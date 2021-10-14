@@ -3,10 +3,10 @@ import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {JobTickHistory} from '../jobs/TickHistory';
+import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
-import {Group} from '../ui/Group';
-import {ScrollContainer} from '../ui/ListComponents';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -15,7 +15,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+import {SchedulerInfo} from './SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
@@ -62,41 +62,38 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleOrError, scheduler, instance}) => {
+      {({scheduleOrError, instance}) => {
         if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
 
         return (
-          <ScrollContainer>
-            <Page>
-              <Group direction="column" spacing={20}>
-                <SchedulerInfo
-                  schedulerOrError={scheduler}
-                  daemonHealth={instance.daemonHealth}
-                  errorsOnly={true}
-                />
-                <ScheduleDetails
-                  repoAddress={repoAddress}
-                  schedule={scheduleOrError}
-                  countdownDuration={INTERVAL}
-                  countdownStatus={countdownStatus}
-                  onRefresh={() => onRefresh()}
-                />
-                <JobTickHistory
-                  repoAddress={repoAddress}
-                  jobName={scheduleOrError.name}
-                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-                />
-                <SchedulePreviousRuns
-                  repoAddress={repoAddress}
-                  schedule={scheduleOrError}
-                  highlightedIds={selectedRunIds}
-                  runTab={runTab}
-                />
-              </Group>
-            </Page>
-          </ScrollContainer>
+          <Page>
+            <ScheduleDetails
+              repoAddress={repoAddress}
+              schedule={scheduleOrError}
+              countdownDuration={INTERVAL}
+              countdownStatus={countdownStatus}
+              onRefresh={() => onRefresh()}
+            />
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <SchedulerInfo daemonHealth={instance.daemonHealth} />
+            </Box>
+            <TickHistory
+              repoAddress={repoAddress}
+              name={scheduleOrError.name}
+              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+            />
+            <SchedulePreviousRuns
+              repoAddress={repoAddress}
+              schedule={scheduleOrError}
+              highlightedIds={selectedRunIds}
+              runTab={runTab}
+            />
+          </Page>
         );
       }}
     </Loading>
@@ -138,9 +135,6 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
 
 const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
-    scheduler {
-      ...SchedulerFragment
-    }
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
         id
@@ -159,7 +153,6 @@ const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

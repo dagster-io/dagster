@@ -1,12 +1,15 @@
-import {Colors, Icon, IconName} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
+import {IconName, IconWIP} from './Icon';
+
+export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
 export interface Props {
-  intent: 'info' | 'warning' | 'error' | 'success';
+  intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
 }
@@ -14,61 +17,59 @@ export interface Props {
 export const Alert: React.FC<Props> = (props) => {
   const {intent, title, description} = props;
 
-  const {backgroundColor, borderColor, icon, iconColor} = React.useMemo(() => {
+  const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: `${Colors.GOLD3}16`,
-          borderColor: Colors.GOLD3,
-          icon: 'warning-sign',
-          iconColor: Colors.GOLD3,
+          backgroundColor: ColorsWIP.Yellow50,
+          borderColor: ColorsWIP.Yellow500,
+          icon: 'warning',
+          iconColor: ColorsWIP.Yellow500,
+          textColor: ColorsWIP.Yellow700,
         };
       case 'error':
         return {
-          backgroundColor: `${Colors.RED3}16`,
-          borderColor: Colors.RED3,
+          backgroundColor: ColorsWIP.Red50,
+          borderColor: ColorsWIP.Red500,
           icon: 'error',
-          iconColor: Colors.RED3,
+          iconColor: ColorsWIP.Red500,
+          textColor: ColorsWIP.Red700,
         };
       case 'success':
         return {
-          backgroundColor: `${Colors.GREEN3}16`,
-          borderColor: Colors.GREEN3,
-          icon: 'tick-circle',
-          iconColor: Colors.GREEN3,
+          backgroundColor: ColorsWIP.Green50,
+          borderColor: ColorsWIP.Green500,
+          icon: 'done',
+          iconColor: ColorsWIP.Green500,
+          textColor: ColorsWIP.Green700,
         };
       case 'info':
       default:
         return {
-          backgroundColor: Colors.LIGHT_GRAY5,
-          borderColor: Colors.BLUE3,
-          icon: 'info-sign',
-          iconColor: Colors.BLUE3,
+          backgroundColor: ColorsWIP.Blue50,
+          borderColor: ColorsWIP.Blue500,
+          icon: 'info',
+          iconColor: ColorsWIP.Blue500,
+          textColor: ColorsWIP.Blue700,
         };
     }
   }, [intent]);
 
   return (
-    <Box
+    <AlertContainer
       background={backgroundColor}
+      $borderColor={borderColor}
+      $textColor={textColor}
       padding={{horizontal: 16, vertical: 12}}
-      style={{
-        boxShadow: `inset 4px 0 ${borderColor}, inset -1px 1px ${Colors.LIGHT_GRAY3}, inset 0 -1px ${Colors.LIGHT_GRAY3}`,
-      }}
     >
       <Group direction="row" spacing={12} alignItems="flex-start">
-        <Icon
-          icon={icon as IconName}
-          iconSize={14}
-          color={iconColor}
-          style={{position: 'relative', top: '-1px'}}
-        />
+        <IconWIP name={icon as IconName} color={iconColor} />
         <Group direction="column" spacing={8}>
           <AlertTitle>{title}</AlertTitle>
           {description ? <AlertDescription>{description}</AlertDescription> : null}
         </Group>
       </Group>
-    </Box>
+    </AlertContainer>
   );
 };
 
@@ -76,13 +77,23 @@ Alert.defaultProps = {
   intent: 'info',
 };
 
+const AlertContainer = styled(Box)<{$borderColor: string; $textColor: string}>`
+  box-shadow: inset 4px 0 ${({$borderColor}) => $borderColor};
+  color: ${({$textColor}) => $textColor};
+
+  a:link,
+  a:visited,
+  a:hover,
+  a:active {
+    color: ${({$textColor}) => $textColor};
+    text-decoration: underline;
+  }
+`;
+
 const AlertTitle = styled.div`
-  color: ${Colors.DARK_GRAY3};
   font-weight: 600;
-  -webkit-font-smoothing: antialiased;
 `;
 
 const AlertDescription = styled.div`
-  color: ${Colors.DARK_GRAY3};
   font-weight: 400;
 `;

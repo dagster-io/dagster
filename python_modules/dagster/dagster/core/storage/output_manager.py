@@ -57,8 +57,6 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
 class OutputManager(ABC):
     """Base class for user-provided output managers. OutputManagers are used to handle the outputs
     of solids.
-
-    The easiest way to define an OutputManager is with the :py:function:`output_manager` decorator.
     """
 
     @abstractmethod

@@ -21,7 +21,7 @@ def multiply_the_word(context, word):
 
 
 @solid(input_defs=[InputDefinition("word")])
-def count_letters(_context, word):
+def count_letters(word):
     return dict(Counter(word))
 
 

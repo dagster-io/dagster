@@ -19,26 +19,29 @@ from dagster import (
     check,
     execute_pipeline,
     execute_pipeline_iterator,
-    fs_io_manager,
     pipeline,
     reconstructable,
     reexecute_pipeline,
     solid,
 )
-from dagster.cli.workspace.load import location_origin_from_python_file
-from dagster.core.definitions import Solid
+from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test, step_output_event_filter
+from dagster.core.test_utils import (
+    default_mode_def_for_test,
+    instance_for_test,
+    step_output_event_filter,
+)
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
     define_stub_solid,
     input_set,
 )
+from dagster.core.workspace.load import location_origin_from_python_file
 from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members
@@ -76,7 +79,7 @@ def make_compute_fn():
 def _do_construct(solids, dependencies):
     pipeline_def = PipelineDefinition(name="test", solid_defs=solids, dependencies=dependencies)
     solids = {
-        s.name: Solid(name=s.name, definition=s, graph_definition=pipeline_def) for s in solids
+        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph) for s in solids
     }
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
@@ -781,7 +784,7 @@ def retry_pipeline():
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
+        mode_defs=[default_mode_def_for_test],
     )
 
 

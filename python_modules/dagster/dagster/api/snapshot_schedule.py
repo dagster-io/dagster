@@ -1,12 +1,11 @@
 from dagster import check
+from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.external_data import (
-    ExternalScheduleExecutionData,
-    ExternalScheduleExecutionErrorData,
-)
+from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import ExternalScheduleExecutionArgs
-from dagster.seven import PendulumDateTime
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.seven.compat.pendulum import PendulumDateTime
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
@@ -44,20 +43,22 @@ def sync_get_external_schedule_execution_data_grpc(
     origin = repository_handle.get_external_origin()
 
     result = check.inst(
-        api_client.external_schedule_execution(
-            external_schedule_execution_args=ExternalScheduleExecutionArgs(
-                repository_origin=origin,
-                instance_ref=instance.get_ref(),
-                schedule_name=schedule_name,
-                scheduled_execution_timestamp=scheduled_execution_time.timestamp()
-                if scheduled_execution_time
-                else None,
-                scheduled_execution_timezone=scheduled_execution_time.timezone.name
-                if scheduled_execution_time
-                else None,
-            )
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_schedule_execution(
+                external_schedule_execution_args=ExternalScheduleExecutionArgs(
+                    repository_origin=origin,
+                    instance_ref=instance.get_ref(),
+                    schedule_name=schedule_name,
+                    scheduled_execution_timestamp=scheduled_execution_time.timestamp()
+                    if scheduled_execution_time
+                    else None,
+                    scheduled_execution_timezone=scheduled_execution_time.timezone.name
+                    if scheduled_execution_time
+                    else None,
+                )
+            ),
         ),
-        (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
+        (ScheduleExecutionData, ExternalScheduleExecutionErrorData),
     )
     if isinstance(result, ExternalScheduleExecutionErrorData):
         raise DagsterUserCodeProcessError.from_error_info(result.error)

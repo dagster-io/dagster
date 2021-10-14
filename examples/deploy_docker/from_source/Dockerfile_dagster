@@ -3,21 +3,7 @@
 
 FROM python:3.7-slim
 
-# Install curl
-RUN apt-get update -y && apt-get install -y curl
-
-# Add yarn repo
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update -yqq \
-    && apt-get upgrade -yqq
-
-# Install yarn
-RUN apt-get install -y yarn
-
 COPY ./python_modules/ /tmp/python_modules/
-COPY ./js_modules/ /tmp/js_modules/
 
 WORKDIR /tmp
 
@@ -27,11 +13,6 @@ RUN pip install \
     -e python_modules/dagit \
     -e python_modules/libraries/dagster-postgres \
     -e python_modules/libraries/dagster-docker
-
-WORKDIR /tmp/js_modules/dagit/
-
-RUN yarn install
-RUN yarn build-for-python
 
 # Set $DAGSTER_HOME and copy dagster instance and workspace YAML there
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/

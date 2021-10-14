@@ -75,6 +75,38 @@ def dbt_example_extra_cmds_fn(_):
     ]
 
 
+def docs_snippets_extra_cmds_fn(_):
+    return [
+        "pushd examples/docs_snippets",
+        # Run the postgres db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
+        ),
+        "popd",
+    ]
+
+
+def docs_snippets_crag_extra_cmds_fn(_):
+    return [
+        "pushd examples/docs_snippets_crag",
+        # Run the postgres db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
+        ),
+        "popd",
+    ]
+
+
 def deploy_docker_example_extra_cmds_fn(_):
     return [
         "pushd examples/deploy_docker/from_source",
@@ -266,6 +298,34 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         upload_coverage=False,
         supported_pythons=ExamplePythons,
     ),
+    ModuleBuildSpec(
+        "examples/docs_snippets",
+        extra_cmds_fn=docs_snippets_extra_cmds_fn,
+        buildkite_label="docs_snippets",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
+        "examples/docs_snippets_crag",
+        extra_cmds_fn=docs_snippets_crag_extra_cmds_fn,
+        buildkite_label="docs_snippets_crag",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
+        "examples/hacker_news_assets",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        buildkite_label="hacker_news_assets",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
+        "examples/hacker_news",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        buildkite_label="hacker_news_example",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
     ModuleBuildSpec(
@@ -281,6 +341,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-general_tests",
             "-scheduler_tests",
             "-scheduler_tests_old_pendulum",
+            "-execution_tests",
         ],
     ),
     ModuleBuildSpec(
@@ -306,6 +367,9 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-postgres_instance_managed_grpc_env",
             "-postgres_instance_deployed_grpc_env",
         ],
+    ),
+    ModuleBuildSpec(
+        "python_modules/dagster-test",
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-dbt",
@@ -378,6 +442,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         extra_cmds_fn=k8s_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
+    ModuleBuildSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     ModuleBuildSpec("python_modules/libraries/dagster-mysql", extra_cmds_fn=mysql_extra_cmds_fn),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
@@ -387,6 +452,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
+    ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagstermill",
+        tox_env_suffixes=["-papermill1", "-papermill2"],
     ),
     ModuleBuildSpec("python_modules/libraries/lakehouse", upload_coverage=False),
 ]
@@ -414,9 +483,12 @@ def examples_tests():
     skip_examples = [
         # Skip these folders because they need custom build config
         "docs_snippets",
+        "docs_snippets_crag",
         "airline_demo",
         "dbt_example",
         "deploy_docker",
+        "hacker_news",
+        "hacker_news_assets",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
@@ -511,15 +583,6 @@ def pylint_steps():
     ]
 
 
-def version_equality_checks(version=SupportedPython.V3_7):
-    return [
-        StepBuilder("all versions == ?")
-        .on_integration_image(version)
-        .run("pip install -e python_modules/automation", "dagster-release version")
-        .build()
-    ]
-
-
 def schema_checks(version=SupportedPython.V3_8):
     return [
         StepBuilder("SQL schema checks")
@@ -534,8 +597,7 @@ def graphql_python_client_backcompat_checks(version=SupportedPython.V3_8):
         StepBuilder("Backwards compat checks for the GraphQL Python Client")
         .on_integration_image(version)
         .run(
-            "pip install -e python_modules/dagster-graphql",
-            "pip install -e python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .build()
@@ -589,7 +651,6 @@ def dagster_steps():
 
     # https://github.com/dagster-io/dagster/issues/2785
     steps += pipenv_smoke_tests()
-    steps += version_equality_checks()
     steps += docs_steps()
     steps += examples_tests()
     steps += helm_steps()

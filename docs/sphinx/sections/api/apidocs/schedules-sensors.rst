@@ -15,8 +15,11 @@ Schedules
 .. autodecorator:: daily_schedule
 
 .. autoclass:: ScheduleDefinition
-.. autoclass:: ScheduleExecutionContext
+
+.. autoclass:: ScheduleEvaluationContext
 .. autoclass:: PartitionScheduleDefinition
+
+.. autofunction:: build_schedule_context
 
 .. currentmodule:: dagster.core.scheduler
 
@@ -30,4 +33,25 @@ Sensors
 .. autodecorator:: sensor
 
 .. autoclass:: SensorDefinition
-.. autoclass:: SensorExecutionContext
+
+.. autoclass:: SensorEvaluationContext
+
+.. autofunction:: build_sensor_context
+
+.. autoclass:: AssetSensorDefinition
+
+.. autodecorator:: asset_sensor
+
+.. autodecorator:: job_failure_sensor
+
+.. autodecorator:: pipeline_failure_sensor
+
+.. autoclass:: JobFailureSensorContext
+
+.. autoclass:: PipelineFailureSensorContext
+
+.. autoclass:: RunStatusSensorDefinition
+
+.. autoclass:: RunStatusSensorContext
+
+.. autodecorator:: run_status_sensor

@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: wget
-      image: {{ include "image.name" $.Values.busybox.image | quote }}
+      image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
       command: ['wget']
       args:  ['{{ include "dagster.dagit.fullname" . }}:{{ .Values.dagit.service.port }}']
   restartPolicy: Never

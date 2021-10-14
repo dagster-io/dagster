@@ -1,10 +1,8 @@
 import {gql} from '@apollo/client';
-import {NonIdealState, Tag} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -16,13 +14,15 @@ import {
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
 import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
+import {TagWIP} from '../ui/TagWIP';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
+import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
@@ -33,17 +33,23 @@ interface Props {
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
   const {pipelinePath} = props;
-  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
-
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
+  useJobTitle(explorerPath);
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = React.useMemo(() => {
     return [
-      {token: 'pipeline', value: pipelineName},
+      flagPipelineModeTuples
+        ? {
+            token: 'job',
+            value: `${pipelineName}${pipelineMode === 'default' ? '' : `:${pipelineMode}`}`,
+          }
+        : {token: 'pipeline', value: pipelineName},
       snapshotId ? {token: 'snapshotId', value: snapshotId} : null,
     ].filter(Boolean) as TokenizingFieldValue[];
-  }, [pipelineName, snapshotId]);
+  }, [flagPipelineModeTuples, pipelineName, pipelineMode, snapshotId]);
 
   const allTokens = [...filterTokens, ...permanentTokens];
 
@@ -60,7 +66,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
         return undefined;
       }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
+      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
       if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
@@ -75,33 +81,26 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Box
           flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          margin={{bottom: 8}}
+          padding={{vertical: 16, horizontal: 24}}
         >
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8}>
-              {permanentTokens.map(({token, value}) => (
-                <Tag minimal key={token}>{`${token}:${value}`}</Tag>
-              ))}
-            </Group>
-            <RunsFilter
-              enabledFilters={ENABLED_FILTERS}
-              tokens={filterTokens}
-              onChange={setFilterTokens}
-              loading={queryResult.loading}
-            />
-          </Group>
+          <Box flex={{direction: 'row', gap: 8}}>
+            {permanentTokens.map(({token, value}) => (
+              <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+            ))}
+          </Box>
           <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
         </Box>
-
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <NonIdealState
-                  icon={IconNames.ERROR}
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
             const runs = pipelineRunsOrError.results;
@@ -109,7 +108,18 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
             const {hasNextCursor, hasPrevCursor} = paginationProps;
             return (
               <>
-                <RunTable runs={displayed} onSetFilter={setFilterTokens} />
+                <RunTable
+                  runs={displayed}
+                  onSetFilter={setFilterTokens}
+                  actionBarComponents={
+                    <RunsFilter
+                      enabledFilters={ENABLED_FILTERS}
+                      tokens={filterTokens}
+                      onChange={setFilterTokens}
+                      loading={queryResult.loading}
+                    />
+                  }
+                />
                 {hasNextCursor || hasPrevCursor ? (
                   <div style={{marginTop: '20px'}}>
                     <CursorPaginationControls {...paginationProps} />

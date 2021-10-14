@@ -2,12 +2,15 @@ from urllib.parse import urljoin, urlparse
 
 import click
 import requests
+from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
-from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
-from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.cli.workspace.workspace import Workspace
+from dagster.cli.workspace.cli_target import (
+    WORKSPACE_TARGET_WARNING,
+    get_workspace_process_context_from_kwargs,
+)
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 from graphql import graphql
@@ -18,31 +21,22 @@ from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema
 from .version import __version__
 
-from future.standard_library import install_aliases  # isort:skip
-
-install_aliases()  # isort:skip
-
 
 def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(workspace, query, variables=None, use_sync_executor=False, instance=None):
-    check.inst_param(workspace, "workspace", Workspace)
+def execute_query(workspace_process_context, query, variables=None, use_sync_executor=False):
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
     check.str_param(query, "query")
     check.opt_dict_param(variables, "variables")
-    instance = (
-        check.inst_param(instance, "instance", DagsterInstance)
-        if instance
-        else DagsterInstance.get()
-    )
     check.bool_param(use_sync_executor, "use_sync_executor")
 
     query = query.strip("'\" \n\t")
 
-    context = WorkspaceProcessContext(
-        workspace=workspace, instance=instance, version=__version__
-    ).create_request_context()
+    context = workspace_process_context.create_request_context()
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
@@ -72,19 +66,19 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
     return result_dict
 
 
-def execute_query_from_cli(workspace, query, instance, variables=None, output=None):
-    check.inst_param(workspace, "workspace", Workspace)
+def execute_query_from_cli(workspace_process_context, query, variables=None, output=None):
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
     check.str_param(query, "query")
-    check.inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(variables, "variables")
     check.opt_str_param(output, "output")
 
     query = query.strip("'\" \n\t")
 
     result_dict = execute_query(
-        workspace,
+        workspace_process_context,
         query,
-        instance=instance,
         variables=seven.json.loads(variables) if variables else None,
     )
     str_res = seven.json.dumps(result_dict)
@@ -116,9 +110,10 @@ def execute_query_against_remote(host, query, variables):
         raise click.UsageError(
             "Host {host} failed sanity check. It is not a dagit server.".format(host=host)
         )
-
     response = requests.post(
-        urljoin(host, "/graphql"), params={"query": query, "variables": variables}
+        urljoin(host, "/graphql"),
+        # send query and vars as post body to avoid uri length limits
+        json={"query": query, "variables": variables},
     )
     response.raise_for_status()
     str_res = response.json()
@@ -203,11 +198,12 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
         print(res)  # pylint: disable=print-call
     else:
         instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
-        with get_workspace_from_kwargs(kwargs) as workspace:
+        with get_workspace_process_context_from_kwargs(
+            instance, version=__version__, read_only=False, kwargs=kwargs
+        ) as workspace_process_context:
             execute_query_from_cli(
-                workspace,
+                workspace_process_context,
                 query,
-                instance,
                 variables,
                 output,
             )

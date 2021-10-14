@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {Box} from './Box';
-import {ButtonLink, Props} from './ButtonLink';
+import {ButtonLink} from './ButtonLink';
+import {ColorsWIP} from './Colors';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,35 +11,36 @@ export default {
   component: ButtonLink,
 } as Meta;
 
+type Props = React.ComponentProps<typeof ButtonLink>;
 const Template: Story<Props> = (props) => <ButtonLink {...props} />;
 
 export const ColorString = Template.bind({});
 ColorString.args = {
   children: 'Hello world',
-  color: Colors.COBALT4,
+  color: ColorsWIP.Blue500,
 };
 
 export const ColorMap = Template.bind({});
 ColorMap.args = {
   children: 'Hello world',
   color: {
-    link: Colors.COBALT4,
-    hover: Colors.COBALT1,
-    active: Colors.ORANGE1,
+    link: ColorsWIP.Blue500,
+    hover: ColorsWIP.Blue700,
+    active: ColorsWIP.Yellow700,
   },
 };
 
 export const HoverUnderline = Template.bind({});
 HoverUnderline.args = {
   children: 'Hello world',
-  color: Colors.COBALT4,
+  color: ColorsWIP.Blue500,
   underline: 'hover',
 };
 
 export const WhiteLinkOnBlack = () => {
   return (
-    <Box background={Colors.BLACK} padding={16}>
-      <ButtonLink color={{link: Colors.WHITE, hover: Colors.LIGHT_GRAY1}} underline="always">
+    <Box background={ColorsWIP.Dark} padding={16}>
+      <ButtonLink color={{link: ColorsWIP.White, hover: ColorsWIP.Gray200}} underline="always">
         Hello world
       </ButtonLink>
     </Box>
@@ -50,7 +51,7 @@ export const WithinText = () => {
   return (
     <div>
       Lorem ipsum{' '}
-      <ButtonLink color={{link: Colors.COBALT4, hover: Colors.BLUE1}} underline="always">
+      <ButtonLink color={{link: ColorsWIP.Blue500, hover: ColorsWIP.Link}} underline="always">
         dolor sit
       </ButtonLink>{' '}
       amet edipiscing.

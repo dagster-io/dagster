@@ -1,0 +1,81 @@
+services:
+
+  docker_postgresql:
+    image: postgres:11
+    container_name: docker_postgresql
+    environment:
+      POSTGRES_USER: "postgres_user"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_DB: "postgres_db"
+    networks:
+      - dagit_service_network
+
+  dagster_grpc_server:
+    container_name: dagster_grpc_server
+    image: dagster_grpc_image
+    build:
+      context: .
+      dockerfile: ${USER_CODE_DOCKERFILE}
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_CURRENT_IMAGE: "dagster_grpc_image"
+    networks:
+      - dagit_service_network
+
+  dagit:
+    container_name: dagit
+    networks:
+      - dagit_service_network
+    build:
+      context: .
+      dockerfile: ${DAGIT_DOCKERFILE}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3000:3000"
+    expose:
+      - "3000"
+    entrypoint:
+      - dagit
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - "workspace.yaml"
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    depends_on:
+      - dagster_grpc_server
+      - docker_daemon
+      - docker_postgresql
+
+  docker_daemon:
+    build:
+      context: .
+      dockerfile: ${DAGIT_DOCKERFILE}
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: docker_daemon
+    restart: on-failure
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dagit_service_network
+    depends_on:
+      - docker_postgresql
+      - dagster_grpc_server
+
+networks:
+  dagit_service_network:
+    driver: bridge
+    name: dagit_service_network

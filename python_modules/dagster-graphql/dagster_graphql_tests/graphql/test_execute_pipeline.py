@@ -1,13 +1,21 @@
+import time
 import uuid
 
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
+from dagster_graphql.client.query import (
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    RUN_EVENTS_QUERY,
+    SUBSCRIPTION_QUERY,
+)
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
@@ -85,6 +93,26 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
             == "hello_world_with_tags"
         )
+
+        # ensure provided tags override def tags
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "executionMetadata": {
+                        "tags": [{"key": "tag_key", "value": "new_tag_value"}],
+                    },
+                },
+            },
+        )
+
+        assert not result.errors
+        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
+            {"key": "tag_key", "value": "new_tag_value"}
+        ]
 
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -227,6 +255,27 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPipelineExecution"]["__typename"] == "PipelineNotFoundError"
         assert result.data["launchPipelineExecution"]["pipelineName"] == "sjkdfkdjkf"
 
+    def _csv_hello_world_event_sequence(self):
+        # expected non engine event sequence from executing csv_hello_world pipeline
+        return [
+            "PipelineStartingEvent",
+            "PipelineStartEvent",
+            "LogsCapturedEvent",
+            "ExecutionStepStartEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
+            "LogsCapturedEvent",
+            "ExecutionStepStartEvent",
+            "LoadedInputEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
+            "PipelineSuccessEvent",
+        ]
+
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         run_logs = sync_execute_get_run_log_data(
@@ -252,23 +301,114 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             for message in run_logs["messages"]
             if message["__typename"] != "EngineEvent"
         ]
-        expected_non_engine_event_types = [
-            "PipelineStartingEvent",
-            "PipelineStartEvent",
-            "ExecutionStepStartEvent",
-            "ExecutionStepInputEvent",
-            "ExecutionStepOutputEvent",
-            "HandledOutputEvent",
-            "ExecutionStepSuccessEvent",
-            "ExecutionStepStartEvent",
-            "LoadedInputEvent",
-            "ExecutionStepInputEvent",
-            "ExecutionStepOutputEvent",
-            "HandledOutputEvent",
-            "ExecutionStepSuccessEvent",
-            "PipelineSuccessEvent",
+
+        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+
+    def test_basic_start_pipeline_and_fetch(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        exc_result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": {
+                        "solids": {
+                            "sum_solid": {
+                                "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
+                            }
+                        }
+                    },
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not exc_result.errors
+        assert exc_result.data
+        assert (
+            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        )
+
+        # block until run finishes
+        graphql_context.instance.run_launcher.join()
+
+        events_result = execute_dagster_graphql(
+            graphql_context,
+            RUN_EVENTS_QUERY,
+            variables={"runId": exc_result.data["launchPipelineExecution"]["run"]["runId"]},
+        )
+
+        assert not events_result.errors
+        assert events_result.data
+        assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+
+        non_engine_event_types = [
+            message["__typename"]
+            for message in events_result.data["pipelineRunOrError"]["events"]
+            if message["__typename"] != "EngineEvent"
         ]
-        assert non_engine_event_types == expected_non_engine_event_types
+        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+
+    def test_basic_start_pipeline_and_poll(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        exc_result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": {
+                        "solids": {
+                            "sum_solid": {
+                                "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
+                            }
+                        }
+                    },
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not exc_result.errors
+        assert exc_result.data
+        assert (
+            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        )
+
+        def _fetch_events(after):
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                    "after": after,
+                },
+            )
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+            return events_result.data["pipelineRunOrError"]["events"]
+
+        full_logs = []
+        cursor = -1
+        iters = 0
+
+        # do 3 polls, then fetch after waiting for execution to finish
+        while iters < 3:
+            full_logs.extend(_fetch_events(cursor))
+            cursor = len(full_logs) - 1
+            iters += 1
+            time.sleep(0.05)  # 50ms
+
+        # block until run finishes
+        graphql_context.instance.run_launcher.join()
+        full_logs.extend(_fetch_events(cursor))
+
+        non_engine_event_types = [
+            message["__typename"] for message in full_logs if message["__typename"] != "EngineEvent"
+        ]
+        assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
     def test_subscription_query_error(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
@@ -490,3 +630,26 @@ def get_step_output_event(logs, step_key, output_name="result"):
             return log
 
     return None
+
+
+class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
+    def test_start_pipeline_execution_readonly_failure(self, graphql_context):
+        assert graphql_context.read_only == True
+
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": csv_hello_world_solids_config(),
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["launchPipelineExecution"]["__typename"] == "UnauthorizedError"

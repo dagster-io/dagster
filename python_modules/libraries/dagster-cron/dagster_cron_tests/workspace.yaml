@@ -1,4 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: test_cron_scheduler.py
-      attribute: test_repository

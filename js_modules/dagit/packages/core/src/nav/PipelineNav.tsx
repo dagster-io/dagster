@@ -1,35 +1,41 @@
-import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
+import {IconName} from '@blueprintjs/core';
 import React from 'react';
-import {Link, useRouteMatch} from 'react-router-dom';
+import {useRouteMatch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
+import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
 } from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
+import {Tab, Tabs} from '../ui/Tabs';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 
 interface TabConfig {
   title: string;
   pathComponent: string;
   icon: IconName;
+  isAvailable?: (permissions: PermissionsMap) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: 'overview', icon: 'dashboard'},
-  definition: {title: 'Definition', pathComponent: '', icon: 'diagram-tree'},
+  overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
   playground: {
     title: 'Playground',
     pathComponent: 'playground',
     icon: 'manually-entered-data',
+    isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
@@ -43,9 +49,9 @@ const pipelineTabs: {[key: string]: TabConfig} = {
   },
 };
 
-const currentOrder = ['overview', 'definition', 'playground', 'runs', 'partitions'];
+const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
 
-export function tabForPipelinePathComponent(component?: string): TabConfig {
+function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
   const match =
     tabList.find((t) => pipelineTabs[t].pathComponent === component) ||
@@ -69,6 +75,7 @@ const tabForKey = (repoAddress: RepoAddress, explorerPath: PipelineExplorerPath)
         repoAddress,
         `/pipelines/${explorerPathForTab}${tab.pathComponent}`,
       ),
+      isAvailable: tab.isAvailable,
     };
   };
 };
@@ -79,42 +86,74 @@ interface Props {
 
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
+  const permissions = usePermissions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
+    '/workspace/:repoPath/jobs/:selector/:tab?',
   ]);
 
   const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
+  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
+  const partitionSets = repo?.repository.partitionSets || [];
 
-  const hasPartitionSet = repo?.repository.partitionSets
-    .map((x) => x.pipelineName)
-    .includes(explorerPath.pipelineName);
+  // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
+  // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
+  const hasPartitionSet = partitionSets.some(
+    (partitionSet) =>
+      partitionSet.pipelineName === pipelineName &&
+      (!flagPipelineModeTuples || partitionSet.mode === pipelineMode),
+  );
 
   const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
 
   return (
-    <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
+    <>
       <PageHeader
-        title={<Heading>{explorerPath.pipelineName}</Heading>}
-        icon="diagram-tree"
-        description={
-          <>
-            <Link to={workspacePathFromAddress(repoAddress, '/pipelines')}>Pipeline</Link> in{' '}
-            <RepositoryLink repoAddress={repoAddress} />
-          </>
+        title={
+          <Heading>
+            {pipelineName}
+            {flagPipelineModeTuples && pipelineMode !== 'default' ? (
+              <span style={{opacity: 0.5}}> : {pipelineMode}</span>
+            ) : null}
+          </Heading>
+        }
+        tags={
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
+            <TagWIP icon="job">
+              {flagPipelineModeTuples ? 'Job' : 'Pipeline'} in{' '}
+              <RepositoryLink repoAddress={repoAddress} />
+            </TagWIP>
+            {snapshotId ? null : (
+              <JobMetadata
+                pipelineName={pipelineName}
+                pipelineMode={pipelineMode}
+                repoAddress={repoAddress}
+              />
+            )}
+          </Box>
+        }
+        tabs={
+          <Tabs size="large" selectedTabId={active.title}>
+            {tabs.map((tab) => {
+              const {href, text, isAvailable} = tab;
+              const disabled = isAvailable && !isAvailable(permissions);
+              const title = disabled ? (
+                <Tooltip content={DISABLED_MESSAGE} placement="top">
+                  {text}
+                </Tooltip>
+              ) : (
+                text
+              );
+              return <Tab key={text} id={text} title={title} disabled={disabled} to={href} />;
+            })}
+          </Tabs>
         }
       />
-      <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
-        <Tabs large={false} selectedTabId={active.title}>
-          {tabs.map((tab) => {
-            const {href, text} = tab;
-            return <Tab key={text} id={text} title={<Link to={href}>{text}</Link>} />;
-          })}
-        </Tabs>
-      </Box>
-    </Group>
+    </>
   );
 };

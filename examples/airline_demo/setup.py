@@ -22,7 +22,6 @@ setup(
         "full": [
             "dagstermill",
             "dagster-aws",
-            "dagster-cron",
             "dagster-postgres",
             "dagster-pyspark",
             "dagster-slack",
@@ -34,7 +33,7 @@ setup(
             "google-cloud-storage",
             "keras",
             "lakehouse",
-            "matplotlib",
+            "matplotlib<3.4.3",
             "mock",
             "moto>=1.3.16",
             "pandas>=1.0.0",
@@ -47,7 +46,10 @@ setup(
             "SQLAlchemy-Utils==0.33.8",
             'tensorflow; python_version < "3.9"',
         ],
-        "airflow": ["dagster_airflow", "docker-compose==1.23.2"],
+        "airflow": [
+            "dagster_airflow",
+            "docker-compose",
+        ],
     },
     include_package_data=True,
 )

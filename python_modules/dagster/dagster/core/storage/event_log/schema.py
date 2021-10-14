@@ -34,12 +34,34 @@ AssetKeyTable = db.Table(
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
     db.Column("asset_details", db.Text),
+    db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check
+    db.Column(
+        "last_materialization_timestamp", db.types.TIMESTAMP
+    ),  # guarded by secondary index check
+    db.Column("tags", db.TEXT),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
-db.Index("idx_step_key", SqlEventLogStorageTable.c.step_key)
-db.Index("idx_asset_key", SqlEventLogStorageTable.c.asset_key)
 db.Index(
-    "idx_asset_partition", SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition
+    "idx_step_key",
+    SqlEventLogStorageTable.c.step_key,
+    mysql_length=32,
+)
+db.Index(
+    "idx_asset_key",
+    SqlEventLogStorageTable.c.asset_key,
+    mysql_length=32,
+)
+db.Index(
+    "idx_asset_partition",
+    SqlEventLogStorageTable.c.asset_key,
+    SqlEventLogStorageTable.c.partition,
+    mysql_length=64,
+)
+db.Index(
+    "idx_event_type",
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.id,
+    mysql_length={"dagster_event_type": 64},
 )

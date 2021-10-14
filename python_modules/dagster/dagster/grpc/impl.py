@@ -5,12 +5,12 @@ import sys
 
 import pendulum
 from dagster import check
-from dagster.core.definitions import ScheduleExecutionContext
+from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.definitions.sensor import SensorExecutionContext
+from dagster.core.definitions.sensor import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvalidSubsetError,
@@ -31,9 +31,7 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
     ExternalPipelineSubsetResult,
-    ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
@@ -227,16 +225,14 @@ def get_external_schedule_execution(
         else None
     )
 
-    with ScheduleExecutionContext(instance_ref, scheduled_execution_time) as schedule_context:
+    with ScheduleEvaluationContext(instance_ref, scheduled_execution_time) as schedule_context:
         try:
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: "Error occurred during the execution function for schedule "
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
-                return ExternalScheduleExecutionData.from_execution_data(
-                    schedule_def.get_execution_data(schedule_context)
-                )
+                return schedule_def.evaluate_tick(schedule_context)
         except ScheduleExecutionError:
             return ExternalScheduleExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
@@ -244,7 +240,7 @@ def get_external_schedule_execution(
 
 
 def get_external_sensor_execution(
-    recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key
+    recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key, cursor
 ):
     check.inst_param(
         recon_repo,
@@ -255,8 +251,12 @@ def get_external_sensor_execution(
     definition = recon_repo.get_definition()
     sensor_def = definition.get_sensor_def(sensor_name)
 
-    with SensorExecutionContext(
-        instance_ref, last_completion_time=last_completion_timestamp, last_run_key=last_run_key
+    with SensorEvaluationContext(
+        instance_ref,
+        last_completion_time=last_completion_timestamp,
+        last_run_key=last_run_key,
+        cursor=cursor,
+        repository_name=recon_repo.get_definition().name,
     ) as sensor_context:
         try:
             with user_code_error_boundary(
@@ -264,9 +264,7 @@ def get_external_sensor_execution(
                 lambda: "Error occurred during the execution of evaluation_fn for sensor "
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
-                return ExternalSensorExecutionData.from_execution_data(
-                    sensor_def.get_execution_data(sensor_context)
-                )
+                return sensor_def.evaluate_tick(sensor_context)
         except SensorExecutionError:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
@@ -401,3 +399,16 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
+
+
+def get_notebook_data(notebook_path):
+    check.str_param(notebook_path, "notebook_path")
+
+    if not notebook_path.endswith(".ipynb"):
+        raise Exception(
+            "unexpected file extension for notebooks. Please provide a path that ends with '.ipynb'."
+        )
+
+    with open(os.path.abspath(notebook_path), "rb") as f:
+        content = f.read()
+        return content

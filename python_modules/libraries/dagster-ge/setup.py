@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-ge",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         license="Apache-2.0",
         description="Package for GE-specific Dagster framework solid and resource components.",
@@ -29,10 +32,10 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=[
-            "dagster",
-            "dagster-pandas",
+            f"dagster{pin}",
+            f"dagster-pandas{pin}",
             "pandas",
-            "great_expectations >=0.11.9, !=0.12.8, <0.13.7",  # 0.13.7 incompatible with sqlalchemy >= 1.4.0
+            "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],
         zip_safe=False,
     )

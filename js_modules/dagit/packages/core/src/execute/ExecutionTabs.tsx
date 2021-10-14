@@ -1,16 +1,16 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled, {css} from 'styled-components/macro';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
-  IStorageData,
   applyChangesToSession,
-  applyCreateSession,
   applyRemoveSession,
   applySelectSession,
+  IStorageData,
 } from '../app/LocalStorage';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 
 interface ExecutationTabProps {
   canRemove?: boolean;
@@ -58,22 +58,23 @@ const ExecutionTab = (props: ExecutationTabProps) => {
   }, [editing]);
 
   return (
-    <TabContainer active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
+    <TabContainer $active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
       {editing ? (
         <input
           ref={input}
           type="text"
-          onKeyDown={(e) => e.keyCode === 13 && e.currentTarget.blur()}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           onChange={handleChange}
           onBlur={handleBlur}
           value={value}
+          placeholder="Type a tab name…"
         />
       ) : (
         title
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <Icon icon={IconNames.CROSS} />
+          <IconWIP name="close" color={ColorsWIP.Olive500} />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -82,11 +83,12 @@ const ExecutionTab = (props: ExecutationTabProps) => {
 
 interface ExecutionTabsProps {
   data: IStorageData;
+  onCreate: () => void;
   onSave: (data: IStorageData) => void;
 }
 
 export const ExecutionTabs = (props: ExecutionTabsProps) => {
-  const {data, onSave} = props;
+  const {data, onCreate, onSave} = props;
   const {sessions} = data;
   const sessionKeys = Object.keys(sessions);
   const sessionCount = sessionKeys.length;
@@ -110,67 +112,94 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
   };
 
   return (
-    <ExecutionTabsContainer>
-      {sessionKeys.map((key) => (
-        <ExecutionTab
-          canRemove={sessionCount > 1}
-          key={key}
-          active={key === data.current}
-          title={sessions[key].name}
-          onClick={() => onApply(applySelectSession, key)}
-          onChange={(name) => onApply(applyChangesToSession, key, {name})}
-          onRemove={() => onRemove(key)}
-        />
-      ))}
-      <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
-    </ExecutionTabsContainer>
+    <Box
+      border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      padding={{horizontal: 12, top: 12}}
+    >
+      <ExecutionTabsContainer>
+        {sessionKeys.map((key) => (
+          <ExecutionTab
+            canRemove={sessionCount > 1}
+            key={key}
+            active={key === data.current}
+            title={sessions[key].name || 'Unnamed'}
+            onClick={() => onApply(applySelectSession, key)}
+            onChange={(name) => onApply(applyChangesToSession, key, {name})}
+            onRemove={() => onRemove(key)}
+          />
+        ))}
+        <ExecutionTab title="+ Add..." onClick={onCreate} />
+      </ExecutionTabsContainer>
+    </Box>
   );
 };
 
 const ExecutionTabsContainer = styled.div`
-  padding-left: 20px;
-  padding-top: 12px;
-  display; flex;
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  gap: 8px;
   z-index: 1;
   flex-direction: row;
-  border-bottom: 1px solid ${Colors.GRAY5};
 `;
 
-const TabContainer = styled.div<{active: boolean}>`
-  position: relative;
-  padding: 0 9px 2px 9px;
-  display: inline-block;
-  background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
-  color: ${({active}) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
+const TabContainer = styled.div<{$active: boolean}>`
+  align-items: center;
   user-select: none;
-  line-height: 28px;
-  height: 30px;
-  top: 1px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 
-  border: 1px solid ${Colors.GRAY5};
-  border-bottom: 1px solid ${({active}) => (active ? 'transparent' : Colors.GRAY5)};
-  border-right: 0;
+  ${({$active}) =>
+    $active
+      ? css`
+          font-weight: 600;
+          background-color: ${ColorsWIP.Gray100};
+          color: ${ColorsWIP.ForestGreen};
+          box-shadow: ${ColorsWIP.ForestGreen} 0 -2px 0 inset;
+        `
+      : css`
+          font-weight: normal;
+          background-color: ${ColorsWIP.Gray50};
+          color: ${ColorsWIP.Gray300};
+          box-shadow: ${ColorsWIP.Olive200} 0 -1px 0 inset;
+
+          &:hover {
+            background-color: ${ColorsWIP.Gray100};
+            box-shadow: ${ColorsWIP.Olive500} 0 -1px 0 inset;
+            color: ${ColorsWIP.Olive500};
+          }
+        `}
+
   &:last-child {
-    border-right: 1px solid ${Colors.GRAY5};
+    padding-right: 12px;
   }
-  &:hover {
-    background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
-  }
+
   input {
-    line-height: 1.28581;
-    font-size: 14px;
+    background-color: transparent;
+    font-size: 13px;
     border: 0;
     outline: none;
+    padding: 0;
   }
-  cursor: ${({active}) => (!active ? 'pointer' : 'inherit')};
+
+  cursor: ${({$active}) => (!$active ? 'pointer' : 'inherit')};
 `;
 
 const RemoveButton = styled.button`
+  background-color: transparent;
   border: 0;
-  margin-left: 8px;
-  opacity: 0.2;
+  cursor: pointer;
   padding: 0;
-  &:hover {
-    opacity: 0.6;
+
+  ${IconWrapper} {
+    transition: background-color 100ms;
+  }
+
+  &:hover ${IconWrapper} {
+    background-color: ${ColorsWIP.Olive700};
   }
 `;

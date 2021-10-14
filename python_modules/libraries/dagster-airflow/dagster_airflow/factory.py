@@ -266,7 +266,7 @@ def make_airflow_dag(
         module_name (str): The name of the importable module in which the pipeline definition can be
             found.
         pipeline_name (str): The name of the pipeline definition.
-        run_config (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
@@ -331,7 +331,7 @@ def make_airflow_dag_for_operator(
         pipeline_name (str): The name of the pipeline definition.
         operator (type): The operator to use. Must be a class that inherits from
             :py:class:`BaseOperator <airflow.models.BaseOperator>`
-        run_config (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
@@ -413,7 +413,7 @@ def make_airflow_dag_containerized(
         pipeline_name (str): The name of the pipeline definition.
         image (str): The name of the Docker image to use for execution (passed through to
             :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
-        run_config (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to

@@ -1,9 +1,11 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
 
@@ -12,6 +14,8 @@ interface Props {
   pipelineHrefContext: 'repo-unknown' | RepoAddress | 'no-link';
   snapshotId?: string | null;
   mode: string;
+  showIcon?: boolean;
+  size?: 'small' | 'normal';
 }
 
 export const PipelineReference: React.FC<Props> = ({
@@ -19,24 +23,56 @@ export const PipelineReference: React.FC<Props> = ({
   pipelineHrefContext,
   mode,
   snapshotId,
+  showIcon,
+  size = 'normal',
 }) => {
+  const modeLabel =
+    mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
+
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={`/workspace/pipelines/${pipelineName}`}>{pipelineName}</Link>
-    ) : pipelineHrefContext === 'no-link' ? (
-      pipelineName
-    ) : (
-      <Link to={workspacePathFromAddress(pipelineHrefContext, `/pipelines/${pipelineName}/`)}>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName, mode)}>
         {pipelineName}
+        {modeLabel}
+      </Link>
+    ) : pipelineHrefContext === 'no-link' ? (
+      <>
+        {pipelineName}
+        {modeLabel}
+      </>
+    ) : (
+      <Link
+        to={workspacePipelinePath(
+          pipelineHrefContext.name,
+          pipelineHrefContext.location,
+          pipelineName,
+          mode,
+        )}
+      >
+        {pipelineName}
+        {modeLabel}
       </Link>
     );
 
   return (
-    <>
-      {pipeline}
-      {snapshotId && ' @ '}
-      {snapshotId && <PipelineSnapshotLink snapshotId={snapshotId} pipelineName={pipelineName} />}
-      {mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>}
-    </>
+    <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
+      {showIcon && (
+        <Box margin={{right: 8}}>
+          <IconWIP color={ColorsWIP.Gray400} name={'job'} />
+        </Box>
+      )}
+      <span>
+        {pipeline}
+        {snapshotId && ' @ '}
+        {snapshotId && (
+          <PipelineSnapshotLink
+            snapshotId={snapshotId}
+            pipelineName={pipelineName}
+            pipelineMode={mode}
+            size={size}
+          />
+        )}
+      </span>
+    </Box>
   );
 };

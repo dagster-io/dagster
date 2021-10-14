@@ -29,7 +29,11 @@ const DaemonLabel = (props: DaemonLabelProps) => {
     case 'BACKFILL':
       return <div>Backfill</div>;
     default:
-      return <div>{daemon.daemonType}</div>;
+      return (
+        <div style={{textTransform: 'capitalize'}}>
+          {daemon.daemonType.replace(/_/g, ' ').toLowerCase()}
+        </div>
+      );
   }
 };
 
@@ -50,7 +54,7 @@ export const DaemonList = (props: Props) => {
     <Table>
       <thead>
         <tr>
-          <th style={{width: '15%'}}>Daemon</th>
+          <th style={{width: '25%'}}>Daemon</th>
           <th style={{width: '30%'}}>Status</th>
           <th>Last heartbeat</th>
         </tr>

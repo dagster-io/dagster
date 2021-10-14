@@ -1,4 +1,5 @@
-import {Colors, Intent, Tag} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
+import qs from 'qs';
 import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -7,6 +8,8 @@ import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {TagWIP} from '../ui/TagWIP';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -22,13 +25,10 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node}) => {
+export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
   const location = useLocation();
   const eventType = node.eventType as string;
   switch (node.__typename) {
-    // Errors
-    case 'PipelineInitFailureEvent':
-      return <FailureContent error={node.error} eventType={eventType} />;
     case 'ExecutionStepFailureEvent':
       return (
         <FailureContent
@@ -36,6 +36,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           error={node.error}
           metadataEntries={node?.failureMetadata?.metadataEntries}
           errorSource={node.errorSource}
+          message={node.error ? undefined : node.message}
         />
       );
 
@@ -43,11 +44,16 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
 
     case 'ExecutionStepStartEvent':
-      if (!node.stepKey) {
+      if (!node.stepKey || metadata.logCaptureSteps) {
         return <DefaultContent message={node.message} eventType={eventType} />;
       } else {
         const currentQuery = querystring.parse(location.search);
-        const updatedQuery = {...currentQuery, logType: 'stdout'};
+        const updatedQuery = {
+          ...currentQuery,
+          logType: 'stdout',
+          logs: `query:${node.stepKey}`,
+          selection: node.stepKey,
+        };
         const href = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
         return (
           <DefaultContent message={node.message} eventType={eventType}>
@@ -123,6 +129,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           message={node.message}
           materialization={node.materialization}
           eventType={eventType}
+          timestamp={node.timestamp}
         />
       );
     case 'ObjectStoreOperationEvent':
@@ -145,6 +152,10 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'HookErroredEvent':
       return <FailureContent eventType={eventType} error={node.error} />;
+    case 'AlertStartEvent':
+      return <DefaultContent eventType={eventType} message={node.message} />;
+    case 'AlertSuccessEvent':
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'PipelineFailureEvent':
       if (node.pipelineFailureError) {
         return (
@@ -189,6 +200,37 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       );
     case 'LogMessageEvent':
       return <DefaultContent message={node.message} />;
+    case 'LogsCapturedEvent':
+      const currentQuery = querystring.parse(location.search);
+      const updatedQuery = {...currentQuery, logType: 'stdout', logKey: node.stepKey};
+      const rawLogsUrl = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
+      const rawLogsLink = (
+        <Link to={rawLogsUrl} style={{color: 'inherit'}}>
+          View stdout / stderr
+        </Link>
+      );
+      const rows = node.stepKey
+        ? [
+            {
+              label: 'captured_logs',
+              item: rawLogsLink,
+            },
+          ]
+        : [
+            {
+              label: 'step_keys',
+              item: <>{JSON.stringify(node.stepKeys)}</>,
+            },
+            {
+              label: 'captured_logs',
+              item: rawLogsLink,
+            },
+          ];
+      return (
+        <DefaultContent eventType={eventType} message={node.message}>
+          <LogRowStructuredContentTable rows={rows} />
+        </DefaultContent>
+      );
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.
@@ -210,8 +252,7 @@ const DefaultContent: React.FunctionComponent<{
     <>
       <EventTypeColumn>
         {eventType && (
-          <Tag
-            minimal={true}
+          <TagWIP
             intent={eventIntent}
             style={
               eventColor
@@ -226,10 +267,10 @@ const DefaultContent: React.FunctionComponent<{
             }
           >
             {eventType}
-          </Tag>
+          </TagWIP>
         )}
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {message}
         {children}
       </Box>
@@ -240,7 +281,7 @@ const DefaultContent: React.FunctionComponent<{
 const FailureContent: React.FunctionComponent<{
   message?: string;
   eventType: string;
-  error?: PythonErrorFragment;
+  error?: PythonErrorFragment | null;
   errorSource?: ErrorSource | null;
   metadataEntries?: MetadataEntryFragment[];
 }> = ({message, error, errorSource, eventType, metadataEntries}) => {
@@ -259,20 +300,22 @@ const FailureContent: React.FunctionComponent<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: Colors.RED3}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: ColorsWIP.Red500}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (!(errorSource == ErrorSource.USER_CODE_ERROR && error.cause)) {
-      errorStack = <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>;
+    if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
+      errorStack = (
+        <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>
+      );
     }
 
     if (error.cause) {
       errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
-          <span style={{color: Colors.RED3}}>{`${error.cause.message}`}</span>
-          <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          <span style={{color: ColorsWIP.Red500}}>{`${error.cause.message}`}</span>
+          <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
         </>
       );
     }
@@ -281,11 +324,11 @@ const FailureContent: React.FunctionComponent<{
   return (
     <>
       <EventTypeColumn>
-        <Tag minimal={true} intent="danger" style={{fontSize: '0.9em'}}>
+        <TagWIP minimal intent="danger">
           {eventType}
-        </Tag>
+        </TagWIP>
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />
@@ -295,11 +338,13 @@ const FailureContent: React.FunctionComponent<{
     </>
   );
 };
+
 const MaterializationContent: React.FC<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
   eventType: string;
-}> = ({message, materialization, eventType}) => {
+  timestamp: string;
+}> = ({message, materialization, eventType, timestamp}) => {
   if (!materialization.assetKey) {
     return (
       <DefaultContent message={message} eventType={eventType}>
@@ -308,15 +353,14 @@ const MaterializationContent: React.FC<{
     );
   }
 
+  const asOf = qs.stringify({asOf: timestamp});
+  const to = `/instance/assets/${materialization.assetKey.path
+    .map(encodeURIComponent)
+    .join('/')}?${asOf}`;
+
   const assetDashboardLink = (
     <span style={{marginLeft: 10}}>
-      [
-      <MetadataEntryLink
-        to={`/instance/assets/${materialization.assetKey.path.map(encodeURIComponent).join('/')}`}
-      >
-        View Asset
-      </MetadataEntryLink>
-      ]
+      [<MetadataEntryLink to={to}>View Asset</MetadataEntryLink>]
     </span>
   );
 

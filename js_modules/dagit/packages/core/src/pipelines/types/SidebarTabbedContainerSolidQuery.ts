@@ -514,11 +514,6 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   value: string;
 }
 
-export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_requiredResources {
-  __typename: "ResourceRequirement";
-  resourceKey: string;
-}
-
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings_definition {
   __typename: "InputDefinition";
   name: string;
@@ -580,7 +575,6 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   name: string;
   description: string | null;
   metadata: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
-  requiredResources: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_requiredResources[];
   inputMappings: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputMappings[];
 }

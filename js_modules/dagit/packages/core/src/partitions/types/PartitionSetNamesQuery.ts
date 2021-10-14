@@ -14,10 +14,6 @@ export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSetNotFound
   __typename: "PartitionSetNotFoundError" | "PythonError";
 }
 
-export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError {
-  __typename: "PythonError";
-}
-
 export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results {
   __typename: "Partition";
   name: string;
@@ -28,7 +24,20 @@ export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partiti
   results: PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results[];
 }
 
-export type PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError = PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError | PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions;
+export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_cause | null;
+}
+
+export type PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError = PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions | PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError;
 
 export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";

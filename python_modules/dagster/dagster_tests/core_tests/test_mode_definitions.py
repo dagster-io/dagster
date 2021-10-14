@@ -15,7 +15,8 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.check import CheckError
+from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.test import execute_solids_within_pipeline
 from dagster_tests.general_tests.test_repository import (
     define_multi_mode_pipeline,
@@ -34,6 +35,19 @@ def test_mode_takes_a_name():
         name="takesamode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
     )
     assert pipeline_def
+
+
+def test_error_on_invalid_resource_key():
+    @resource
+    def test_resource():
+        return ""
+
+    with pytest.raises(CheckError, match="test-foo"):
+        ModeDefinition(
+            resource_defs={
+                "test-foo": test_resource,
+            },
+        )
 
 
 def test_mode_from_resources():
@@ -153,7 +167,7 @@ def test_mode_with_resource_deps():
     called = {"count": 0}
 
     @resource
-    def resource_a(_init_context):
+    def resource_a():
         return 1
 
     @solid(required_resource_keys={"a"})
@@ -171,17 +185,14 @@ def test_mode_with_resource_deps():
 
     assert called["count"] == 1
 
-    with pytest.raises(DagsterInvalidDefinitionError) as ide:
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=r"'a' is required by solid 'requires_a'"
+    ):
         PipelineDefinition(
             name="mode_with_bad_deps",
             solid_defs=[requires_a],
             mode_defs=[ModeDefinition(resource_defs={"ab": resource_a})],
         )
-
-    assert (
-        str(ide.value)
-        == 'Resource "a" is required by solid def requires_a, but is not provided by mode "default".'
-    )
 
     @solid(required_resource_keys={"a"})
     def no_deps(context):
@@ -204,7 +215,7 @@ def test_subset_with_mode_definitions():
     called = {"a": 0, "b": 0}
 
     @resource
-    def resource_a(_init_context):
+    def resource_a():
         return 1
 
     @solid(required_resource_keys={"a"})
@@ -213,7 +224,7 @@ def test_subset_with_mode_definitions():
         assert context.resources.a == 1
 
     @resource
-    def resource_b(_init_context):
+    def resource_b():
         return 2
 
     @solid(required_resource_keys={"b"})

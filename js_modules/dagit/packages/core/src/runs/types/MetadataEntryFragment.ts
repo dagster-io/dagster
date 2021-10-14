@@ -66,4 +66,23 @@ export interface MetadataEntryFragment_EventIntMetadataEntry {
   intRepr: string;
 }
 
-export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry;
+export interface MetadataEntryFragment_EventPipelineRunMetadataEntry {
+  __typename: "EventPipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface MetadataEntryFragment_EventAssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface MetadataEntryFragment_EventAssetMetadataEntry {
+  __typename: "EventAssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: MetadataEntryFragment_EventAssetMetadataEntry_assetKey;
+}
+
+export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;

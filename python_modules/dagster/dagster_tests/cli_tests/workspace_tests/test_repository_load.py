@@ -6,6 +6,8 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.host_representation import ExternalRepository
+from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 
 
@@ -13,12 +15,17 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     @click.command(name="test_repository_command")
     @repository_target_argument
     def command(**kwargs):
-        with get_external_repository_from_kwargs(kwargs) as external_repo:
+        with get_external_repository_from_kwargs(
+            DagsterInstance.get(),
+            version="",
+            kwargs=kwargs,
+        ) as external_repo:
             if repo_assert_fn:
                 repo_assert_fn(external_repo)
 
-    runner = CliRunner()
-    result = runner.invoke(command, cli_args)
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(command, cli_args)
 
     return result
 
@@ -93,7 +100,7 @@ MULTI_LOCATION_WORKSPACE = file_relative_path(__file__, "multi_location/multi_lo
 def test_valid_multi_location_from_file():
     def the_assert(external_repository):
         assert external_repository.name == "hello_world_repository"
-        assert external_repository.handle.repository_location.name == "loaded_from_file"
+        assert external_repository.handle.location_name == "loaded_from_file"
 
     successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_file"], the_assert
@@ -103,7 +110,7 @@ def test_valid_multi_location_from_file():
 def test_valid_multi_location_from_module():
     def the_assert(external_repository):
         assert external_repository.name == "hello_world_repository"
-        assert external_repository.handle.repository_location.name == "loaded_from_module"
+        assert external_repository.handle.location_name == "loaded_from_module"
 
     successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_module"], the_assert
@@ -116,7 +123,7 @@ def test_missing_location_name_multi_location():
     assert result.exit_code == 2
 
     assert (
-        """Must provide --location as there are more than one locations available. """
+        """Must provide --location as there are multiple locations available. """
         """Options are: ['loaded_from_file', 'loaded_from_module', 'loaded_from_package']"""
     ) in result.stdout
 

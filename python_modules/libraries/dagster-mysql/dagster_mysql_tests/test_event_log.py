@@ -2,7 +2,6 @@ import time
 
 import pytest
 import yaml
-from dagster.core.storage.event_log.schema import AssetKeyTable, SqlEventLogStorageTable
 from dagster.core.test_utils import instance_for_test
 from dagster_mysql.event_log import MySQLEventLogStorage
 from dagster_tests.core_tests.storage_tests.utils.event_log_storage import (
@@ -18,13 +17,10 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
     def event_log_storage(self, conn_string):  # pylint: disable=arguments-differ
         storage = MySQLEventLogStorage.create_clean_storage(conn_string)
         assert storage
-        yield storage
-        # need to drop tables since MySQL tables are not run-sharded & some tests depend on a totally
-        # fresh table (i.e.) autoincr. ids starting at 1 - this is related to cursor API, see
-        # https://github.com/dagster-io/dagster/issues/3621
-        with storage.run_connection() as conn:
-            SqlEventLogStorageTable.drop(conn)
-            AssetKeyTable.drop(conn)
+        try:
+            yield storage
+        finally:
+            storage.dispose()
 
     def test_event_log_storage_two_watchers(self, storage):
         run_id = "foo"

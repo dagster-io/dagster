@@ -3,8 +3,8 @@ from typing import Any, Dict, Generator, Optional
 
 from dagster import check
 from dagster.config.validate import process_config
-from dagster.core.definitions.environment_configs import define_resource_dictionary_cls
 from dagster.core.definitions.resource import ResourceDefinition, Resources, ScopedResourcesBuilder
+from dagster.core.definitions.run_config import define_resource_dictionary_cls
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.resources_init import resource_initialization_manager
 from dagster.core.instance import DagsterInstance
@@ -69,18 +69,7 @@ def build_resources(
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
-
-    resource_defs = {}
-    # Wrap instantiated resource values in a resource definition.
-    # If an instantiated IO manager is provided, wrap it in an IO manager definition.
-    for resource_key, resource in resources.items():
-        if isinstance(resource, ResourceDefinition):
-            resource_defs[resource_key] = resource
-        elif isinstance(resource, IOManager):
-            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
-        else:
-            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-
+    resource_defs = wrap_resources_for_execution(resources)
     mapped_resource_config = _get_mapped_resource_config(resource_defs, resource_config)
 
     with ephemeral_instance_if_missing(instance) as dagster_instance:
@@ -105,3 +94,21 @@ def build_resources(
             )
         finally:
             list(resources_manager.generate_teardown_events())
+
+
+def wrap_resources_for_execution(
+    resources: Optional[Dict[str, Any]] = None
+) -> Dict[str, ResourceDefinition]:
+    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resource_defs = {}
+    # Wrap instantiated resource values in a resource definition.
+    # If an instantiated IO manager is provided, wrap it in an IO manager definition.
+    for resource_key, resource in resources.items():
+        if isinstance(resource, ResourceDefinition):
+            resource_defs[resource_key] = resource
+        elif isinstance(resource, IOManager):
+            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
+        else:
+            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
+
+    return resource_defs

@@ -29,7 +29,7 @@ class _BaseRedshiftResource(abc.ABC):
         }
 
         self.autocommit = context.resource_config.get("autocommit")
-        self.log = context.log_manager
+        self.log = context.log
 
     @abc.abstractmethod
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
@@ -324,31 +324,22 @@ def redshift_resource(context):
 
         .. code-block:: python
 
-            from dagster import ModeDefinition, execute_solid, solid
+            from dagster import build_op_context, op
             from dagster_aws.redshift import redshift_resource
 
-            @solid(required_resource_keys={'redshift'})
-            def example_redshift_solid(context):
+            @op(required_resource_keys={'redshift'})
+            def example_redshift_op(context):
                 return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
 
-            result = execute_solid(
-                example_redshift_solid,
-                run_config={
-                    'resources': {
-                        'redshift': {
-                            'config': {
-                                'host': 'my-redshift-cluster.us-east-1.redshift.amazonaws.com',
-                                'port': 5439,
-                                'user': 'dagster',
-                                'password': 'dagster',
-                                'database': 'dev',
-                            }
-                        }
-                    }
-                },
-                mode_def=ModeDefinition(resource_defs={'redshift': redshift_resource}),
-            )
-            assert result.output_value() == [(1,)]
+            redshift_configured = redshift_resource.configured({
+                'host': 'my-redshift-cluster.us-east-1.redshift.amazonaws.com',
+                'port': 5439,
+                'user': 'dagster',
+                'password': 'dagster',
+                'database': 'dev',
+            })
+            context = build_op_context(resources={'redshift': redshift_configured})
+            assert example_redshift_op(context) == [(1,)]
 
     """
     return RedshiftResource(context)

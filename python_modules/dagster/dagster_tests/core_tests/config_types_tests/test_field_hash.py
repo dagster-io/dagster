@@ -39,6 +39,14 @@ def test_construct_same_dicts():
     assert int_dict_1.key == int_dict_2.key
 
 
+def test_construct_same_fields_different_aliases():
+    int_dict_1 = Shape(fields={"an_int": Field(int)}, field_aliases={"an_int": "foo"})
+    int_dict_2 = Shape(fields={"an_int": Field(int)}, field_aliases={"an_int": "bar"})
+
+    assert int_dict_1 is not int_dict_2
+    assert not int_dict_1.key == int_dict_2.key
+
+
 def test_field_order_irrelevant():
     int_dict_1 = Shape(fields={"an_int": Field(int), "another_int": Field(int)})
 
@@ -47,6 +55,20 @@ def test_field_order_irrelevant():
     # assert identical object
     assert int_dict_1 is int_dict_2
     # assert equivalent key
+    assert int_dict_1.key == int_dict_2.key
+
+
+def test_field_alias_order_irrelevant():
+    int_dict_1 = Shape(
+        fields={"an_int": Field(int), "another_int": Field(int)},
+        field_aliases={"an_int": "foo", "another_int": "bar"},
+    )
+    int_dict_2 = Shape(
+        fields={"an_int": Field(int), "another_int": Field(int)},
+        field_aliases={"another_int": "bar", "an_int": "foo"},
+    )
+
+    assert int_dict_1 is int_dict_2
     assert int_dict_1.key == int_dict_2.key
 
 

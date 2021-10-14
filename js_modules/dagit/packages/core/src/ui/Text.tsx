@@ -1,6 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from './Colors';
 import {FontFamily} from './styles';
 
 interface TextProps {
@@ -8,16 +8,16 @@ interface TextProps {
 }
 
 export const Heading = styled.span<TextProps>`
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
   -webkit-font-smoothing: antialiased;
 `;
 
 export const Subheading = styled.span<TextProps>`
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -34,9 +34,14 @@ export const Caption = styled.span<TextProps>`
 `;
 
 export const Code = styled.span`
-  background-color: ${Colors.LIGHT_GRAY4};
-  border-radius: 3px;
+  background-color: ${ColorsWIP.Blue50};
+  border-radius: 2px;
   font-family: ${FontFamily.monospace};
-  font-size: 12px;
+  font-size: 14px;
   padding: 2px 4px;
+`;
+
+export const Mono = styled.span`
+  font-family: ${FontFamily.monospace};
+  font-size: 16px;
 `;

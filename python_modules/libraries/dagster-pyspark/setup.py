@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-pyspark",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -29,8 +32,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=[
-            "dagster",
-            "dagster_spark",
+            f"dagster{pin}",
+            f"dagster_spark{pin}",
             # Pyspark 2.x is incompatible with Python 3.8+
             'pyspark>=3.0.0; python_version >= "3.8"',
             'pyspark>=2.0.2; python_version < "3.8"',

@@ -151,7 +151,7 @@ def execute_solids_within_pipeline(
         inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
             dicts of input names to input values, used to pass input values to the solids directly.
             You may also use the ``run_config`` to configure any inputs that are configurable.
-        run_config (Optional[dict]): The environment configuration that parameterized this
+        run_config (Optional[dict]): The configuration that parameterized this
             execution, as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -204,7 +204,7 @@ def execute_solid_within_pipeline(
         inputs (Optional[Dict[str, Any]]): A dict of input names to input values, used to
             pass input values to the solid directly. You may also use the ``run_config`` to
             configure any inputs that are configurable.
-        run_config (Optional[dict]): The environment configuration that parameterized this
+        run_config (Optional[dict]): The configuration that parameterized this
             execution, as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -285,7 +285,7 @@ def execute_solid(
             configure any inputs that are configurable.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        run_config (Optional[dict]): The environment configuration that parameterized this
+        run_config (Optional[dict]): The configuration that parameterized this
             execution, as a dict.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.

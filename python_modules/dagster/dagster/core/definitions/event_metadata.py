@@ -1,18 +1,51 @@
 import os
-from collections import namedtuple
-from typing import Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidEventMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_warning
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.events import AssetKey
 
-def last_file_comp(path):
+ParseableMetadataEntryData = Union[
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+    "PathMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
+    str,
+    float,
+    int,
+    list,
+    dict,
+]
+
+EventMetadataEntryData = Union[
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+    "PathMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
+]
+
+
+def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
 
-def parse_metadata_entry(label, value):
+def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "EventMetadataEntry":
     check.str_param(label, "label")
 
     if isinstance(value, (EventMetadataEntry, PartitionMetadataEntry)):
@@ -33,6 +66,8 @@ def parse_metadata_entry(label, value):
             FloatMetadataEntryData,
             IntMetadataEntryData,
             PythonArtifactMetadataEntryData,
+            DagsterAssetMetadataEntryData,
+            DagsterPipelineRunMetadataEntryData,
         ),
     ):
         return EventMetadataEntry(label, None, value)
@@ -46,7 +81,7 @@ def parse_metadata_entry(label, value):
     if isinstance(value, int):
         return EventMetadataEntry.int(value, label)
 
-    if isinstance(value, (list, dict)):
+    if isinstance(value, dict):
         try:
             # check that the value is JSON serializable
             seven.dumps(value)
@@ -58,12 +93,16 @@ def parse_metadata_entry(label, value):
             )
 
     raise DagsterInvalidEventMetadata(
-        f'Could not resolve the metadata value for "{label}" to a known type. Consider '
-        "wrapping the value with the appropriate EventMetadata type."
+        f'Could not resolve the metadata value for "{label}" to a known type. '
+        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
+        "EventMetadata type."
     )
 
 
-def parse_metadata(metadata, metadata_entries):
+def parse_metadata(
+    metadata: Dict[str, ParseableMetadataEntryData],
+    metadata_entries: List[Union["EventMetadataEntry", "PartitionMetadataEntry"]],
+) -> List[Union["EventMetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidEventMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -85,70 +124,105 @@ def parse_metadata(metadata, metadata_entries):
 
 
 @whitelist_for_serdes
-class TextMetadataEntryData(namedtuple("_TextMetadataEntryData", "text")):
+class TextMetadataEntryData(
+    NamedTuple(
+        "_TextMetadataEntryData",
+        [
+            ("text", Optional[str]),
+        ],
+    )
+):
     """Container class for text metadata entry data.
 
     Args:
         text (Optional[str]): The text data.
     """
 
-    def __new__(cls, text):
+    def __new__(cls, text: Optional[str]):
         return super(TextMetadataEntryData, cls).__new__(
             cls, check.opt_str_param(text, "text", default="")
         )
 
 
 @whitelist_for_serdes
-class UrlMetadataEntryData(namedtuple("_UrlMetadataEntryData", "url")):
+class UrlMetadataEntryData(
+    NamedTuple(
+        "_UrlMetadataEntryData",
+        [
+            ("url", Optional[str]),
+        ],
+    )
+):
     """Container class for URL metadata entry data.
 
     Args:
         url (Optional[str]): The URL as a string.
     """
 
-    def __new__(cls, url):
+    def __new__(cls, url: Optional[str]):
         return super(UrlMetadataEntryData, cls).__new__(
             cls, check.opt_str_param(url, "url", default="")
         )
 
 
 @whitelist_for_serdes
-class PathMetadataEntryData(namedtuple("_PathMetadataEntryData", "path")):
+class PathMetadataEntryData(
+    NamedTuple(
+        "_PathMetadataEntryData",
+        [
+            ("path", Optional[str]),
+        ],
+    )
+):
     """Container class for path metadata entry data.
 
     Args:
         path (Optional[str]): The path as a string.
     """
 
-    def __new__(cls, path):
+    def __new__(cls, path: Optional[str]):
         return super(PathMetadataEntryData, cls).__new__(
             cls, check.opt_str_param(path, "path", default="")
         )
 
 
 @whitelist_for_serdes
-class JsonMetadataEntryData(namedtuple("_JsonMetadataEntryData", "data")):
+class JsonMetadataEntryData(
+    NamedTuple(
+        "_JsonMetadataEntryData",
+        [
+            ("data", Dict[str, Any]),
+        ],
+    )
+):
     """Container class for JSON metadata entry data.
 
     Args:
-        data (Optional[Dict[str, Any]]): The JSON data.
+        data (Dict[str, Any]): The JSON data.
     """
 
-    def __new__(cls, data):
+    def __new__(cls, data: Optional[Dict[str, Any]]):
         return super(JsonMetadataEntryData, cls).__new__(
             cls, check.opt_dict_param(data, "data", key_type=str)
         )
 
 
 @whitelist_for_serdes
-class MarkdownMetadataEntryData(namedtuple("_MarkdownMetadataEntryData", "md_str")):
+class MarkdownMetadataEntryData(
+    NamedTuple(
+        "_MarkdownMetadataEntryData",
+        [
+            ("md_str", Optional[str]),
+        ],
+    )
+):
     """Container class for markdown metadata entry data.
 
     Args:
         md_str (Optional[str]): The markdown as a string.
     """
 
-    def __new__(cls, md_str):
+    def __new__(cls, md_str: Optional[str]):
         return super(MarkdownMetadataEntryData, cls).__new__(
             cls, check.opt_str_param(md_str, "md_str", default="")
         )
@@ -156,7 +230,13 @@ class MarkdownMetadataEntryData(namedtuple("_MarkdownMetadataEntryData", "md_str
 
 @whitelist_for_serdes
 class PythonArtifactMetadataEntryData(
-    namedtuple("_PythonArtifactMetadataEntryData", "module name")
+    NamedTuple(
+        "_PythonArtifactMetadataEntryData",
+        [
+            ("module", str),
+            ("name", str),
+        ],
+    )
 ):
     """Container class for python artifact metadata entry data.
 
@@ -165,50 +245,90 @@ class PythonArtifactMetadataEntryData(
         name (str): The name of the python artifact
     """
 
-    def __new__(cls, module, name):
+    def __new__(cls, module: str, name: str):
         return super(PythonArtifactMetadataEntryData, cls).__new__(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
 
 @whitelist_for_serdes
-class FloatMetadataEntryData(namedtuple("_FloatMetadataEntryData", "value")):
+class FloatMetadataEntryData(
+    NamedTuple(
+        "_FloatMetadataEntryData",
+        [
+            ("value", Optional[float]),
+        ],
+    )
+):
     """Container class for float metadata entry data.
 
     Args:
         value (Optional[float]): The float value.
     """
 
-    def __new__(cls, value):
+    def __new__(cls, value: Optional[float]):
         return super(FloatMetadataEntryData, cls).__new__(
             cls, check.opt_float_param(value, "value")
         )
 
 
 @whitelist_for_serdes
-class IntMetadataEntryData(namedtuple("_IntMetadataEntryData", "value")):
+class IntMetadataEntryData(
+    NamedTuple(
+        "_IntMetadataEntryData",
+        [
+            ("value", Optional[int]),
+        ],
+    )
+):
     """Container class for int metadata entry data.
 
     Args:
         value (Optional[int]): The int value.
     """
 
-    def __new__(cls, value):
+    def __new__(cls, value: Optional[int]):
         return super(IntMetadataEntryData, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
-## for typing
+@whitelist_for_serdes
+class DagsterPipelineRunMetadataEntryData(
+    NamedTuple(
+        "_DagsterPipelineRunMetadataEntryData",
+        [
+            ("run_id", str),
+        ],
+    )
+):
+    """Representation of a dagster pipeline run.
 
-EventMetadataEntryData = Union[
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
-    PathMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-]
+    Args:
+        run_id (str): The pipeline run id
+    """
+
+    def __new__(cls, run_id: str):
+        return super(DagsterPipelineRunMetadataEntryData, cls).__new__(
+            cls, check.str_param(run_id, "run_id")
+        )
+
+
+@whitelist_for_serdes
+class DagsterAssetMetadataEntryData(
+    NamedTuple("_DagsterAssetMetadataEntryData", [("asset_key", "AssetKey")])
+):
+    """Representation of a dagster asset.
+
+    Args:
+        asset_key (AssetKey): The dagster asset key
+    """
+
+    def __new__(cls, asset_key: "AssetKey"):
+        from dagster.core.definitions.events import AssetKey
+
+        return super(DagsterAssetMetadataEntryData, cls).__new__(
+            cls, check.inst_param(asset_key, "asset_key", AssetKey)
+        )
+
 
 ## for runtime checks
 
@@ -221,6 +341,8 @@ EntryDataUnion = (
     FloatMetadataEntryData,
     IntMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    DagsterAssetMetadataEntryData,
+    DagsterPipelineRunMetadataEntryData,
 )
 
 
@@ -367,7 +489,8 @@ class EventMetadata:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "size (bytes)": EventMetadata.float(calculate_bytes(df)),
+                        "class": EventMetadata.python_artifact(MyClass),
+                        "function": EventMetadata.python_artifact(my_function),
                     }
                 )
 
@@ -402,7 +525,7 @@ class EventMetadata:
 
     @staticmethod
     def int(value: int) -> "IntMetadataEntryData":
-        """Static constructor for a metadata entry wrapping an int as
+        """Static constructor for a metadata value wrapping an int as
         :py:class:`IntMetadataEntryData`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
@@ -423,9 +546,49 @@ class EventMetadata:
 
         return IntMetadataEntryData(value)
 
+    @staticmethod
+    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
+        check.str_param(run_id, "run_id")
+        return DagsterPipelineRunMetadataEntryData(run_id)
+
+    @staticmethod
+    def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataEntryData":
+        """Static constructor for a metadata value referencing a Dagster asset, by key.
+
+        For example:
+
+        .. code-block:: python
+
+            @solid
+            def validate_table_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key=AssetKey("my_table"),
+                    metadata={
+                        "Related asset": EventMetadata.asset(AssetKey('my_other_table')),
+                    },
+                )
+
+        Args:
+            asset_key (AssetKey): The asset key referencing the asset.
+        """
+
+        from dagster.core.definitions.events import AssetKey
+
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        return DagsterAssetMetadataEntryData(asset_key)
+
 
 @whitelist_for_serdes
-class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description entry_data")):
+class EventMetadataEntry(
+    NamedTuple(
+        "_EventMetadataEntry",
+        [
+            ("label", str),
+            ("description", Optional[str]),
+            ("entry_data", "EventMetadataEntryData"),
+        ],
+    )
+):
     """The standard structure for describing metadata for Dagster events.
 
     Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
@@ -442,7 +605,7 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
             for customized display in tools like dagit.
     """
 
-    def __new__(cls, label: str, description: Optional[str], entry_data: EventMetadataEntryData):
+    def __new__(cls, label: str, description: Optional[str], entry_data: "EventMetadataEntryData"):
         return super(EventMetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
@@ -451,7 +614,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         )
 
     @staticmethod
-    def text(text, label, description=None):
+    def text(
+        text: Optional[str], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing text as
         :py:class:`TextMetadataEntryData`. For example:
 
@@ -474,7 +639,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, TextMetadataEntryData(text))
 
     @staticmethod
-    def url(url, label, description=None):
+    def url(
+        url: Optional[str], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing a URL as
         :py:class:`UrlMetadataEntryData`. For example:
 
@@ -499,7 +666,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, UrlMetadataEntryData(url))
 
     @staticmethod
-    def path(path, label, description=None):
+    def path(
+        path: Optional[str], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing a path as
         :py:class:`PathMetadataEntryData`. For example:
 
@@ -520,7 +689,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, PathMetadataEntryData(path))
 
     @staticmethod
-    def fspath(path, label=None, description=None):
+    def fspath(
+        path: Optional[str], label: Optional[str] = None, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing a filesystem path as
         :py:class:`PathMetadataEntryData`. For example:
 
@@ -535,16 +706,22 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
 
         Args:
             path (Optional[str]): The path contained by this metadata entry.
-            label (str): Short display label for this metadata entry. Defaults to the
+            label (Optional[str]): Short display label for this metadata entry. Defaults to the
                 base name of the path.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry.path(
-            path, label if label is not None else last_file_comp(path), description
-        )
+        if not label:
+            path = cast(str, check.str_param(path, "path"))
+            label = last_file_comp(path)
+
+        return EventMetadataEntry.path(path, label, description)
 
     @staticmethod
-    def json(data, label, description=None):
+    def json(
+        data: Optional[Dict[str, Any]],
+        label: str,
+        description: Optional[str] = None,
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing JSON data as
         :py:class:`JsonMetadataEntryData`. For example:
 
@@ -570,7 +747,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, JsonMetadataEntryData(data))
 
     @staticmethod
-    def md(md_str, label, description=None):
+    def md(
+        md_str: Optional[str], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
         :py:class:`MarkdownMetadataEntryData`. For example:
 
@@ -591,7 +770,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
 
     @staticmethod
-    def python_artifact(python_artifact, label, description=None):
+    def python_artifact(
+        python_artifact: Callable[..., Any], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         check.callable_param(python_artifact, "python_artifact")
         return EventMetadataEntry(
             label,
@@ -600,7 +781,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         )
 
     @staticmethod
-    def float(value, label, description=None):
+    def float(
+        value: Optional[float], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing float as
         :py:class:`FloatMetadataEntryData`. For example:
 
@@ -622,7 +805,9 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         return EventMetadataEntry(label, description, FloatMetadataEntryData(value))
 
     @staticmethod
-    def int(value, label, description=None):
+    def int(
+        value: Optional[int], label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing int as
         :py:class:`IntMetadataEntryData`. For example:
 
@@ -643,8 +828,53 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
 
         return EventMetadataEntry(label, description, IntMetadataEntryData(value))
 
+    @staticmethod
+    def pipeline_run(
+        run_id: str, label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
+        check.str_param(run_id, "run_id")
+        return EventMetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
 
-class PartitionMetadataEntry(namedtuple("_PartitionMetadataEntry", "partition entry")):
+    @staticmethod
+    def asset(
+        asset_key: "AssetKey", label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
+        """Static constructor for a metadata entry referencing a Dagster asset, by key.
+
+        For example:
+
+        .. code-block:: python
+
+            @solid
+            def validate_table_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key=AssetKey("my_table"),
+                    metadata_entries=[
+                         EventMetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
+                    ],
+                )
+
+        Args:
+            asset_key (AssetKey): The asset key referencing the asset.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        """
+
+        from dagster.core.definitions.events import AssetKey
+
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        return EventMetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
+
+
+class PartitionMetadataEntry(
+    NamedTuple(
+        "_PartitionMetadataEntry",
+        [
+            ("partition", str),
+            ("entry", "EventMetadataEntry"),
+        ],
+    )
+):
     """Event containing an :py:class:`EventMetdataEntry` and the name of a partition that the entry
     applies to.
 

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.job import JobState, JobStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -76,7 +76,7 @@ def stop_sensor(graphene_info, job_origin_id):
 
 @capture_error
 def get_unloadable_sensor_states_or_error(graphene_info):
-    from ..schema.jobs import GrapheneJobState, GrapheneJobStates
+    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     sensor_states = graphene_info.context.instance.all_stored_job_state(job_type=JobType.SENSOR)
     external_sensors = [
@@ -96,8 +96,8 @@ def get_unloadable_sensor_states_or_error(graphene_info):
         if sensor_state.job_origin_id not in sensor_origin_ids
     ]
 
-    return GrapheneJobStates(
-        results=[GrapheneJobState(job_state=job_state) for job_state in unloadable_states]
+    return GrapheneInstigationStates(
+        results=[GrapheneInstigationState(job_state=job_state) for job_state in unloadable_states]
     )
 
 
@@ -114,12 +114,13 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
     return [
         GrapheneSensor(graphene_info, external_sensor)
         for external_sensor in external_sensors
-        if external_sensor.pipeline_name == pipeline_selector.pipeline_name
+        if pipeline_selector.pipeline_name
+        in [target.pipeline_name for target in external_sensor.get_external_targets()]
     ]
 
 
 def get_sensor_next_tick(graphene_info, sensor_state):
-    from ..schema.jobs import GrapheneFutureJobTick
+    from ..schema.instigation import GrapheneFutureInstigationTick
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(sensor_state, "sensor_state", JobState)
@@ -149,4 +150,4 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     next_timestamp = latest_tick.timestamp + external_sensor.min_interval_seconds
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
         return None
-    return GrapheneFutureJobTick(sensor_state, next_timestamp)
+    return GrapheneFutureInstigationTick(sensor_state, next_timestamp)

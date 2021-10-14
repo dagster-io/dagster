@@ -27,7 +27,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
@@ -103,8 +103,8 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     run_id = make_new_run_id()
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -116,7 +116,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
+            execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -126,7 +126,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"], pipeline_def, environment_config),
+        execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
         pipeline_run,
@@ -147,7 +147,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -157,7 +157,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"], pipeline_def, environment_config),
+        execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
         pipeline_run,

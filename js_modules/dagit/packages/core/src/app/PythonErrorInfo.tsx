@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {MetadataEntries} from '../runs/MetadataEntry';
 import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
 import {PythonErrorFragment} from './types/PythonErrorFragment';
@@ -46,9 +47,9 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </>
         ) : null}
         {props.showReload && (
-          <Button icon="refresh" onClick={() => window.location.reload()}>
+          <ButtonWIP icon={<IconWIP name="refresh" />} onClick={() => window.location.reload()}>
             Reload
-          </Button>
+          </ButtonWIP>
         )}
       </Wrapper>
     </>
@@ -65,6 +66,12 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
       return null;
   }
 };
+
+export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
+  fragment UnauthorizedErrorFragment on UnauthorizedError {
+    message
+  }
+`;
 
 export const PYTHON_ERROR_FRAGMENT = gql`
   fragment PythonErrorFragment on PythonError {
@@ -97,7 +104,7 @@ const ErrorHeader = styled.h3`
 const Trace = styled.div`
   color: rgb(41, 50, 56);
   font-family: ${FontFamily.monospace};
-  font-size: 0.85em;
+  font-size: 1em;
   white-space: pre;
   padding-bottom: 1em;
 `;

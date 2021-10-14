@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from dagster.daemon.types import DaemonHeartbeat
 
 
@@ -21,7 +22,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: PipelineRun):
+    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
@@ -131,6 +132,27 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Returns:
             Optional[PipelineRun]
+        """
+
+    @abstractmethod
+    def get_run_records(
+        self,
+        filters: PipelineRunsFilter = None,
+        limit: int = None,
+        order_by: str = None,
+        ascending: bool = False,
+    ) -> List[RunRecord]:
+        """Return a list of run records stored in the run storage, sorted by the given column in given order.
+
+        Args:
+            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+            order_by (Optional[str]): Name of the column to sort by. Defaults to id.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            List[RunRecord]: List of run records stored in the run storage.
         """
 
     @abstractmethod
@@ -276,17 +298,19 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     # Backfill storage
     @abstractmethod
-    def get_backfills(self, status=None, cursor=None, limit=None):
-        """ Get a list of partition backfills """
+    def get_backfills(
+        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+    ) -> List[PartitionBackfill]:
+        """Get a list of partition backfills"""
 
     @abstractmethod
-    def get_backfill(self, backfill_id):
-        """ Get a list of partition backfills """
+    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
+        """Get the partition backfill of the given backfill id."""
 
     @abstractmethod
-    def add_backfill(self, partition_backfill):
-        """ Add partition backfill to run storage """
+    def add_backfill(self, partition_backfill: PartitionBackfill):
+        """Add partition backfill to run storage"""
 
     @abstractmethod
-    def update_backfill(self, partition_backfill):
-        """ Update a partition backfill in run storage """
+    def update_backfill(self, partition_backfill: PartitionBackfill):
+        """Update a partition backfill in run storage"""

@@ -2,7 +2,7 @@ import {Story, Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 
 import {TerminationDialog, Props as TerminationDialogProps} from './TerminationDialog';
 
@@ -13,9 +13,9 @@ export default {
 } as Meta;
 
 const Template: Story<TerminationDialogProps> = (props) => (
-  <ApolloTestProvider>
+  <StorybookProvider>
     <TerminationDialog {...props} />
-  </ApolloTestProvider>
+  </StorybookProvider>
 );
 
 const runIDs = [

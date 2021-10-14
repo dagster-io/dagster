@@ -1,15 +1,21 @@
 import typing
 
+Any = typing.Any
+Bool = bool
+Float = float
+Int = int
+Nothing = type(None)
+String = str
+
 
 class BuiltinEnum:
 
-    ANY = typing.Any
-    # mypy doesn't like the mismatch between BOOL and "Bool"
-    BOOL = typing.NewType("Bool", bool)  # type: ignore[misc]
-    FLOAT = typing.NewType("Float", float)  # type: ignore[misc]
-    INT = typing.NewType("Int", int)  # type: ignore[misc]
-    STRING = typing.NewType("String", str)  # type: ignore[misc]
-    NOTHING = typing.NewType("Nothing", None)  # type: ignore[misc]
+    ANY = Any
+    BOOL = Bool
+    FLOAT = Float
+    INT = Int
+    NOTHING = Nothing
+    STRING = String
 
     @classmethod
     def contains(cls, value):
@@ -18,11 +24,3 @@ class BuiltinEnum:
                 return True
 
         return False
-
-
-Any = BuiltinEnum.ANY
-String = BuiltinEnum.STRING
-Int = BuiltinEnum.INT
-Bool = BuiltinEnum.BOOL
-Float = BuiltinEnum.FLOAT
-Nothing = BuiltinEnum.NOTHING

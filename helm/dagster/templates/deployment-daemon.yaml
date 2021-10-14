@@ -37,7 +37,7 @@ spec:
         {{- toYaml .Values.dagsterDaemon.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          image: {{ include "dagster.externalImage.name" $.Values.postgresql.image | quote }}
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
@@ -47,7 +47,7 @@ spec:
           securityContext:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
-          image: "{{ .Values.dagsterDaemon.image.repository }}:{{ .Values.dagsterDaemon.image.tag }}"
+          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagsterDaemon.image) | quote }}
           command: ["dagster-daemon"]
           args: ["run"]
           env:

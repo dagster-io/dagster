@@ -13,6 +13,8 @@ def hello_cereal(context):
     cereals = [row for row in csv.DictReader(lines)]
     context.log.info(f"Found {len(cereals)} cereals")
 
+    return cereals
+
 
 # end_solid_marker
 

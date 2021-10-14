@@ -1,16 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState, Button, Colors, Tooltip} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import qs from 'query-string';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
-import {openRunInBrowser} from '../runs/RunUtils';
 import {StepEventStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
 import {
@@ -38,7 +39,6 @@ interface PartitionRunListForStepProps {
 export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListForStepProps> = (
   props,
 ) => {
-  const {basePath} = React.useContext(AppContext);
   const {data, loading} = useQuery<
     PartitionRunListForStepQuery,
     PartitionRunListForStepQueryVariables
@@ -58,7 +58,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Query Error"
         description={data.pipelineRunsOrError.message}
       />
@@ -78,18 +78,10 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
           <StepStatsColumn
             key="context"
             stats={props.stepStatsByRunId[run.runId] || null}
-            onOpenLogs={() =>
-              openRunInBrowser(
-                basePath,
-                {runId: run.runId, pipelineName: props.pipelineName},
-                {
-                  query: {
-                    selection: props.stepName,
-                    logs: `step:${props.stepName}`,
-                  },
-                },
-              )
-            }
+            linkToLogs={`/instance/runs/${run.runId}?${qs.stringify({
+              selection: props.stepName,
+              logs: `step:${props.stepName}`,
+            })}`}
           />,
         ]}
       />
@@ -99,8 +91,8 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
 
 const StepStatsColumn: React.FunctionComponent<{
   stats: StepStats | null;
-  onOpenLogs: () => void;
-}> = ({stats, onOpenLogs}) => {
+  linkToLogs: string;
+}> = ({stats, linkToLogs}) => {
   return (
     <td key="context" style={{maxWidth: 150, borderRight: 0}}>
       {stats ? (
@@ -123,9 +115,7 @@ const StepStatsColumn: React.FunctionComponent<{
               <StatBox>{`${stats.materializations.length}`}</StatBox>
             </Tooltip>
           </StatSummaryLine>
-          <Button onClick={onOpenLogs} rightIcon="share" small>
-            Step Logs
-          </Button>
+          <Link to={linkToLogs}>Step logs</Link>
         </div>
       ) : (
         <div>No step data.</div>
@@ -141,10 +131,11 @@ const StatSummaryLine = styled.div`
 `;
 
 const StatBox = styled.div`
-  border: 1px solid ${Colors.LIGHT_GRAY2};
+  border: 1px solid ${ColorsWIP.Gray100};
   margin-left: 4px;
   padding: 1px 5px;
   font-size: 11px;
+  white-space: nowrap;
 `;
 
 const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`

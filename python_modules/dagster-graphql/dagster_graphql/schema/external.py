@@ -6,9 +6,10 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
-from dagster.utils.error import SerializableErrorInfo
+from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 
+from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
 from .pipelines.pipeline import GraphenePipeline
@@ -27,6 +28,24 @@ class GrapheneLocationStateChangeEventType(graphene.Enum):
 
     class Meta:
         name = "LocationStateChangeEventType"
+
+
+class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
+    LOADING = "LOADING"
+    LOADED = "LOADED"
+
+    class Meta:
+        name = "RepositoryLocationLoadStatus"
+
+    @classmethod
+    def from_python_status(cls, python_status):
+        check.inst_param(python_status, "python_status", WorkspaceLocationLoadStatus)
+        if python_status == WorkspaceLocationLoadStatus.LOADING:
+            return GrapheneRepositoryLocationLoadStatus.LOADING
+        elif python_status == WorkspaceLocationLoadStatus.LOADED:
+            return GrapheneRepositoryLocationLoadStatus.LOADED
+        else:
+            check.failed(f"Invalid location load status: {python_status}")
 
 
 class GrapheneRepositoryLocation(graphene.ObjectType):
@@ -71,6 +90,59 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         ]
 
 
+class GrapheneRepositoryLocationOrLoadError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneRepositoryLocation,
+            GraphenePythonError,
+        )
+        name = "RepositoryLocationOrLoadError"
+
+
+class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    locationOrLoadError = graphene.Field(GrapheneRepositoryLocationOrLoadError)
+    loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
+    displayMetadata = non_null_list(GrapheneRepositoryMetadata)
+    updatedTimestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        name = "WorkspaceLocationEntry"
+
+    def __init__(self, location_entry):
+        self._location_entry = check.inst_param(
+            location_entry, "location_entry", WorkspaceLocationEntry
+        )
+        super().__init__(name=self._location_entry.origin.location_name)
+
+    def resolve_id(self, _):
+        return self.name
+
+    def resolve_locationOrLoadError(self, _):
+        if self._location_entry.repository_location:
+            return GrapheneRepositoryLocation(self._location_entry.repository_location)
+
+        error = self._location_entry.load_error
+        return GraphenePythonError(error) if error else None
+
+    def resolve_loadStatus(self, _):
+        return GrapheneRepositoryLocationLoadStatus.from_python_status(
+            self._location_entry.load_status
+        )
+
+    def resolve_displayMetadata(self, _):
+        metadata = self._location_entry.display_metadata
+        return [
+            GrapheneRepositoryMetadata(key=key, value=value)
+            for key, value in metadata.items()
+            if value is not None
+        ]
+
+    def resolve_updatedTimestamp(self, _):
+        return self._location_entry.update_timestamp
+
+
 class GrapheneRepository(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
@@ -82,6 +154,7 @@ class GrapheneRepository(graphene.ObjectType):
     partitionSets = non_null_list(GraphenePartitionSet)
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
+    assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
 
     class Meta:
@@ -148,28 +221,11 @@ class GrapheneRepository(graphene.ObjectType):
             if value is not None
         ]
 
-
-class GrapheneRepositoryLocationLoadFailure(graphene.ObjectType):
-    id = graphene.NonNull(graphene.ID)
-    name = graphene.NonNull(graphene.String)
-    error = graphene.NonNull(GraphenePythonError)
-
-    class Meta:
-        name = "RepositoryLocationLoadFailure"
-
-    def __init__(self, name, error):
-        check.str_param(name, "name")
-        check.inst_param(error, "error", SerializableErrorInfo)
-        super().__init__(name=name, error=GraphenePythonError(error))
-
-    def resolve_id(self, _):
-        return self.name
-
-
-class GrapheneRepositoryLocationOrLoadFailure(graphene.Union):
-    class Meta:
-        types = (GrapheneRepositoryLocation, GrapheneRepositoryLocationLoadFailure)
-        name = "RepositoryLocationOrLoadFailure"
+    def resolve_assetNodes(self, _graphene_info):
+        return [
+            GrapheneAssetNode(self._repository, external_asset_node)
+            for external_asset_node in self._repository.get_external_asset_nodes()
+        ]
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):
@@ -179,11 +235,11 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
         name = "RepositoryConnection"
 
 
-class GrapheneRepositoryLocationConnection(graphene.ObjectType):
-    nodes = non_null_list(GrapheneRepositoryLocationOrLoadFailure)
+class GrapheneWorkspace(graphene.ObjectType):
+    locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
 
     class Meta:
-        name = "RepositoryLocationConnection"
+        name = "Workspace"
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):
@@ -227,10 +283,10 @@ class GrapheneRepositoriesOrError(graphene.Union):
         name = "RepositoriesOrError"
 
 
-class GrapheneRepositoryLocationsOrError(graphene.Union):
+class GrapheneWorkspaceOrError(graphene.Union):
     class Meta:
-        types = (GrapheneRepositoryLocationConnection, GraphenePythonError)
-        name = "RepositoryLocationsOrError"
+        types = (GrapheneWorkspace, GraphenePythonError)
+        name = "WorkspaceOrError"
 
 
 class GrapheneRepositoryOrError(graphene.Union):
@@ -247,9 +303,5 @@ types = [
     GrapheneRepository,
     GrapheneRepositoryConnection,
     GrapheneRepositoryLocation,
-    GrapheneRepositoryLocationConnection,
-    GrapheneRepositoryLocationLoadFailure,
-    GrapheneRepositoryLocationOrLoadFailure,
-    GrapheneRepositoryLocationsOrError,
     GrapheneRepositoryOrError,
 ]

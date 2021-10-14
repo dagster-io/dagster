@@ -19,11 +19,7 @@ from dagster import (
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.test_utils import (
-    instance_for_test,
-    instance_for_test_tempdir,
-    nesting_composite_pipeline,
-)
+from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline
 from dagster.utils import send_interrupt
 from dagster_dask import DataFrame, dask_executor
 from dask.distributed import Scheduler, Worker
@@ -41,7 +37,7 @@ def dask_engine_pipeline():
 
 def test_execute_on_dask_local():
     with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test_tempdir(tempdir) as instance:
+        with instance_for_test(temp_dir=tempdir) as instance:
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
                 run_config={
@@ -142,7 +138,7 @@ def test_dask():
 
 def test_execute_on_dask_local_with_intermediate_storage():
     with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test_tempdir(tempdir) as instance:
+        with instance_for_test(temp_dir=tempdir) as instance:
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
                 run_config={

@@ -15,7 +15,7 @@ from dagster.utils import ensure_dir, ensure_file
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to S3.
+    """Logs compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
     such as the following:
@@ -33,6 +33,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             verify: true
             verify_cert_path: "/path/to/cert/bundle.pem"
             endpoint_url: "http://alternate-s3-host.io"
+            skip_empty_files: true
 
     Args:
         bucket (str): The name of the s3 bucket to which to log.
@@ -44,6 +45,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         verify_cert_path (Optional[str]): A filename of the CA cert bundle to use. Only used if
             `verify` set to False.
         endpoint_url (Optional[str]): Override for the S3 endpoint url.
+        skip_empty_files: (Optional[bool]): Skip upload of empty log files.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -58,6 +60,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         verify=True,
         verify_cert_path=None,
         endpoint_url=None,
+        skip_empty_files=False,
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
@@ -72,6 +75,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
 
         self.local_manager = LocalComputeLogManager(local_dir)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._skip_empty_files = check.bool_param(skip_empty_files, "skip_empty_files")
 
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
@@ -95,6 +99,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             "verify": Field(bool, is_required=False, default_value=True),
             "verify_cert_path": Field(StringSource, is_required=False),
             "endpoint_url": Field(StringSource, is_required=False),
+            "skip_empty_files": Field(bool, is_required=False, default_value=False),
         }
 
     @staticmethod
@@ -136,6 +141,9 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def on_subscribe(self, subscription):
         self.local_manager.on_subscribe(subscription)
 
+    def on_unsubscribe(self, subscription):
+        self.local_manager.on_unsubscribe(subscription)
+
     def _should_download(self, run_id, key, io_type):
         local_path = self.get_local_path(run_id, key, io_type)
         if os.path.exists(local_path):
@@ -164,6 +172,9 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _upload_from_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
+        if self._skip_empty_files and os.stat(path).st_size == 0:
+            return
+
         key = self._bucket_key(run_id, key, io_type)
         with open(path, "rb") as data:
             self._s3_session.upload_fileobj(data, self._s3_bucket, key)
@@ -187,3 +198,6 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             "{}.{}".format(key, extension),
         ]
         return "/".join(paths)  # s3 path delimiter
+
+    def dispose(self):
+        self.local_manager.dispose()

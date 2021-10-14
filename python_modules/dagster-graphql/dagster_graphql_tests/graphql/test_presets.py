@@ -3,10 +3,10 @@ from collections import OrderedDict
 
 from dagster_graphql.test.preset_query import execute_preset_query
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 
-class TestPresets(ReadonlyGraphQLContextTestMatrix):
+class TestPresets(NonLaunchableGraphQLContextTestMatrix):
     def test_basic_preset_query_no_presets(self, graphql_context):
         result = execute_preset_query("csv_hello_world_two", graphql_context)
         assert result.data == OrderedDict(

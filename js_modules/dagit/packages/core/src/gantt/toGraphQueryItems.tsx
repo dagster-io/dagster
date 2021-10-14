@@ -1,8 +1,9 @@
 import {gql} from '@apollo/client';
 
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 import {StepKind} from '../types/globalTypes';
 
-import {IGanttNode} from './Constants';
 import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
 import {ExecutionPlanToGraphFragment} from './types/ExecutionPlanToGraphFragment';
 
@@ -15,75 +16,86 @@ import {ExecutionPlanToGraphFragment} from './types/ExecutionPlanToGraphFragment
  * Pass runtimeStepKeys to duplicate dynamic step sub-trees for each occurrence of
  * the step key found at runtime.
  */
+
 export const toGraphQueryItems = (
   plan: ExecutionPlanToGraphFragment,
-  runtimeStepKeys: string[],
+  runtimeStepMetadata: {[key: string]: IStepMetadata},
 ) => {
-  const nodeTable: {[key: string]: IGanttNode} = {};
-
-  // Map of "multiply_input[*]" => ["multiply_input[1]", "multiply_input[2]"]
+  // Step 1: Find unresolved steps in the initial plan and build a mapping
+  // of their unresolved names to their resolved step keys, eg:
+  // "multiply_input[*]" => ["multiply_input[1]", "multiply_input[2]"]
   const keyExpansionMap: {[key: string]: string[]} = {};
+  const runtimeStepKeys = Object.keys(runtimeStepMetadata);
 
-  // Find unresolved steps in the initial plan - build the key expansion map
-  // and add each runtime step to the nodeTable.
   for (const step of plan.steps) {
     if (step.kind === StepKind.UNRESOLVED_MAPPED) {
-      const runtime = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
-      keyExpansionMap[step.key] = runtime;
-      for (const k of runtime) {
-        nodeTable[k] = {
-          name: k,
-          inputs: [],
-          outputs: [],
-        };
+      let keys = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
+
+      // If the upstream steps have NOT succeeded, it's expected that there are zero runtime step keys
+      // matching the dynamic step. Until upstream steps run, we should show the [*] placeholder item
+      // in the runtime graph (rather than just showing nothing.)
+      const invocationsHappened = step.inputs.every((i) =>
+        i.dependsOn.every((s) => IStepState.SUCCEEDED === runtimeStepMetadata[s.key]?.state),
+      );
+      if (!invocationsHappened && keys.length === 0) {
+        keys = [step.key];
       }
-    } else {
-      nodeTable[step.key] = {
-        name: step.key,
+      keyExpansionMap[step.key] = keys;
+    }
+  }
+
+  // Step 2: Create a graph node for each resolved step without any inputs or outputs.
+  const nodeTable: {[key: string]: GraphQueryItem} = {};
+  for (const step of plan.steps) {
+    const stepRuntimeKeys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+    for (const key of stepRuntimeKeys) {
+      nodeTable[key] = {
+        name: key,
         inputs: [],
         outputs: [],
       };
     }
   }
 
+  // Step 3: For each step in the original plan, visit each input and create inputs/outputs
+  // in our Gantt Node result set.
   for (const step of plan.steps) {
-    for (const input of step.inputs) {
-      const keys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+    const stepRuntimeKeys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+    for (const key of stepRuntimeKeys) {
+      for (const input of step.inputs) {
+        // Add the input to our node in the result set
+        const nodeInput: GraphQueryItem['inputs'][0] = {dependsOn: []};
+        nodeTable[key].inputs.push(nodeInput);
 
-      for (const key of keys) {
-        nodeTable[key].inputs.push({
-          dependsOn: input.dependsOn.map((d) => ({
-            solid: {
-              name:
-                d.kind === StepKind.UNRESOLVED_MAPPED && step.kind !== StepKind.UNRESOLVED_COLLECT
-                  ? replacePlannedIndex(d.key, key)
-                  : d.key,
-            },
-          })),
-        });
-
+        // For each upstream step in the plan, map it to upstream nodes in the runtime graph
+        // and attach inputs / outputs to our result graph.
         for (const upstream of input.dependsOn) {
           let upstreamKeys = [];
-          if (step.kind === StepKind.UNRESOLVED_MAPPED) {
+          if (step.kind === StepKind.UNRESOLVED_COLLECT) {
+            // If we are a collect, there may be N runtime keys fanning in to this input,
+            // fetch the keys if they exist or fall back to the sigle upstream step case.
+            upstreamKeys = keyExpansionMap[upstream.key] || [upstream.key];
+          } else {
+            // If the input was coming from an unresolved mapped step and WE are not a collector,
+            // assume our own dynamic key index applies to the upstream mapped step as well.
             upstreamKeys = [
               upstream.kind === StepKind.UNRESOLVED_MAPPED
                 ? replacePlannedIndex(upstream.key, key)
                 : upstream.key,
             ];
-          } else if (step.kind == StepKind.UNRESOLVED_COLLECT) {
-            upstreamKeys = keyExpansionMap[upstream.key];
-          } else {
-            upstreamKeys = [upstream.key];
           }
+
           for (const upstreamKey of upstreamKeys) {
-            let output = nodeTable[upstreamKey].outputs[0];
-            if (!output) {
-              output = {
-                dependedBy: [],
-              };
-              nodeTable[upstreamKey].outputs.push(output);
+            if (!nodeTable[upstreamKey]) {
+              continue;
             }
-            output.dependedBy.push({
+            nodeInput.dependsOn.push({solid: {name: upstreamKey}});
+            let upstreamOutput: GraphQueryItem['outputs'][0] = nodeTable[upstreamKey].outputs[0];
+            if (!upstreamOutput) {
+              upstreamOutput = {dependedBy: []};
+              nodeTable[upstreamKey].outputs.push(upstreamOutput);
+            }
+            upstreamOutput.dependedBy.push({
               solid: {name: key},
             });
           }

@@ -8,26 +8,37 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import Any, Field, pipeline, repository, solid
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-from dagster.core.definitions import PartitionSetDefinition
+from dagster import (
+    Any,
+    Field,
+    ModeDefinition,
+    daily_partitioned_config,
+    fs_io_manager,
+    graph,
+    pipeline,
+    repository,
+    solid,
+)
+from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import get_system_temp_directory
+from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo
+
+default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def _failure_flag_file():
@@ -49,6 +60,24 @@ def always_succeed(_):
     return 1
 
 
+@graph
+def comp_always_succeed():
+    always_succeed()
+
+
+@daily_partitioned_config(start_date="2021-05-05")
+def my_config(_start, _end):
+    return {}
+
+
+always_succeed_job = comp_always_succeed.to_job(config=my_config)
+
+
+@solid
+def fail_solid(_):
+    raise Exception("blah")
+
+
 @solid
 def conditionally_fail(_, _input):
     if os.path.isfile(_failure_flag_file()):
@@ -62,21 +91,29 @@ def after_failure(_, _input):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def the_pipeline():
     always_succeed()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def conditional_failure_pipeline():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def partial_pipeline():
     always_succeed.alias("step_one")()
     always_succeed.alias("step_two")()
     always_succeed.alias("step_three")()
+
+
+@pipeline(mode_defs=[default_mode_def])
+def parallel_failure_pipeline():
+    fail_solid.alias("fail_one")()
+    fail_solid.alias("fail_two")()
+    fail_solid.alias("fail_three")()
+    always_succeed.alias("success_four")()
 
 
 @solid(config_schema=Field(Any))
@@ -84,7 +121,7 @@ def config_solid(_):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def config_pipeline():
     config_solid()
 
@@ -92,22 +129,25 @@ def config_pipeline():
 simple_partition_set = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 conditionally_fail_partition_set = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 partial_partition_set = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+)
+
+parallel_failure_partition_set = PartitionSetDefinition(
+    name="parallel_failure_partition_set",
+    pipeline_name="parallel_failure_pipeline",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 
@@ -133,7 +173,7 @@ def _large_partition_config(_):
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
     pipeline_name="config_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=_large_partition_config,
 )
 
@@ -157,6 +197,9 @@ def the_repo():
         conditionally_fail_partition_set,
         partial_partition_set,
         large_partition_set,
+        always_succeed_job,
+        parallel_failure_partition_set,
+        parallel_failure_pipeline,
     ]
 
 
@@ -182,10 +225,9 @@ def repos():
 @contextmanager
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 def step_did_not_run(instance, run, step_name):
@@ -218,6 +260,26 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         pending_runs = [run for run in instance.get_runs() if run.status in pending_states]
 
         if len(pending_runs) == 0:
+            break
+
+
+def wait_for_all_runs_to_finish(instance, timeout=10):
+    start_time = time.time()
+    FINISHED_STATES = [
+        PipelineRunStatus.SUCCESS,
+        PipelineRunStatus.FAILURE,
+        PipelineRunStatus.CANCELED,
+    ]
+    while True:
+        if time.time() - start_time > timeout:
+            raise Exception("Timed out waiting for runs to start")
+        time.sleep(0.5)
+
+        not_finished_runs = [
+            run for run in instance.get_runs() if run.status not in FINISHED_STATES
+        ]
+
+        if len(not_finished_runs) == 0:
             break
 
 
@@ -370,6 +432,7 @@ def test_failure_backfill(external_repo_context):
         assert step_succeeded(instance, one, "after_failure")
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_partial_backfill(external_repo_context):
     with instance_for_context(external_repo_context) as (
@@ -535,3 +598,98 @@ def test_unloadable_backfill(external_repo_context):
         backfill = instance.get_backfill("simple")
         assert backfill.status == BulkActionStatus.FAILED
         assert isinstance(backfill.error, SerializableErrorInfo)
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_backfill_from_partitioned_job(external_repo_context):
+    partition_name_list = [
+        partition.name for partition in my_config.partitions_def.get_partitions()
+    ]
+    with instance_for_context(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set(
+            "comp_always_succeed_partition_set"
+        )
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="partition_schedule_from_job",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=partition_name_list[:3],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        list(
+            execute_backfill_iteration(
+                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+        assert instance.get_runs_count() == 3
+        runs = reversed(instance.get_runs())
+        for idx, run in enumerate(runs):
+            assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
+            assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+            assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_backfill_from_failure_for_subselection(external_repo_context):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        partition = parallel_failure_partition_set.get_partition("one")
+        run_config = parallel_failure_partition_set.run_config_for_partition(partition)
+        tags = parallel_failure_partition_set.tags_for_partition(partition)
+        external_partition_set = external_repo.get_external_partition_set(
+            "parallel_failure_partition_set"
+        )
+
+        execute_pipeline(
+            parallel_failure_pipeline,
+            run_config=run_config,
+            tags=tags,
+            instance=instance,
+            solid_selection=["fail_three", "success_four"],
+            raise_on_error=False,
+        )
+
+        assert instance.get_runs_count() == 1
+        wait_for_all_runs_to_finish(instance)
+        run = instance.get_runs()[0]
+        assert run.status == PipelineRunStatus.FAILURE
+
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="fromfailure",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one"],
+                from_failure=True,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+
+        list(
+            execute_backfill_iteration(
+                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+        assert instance.get_runs_count() == 2
+        run = instance.get_runs(limit=1)[0]
+        assert run.solids_to_execute
+        assert run.solid_selection
+        assert len(run.solids_to_execute) == 2
+        assert len(run.solid_selection) == 2

@@ -12,9 +12,11 @@ Dagster includes a rich and extensible logging system. Dagster comes with a buil
 | Name                                                  | Description                                                                                                                                            |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <PyObject object="logger" decorator />                | The decorator used to define loggers. The decorator returns a <PyObject object="LoggerDefinition" />                                                   |
-| <PyObject object="LoggerDefinition" />                | Base class for loggers. You almost never want to use initialize this class directly. Instead, you should use the decorator above                       |
+| <PyObject object="LoggerDefinition" />                | Class for loggers. You almost never want to use initialize this class directly. Instead, you should use the decorator above                            |
 | <PyObject object="SolidExecutionContext" />           | The `context` object available to a solid compute function                                                                                             |
 | <PyObject module="dagster" object="ModeDefinition" /> | Modes allow you to vary pipeline behavior between different deployment environments. For more info, see the [Modes](/concepts/modes-resources) section |
+| <PyObject object="InitLoggerContext" />               | The context object passed to a custom logger's initialization function.                                                                                |
+| <PyObject object="build_init_logger_context"/>        | A function to construct a <PyObject object="InitLoggerContext" /> outside of execution, primarily to be used for testing purposes.                     |
 
 ## Overview
 
@@ -191,6 +193,29 @@ src="/images/concepts/logging/custom-logger.png"
 width={1280}
 height={330}
 />
+
+### Testing Custom Loggers
+
+You can unit test the initialization method of a logger by invoking it.
+
+```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing endbefore=end_custom_logger_testing
+def test_init_json_console_logger():
+    logger_ = json_console_logger(None)
+    assert logger_.level == 20
+    assert logger_.name == "dagster"
+```
+
+If you need to provide config to the initialization of your logger, you can use the <PyObject object="build_init_logger_context" /> function to do so.
+
+```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing_context endbefore=end_custom_logger_testing_context
+from dagster import build_init_logger_context
+
+
+def test_init_json_console_logger_with_context():
+    logger_ = json_console_logger(build_init_logger_context(logger_config={"name": "my_logger"}))
+    assert logger_.level == 20
+    assert logger_.name == "my_logger"
+```
 
 ## Patterns
 

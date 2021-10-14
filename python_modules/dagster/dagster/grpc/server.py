@@ -2,13 +2,13 @@ import math
 import os
 import queue
 import sys
-import tempfile
 import threading
 import time
 import uuid
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadingEventType
+from time import sleep
 
 import grpc
 from dagster import check, seven
@@ -17,7 +17,6 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
-from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
@@ -27,12 +26,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.ipc import (
-    IPCErrorMessage,
-    ipc_write_stream,
-    open_ipc_subprocess,
-    read_unary_response,
-)
+from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -47,6 +41,7 @@ from .impl import (
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     get_external_sensor_execution,
+    get_notebook_data,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -85,10 +80,7 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
-class LazyRepositorySymbolsAndCodePointers:
-    """Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
-    we can gracefully handle user code errors."""
-
+class RepositorySymbolsAndCodePointers:
     def __init__(self, loadable_target_origin):
         self._loadable_target_origin = loadable_target_origin
         self._loadable_repository_symbols = None
@@ -104,16 +96,10 @@ class LazyRepositorySymbolsAndCodePointers:
 
     @property
     def loadable_repository_symbols(self):
-        if self._loadable_repository_symbols is None:
-            self.load()
-
         return self._loadable_repository_symbols
 
     @property
     def code_pointers_by_repo_name(self):
-        if self._code_pointers_by_repo_name is None:
-            self.load()
-
         return self._code_pointers_by_repo_name
 
 
@@ -210,11 +196,17 @@ class DagsterApiServer(DagsterApiServicer):
         self._termination_times = {}
         self._execution_lock = threading.Lock()
 
-        self._repository_symbols_and_code_pointers = LazyRepositorySymbolsAndCodePointers(
+        self._serializable_load_error = None
+
+        self._repository_symbols_and_code_pointers = RepositorySymbolsAndCodePointers(
             loadable_target_origin
         )
-        if not lazy_load_user_code:
+        try:
             self._repository_symbols_and_code_pointers.load()
+        except Exception:  # pylint:disable=broad-except
+            if not lazy_load_user_code:
+                raise
+            self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
@@ -352,18 +344,22 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ListRepositories(self, request, _context):
-        try:
-            response = ListRepositoriesResponse(
-                self._repository_symbols_and_code_pointers.loadable_repository_symbols,
-                executable_path=self._loadable_target_origin.executable_path
-                if self._loadable_target_origin
-                else None,
-                repository_code_pointer_dict=(
-                    self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
-                ),
+        if self._serializable_load_error:
+            return api_pb2.ListRepositoriesReply(
+                serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(
+                    self._serializable_load_error
+                )
             )
-        except Exception:  # pylint: disable=broad-except
-            response = serializable_error_info_from_exc_info(sys.exc_info())
+
+        response = ListRepositoriesResponse(
+            self._repository_symbols_and_code_pointers.loadable_repository_symbols,
+            executable_path=self._loadable_target_origin.executable_path
+            if self._loadable_target_origin
+            else None,
+            repository_code_pointer_dict=(
+                self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
+            ),
+        )
 
         return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(response)
@@ -386,6 +382,11 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
+
+    def ExternalNotebookData(self, request, _context):
+        notebook_path = request.notebook_path
+        check.str_param(notebook_path, "notebook_path")
+        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
         args = deserialize_json_to_dagster_namedtuple(
@@ -548,6 +549,7 @@ class DagsterApiServer(DagsterApiServicer):
                 args.sensor_name,
                 args.last_completion_time,
                 args.last_run_key,
+                args.cursor,
             )
         )
 
@@ -676,7 +678,7 @@ class DagsterApiServer(DagsterApiServicer):
         serializable_error_info = None
 
         while success is None:
-            time.sleep(EVENT_QUEUE_POLL_INTERVAL)
+            sleep(EVENT_QUEUE_POLL_INTERVAL)
             # We use `get_nowait()` instead of `get()` so that we can handle the case where the
             # execution process has died unexpectedly -- `get()` would hang forever in that case
             try:
@@ -806,7 +808,10 @@ class DagsterGrpcServer:
             "If set to None, the server will use the gRPC default.",
         )
 
-        self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
+        self.server = grpc.server(
+            ThreadPoolExecutor(max_workers=max_workers),
+            compression=grpc.Compression.Gzip,
+        )
         self._server_termination_event = threading.Event()
 
         try:
@@ -917,21 +922,29 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(server_process, ipc_output_file, timeout=60):
-    event = read_unary_response(ipc_output_file, timeout=timeout, ipc_process=server_process)
+def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
+    start_time = time.time()
 
-    if isinstance(event, GrpcServerFailedToBindEvent):
-        raise CouldNotBindGrpcServerToAddress()
-    elif isinstance(event, GrpcServerLoadErrorEvent):
-        raise DagsterUserCodeProcessError(
-            event.error_info.to_string(), user_code_process_error_infos=[event.error_info]
-        )
-    elif isinstance(event, GrpcServerStartedEvent):
-        return True
-    else:
-        raise Exception(
-            "Received unexpected IPC event from gRPC Server: {event}".format(event=event)
-        )
+    last_error = None
+
+    while True:
+        try:
+            client.ping("")
+            return
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            last_error = serializable_error_info_from_exc_info(sys.exc_info())
+
+        if time.time() - start_time > timeout:
+            raise Exception(
+                f"Timed out waiting for gRPC server to start with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
+            )
+
+        if server_process.poll() != None:
+            raise Exception(
+                f"gRPC server exited with return code {server_process.returncode} while starting up with the command: \"{' '.join(subprocess_args)}\""
+            )
+
+        sleep(0.1)
 
 
 def open_server_process(
@@ -941,8 +954,8 @@ def open_server_process(
     max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
-    lazy_load_user_code=False,
     fixed_server_id=None,
+    startup_timeout=20,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -950,49 +963,47 @@ def open_server_process(
 
     from dagster.core.test_utils import get_mocked_system_timezone
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        output_file = os.path.join(
-            temp_dir, "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
-        )
+    mocked_system_timezone = get_mocked_system_timezone()
 
-        mocked_system_timezone = get_mocked_system_timezone()
+    subprocess_args = (
+        [
+            loadable_target_origin.executable_path
+            if loadable_target_origin and loadable_target_origin.executable_path
+            else sys.executable,
+            "-m",
+            "dagster.grpc",
+        ]
+        + ["--lazy-load-user-code"]
+        + (["--port", str(port)] if port else [])
+        + (["--socket", socket] if socket else [])
+        + (["-n", str(max_workers)] if max_workers else [])
+        + (["--heartbeat"] if heartbeat else [])
+        + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
+        + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
+        + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
+    )
 
-        subprocess_args = (
-            [
-                loadable_target_origin.executable_path
-                if loadable_target_origin and loadable_target_origin.executable_path
-                else sys.executable,
-                "-m",
-                "dagster.grpc",
-            ]
-            + (["--port", str(port)] if port else [])
-            + (["--socket", socket] if socket else [])
-            + (["-n", str(max_workers)] if max_workers else [])
-            + (["--heartbeat"] if heartbeat else [])
-            + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
-            + (["--lazy-load-user-code"] if lazy_load_user_code else [])
-            + (["--ipc-output-file", output_file])
-            + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
-            + (
-                ["--override-system-timezone", mocked_system_timezone]
-                if mocked_system_timezone
-                else []
-            )
-        )
+    if loadable_target_origin:
+        subprocess_args += loadable_target_origin.get_cli_args()
 
-        if loadable_target_origin:
-            subprocess_args += loadable_target_origin.get_cli_args()
+    server_process = open_ipc_subprocess(subprocess_args)
 
-        server_process = open_ipc_subprocess(subprocess_args)
+    from dagster.grpc.client import DagsterGrpcClient
 
-        try:
-            wait_for_grpc_server(server_process, output_file)
-        except:
-            if server_process.poll() is None:
-                server_process.terminate()
-            raise
+    client = DagsterGrpcClient(
+        port=port,
+        socket=socket,
+        host="localhost",
+    )
 
-        return server_process
+    try:
+        wait_for_grpc_server(server_process, client, subprocess_args, timeout=startup_timeout)
+    except:
+        if server_process.poll() is None:
+            server_process.terminate()
+        raise
+
+    return server_process
 
 
 def open_server_process_on_dynamic_port(
@@ -1001,8 +1012,8 @@ def open_server_process_on_dynamic_port(
     max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
-    lazy_load_user_code=False,
     fixed_server_id=None,
+    startup_timeout=20,
 ):
     server_process = None
     retries = 0
@@ -1016,8 +1027,8 @@ def open_server_process_on_dynamic_port(
                 max_workers=max_workers,
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
-                lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -1036,8 +1047,8 @@ class GrpcServerProcess:
         max_workers=None,
         heartbeat=False,
         heartbeat_timeout=30,
-        lazy_load_user_code=False,
         fixed_server_id=None,
+        startup_timeout=20,
     ):
         self.port = None
         self.socket = None
@@ -1052,8 +1063,8 @@ class GrpcServerProcess:
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
-        check.bool_param(lazy_load_user_code, "lazy_load_user_code")
         check.opt_str_param(fixed_server_id, "fixed_server_id")
+        check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
             "max_workers must be greater than 1 or set to None if heartbeat is True. "
@@ -1067,8 +1078,8 @@ class GrpcServerProcess:
                 max_workers=max_workers,
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
-                lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1080,8 +1091,8 @@ class GrpcServerProcess:
                 max_workers=max_workers,
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
-                lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
 
         if self.server_process is None:

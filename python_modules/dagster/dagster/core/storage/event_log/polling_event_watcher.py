@@ -1,8 +1,8 @@
 import threading
-from typing import Callable, Dict, List, MutableMapping, NamedTuple
+from typing import Callable, List, MutableMapping, NamedTuple
 
 from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 
 from .sql_event_log import SqlEventLogStorage
 
@@ -12,14 +12,14 @@ POLLING_CADENCE = 0.1  # 100 ms
 class CallbackAfterCursor(NamedTuple):
     """Callback passed from Observer class in event polling
 
-    start_cursor (int): Only process EventRecords with an id >= start_cursor
+    start_cursor (int): Only process EventLogEntrys with an id >= start_cursor
         (earlier ones have presumably already been processed)
-    callback (Callable[[EventRecord], None]): callback passed from Observer
-        to call on new EventRecords
+    callback (Callable[[EventLogEntry], None]): callback passed from Observer
+        to call on new EventLogEntrys
     """
 
     start_cursor: int
-    callback: Callable[[EventRecord], None]
+    callback: Callable[[EventLogEntry], None]
 
 
 class SqlPollingEventWatcher:
@@ -48,7 +48,7 @@ class SqlPollingEventWatcher:
             _has_run_id = run_id in self._run_id_to_watcher_dict
         return _has_run_id
 
-    def watch_run(self, run_id: str, start_cursor: int, callback: Callable[[EventRecord], None]):
+    def watch_run(self, run_id: str, start_cursor: int, callback: Callable[[EventLogEntry], None]):
         run_id = check.str_param(run_id, "run_id")
         start_cursor = check.int_param(start_cursor, "start_cursor")
         callback = check.callable_param(callback, "callback")
@@ -61,7 +61,7 @@ class SqlPollingEventWatcher:
                 self._run_id_to_watcher_dict[run_id].start()
             self._run_id_to_watcher_dict[run_id].add_callback(start_cursor, callback)
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventRecord], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         run_id = check.str_param(run_id, "run_id")
         handler = check.callable_param(handler, "handler")
         with self._dict_lock:
@@ -90,7 +90,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     Holds a list of callbacks (_callback_fn_list) each passed in by an `Observer`. Note that
         the callbacks have a cursor associated; this means that the callbacks should be
-        only executed on EventRecords with an associated id >= callback.start_cursor
+        only executed on EventLogEntrys with an associated id >= callback.start_cursor
     Exits when `self.should_thread_exit` is set.
 
     LOCKING INFO:
@@ -113,29 +113,27 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     def should_thread_exit(self) -> threading.Event:
         return self._should_thread_exit
 
-    def add_callback(self, start_cursor: int, callback: Callable[[EventRecord], None]):
+    def add_callback(self, start_cursor: int, callback: Callable[[EventLogEntry], None]):
         """Observer has started watching this run.
-            Add a callback to execute on new EventRecords st. id >= start_cursor
+            Add a callback to execute on new EventLogEntrys st. id >= start_cursor
 
         Args:
             start_cursor (int): minimum event_id for the callback to execute
-            callback (Callable[[EventRecord], None]): callback to update the Dagster UI
+            callback (Callable[[EventLogEntry], None]): callback to update the Dagster UI
         """
         start_cursor = check.int_param(start_cursor, "start_cursor")
         callback = check.callable_param(callback, "callback")
         with self._callback_fn_list_lock:
-            # adjust start_cursor by 1 since start_cursor is passed-in 0-indexed
-            # https://github.com/dagster-io/dagster/issues/3621
-            self._callback_fn_list.append(CallbackAfterCursor(start_cursor + 1, callback))
+            self._callback_fn_list.append(CallbackAfterCursor(start_cursor, callback))
 
-    def remove_callback(self, callback: Callable[[EventRecord], None]):
+    def remove_callback(self, callback: Callable[[EventLogEntry], None]):
         """Observer has stopped watching this run;
-            Remove a callback from the list of callbacks to execute on new EventRecords
+            Remove a callback from the list of callbacks to execute on new EventLogEntrys
 
             Also kill thread if no callbacks remaining (i.e. no Observers are watching this run_id)
 
         Args:
-            callback (Callable[[EventRecord], None]): callback to remove from list of callbacks
+            callback (Callable[[EventLogEntry], None]): callback to remove from list of callbacks
         """
         callback = check.callable_param(callback, "callback")
         with self._callback_fn_list_lock:
@@ -148,22 +146,18 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
                 self._should_thread_exit.set()
 
     def run(self):
-        """Polling function to update Observers with EventRecords from Event Log DB.
+        """Polling function to update Observers with EventLogEntrys from Event Log DB.
         Wakes every POLLING_CADENCE &
-            1. executes a SELECT query to get new EventRecords
-            2. fires each callback (taking into account the callback.cursor) on the new EventRecords
+            1. executes a SELECT query to get new EventLogEntrys
+            2. fires each callback (taking into account the callback.cursor) on the new EventLogEntrys
         Uses max_index_so_far as a cursor in the DB to make sure that only new records are retrieved
         """
-        # need to adjust cursor here as well because of 0-indexing
-        # see https://github.com/dagster-io/dagster/issues/3621
-        cursor: int = 0
+        cursor = -1
         while not self._should_thread_exit.wait(POLLING_CADENCE):
-            index_to_event_log_dict: Dict[
-                int, EventRecord
-            ] = self._event_log_storage.get_logs_for_run_by_log_id(self._run_id, cursor=cursor - 1)
-            for (index, dagster_event) in index_to_event_log_dict.items():
-                cursor = max(cursor, index)
+            events = self._event_log_storage.get_logs_for_run(self._run_id, cursor=cursor)
+            for event_record in events:
+                cursor += 1
                 with self._callback_fn_list_lock:
                     for callback_with_cursor in self._callback_fn_list:
-                        if callback_with_cursor.start_cursor < index:
-                            callback_with_cursor.callback(dagster_event)
+                        if callback_with_cursor.start_cursor < cursor:
+                            callback_with_cursor.callback(event_record)

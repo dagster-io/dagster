@@ -1,4 +1,5 @@
 import graphene
+import pendulum
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
 from .pipelines.status import GraphenePipelineRunStatus
@@ -27,10 +28,11 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     statuses = graphene.List(graphene.NonNull(GraphenePipelineRunStatus))
     snapshotId = graphene.Field(graphene.String)
+    updatedAfter = graphene.Field(graphene.String)
+    mode = graphene.Field(graphene.String)
 
     class Meta:
-        description = """This type represents a filter on pipeline runs.
-        Currently, you may only pass one of the filter options."""
+        description = """This type represents a filter on pipeline runs."""
         name = "PipelineRunsFilter"
 
     def to_selector(self):
@@ -48,12 +50,16 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
+        updated_after = pendulum.parse(self.updatedAfter) if self.updatedAfter else None
+
         return PipelineRunsFilter(
             run_ids=self.runIds,
             pipeline_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
+            updated_after=updated_after,
+            mode=self.mode,
         )
 
 
@@ -200,16 +206,16 @@ class GrapheneStepExecution(graphene.InputObjectType):
         name = "StepExecution"
 
 
-class GrapheneJobSelector(graphene.InputObjectType):
+class GrapheneInstigationSelector(graphene.InputObjectType):
     class Meta:
-        name = "JobSelector"
+        name = "InstigationSelector"
         description = (
             """This type represents the fields necessary to identify a schedule or sensor."""
         )
 
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
-    jobName = graphene.NonNull(graphene.String)
+    name = graphene.NonNull(graphene.String)
 
 
 types = [
@@ -217,7 +223,7 @@ types = [
     GrapheneExecutionMetadata,
     GrapheneExecutionParams,
     GrapheneExecutionTag,
-    GrapheneJobSelector,
+    GrapheneInstigationSelector,
     GrapheneMarshalledInput,
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,

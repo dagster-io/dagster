@@ -5,9 +5,13 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
+    AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
     DependencyDefinition,
+    DynamicOut,
+    DynamicOutput,
+    DynamicOutputDefinition,
     EventMetadata,
     EventMetadataEntry,
     ExecutorDefinition,
@@ -15,17 +19,24 @@ from dagster.core.definitions import (
     ExpectationResult,
     Failure,
     FloatMetadataEntryData,
+    GraphDefinition,
+    GraphIn,
+    GraphOut,
     HookDefinition,
+    In,
     InputDefinition,
     InputMapping,
     IntMetadataEntryData,
     IntermediateStorageDefinition,
+    JobDefinition,
     JsonMetadataEntryData,
     LoggerDefinition,
     MarkdownMetadataEntryData,
     Materialization,
     ModeDefinition,
     MultiDependencyDefinition,
+    OpDefinition,
+    Out,
     Output,
     OutputDefinition,
     OutputMapping,
@@ -34,15 +45,22 @@ from dagster.core.definitions import (
     PartitionSetDefinition,
     PathMetadataEntryData,
     PipelineDefinition,
+    PipelineFailureSensorContext,
     PresetDefinition,
     PythonArtifactMetadataEntryData,
+    RepositoryData,
     RepositoryDefinition,
     ResourceDefinition,
     RetryRequested,
+    RunFailureSensorContext,
     RunRequest,
+    RunStatusSensorContext,
+    RunStatusSensorDefinition,
     ScheduleDefinition,
+    ScheduleEvaluationContext,
     ScheduleExecutionContext,
     SensorDefinition,
+    SensorEvaluationContext,
     SensorExecutionContext,
     SkipReason,
     SolidDefinition,
@@ -50,31 +68,56 @@ from dagster.core.definitions import (
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
+    asset_sensor,
+    build_init_logger_context,
     composite_solid,
+    config_mapping,
+    daily_partitioned_config,
     daily_schedule,
     default_executors,
+    dynamic_partitioned_config,
     executor,
     failure_hook,
+    graph,
+    hourly_partitioned_config,
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
+    job,
     lambda_solid,
     logger,
     make_values_resource,
+    monthly_partitioned_config,
     monthly_schedule,
     multiple_process_executor_requirements,
     multiprocess_executor,
+    op,
     pipeline,
+    pipeline_failure_sensor,
     reconstructable,
     repository,
     resource,
+    run_failure_sensor,
+    run_status_sensor,
     schedule,
+    schedule_from_partitions,
     sensor,
     solid,
+    static_partitioned_config,
     success_hook,
+    weekly_partitioned_config,
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
+from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
+from dagster.core.definitions.schedule import build_schedule_context
+from dagster.core.definitions.sensor import build_sensor_context
+from dagster.core.definitions.utils import (
+    config_from_files,
+    config_from_pkg_resources,
+    config_from_yaml_strings,
+)
+from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -91,6 +134,7 @@ from dagster.core.errors import (
     DagsterSubprocessError,
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
+    DagsterUnknownPartitionError,
     DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
@@ -103,27 +147,38 @@ from dagster.core.execution.api import (
     reexecute_pipeline_iterator,
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.init import InitResourceContext
-from dagster.core.execution.context.input import InputContext
+from dagster.core.execution.context.hook import HookContext, build_hook_context
+from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster.core.execution.context.input import InputContext, build_input_context
+from dagster.core.execution.context.invocation import build_op_context, build_solid_context
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.context.output import OutputContext
-from dagster.core.execution.context.system import HookContext, TypeCheckContext
+from dagster.core.execution.context.output import OutputContext, build_output_context
+from dagster.core.execution.context.system import TypeCheckContext
+from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
     SolidExecutionResult,
 )
+from dagster.core.execution.validate_run_config import validate_run_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.storage.event_log import (
+    EventLogEntry,
+    EventLogRecord,
+    EventRecordsFilter,
+    RunShardedEventsCursor,
+)
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
@@ -136,6 +191,7 @@ from dagster.core.storage.system_storage import (
     io_manager_from_intermediate_storage,
     mem_intermediate_storage,
 )
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.config_schema import (
     DagsterTypeLoader,
     DagsterTypeMaterializer,
@@ -174,6 +230,7 @@ __all__ = [
     # Definition
     "AssetKey",
     "AssetMaterialization",
+    "AssetSensorDefinition",
     "CompositeSolidDefinition",
     "ConfigMapping",
     "DependencyDefinition",
@@ -184,18 +241,26 @@ __all__ = [
     "ExpectationResult",
     "Failure",
     "Field",
+    "GraphDefinition",
+    "GraphIn",
+    "GraphOut",
     "HookDefinition",
+    "JobDefinition",
+    "In",
     "InputDefinition",
     "InputMapping",
     "IntermediateStorageDefinition",
     "JsonMetadataEntryData",
     "LoggerDefinition",
+    "build_init_logger_context",
     "MarkdownMetadataEntryData",
     "IntMetadataEntryData",
     "FloatMetadataEntryData",
     "Materialization",
     "ModeDefinition",
     "MultiDependencyDefinition",
+    "OpDefinition",
+    "Out",
     "Output",
     "OutputDefinition",
     "OutputMapping",
@@ -203,6 +268,7 @@ __all__ = [
     "PipelineDefinition",
     "PresetDefinition",
     "PythonArtifactMetadataEntryData",
+    "RepositoryData",
     "RepositoryDefinition",
     "ResourceDefinition",
     "SolidDefinition",
@@ -210,12 +276,24 @@ __all__ = [
     "TextMetadataEntryData",
     "UrlMetadataEntryData",
     "make_values_resource",
+    "RetryPolicy",
+    "Backoff",
+    "Jitter",
+    "RunStatusSensorDefinition",
+    "DynamicOutput",
+    "DynamicOut",
+    "DynamicOutputDefinition",
     # Decorators
+    "asset_sensor",
     "composite_solid",
+    "config_mapping",
     "executor",
+    "graph",
     "intermediate_storage",
+    "job",
     "lambda_solid",
     "logger",
+    "op",
     "pipeline",
     "repository",
     "resource",
@@ -224,29 +302,43 @@ __all__ = [
     "solid",
     "success_hook",
     "failure_hook",
+    "run_failure_sensor",
+    "pipeline_failure_sensor",
+    "run_status_sensor",
     # Execution
     "CompositeSolidExecutionResult",
     "DagsterEvent",
     "DagsterEventType",
     "DefaultRunLauncher",
+    "EventLogEntry",
+    "EventLogRecord",
     "Executor",
     "InitExecutorContext",
     "InitLoggerContext",
     "InitResourceContext",
+    "ExecuteInProcessResult",
+    "build_init_resource_context",
     "InitIntermediateStorageContext",
     "PipelineExecutionResult",
     "RetryRequested",
     "SolidExecutionResult",
     "SolidExecutionContext",
+    "build_solid_context",
+    "build_op_context",
     "HookContext",
+    "build_hook_context",
     "TypeCheckContext",
     "InputContext",
+    "build_input_context",
     "OutputContext",
+    "build_output_context",
     "PipelineRun",
+    "PipelineRunStatus",
     "default_executors",
     "default_intermediate_storage_defs",
     "execute_pipeline_iterator",
     "execute_pipeline",
+    "validate_run_config",
     "execute_solid_within_pipeline",
     "fs_intermediate_storage",
     "in_process_executor",
@@ -273,6 +365,7 @@ __all__ = [
     "DagsterSubprocessError",
     "DagsterTypeCheckDidNotPass",
     "DagsterTypeCheckError",
+    "DagsterUnknownPartitionError",
     "DagsterUnknownResourceError",
     "DagsterUnmetExecutorRequirementsError",
     "DagsterUserCodeExecutionError",
@@ -284,6 +377,9 @@ __all__ = [
     "execute_solid",
     "execute_solids_within_pipeline",
     "file_relative_path",
+    "config_from_files",
+    "config_from_pkg_resources",
+    "config_from_yaml_strings",
     "configured",
     # types
     "Any",
@@ -327,15 +423,32 @@ __all__ = [
     "local_file_manager",
     # instance
     "DagsterInstance",
+    # storage
+    "EventRecordsFilter",
+    "RunShardedEventsCursor",
     # partitions and schedules
+    "schedule_from_partitions",
+    "dynamic_partitioned_config",
+    "static_partitioned_config",
+    "daily_partitioned_config",
+    "hourly_partitioned_config",
+    "monthly_partitioned_config",
+    "weekly_partitioned_config",
     "Partition",
     "PartitionScheduleDefinition",
     "PartitionSetDefinition",
     "RunRequest",
     "ScheduleDefinition",
+    "ScheduleEvaluationContext",
     "ScheduleExecutionContext",
+    "build_schedule_context",
     "SensorDefinition",
+    "SensorEvaluationContext",
     "SensorExecutionContext",
+    "RunFailureSensorContext",
+    "PipelineFailureSensorContext",
+    "RunStatusSensorContext",
+    "build_sensor_context",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",
@@ -356,4 +469,8 @@ __all__ = [
     "custom_path_fs_io_manager",
     # warnings
     "ExperimentalWarning",
+    # Versioning / Memoization
+    "VersionStrategy",
+    "MEMOIZED_RUN_TAG",
+    "MemoizableIOManager",
 ]

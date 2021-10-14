@@ -165,8 +165,8 @@ def pagerduty_resource(context):
 
     .. code-block:: python
 
-        @solid(required_resource_keys={'pagerduty'})
-        def pagerduty_solid(context):
+        @op(required_resource_keys={'pagerduty'})
+        def pagerduty_op(context):
             context.resources.pagerduty.EventV2_create(
                 summary='alert from dagster'
                 source='localhost',
@@ -174,19 +174,16 @@ def pagerduty_resource(context):
                 event_action='trigger',
             )
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
-        )
-        def pd_pipeline():
-            pagerduty_solid()
+        @job(resource_defs={ 'pagerduty': pagerduty_resource })
+        def pagerduty_test():
+            pagerduty_op()
 
-        execute_pipeline(
-            pd_pipeline,
-            {
-                'resources': {
+        pagerduty_test.execute_in_process(
+            run_config={
+                "resources": {
                     'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
                 }
-            },
+            }
         )
     """
     return PagerDutyService(context.resource_config.get("routing_key"))

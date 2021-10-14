@@ -1,36 +1,29 @@
-import {useMutation} from '@apollo/client';
-import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
-import {TickTag} from '../jobs/JobTick';
+import {useFeatureFlags} from '../app/Flags';
+import {useCopyToClipboard} from '../app/browser';
+import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobStatus, JobType} from '../types/globalTypes';
+import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
 import {Group} from '../ui/Group';
-import {MetadataTable} from '../ui/MetadataTable';
+import {MetadataTableWIP} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
-import {Code, Heading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {TagWIP} from '../ui/TagWIP';
+import {Code, Heading, Mono} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  displayScheduleMutationErrors,
-  START_SCHEDULE_MUTATION,
-  STOP_SCHEDULE_MUTATION,
-} from './ScheduleMutations';
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 
@@ -43,26 +36,10 @@ export const ScheduleDetails: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  const copyToClipboard = useCopyToClipboard();
 
   const [copyText, setCopyText] = React.useState('Click to copy');
-
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
-  };
 
   const timeRemaining = useCountdown({
     duration: countdownDuration,
@@ -86,141 +63,123 @@ export const ScheduleDetails: React.FC<{
   const {status, id, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
-  const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSchedule({
-        variables: {scheduleOriginId: id},
-      });
-    } else {
-      startSchedule({
-        variables: {scheduleSelector},
-      });
-    }
-  };
-
   const copyId = () => {
-    navigator.clipboard.writeText(id);
+    copyToClipboard(id);
     setCopyText('Copied!');
   };
 
-  const running = status === JobStatus.RUNNING;
+  const running = status === InstigationStatus.RUNNING;
   const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
   const seconds = Math.floor(timeRemaining / 1000);
 
   return (
-    <Group direction="column" spacing={16}>
+    <>
       <PageHeader
         title={
-          <Group alignItems="center" direction="row" spacing={2}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
             <Heading>{name}</Heading>
-            <Box margin={{left: 12}}>
-              <Switch
-                checked={running}
-                inline
-                large
-                disabled={toggleOffInFlight || toggleOnInFlight}
-                innerLabelChecked="on"
-                innerLabel="off"
-                onChange={onChangeSwitch}
-                style={{margin: '4px 0 0 0'}}
-              />
-            </Box>
+            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+          </Box>
+        }
+        tags={
+          <>
+            <TagWIP icon="schedule">
+              Schedule in <RepositoryLink repoAddress={repoAddress} />
+            </TagWIP>
             {futureTicks.results.length && running ? (
-              <Group direction="row" spacing={4}>
-                <div>Next tick:</div>
+              <TagWIP icon="timer">
+                Next tick:{' '}
                 <TimestampDisplay
                   timestamp={futureTicks.results[0].timestamp}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
-              </Group>
+              </TagWIP>
             ) : null}
-          </Group>
-        }
-        icon="time"
-        description={
-          <>
-            <Link to={workspacePathFromAddress(repoAddress, '/schedules')}>Schedule</Link> in{' '}
-            <RepositoryLink repoAddress={repoAddress} />
+            <Tooltip content={copyText}>
+              <ButtonLink
+                color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
+                onClick={copyId}
+              >
+                <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
+              </ButtonLink>
+            </Tooltip>
           </>
         }
         right={
-          <Box margin={{top: 4}}>
-            <Group direction="column" spacing={8} alignItems="flex-end">
-              <RefreshableCountdown
-                refreshing={countdownRefreshing}
-                seconds={seconds}
-                onRefresh={onRefresh}
-              />
-              <Tooltip content={copyText}>
-                <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
-                  <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
-                </ButtonLink>
-              </Tooltip>
-            </Group>
-          </Box>
+          <RefreshableCountdown
+            refreshing={countdownRefreshing}
+            seconds={seconds}
+            onRefresh={onRefresh}
+          />
         }
       />
-      <MetadataTable
-        rows={[
-          schedule.description
-            ? {
-                key: 'Description',
-                value: schedule.description,
-              }
-            : null,
-          {
-            key: 'Latest tick',
-            value: latestTick ? (
-              <Group direction="row" spacing={8} alignItems="center">
-                <TimestampDisplay
-                  timestamp={latestTick.timestamp}
-                  timezone={executionTimezone}
-                  timeFormat={TIME_FORMAT}
-                />
-                <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
-              </Group>
-            ) : (
-              'Schedule has never run'
-            ),
-          },
-          {
-            key: 'Pipeline',
-            value: (
+      <MetadataTableWIP>
+        <tbody>
+          {schedule.description ? (
+            <tr>
+              <td>Description</td>
+              <td>{schedule.description}</td>
+            </tr>
+          ) : null}
+          <tr>
+            <td>Latest tick</td>
+            <td>
+              {latestTick ? (
+                <Group direction="row" spacing={8} alignItems="center">
+                  <TimestampDisplay
+                    timestamp={latestTick.timestamp}
+                    timezone={executionTimezone}
+                    timeFormat={TIME_FORMAT}
+                  />
+                  <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+                </Group>
+              ) : (
+                'Schedule has never run'
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</td>
+            <td>
               <PipelineReference
                 pipelineName={pipelineName}
                 pipelineHrefContext={repoAddress}
                 mode={schedule.mode}
               />
-            ),
-          },
-          {
-            key: 'Partition Set',
-            value: partitionSet ? (
-              <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
-            ) : (
-              'None'
-            ),
-          },
-          {
-            key: 'Schedule',
-            value: cronSchedule ? (
-              <Group direction="row" spacing={8}>
-                <span>{humanCronString(cronSchedule)}</span>
-                <Code>({cronSchedule})</Code>
-              </Group>
-            ) : (
-              <div>&mdash;</div>
-            ),
-          },
-          executionTimezone
-            ? {
-                key: 'Execution timezone',
-                value: executionTimezone,
-              }
-            : null,
-        ].filter(Boolean)}
-      />
-    </Group>
+            </td>
+          </tr>
+          <tr>
+            <td>Partition set</td>
+            <td>
+              {partitionSet ? (
+                <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+              ) : (
+                'None'
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>Schedule</td>
+            <td>
+              {cronSchedule ? (
+                <Group direction="row" spacing={8}>
+                  <span>{humanCronString(cronSchedule)}</span>
+                  <Code>({cronSchedule})</Code>
+                </Group>
+              ) : (
+                <div>&mdash;</div>
+              )}
+            </td>
+          </tr>
+          {executionTimezone ? (
+            <tr>
+              <td>Execution timezone</td>
+              <td>{executionTimezone}</td>
+            </tr>
+          ) : null}
+        </tbody>
+      </MetadataTableWIP>
+    </>
   );
 };

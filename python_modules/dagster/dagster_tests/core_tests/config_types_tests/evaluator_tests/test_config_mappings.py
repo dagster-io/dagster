@@ -12,6 +12,7 @@ from dagster import (
     String,
     composite_solid,
     execute_pipeline,
+    graph,
     lambda_solid,
     pipeline,
     solid,
@@ -177,17 +178,32 @@ def test_config_mapper_throws():
     def wrap_pipeline():
         bad_wrap.alias("do_stuff")()
 
-    with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
+    with pytest.raises(
+        DagsterConfigMappingFunctionError,
+        match="The config mapping function on composite solid 'do_stuff' "
+        "in pipeline 'wrap_pipeline' has thrown an unexpected error during its "
+        'execution. The definition is instantiated at stack "do_stuff"',
+    ):
         execute_pipeline(
             wrap_pipeline,
             {"solids": {"do_stuff": {"config": {"does_not_matter": "blah"}}}},
         )
 
-    assert (
-        'The config mapping function on the composite solid definition "bad_wrap" at solid '
-        '"do_stuff" in pipeline "wrap_pipeline" has thrown an unexpected error during its '
-        'execution. The definition is instantiated at stack "do_stuff"'
-    ) in str(exc_info.value)
+    @graph
+    def wrap_invocations():
+        bad_wrap()
+
+    # Workaround to check error message for job since GraphDefinition currently does not accept
+    # config mapping: https://github.com/dagster-io/dagster/issues/4831
+    with pytest.raises(
+        DagsterConfigMappingFunctionError,
+        match="The config mapping function on composite solid 'bad_wrap' "
+        "in job 'wrap_invocations' has thrown an unexpected error during its "
+        'execution. The definition is instantiated at stack "bad_wrap"',
+    ):
+        wrap_invocations.to_job().execute_in_process(
+            run_config={"ops": {"bad_wrap": {"config": {"does_not_matter": "blah"}}}}
+        )
 
 
 def test_config_mapper_throws_nested():
@@ -216,8 +232,8 @@ def test_config_mapper_throws_nested():
         )
 
     assert (
-        'The config mapping function on the composite solid definition "bad_wrap" '
-        'at solid "layer1" in pipeline "wrap_pipeline" has thrown an unexpected '
+        "The config mapping function on composite solid 'layer1' "
+        "in pipeline 'wrap_pipeline' has thrown an unexpected "
         'error during its execution. The definition is instantiated at stack "layer0:layer1".'
     ) in str(exc_info.value)
 
@@ -768,7 +784,7 @@ def test_bad_solid_def():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "@composite_solid 'config_only' defines a configuration schema but does not define a "
+            "composite_solid 'config_only' defines a configuration schema but does not define a "
             "configuration function."
         ),
     ):

@@ -1,44 +1,29 @@
-import {useMutation} from '@apollo/client';
-import {
-  Button,
-  Colors,
-  Icon,
-  Intent,
-  Menu,
-  MenuItem,
-  Popover,
-  PopoverInteractionKind,
-  Position,
-  Tag,
-  Tooltip,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from '../jobs/JobTick';
-import {JobRunStatus} from '../jobs/JobUtils';
+import {TickTag} from '../instigation/InstigationTick';
+import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobStatus, JobType} from '../types/globalTypes';
-import {Group} from '../ui/Group';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
 import {Code} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReconcileButton} from './ReconcileButton';
-import {
-  START_SCHEDULE_MUTATION,
-  STOP_SCHEDULE_MUTATION,
-  displayScheduleMutationErrors,
-} from './ScheduleMutations';
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
 
 export const SchedulesTable: React.FC<{
   schedules: ScheduleFragment[];
@@ -64,42 +49,30 @@ export const SchedulesTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th style={{minWidth: '300px'}}>Schedule Name</th>
           <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{width: '200px'}}>Next Tick</th>
+          <th style={{minWidth: '170px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Tick
               <Tooltip position="top" content={lastTick}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
-              Partition Status
+            <Box flex={{gap: 8, alignItems: 'end'}}>
+              Partition
               <Tooltip position="top" content={partitionStatus}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th />
         </tr>
@@ -114,22 +87,22 @@ export const SchedulesTable: React.FC<{
 };
 
 const errorDisplay = (
-  status: JobStatus,
+  status: InstigationStatus,
   runningScheduleCount: number,
   repoAddress: RepoAddress,
 ) => {
-  if (status === JobStatus.STOPPED && runningScheduleCount === 0) {
+  if (status === InstigationStatus.STOPPED && runningScheduleCount === 0) {
     return null;
-  } else if (status === JobStatus.RUNNING && runningScheduleCount === 1) {
+  } else if (status === InstigationStatus.RUNNING && runningScheduleCount === 1) {
     return null;
   }
 
   const errors = [];
-  if (status === JobStatus.RUNNING && runningScheduleCount === 0) {
+  if (status === InstigationStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
       'Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule',
     );
-  } else if (status === JobStatus.STOPPED && runningScheduleCount > 0) {
+  } else if (status === InstigationStatus.STOPPED && runningScheduleCount > 0) {
     errors.push('Schedule is set to be stopped, but the scheduler is still running the schedule');
   }
 
@@ -139,29 +112,28 @@ const errorDisplay = (
 
   return (
     <Popover
-      interactionKind={PopoverInteractionKind.CLICK}
+      interactionKind="hover"
       popoverClassName="bp3-popover-content-sizing"
-      position={Position.RIGHT}
-      fill={true}
+      position="right"
+      content={
+        <Box flex={{direction: 'column', gap: 8}} padding={12}>
+          <strong>There are errors with this schedule.</strong>
+          <div>Errors:</div>
+          <ul>
+            {errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+          <div>
+            To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
+            <Code>dagster schedule up</Code>
+          </div>
+        </Box>
+      }
     >
-      <Tag fill={true} interactive={true} intent={Intent.DANGER}>
+      <TagWIP fill interactive intent="danger">
         Error
-      </Tag>
-      <div>
-        <h3>There are errors with this schedule.</h3>
-
-        <p>Errors:</p>
-        <ul>
-          {errors.map((error, index) => (
-            <li key={index}>{error}</li>
-          ))}
-        </ul>
-
-        <p>
-          To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
-          <Code>dagster schedule up</Code>
-        </p>
-      </div>
+      </TagWIP>
     </Popover>
   );
 };
@@ -172,19 +144,6 @@ const ScheduleRow: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule} = props;
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-
   const {
     name,
     cronSchedule,
@@ -194,62 +153,31 @@ const ScheduleRow: React.FC<{
     mode,
     scheduleState,
   } = schedule;
-  const {id, status, ticks, runningCount: runningScheduleCount} = scheduleState;
-
-  const scheduleSelector = {
-    repositoryLocationName: repoAddress.location,
-    repositoryName: repoAddress.name,
-    scheduleName: name,
-  };
-
-  const onStatusChange = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSchedule({
-        variables: {scheduleOriginId: id},
-      });
-    } else {
-      startSchedule({
-        variables: {scheduleSelector},
-      });
-    }
-  };
+  const {status, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
     <tr key={name}>
       <td>
-        <SwitchWithoutLabel
-          checked={status === JobStatus.RUNNING}
-          large={true}
-          disabled={toggleOffInFlight || toggleOnInFlight}
-          innerLabelChecked="on"
-          innerLabel="off"
-          onChange={onStatusChange}
-        />
-        {errorDisplay(status, runningScheduleCount, repoAddress)}
+        <Box flex={{direction: 'column', gap: 4}}>
+          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+          {errorDisplay(status, runningScheduleCount, repoAddress)}
+        </Box>
       </td>
       <td>
-        <Group direction="column" spacing={4}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
           </span>
-          <Group direction="row" spacing={4} alignItems="flex-start">
-            <Icon
-              icon="diagram-tree"
-              color={Colors.GRAY2}
-              iconSize={9}
-              style={{position: 'relative', top: '-3px'}}
-            />
-            <span style={{fontSize: '13px'}}>
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                mode={mode}
-              />
-            </span>
-          </Group>
-        </Group>
+          <PipelineReference
+            showIcon
+            size="small"
+            pipelineName={pipelineName}
+            pipelineHrefContext={repoAddress}
+            mode={mode}
+          />
+        </Box>
       </td>
       <td>
         {cronSchedule ? (
@@ -257,60 +185,64 @@ const ScheduleRow: React.FC<{
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
-        {futureTicks.results.length && status === JobStatus.RUNNING ? (
+        {futureTicks.results.length && status === InstigationStatus.RUNNING ? (
           <TimestampDisplay
             timestamp={futureTicks.results[0].timestamp}
             timezone={executionTimezone}
           />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
+          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
-        <JobRunStatus jobState={scheduleState} />
+        <InstigatedRunStatus instigationState={scheduleState} />
       </td>
       <td>
-        <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+        {schedule.partitionSet ? (
+          <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+        ) : (
+          <div style={{color: ColorsWIP.Gray300}}>None</div>
+        )}
       </td>
       <td>
         {schedule.partitionSet ? (
           <Popover
             content={
-              <Menu>
-                <MenuItem
+              <MenuWIP>
+                <MenuItemWIP
                   text="View Partition History..."
-                  icon="multi-select"
+                  icon="dynamic_feed"
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
                     `/pipelines/${pipelineName}/partitions`,
                   )}
                 />
-                <MenuItem
+                <MenuItemWIP
                   text="Launch Partition Backfill..."
-                  icon="add"
+                  icon="add_circle"
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
                     `/pipelines/${pipelineName}/partitions`,
                   )}
                 />
-              </Menu>
+              </MenuWIP>
             }
-            position="bottom"
+            position="bottom-left"
           >
-            <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+            <ButtonWIP icon={<IconWIP name="expand_more" />} />
           </Popover>
         ) : null}
       </td>

@@ -1,10 +1,9 @@
 import {QueryResult} from '@apollo/client';
-import {Colors, Tabs, Tab} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
-import {Box} from '../main';
+import {Box} from '../ui/Box';
+import {Tab, Tabs} from '../ui/Tabs';
 
 const POLL_INTERVAL = 15000;
 
@@ -16,16 +15,13 @@ interface Props {
 export const InstanceTabs: React.FC<Props> = (props) => {
   const {queryData, tab} = props;
   return (
-    <Box
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
-      border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-    >
+    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
-        <Tab id="schedules" title={<Link to="/instance/schedules">Schedules</Link>} />
-        <Tab id="sensors" title={<Link to="/instance/sensors">Sensors</Link>} />
-        <Tab id="backfills" title={<Link to="/instance/backfills">Backfills</Link>} />
-        <Tab id="config" title={<Link to="/instance/config">Configuration</Link>} />
+        <Tab id="health" title="Health" to="/instance/health" />
+        <Tab id="schedules" title="Schedules" to="/instance/schedules" />
+        <Tab id="sensors" title="Sensors" to="/instance/sensors" />
+        <Tab id="backfills" title="Backfills" to="/instance/backfills" />
+        <Tab id="config" title="Configuration" to="/instance/config" />
       </Tabs>
       {queryData ? (
         <Box padding={{bottom: 8}}>

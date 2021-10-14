@@ -1,11 +1,14 @@
 import {useQuery} from '@apollo/client';
 import {render, screen} from '@testing-library/react';
+import {loader} from 'graphql.macro';
 import React from 'react';
 
 import {INSTANCE_CONFIG_QUERY} from '../instance/InstanceConfig';
 import {InstanceConfigQuery} from '../instance/types/InstanceConfigQuery';
 
 import {ApolloTestProvider} from './ApolloTestProvider';
+
+const typeDefs = loader('../graphql/schema.graphql');
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {
@@ -22,7 +25,7 @@ describe('ApolloTestProvider', () => {
 
   it('successfully mocks values', async () => {
     render(
-      <ApolloTestProvider>
+      <ApolloTestProvider typeDefs={typeDefs}>
         <Thing />
       </ApolloTestProvider>,
     );
@@ -38,7 +41,7 @@ describe('ApolloTestProvider', () => {
     };
 
     render(
-      <ApolloTestProvider mocks={mocks}>
+      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs}>
         <Thing />
       </ApolloTestProvider>,
     );
@@ -54,7 +57,7 @@ describe('ApolloTestProvider', () => {
     };
 
     render(
-      <ApolloTestProvider mocks={mocks}>
+      <ApolloTestProvider mocks={mocks} typeDefs={typeDefs}>
         <Thing />
       </ApolloTestProvider>,
     );

@@ -704,6 +704,7 @@ export interface PipelineExplorerFragment_modes_loggers {
 
 export interface PipelineExplorerFragment_modes {
   __typename: "Mode";
+  id: string;
   name: string;
   description: string | null;
   resources: PipelineExplorerFragment_modes_resources[];

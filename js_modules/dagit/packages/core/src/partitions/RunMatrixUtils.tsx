@@ -1,12 +1,15 @@
-import {Colors} from '@blueprintjs/core';
-import {Tooltip2} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {Tooltip} from '../ui/Tooltip';
+
+export const BOX_SIZE = 32;
+
 export const STEP_STATUS_COLORS = {
-  SUCCESS: '#009857',
-  FAILURE: Colors.RED3,
-  SKIPPED: Colors.GOLD3,
+  SUCCESS: ColorsWIP.Green500,
+  FAILURE: ColorsWIP.Red500,
+  SKIPPED: ColorsWIP.Yellow500,
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -15,31 +18,28 @@ export const STEP_STATUS_COLORS = {
 const flatGradient = (color: string) => `linear-gradient(to left, ${color} 0%, ${color} 100%)`;
 const flatGradientStack = (colors: string[]) => colors.map(flatGradient).join(',');
 
-const SuccessColorForProps = ({dimSuccesses}: {dimSuccesses?: boolean}) =>
-  dimSuccesses ? '#CFE6DC' : STEP_STATUS_COLORS.SUCCESS;
-
 export const GridColumn = styled.div<{
   disabled?: boolean;
   hovered?: boolean;
   focused?: boolean;
   multiselectFocused?: boolean;
-  dimSuccesses?: boolean;
 }>`
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  line-height: 0;
 
   ${({disabled, focused, multiselectFocused, hovered}) =>
     !disabled &&
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-    background: ${Colors.LIGHT_GRAY3};
+    background: ${ColorsWIP.Gray100};
     cursor: default;
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.White};
       .tilted {
-        background: ${Colors.LIGHT_GRAY3};
+        background: ${ColorsWIP.Gray100};
       }
     }
   }`}
@@ -48,42 +48,42 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${Colors.GRAY3}
+        color: ${ColorsWIP.Gray400}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${Colors.BLUE4};
+    `background: ${ColorsWIP.Blue500};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.White};
       color: white;
       .tilted {
-        background: ${Colors.BLUE4};
+        background: ${ColorsWIP.Blue500};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${Colors.BLUE5};
+    `background: ${ColorsWIP.Blue200};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.White};
       color: white;
       .tilted {
-        background: ${Colors.BLUE5};
+        background: ${ColorsWIP.Blue200};
       }
     }
   }`}
 
   .cell {
-    height: 23px;
+    height: ${BOX_SIZE}px;
     display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -91,34 +91,36 @@ export const GridColumn = styled.div<{
     font-size: 12px;
     padding: 2px;
     box-sizing: border-box;
+    line-height: initial;
   }
 
   .square {
-    width: 23px;
-    height: 23px;
+    width: 20px;
+    height: 20px;
+    margin: 6px;
     display: inline-block;
 
-    &:hover:not(.empty) {
-      background: ${Colors.BLUE5};
+    &:hover:not(.empty):before {
+      box-shadow: ${ColorsWIP.Blue500} 0 0 0 3px;
     }
     &:before {
       content: ' ';
+      border-radius: 10px;
       display: inline-block;
-      width: 15px;
-      height: 15px;
-      margin: 4px;
+      width: 20px;
+      height: 20px;
     }
     &.success {
       &:before {
-        background: ${SuccessColorForProps};
+        background: ${STEP_STATUS_COLORS.SUCCESS};
       }
     }
     &.success-skipped {
       &:before {
         background: linear-gradient(
           135deg,
-          ${SuccessColorForProps} 40%,
-          ${STEP_STATUS_COLORS.SKIPPED} 41%
+          ${STEP_STATUS_COLORS.SUCCESS} 49%,
+          ${STEP_STATUS_COLORS.SKIPPED} 51%
         );
       }
     }
@@ -126,8 +128,8 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${SuccessColorForProps} 40%,
-          ${STEP_STATUS_COLORS.FAILURE} 41%
+          ${STEP_STATUS_COLORS.SUCCESS} 49%,
+          ${STEP_STATUS_COLORS.FAILURE} 51%
         );
       }
     }
@@ -140,8 +142,8 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 40%,
-          ${SuccessColorForProps} 41%
+          ${STEP_STATUS_COLORS.FAILURE} 49%,
+          ${STEP_STATUS_COLORS.SUCCESS} 51%
         );
       }
     }
@@ -149,8 +151,8 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 40%,
-          ${STEP_STATUS_COLORS.SKIPPED} 41%
+          ${STEP_STATUS_COLORS.FAILURE} 49%,
+          ${STEP_STATUS_COLORS.SKIPPED} 51%
         );
       }
     }
@@ -158,8 +160,8 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 40%,
-          rgba(150, 150, 150, 0.3) 41%
+          ${STEP_STATUS_COLORS.FAILURE} 49%,
+          rgba(150, 150, 150, 0.3) 51%
         );
       }
     }
@@ -172,8 +174,8 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${STEP_STATUS_COLORS.SKIPPED} 40%,
-          ${SuccessColorForProps} 41%
+          ${STEP_STATUS_COLORS.SKIPPED} 49%,
+          ${STEP_STATUS_COLORS.SUCCESS} 51%
         );
       }
     }
@@ -181,30 +183,27 @@ export const GridColumn = styled.div<{
       &:before {
         background: linear-gradient(
           135deg,
-          ${STEP_STATUS_COLORS.SKIPPED} 40%,
-          ${STEP_STATUS_COLORS.FAILURE} 41%
+          ${STEP_STATUS_COLORS.SKIPPED} 49%,
+          ${STEP_STATUS_COLORS.FAILURE} 51%
         );
       }
     }
     &.missing {
       &:before {
-        background: ${Colors.WHITE};
+        background: ${ColorsWIP.Gray50};
       }
     }
   }
 `;
 
-export const LeftLabel = styled.div<{hovered?: boolean; redness?: number}>`
-  height: 23px;
-  line-height: 23px;
+export const LeftLabel = styled.div<{hovered?: boolean}>`
+  height: ${BOX_SIZE}px;
+  line-height: ${BOX_SIZE}px;
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: ${({redness, hovered}) =>
-    flatGradientStack([
-      redness ? `rgba(255, 0, 0, ${redness * 0.6})` : 'transparent',
-      hovered ? Colors.LIGHT_GRAY2 : 'transparent',
-    ])};
+  position: relative;
+  background: ${({hovered}) => flatGradientStack([hovered ? ColorsWIP.Gray100 : 'transparent'])};
 `;
 
 export const TopLabel = styled.div`
@@ -217,7 +216,7 @@ export const TopLabel = styled.div`
   display: flex;
 `;
 
-const TITLE_HEGIHT = 55;
+const TITLE_HEIGHT = 55;
 const ROTATION_DEGREES = 41;
 
 export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
@@ -230,7 +229,7 @@ export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
     if (node.current) {
       const nodeWidth = node.current.offsetWidth;
       const rotatedHeight = Math.sin(ROTATION_DEGREES * (Math.PI / 180)) * nodeWidth;
-      if (rotatedHeight > TITLE_HEGIHT) {
+      if (rotatedHeight > TITLE_HEIGHT) {
         showTooltip(true);
       }
     }
@@ -245,23 +244,24 @@ export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
   );
 
   return tooltip ? (
-    <Tooltip2 placement="bottom" content={label}>
+    <Tooltip placement="bottom" content={label}>
       {content}
-    </Tooltip2>
+    </Tooltip>
   ) : (
     content
   );
 };
 
-export const TopLabelTiltedInner = styled.div`
+const TopLabelTiltedInner = styled.div`
   position: relative;
-  height: ${TITLE_HEGIHT}px;
+  height: ${TITLE_HEIGHT}px;
   padding: 4px;
   padding-bottom: 0;
   min-width: 15px;
   margin-bottom: 15px;
   align-items: end;
   display: flex;
+  line-height: normal;
 
   & > div.tilted {
     font-size: 12px;
@@ -279,7 +279,7 @@ export const TopLabelTiltedInner = styled.div`
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${Colors.GRAY5};
+  border-right: 1px solid ${ColorsWIP.Gray200};
   padding-bottom: 16px;
   width: 330px;
   z-index: 1;
@@ -292,9 +292,9 @@ export const GridScrollContainer = styled.div`
   overflow-x: scroll;
   overscroll-behavior-x: contain;
   z-index: 0;
-  background: ${Colors.LIGHT_GRAY5};
+  background: ${ColorsWIP.White};
   flex: 1;
-  scrollbar-color: ${Colors.GRAY2} ${Colors.LIGHT_GRAY3};
+  scrollbar-color: ${ColorsWIP.Gray500} ${ColorsWIP.Gray100};
   scrollbar-width: thin;
 
   ::-webkit-scrollbar {
@@ -308,10 +308,10 @@ export const GridScrollContainer = styled.div`
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 8px;
-    border: 2px solid ${Colors.LIGHT_GRAY3};
-    background-color: ${Colors.GRAY2};
+    border: 2px solid ${ColorsWIP.Gray100};
+    background-color: ${ColorsWIP.Gray500};
   }
   &::-webkit-scrollbar-track {
-    background-color: ${Colors.LIGHT_GRAY3};
+    background-color: ${ColorsWIP.Gray100};
   }
 `;

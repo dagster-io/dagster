@@ -5,8 +5,6 @@ from difflib import SequenceMatcher
 
 from click.testing import CliRunner
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     UPDATE_REPO_STATS,
@@ -14,7 +12,8 @@ from dagster.core.telemetry import (
     hash_name,
     log_workspace_stats,
 )
-from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
@@ -89,7 +88,7 @@ def test_dagster_telemetry_disabled(caplog):
 
 def test_dagster_telemetry_unset(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(temp_dir):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -115,7 +114,7 @@ def test_dagster_telemetry_unset(caplog):
 
 def test_repo_stats(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(temp_dir):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_name = "multi_mode_with_resources"
@@ -151,10 +150,9 @@ def test_repo_stats(caplog):
 
 def test_log_workspace_stats(caplog):
     with instance_for_test() as instance:
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
-        ) as workspace:
-            context = WorkspaceProcessContext(instance=instance, workspace=workspace)
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
+        ) as context:
             log_workspace_stats(instance, context)
 
             for record in caplog.records:

@@ -1,16 +1,18 @@
+import logging
 import threading
 from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
-from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster import check, seven
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import (
@@ -19,6 +21,7 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
+from dagster.utils import utc_datetime_from_timestamp
 
 from ..pynotify import await_pg_notifications
 from ..utils import (
@@ -73,18 +76,20 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         if self.should_autocreate_tables and "event_logs" not in table_names:
-            with self._connect() as conn:
-                alembic_config = pg_alembic_config(__file__)
-                retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
-
-                # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(alembic_config, conn)
-
-            # mark all secondary indexes to be used
-            self.reindex()
+            retry_pg_creation_fn(self._init_db)
+            self.reindex_events()
+            self.reindex_assets()
 
         super().__init__()
+
+    def _init_db(self):
+        with self._connect() as conn:
+            with conn.begin():
+                SqlEventLogStorageMetadata.create_all(conn)
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
@@ -131,9 +136,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
@@ -152,27 +157,56 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset(event)
 
     def store_asset(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
         materialization = event.dagster_event.step_materialization_data.materialization
-        with self.index_connection() as conn:
-            conn.execute(
-                db.dialects.postgresql.insert(AssetKeyTable)
-                .values(
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(materialization),
-                    last_run_id=event.run_id,
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization=serialize_dagster_namedtuple(materialization),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                        last_run_id=event.run_id,
+                        tags=seven.json.dumps(materialization.tags)
+                        if materialization.tags
+                        else None,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization=serialize_dagster_namedtuple(materialization),
+                            last_materialization_timestamp=utc_datetime_from_timestamp(
+                                event.timestamp
+                            ),
+                            last_run_id=event.run_id,
+                            tags=seven.json.dumps(materialization.tags)
+                            if materialization.tags
+                            else None,
+                        ),
+                    )
                 )
-                .on_conflict_do_update(
-                    index_elements=[AssetKeyTable.c.asset_key],
-                    set_=dict(
+
+        else:
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
                         last_materialization=serialize_dagster_namedtuple(materialization),
                         last_run_id=event.run_id,
-                    ),
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization=serialize_dagster_namedtuple(materialization),
+                            last_run_id=event.run_id,
+                        ),
+                    )
                 )
-            )
 
     def _connect(self):
         return create_pg_connection(self._engine, __file__, "event log")
@@ -200,10 +234,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
-
-    @property
-    def event_watcher(self):
-        return self._event_watcher
 
     def __del__(self):
         # Keep the inherent limitations of __del__ in Python in mind!
@@ -251,22 +281,25 @@ def watcher_thread(
             )
             try:
                 with engine.connect() as conn:
-                    # https://github.com/dagster-io/dagster/issues/3858
                     cursor_res = conn.execute(
                         db.select([SqlEventLogStorageTable.c.event]).where(
                             SqlEventLogStorageTable.c.id == index
                         ),
                     )
-                    dagster_event: EventRecord = deserialize_json_to_dagster_namedtuple(
+                    dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
                         cursor_res.scalar()
                     )
             finally:
                 engine.dispose()
 
-            with dict_lock:
-                for callback_with_cursor in handlers:
-                    if callback_with_cursor.start_cursor < index:
+            for callback_with_cursor in handlers:
+                if callback_with_cursor.start_cursor < index:
+                    try:
                         callback_with_cursor.callback(dagster_event)
+                    except Exception:  # pylint: disable=broad-except
+                        logging.exception(
+                            "Exception in callback for event watch on run %s.", run_id
+                        )
 
 
 class PostgresEventWatcher:
@@ -282,7 +315,7 @@ class PostgresEventWatcher:
         self,
         run_id: str,
         start_cursor: int,
-        callback: Callable[[EventRecord], None],
+        callback: Callable[[EventLogEntry], None],
         start_timeout=15,
     ):
         check.str_param(run_id, "run_id")
@@ -314,7 +347,7 @@ class PostgresEventWatcher:
         with self._dict_lock:
             self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventRecord], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         with self._dict_lock:

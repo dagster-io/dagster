@@ -1,24 +1,23 @@
 import pytest
 from dagster import (
     DagsterInstance,
-    InputContext,
+    DynamicOutput,
+    DynamicOutputDefinition,
     InputDefinition,
     Int,
-    ModeDefinition,
-    OutputContext,
     OutputDefinition,
     PipelineRun,
-    lambda_solid,
-    pipeline,
+    build_input_context,
+    build_output_context,
+    graph,
+    op,
     resource,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
@@ -45,29 +44,26 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, io_manager_key="io_manager"))
+def define_inty_job():
+    @op(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
-    @lambda_solid(
+    @op(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, io_manager_key="io_manager"),
+        output_defs=[DynamicOutputDefinition(Int)],
     )
     def add_one(num):
-        return num + 1
+        yield DynamicOutput(num + 1, "foo")
+        yield DynamicOutput(num + 1, "bar")
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
-            )
-        ]
-    )
+    @graph
     def basic_external_plan_execution():
         add_one(return_one())
 
-    return basic_external_plan_execution
+    return basic_external_plan_execution.to_job(
+        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
+    )
 
 
 nettest = pytest.mark.nettest
@@ -75,7 +71,7 @@ nettest = pytest.mark.nettest
 
 @nettest
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
-    pipeline_def = define_inty_pipeline()
+    job = define_inty_job()
 
     run_config = {
         "resources": {
@@ -88,21 +84,19 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     run_id = make_new_run_id()
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+    resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -110,18 +104,12 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     )
 
     assert get_step_output(return_one_step_events, "return_one")
-    step_output_handle = StepOutputHandle("return_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("return_one"),
-        upstream_output=OutputContext(
-            step_key=step_output_handle.step_key,
-            name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
+    context = build_input_context(
+        upstream_output=build_output_context(
+            step_key="return_one",
+            name="result",
             run_id=run_id,
-            solid_def=pipeline_def.solid_def_named("return_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+        )
     )
 
     io_manager = PickledObjectADLS2IOManager(
@@ -133,26 +121,21 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             pipeline_run=pipeline_run,
             run_config=run_config,
             instance=instance,
         )
     )
 
-    step_output_handle = StepOutputHandle("add_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("add_one"),
-        upstream_output=OutputContext(
-            step_key=step_output_handle.step_key,
-            name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
+    context = build_input_context(
+        upstream_output=build_output_context(
+            step_key="add_one",
+            name="result",
             run_id=run_id,
-            solid_def=pipeline_def.solid_def_named("add_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+            mapping_key="foo",
+        )
     )
 
     assert get_step_output(add_one_step_events, "add_one")

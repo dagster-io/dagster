@@ -13,7 +13,7 @@ We've seen a solid whose behavior is the same every time it runs:
 
 ```python file=/intro_tutorial/advanced/configuring_solids/download_csv.py startafter=start_download_cereals_marker endbefore=end_download_cereals_marker
 @solid
-def download_cereals(_):
+def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]

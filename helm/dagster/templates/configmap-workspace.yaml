@@ -16,9 +16,10 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   workspace.yaml: |
+    {{- $dagitWorkspace := .Values.dagit.workspace }}
+    {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
+    {{- if $deployments }}
     load_from:
-      {{- $dagitWorkspace := .Values.dagit.workspace }}
-      {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
       {{- range $deployment := $deployments }}
       {{- $deploymentHost := ternary $deployment.host $deployment.name $dagitWorkspace.enabled }}
       - grpc_server:
@@ -26,4 +27,7 @@ data:
           port: {{ $deployment.port }}
           location_name: {{ $deploymentHost }}
       {{- end }}
+    {{- else }}
+    load_from: []
+    {{- end }}
 {{- end }}

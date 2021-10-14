@@ -12,14 +12,17 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="lakehouse",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/lakehouse",
-        install_requires=["dagster"],
+        install_requires=[f"dagster{pin}"],
         packages=find_packages(exclude=["test"]),
         entry_points={"console_scripts": ["house = lakehouse.cli:main"]},
         classifiers=[

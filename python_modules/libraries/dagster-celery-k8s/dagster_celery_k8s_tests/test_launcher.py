@@ -4,9 +4,15 @@ from unittest import mock
 import pytest
 from dagster import pipeline, reconstructable
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.host_representation import InProcessRepositoryLocationOrigin, RepositoryHandle
+from dagster.core.host_representation import RepositoryHandle
+from dagster.core.launcher import LaunchRunContext
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster.core.test_utils import (
+    create_run_for_test,
+    environ,
+    in_process_test_workspace,
+    instance_for_test,
+)
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_celery_k8s.config import get_celery_engine_config
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
@@ -16,7 +22,7 @@ from dagster_celery_k8s.launcher import (
 )
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
-from dagster_test.test_project import get_test_project_external_pipeline
+from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
 
 
 def test_get_validated_celery_k8s_executor_config():
@@ -33,6 +39,8 @@ def test_get_validated_celery_k8s_executor_config():
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
+        "volume_mounts": [],
+        "volumes": [],
     }
 
     with pytest.raises(
@@ -61,6 +69,8 @@ def test_get_validated_celery_k8s_executor_config():
             "job_namespace": "default",
             "repo_location_name": "<<in_process>>",
             "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
+            "volume_mounts": [],
+            "volumes": [],
         }
 
     # Test setting all possible config fields
@@ -104,6 +114,8 @@ def test_get_validated_celery_k8s_executor_config():
                         "env_config_maps": [{"env": "TEST_PIPELINE_RUN_ENV_CONFIGMAP"}],
                         "env_secrets": [{"env": "TEST_SECRET"}],
                         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
+                        "volume_mounts": [],
+                        "volumes": [],
                     }
                 }
             }
@@ -127,6 +139,8 @@ def test_get_validated_celery_k8s_executor_config():
             "env_config_maps": ["config-pipeline-env"],
             "env_secrets": ["config-secret-env"],
             "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
+            "volume_mounts": [],
+            "volumes": [],
         }
 
 
@@ -156,22 +170,21 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     # Create fake external pipeline.
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
-    location_origin = InProcessRepositoryLocationOrigin(recon_repo)
-    with location_origin.create_location() as location:
-        location = location_origin.create_location()
-        repo_def = recon_repo.get_definition()
-        repo_handle = RepositoryHandle(
-            repository_name=repo_def.name,
-            repository_location=location,
-        )
-        fake_external_pipeline = external_pipeline_from_recon_pipeline(
-            recon_pipeline,
-            solid_selection=None,
-            repository_handle=repo_handle,
-        )
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, recon_repo) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
 
-        # Launch the run in a fake Dagster instance.
-        with instance_for_test() as instance:
+            repo_def = recon_repo.get_definition()
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
             celery_k8s_run_launcher.register_instance(instance)
             pipeline_name = "demo_pipeline"
             run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
@@ -180,19 +193,21 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 pipeline_name=pipeline_name,
                 run_config=run_config,
                 tags=tags,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
             )
-            celery_k8s_run_launcher.launch_run(run, fake_external_pipeline)
+            celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
             assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"
 
-        # Check that user defined k8s config was passed down to the k8s job.
-        mock_method_calls = mock_k8s_client_batch_api.method_calls
-        assert len(mock_method_calls) > 0
-        method_name, _args, kwargs = mock_method_calls[0]
-        assert method_name == "create_namespaced_job"
-        job_resources = kwargs["body"].spec.template.spec.containers[0].resources
-        assert job_resources == expected_resources
+            # Check that user defined k8s config was passed down to the k8s job.
+            mock_method_calls = mock_k8s_client_batch_api.method_calls
+            assert len(mock_method_calls) > 0
+            method_name, _args, kwargs = mock_method_calls[0]
+            assert method_name == "create_namespaced_job"
+            job_resources = kwargs["body"].spec.template.spec.containers[0].resources
+            assert job_resources == expected_resources
 
 
 def test_k8s_executor_config_override(kubeconfig_file):
@@ -207,20 +222,25 @@ def test_k8s_executor_config_override(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    with get_test_project_external_pipeline("demo_pipeline", "my_image:tag") as external_pipeline:
+    pipeline_name = "demo_pipeline"
 
-        # Launch the run in a fake Dagster instance.
-        with instance_for_test() as instance:
+    with instance_for_test() as instance:
+        with get_test_project_workspace_and_external_pipeline(
+            instance, pipeline_name, "my_image:tag"
+        ) as (workspace, external_pipeline):
+
+            # Launch the run in a fake Dagster instance.
             celery_k8s_run_launcher.register_instance(instance)
-            pipeline_name = "demo_pipeline"
 
             # Launch without custom job_image
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
                 run_config={"execution": {"celery-k8s": {}}},
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            celery_k8s_run_launcher.launch_run(run, external_pipeline)
+            celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
             assert updated_run.tags[DOCKER_IMAGE_TAG] == "my_image:tag"
@@ -232,8 +252,10 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 run_config={
                     "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
                 },
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            celery_k8s_run_launcher.launch_run(run, external_pipeline)
+            celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
             assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"

@@ -9,10 +9,10 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                    | Description                                                                                                           |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="execute_pipeline"  /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
-| <PyObject object="execute_solid" />     | A method to execute a single solid in an ephemeral pipeline, intended to support unit tests.                          |
+| Name                                       | Description                                                                                                           |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="execute_pipeline"     /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
+| <PyObject object="build_solid_context"  /> | A method to construct a `SolidExecutionContext`, typically to provide to the invocation of a solid for testing.       |
 
 ## Overview
 
@@ -119,19 +119,72 @@ For more information, you can check out the [Modes](/concepts/modes-resources) a
 
 ## Examples
 
-### Testing single solid execution
+### Testing solids
 
-You can execute a single solid without writing a pipeline using <PyObject object="execute_solid" />. Using this function you will a single solid in an ephemeral pipeline. You can then then test execution properties using the <PyObject object="SolidExecutionResult" /> object that it returns.
+While using the `@solid` decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
+
+Consider the following solid.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_solid_marker endbefore=end_invocation_solid_marker
+@solid
+def my_solid_to_test():
+    return 5
+```
+
+Since it has no arguments, we can invoke it directly.
 
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_marker endbefore=end_test_solid_marker
-def test_solid():
-    result = execute_solid(add_one)
+def test_solid_with_invocation():
+    assert my_solid_to_test() == 5
+```
 
-    # return type is SolidExecutionResult
-    assert isinstance(result, SolidExecutionResult)
-    assert result.success
-    # check the solid output value
-    assert result.output_value() == 2
+Consider the following solid with inputs.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_solid_inputs_marker endbefore=end_invocation_solid_inputs_marker
+@solid
+def my_solid_with_inputs(x, y):
+    return x + y
+```
+
+We can directly provide values for these inputs to the invocation.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_with_inputs_marker endbefore=end_test_solid_with_inputs_marker
+def test_inputs_solid_with_invocation():
+    assert my_solid_with_inputs(5, 6) == 11
+```
+
+If your solid requires contextual information such as resources or config, this can be provided using the <PyObject module="dagster" object="build_solid_context"/> function.
+
+Consider the following solid, which requires a resource `foo`.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_solid_requires_foo_marker endbefore=end_solid_requires_foo_marker
+@solid(required_resource_keys={"foo"})
+def solid_requires_foo(context):
+    return f"found {context.resources.foo}"
+```
+
+We construct the context using <PyObject module="dagster" object="build_solid_context"/>. Note how we can directly provide a resource instance, instead of having to create a mock resource definition.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_context_marker endbefore=end_test_solid_context_marker
+from dagster import build_solid_context
+
+
+def test_solid_with_context():
+    context = build_solid_context(resources={"foo": "bar"})
+    assert solid_requires_foo(context) == "found bar"
+```
+
+We can also provide a resource definition to <PyObject module="dagster" object="build_solid_context"/>. It does not have a `resource_config` argument, so any config should be supplied to the resource via the <PyObject module="dagster" object="ResourceDefinition" method="configured"/> API.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_resource_def_marker endbefore=end_test_resource_def_marker
+@resource(config_schema={"my_str": str})
+def my_foo_resource(context):
+    return context.resource_config["my_str"]
+
+
+def test_solid_resource_def():
+    context = build_solid_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    assert solid_requires_foo(context) == "found bar"
 ```
 
 ### Testing pipeline execution with configs

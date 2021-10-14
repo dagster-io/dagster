@@ -1,6 +1,7 @@
 import * as React from 'react';
-import ReactMarkdown from 'react-markdown';
 import styled from 'styled-components/macro';
+
+import {Markdown} from '../ui/Markdown';
 
 interface IDescriptionProps {
   description: string | null;
@@ -87,7 +88,7 @@ export class Description extends React.Component<IDescriptionProps, IDescription
         )}
 
         <div ref={this._container} style={{overflowX: 'auto'}}>
-          <ReactMarkdown source={removeLeadingSpaces(this.props.description)} />
+          <Markdown>{removeLeadingSpaces(this.props.description)}</Markdown>
         </div>
       </Container>
     );
@@ -99,7 +100,7 @@ const Container = styled.div`
   font-size: 0.8rem;
   position: relative;
   p:last-child {
-    margin-bottom: 5px;
+    margin-bottom: 0;
   }
 `;
 

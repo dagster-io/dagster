@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster_graphql.cli import ui
 
@@ -15,8 +15,8 @@ from dagster_graphql.cli import ui
 @contextmanager
 def dagster_cli_runner():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
-        with instance_for_test_tempdir(
-            dagster_home_temp,
+        with instance_for_test(
+            temp_dir=dagster_home_temp,
             overrides={
                 "run_launcher": {
                     "module": "dagster.core.launcher.sync_in_memory_run_launcher",
@@ -55,26 +55,26 @@ def test_basic_repositories():
 
 
 def test_basic_repository_locations():
-    query = "{ repositoryLocationsOrError { ... on RepositoryLocationConnection { nodes { ... on RepositoryLocation { __typename, name } ... on RepositoryLocationLoadFailure { __typename, name, error { message } } } } } }"
+    query = "{ workspaceOrError { ... on Workspace { locationEntries { __typename, name, locationOrLoadError { __typename, ... on RepositoryLocation { __typename, name } ... on PythonError { message } } } } } }"
 
     workspace_path = file_relative_path(__file__, "./cli_test_error_workspace.yaml")
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(ui, ["-w", workspace_path, "-t", query])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, str(result.exception)
 
         result_data = json.loads(result.output)
 
-        nodes = result_data["data"]["repositoryLocationsOrError"]["nodes"]
-        assert len(nodes) == 2
+        nodes = result_data["data"]["workspaceOrError"]["locationEntries"]
+        assert len(nodes) == 2, str(nodes)
 
-        assert nodes[0]["__typename"] == "RepositoryLocation"
+        assert nodes[0]["locationOrLoadError"]["__typename"] == "RepositoryLocation"
         assert nodes[0]["name"] == "test_cli_location"
 
-        assert nodes[1]["__typename"] == "RepositoryLocationLoadFailure"
+        assert nodes[1]["locationOrLoadError"]["__typename"] == "PythonError"
         assert nodes[1]["name"] == "test_cli_location_error"
-        assert "No module named" in nodes[1]["error"]["message"]
+        assert "No module named" in nodes[1]["locationOrLoadError"]["message"]
 
 
 def test_basic_variables():
@@ -292,8 +292,8 @@ def test_logs_in_start_execution_predefined():
 
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={
                 "run_launcher": {
                     "module": "dagster.core.launcher.sync_in_memory_run_launcher",

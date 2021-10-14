@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import {RunFragmentForRepositoryMatch} from '../runs/types/RunFragmentForRepositoryMatch';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
@@ -5,7 +7,7 @@ import {findRepoContainingPipeline, repoContainsPipeline} from './findRepoContai
 
 type MatchType = {
   match: DagsterRepoOption;
-  type: 'origin' | 'snapshot' | 'pipeline-name';
+  type: 'origin-and-snapshot' | 'origin-only' | 'snapshot-only' | 'pipeline-name-only';
 };
 
 /**
@@ -16,26 +18,19 @@ export const useRepositoryForRun = (
 ): MatchType | null => {
   const {options} = useRepositoryOptions();
 
-  if (!run) {
-    return null;
-  }
-
-  const pipelineName = run.pipeline.name;
-  const snapshotId = run.pipelineSnapshotId;
-
-  // Find the repository that contains the specified pipeline name and snapshot ID, if any.
-  // This is our surest repo match for this run.
-  if (pipelineName && snapshotId) {
-    const snapshotMatches = findRepoContainingPipeline(options, pipelineName, snapshotId);
-    if (snapshotMatches.length) {
-      return {match: snapshotMatches[0], type: 'snapshot'};
+  const repoMatch = React.useMemo(() => {
+    if (!run) {
+      return null;
     }
-  }
 
-  // Otherwise, try to match the pipeline name within the specified origin, if any.
-  const origin = run.repositoryOrigin;
+    const pipelineName = run.pipeline.name;
+    // Try to match the pipeline name within the specified origin, if possible.
+    const origin = run.repositoryOrigin;
 
-  if (origin) {
+    if (!origin) {
+      return null;
+    }
+
     const location = origin?.repositoryLocationName;
     const name = origin?.repositoryName;
 
@@ -44,18 +39,61 @@ export const useRepositoryForRun = (
     );
 
     // The origin repo is loaded. Verify that a pipeline with this name exists and return the match if so.
-    if (match && repoContainsPipeline(match, pipelineName)) {
-      return {match, type: 'pipeline-name'};
+    return match && repoContainsPipeline(match, pipelineName) ? match : null;
+  }, [options, run]);
+
+  const snapshotMatches = React.useMemo(() => {
+    if (!run) {
+      return null;
     }
 
-    // Could not find this pipeline within the origin repo.
+    const pipelineName = run.pipeline.name;
+    const snapshotId = run.pipelineSnapshotId;
+
+    // Find the repository that contains the specified pipeline name and snapshot ID, if any.
+    if (pipelineName && snapshotId) {
+      const snapshotMatches = findRepoContainingPipeline(options, pipelineName, snapshotId);
+      if (snapshotMatches.length) {
+        return snapshotMatches;
+      }
+    }
+
     return null;
+  }, [options, run]);
+
+  const pipelineNameMatches = React.useMemo(() => {
+    if (!run) {
+      return null;
+    }
+
+    const pipelineName = run.pipeline.name;
+
+    // There is no origin repo. Find any repos that might contain a matching pipeline name.
+    const possibleMatches = findRepoContainingPipeline(options, pipelineName);
+    return possibleMatches.length ? possibleMatches : null;
+  }, [options, run]);
+
+  if (repoMatch) {
+    if (snapshotMatches) {
+      const repoAndSnapshotMatch = snapshotMatches.find(
+        (repoOption) =>
+          repoOption.repository.name === repoMatch.repository.name &&
+          repoOption.repositoryLocation.name === repoMatch.repositoryLocation.name,
+      );
+      if (repoAndSnapshotMatch) {
+        return {match: repoAndSnapshotMatch, type: 'origin-and-snapshot'};
+      }
+    }
+
+    return {match: repoMatch, type: 'origin-only'};
   }
 
-  // There is no origin repo. Fall back to the first pipeline name match.
-  const possibleMatches = findRepoContainingPipeline(options, pipelineName);
-  if (possibleMatches.length) {
-    return {match: possibleMatches[0], type: 'pipeline-name'};
+  if (snapshotMatches) {
+    return {match: snapshotMatches[0], type: 'snapshot-only'};
+  }
+
+  if (pipelineNameMatches) {
+    return {match: pipelineNameMatches[0], type: 'pipeline-name-only'};
   }
 
   return null;

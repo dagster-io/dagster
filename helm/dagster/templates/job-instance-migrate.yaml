@@ -16,7 +16,7 @@ spec:
         - name: dagster-instance-migrate
           securityContext: {{ .Values.dagit.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: {{ include "image.name" .Values.dagit.image | quote }}
+          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagit.image) | quote }}
           command: ["dagster"]
           args: ["instance", "migrate"]
           env:

@@ -20,7 +20,7 @@ def other_foo_pipeline():
     pipeline_name="foo_pipeline",
     cron_schedule="*/1 * * * *",
 )
-def always_run_schedule(_context):
+def always_run_schedule():
     return {}
 
 

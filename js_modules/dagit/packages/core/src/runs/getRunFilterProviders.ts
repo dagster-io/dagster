@@ -21,5 +21,5 @@ export const getRunFilterProviders = memoize(
       },
     ];
   },
-  (stepNames: string[]) => JSON.stringify(stepNames),
+  (stepNames: string[] = []) => JSON.stringify(stepNames),
 );

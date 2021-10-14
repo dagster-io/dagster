@@ -11,6 +11,22 @@ metadata:
     {{- end }}
 spec:
   # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  tls:
+    {{- if .Values.ingress.dagit.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.dagit.host }}
+      secretName: {{ .Values.ingress.dagit.tls.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.readOnlyDagit.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.readOnlyDagit.host }}
+      secretName: {{ .Values.ingress.readOnlyDagit.tls.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.flower.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.flower.host }}
+      secretName: {{ .Values.ingress.flower.tls.secretName }}
+    {{- end }}
   rules:
     - host: {{ .Values.ingress.dagit.host }}
       http:
@@ -21,7 +37,7 @@ spec:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
-          - path: "/*"
+          - path: {{ .Values.ingress.dagit.path | default "/*" }}
             backend:
               serviceName: {{ include "dagster.dagit.fullname" . }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
@@ -31,6 +47,27 @@ spec:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
+    {{- if .Values.dagit.enableReadOnly }}
+    - host: {{ .Values.ingress.readOnlyDagit.host }}
+      http:
+        paths:
+          {{- range .Values.ingress.readOnlyDagit.precedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+          - path: {{ .Values.ingress.readOnlyDagit.path | default "/*" }}
+            backend:
+              serviceName: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
+              servicePort: {{ .Values.dagit.service.port | default 80 }}
+          {{- range .Values.ingress.readOnlyDagit.succeedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+    {{end}}
     {{- if .Values.flower.enabled }}
     - host: {{ .Values.ingress.flower.host }}
       http:

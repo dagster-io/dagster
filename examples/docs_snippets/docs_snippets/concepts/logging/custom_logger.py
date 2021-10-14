@@ -1,3 +1,4 @@
+"""isort:skip_file"""
 import json
 import logging
 
@@ -43,3 +44,26 @@ def demo_pipeline():
 
 
 # end_custom_logger_marker_0
+
+# start_custom_logger_testing
+
+
+def test_init_json_console_logger():
+    logger_ = json_console_logger(None)
+    assert logger_.level == 20
+    assert logger_.name == "dagster"
+
+
+# end_custom_logger_testing
+
+# start_custom_logger_testing_context
+from dagster import build_init_logger_context
+
+
+def test_init_json_console_logger_with_context():
+    logger_ = json_console_logger(build_init_logger_context(logger_config={"name": "my_logger"}))
+    assert logger_.level == 20
+    assert logger_.name == "my_logger"
+
+
+# end_custom_logger_testing_context

@@ -1,34 +1,34 @@
 import pandas as pd
-from dagster import InputDefinition, execute_pipeline, file_relative_path, lambda_solid, pipeline
+from dagster import DagsterEventType, In, file_relative_path, graph, op
 from dagster_pandas import DataFrame
 
 
 def test_basic_pd_df_metadata():
-    @lambda_solid
+    @op
     def return_num_csv():
         return pd.read_csv(file_relative_path(__file__, "num.csv"))
 
-    @lambda_solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def noop(df):
         return df
 
-    @pipeline
-    def pipe():
+    @graph
+    def basic_graph():
         noop(return_num_csv())
 
-    result = execute_pipeline(pipe)
+    result = basic_graph.execute_in_process()
 
     assert result.success
 
-    solid_result = result.result_for_solid("noop")
+    op_events = result.events_for_node("noop")
 
-    input_event_dict = solid_result.compute_input_event_dict
+    input_events = [event for event in op_events if event.event_type == DagsterEventType.STEP_INPUT]
+    assert len(input_events) == 1
+    input_event = input_events[0]
 
-    assert len(input_event_dict) == 1
+    assert input_event.step_input_data.input_name == "df"
 
-    df_input_event = input_event_dict["df"]
-
-    metadata_entries = df_input_event.event_specific_data.type_check_data.metadata_entries
+    metadata_entries = input_event.step_input_data.type_check_data.metadata_entries
 
     assert metadata_entries[0].label == "row_count"
     assert metadata_entries[0].entry_data.text == "2"

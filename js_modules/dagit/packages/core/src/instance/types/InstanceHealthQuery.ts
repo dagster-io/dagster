@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: InstanceHealthQuery
 // ====================================================
@@ -24,7 +26,7 @@ export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_las
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
@@ -42,7 +44,13 @@ export interface InstanceHealthQuery_instance {
   daemonHealth: InstanceHealthQuery_instance_daemonHealth;
 }
 
-export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation {
+export interface InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_displayMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {
   __typename: "RepositoryLocation";
   id: string;
   isReloadSupported: boolean;
@@ -50,41 +58,44 @@ export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocati
   name: string;
 }
 
-export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error {
+export interface InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
 }
 
-export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
-  __typename: "RepositoryLocationLoadFailure";
+export type InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
+
+export interface InstanceHealthQuery_workspaceOrError_Workspace_locationEntries {
+  __typename: "WorkspaceLocationEntry";
   id: string;
   name: string;
-  error: InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
+  displayMetadata: InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_displayMetadata[];
+  updatedTimestamp: number;
+  locationOrLoadError: InstanceHealthQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError | null;
 }
 
-export type InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
-
-export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection {
-  __typename: "RepositoryLocationConnection";
-  nodes: InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes[];
+export interface InstanceHealthQuery_workspaceOrError_Workspace {
+  __typename: "Workspace";
+  locationEntries: InstanceHealthQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface InstanceHealthQuery_repositoryLocationsOrError_PythonError_cause {
+export interface InstanceHealthQuery_workspaceOrError_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceHealthQuery_repositoryLocationsOrError_PythonError {
+export interface InstanceHealthQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceHealthQuery_repositoryLocationsOrError_PythonError_cause | null;
+  cause: InstanceHealthQuery_workspaceOrError_PythonError_cause | null;
 }
 
-export type InstanceHealthQuery_repositoryLocationsOrError = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection | InstanceHealthQuery_repositoryLocationsOrError_PythonError;
+export type InstanceHealthQuery_workspaceOrError = InstanceHealthQuery_workspaceOrError_Workspace | InstanceHealthQuery_workspaceOrError_PythonError;
 
 export interface InstanceHealthQuery {
   instance: InstanceHealthQuery_instance;
-  repositoryLocationsOrError: InstanceHealthQuery_repositoryLocationsOrError;
+  workspaceOrError: InstanceHealthQuery_workspaceOrError;
 }

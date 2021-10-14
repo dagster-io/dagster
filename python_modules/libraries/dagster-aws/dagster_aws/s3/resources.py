@@ -26,35 +26,44 @@ S3_SESSION_CONFIG = {
         is_required=False,
         default_value=5,
     ),
+    "profile_name": Field(
+        str,
+        description="Specifies a profile to connect that session",
+        is_required=False,
+    ),
 }
 
 
 @resource(S3_SESSION_CONFIG)
 def s3_resource(context):
-    """Resource that gives solids access to S3.
+    """Resource that gives access to S3.
 
-    The underlying S3 session is created by calling :py:func:`boto3.resource('s3') <boto3:boto3.resource>`.
+    The underlying S3 session is created by calling
+    :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
     The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
-    available to your solids.
+    available to your ops.
 
     Example:
 
         .. code-block:: python
 
-            from dagster import ModeDefinition, execute_solid, solid
+            from dagster import build_op_context, job, op
             from dagster_aws.s3 import s3_resource
 
-            @solid(required_resource_keys={'s3'})
-            def example_s3_solid(context):
+            @op(required_resource_keys={'s3'})
+            def example_s3_op(context):
                 return context.resources.s3.list_objects_v2(
                     Bucket='my-bucket',
                     Prefix='some-key'
                 )
 
-            result = execute_solid(
-                example_s3_solid,
+            @job(resource_defs={'s3': s3_resource})
+            def example_job(context):
+                example_s3_op()
+
+            example_job.execute_in_process(
                 run_config={
                     'resources': {
                         's3': {
@@ -63,11 +72,10 @@ def s3_resource(context):
                             }
                         }
                     }
-                },
-                mode_def=ModeDefinition(resource_defs={'s3': s3_resource}),
+                }
             )
 
-    Note that your solids must also declare that they require this resource with
+    Note that your ops must also declare that they require this resource with
     `required_resource_keys`, or it will not be initialized for the execution of their compute
     functions.
 
@@ -85,12 +93,17 @@ def s3_resource(context):
               # Optional[bool]: Specifies whether to use an unsigned S3 session. Default: True
               endpoint_url: "http://localhost"
               # Optional[str]: Specifies a custom endpoint for the S3 session. Default is None.
+              profile_name: "dev"
+              # Optional[str]: Specifies a custom profile for S3 session. Default is default
+              # profile as specified in ~/.aws/credentials file
+
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
         region_name=context.resource_config.get("region_name"),
         endpoint_url=context.resource_config.get("endpoint_url"),
         use_unsigned_session=context.resource_config["use_unsigned_session"],
+        profile_name=context.resource_config.get("profile_name"),
     )
 
 
@@ -114,6 +127,7 @@ def s3_file_manager(context):
             region_name=context.resource_config.get("region_name"),
             endpoint_url=context.resource_config.get("endpoint_url"),
             use_unsigned_session=context.resource_config["use_unsigned_session"],
+            profile_name=context.resource_config.get("profile_name"),
         ),
         s3_bucket=context.resource_config["s3_bucket"],
         s3_base_key=context.resource_config["s3_prefix"],

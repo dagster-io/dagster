@@ -1,10 +1,13 @@
-import {Colors, Icon, Text} from '@blueprintjs/core';
+import {Text} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {titleOfIO} from '../app/Util';
-import {SolidColumn} from '../runs/LogsRowComponents';
+import {titleOfIO} from '../app/titleOfIO';
+import {SolidColumn, SolidColumnContainer} from '../runs/LogsRowComponents';
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Code} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 
@@ -27,7 +30,7 @@ export type SolidMappingTable = {
 export const ShowAllButton = styled.button`
   background: transparent;
   border: none;
-  color: ${Colors.BLUE3};
+  color: ${ColorsWIP.Blue500};
   text-decoration: underline;
   padding-top: 10px;
   font-size: 0.9rem;
@@ -61,7 +64,7 @@ export const Invocation = (props: {
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{color: Colors.BLUE1}}>{pipelineName}</div>}
+      {pipelineName && <div style={{color: ColorsWIP.Blue700}}>{pipelineName}</div>}
       <SolidColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
@@ -80,8 +83,10 @@ export const DependencyRow = ({
     <tr>
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
-        {isDynamic && <Icon icon="asterisk" iconSize={12} color={Colors.GRAY1} />}
-        <Icon icon="arrow-right" iconSize={12} color={Colors.GRAY1} />
+        <Group direction="row" spacing={2} alignItems="center">
+          {isDynamic && <IconWIP name="op_dynamic" color={ColorsWIP.Gray700} />}
+          <IconWIP name="arrow_forward" color={ColorsWIP.Gray700} />
+        </Group>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <SolidLink {...to} />}</Cell>
     </tr>
@@ -103,7 +108,7 @@ export const DependencyHeaderRow: React.FunctionComponent<DependencyHeaderRowPro
 );
 
 export const ResourceHeader = styled(SectionHeader)`
-  font-size: 13px;
+  font-size: 14px;
 `;
 
 const Cell = styled.td`
@@ -117,13 +122,11 @@ const Cell = styled.td`
 export const ResourceContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  padding-top: 15px;
-  & .bp3-icon {
-    padding-top: 7px;
-    padding-right: 10px;
+  & h4 {
+    margin-top: 0;
   }
-  &:first-child {
-    padding-top: 0;
+  & ${IconWrapper} {
+    margin-right: 8px;
   }
 `;
 
@@ -133,19 +136,26 @@ export const DependencyTable = styled.table`
 
 const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
 `;
 
 const InvocationContainer = styled.div`
-  margin: 0 -10px;
-  padding: 10px;
-  pointer: default;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+
   &:last-child {
     border-bottom: none;
   }
+
   &:hover {
-    background: ${Colors.LIGHT_GRAY5};
+    background: ${ColorsWIP.Gray50};
   }
+
   font-family: ${FontFamily.monospace};
+
+  ${SolidColumnContainer} {
+    margin-left: -12px;
+  }
 `;

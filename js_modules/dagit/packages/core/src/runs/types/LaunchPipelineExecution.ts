@@ -11,7 +11,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LaunchPipelineExecution_launchPipelineExecution_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run {

@@ -44,7 +44,6 @@ TELEMETRY_VERSION = "0.2"
 
 # start_TELEMETRY_WHITELISTED_FUNCTIONS
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "_launch_scheduled_executions",
     "_logged_execute_pipeline",
     "execute_execute_command",
     "execute_launch_command",
@@ -404,14 +403,16 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
 
 
 def log_workspace_stats(instance, workspace_process_context):
-    from dagster.cli.workspace import WorkspaceProcessContext
+    from dagster.core.workspace import IWorkspaceProcessContext
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(
-        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+        workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
     )
 
-    for repo_location in workspace_process_context.repository_locations:
+    request_context = workspace_process_context.create_request_context()
+
+    for repo_location in request_context.repository_locations:
         for external_repo in repo_location.get_repositories().values():
             log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
 

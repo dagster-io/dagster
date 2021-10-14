@@ -1,19 +1,19 @@
 import re
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Union
 
 from dagster import check
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
+class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle)])):
     """A reference to an ExecutionStep that was determined statically"""
 
-    def __new__(cls, solid_handle: Optional[SolidHandle]):
+    def __new__(cls, solid_handle: NodeHandle):
         return super(StepHandle, cls).__new__(
             cls,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
         )
 
     def to_key(self) -> str:
@@ -25,25 +25,25 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
     ) -> Union["StepHandle", "ResolvedFromDynamicStepHandle", "UnresolvedStepHandle"]:
         unresolved_match = re.match(r"(.*)\[\?\]", string)
         if unresolved_match:
-            return UnresolvedStepHandle(SolidHandle.from_string(unresolved_match.group(1)))
+            return UnresolvedStepHandle(NodeHandle.from_string(unresolved_match.group(1)))
 
         resolved_match = re.match(r"(.*)\[(.*)\]", string)
         if resolved_match:
             return ResolvedFromDynamicStepHandle(
-                SolidHandle.from_string(resolved_match.group(1)), resolved_match.group(2)
+                NodeHandle.from_string(resolved_match.group(1)), resolved_match.group(2)
             )
 
-        return StepHandle(SolidHandle.from_string(string))
+        return StepHandle(NodeHandle.from_string(string))
 
 
 @whitelist_for_serdes
-class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", SolidHandle)])):
+class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", NodeHandle)])):
     """A reference to an UnresolvedMappedExecutionStep in an execution"""
 
-    def __new__(cls, solid_handle: Optional[SolidHandle]):
+    def __new__(cls, solid_handle: NodeHandle):
         return super(UnresolvedStepHandle, cls).__new__(
             cls,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
         )
 
     def to_key(self):
@@ -56,7 +56,7 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle",
 @whitelist_for_serdes
 class ResolvedFromDynamicStepHandle(
     NamedTuple(
-        "_ResolvedFromDynamicStepHandle", [("solid_handle", SolidHandle), ("mapping_key", str)]
+        "_ResolvedFromDynamicStepHandle", [("solid_handle", NodeHandle), ("mapping_key", str)]
     )
 ):
     """
@@ -65,10 +65,10 @@ class ResolvedFromDynamicStepHandle(
     completed successfully.
     """
 
-    def __new__(cls, solid_handle: Optional[SolidHandle], mapping_key: str):
+    def __new__(cls, solid_handle: NodeHandle, mapping_key: str):
         return super(ResolvedFromDynamicStepHandle, cls).__new__(
             cls,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),
         )
 

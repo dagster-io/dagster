@@ -1,12 +1,14 @@
-import {Colors, Icon, Overlay} from '@blueprintjs/core';
+import {Overlay} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
@@ -56,13 +58,11 @@ const initialState: State = {
   loaded: false,
 };
 
-export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder: string}> = ({
-  theme,
-  searchPlaceholder,
-}) => {
+export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
   const location = useLocation();
   const history = useHistory();
   const {loading, performSearch} = useRepoSearch();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
@@ -137,31 +137,47 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
         shortcutLabel="/"
         shortcutFilter={(e) => e.key === '/'}
       >
-        <SearchTrigger onClick={openSearch} $theme={theme}>
+        <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Group direction="row" alignItems="center" spacing={8}>
-              <Icon icon="search" iconSize={16} color={Colors.GRAY3} style={{display: 'block'}} />
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <div
+                style={{
+                  background: ColorsWIP.Gray900,
+                  borderRadius: '12px',
+                  height: '24px',
+                  width: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <IconWIP name="search" color={ColorsWIP.Gray50} />
+              </div>
               <Placeholder>{searchPlaceholder}</Placeholder>
-              <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
-            </Group>
+            </Box>
+            <SlashShortcut>{'/'}</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: 'rgba(0, 0, 0, .35)'}}}
+        backdropProps={{style: {backgroundColor: ColorsWIP.WashGray}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <Icon icon="search" iconSize={18} color={Colors.LIGHT_GRAY3} />
+            <IconWIP name="search" color={ColorsWIP.Gray200} size={20} />
             <SearchInput
               autoFocus
               spellCheck={false}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder="Search pipelines, schedules, sensors…"
+              placeholder={
+                flagPipelineModeTuples
+                  ? 'Search jobs, schedules, sensors…'
+                  : 'Search pipelines, schedules, sensors…'
+              }
               type="text"
               value={queryString}
             />
@@ -179,25 +195,21 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
   );
 };
 
-SearchDialog.defaultProps = {
-  theme: 'light',
-};
-
-const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY1)};
+const SearchTrigger = styled.button`
+  background-color: ${ColorsWIP.Gray800};
+  border-radius: 24px;
   border: none;
-  color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.GRAY4)};
-  font-size: 15px;
-  font-weight: 400;
+  color: ${ColorsWIP.Gray50};
+  font-size: 14px;
   cursor: pointer;
-  padding: ${({$theme}) => ($theme === 'light' ? '6px 6px 6px 10px' : '4px 6px 4px 20px')};
+  padding: 4px 16px 4px 4px;
   outline: none;
   user-select: none;
-  width: 100%;
-  height: 100%;
+  width: 188px;
+  height: 32px;
 
   :focus {
-    border-color: ${({$theme}) => ($theme === 'light' ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    border-color: ${ColorsWIP.Gray100};
   }
 `;
 
@@ -207,7 +219,7 @@ const Placeholder = styled.div`
 `;
 
 const Container = styled.div`
-  background-color: ${Colors.WHITE};
+  background-color: ${ColorsWIP.White};
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
@@ -224,30 +236,30 @@ interface SearchBoxProps {
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
   border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.LIGHT_GRAY2}` : 'none'};
+    hasQueryString ? `1px solid ${ColorsWIP.Gray100}` : 'none'};
   display: flex;
   padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
   border: none;
-  color: ${Colors.GRAY1};
+  color: ${ColorsWIP.Gray600};
   font-family: ${FontFamily.default};
   font-size: 18px;
-  margin-left: 8px;
+  margin-left: 4px;
   outline: none;
   width: 100%;
 
   &::placeholder {
-    color: ${Colors.GRAY5};
+    color: ${ColorsWIP.Gray200};
   }
 `;
 
-const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
+const SlashShortcut = styled.div`
+  background-color: ${ColorsWIP.Gray700};
   border-radius: 3px;
-  color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
-  font-size: 10px;
+  color: ${ColorsWIP.Gray100};
+  font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;
 `;

@@ -11,7 +11,7 @@ The Dagster type system helps you describe what kind of values your solids accep
 
 | Name                                                                           | Description                                                                 |
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| <PyObject module="dagster" object="DagsterType" />                             | Base class for dagster types.                                               |
+| <PyObject module="dagster" object="DagsterType" />                             | Class for dagster types.                                                    |
 | <PyObject module="dagster" object="PythonObjectDagsterType" />                 | A class for defining a Dagster Type whose typecheck is an isinstance check. |
 | <PyObject module="dagster" object="check_dagster_type" />                      | The method to test a custom Dagster Type.                                   |
 | <PyObject module="dagster" object="usable_as_dagster_type" decorator />        | A decorator to define how a Python class is used as a Dagster Type.         |
@@ -19,7 +19,7 @@ The Dagster type system helps you describe what kind of values your solids accep
 
 ## Overview
 
-Each solid input and output can be annotated with a Dagster Type.
+Each solid input and output can be given a Dagster Type.
 
 The type system:
 
@@ -28,6 +28,12 @@ The type system:
 - Happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects. When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed. When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
 
 - Is complimentary to the [PEP 484](https://www.python.org/dev/peps/pep-0484/) Python type system. PEP 484 annotations enable static checks that verify variables and return values match particular Python types, while the Dagster type system enables runtime checks that include arbitrary validation logic.
+
+### DagsterTypes vs Python Types (mypy type-checking)
+
+You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate solid bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
+
+You can see an example of this pattern [below](#using-dagster-types-with-pep-484-type-annotations).
 
 ---
 
@@ -49,7 +55,7 @@ Once created, types can be attached to solid <PyObject module="dagster" object="
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even(_, num):
+def double_even(num):
     return num
 ```
 
@@ -69,7 +75,8 @@ class MyClass:
     pass
 
 
-def my_solid(_) -> MyClass:
+@solid
+def my_solid() -> MyClass:
     return MyClass()
 ```
 
@@ -129,7 +136,7 @@ Dagster types peacefully coexist with Python type annotations. In this example, 
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even_with_annotations(_, num: int) -> int:
+def double_even_with_annotations(num: int) -> int:
     return num
 ```
 
@@ -148,7 +155,7 @@ There are two APIs:
 - <PyObject module="dagster" object="make_python_type_usable_as_dagster_type" /> for
   mapping existing classes.
 
-This is designed for importing python types libraries that cannot be altered and mapping them to Dagster types.
+This is designed for importing python types libraries that cannot be altered and mapping them to Dagster types. Note that in the following examples, python types are being used in the annotations, not the corresponding `DagsterType`s
 
 #### Decorating class declarations
 
@@ -164,7 +171,7 @@ class EvenType:
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
 
@@ -186,7 +193,7 @@ make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
 

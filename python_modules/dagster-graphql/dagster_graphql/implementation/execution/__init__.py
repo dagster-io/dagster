@@ -6,16 +6,15 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from ..external import (
-    ExternalPipeline,
-    ensure_valid_config,
-    ensure_valid_step_keys,
-    get_external_pipeline_or_raise,
-)
+from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error
-from .backfill import cancel_partition_backfill, create_and_launch_partition_backfill
+from .backfill import (
+    cancel_partition_backfill,
+    create_and_launch_partition_backfill,
+    resume_partition_backfill,
+)
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
 
 
@@ -137,15 +136,18 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
+    def _handle_events(payload):
+        events, loading_past = payload
+        return GraphenePipelineRunLogsSubscriptionSuccess(
+            run=GraphenePipelineRun(run),
+            messages=[from_event_record(event, run.pipeline_name) for event in events],
+            hasMorePastEvents=loading_past,
+        )
+
     # pylint: disable=E1101
     return Observable.create(
         PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(
-        lambda events: GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GraphenePipelineRun(run),
-            messages=[from_event_record(event, run.pipeline_name) for event in events],
-        )
-    )
+    ).map(_handle_events)
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):

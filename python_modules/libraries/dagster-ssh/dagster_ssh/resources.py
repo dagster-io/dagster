@@ -252,5 +252,5 @@ class SSHResource:
 )
 def ssh_resource(init_context):
     args = init_context.resource_config
-    args = merge_dicts(init_context.resource_config, {"logger": init_context.log_manager})
+    args = merge_dicts(init_context.resource_config, {"logger": init_context.log})
     return SSHResource(**args)

@@ -3,11 +3,11 @@ import React, {useState} from 'react';
 
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
-import {GanttChart} from './GanttChart';
+import {GanttChart, GanttChartLoadingState} from './GanttChart';
 
 const R1_START = 1619468000;
 const R2_START = 1619468000 + 30000;
@@ -372,17 +372,16 @@ export default {
     graph: {control: {disable: true}},
     selection: {control: {disable: true}},
     toolbarActions: {control: {disable: true}},
-    toolbarLeftActions: {control: {disable: true}},
   },
 } as Meta;
 
 export const EmptyStateCase = () => {
   return (
-    <ApolloTestProvider mocks={APOLLO_MOCKS}>
+    <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
       <div style={{width: '100%', height: 400}}>
-        <GanttChart.LoadingState runId={'r2'} />
+        <GanttChartLoadingState runId={'r2'} />
       </div>
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };
 
@@ -392,7 +391,7 @@ export const InteractiveCase = (argValues: any) => {
 
   const metadata = extractMetadataFromLogs(LOGS.slice(0, argValues.progress));
   return (
-    <ApolloTestProvider mocks={APOLLO_MOCKS}>
+    <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
       <div style={{width: '100%', height: 400}}>
         <GanttChart
           key={metadata.mostRecentLogAt}
@@ -409,6 +408,6 @@ export const InteractiveCase = (argValues: any) => {
           onSetSelection={setSelectionQuery}
         />
       </div>
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };

@@ -19,11 +19,7 @@ from dagster import (
 from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import (
-    create_run_for_test,
-    instance_for_test,
-    instance_for_test_tempdir,
-)
+from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.seven import multiprocessing
 from dagster.utils import ensure_dir, touch_file
 
@@ -306,9 +302,9 @@ def test_single():
 )
 def test_compute_log_base_with_spaces():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
-            {
+        with instance_for_test(
+            temp_dir=temp_dir,
+            overrides={
                 "compute_logs": {
                     "module": "dagster.core.storage.local_compute_log_manager",
                     "class": "LocalComputeLogManager",

@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-dask",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -30,7 +33,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["test"]),
         install_requires=[
             "bokeh",
-            "dagster",
+            f"dagster{pin}",
             "dask[dataframe]>=1.2.2",
             "distributed>=1.28.1",
             # resolve issue with aiohttp pin of chardet for aiohttp<=3.7.3, req'd by dask-kubernetes

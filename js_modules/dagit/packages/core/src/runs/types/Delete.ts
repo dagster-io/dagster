@@ -17,12 +17,17 @@ export interface Delete_deletePipelineRun_PythonError {
   message: string;
 }
 
+export interface Delete_deletePipelineRun_UnauthorizedError {
+  __typename: "UnauthorizedError";
+  message: string;
+}
+
 export interface Delete_deletePipelineRun_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError";
   message: string;
 }
 
-export type Delete_deletePipelineRun = Delete_deletePipelineRun_DeletePipelineRunSuccess | Delete_deletePipelineRun_PythonError | Delete_deletePipelineRun_PipelineRunNotFoundError;
+export type Delete_deletePipelineRun = Delete_deletePipelineRun_DeletePipelineRunSuccess | Delete_deletePipelineRun_PythonError | Delete_deletePipelineRun_UnauthorizedError | Delete_deletePipelineRun_PipelineRunNotFoundError;
 
 export interface Delete {
   deletePipelineRun: Delete_deletePipelineRun;

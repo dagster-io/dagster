@@ -12,13 +12,16 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-azure",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for Azure-specific Dagster framework solid and resource components.",
+        description="Package for Azure-specific Dagster framework op and resource components.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure",
         classifiers=[
             "Programming Language :: Python :: 3.6",
@@ -32,7 +35,7 @@ if __name__ == "__main__":
         install_requires=[
             "azure-storage-blob~=12.3.0",
             "azure-storage-file-datalake~=12.0.1",
-            "dagster",
+            f"dagster{pin}",
         ],
         entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
         zip_safe=False,

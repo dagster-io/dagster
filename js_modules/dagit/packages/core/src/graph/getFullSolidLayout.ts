@@ -1,7 +1,7 @@
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker';
+import memoize from 'lodash/memoize';
+import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker.ts';
 
-import {asyncMemoize, memoize} from '../app/Util';
+import {asyncMemoize} from '../app/Util';
 
 import {ILayoutSolid, layoutPipeline} from './layout';
 
@@ -21,7 +21,7 @@ export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
   return new Promise((resolve) => {
     const worker = new LayoutWorker();
-    worker.addEventListener('message', function (event) {
+    worker.addEventListener('message', (event) => {
       resolve(event.data);
       worker.terminate();
     });

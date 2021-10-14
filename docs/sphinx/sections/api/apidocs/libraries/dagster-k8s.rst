@@ -13,9 +13,8 @@ APIs
 
 .. autoclass:: K8sRunLauncher
 
-.. currentmodule:: dagster_k8s
-
-.. autoclass:: K8sScheduler
+.. autodata:: k8s_job_executor
+  :annotation: ExecutorDefinition
 
 
 Python API

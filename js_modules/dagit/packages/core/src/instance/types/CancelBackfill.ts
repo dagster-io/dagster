@@ -8,6 +8,10 @@
 // GraphQL mutation operation: CancelBackfill
 // ====================================================
 
+export interface CancelBackfill_cancelPartitionBackfill_UnauthorizedError {
+  __typename: "UnauthorizedError";
+}
+
 export interface CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess {
   __typename: "CancelBackfillSuccess";
   backfillId: string;
@@ -18,7 +22,7 @@ export interface CancelBackfill_cancelPartitionBackfill_PythonError {
   message: string;
 }
 
-export type CancelBackfill_cancelPartitionBackfill = CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess | CancelBackfill_cancelPartitionBackfill_PythonError;
+export type CancelBackfill_cancelPartitionBackfill = CancelBackfill_cancelPartitionBackfill_UnauthorizedError | CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess | CancelBackfill_cancelPartitionBackfill_PythonError;
 
 export interface CancelBackfill {
   cancelPartitionBackfill: CancelBackfill_cancelPartitionBackfill;

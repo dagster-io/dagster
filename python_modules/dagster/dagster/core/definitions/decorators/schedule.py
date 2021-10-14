@@ -1,10 +1,15 @@
 import datetime
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
+from functools import update_wrapper
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
-import pendulum
 from dagster import check
-from dagster.core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
+from dagster.core.definitions.partition import (
+    PartitionScheduleDefinition,
+    PartitionSetDefinition,
+    ScheduleTimeBasedPartitionsDefinition,
+    ScheduleType,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
@@ -12,14 +17,15 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
     create_offset_partition_selector,
-    schedule_partition_range,
 )
 
+from ..graph import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
+from ..pipeline import PipelineDefinition
 from ..schedule import ScheduleDefinition
 
 if TYPE_CHECKING:
-    from dagster import ScheduleExecutionContext, Partition
+    from dagster import ScheduleEvaluationContext, Partition
 
 # Error messages are long
 # pylint: disable=C0301
@@ -27,22 +33,23 @@ if TYPE_CHECKING:
 
 def schedule(
     cron_schedule: str,
-    pipeline_name: str,
+    pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    tags_fn: Optional[Callable[["ScheduleExecutionContext"], Optional[Dict[str, str]]]] = None,
+    tags_fn: Optional[Callable[["ScheduleEvaluationContext"], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
-) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
+    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+) -> Callable[[Callable[["ScheduleEvaluationContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    :py:class:`~dagster.ScheduleEvaluationContext` as its only argument, returning the run config
     for the scheduled execution.
 
     Args:
@@ -52,31 +59,33 @@ def schedule(
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
+        tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A function
             that generates tags to attach to the schedules runs. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
+        should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[Union[PipelineDefinition, GraphDefinition]]): Experimental
     """
 
-    def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[["ScheduleEvaluationContext"], Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        return ScheduleDefinition(
+        schedule_def = ScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
@@ -89,13 +98,18 @@ def schedule(
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
             description=description,
+            job=job,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+
+        return schedule_def
 
     return inner
 
 
 def monthly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
@@ -103,7 +117,7 @@ def monthly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -134,16 +148,17 @@ def monthly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_months_offset (Optional[int]): How many months back to go when choosing the partition
             for a given schedule execution. For example, when partition_months_offset=1, the schedule
             that executes during month N will fill in the partition for month N-1.
@@ -158,7 +173,7 @@ def monthly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -193,28 +208,6 @@ def my_schedule_definition(_):
             "between 1 and 31".format(execution_day_of_month)
         )
 
-    cron_schedule = "{minute} {hour} {day} * *".format(
-        minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
-    )
-
-    fmt = DEFAULT_MONTHLY_FORMAT
-
-    execution_time_to_partition_fn = (
-        lambda d: pendulum.instance(d)
-        .replace(hour=0, minute=0)
-        .subtract(months=partition_months_offset, days=execution_day_of_month - 1)
-    )
-
-    partition_fn = schedule_partition_range(
-        start_date,
-        end=end_date,
-        cron_schedule=cron_schedule,
-        fmt=fmt,
-        timezone=execution_timezone,
-        execution_time_to_partition_fn=execution_time_to_partition_fn,
-        inclusive=(partition_months_offset == 0),
-    )
-
     def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
@@ -229,33 +222,50 @@ def my_schedule_definition(_):
             )
             tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
+        fmt = DEFAULT_MONTHLY_FORMAT
+
+        partitions_def = ScheduleTimeBasedPartitionsDefinition(
+            schedule_type=ScheduleType.MONTHLY,
+            start=start_date,
+            execution_day=execution_day_of_month,
+            execution_time=execution_time,
+            end=end_date,
+            fmt=fmt,
+            timezone=execution_timezone,
+            offset=partition_months_offset,
+        )
+
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
-            pipeline_name=pipeline_name,
-            partition_fn=partition_fn,
+            pipeline_name=pipeline_name,  # type: ignore[arg-type]
             run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
+            partitions_def=partitions_def,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
-            cron_schedule,
+            partitions_def.get_cron_schedule(),
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_offset_partition_selector(
-                execution_time_to_partition_fn=execution_time_to_partition_fn
+                execution_time_to_partition_fn=partitions_def.get_execution_time_to_partition_fn()
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
+        update_wrapper(schedule_def, wrapped=fn)
+
+        return schedule_def
 
     return inner
 
 
 def weekly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
@@ -263,7 +273,7 @@ def weekly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -293,16 +303,17 @@ def weekly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_weeks_offset (Optional[int]): How many weeks back to go when choosing the partition
             for a given schedule execution. For example, when partition_weeks_offset=1, the schedule
             that executes during week N will fill in the partition for week N-1.
@@ -317,7 +328,7 @@ def weekly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -347,30 +358,6 @@ def my_schedule_definition(_):
             "between 0 [Sunday] and 6 [Saturday]".format(execution_day_of_week)
         )
 
-    cron_schedule = "{minute} {hour} * * {day}".format(
-        minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
-    )
-
-    fmt = DEFAULT_DATE_FORMAT
-
-    day_difference = (execution_day_of_week - (start_date.weekday() + 1)) % 7
-
-    execution_time_to_partition_fn = (
-        lambda d: pendulum.instance(d)
-        .replace(hour=0, minute=0)
-        .subtract(weeks=partition_weeks_offset, days=day_difference)
-    )
-
-    partition_fn = schedule_partition_range(
-        start_date,
-        end=end_date,
-        cron_schedule=cron_schedule,
-        fmt=fmt,
-        timezone=execution_timezone,
-        execution_time_to_partition_fn=execution_time_to_partition_fn,
-        inclusive=(partition_weeks_offset == 0),
-    )
-
     def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
@@ -385,40 +372,57 @@ def my_schedule_definition(_):
             )
             tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
+        fmt = DEFAULT_DATE_FORMAT
+
+        partitions_def = ScheduleTimeBasedPartitionsDefinition(
+            schedule_type=ScheduleType.WEEKLY,
+            start=start_date,
+            execution_time=execution_time,
+            execution_day=execution_day_of_week,
+            end=end_date,
+            fmt=fmt,
+            timezone=execution_timezone,
+            offset=partition_weeks_offset,
+        )
+
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
-            pipeline_name=pipeline_name,
-            partition_fn=partition_fn,
+            pipeline_name=pipeline_name,  # type: ignore[arg-type]
             run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
+            partitions_def=partitions_def,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
-            cron_schedule,
+            partitions_def.get_cron_schedule(),
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_offset_partition_selector(
-                execution_time_to_partition_fn=execution_time_to_partition_fn,
+                execution_time_to_partition_fn=partitions_def.get_execution_time_to_partition_fn(),
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner
 
 
 def daily_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -447,23 +451,24 @@ def daily_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_days_offset (Optional[int]): How many days back to go when choosing the partition
             for a given schedule execution. For example, when partition_days_offset=1, the schedule
             that executes during day N will fill in the partition for day N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
     """
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_str_param(name, "name")
     check.inst_param(execution_time, "execution_time", datetime.time)
@@ -493,29 +498,7 @@ def my_schedule_definition(_):
 """
         )
 
-    cron_schedule = "{minute} {hour} * * *".format(
-        minute=execution_time.minute, hour=execution_time.hour
-    )
-
     fmt = DEFAULT_DATE_FORMAT
-
-    execution_time_to_partition_fn = (
-        lambda d: pendulum.instance(d)
-        .replace(hour=0, minute=0)
-        .subtract(
-            days=partition_days_offset,
-        )
-    )
-
-    partition_fn = schedule_partition_range(
-        start_date,
-        end=end_date,
-        cron_schedule=cron_schedule,
-        fmt=fmt,
-        timezone=execution_timezone,
-        execution_time_to_partition_fn=execution_time_to_partition_fn,
-        inclusive=(partition_days_offset == 0),
-    )
 
     def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
@@ -531,42 +514,55 @@ def my_schedule_definition(_):
             )
             tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
+        partitions_def = ScheduleTimeBasedPartitionsDefinition(
+            schedule_type=ScheduleType.DAILY,
+            start=start_date,
+            execution_time=execution_time,
+            end=end_date,
+            fmt=fmt,
+            timezone=execution_timezone,
+            offset=partition_days_offset,
+        )
+
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
-            pipeline_name=pipeline_name,
-            partition_fn=partition_fn,
+            pipeline_name=pipeline_name,  # type: ignore[arg-type]
             run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
+            partitions_def=partitions_def,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
-            cron_schedule,
+            partitions_def.get_cron_schedule(),
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_offset_partition_selector(
-                execution_time_to_partition_fn=execution_time_to_partition_fn,
+                execution_time_to_partition_fn=partitions_def.get_execution_time_to_partition_fn(),
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner
 
 
 def hourly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
-    end_date: Optional[str] = None,
+    end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
@@ -595,16 +591,17 @@ def hourly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_hours_offset (Optional[int]): How many hours back to go when choosing the partition
             for a given schedule execution. For example, when partition_hours_offset=1, the schedule
             that executes during hour N will fill in the partition for hour N-1.
@@ -619,7 +616,7 @@ def hourly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_hours_offset, "partition_hours_offset")
@@ -651,28 +648,6 @@ def my_schedule_definition(_):
             "datetime.time(minute={minute}, ...) to fix this warning."
         )
 
-    cron_schedule = "{minute} * * * *".format(minute=execution_time.minute)
-
-    fmt = (
-        DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
-        if execution_timezone
-        else DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-    )
-
-    execution_time_to_partition_fn = lambda d: pendulum.instance(d).subtract(
-        hours=partition_hours_offset, minutes=(execution_time.minute - start_date.minute) % 60
-    )
-
-    partition_fn = schedule_partition_range(
-        start_date,
-        end=end_date,
-        cron_schedule=cron_schedule,
-        fmt=fmt,
-        timezone=execution_timezone,
-        execution_time_to_partition_fn=execution_time_to_partition_fn,
-        inclusive=(partition_hours_offset == 0),
-    )
-
     def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
@@ -687,26 +662,46 @@ def my_schedule_definition(_):
             )
             tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
+        fmt = (
+            DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
+            if execution_timezone
+            else DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+        )
+
+        partitions_def = ScheduleTimeBasedPartitionsDefinition(
+            schedule_type=ScheduleType.HOURLY,
+            start=start_date,
+            execution_time=execution_time,
+            end=end_date,
+            fmt=fmt,
+            timezone=execution_timezone,
+            offset=partition_hours_offset,
+        )
+
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
-            pipeline_name=pipeline_name,
-            partition_fn=partition_fn,
+            pipeline_name=pipeline_name,  # type: ignore[arg-type]
             run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
+            partitions_def=partitions_def,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
-            cron_schedule,
+            partitions_def.get_cron_schedule(),
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_offset_partition_selector(
-                execution_time_to_partition_fn=execution_time_to_partition_fn,
+                execution_time_to_partition_fn=partitions_def.get_execution_time_to_partition_fn(),
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner

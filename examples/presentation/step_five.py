@@ -31,19 +31,19 @@ from dagster_pandas import DataFrame
 
 
 @solid
-def add_sugar_per_cup(_, cereals: DataFrame):
+def add_sugar_per_cup(cereals: DataFrame):
     df = cereals[["name"]]
     df["sugar_per_cup"] = cereals["sugars"] / cereals["cups"]
     return df
 
 
 @solid
-def compute_cutoff(_, cereals: DataFrame) -> float:
+def compute_cutoff(cereals: DataFrame) -> float:
     return cereals["sugar_per_cup"].quantile(0.75)
 
 
 @solid
-def filter_below_cutoff(_, cereals: DataFrame, cutoff: float) -> DataFrame:
+def filter_below_cutoff(cereals: DataFrame, cutoff: float) -> DataFrame:
     return cereals[cereals["sugar_per_cup"] > cutoff]
 
 

@@ -1,7 +1,14 @@
 import datetime
 from collections import defaultdict
 
-from dagster import PartitionSetDefinition, ScheduleExecutionContext
+from dagster import (
+    PartitionSetDefinition,
+    ScheduleEvaluationContext,
+    daily_schedule,
+    hourly_schedule,
+    monthly_schedule,
+    weekly_schedule,
+)
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.partitions import date_partition_range
 
@@ -21,7 +28,9 @@ def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
 
 
 def backfilling_partition_selector(
-    context: ScheduleExecutionContext, partition_set_def: PartitionSetDefinition, retry_failed=False
+    context: ScheduleEvaluationContext,
+    partition_set_def: PartitionSetDefinition,
+    retry_failed=False,
 ):
     status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
     runs_by_partition = _fetch_runs_by_partition(
@@ -78,7 +87,6 @@ def backfill_test_schedule():
             start=datetime.datetime(2020, 1, 5),
             delta_range="weeks",
         ),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -100,7 +108,6 @@ def materialization_schedule():
         name="many_events_minutely",
         pipeline_name="many_events",
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -113,6 +120,42 @@ def materialization_schedule():
         should_execute=_should_execute,
         execution_timezone=_toys_tz_info(),
     )
+
+
+@hourly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def hourly_materialization_schedule():
+    return {}
+
+
+@daily_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def daily_materialization_schedule():
+    return {}
+
+
+@weekly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def weekly_materialization_schedule():
+    return {}
+
+
+@monthly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def monthly_materialization_schedule():
+    return {}
 
 
 def longitudinal_schedule():
@@ -157,11 +200,14 @@ def get_toys_schedules():
         backfill_test_schedule(),
         longitudinal_schedule(),
         materialization_schedule(),
+        hourly_materialization_schedule,
+        daily_materialization_schedule,
+        weekly_materialization_schedule,
+        monthly_materialization_schedule,
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
             pipeline_name="many_events",
-            run_config_fn=lambda _: {"intermediate_storage": {"filesystem": {}}},
             execution_timezone=_toys_tz_info(),
         ),
     ]

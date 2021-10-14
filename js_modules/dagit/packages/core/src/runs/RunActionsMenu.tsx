@@ -1,12 +1,18 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissions} from '../app/Permissions';
+import {ButtonWIP} from '../ui/Button';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
+import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
+import {Tooltip} from '../ui/Tooltip';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
@@ -20,16 +26,16 @@ import {
 import {TerminationDialog} from './TerminationDialog';
 import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
 import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
-  run: RunTableRunFragment | RunActionMenuFragment;
+  run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
   const {basePath, rootServerURI} = React.useContext(AppContext);
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -57,16 +63,35 @@ export const RunActionsMenu: React.FC<{
   const repoMatch = useRepositoryForRun(pipelineRun);
   const isFinished = doneStatuses.has(run.status);
 
+  const playgroundPath = () => {
+    const path = `/playground/setup?${qs.stringify({
+      config: runConfigYaml,
+      solidSelection: run.solidSelection,
+    })}`;
+
+    if (repoMatch) {
+      return workspacePipelinePath(
+        repoMatch.match.repository.name,
+        repoMatch.match.repositoryLocation.name,
+        run.pipelineName,
+        run.mode,
+        path,
+      );
+    }
+
+    return workspacePipelinePathGuessRepo(run.pipelineName, run.mode, path);
+  };
+
   const infoReady = called ? !loading : false;
   return (
     <>
       <Popover
         content={
-          <Menu>
-            <MenuItem
+          <MenuWIP>
+            <MenuItemWIP
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
-              icon="share"
+              icon="open_in_new"
               onClick={() =>
                 showCustomAlert({
                   title: 'Config',
@@ -74,40 +99,33 @@ export const RunActionsMenu: React.FC<{
                 })
               }
             />
-            <MenuDivider />
+            <MenuDividerWIP />
             <>
               <Tooltip
                 content={OPEN_PLAYGROUND_UNKNOWN}
-                position={Position.BOTTOM}
+                position="bottom"
                 disabled={infoReady}
-                wrapperTagName="div"
                 targetTagName="div"
               >
-                <MenuItem
+                <MenuItemWIP
                   text="Open in Playground..."
                   disabled={!infoReady}
                   icon="edit"
-                  target="_blank"
-                  href={`/workspace/pipelines/${run.pipelineName}/playground/setup?${qs.stringify({
-                    mode: run.mode,
-                    config: runConfigYaml,
-                    solidSelection: run.solidSelection,
-                  })}`}
+                  href={playgroundPath()}
                 />
               </Tooltip>
               <Tooltip
                 content={
                   'Re-execute is unavailable because the pipeline is not present in the current workspace.'
                 }
-                position={Position.BOTTOM}
+                position="bottom"
                 disabled={infoReady && !!repoMatch}
-                wrapperTagName="div"
                 targetTagName="div"
               >
-                <MenuItem
+                <MenuItemWIP
                   text="Re-execute"
                   disabled={!infoReady || !repoMatch}
-                  icon="repeat"
+                  icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
                       const result = await reexecute({
@@ -123,56 +141,72 @@ export const RunActionsMenu: React.FC<{
                   }}
                 />
               </Tooltip>
-              {isFinished ? null : (
-                <MenuItem
-                  icon="stop"
+              {isFinished || !canTerminatePipelineExecution ? null : (
+                <MenuItemWIP
+                  icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
                 />
               )}
-              <MenuDivider />
+              <MenuDividerWIP />
             </>
-            <MenuItem
+            <MenuItemWIP
               text="Download Debug File"
-              icon="download"
+              icon="download_for_offline"
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
-            <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
-          </Menu>
+            {canDeletePipelineRun ? (
+              <MenuItemWIP
+                icon="delete"
+                text="Delete"
+                intent="danger"
+                onClick={() => setVisibleDialog('delete')}
+              />
+            ) : null}
+          </MenuWIP>
         }
-        position={'bottom'}
+        position="bottom-right"
         onOpening={() => {
           if (!called) {
             loadEnv();
           }
         }}
       >
-        <Button minimal={true} icon="more" style={{position: 'relative', top: '-6px'}} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
-      <TerminationDialog
-        isOpen={visibleDialog === 'terminate'}
-        onClose={closeDialogs}
-        onComplete={onComplete}
-        selectedRuns={{[run.id]: run.canTerminate}}
-      />
-      <DeletionDialog
-        isOpen={visibleDialog === 'delete'}
-        onClose={closeDialogs}
-        onComplete={onComplete}
-        onTerminateInstead={() => setVisibleDialog('terminate')}
-        selectedRuns={{[run.id]: run.canTerminate}}
-      />
+      {canTerminatePipelineExecution ? (
+        <TerminationDialog
+          isOpen={visibleDialog === 'terminate'}
+          onClose={closeDialogs}
+          onComplete={onComplete}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
+      {canDeletePipelineRun ? (
+        <DeletionDialog
+          isOpen={visibleDialog === 'delete'}
+          onClose={closeDialogs}
+          onComplete={onComplete}
+          onTerminateInstead={() => setVisibleDialog('terminate')}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
     </>
   );
 });
 
-export const RunBulkActionsMenu: React.FunctionComponent<{
+export const RunBulkActionsMenu: React.FC<{
   selected: RunTableRunFragment[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+
+  if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
+    return null;
+  }
 
   const unfinishedRuns = selected.filter((r) => !doneStatuses.has(r?.status));
   const unfinishedIDs = unfinishedRuns.map((r) => r.id);
@@ -197,30 +231,37 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
     <>
       <Popover
         content={
-          <Menu>
-            <MenuItem
-              icon="stop"
-              text={`Terminate ${unfinishedIDs.length} ${
-                unfinishedIDs.length === 1 ? 'run' : 'runs'
-              }`}
-              disabled={unfinishedIDs.length === 0}
-              onClick={() => {
-                setVisibleDialog('terminate');
-              }}
-            />
-            <MenuItem
-              icon="trash"
-              text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
-              disabled={selectedIDs.length === 0}
-              onClick={() => {
-                setVisibleDialog('delete');
-              }}
-            />
-          </Menu>
+          <MenuWIP>
+            {canTerminatePipelineExecution ? (
+              <MenuItemWIP
+                icon="cancel"
+                text={`Terminate ${unfinishedIDs.length} ${
+                  unfinishedIDs.length === 1 ? 'run' : 'runs'
+                }`}
+                disabled={unfinishedIDs.length === 0}
+                onClick={() => {
+                  setVisibleDialog('terminate');
+                }}
+              />
+            ) : null}
+            {canDeletePipelineRun ? (
+              <MenuItemWIP
+                icon="delete"
+                intent="danger"
+                text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
+                disabled={selectedIDs.length === 0}
+                onClick={() => {
+                  setVisibleDialog('delete');
+                }}
+              />
+            ) : null}
+          </MenuWIP>
         }
-        position={'bottom'}
+        position="bottom-right"
       >
-        <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
+        <ButtonWIP disabled={selected.length === 0} rightIcon={<IconWIP name="expand_more" />}>
+          Actions
+        </ButtonWIP>
       </Popover>
       <TerminationDialog
         isOpen={visibleDialog === 'terminate'}

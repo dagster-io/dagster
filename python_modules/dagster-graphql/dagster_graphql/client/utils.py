@@ -20,17 +20,39 @@ class ReloadRepositoryLocationStatus(Enum):
     FAILURE = "FAILURE"
 
 
+class ShutdownRepositoryLocationStatus(Enum):
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
 class ReloadRepositoryLocationInfo(NamedTuple):
     """This class gives information about the result of reloading
     a Dagster repository location with a GraphQL mutation.
 
     Args:
         status (ReloadRepositoryLocationStatus): The status of the reload repository location mutation
+        failure_type: (Optional[str], optional): the failure type if `status == ReloadRepositoryLocationStatus.FAILURE`.
+          Can be one of `ReloadNotSupported`, `RepositoryLocationNotFound`, or `RepositoryLocationLoadFailure`. Defaults to None.
         message (Optional[str], optional): the failure message/reason if
           `status == ReloadRepositoryLocationStatus.FAILURE`. Defaults to None.
     """
 
     status: ReloadRepositoryLocationStatus
+    failure_type: Optional[str] = None
+    message: Optional[str] = None
+
+
+class ShutdownRepositoryLocationInfo(NamedTuple):
+    """This class gives information about the result of shutting down the server for
+    a Dagster repository location using a GraphQL mutation.
+
+    Args:
+        status (ShutdownRepositoryLocationStatus) Whether the shutdown succeeded or failed.
+        message (Optional[str], optional): the failure message/reason if
+          `status == ShutdownRepositoryLocationStatus.FAILURE`. Defaults to None.
+    """
+
+    status: ShutdownRepositoryLocationStatus
     message: Optional[str] = None
 
 

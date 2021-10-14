@@ -2,7 +2,7 @@ Datadog (dagster-datadog)
 -------------------------
 
 This library provides an integration with Datadog, to support publishing metrics to Datadog from
-within Dagster solids.
+within Dagster ops.
 
 |
 

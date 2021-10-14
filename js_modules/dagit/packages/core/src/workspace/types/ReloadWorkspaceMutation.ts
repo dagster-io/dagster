@@ -4,45 +4,54 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: ReloadWorkspaceMutation
 // ====================================================
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
   name: string;
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories {
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories {
   __typename: "Repository";
   id: string;
   name: string;
-  pipelines: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines[];
+  pipelines: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines[];
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation {
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {
   __typename: "RepositoryLocation";
   id: string;
-  repositories: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories[];
+  repositories: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error {
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
-  __typename: "RepositoryLocationLoadFailure";
+export type ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError = ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError;
+
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries {
+  __typename: "WorkspaceLocationEntry";
+  name: string;
   id: string;
-  error: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
+  locationOrLoadError: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError | null;
 }
 
-export type ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation | ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace {
+  __typename: "Workspace";
+  locationEntries: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries[];
+}
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection {
-  __typename: "RepositoryLocationConnection";
-  nodes: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes[];
+export interface ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError {
+  __typename: "UnauthorizedError";
+  message: string;
 }
 
 export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError_cause {
@@ -58,7 +67,7 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError {
   cause: ReloadWorkspaceMutation_reloadWorkspace_PythonError_cause | null;
 }
 
-export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
+export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_Workspace | ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
 
 export interface ReloadWorkspaceMutation {
   reloadWorkspace: ReloadWorkspaceMutation_reloadWorkspace;

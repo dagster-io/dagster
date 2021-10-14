@@ -7,7 +7,7 @@ from contextlib import ExitStack
 
 import click
 import pendulum
-from dagster import __version__
+from dagster import __version__ as dagster_version
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -121,7 +121,7 @@ def create_dagster_daemon_cli():
     }
 
     @click.group(commands=commands)
-    @click.version_option(version=__version__)
+    @click.version_option(version=dagster_version)
     def group():
         "CLI tools for working with the dagster daemon process."
 

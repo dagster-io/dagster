@@ -2,6 +2,7 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -9,6 +10,7 @@ import {
 } from '../runs/types/LaunchPipelineExecution';
 
 import {LaunchButton} from './LaunchButton';
+import {showLaunchError} from './showLaunchError';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -19,6 +21,7 @@ interface LaunchRootExecutionButtonProps {
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
   props,
 ) => {
+  const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
@@ -34,21 +37,20 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
       const result = await launchPipelineExecution({variables});
       handleLaunchResult(basePath, props.pipelineName, result);
     } catch (error) {
-      console.error('Error launching run:', error);
+      showLaunchError(error as Error);
     }
   };
 
   return (
-    <div style={{marginRight: 20}}>
-      <LaunchButton
-        runCount={1}
-        config={{
-          icon: 'send-to',
-          onClick: onLaunch,
-          title: 'Launch Execution',
-          disabled: props.disabled,
-        }}
-      />
-    </div>
+    <LaunchButton
+      runCount={1}
+      config={{
+        icon: 'open_in_new',
+        onClick: onLaunch,
+        title: 'Launch Execution',
+        disabled: props.disabled || !canLaunchPipelineExecution,
+        tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
+      }}
+    />
   );
 };

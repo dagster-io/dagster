@@ -1,8 +1,7 @@
 import pendulum
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-from dagster.core.definitions.job import JobType
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.definitions.run_request import JobType
 from dagster.core.scheduler.job import JobState, JobStatus
+from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
@@ -15,7 +14,7 @@ from dagster_graphql.test.utils import (
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
+    NonLaunchableGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """
@@ -28,12 +27,13 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
     }
     ... on Sensors {
       results {
-        id
         name
-        pipelineName
-        solidSelection
+        targets {
+          pipelineName
+          solidSelection
+          mode
+        }
         description
-        mode
         minIntervalSeconds
         sensorState {
           status
@@ -69,11 +69,12 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       stack
     }
     ... on Sensor {
-      id
       name
-      pipelineName
-      solidSelection
-      mode
+      targets {
+        pipelineName
+        solidSelection
+        mode
+      }
       minIntervalSeconds
       nextTick {
         timestamp
@@ -152,7 +153,7 @@ mutation($jobOriginId: String!) {
       stack
     }
     ... on StopSensorMutationResult {
-      jobState {
+      instigationState {
         status
       }
     }
@@ -161,7 +162,7 @@ mutation($jobOriginId: String!) {
 """
 
 
-class TestSensors(ReadonlyGraphQLContextTestMatrix):
+class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     def test_get_sensors(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
@@ -221,7 +222,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"jobOriginId": job_origin_id},
         )
         assert result.data
-        assert result.data["stopSensor"]["jobState"]["status"] == JobStatus.STOPPED.value
+        assert result.data["stopSensor"]["instigationState"]["status"] == JobStatus.STOPPED.value
 
 
 def test_sensor_next_ticks(graphql_context):
@@ -271,13 +272,10 @@ def test_sensor_next_ticks(graphql_context):
 
 
 def _create_tick(instance):
-    with ProcessGrpcServerRegistry() as grpc_server_registry:
-        with DynamicWorkspace(grpc_server_registry) as workspace:
-            list(
-                execute_sensor_iteration(
-                    instance, get_default_daemon_logger("SensorDaemon"), workspace
-                )
-            )
+    with create_test_daemon_workspace() as workspace:
+        list(
+            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"), workspace)
+        )
 
 
 def test_sensor_tick_range(graphql_context):

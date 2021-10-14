@@ -56,30 +56,35 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         install_requires=[
-            "future",
             # cli
-            "click>=5.0",
+            "click>=5.0,<9.0",
             "coloredlogs>=6.1, <=14.0",
-            "Jinja2",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "Jinja2<3.0",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
-            "alembic>=1.2.1",
+            # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
+            # alembic 1.7.0 is a breaking change
+            "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
             "grpcio-health-checking>=1.32.0",
+            "packaging>=20.9",
             "pendulum",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
+            "pytz",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
             "tabulate",
             "tqdm",
+            "typing_compat",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
-            "docstring-parser==0.7.1",
+            "docstring-parser",
         ],
         extras_require={
             "docker": ["docker"],
@@ -98,6 +103,7 @@ if __name__ == "__main__":
                 "pytest-cov==2.10.1",
                 "pytest-dependency==0.5.1",
                 "pytest-mock==3.3.1",
+                "pytest-rerunfailures==10.0",
                 "pytest-runner==5.2",
                 "pytest-xdist==2.1.0",
                 "pytest==6.1.1",

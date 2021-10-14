@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dagster import check
-from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
+from dagster.core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -32,7 +32,7 @@ class GraphExecutionResult:
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
         self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-        self.handle = check.opt_inst_param(handle, "handle", SolidHandle)
+        self.handle = check.opt_inst_param(handle, "handle", NodeHandle)
         self.output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
         )
@@ -72,7 +72,7 @@ class GraphExecutionResult:
                 "solid.".format(name=name, container=self.container.name)
             )
 
-        return self.result_for_handle(SolidHandle(name, None))
+        return self.result_for_handle(NodeHandle(name, None))
 
     def output_for_solid(self, handle_str, output_name=DEFAULT_OUTPUT):
         """Get the output of a solid by its solid handle string and output name.
@@ -86,7 +86,7 @@ class GraphExecutionResult:
         """
         check.str_param(handle_str, "handle_str")
         check.str_param(output_name, "output_name")
-        return self.result_for_handle(SolidHandle.from_string(handle_str)).output_value(output_name)
+        return self.result_for_handle(NodeHandle.from_string(handle_str)).output_value(output_name)
 
     @property
     def solid_result_list(self):
@@ -102,7 +102,7 @@ class GraphExecutionResult:
 
         events_by_kind = defaultdict(list)
 
-        if solid.is_composite:
+        if solid.is_graph:
             events = []
             for event in self.event_list:
                 if event.is_step_event:
@@ -140,16 +140,16 @@ class GraphExecutionResult:
         composite solids.
 
         Args:
-            handle (Union[str,SolidHandle]): The handle for the solid.
+            handle (Union[str,NodeHandle]): The handle for the solid.
 
         Returns:
             Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of the given
             solid.
         """
         if isinstance(handle, str):
-            handle = SolidHandle.from_string(handle)
+            handle = NodeHandle.from_string(handle)
         else:
-            check.inst_param(handle, "handle", SolidHandle)
+            check.inst_param(handle, "handle", NodeHandle)
 
         solid = self.container.get_solid(handle)
 
@@ -174,7 +174,7 @@ class PipelineExecutionResult(GraphExecutionResult):
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def,
+            container=pipeline_def.graph,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
             pipeline_def=pipeline_def,
@@ -198,9 +198,9 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         handle=None,
         output_capture=None,
     ):
-        check.inst_param(solid, "solid", Solid)
+        check.inst_param(solid, "solid", Node)
         check.invariant(
-            solid.is_composite,
+            solid.is_graph,
             desc="Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid",
         )
         self.solid = solid
@@ -249,7 +249,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
 
             inner_solid_values = self._result_for_handle(
                 self.solid.definition.solid_named(output_mapping.maps_from.solid_name),
-                SolidHandle(output_mapping.maps_from.solid_name, None),
+                NodeHandle(output_mapping.maps_from.solid_name, None),
             ).output_values
 
             if inner_solid_values is not None:  # may be None if inner solid was skipped
@@ -281,7 +281,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
 
         return self._result_for_handle(
             self.solid.definition.solid_named(output_mapping.maps_from.solid_name),
-            SolidHandle(output_mapping.maps_from.solid_name, None),
+            NodeHandle(output_mapping.maps_from.solid_name, None),
         ).output_value(output_mapping.maps_from.output_name)
 
 
@@ -294,9 +294,9 @@ class SolidExecutionResult:
     def __init__(
         self, solid, step_events_by_kind, reconstruct_context, pipeline_def, output_capture=None
     ):
-        check.inst_param(solid, "solid", Solid)
+        check.inst_param(solid, "solid", Node)
         check.invariant(
-            not solid.is_composite,
+            not solid.is_graph,
             desc="Tried to instantiate a SolidExecutionResult with a composite solid",
         )
         self.solid = solid
@@ -559,7 +559,7 @@ class SolidExecutionResult:
                 metadata=None,
                 dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
                 source_handle=step_output_handle,
-                resource_config=context.environment_config.resources[manager_key].config,
+                resource_config=context.resolved_run_config.resources[manager_key].config,
                 resources=build_resources_for_manager(manager_key, context),
             )
         )

@@ -47,10 +47,11 @@ def stamp_alembic_rev(alembic_config, conn, rev="head", quiet=True):
 
 
 def check_alembic_revision(alembic_config, conn):
-    migration_context = MigrationContext.configure(conn)
-    db_revision = migration_context.get_current_revision()
-    script = ScriptDirectory.from_config(alembic_config)
-    head_revision = script.as_revision_number("head")
+    with _alembic_lock:
+        migration_context = MigrationContext.configure(conn)
+        db_revision = migration_context.get_current_revision()
+        script = ScriptDirectory.from_config(alembic_config)
+        head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
 
@@ -149,7 +150,7 @@ def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw):
     return f"DATETIME({MYSQL_DATE_PRECISION})"
 
 
-class get_current_timestamp(db.sql.expression.FunctionElement):
+class get_current_timestamp(db.sql.expression.FunctionElement):  # pylint: disable=abstract-method
     """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite"""
 
     type = db.types.DateTime()

@@ -5,15 +5,15 @@ from collections import namedtuple
 
 import pendulum
 from dagster import check, seven
-from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.sensor import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
-from dagster.core.host_representation.external_data import ExternalSensorExecutionData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
+from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -53,12 +53,30 @@ class SensorLaunchContext:
 
     def update_state(self, status, **kwargs):
         skip_reason = kwargs.get("skip_reason")
+        cursor = kwargs.get("cursor")
+        origin_run_id = kwargs.get("origin_run_id")
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
-        self._tick = self._tick.with_status(status=status, **kwargs).with_reason(
-            skip_reason=skip_reason
-        )
+        if "cursor" in kwargs:
+            del kwargs["cursor"]
+
+        if "origin_run_id" in kwargs:
+            del kwargs["origin_run_id"]
+        if kwargs:
+            check.inst_param(status, "status", JobTickStatus)
+
+        if status:
+            self._tick = self._tick.with_status(status=status, **kwargs)
+
+        if skip_reason:
+            self._tick = self._tick.with_reason(skip_reason=skip_reason)
+
+        if cursor:
+            self._tick = self._tick.with_cursor(cursor)
+
+        if origin_run_id:
+            self._tick = self._tick.with_origin_run(origin_run_id)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -79,6 +97,7 @@ class SensorLaunchContext:
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
                         min_interval=self._external_sensor.min_interval_seconds,
+                        cursor=self._tick.cursor,
                     )
                 )
             )
@@ -125,6 +144,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
 
+    workspace_iteration = 0
     start_time = pendulum.now("UTC").timestamp()
     while True:
         start_time = pendulum.now("UTC").timestamp()
@@ -135,15 +155,19 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
         if start_time - manager_loaded_time > RELOAD_LOCATION_MANAGER_INTERVAL:
             workspace.cleanup()
             manager_loaded_time = pendulum.now("UTC").timestamp()
+            workspace_iteration = 0
 
-        yield from execute_sensor_iteration(instance, logger, workspace)
+        yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
         yield
+        workspace_iteration += 1
 
 
-def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):
+def execute_sensor_iteration(
+    instance, logger, workspace, workspace_iteration=None, debug_crash_flags=None
+):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
@@ -152,7 +176,8 @@ def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None
         if s.status == JobStatus.RUNNING
     ]
     if not sensor_jobs:
-        logger.info("Not checking for any runs since no sensors have been started.")
+        if not workspace_iteration:
+            logger.info("Not checking for any runs since no sensors have been started.")
         yield
         return
 
@@ -205,6 +230,7 @@ def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None
                 yield from _evaluate_sensor(
                     tick_context,
                     instance,
+                    workspace,
                     repo_location,
                     external_repo,
                     external_sensor,
@@ -225,6 +251,7 @@ def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None
 def _evaluate_sensor(
     context,
     instance,
+    workspace,
     repo_location,
     external_repo,
     external_sensor,
@@ -238,41 +265,85 @@ def _evaluate_sensor(
         external_sensor.name,
         job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
+        job_state.job_specific_data.cursor if job_state.job_specific_data else None,
     )
 
     yield
 
-    assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
+    assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
-        if sensor_runtime_data.skip_message:
+        if sensor_runtime_data.pipeline_run_reactions:
+            for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
+                origin_run_id = pipeline_run_reaction.pipeline_run.run_id
+                message = (
+                    f'Sensor "{external_sensor.name}" processed failure of run {origin_run_id}.'
+                )
+
+                if pipeline_run_reaction.error:
+                    context.logger.error(
+                        f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
+                    )
+                    context.update_state(
+                        JobTickStatus.FAILURE,
+                        cursor=sensor_runtime_data.cursor,
+                        error=pipeline_run_reaction.error,
+                    )
+                else:
+                    # log to the original pipeline run
+                    instance.report_engine_event(
+                        message=message, pipeline_run=pipeline_run_reaction.pipeline_run
+                    )
+                    context.logger.info(
+                        f"Completed a reaction request for run {origin_run_id}: {message}"
+                    )
+                    context.update_state(
+                        JobTickStatus.SUCCESS,
+                        cursor=sensor_runtime_data.cursor,
+                        origin_run_id=origin_run_id,
+                    )
+        elif sensor_runtime_data.skip_message:
             context.logger.info(
                 f"Sensor returned false for {external_sensor.name}, skipping: "
                 f"{sensor_runtime_data.skip_message}"
             )
             context.update_state(
-                JobTickStatus.SKIPPED, skip_reason=sensor_runtime_data.skip_message
+                JobTickStatus.SKIPPED,
+                skip_reason=sensor_runtime_data.skip_message,
+                cursor=sensor_runtime_data.cursor,
             )
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
-            context.update_state(JobTickStatus.SKIPPED)
-        return
+            context.update_state(JobTickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
-    pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
-        repository_name=external_repo.name,
-        pipeline_name=external_sensor.pipeline_name,
-        solid_selection=external_sensor.solid_selection,
-    )
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
+        yield
+        return
 
     skipped_runs = []
     for run_request in sensor_runtime_data.run_requests:
+
+        target_data = external_sensor.get_target_data(run_request.job_name)
+
+        pipeline_selector = PipelineSelector(
+            location_name=repo_location.name,
+            repository_name=external_repo.name,
+            pipeline_name=target_data.pipeline_name,
+            solid_selection=target_data.solid_selection,
+        )
+        subset_pipeline_result = repo_location.get_subset_external_pipeline_result(
+            pipeline_selector
+        )
+        external_pipeline = ExternalPipeline(
+            subset_pipeline_result.external_pipeline_data,
+            external_repo.handle,
+        )
         run = _get_or_create_sensor_run(
-            context, instance, repo_location, external_sensor, external_pipeline, run_request
+            context,
+            instance,
+            repo_location,
+            external_sensor,
+            external_pipeline,
+            run_request,
+            target_data,
         )
 
         if isinstance(run, SkippedSensorRun):
@@ -288,7 +359,7 @@ def _evaluate_sensor(
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
-            instance.submit_run(run.run_id, external_pipeline)
+            instance.submit_run(run.run_id, workspace)
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(
                     run_id=run.run_id, sensor_name=external_sensor.name
@@ -315,9 +386,9 @@ def _evaluate_sensor(
         )
 
     if context.run_count:
-        context.update_state(JobTickStatus.SUCCESS)
+        context.update_state(JobTickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
     else:
-        context.update_state(JobTickStatus.SKIPPED)
+        context.update_state(JobTickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
     yield
 
@@ -337,12 +408,12 @@ def _is_under_min_interval(job_state, now):
 
 
 def _get_or_create_sensor_run(
-    context, instance, repo_location, external_sensor, external_pipeline, run_request
+    context, instance, repo_location, external_sensor, external_pipeline, run_request, target_data
 ):
 
     if not run_request.run_key:
         return _create_sensor_run(
-            instance, repo_location, external_sensor, external_pipeline, run_request
+            instance, repo_location, external_sensor, external_pipeline, run_request, target_data
         )
 
     existing_runs = instance.get_runs(
@@ -360,6 +431,7 @@ def _get_or_create_sensor_run(
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
+            context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
             context.logger.info(
@@ -371,15 +443,17 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, repo_location, external_sensor, external_pipeline, run_request
+        instance, repo_location, external_sensor, external_pipeline, run_request, target_data
     )
 
 
-def _create_sensor_run(instance, repo_location, external_sensor, external_pipeline, run_request):
+def _create_sensor_run(
+    instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+):
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         run_request.run_config,
-        external_sensor.mode,
+        target_data.mode,
         step_keys_to_execute=None,
         known_state=None,
     )
@@ -395,14 +469,14 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         tags[RUN_KEY_TAG] = run_request.run_key
 
     return instance.create_run(
-        pipeline_name=external_sensor.pipeline_name,
+        pipeline_name=target_data.pipeline_name,
         run_id=None,
         run_config=run_request.run_config,
-        mode=external_sensor.mode,
+        mode=target_data.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         status=PipelineRunStatus.NOT_STARTED,
-        solid_selection=external_sensor.solid_selection,
+        solid_selection=target_data.solid_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
@@ -410,4 +484,5 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
     )

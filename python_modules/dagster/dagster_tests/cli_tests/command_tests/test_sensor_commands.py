@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 from dagster.cli.sensor import (
     check_repo_and_scheduler,
+    sensor_cursor_command,
     sensor_list_command,
     sensor_preview_command,
     sensor_start_command,
@@ -28,7 +29,9 @@ def test_sensors_list(gen_sensor_args):
             result = runner.invoke(sensor_list_command, cli_args)
 
             assert result.exit_code == 0
-            assert result.output == "Repository bar\n**************\nSensor: foo_sensor [STOPPED]\n"
+            assert result.output == (
+                "Repository bar\n" "**************\n" "Sensor: foo_sensor [STOPPED]\n"
+            )
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
@@ -138,3 +141,18 @@ def test_sensor_preview_since(gen_sensor_args):
                 result.output
                 == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\nsince: 1.1\n\n"
             )
+
+
+@pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
+def test_sensor_cursor(gen_sensor_args):
+    with gen_sensor_args as (cli_args, instance):
+        runner = CliRunner()
+        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+            _instance.return_value = instance
+            result = runner.invoke(sensor_cursor_command, cli_args + ["foo_sensor", "--set", "foo"])
+            assert result.exit_code == 0
+            assert result.output == 'Set cursor state for sensor foo_sensor to "foo"\n'
+
+            result = runner.invoke(sensor_cursor_command, cli_args + ["foo_sensor", "--delete"])
+            assert result.exit_code == 0
+            assert result.output == "Cleared cursor state for sensor foo_sensor\n"

@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "outDir": "./lib",
     "target": "es5",
     "lib": [
       "es6",
@@ -25,7 +24,7 @@
     ],
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": false,
+    "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

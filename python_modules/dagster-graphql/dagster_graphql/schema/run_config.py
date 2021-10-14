@@ -28,7 +28,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     isRunConfigValid = graphene.Field(
         graphene.NonNull(GraphenePipelineConfigValidationResult),
         args={"runConfigData": graphene.Argument(GrapheneRunConfigData)},
-        description="""Parse a particular environment config result. The return value
+        description="""Parse a particular run config result. The return value
         either indicates that the validation succeeded by returning
         `PipelineConfigValidationValid` or that there are configuration errors
         by returning `PipelineConfigValidationInvalid' which containers a list errors

@@ -1,22 +1,25 @@
-import {Checkbox, Colors, Icon, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
-import {WebsocketStatusContext} from '../app/WebsocketStatus';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
+  BOTTOM_INSET,
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
   BOX_DOT_WIDTH_CUTOFF,
@@ -35,20 +38,22 @@ import {
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
+  TOP_INSET,
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
-  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
+  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
 import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from './VizComponents';
+import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
+import {useGanttChartMode} from './useGanttChartMode';
 import {useViewport} from './useViewport';
 
 export {GanttChartMode} from './Constants';
@@ -79,7 +84,6 @@ interface GanttChartProps {
   options?: Partial<GanttChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
-  toolbarLeftActions?: React.ReactChild;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelection: (query: string) => void;
@@ -92,107 +96,110 @@ interface GanttChartState {
   options: GanttChartLayoutOptions;
 }
 
-export class GanttChart extends React.Component<GanttChartProps, GanttChartState> {
-  static LoadingState: React.FunctionComponent<{runId: string}>;
+export const GanttChart: React.FC<GanttChartProps> = (props) => {
+  const {graph, onSetSelection, options, selection, toolbarActions} = props;
+  const [mode, setMode] = useGanttChartMode();
+  const [state, setState] = React.useState(() => ({
+    ...DEFAULT_OPTIONS,
+    ...options,
+    mode,
+  }));
 
-  _cachedLayout: GanttChartLayout | null = null;
-  _cachedLayoutParams: BuildLayoutParams | null = null;
+  const cachedLayout = React.useRef<GanttChartLayout | null>(null);
+  const cachedLayoutParams = React.useRef<BuildLayoutParams | null>(null);
+  const graphFiltered = filterByQuery(graph, selection.query);
+  const layoutParams = React.useMemo(
+    () => ({
+      nodes: state.hideUnselectedSteps ? graphFiltered.all : graph,
+      mode: state.mode,
+    }),
+    [graph, graphFiltered.all, state.hideUnselectedSteps, state.mode],
+  );
 
-  constructor(props: GanttChartProps) {
-    super(props);
-
-    this.state = {
-      options: {
-        ...DEFAULT_OPTIONS,
-        ...props.options,
-      },
-    };
-  }
-
-  getLayout = (params: BuildLayoutParams) => {
+  const layout = React.useMemo(() => {
     const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
     if (
-      !this._cachedLayoutParams ||
-      names(this._cachedLayoutParams.nodes) !== names(params.nodes) ||
-      this._cachedLayoutParams.mode !== params.mode
+      !cachedLayoutParams.current ||
+      names(cachedLayoutParams.current.nodes) !== names(layoutParams.nodes) ||
+      cachedLayoutParams.current.mode !== layoutParams.mode
     ) {
-      this._cachedLayout = buildLayout(params);
-      this._cachedLayoutParams = params;
+      cachedLayout.current = buildLayout(layoutParams);
+      cachedLayoutParams.current = layoutParams;
     }
-    return this._cachedLayout!;
-  };
+    return cachedLayout.current!;
+  }, [layoutParams]);
 
-  updateOptions = (changes: Partial<GanttChartLayoutOptions>) => {
-    this.setState({
-      ...this.state,
-      options: {...this.state.options, ...changes},
-    });
-  };
+  const updateOptions = React.useCallback((changes: Partial<GanttChartLayoutOptions>) => {
+    setState((current) => ({...current, ...changes}));
+  }, []);
 
-  onUpdateQuery = (query: string) => {
-    this.props.onSetSelection(query || '*');
-  };
+  const onChangeMode = React.useCallback(
+    (mode: GanttChartMode) => {
+      updateOptions({mode});
+      setMode(mode);
+    },
+    [setMode, updateOptions],
+  );
 
-  onDoubleClickStep = (stepKey: string) => {
-    const query = `*${stepKey}*`;
-    this.onUpdateQuery(this.props.selection.query !== query ? query : '*');
-  };
+  const onUpdateQuery = React.useCallback(
+    (query: string) => {
+      onSetSelection(query || '*');
+    },
+    [onSetSelection],
+  );
 
-  render() {
-    const {graph, selection} = this.props;
-    const {options} = this.state;
-    const graphFiltered = filterByQuery(graph, selection.query);
+  const onDoubleClickStep = React.useCallback(
+    (stepKey: string) => {
+      const query = `*${stepKey}*`;
+      onUpdateQuery(selection.query !== query ? query : '*');
+    },
+    [onUpdateQuery, selection.query],
+  );
 
-    const layout = this.getLayout({
-      nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
-      mode: options.mode,
-    });
-
-    return (
-      <GanttChartContainer>
-        <OptionsContainer>
-          {this.props.toolbarLeftActions}
-          {this.props.toolbarLeftActions && <OptionsDivider />}
-          <GanttChartModeControl
-            value={options.mode}
-            onChange={(mode) => this.updateOptions({mode})}
-            hideTimedMode={options.hideTimedMode}
-          />
-          {options.mode === GanttChartMode.WATERFALL_TIMED && (
-            <>
-              <OptionsSpacer />
-              <div style={{width: 200}}>
-                <ZoomSlider value={options.zoom} onChange={(v) => this.updateOptions({zoom: v})} />
-              </div>
-              <OptionsSpacer />
-              <Checkbox
-                style={{marginBottom: 0}}
-                label="Hide not started steps"
-                checked={options.hideWaiting}
-                onClick={() => this.updateOptions({hideWaiting: !options.hideWaiting})}
-              />
-            </>
-          )}
-          <div style={{flex: 1}} />
-          {this.props.toolbarActions}
-        </OptionsContainer>
-        <GanttChartInner
-          {...this.props}
-          {...this.state}
-          layout={layout}
-          graph={graph}
-          onUpdateQuery={this.onUpdateQuery}
-          onDoubleClickStep={this.onDoubleClickStep}
-          onChange={() =>
-            this.updateOptions({
-              hideUnselectedSteps: !options.hideUnselectedSteps,
-            })
-          }
+  return (
+    <GanttChartContainer>
+      <OptionsContainer>
+        <GanttChartModeControl
+          value={state.mode}
+          onChange={onChangeMode}
+          hideTimedMode={state.hideTimedMode}
         />
-      </GanttChartContainer>
-    );
-  }
-}
+        {state.mode === GanttChartMode.WATERFALL_TIMED && (
+          <>
+            <OptionsSpacer />
+            <div style={{width: 200}}>
+              <ZoomSlider value={state.zoom} onChange={(v) => updateOptions({zoom: v})} />
+            </div>
+            <OptionsSpacer />
+            <Checkbox
+              style={{marginBottom: 0}}
+              label="Hide not started steps"
+              checked={state.hideWaiting}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                updateOptions({hideWaiting: e.target.checked})
+              }
+            />
+          </>
+        )}
+        <div style={{flex: 1}} />
+        {toolbarActions}
+      </OptionsContainer>
+      <GanttChartInner
+        {...props}
+        options={{...state}}
+        layout={layout}
+        graph={graph}
+        onUpdateQuery={onUpdateQuery}
+        onDoubleClickStep={onDoubleClickStep}
+        onChange={() =>
+          updateOptions({
+            hideUnselectedSteps: !state.hideUnselectedSteps,
+          })
+        }
+      />
+    </GanttChartContainer>
+  );
+};
 
 type GanttChartInnerProps = GanttChartProps &
   GanttChartState & {
@@ -212,8 +219,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
   const {rootServerURI} = React.useContext(AppContext);
 
-  const websocketStatus = React.useContext(WebsocketStatusContext);
-  const websocketClosed = websocketStatus === WebSocket.CLOSED;
+  const {availability, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = availability === 'available' && status === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -237,7 +244,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // Because renders can happen "out of band" of our update interval, we set a timer for
   // "time until the next interval after the current nowMs".
   React.useEffect(() => {
-    if (scale === 0 || websocketClosed) {
+    if (scale === 0 || lostWebsocket) {
       return;
     }
 
@@ -248,21 +255,20 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       return;
     }
 
-    // time required for 2px shift in viz, but not more rapid than our CSS animation duration
     const renderInterval = Math.max(CSS_DURATION, 2 / scale);
     const now = Date.now();
 
     const timeUntilIntervalElasped = renderInterval - (now - nowMs);
     const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs, websocketClosed]);
+  }, [scale, nowMs, lostWebsocket, metadata]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.
   React.useEffect(() => {
     const listener = (e: CustomEvent) => setHoveredTime(e.detail);
-    document.addEventListener(HIGHLIGHT_TIME_EVENT, listener);
-    return () => document.removeEventListener(HIGHLIGHT_TIME_EVENT, listener);
+    document.addEventListener(HIGHLIGHT_TIME_EVENT, listener as EventListener);
+    return () => document.removeEventListener(HIGHLIGHT_TIME_EVENT, listener as EventListener);
   });
 
   // The `layout` we receive has been laid out and the rows / "waterfall" are final,
@@ -277,7 +283,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   );
   const layoutSize = {
     width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
-    height: Math.max(0, ...layout.boxes.map((b) => b.y * BOX_HEIGHT + BOX_HEIGHT)),
+    height: Math.max(0, ...layout.boxes.map((b) => TOP_INSET + b.y * BOX_HEIGHT + BOTTOM_INSET)),
   };
 
   React.useEffect(() => {
@@ -330,7 +336,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
         />
       )}
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
-        <div style={{position: 'relative', ...layoutSize}}>
+        <div style={{position: 'relative', marginBottom: 50, ...layoutSize}}>
           {measurementComplete && (
             <GanttChartViewportContents
               options={options}
@@ -348,22 +354,17 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       </div>
 
       <GraphQueryInputContainer>
-        {websocketClosed ? (
+        {lostWebsocket ? (
           <WebsocketWarning>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
               <Group
                 direction="row"
                 spacing={8}
-                background={`${Colors.ORANGE3}26`}
+                background={`${ColorsWIP.Yellow500}26`}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon
-                  icon="warning-sign"
-                  color={Colors.ORANGE2}
-                  iconSize={14}
-                  style={{display: 'block', position: 'relative', top: '2px'}}
-                />
+                <IconWIP name="warning" color={ColorsWIP.Yellow700} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagit server.</strong>
                   <span>
@@ -374,21 +375,21 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <GraphQueryInput
-          items={props.graph}
-          value={props.selection.query}
-          placeholder="Type a Step Subset"
-          onChange={props.onUpdateQuery}
-          presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selection.keys.length > 0 ? 'has-step' : ''}
-        />
-        <Checkbox
-          checked={options.hideUnselectedSteps}
-          label="Hide unselected steps"
-          onChange={props.onChange}
-          inline={true}
-          style={{marginLeft: 5}}
-        />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+          <GraphQueryInput
+            items={props.graph}
+            value={props.selection.query}
+            placeholder="Type a Step Subset"
+            onChange={props.onUpdateQuery}
+            presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+            className={selection.keys.length > 0 ? 'has-step' : ''}
+          />
+          <Checkbox
+            checked={options.hideUnselectedSteps}
+            label="Hide unselected steps"
+            onChange={props.onChange}
+          />
+        </Box>
       </GraphQueryInputContainer>
     </>
   );
@@ -553,9 +554,9 @@ interface Bounds {
 const boundsForBox = (a: GanttChartPlacement): Bounds => {
   return {
     minX: a.x,
-    minY: a.y * BOX_HEIGHT,
+    minY: TOP_INSET + a.y * BOX_HEIGHT,
     maxX: a.x + a.width,
-    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT,
+    maxY: TOP_INSET + a.y * BOX_HEIGHT + BOX_HEIGHT,
   };
 };
 
@@ -579,7 +580,7 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
 
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY;
+  const minY = TOP_INSET + (straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY);
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.
@@ -587,8 +588,8 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
     ? Math.max(a.x, b.x)
     : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
   const maxY = straight
-    ? b.y * BOX_HEIGHT + bCenterY
-    : b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
+    ? TOP_INSET + b.y * BOX_HEIGHT + bCenterY
+    : TOP_INSET + b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
 
   return {minX, minY, maxX, maxY};
 };
@@ -614,7 +615,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
+      darkened ? ColorsWIP.Gray700 : ColorsWIP.Gray300
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -638,7 +639,7 @@ const GanttLine = React.memo(
             style={{
               width: 1,
               left: maxXAvoidingOverlap,
-              top: minY,
+              top: minY - LINE_SIZE / 2,
               height: maxY - minY,
               borderRight: border,
               zIndex: darkened ? 100 : 1,
@@ -661,7 +662,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 
   .line {
     position: absolute;
@@ -672,7 +673,7 @@ const GanttChartContainer = styled.div`
   }
 
   .chart-element {
-    font-size: 11px;
+    font-size: 12px;
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
@@ -691,26 +692,24 @@ const GanttChartContainer = styled.div`
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
 
   .box {
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    padding: 2px;
+    padding: 3px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: 2px;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${Colors.DARK_GRAY1};
-      box-shadow: 0 0 0 2px ${Colors.GOLD3};
+      border: 1px solid ${ColorsWIP.Gray900};
+      box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
     }
     &.hovered {
-      border: 1px solid ${Colors.DARK_GRAY3};
+      border: 1px solid ${ColorsWIP.Gray800};
     }
     &.dynamic {
       filter: brightness(125%);
@@ -743,7 +742,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${Colors.ORANGE2};
+  color: ${ColorsWIP.Yellow700};
   width: 100%;
 `;
 
@@ -756,13 +755,17 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
-GanttChart.LoadingState = ({runId}: {runId: string}) => (
+export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   <GanttChartContainer>
     <OptionsContainer />
     <SplitPanelContainer
       identifier="gantt-split"
       axis="horizontal"
-      first={<NonIdealState icon={<Spinner purpose="section" />} />}
+      first={
+        <div style={{margin: 'auto', marginTop: 100}}>
+          <Spinner purpose="section" />
+        </div>
+      }
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
@@ -784,7 +787,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       axis="horizontal"
       first={
         <NonIdealState
-          icon={IconNames.TIME}
+          icon="arrow_forward"
           description="This run is currently queued."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />

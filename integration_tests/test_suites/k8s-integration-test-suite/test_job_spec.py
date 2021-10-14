@@ -4,7 +4,7 @@ import yaml
 from dagster import __version__ as dagster_version
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import create_run_for_test
+from dagster.core.test_utils import create_run_for_test, remove_none_recursively
 from dagster.utils import load_yaml_from_path
 from dagster_k8s import construct_dagster_k8s_job
 from dagster_k8s.job import (
@@ -13,12 +13,12 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
+from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_external_pipeline,
+    get_test_project_workspace_and_external_pipeline,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -88,14 +88,20 @@ spec:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
           sub_path: dagster.yaml
+        - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+          name: test-volume
+          sub_path: volume_mounted_file.yaml
       image_pull_secrets:
-      - name: element-dev-key
+      - name: test-image-pull-secret
       restart_policy: Never
       service_account_name: dagit-admin
       volumes:
       - config_map:
           name: dagster-instance
         name: dagster-instance
+      - config_map:
+          name: test-volume-configmap
+        name: test-volume
   ttl_seconds_after_finished: 86400
 """
 
@@ -111,7 +117,7 @@ metadata:
     app.kubernetes.io/version: {dagster_version}
   name: dagster-run-{run_id}
 spec:
-  backoff_limit: 0
+  backoff_limit: {backoff_limit}
   template:
     metadata:
       {annotations}
@@ -146,15 +152,21 @@ spec:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
           sub_path: dagster.yaml
+        - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+          name: test-volume
+          sub_path: volume_mounted_file.yaml
       image_pull_secrets:
-      - name: element-dev-key
+      - name: test-image-pull-secret
       restart_policy: Never
       service_account_name: dagit-admin
       volumes:
       - config_map:
           name: dagster-instance
         name: dagster-instance
-  ttl_seconds_after_finished: 86400
+      - config_map:
+          name: test-volume-configmap
+        name: test-volume
+  ttl_seconds_after_finished: {ttl_seconds_after_finished}
 """
 
 
@@ -244,6 +256,9 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
+    backoff_limit = 1234
+    ttl_seconds_after_finished = 5678
+
     tags = validate_tags(
         {
             USER_DEFINED_K8S_CONFIG_KEY: (
@@ -257,6 +272,10 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
                     "pod_template_spec_metadata": {
                         "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"},
                         "labels": {"spotinst.io/restrict-scale-down": "true"},
+                    },
+                    "job_spec_config": {
+                        "ttl_seconds_after_finished": ttl_seconds_after_finished,
+                        "backoff_limit": backoff_limit,
                     },
                     "pod_spec_config": {
                         "affinity": {
@@ -302,6 +321,8 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
             dagster_version=dagster_version,
             labels="spotinst.io/restrict-scale-down: 'true'",
             env_from=ENV_FROM,
+            backoff_limit=backoff_limit,
+            ttl_seconds_after_finished=ttl_seconds_after_finished,
             resources="""
         resources:
           limits:
@@ -331,19 +352,23 @@ def test_k8s_run_launcher(
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+    with get_test_project_workspace_and_external_pipeline(
+        dagster_instance_for_k8s_run_launcher, pipeline_name
+    ) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
         )
@@ -356,15 +381,23 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = {"blah blah this is wrong": {}}
     pipeline_name = "demo_pipeline"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
-    )
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+    with get_test_project_workspace_and_external_pipeline(
+        dagster_instance_for_k8s_run_launcher, pipeline_name
+    ) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
         )

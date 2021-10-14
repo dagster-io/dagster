@@ -39,7 +39,7 @@ To make Dagster aware that we materialized an asset in our solid, we can yield a
 
 ```python file=/concepts/assets/materialization_solids.py startafter=start_materialization_solids_marker_0 endbefore=end_materialization_solids_marker_0
 @solid
-def my_simple_solid(_):
+def my_simple_solid():
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     return remote_storage_path
@@ -270,14 +270,14 @@ from dagster import solid, pipeline, OutputDefinition, AssetKey
 
 
 @solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_db.users"))])
-def scrape_users(_):
+def scrape_users():
     users_df = some_api_call()
     persist_to_db(users_df)
     return users_df
 
 
 @solid(output_defs=[OutputDefinition(asset_key=AssetKey("ml_models.user_prediction"))])
-def get_prediction_model(_, users_df):
+def get_prediction_model(users_df):
     my_ml_model = train_prediction_model(users_df)
     persist_to_model_store(my_ml_model)
     return my_ml_model

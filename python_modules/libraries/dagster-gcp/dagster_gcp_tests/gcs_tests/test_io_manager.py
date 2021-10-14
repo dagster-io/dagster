@@ -1,25 +1,23 @@
 from dagster import (
     DagsterInstance,
-    InputContext,
-    InputDefinition,
+    DynamicOut,
+    DynamicOutput,
+    In,
     Int,
-    ModeDefinition,
-    OutputContext,
-    OutputDefinition,
+    Out,
     PipelineRun,
-    lambda_solid,
-    pipeline,
-    solid,
+    build_input_context,
+    build_output_context,
+    job,
+    op,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import execute_pipeline, execute_plan
+from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
@@ -36,25 +34,19 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, io_manager_key="io_manager"))
+def define_inty_job():
+    @op(out=Out(Int, io_manager_key="io_manager"))
     def return_one():
         return 1
 
-    @lambda_solid(
-        input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, io_manager_key="io_manager"),
+    @op(
+        ins={"num": In(Int)},
+        out=Out(Int, io_manager_key="io_manager"),
     )
     def add_one(num):
         return num + 1
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource},
-            )
-        ]
-    )
+    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
     def basic_external_plan_execution():
         add_one(return_one())
 
@@ -62,7 +54,7 @@ def define_inty_pipeline():
 
 
 def test_gcs_pickle_io_manager_execution(gcs_bucket):
-    pipeline_def = define_inty_pipeline()
+    inty_job = define_inty_job()
 
     run_config = {
         "resources": {
@@ -76,21 +68,19 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     run_id = make_new_run_id()
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+    resolved_run_config = ResolvedRunConfig.build(inty_job, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(inty_job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    pipeline_run = PipelineRun(pipeline_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(step_keys, inty_job, resolved_run_config),
+            pipeline=InMemoryPipeline(inty_job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -101,24 +91,19 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     io_manager = PickledObjectGCSIOManager(gcs_bucket, storage.Client())
     step_output_handle = StepOutputHandle("return_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("return_one"),
-        upstream_output=OutputContext(
+    context = build_input_context(
+        upstream_output=build_output_context(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
             run_id=run_id,
-            solid_def=pipeline_def.solid_def_named("return_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+        )
     )
     assert io_manager.load_input(context) == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(["add_one"], inty_job, resolved_run_config),
+            pipeline=InMemoryPipeline(inty_job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -126,17 +111,12 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     )
 
     step_output_handle = StepOutputHandle("add_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("add_one"),
-        upstream_output=OutputContext(
+    context = build_input_context(
+        upstream_output=build_output_context(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
             run_id=run_id,
-            solid_def=pipeline_def.solid_def_named("add_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+        )
     )
 
     assert get_step_output(add_one_step_events, "add_one")
@@ -144,24 +124,20 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
 
 def test_dynamic(gcs_bucket):
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def numbers(_):
+    @op(out=DynamicOut())
+    def numbers():
         for i in range(3):
             yield DynamicOutput(i, mapping_key=str(i))
 
-    @solid
+    @op
     def echo(_, x):
         return x
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
-        ]
-    )
+    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
     def dynamic():
-        numbers().map(echo)
+        numbers().map(echo)  # pylint: disable=no-member
 
-    result = execute_pipeline(
-        dynamic, run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}
+    result = dynamic.execute_in_process(
+        run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}
     )
     assert result.success

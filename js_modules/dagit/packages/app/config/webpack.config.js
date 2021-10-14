@@ -7,6 +7,7 @@ const path = require('path');
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
+const CspHtmlWebpackPlugin = require('csp-html-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -15,7 +16,6 @@ const PnpWebpackPlugin = require('pnp-webpack-plugin');
 const postcssNormalize = require('postcss-normalize');
 const safePostCssParser = require('postcss-safe-parser');
 const ForkTsCheckerWebpackPlugin = require('react-dev-utils/ForkTsCheckerWebpackPlugin');
-const InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin');
 const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const ModuleNotFoundPlugin = require('react-dev-utils/ModuleNotFoundPlugin');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
@@ -39,10 +39,6 @@ const shouldUseSourceMap = process.env.GENERATE_SOURCEMAP !== 'false';
 
 const webpackDevClientEntry = require.resolve('react-dev-utils/webpackHotDevClient');
 const reactRefreshOverlayEntry = require.resolve('react-dev-utils/refreshOverlayInterop');
-
-// Some apps do not need the benefits of saving a web request, so not inlining the chunk
-// makes for a smoother build process.
-const shouldInlineRuntimeChunk = process.env.INLINE_RUNTIME_CHUNK !== 'false';
 
 const emitErrorsAsWarnings = process.env.ESLINT_NO_DEV_ERRORS === 'true';
 const disableESLintPlugin = process.env.DISABLE_ESLINT_PLUGIN === 'true';
@@ -77,10 +73,6 @@ const hasJsxRuntime = (() => {
 // This is the production and development configuration.
 // It is focused on developer experience, fast rebuilds, and a minimal bundle.
 module.exports = function (webpackEnv) {
-  // console.log(paths.dagitCore);
-  // console.log(path.resolve(paths.dagit, 'packages/core/src'));
-  // process.exit(0);
-
   const isEnvDevelopment = webpackEnv === 'development';
   const isEnvProduction = webpackEnv === 'production';
 
@@ -321,6 +313,7 @@ module.exports = function (webpackEnv) {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
         'react-native': 'react-native-web',
+        '@dagit/core': paths.dagitCore,
         // Allows for better profiling with ReactDevTools
         ...(isEnvProductionProfile && {
           'react-dom$': 'react-dom/profiling',
@@ -337,7 +330,10 @@ module.exports = function (webpackEnv) {
         // To fix this, we prevent you from importing files out of src/ -- if you'd like to,
         // please link the files into your node_modules/ and let module-resolution kick in.
         // Make sure your source files are compiled, as they will not be processed in any way.
-        new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson, reactRefreshOverlayEntry]),
+        new ModuleScopePlugin(
+          [paths.appSrc, paths.dagitCore],
+          [paths.appPackageJson, reactRefreshOverlayEntry],
+        ),
       ],
     },
     resolveLoader: {
@@ -560,12 +556,37 @@ module.exports = function (webpackEnv) {
             : undefined,
         ),
       ),
-      // Inlines the webpack runtime script. This script is too small to warrant
-      // a network request.
-      // https://github.com/facebook/create-react-app/issues/5358
-      isEnvProduction &&
-        shouldInlineRuntimeChunk &&
-        new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
+      new CspHtmlWebpackPlugin(
+        {
+          'default-src': `'none'`,
+          'base-uri': `'self'`,
+          // It shouldn't be necessary to specify WS here, but Safari is broken.
+          // https://bugs.webkit.org/show_bug.cgi?id=201591
+          'connect-src': [`'self'`, 'ws:', 'wss:'],
+          'font-src': [`'self'`, 'fonts.gstatic.com'],
+          'frame-src': isEnvDevelopment ? [`http://localhost:*`, `'self'`] : `'self'`,
+          'img-src': [`'self'`, 'data:'],
+          'manifest-src': `'self'`,
+          // Allow inline `script` and `style` in development because we don't generate a
+          // nonce when running Webpack devserver.
+          'script-src': isEnvDevelopment
+            ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
+            : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
+          'style-src': isEnvDevelopment
+            ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`, 'fonts.googleapis.com']
+            : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`, 'fonts.googleapis.com'],
+        },
+        {
+          hashEnabled: {
+            'script-src': false,
+            'style-src': false,
+          },
+          nonceEnabled: {
+            'script-src': false,
+            'style-src': false,
+          },
+        },
+      ),
       // Makes some environment variables available in index.html.
       // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
       // <link rel="icon" href="%PUBLIC_URL%/favicon.ico">

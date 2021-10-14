@@ -11,16 +11,17 @@ Solids are the functional unit of work in Dagster. A solid's responsibility is t
 
 ## Relevant APIs
 
-| Name                                   | Description                                                                                                                                                                                                  |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="solid" decorator />  | The decorator used to define solids. The decorated function is called the `compute_fn`. The decorator returns a <PyObject object="SolidDefinition" />                                                        |
-| <PyObject object="InputDefinition" />  | InputDefinitions define the inputs to a solid compute function. These are defined on the `input_defs` argument to the <PyObject object="solid" decorator/> decorator                                         |
-| <PyObject object="OutputDefinition" /> | OutputDefinitions define the outputs of a solid compute function. These are defined on the `output_defs` argument to the <PyObject object="solid" displayText="@solid"/> decorator                           |
-| <PyObject object="SolidDefinition"  /> | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="solid" decorator /> which returns a <PyObject object="SolidDefinition"  /> |
+| Name                                       | Description                                                                                                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="solid" decorator />      | The decorator used to define solids. The decorated function is called the `compute_fn`. The decorator returns a <PyObject object="SolidDefinition" />.                                                  |
+| <PyObject object="InputDefinition" />      | InputDefinitions define the inputs to a solid compute function. These are defined on the `input_defs` argument to the <PyObject object="solid" decorator/> decorator.                                   |
+| <PyObject object="OutputDefinition" />     | OutputDefinitions define the outputs of a solid compute function. These are defined on the `output_defs` argument to the <PyObject object="solid" displayText="@solid"/> decorator.                     |
+| <PyObject object="SolidExecutionContext"/> | An optional first argument to a solid's compute function, providing access to Dagster system information such as resources, logging, and the underlying Dagster instance.                               |
+| <PyObject object="SolidDefinition"  />     | Class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="solid" decorator /> which returns a <PyObject object="SolidDefinition" />. |
 
 ## Overview
 
-Solids are used to define computations. Solids can later be assembled into Pipelines [Pipelines](/concepts/solids-pipelines/pipelines). Solids generally perform one specific action and are used for batch computations. For example, you can use a solid to:
+Solids are used to define computations. Solids can later be assembled into [Pipelines](/concepts/solids-pipelines/pipelines). Solids generally perform one specific action and are used for batch computations. For example, you can use a solid to:
 
 - Derive a data set from some other data sets.
 - Execute a database query.
@@ -42,11 +43,11 @@ Solids have several important properties:
 
 ## Defining a solid
 
-To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn` and must have `context` as the first argument. The context provides access to important properties and objects, such as [solid configuration](/concepts/solids-pipelines/solids#solid-configuration) and [resources](/concepts/modes-resources).
+To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn`.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_marker endbefore=end_solid_marker
 @solid
-def my_solid(context):
+def my_solid():
     return "hello"
 ```
 
@@ -68,7 +69,7 @@ The most common way to define inputs is just to add arguments to the decorated f
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_input_solid_marker endbefore=end_input_solid_marker
 @solid
-def my_input_solid(context, abc, xyz):
+def my_input_solid(abc, xyz):
     pass
 ```
 
@@ -84,7 +85,7 @@ MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name=
 
 
 @solid(input_defs=[InputDefinition(name="abc", dagster_type=MyDagsterType)])
-def my_typed_input_solid(context, abc):
+def my_typed_input_solid(abc):
     pass
 ```
 
@@ -96,7 +97,7 @@ When you have one output, you can return the output value directly.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_output_solid_marker endbefore=end_output_solid_marker
 @solid
-def my_output_solid(context):
+def my_output_solid():
     return 5
 ```
 
@@ -111,7 +112,7 @@ When you have more than one output, you must `yield` an instance of the <PyObjec
         OutputDefinition(name="second_output"),
     ],
 )
-def my_multi_output_solid(context):
+def my_multi_output_solid():
     yield Output(5, output_name="first_output")
     yield Output(6, output_name="second_output")
 ```
@@ -120,12 +121,7 @@ Like inputs, outputs can also have [Dagster Types](/concepts/types).
 
 ### Solid Context
 
-The first parameter of a solids `compute_fn` is the context object, which is an instance of <PyObject object="SolidExecutionContext"/>. The context provides access to:
-
-- Solid configuration (`context.solid_config`)
-- Loggers (`context.log`)
-- Resources (`context.resources`)
-- The current run ID: (`context.run_id`)
+When writing a solid, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the solid. The context provides access to system information like solid configuration, loggers, resources, and the current run id. See <PyObject object="SolidExecutionContext"/> for the full list of properties accessible from the solid context.
 
 For example, to access the logger and log a info message:
 
@@ -154,7 +150,7 @@ def my_configurable_solid(context):
 
 ## Using a solid
 
-Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](/concepts/solids-pipelines/pipelines) page. You can also execute a single solid, usually within a test context, using the <PyObject object="execute_solid" /> function. More information can be found at [Testing single solid execution](/concepts/testing#testing-single-solid-execution)
+Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](/concepts/solids-pipelines/pipelines) page. You can also execute a single solid, usually within a test context, by directly invoking it. More information can be found at [Testing solids](/concepts/testing#testing-solids)
 
 ## Patterns
 

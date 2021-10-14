@@ -3,7 +3,6 @@ import re
 import pytest
 from dagster.check import CheckError
 from dagster.utils.backcompat import (
-    EXPERIMENTAL_WARNING_HELP,
     ExperimentalWarning,
     canonicalize_backcompat_args,
     experimental,
@@ -108,13 +107,10 @@ def test_experimental_arg_warning():
     assert warning[0].filename.endswith("test_backcompat.py")
 
 
-def test_experimental_decorator():
-    with assert_no_warnings():
-
-        @experimental
-        def my_experimental_function(some_arg):
-            assert some_arg == 5
-            return 4
+def test_experimental_decorator_function():
+    @experimental
+    def my_experimental_function(arg):
+        return arg
 
     assert my_experimental_function.__name__ == "my_experimental_function"
 
@@ -123,6 +119,50 @@ def test_experimental_decorator():
         match='"my_experimental_function" is an experimental function. It may break in future'
         " versions, even between dot releases. ",
     ) as warning:
-        assert my_experimental_function(5) == 4
+        assert my_experimental_function(5) == 5
 
     assert warning[0].filename.endswith("test_backcompat.py")
+
+
+def test_experimental_decorator_class():
+    @experimental
+    class ExperimentalClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @experimental
+    class ExperimentalClassWithExperimentalFunction(ExperimentalClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @experimental
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"ExperimentalClass" is an experimental class. It may break in future versions, even between dot releases.',
+    ):
+        experimental_class = ExperimentalClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert experimental_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"ExperimentalClassWithExperimentalFunction" is an experimental class. It may break in future versions, even between dot releases.',
+    ):
+        experimental_class_with_experimental_function = ExperimentalClassWithExperimentalFunction()
+
+    with assert_no_warnings():
+        assert experimental_class_with_experimental_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"goodbye" is an experimental function. It may break in future versions, even between dot releases.',
+    ):
+        assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"

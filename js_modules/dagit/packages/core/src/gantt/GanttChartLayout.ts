@@ -1,11 +1,11 @@
-import {Colors} from '@blueprintjs/core';
-
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
+import {ColorsWIP} from '../ui/Colors';
 
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
   BOX_WIDTH,
+  FLAT_INSET_FROM_PARENT,
   GanttChartBox,
   GanttChartLayout,
   GanttChartLayoutOptions,
@@ -13,7 +13,6 @@ import {
   GanttChartMode,
   IGanttNode,
   LEFT_INSET,
-  FLAT_INSET_FROM_PARENT,
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 
@@ -21,8 +20,6 @@ export interface BuildLayoutParams {
   nodes: IGanttNode[];
   mode: GanttChartMode;
 }
-
-const ROUNDING_GRADIENT = 'linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))';
 
 export const buildLayout = (params: BuildLayoutParams) => {
   const {nodes, mode} = params;
@@ -232,10 +229,10 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const ColorsForStates = {
-  [IStepState.RETRY_REQUESTED]: Colors.ORANGE3,
-  [IStepState.RUNNING]: Colors.GRAY3,
-  [IStepState.SUCCEEDED]: Colors.GREEN3,
-  [IStepState.FAILED]: Colors.RED3,
+  [IStepState.RETRY_REQUESTED]: ColorsWIP.Yellow500,
+  [IStepState.RUNNING]: ColorsWIP.Gray400,
+  [IStepState.SUCCEEDED]: ColorsWIP.Green500,
+  [IStepState.FAILED]: ColorsWIP.Red500,
   [IStepState.SKIPPED]: 'rgb(173, 185, 152)',
 };
 
@@ -251,22 +248,21 @@ export const boxStyleFor = (
     !context.metadata.startedPipelineAt &&
     context.options.mode !== GanttChartMode.WATERFALL_TIMED
   ) {
-    return {background: `${ROUNDING_GRADIENT}, #2491eb`};
+    return {background: `#2491eb`};
   }
 
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      background: `${ROUNDING_GRADIENT}, ${ColorsForStates[state] || Colors.GRAY3}`,
+      background: `${ColorsForStates[state] || ColorsWIP.Gray400}`,
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: Colors.DARK_GRAY4,
-    background: Colors.WHITE,
-    border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
-    boxShadow: `none`,
+    color: ColorsWIP.Gray200,
+    background: ColorsWIP.White,
+    border: `1.5px dotted ${ColorsWIP.Gray200}`,
   };
 };
 

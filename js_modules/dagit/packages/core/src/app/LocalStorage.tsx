@@ -18,11 +18,15 @@ export interface PipelineRunTag {
   value: string;
 }
 
+export type SessionBase =
+  | {presetName: string}
+  | {partitionsSetName: string; partitionName: string | null};
+
 export interface IExecutionSession {
   key: string;
   name: string;
   runConfigYaml: string;
-  base: {presetName: string} | {partitionsSetName: string; partitionName: string | null} | null;
+  base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
   solidSelection: string[] | null;
@@ -99,7 +103,7 @@ export function applyCreateSession(
 
 // StorageProvider component that vends `IStorageData` via a render prop
 
-type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
+type StorageHook = [IStorageData, (data: IStorageData) => void];
 
 let _data: IStorageData | null = null;
 let _dataNamespace = '';
@@ -120,7 +124,7 @@ export function getJSONForKey(key: string) {
   return undefined;
 }
 
-function getStorageDataForNamespace(namespace: string) {
+function getStorageDataForNamespace(namespace: string, initial: Partial<IExecutionSession> = {}) {
   if (_data && _dataNamespace === namespace) {
     return _data;
   }
@@ -131,8 +135,9 @@ function getStorageDataForNamespace(namespace: string) {
   );
 
   if (Object.keys(data.sessions).length === 0) {
-    data = applyCreateSession(data, {});
+    data = applyCreateSession(data, initial);
   }
+
   if (!data.sessions[data.current]) {
     data.current = Object.keys(data.sessions)[0];
   }
@@ -156,7 +161,11 @@ current localStorage namespace in memory (in _data above) and React keeps a simp
 version flag it can use to trigger a re-render after changes are saved, so changing
 namespaces changes the returned data immediately.
 */
-export function useStorage(repositoryName: string, pipelineName: string): StorageHook {
+export function useStorage(
+  repositoryName: string,
+  pipelineName: string,
+  initial: Partial<IExecutionSession> = {},
+): StorageHook {
   const namespace = `${repositoryName}.${pipelineName}`;
   const [version, setVersion] = React.useState<number>(0);
 
@@ -165,7 +174,7 @@ export function useStorage(repositoryName: string, pipelineName: string): Storag
     setVersion(version + 1); // trigger a React render
   };
 
-  return [getStorageDataForNamespace(namespace), onSave];
+  return [getStorageDataForNamespace(namespace, initial), onSave];
 }
 
 type Repository = {

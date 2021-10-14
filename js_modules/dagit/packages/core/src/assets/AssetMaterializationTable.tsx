@@ -1,19 +1,24 @@
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
-import {RunStatusTagWithStats} from '../runs/RunStatusTag';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
+import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
@@ -22,6 +27,7 @@ export const AssetMaterializationTable: React.FC<{
   materializations: HistoricalMaterialization[];
   shouldBucketPartitions?: boolean;
 }> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const list = React.useMemo(() => {
     if (shouldBucketPartitions) {
       return materializations;
@@ -34,11 +40,11 @@ export const AssetMaterializationTable: React.FC<{
       <thead>
         <tr>
           {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
-          <th style={{paddingLeft: 0}}>Materialization Metadata</th>
-          {hasLineage && <th style={{minWidth: 100}}>Parent Materializations</th>}
+          <th style={{minWidth: 240}}>Materialization Metadata</th>
+          {hasLineage && <th>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
-          <th style={{minWidth: 150}}>Pipeline</th>
-          <th style={{width: 200}}>Run</th>
+          <th style={{minWidth: 150}}>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
+          <th style={{width: 100}}>Run</th>
         </tr>
       </thead>
       <tbody>
@@ -71,14 +77,18 @@ const AssetMaterializationRow: React.FC<{
   return (
     <tr>
       {isPartitioned && (
-        <td>{latest.partition || <span style={{color: Colors.GRAY3}}>None</span>}</td>
+        <td style={{whiteSpace: 'nowrap'}}>
+          {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+        </td>
       )}
-      <td style={{fontSize: 12, padding: '4px 12px 0 0'}}>
+      <td style={{fontSize: 12}}>
         {materialization.description ? (
           <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
         ) : null}
         {metadataEntries && metadataEntries.length ? (
-          <MetadataEntries entries={metadataEntries} />
+          <MetadataTableContainer>
+            <MetadataEntries entries={metadataEntries} />
+          </MetadataTableContainer>
         ) : null}
       </td>
       {hasLineage && (
@@ -105,22 +115,30 @@ const AssetMaterializationRow: React.FC<{
         />
       </td>
       <td>
-        <Link
-          style={{marginRight: 5, fontFamily: FontFamily.monospace}}
-          to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}
-        >
-          {titleForRun(run)}
-        </Link>
-        <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <RunStatusWithStats runId={run.runId} status={run.status} />
+          <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
+            <Mono>{titleForRun(run)}</Mono>
+          </Link>
+        </Box>
       </td>
     </tr>
   );
 };
 
+const MetadataTableContainer = styled.div`
+  margin-top: -4px;
+  margin-bottom: -10px;
+
+  & tbody > tr > td {
+    font-size: 13px;
+  }
+`;
+
 interface PredecessorDialogProps {
   hasLineage: boolean;
   isPartitioned: boolean;
-  predecessors: Materialization[];
+  predecessors: AssetMaterializationFragment[];
 }
 
 export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
@@ -143,7 +161,7 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${count} previous`}</ButtonLink>
-      <Dialog
+      <DialogWIP
         isOpen={open}
         canEscapeKeyClose
         canOutsideClickClose
@@ -151,22 +169,20 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
         style={{width: '80%', minWidth: '800px'}}
         title={title()}
       >
-        <div className={Classes.DIALOG_BODY}>
+        <Box padding={{bottom: 8}}>
           <AssetMaterializationTable
             hasLineage={hasLineage}
             isPartitioned={isPartitioned}
             materializations={predecessors.map((p) => ({latest: p}))}
             shouldBucketPartitions={false}
           />
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="primary" onClick={() => setOpen(false)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </Box>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };

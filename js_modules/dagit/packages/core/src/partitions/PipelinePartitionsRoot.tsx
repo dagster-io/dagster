@@ -1,17 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
+import {useJobTitle} from '../pipelines/useJobTitle';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {PartitionView} from './PartitionView';
 import {
@@ -26,8 +23,11 @@ interface Props {
 
 export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
-  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineMode, pipelineName} = explorerPath;
+  useJobTitle(explorerPath);
+  useStripSnapshotFromPath(props);
+
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<PipelinePartitionsRootQuery, PipelinePartitionsRootQueryVariables>(
@@ -41,34 +41,26 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
     queryKey: 'partitionSet',
   });
 
-  if (snapshotId) {
-    return (
-      <Redirect
-        to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/partitions`)}
-      />
-    );
-  }
-
   return (
     <Loading queryResult={queryResult}>
       {({partitionSetsOrError}) => {
         if (partitionSetsOrError.__typename !== 'PartitionSets') {
           return (
-            <Wrapper>
+            <Box padding={{vertical: 64}}>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={partitionSetsOrError.message}
               />
-            </Wrapper>
+            </Box>
           );
         }
 
         if (!partitionSetsOrError.results.length) {
           return (
-            <Wrapper>
+            <Box padding={{vertical: 64}}>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={
                   <p>
@@ -76,7 +68,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
                   </p>
                 }
               />
-            </Wrapper>
+            </Box>
           );
         }
 
@@ -88,15 +80,14 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
             : partitionSetsOrError.results[0];
 
         return (
-          <Box padding={20}>
-            <PartitionView
-              partitionSet={partitionSet}
-              partitionSets={partitionSetsOrError.results}
-              onChangePartitionSet={(x) => setSelected(x.name)}
-              pipelineName={pipelineName}
-              repoAddress={repoAddress}
-            />
-          </Box>
+          <PartitionView
+            partitionSet={partitionSet}
+            partitionSets={partitionSetsOrError.results}
+            onChangePartitionSet={(x) => setSelected(x.name)}
+            pipelineName={pipelineName}
+            pipelineMode={pipelineMode}
+            repoAddress={repoAddress}
+          />
         );
       }}
     </Loading>
@@ -118,15 +109,10 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       ... on PartitionSets {
         results {
           id
+          mode
           name
         }
       }
     }
   }
-`;
-
-const Wrapper = styled.div`
-  width: 100%;
-  height: 100%;
-  min-width: 0;
 `;

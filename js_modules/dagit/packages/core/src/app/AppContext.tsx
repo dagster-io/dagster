@@ -1,13 +1,11 @@
 import * as React from 'react';
 
-type AppContext = {
+export type AppContextValue = {
   basePath: string;
   rootServerURI: string;
-  websocketURI: string;
 };
 
-export const AppContext = React.createContext<AppContext>({
+export const AppContext = React.createContext<AppContextValue>({
   basePath: '',
   rootServerURI: '',
-  websocketURI: '',
 });

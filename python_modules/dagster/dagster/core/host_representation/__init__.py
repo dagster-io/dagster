@@ -28,8 +28,9 @@ from .external_data import (
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalScheduleData,
-    ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
+    ExternalSensorExecutionErrorData,
+    ExternalTargetData,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
@@ -53,7 +54,7 @@ from .repository_location import (
 )
 from .represented import RepresentedPipeline
 from .selector import (
-    JobSelector,
+    InstigationSelector,
     PipelineSelector,
     RepositorySelector,
     ScheduleSelector,

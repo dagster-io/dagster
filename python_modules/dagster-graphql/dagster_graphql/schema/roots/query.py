@@ -2,19 +2,15 @@ import graphene
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import (
-    JobSelector,
+    InstigationSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
 from dagster.core.scheduler.job import JobType
 
-from ...implementation.external import (
-    fetch_repositories,
-    fetch_repository,
-    fetch_repository_locations,
-)
-from ...implementation.fetch_assets import get_asset, get_assets
+from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
+from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_jobs import get_job_state_or_error, get_unloadable_job_states_or_error
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
@@ -39,15 +35,16 @@ from ...implementation.fetch_schedules import (
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import pipeline_selector_from_graphql
+from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import GraphenePartitionBackfillOrError, GraphenePartitionBackfillsOrError
 from ..external import (
     GrapheneRepositoriesOrError,
-    GrapheneRepositoryLocationsOrError,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceOrError,
 )
 from ..inputs import (
     GrapheneAssetKeyInput,
-    GrapheneJobSelector,
+    GrapheneInstigationSelector,
     GraphenePipelineRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
@@ -55,8 +52,13 @@ from ..inputs import (
     GrapheneSensorSelector,
 )
 from ..instance import GrapheneInstance
-from ..jobs import GrapheneJobStateOrError, GrapheneJobStatesOrError, GrapheneJobType
+from ..instigation import (
+    GrapheneInstigationStateOrError,
+    GrapheneInstigationStatesOrError,
+    GrapheneInstigationType,
+)
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
+from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GraphenePipelineRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
@@ -86,7 +88,7 @@ class GrapheneQuery(graphene.ObjectType):
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
     )
 
-    repositoryLocationsOrError = graphene.NonNull(GrapheneRepositoryLocationsOrError)
+    workspaceOrError = graphene.NonNull(GrapheneWorkspaceOrError)
 
     pipelineOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
@@ -119,13 +121,14 @@ class GrapheneQuery(graphene.ObjectType):
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
     )
 
-    jobStateOrError = graphene.Field(
-        graphene.NonNull(GrapheneJobStateOrError),
-        jobSelector=graphene.NonNull(GrapheneJobSelector),
+    instigationStateOrError = graphene.Field(
+        graphene.NonNull(GrapheneInstigationStateOrError),
+        instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
     )
 
-    unloadableJobStatesOrError = graphene.Field(
-        graphene.NonNull(GrapheneJobStatesOrError), jobType=graphene.Argument(GrapheneJobType)
+    unloadableInstigationStatesOrError = graphene.Field(
+        graphene.NonNull(GrapheneInstigationStatesOrError),
+        instigationType=graphene.Argument(GrapheneInstigationType),
     )
 
     partitionSetsOrError = graphene.Field(
@@ -193,10 +196,22 @@ class GrapheneQuery(graphene.ObjectType):
 
     instance = graphene.NonNull(GrapheneInstance)
 
-    assetsOrError = graphene.NonNull(GrapheneAssetsOrError)
+    assetsOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetsOrError),
+        prefix=graphene.List(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
 
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+    )
+
+    assetNodes = non_null_list(GrapheneAssetNode)
+
+    assetNodeOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetNodeOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
     )
 
@@ -211,6 +226,8 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Int(),
     )
 
+    permissions = graphene.Field(non_null_list(GraphenePermission))
+
     class Meta:
         name = "Query"
 
@@ -223,8 +240,8 @@ class GrapheneQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_repositoryLocationsOrError(self, graphene_info):
-        return fetch_repository_locations(graphene_info.context)
+    def resolve_workspaceOrError(self, graphene_info):
+        return fetch_workspace(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
@@ -272,11 +289,13 @@ class GrapheneQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_jobStateOrError(self, graphene_info, jobSelector):
-        return get_job_state_or_error(graphene_info, JobSelector.from_graphql_input(jobSelector))
+    def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
+        return get_job_state_or_error(
+            graphene_info, InstigationSelector.from_graphql_input(instigationSelector)
+        )
 
-    def resolve_unloadableJobStatesOrError(self, graphene_info, **kwargs):
-        job_type = JobType(kwargs["jobType"]) if "jobType" in kwargs else None
+    def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):
+        job_type = JobType(kwargs["instigationType"]) if "instigationType" in kwargs else None
         return get_unloadable_job_states_or_error(graphene_info, job_type)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
@@ -356,8 +375,19 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_instance(self, graphene_info):
         return GrapheneInstance(graphene_info.context.instance)
 
-    def resolve_assetsOrError(self, graphene_info):
-        return get_assets(graphene_info)
+    def resolve_assetNodes(self, graphene_info):
+        return get_asset_nodes(graphene_info)
+
+    def resolve_assetNodeOrError(self, graphene_info, **kwargs):
+        return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+
+    def resolve_assetsOrError(self, graphene_info, **kwargs):
+        return get_assets(
+            graphene_info,
+            prefix=kwargs.get("prefix"),
+            cursor=kwargs.get("cursor"),
+            limit=kwargs.get("limit"),
+        )
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
@@ -371,3 +401,7 @@ class GrapheneQuery(graphene.ObjectType):
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
         )
+
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]

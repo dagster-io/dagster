@@ -17,7 +17,7 @@ from .utils import create_blob_client, generate_blob_sas
 
 
 class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to Azure Blob Storage.
+    """Logs op compute function stdout and stderr to Azure Blob Storage.
 
     This is also compatible with Azure Data Lake Storage.
 
@@ -140,6 +140,9 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
     def on_subscribe(self, subscription):
         self.local_manager.on_subscribe(subscription)
 
+    def on_unsubscribe(self, subscription):
+        self.local_manager.on_unsubscribe(subscription)
+
     def _should_download(self, run_id, key, io_type):
         local_path = self.get_local_path(run_id, key, io_type)
         if os.path.exists(local_path):
@@ -197,3 +200,6 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
             "{}.{}".format(key, extension),
         ]
         return "/".join(paths)  # blob path delimiter
+
+    def dispose(self):
+        self.local_manager.dispose()

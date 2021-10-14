@@ -1,4 +1,4 @@
 # dagster-ge
 
 The docs for `dagster-ge` can be found
-[here](https://docs.dagster.io/_apidocs/libraries/dagster_ge).
+[here](https://docs.dagster.io/_apidocs/libraries/dagster-ge).

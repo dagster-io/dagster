@@ -100,7 +100,14 @@
                 },
                 "tag": {
                     "title": "Tag",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "pullPolicy": {
                     "$ref": "#/definitions/PullPolicy"
@@ -108,7 +115,6 @@
             },
             "required": [
                 "repository",
-                "tag",
                 "pullPolicy"
             ]
         },
@@ -311,6 +317,21 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "enableReadOnly": {
+                    "title": "Enablereadonly",
+                    "type": "boolean"
+                },
+                "dbStatementTimeout": {
+                    "title": "Dbstatementtimeout",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -329,7 +350,8 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe",
-                "annotations"
+                "annotations",
+                "enableReadOnly"
             ]
         },
         "UserDeployment": {
@@ -406,6 +428,13 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -441,14 +470,10 @@
                 "deployments"
             ]
         },
-        "ImageWithRegistry": {
-            "title": "ImageWithRegistry",
+        "ExternalImage": {
+            "title": "ExternalImage",
             "type": "object",
             "properties": {
-                "registry": {
-                    "title": "Registry",
-                    "type": "string"
-                },
                 "repository": {
                     "title": "Repository",
                     "type": "string"
@@ -462,7 +487,6 @@
                 }
             },
             "required": [
-                "registry",
                 "repository",
                 "tag",
                 "pullPolicy"
@@ -486,7 +510,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "enabled": {
                     "title": "Enabled",
@@ -568,7 +592,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [
@@ -584,7 +608,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "rabbitmq": {
                     "$ref": "#/definitions/RabbitMQConfiguration"
@@ -689,6 +713,24 @@
                 "startupProbe"
             ]
         },
+        "IngressTLSConfiguration": {
+            "title": "IngressTLSConfiguration",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "secretName": {
+                    "title": "Secretname",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "enabled",
+                "secretName"
+            ]
+        },
         "IngressPath": {
             "title": "IngressPath",
             "type": "object",
@@ -727,38 +769,12 @@
                     "title": "Host",
                     "type": "string"
                 },
-                "precedingPaths": {
-                    "title": "Precedingpaths",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/IngressPath"
-                    }
-                },
-                "succeedingPaths": {
-                    "title": "Succeedingpaths",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/IngressPath"
-                    }
-                }
-            },
-            "required": [
-                "host",
-                "precedingPaths",
-                "succeedingPaths"
-            ]
-        },
-        "FlowerIngressConfiguration": {
-            "title": "FlowerIngressConfiguration",
-            "type": "object",
-            "properties": {
-                "host": {
-                    "title": "Host",
-                    "type": "string"
-                },
                 "path": {
                     "title": "Path",
                     "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/IngressTLSConfiguration"
                 },
                 "precedingPaths": {
                     "title": "Precedingpaths",
@@ -778,6 +794,45 @@
             "required": [
                 "host",
                 "path",
+                "tls",
+                "precedingPaths",
+                "succeedingPaths"
+            ]
+        },
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "path": {
+                    "title": "Path",
+                    "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/IngressTLSConfiguration"
+                },
+                "precedingPaths": {
+                    "title": "Precedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                },
+                "succeedingPaths": {
+                    "title": "Succeedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                }
+            },
+            "required": [
+                "host",
+                "path",
+                "tls",
                 "precedingPaths",
                 "succeedingPaths"
             ]
@@ -796,6 +851,9 @@
                 "dagit": {
                     "$ref": "#/definitions/DagitIngressConfiguration"
                 },
+                "readOnlyDagit": {
+                    "$ref": "#/definitions/DagitIngressConfiguration"
+                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
                 }
@@ -804,6 +862,7 @@
                 "enabled",
                 "annotations",
                 "dagit",
+                "readOnlyDagit",
                 "flower"
             ]
         },
@@ -817,6 +876,7 @@
             "title": "ComputeLogManagerType",
             "description": "An enumeration.",
             "enum": [
+                "NoOpComputeLogManager",
                 "LocalComputeLogManager",
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",
@@ -825,8 +885,8 @@
             ],
             "type": "string"
         },
-        "_StringSource": {
-            "title": "_StringSource",
+        "Source": {
+            "title": "Source",
             "type": "object",
             "properties": {
                 "env": {
@@ -850,7 +910,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -861,7 +921,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -872,7 +932,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -883,7 +943,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -897,7 +957,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -909,8 +969,7 @@
                 "storageAccount",
                 "container",
                 "secretKey"
-            ],
-            "additionalProperties": false
+            ]
         },
         "GCSComputeLogManager": {
             "title": "GCSComputeLogManager",
@@ -923,7 +982,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -934,7 +993,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -948,7 +1007,21 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jsonCredentialsEnvvar": {
+                    "title": "Jsoncredentialsenvvar",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -958,8 +1031,7 @@
             },
             "required": [
                 "bucket"
-            ],
-            "additionalProperties": false
+            ]
         },
         "S3ComputeLogManager": {
             "title": "S3ComputeLogManager",
@@ -972,7 +1044,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -983,7 +1055,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -997,7 +1069,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1033,7 +1105,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1047,7 +1119,18 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "skipEmptyFiles": {
+                    "title": "Skipemptyfiles",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
                         },
                         {
                             "type": "null"
@@ -1057,8 +1140,7 @@
             },
             "required": [
                 "bucket"
-            ],
-            "additionalProperties": false
+            ]
         },
         "ConfigurableClass": {
             "title": "ConfigurableClass",
@@ -1231,74 +1313,14 @@
             "description": "An enumeration.",
             "enum": [
                 "DagsterDaemonScheduler",
-                "K8sScheduler",
                 "CustomScheduler"
             ],
             "type": "string"
-        },
-        "K8sSchedulerConfig": {
-            "title": "K8sSchedulerConfig",
-            "type": "object",
-            "properties": {
-                "image": {
-                    "$ref": "#/definitions/Image"
-                },
-                "schedulerNamespace": {
-                    "title": "Schedulernamespace",
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "loadInclusterConfig": {
-                    "title": "Loadinclusterconfig",
-                    "type": "boolean"
-                },
-                "kubeconfigFile": {
-                    "title": "Kubeconfigfile",
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "envSecrets": {
-                    "title": "Envsecrets",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/SecretEnvSource"
-                    }
-                }
-            },
-            "required": [
-                "image",
-                "loadInclusterConfig",
-                "envSecrets"
-            ],
-            "additionalProperties": false
         },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
             "properties": {
-                "k8sScheduler": {
-                    "title": "K8sSchedulerConfig",
-                    "anyOf": [
-                        {
-                            "$ref": "#/definitions/K8sSchedulerConfig"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
                 "customScheduler": {
                     "title": "ConfigurableClass",
                     "anyOf": [
@@ -1330,24 +1352,6 @@
             ],
             "additionalProperties": false,
             "allOf": [
-                {
-                    "if": {
-                        "properties": {
-                            "type": {
-                                "const": "K8sScheduler"
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "config": {
-                                "required": [
-                                    "k8sScheduler"
-                                ]
-                            }
-                        }
-                    }
-                },
                 {
                     "if": {
                         "properties": {
@@ -1514,6 +1518,18 @@
             ],
             "additionalProperties": false
         },
+        "VolumeMount": {
+            "title": "VolumeMount",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+        },
+        "Volume": {
+            "title": "Volume",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -1528,6 +1544,9 @@
                             "type": "null"
                         }
                     ]
+                },
+                "imagePullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
                 },
                 "jobNamespace": {
                     "title": "Jobnamespace",
@@ -1568,12 +1587,37 @@
                     "items": {
                         "$ref": "#/definitions/SecretEnvSource"
                     }
+                },
+                "envVars": {
+                    "title": "Envvars",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    }
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
+                    }
                 }
             },
             "required": [
+                "imagePullPolicy",
                 "loadInclusterConfig",
                 "envConfigMaps",
-                "envSecrets"
+                "envSecrets",
+                "envVars",
+                "volumeMounts",
+                "volumes"
             ],
             "additionalProperties": false
         },
@@ -1689,22 +1733,197 @@
                 }
             ]
         },
-        "QueuedRunCoordinator": {
-            "title": "QueuedRunCoordinator",
+        "RunCoordinatorType": {
+            "title": "RunCoordinatorType",
+            "description": "An enumeration.",
+            "enum": [
+                "QueuedRunCoordinator",
+                "CustomRunCoordinator"
+            ],
+            "type": "string"
+        },
+        "TagConcurrencyLimitConfig": {
+            "title": "TagConcurrencyLimitConfig",
+            "type": "object",
+            "properties": {
+                "applyLimitPerUniqueValue": {
+                    "title": "Applylimitperuniquevalue",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "applyLimitPerUniqueValue"
+            ],
+            "additionalProperties": false
+        },
+        "TagConcurrencyLimit": {
+            "title": "TagConcurrencyLimit",
+            "type": "object",
+            "properties": {
+                "key": {
+                    "title": "Key",
+                    "type": "string"
+                },
+                "value": {
+                    "title": "Value",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/TagConcurrencyLimitConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "limit": {
+                    "title": "Limit",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "limit"
+            ],
+            "additionalProperties": false
+        },
+        "QueuedRunCoordinatorConfig": {
+            "title": "QueuedRunCoordinatorConfig",
+            "type": "object",
+            "properties": {
+                "maxConcurrentRuns": {
+                    "title": "Maxconcurrentruns",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "tagConcurrencyLimits": {
+                    "title": "Tagconcurrencylimits",
+                    "items": {
+                        "$ref": "#/definitions/TagConcurrencyLimit"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueIntervalSeconds": {
+                    "title": "Dequeueintervalseconds",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "RunCoordinatorConfig": {
+            "title": "RunCoordinatorConfig",
+            "type": "object",
+            "properties": {
+                "queuedRunCoordinator": {
+                    "title": "QueuedRunCoordinatorConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/QueuedRunCoordinatorConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "customRunCoordinator": {
+                    "title": "ConfigurableClass",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ConfigurableClass"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
+        "RunCoordinator": {
+            "title": "RunCoordinator",
             "type": "object",
             "properties": {
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "type": {
+                    "$ref": "#/definitions/RunCoordinatorType"
+                },
                 "config": {
-                    "title": "Config",
-                    "type": "object"
+                    "$ref": "#/definitions/RunCoordinatorConfig"
                 }
             },
             "required": [
                 "enabled",
+                "type",
                 "config"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "QueuedRunCoordinator"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "queuedRunCoordinator"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CustomRunCoordinator"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "customRunCoordinator"
+                                ]
+                            }
+                        }
+                    }
+                }
             ]
         },
         "Daemon": {
@@ -1718,8 +1937,8 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
-                "queuedRunCoordinator": {
-                    "$ref": "#/definitions/QueuedRunCoordinator"
+                "runCoordinator": {
+                    "$ref": "#/definitions/RunCoordinator"
                 },
                 "heartbeatTolerance": {
                     "title": "Heartbeattolerance",
@@ -1777,7 +1996,7 @@
             "required": [
                 "enabled",
                 "image",
-                "queuedRunCoordinator",
+                "runCoordinator",
                 "heartbeatTolerance",
                 "env",
                 "envConfigMaps",
@@ -1798,7 +2017,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/Image"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [
@@ -1829,11 +2048,15 @@
                 "name": {
                     "title": "Name",
                     "type": "string"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
                 }
             },
             "required": [
                 "create",
-                "name"
+                "name",
+                "annotations"
             ]
         },
         "Global": {

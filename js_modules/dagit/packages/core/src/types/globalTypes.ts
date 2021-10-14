@@ -21,6 +21,8 @@ export enum ComputeIOType {
 }
 
 export enum DagsterEventType {
+  ALERT_START = "ALERT_START",
+  ALERT_SUCCESS = "ALERT_SUCCESS",
   ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION",
   ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION",
   ENGINE_EVENT = "ENGINE_EVENT",
@@ -29,13 +31,13 @@ export enum DagsterEventType {
   HOOK_ERRORED = "HOOK_ERRORED",
   HOOK_SKIPPED = "HOOK_SKIPPED",
   LOADED_INPUT = "LOADED_INPUT",
+  LOGS_CAPTURED = "LOGS_CAPTURED",
   OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION",
   PIPELINE_CANCELED = "PIPELINE_CANCELED",
   PIPELINE_CANCELING = "PIPELINE_CANCELING",
   PIPELINE_DEQUEUED = "PIPELINE_DEQUEUED",
   PIPELINE_ENQUEUED = "PIPELINE_ENQUEUED",
   PIPELINE_FAILURE = "PIPELINE_FAILURE",
-  PIPELINE_INIT_FAILURE = "PIPELINE_INIT_FAILURE",
   PIPELINE_START = "PIPELINE_START",
   PIPELINE_STARTING = "PIPELINE_STARTING",
   PIPELINE_SUCCESS = "PIPELINE_SUCCESS",
@@ -66,19 +68,19 @@ export enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
 }
 
-export enum JobStatus {
+export enum InstigationStatus {
   RUNNING = "RUNNING",
   STOPPED = "STOPPED",
 }
 
-export enum JobTickStatus {
+export enum InstigationTickStatus {
   FAILURE = "FAILURE",
   SKIPPED = "SKIPPED",
   STARTED = "STARTED",
   SUCCESS = "SUCCESS",
 }
 
-export enum JobType {
+export enum InstigationType {
   SCHEDULE = "SCHEDULE",
   SENSOR = "SENSOR",
 }
@@ -115,6 +117,11 @@ export enum PipelineRunStatus {
   STARTED = "STARTED",
   STARTING = "STARTING",
   SUCCESS = "SUCCESS",
+}
+
+export enum RepositoryLocationLoadStatus {
+  LOADED = "LOADED",
+  LOADING = "LOADING",
 }
 
 export enum StepEventStatus {
@@ -159,10 +166,10 @@ export interface ExecutionTag {
   value: string;
 }
 
-export interface JobSelector {
+export interface InstigationSelector {
   repositoryName: string;
   repositoryLocationName: string;
-  jobName: string;
+  name: string;
 }
 
 export interface LaunchBackfillParams {
@@ -185,6 +192,8 @@ export interface PipelineRunsFilter {
   tags?: ExecutionTag[] | null;
   statuses?: PipelineRunStatus[] | null;
   snapshotId?: string | null;
+  updatedAfter?: string | null;
+  mode?: string | null;
 }
 
 export interface PipelineSelector {

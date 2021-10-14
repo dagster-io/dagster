@@ -1,4 +1,9 @@
 ---
+global:
+  postgresqlSecretName: ""
+  dagsterHome: ""
+  serviceAccountName: ""
+
 dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
 
@@ -17,8 +22,9 @@ postgresqlSecretName: "dagster-postgresql-secret"
 deployments:
   - name: "k8s-example-user-code-1"
     image:
-      repository: "dagster/user-code-example"
-      tag: latest
+      # When a tag is not supplied, it will default as the Helm chart version.
+      repository: "docker.io/dagster/user-code-example"
+      tag: ~
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.
@@ -73,6 +79,7 @@ deployments:
     securityContext: {}
     resources: {}
     replicaCount: 1
+    labels: {}
     # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
     # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
@@ -104,5 +111,20 @@ deployments:
     service:
       annotations: {}
 
+# Specify secrets to run containers based on images in private registries. See:
+# https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+imagePullSecrets: []
+
 serviceAccount:
   create: true
+
+  # Specifies the name for the service account to reference in the chart. Note that setting
+  # the global service account name will override this field.
+  name: ""
+
+  annotations: {}
+
+####################################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+####################################################################################################
+extraManifests: []

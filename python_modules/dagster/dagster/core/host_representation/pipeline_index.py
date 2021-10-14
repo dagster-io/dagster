@@ -20,13 +20,8 @@ class PipelineIndex:
                 self.parent_pipeline_snapshot is not None,
                 "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
             )
-            parent_id = create_pipeline_snapshot_id(self.parent_pipeline_snapshot)
-            check.invariant(
-                pipeline_snapshot.lineage_snapshot.parent_snapshot_id == parent_id,
-                "Mismatch in IDs between pipeline_snapshot lineage and parent_pipeline_snapshot",
-            )
 
-        self._solid_defs_snaps_index = {
+        self._node_defs_snaps_index = {
             sd.name: sd
             for sd in pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps
             + pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
@@ -67,9 +62,9 @@ class PipelineIndex:
     def get_dagster_type_from_name(self, type_name):
         return self._dagster_type_snaps_by_name_index[type_name]
 
-    def get_solid_def_snap(self, solid_def_name):
-        check.str_param(solid_def_name, "solid_def_name")
-        return self._solid_defs_snaps_index[solid_def_name]
+    def get_node_def_snap(self, node_def_name):
+        check.str_param(node_def_name, "node_def_name")
+        return self._node_defs_snaps_index[node_def_name]
 
     def get_dep_structure_index(self, comp_solid_def_name):
         return self._comp_dep_structures[comp_solid_def_name]

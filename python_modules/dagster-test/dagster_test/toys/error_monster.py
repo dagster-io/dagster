@@ -32,14 +32,14 @@ class ErrorableIOManager(IOManager):
         if self._throw_output:
             raise ExampleException("throwing up trying to handle output")
 
-        keys = tuple(context.get_run_scoped_output_identifier())
+        keys = tuple(context.get_output_identifier())
         self._values[keys] = obj
 
     def load_input(self, context):
         if self._throw_input:
             raise ExampleException("throwing up trying to load input")
 
-        keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
+        keys = tuple(context.upstream_output.get_output_identifier())
         return self._values[keys]
 
 
@@ -159,7 +159,7 @@ def str_to_num(context, string):
                 "errorable_resource": define_errorable_resource(),
                 "io_manager": errorable_io_manager,
             },
-        )
+        ),
     ],
     preset_defs=[
         PresetDefinition.from_pkg_resources(
@@ -168,6 +168,7 @@ def str_to_num(context, string):
             mode="errorable_mode",
         )
     ],
+    tags={"monster": "error"},
 )
 def error_monster():
     start = emit_num.alias("start")()
@@ -187,4 +188,3 @@ if __name__ == "__main__":
             "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
     )
-    print("Pipeline Success: ", result.success)

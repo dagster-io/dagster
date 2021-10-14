@@ -4,9 +4,8 @@ import kubernetes
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -77,7 +76,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
             facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
-            ``"Always"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
+            ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
         job_namespace (Optional[str]): The namespace into which to launch new jobs. Note that any
             other Kubernetes resources the Job requires (such as the service account) must be
             present in this namespace. Default: ``"default"``
@@ -87,6 +86,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
+            Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
+            container. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
     """
 
     def __init__(
@@ -96,7 +102,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         postgres_password_secret=None,
         dagster_home=None,
         job_image=None,
-        image_pull_policy="Always",
+        image_pull_policy=None,
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
@@ -104,12 +110,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
+        env_vars=None,
         k8s_client_batch_api=None,
-        k8s_client_core_api=None,
+        volume_mounts=None,
+        volumes=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
+        self.load_incluster_config = load_incluster_config
+        self.kubeconfig_file = kubeconfig_file
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
@@ -120,13 +130,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
-        self._core_api = k8s_client_core_api or kubernetes.client.CoreV1Api()
+        self._fixed_batch_api = k8s_client_batch_api
 
         self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
-        self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
+        self._image_pull_policy = check.opt_str_param(
+            image_pull_policy, "image_pull_policy", "IfNotPresent"
+        )
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
@@ -139,8 +150,43 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_config_maps, "env_config_maps", of_type=str
         )
         self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+        self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
+        self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
+        self._volumes = check.opt_list_param(volumes, "volumes")
 
         super().__init__()
+
+    @property
+    def image_pull_policy(self):
+        return self._image_pull_policy
+
+    @property
+    def image_pull_secrets(self):
+        return self._image_pull_secrets
+
+    @property
+    def service_account_name(self):
+        return self._service_account_name
+
+    @property
+    def env_config_maps(self):
+        return self._env_config_maps
+
+    @property
+    def env_secrets(self):
+        return self._env_secrets
+
+    @property
+    def volume_mounts(self):
+        return self._volume_mounts
+
+    @property
+    def volumes(self):
+        return self._volumes
+
+    @property
+    def _batch_api(self):
+        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 
     @classmethod
     def config_type(cls):
@@ -188,6 +234,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     self._env_config_maps, "env_config_maps", of_type=str
                 ),
                 env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+                env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
+                volume_mounts=self._volume_mounts,
+                volumes=self._volumes,
             )
             return self._job_config
 
@@ -210,18 +259,20 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 self._env_config_maps, "env_config_maps", of_type=str
             ),
             env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+            env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
+            volume_mounts=self._volume_mounts,
+            volumes=self._volumes,
         )
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
 
         job_name = "dagster-run-{}".format(run.run_id)
         pod_name = job_name
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        pipeline_origin = external_pipeline.get_python_origin()
+        pipeline_origin = context.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_config = (
@@ -252,9 +303,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
-            "Kubernetes run worker job launched",
+            "Creating Kubernetes run worker job",
             run,
             EngineEventData(
                 [
@@ -265,7 +315,20 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
-        return run
+
+        self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
+        self._instance.report_engine_event(
+            "Kubernetes run worker job created",
+            run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
+                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                ]
+            ),
+            cls=self.__class__,
+        )
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):

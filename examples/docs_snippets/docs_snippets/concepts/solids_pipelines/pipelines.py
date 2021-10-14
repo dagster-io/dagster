@@ -12,7 +12,7 @@ from dagster import (
 
 
 @solid
-def my_solid(_):
+def my_solid():
     pass
 
 

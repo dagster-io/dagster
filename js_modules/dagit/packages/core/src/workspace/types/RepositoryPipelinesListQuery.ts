@@ -14,9 +14,16 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
 }
 
+export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_modes {
+  __typename: "Mode";
+  id: string;
+  name: string;
+}
+
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs {
   __typename: "PipelineRun";
   id: string;
+  mode: string;
   runId: string;
   status: PipelineRunStatus;
 }
@@ -25,12 +32,20 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   __typename: "Schedule";
   id: string;
   name: string;
+  mode: string;
+}
+
+export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors_targets {
+  __typename: "Target";
+  mode: string;
+  pipelineName: string;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
+  targets: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors_targets[] | null;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines {
@@ -38,6 +53,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   id: string;
   description: string | null;
   name: string;
+  modes: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_modes[];
   runs: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs[];
   schedules: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_schedules[];
   sensors: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors[];

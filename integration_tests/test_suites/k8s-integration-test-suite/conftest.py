@@ -7,14 +7,17 @@ import kubernetes
 import pytest
 from dagster.core.instance import DagsterInstance
 from dagster_k8s.launcher import K8sRunLauncher
-from dagster_k8s.scheduler import K8sScheduler
 from dagster_k8s_test_infra.cluster import (
     dagster_instance_for_k8s_run_launcher,
-    dagster_instance_with_k8s_scheduler,
     define_cluster_provider_fixture,
     helm_postgres_url_for_k8s_run_launcher,
 )
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
+from dagster_k8s_test_infra.helm import (
+    TEST_AWS_CONFIGMAP_NAME,
+    TEST_IMAGE_PULL_SECRET_NAME,
+    TEST_SECRET_NAME,
+    TEST_VOLUME_CONFIGMAP_NAME,
+)
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
@@ -43,45 +46,13 @@ def schedule_tempdir():
         yield tempdir
 
 
-@pytest.fixture
-def k8s_scheduler(
-    cluster_provider, helm_namespace_for_k8s_run_launcher
-):  # pylint: disable=redefined-outer-name,unused-argument
-    with pytest.warns(UserWarning, match="`K8sScheduler` is deprecated"):
-        return K8sScheduler(
-            scheduler_namespace=helm_namespace_for_k8s_run_launcher,
-            image_pull_secrets=[{"name": "element-dev-key"}],
-            service_account_name="dagit-admin",
-            instance_config_map="dagster-instance",
-            postgres_password_secret="dagster-postgresql-secret",
-            dagster_home="/opt/dagster/dagster_home",
-            job_image=get_test_project_docker_image(),
-            load_incluster_config=False,
-            kubeconfig_file=cluster_provider.kubeconfig_file,
-            image_pull_policy=image_pull_policy(),
-            env_config_maps=["dagster-pipeline-env", "test-env-configmap"],
-            env_secrets=["test-env-secret"],
-        )
-
-
-@pytest.fixture(scope="function")
-def restore_k8s_cron_tab(
-    helm_namespace_for_k8s_run_launcher,
-):  # pylint: disable=redefined-outer-name
-    kube_api = kubernetes.client.BatchV1beta1Api()
-    # Doubly make sure CronJobs are deleted pre-test and post-test
-    kube_api.delete_collection_namespaced_cron_job(namespace=helm_namespace_for_k8s_run_launcher)
-    yield
-    kube_api.delete_collection_namespaced_cron_job(namespace=helm_namespace_for_k8s_run_launcher)
-
-
 @pytest.fixture()
 def run_launcher(
     cluster_provider, helm_namespace_for_k8s_run_launcher
 ):  # pylint: disable=redefined-outer-name,unused-argument
 
     return K8sRunLauncher(
-        image_pull_secrets=[{"name": "element-dev-key"}],
+        image_pull_secrets=[{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         service_account_name="dagit-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
@@ -94,6 +65,14 @@ def run_launcher(
         env_config_maps=["dagster-pipeline-env", "test-env-configmap"]
         + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
         env_secrets=["test-env-secret"],
+        volume_mounts=[
+            {
+                "name": "test-volume",
+                "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                "subPath": "volume_mounted_file.yaml",
+            }
+        ],
+        volumes=[{"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}],
     )
 
 

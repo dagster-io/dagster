@@ -3,27 +3,30 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.scheduler.job import JobTickStatsSnapshot
+from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import (
     reconcile_scheduler_state,
     start_schedule,
     stop_schedule,
 )
+from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
+    GrapheneUnauthorizedError,
 )
 from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
-from ..jobs import GrapheneJobState
+from ..instigation import GrapheneInstigationState
 from .schedules import (
     GrapheneSchedule,
     GrapheneScheduleOrError,
     GrapheneSchedules,
     GrapheneSchedulesOrError,
 )
-from .ticks import GrapheneJobTickStatus
+from .ticks import GrapheneInstigationTickStatus
 
 
 class GrapheneScheduleStatus(graphene.Enum):
@@ -76,7 +79,11 @@ class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
 
 class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReconcileSchedulerStateSuccess,
+        )
         name = "ReconcileSchedulerStateMutationResult"
 
 
@@ -89,6 +96,8 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
     class Meta:
         name = "ReconcileSchedulerStateMutation"
 
+    @capture_error
+    @check_permission(Permissions.START_SCHEDULE)
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
             graphene_info, RepositorySelector.from_graphql_input(repository_selector)
@@ -96,7 +105,7 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
 
 
 class GrapheneScheduleStateResult(graphene.ObjectType):
-    scheduleState = graphene.NonNull(GrapheneJobState)
+    scheduleState = graphene.NonNull(GrapheneInstigationState)
 
     class Meta:
         name = "ScheduleStateResult"
@@ -144,7 +153,7 @@ def types():
 
     # Double check mutations don't appear twice
     return [
-        GrapheneJobTickStatus,
+        GrapheneInstigationTickStatus,
         GrapheneReconcileSchedulerStateMutation,
         GrapheneReconcileSchedulerStateMutationResult,
         GrapheneReconcileSchedulerStateSuccess,

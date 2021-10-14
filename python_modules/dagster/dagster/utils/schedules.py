@@ -1,24 +1,26 @@
 import datetime
+from typing import Iterator, Optional
 
 import pendulum
+import pytz
 from croniter import croniter
 from dagster import check
-from dagster.seven import to_timezone
+from dagster.seven.compat.pendulum import to_timezone
 
 
-def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_timezone):
-    check.float_param(start_timestamp, "start_timestamp")
-    check.str_param(cron_schedule, "cron_schedule")
-    check.opt_str_param(execution_timezone, "execution_timezone")
+def schedule_execution_time_iterator(
+    start_timestamp: float, cron_schedule: str, execution_timezone: Optional[str]
+) -> Iterator[datetime.datetime]:
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
-    start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
+    utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
+    start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
 
     date_iter = croniter(cron_schedule, start_datetime)
 
     # Go back one iteration so that the next iteration is the first time that is >= start_datetime
     # and matches the cron schedule
-    next_date = to_timezone(pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str)
+    next_date = date_iter.get_prev(datetime.datetime)
 
     cron_parts = cron_schedule.split(" ")
 
@@ -45,8 +47,10 @@ def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_t
         delta_fn = lambda d, num: d.add(hours=num)
         should_hour_change = True
 
-    while True:
-        if delta_fn:
+    if delta_fn:
+        # Use pendulums for intervals when possible
+        next_date = to_timezone(pendulum.instance(next_date), timezone_str)
+        while True:
             curr_hour = next_date.hour
 
             next_date_cand = delta_fn(next_date, 1)
@@ -67,9 +71,12 @@ def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_t
                 check.invariant(next_date_cand.hour == curr_hour)
 
             next_date = next_date_cand
-        else:
+            yield next_date
+    else:
+        # Otherwise fall back to croniter
+        while True:
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
             )
 
-        yield next_date
+            yield next_date

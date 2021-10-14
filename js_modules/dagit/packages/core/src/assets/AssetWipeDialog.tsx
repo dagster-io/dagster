@@ -1,6 +1,9 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
-import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
+
+import {ButtonWIP} from '../ui/Button';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
+import {Group} from '../ui/Group';
 
 interface AssetKey {
   path: string[];
@@ -26,28 +29,31 @@ export const AssetWipeDialog: React.FC<{
     onComplete(assetKeys);
   };
 
-  const title =
-    assetKeys.length === 1 ? (
-      <>
-        Wipe asset <code>{assetKeys[0].path.join(' > ')}</code>
-      </>
-    ) : (
-      <>Wipe {assetKeys.length} assets</>
-    );
   return (
-    <Dialog isOpen={isOpen} title={title} onClose={onClose} style={{width: 800}}>
-      <div className={Classes.DIALOG_BODY}>Wiping assets cannot be undone.</div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button intent="danger" onClick={wipe}>
-            Wipe
-          </Button>
-          <Button intent="none" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+    <DialogWIP isOpen={isOpen} title="Wipe assets?" onClose={onClose} style={{width: 400}}>
+      <DialogBody>
+        <Group direction="column" spacing={8}>
+          <div>
+            {assetKeys.length === 1 ? (
+              <>
+                The asset <code>{assetKeys[0].path.join(' > ')}</code> will be wiped.
+              </>
+            ) : (
+              <>{assetKeys.length} assets will be wiped.</>
+            )}
+          </div>
+          <strong>Wiping assets cannot be undone.</strong>
+        </Group>
+      </DialogBody>
+      <DialogFooter>
+        <ButtonWIP intent="none" onClick={onClose}>
+          Cancel
+        </ButtonWIP>
+        <ButtonWIP intent="danger" onClick={wipe}>
+          Wipe
+        </ButtonWIP>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 

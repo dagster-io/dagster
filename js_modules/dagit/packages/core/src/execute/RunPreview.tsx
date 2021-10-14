@@ -1,18 +1,27 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {TagWIP} from '../ui/TagWIP';
+import {Code} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,
@@ -26,20 +35,20 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === 'object' && '__typename' in e ? true : false;
 }
 
-const stateToHint = {
+const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
   invalid: {
     title: `You need to fix this configuration section.`,
-    intent: Intent.DANGER,
+    intent: 'danger',
   },
   missing: {
     title: `You need to add this configuration section.`,
-    intent: Intent.DANGER,
+    intent: 'danger',
   },
   present: {
     title: `This section is present and valid.`,
-    intent: Intent.SUCCESS,
+    intent: 'none',
   },
-  none: {title: `This section is empty and valid.`, intent: Intent.PRIMARY},
+  none: {title: `This section is empty and valid.`, intent: 'none'},
 };
 
 const RemoveExtraConfigButton = ({
@@ -71,58 +80,51 @@ const RemoveExtraConfigButton = ({
     }
   }
 
-  return (
-    <div style={{marginTop: 5}}>
-      <Button
-        small={true}
-        onClick={async () => {
-          await confirm({
-            title: 'Remove extra config',
-            description: (
-              <div>
-                <p>
-                  You have provided extra configuration in your run config which does not conform to
-                  your pipeline{`'`}s config schema.
-                </p>
-                {Object.entries(knownKeyExtraPaths).length > 0 &&
-                  Object.entries(knownKeyExtraPaths).map(([key, value]) => (
-                    <>
-                      <p>Extra {key}:</p>
-                      <ul>
-                        {value.map((v) => (
-                          <li key={v}>
-                            <Code>{v}</Code>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
+  const onClick = async () => {
+    await confirm({
+      title: 'Remove extra config',
+      description: (
+        <div>
+          <p>
+            {`You have provided extra configuration in your run config which does not conform to your
+            pipeline's config schema.`}
+          </p>
+          {Object.entries(knownKeyExtraPaths).length > 0 &&
+            Object.entries(knownKeyExtraPaths).map(([key, value]) => (
+              <>
+                <p>Extra {key}:</p>
+                <ul>
+                  {value.map((v) => (
+                    <li key={v}>
+                      <Code>{v}</Code>
+                    </li>
                   ))}
-                {otherPaths.length > 0 && (
-                  <>
-                    <p>Other extra paths:</p>
-                    <ul>
-                      {otherPaths.map((v) => (
-                        <li key={v}>
-                          <Code>{v}</Code>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <p>
-                  Clicking confirm will automatically remove this extra configuration from your run
-                  config.
-                </p>{' '}
-              </div>
-            ),
-          });
-          onRemoveExtraPaths(extraNodes);
-        }}
-      >
-        Remove Extra Config
-      </Button>
-    </div>
-  );
+                </ul>
+              </>
+            ))}
+          {otherPaths.length > 0 && (
+            <>
+              <p>Other extra paths:</p>
+              <ul>
+                {otherPaths.map((v) => (
+                  <li key={v}>
+                    <Code>{v}</Code>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <p>
+            Clicking confirm will automatically remove this extra configuration from your run
+            config.
+          </p>
+        </div>
+      ),
+    });
+    onRemoveExtraPaths(extraNodes);
+  };
+
+  return <ButtonWIP onClick={onClick}>Remove Extra Config</ButtonWIP>;
 };
 
 const ScaffoldConfigButton = ({
@@ -157,26 +159,19 @@ const ScaffoldConfigButton = ({
 
   const onClick = async () => {
     await confirm({
-      title: 'Scaffold extra config',
+      title: 'Scaffold missing config',
       description: confirmationMessage,
     });
     onScaffoldMissingConfig();
   };
 
-  return (
-    <div style={{marginTop: 5}}>
-      <Button small={true} onClick={onClick}>
-        Scaffold Missing Config
-      </Button>
-    </div>
-  );
+  return <ButtonWIP onClick={onClick}>Scaffold missing config</ButtonWIP>;
 };
 
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: any | null;
 
-  actions?: React.ReactChild;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
@@ -184,29 +179,25 @@ interface RunPreviewProps {
   solidSelection: string[] | null;
 }
 
-interface RunPreviewState {
-  errorsOnly: boolean;
-}
+export const RunPreview: React.FC<RunPreviewProps> = (props) => {
+  const {
+    document,
+    validation,
+    onHighlightPath,
+    onRemoveExtraPaths,
+    onScaffoldMissingConfig,
+    solidSelection,
+    runConfigSchema,
+  } = props;
+  const [errorsOnly, setErrorsOnly] = React.useState(false);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
-export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState> {
-  state: RunPreviewState = {
-    errorsOnly: false,
-  };
-
-  shouldComponentUpdate(nextProps: RunPreviewProps, nextState: RunPreviewState) {
-    return (
-      nextProps.validation !== this.props.validation ||
-      nextProps.runConfigSchema !== this.props.runConfigSchema ||
-      nextState.errorsOnly !== this.state.errorsOnly
-    );
-  }
-
-  getRootCompositeChildren = () => {
-    if (!this.props.runConfigSchema) {
+  const rootCompositeChildren = React.useMemo(() => {
+    if (!runConfigSchema) {
       return {};
     }
 
-    const {allConfigTypes, rootConfigType} = this.props.runConfigSchema;
+    const {allConfigTypes, rootConfigType} = runConfigSchema;
     const children: {
       [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
     } = {};
@@ -225,150 +216,139 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     });
 
     return children;
+  }, [runConfigSchema]);
+
+  const extraNodes: string[] = [];
+  const missingNodes: string[] = [];
+  const errorsAndPaths: {
+    pathKey: string;
+    error: ValidationErrorOrNode;
+  }[] = [];
+
+  if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
+    validation.errors.forEach((e) => {
+      const path = errorStackToYamlPath(e.stack.entries);
+
+      errorsAndPaths.push({pathKey: path.join('.'), error: e});
+
+      if (e.__typename === 'MissingFieldConfigError') {
+        missingNodes.push([...path, e.field.name].join('.'));
+      } else if (e.__typename === 'MissingFieldsConfigError') {
+        for (const field of e.fields) {
+          missingNodes.push([...path, field.name].join('.'));
+        }
+      } else if (e.__typename === 'FieldNotDefinedConfigError') {
+        extraNodes.push([...path, e.fieldName].join('.'));
+      } else if (e.__typename === 'FieldsNotDefinedConfigError') {
+        for (const fieldName of e.fieldNames) {
+          extraNodes.push([...path, fieldName].join('.'));
+        }
+      } else if (e.__typename === 'RuntimeMismatchConfigError') {
+        // If an entry at a path is the wrong type,
+        // it is equivalent to it being missing
+        missingNodes.push(path.join('.'));
+      }
+    });
+  }
+
+  if (validation?.__typename === 'InvalidSubsetError') {
+    errorsAndPaths.push({pathKey: '', error: validation.message});
+  }
+
+  if (validation?.__typename === 'PythonError') {
+    const info = <PythonErrorInfo error={validation} />;
+    errorsAndPaths.push({
+      pathKey: '',
+      error: (
+        <span>
+          PythonError:{' '}
+          <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
+        </span>
+      ),
+    });
+  }
+
+  const {resources, solids, ...rest} = rootCompositeChildren;
+
+  const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
+    const boxes = items
+      .map((item) => {
+        // If a solid selection is in use, discard anything not in it.
+        if (solidSelection?.length && !solidSelection?.includes(item.name)) {
+          return null;
+        }
+
+        const path = [...parents, item.name];
+        const pathKey = path.join('.');
+        const pathErrors = errorsAndPaths
+          .filter((e) => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
+          .map((e) => e.error);
+
+        const isPresent = pathExistsInObject(path, document);
+        const containsMissing = missingNodes.some((missingNode) =>
+          missingNode.includes(path.join('.')),
+        );
+        const isInvalid = pathErrors.length || containsMissing;
+        const isMissing = path.some((_, idx) =>
+          missingNodes.includes(path.slice(0, idx + 1).join('.')),
+        );
+        if (errorsOnly && !isInvalid) {
+          return false;
+        }
+        const state =
+          isMissing && item.isRequired
+            ? 'missing'
+            : isInvalid
+            ? 'invalid'
+            : isPresent
+            ? 'present'
+            : 'none';
+
+        return (
+          <Tooltip
+            position="bottom"
+            content={stateToHint[state].title}
+            intent={stateToHint[state].intent}
+            key={item.name}
+          >
+            <TagWIP
+              key={item.name}
+              intent={stateToHint[state].intent}
+              onClick={() => {
+                const first = pathErrors.find(isValidationError);
+                onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
+              }}
+            >
+              {item.name}
+            </TagWIP>
+          </Tooltip>
+        );
+      })
+      .filter(Boolean);
+
+    if (!boxes.length) {
+      return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
+    }
+    return boxes;
   };
 
-  render() {
-    const {
-      actions,
-      document,
-      validation,
-      onHighlightPath,
-      onRemoveExtraPaths,
-      onScaffoldMissingConfig,
-      solidSelection,
-    } = this.props;
-    const {errorsOnly} = this.state;
+  return (
+    <SplitPanelContainer
+      identifier="run-preview"
+      axis="horizontal"
+      first={
+        <ErrorListContainer>
+          <Section>
+            <SectionTitle>Errors</SectionTitle>
+            {errorsAndPaths.map((item, idx) => (
+              <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
+            ))}
+          </Section>
 
-    const extraNodes: string[] = [];
-    const missingNodes: string[] = [];
-    const errorsAndPaths: {
-      pathKey: string;
-      error: ValidationErrorOrNode;
-    }[] = [];
-
-    if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
-      validation.errors.forEach((e) => {
-        const path = errorStackToYamlPath(e.stack.entries);
-
-        errorsAndPaths.push({pathKey: path.join('.'), error: e});
-
-        if (e.__typename === 'MissingFieldConfigError') {
-          missingNodes.push([...path, e.field.name].join('.'));
-        } else if (e.__typename === 'MissingFieldsConfigError') {
-          for (const field of e.fields) {
-            missingNodes.push([...path, field.name].join('.'));
-          }
-        } else if (e.__typename === 'FieldNotDefinedConfigError') {
-          extraNodes.push([...path, e.fieldName].join('.'));
-        } else if (e.__typename === 'FieldsNotDefinedConfigError') {
-          for (const fieldName of e.fieldNames) {
-            extraNodes.push([...path, fieldName].join('.'));
-          }
-        } else if (e.__typename === 'RuntimeMismatchConfigError') {
-          // If an entry at a path is the wrong type,
-          // it is equivalent to it being missing
-          missingNodes.push(path.join('.'));
-        }
-      });
-    }
-
-    if (validation?.__typename === 'InvalidSubsetError') {
-      errorsAndPaths.push({pathKey: '', error: validation.message});
-    }
-
-    if (validation?.__typename === 'PythonError') {
-      const info = <PythonErrorInfo error={validation} />;
-      errorsAndPaths.push({
-        pathKey: '',
-        error: (
-          <span>
-            PythonError:{' '}
-            <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
-          </span>
-        ),
-      });
-    }
-
-    const {resources, solids, ...rest} = this.getRootCompositeChildren();
-
-    const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
-      const boxes = items
-        .map((item) => {
-          // If a solid selection is in use, discard anything not in it.
-          if (solidSelection?.length && !solidSelection?.includes(item.name)) {
-            return null;
-          }
-
-          const path = [...parents, item.name];
-          const pathKey = path.join('.');
-          const pathErrors = errorsAndPaths
-            .filter((e) => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
-            .map((e) => e.error);
-
-          const isPresent = pathExistsInObject(path, document);
-          const containsMissing = missingNodes.some((missingNode) =>
-            missingNode.includes(path.join('.')),
-          );
-          const isInvalid = pathErrors.length || containsMissing;
-          const isMissing = path.some((_, idx) =>
-            missingNodes.includes(path.slice(0, idx + 1).join('.')),
-          );
-          if (errorsOnly && !isInvalid) {
-            return false;
-          }
-          const state =
-            isMissing && item.isRequired
-              ? 'missing'
-              : isInvalid
-              ? 'invalid'
-              : isPresent
-              ? 'present'
-              : 'none';
-
-          return (
-            <Tooltip
-              position={Position.BOTTOM}
-              content={stateToHint[state].title}
-              intent={stateToHint[state].intent}
-              key={item.name}
-            >
-              <Item
-                key={item.name}
-                state={state}
-                onClick={() => {
-                  const first = pathErrors.find(isValidationError);
-                  onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
-                }}
-              >
-                {item.name}
-              </Item>
-            </Tooltip>
-          );
-        })
-        .filter(Boolean);
-
-      if (!boxes.length) {
-        return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
-      }
-      return boxes;
-    };
-
-    return (
-      <SplitPanelContainer
-        identifier="run-preview"
-        axis="horizontal"
-        first={
-          <ErrorListContainer>
+          {(extraNodes.length > 0 || missingNodes.length > 0) && (
             <Section>
-              <SectionTitle>Errors</SectionTitle>
-              {errorsAndPaths.map((item, idx) => (
-                <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
-              ))}
-            </Section>
-
-            {(extraNodes.length > 0 || missingNodes.length > 0) && (
-              <Section>
-                <SectionTitle>Bulk Actions:</SectionTitle>
+              <SectionTitle>Bulk Actions:</SectionTitle>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{top: 4}}>
                 {extraNodes.length ? (
                   <RemoveExtraConfigButton
                     onRemoveExtraPaths={onRemoveExtraPaths}
@@ -381,60 +361,59 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
                     missingNodes={missingNodes}
                   />
                 ) : null}
-              </Section>
-            )}
-          </ErrorListContainer>
-        }
-        firstInitialPercent={50}
-        firstMinSize={150}
-        second={
-          <>
-            <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
-              <RuntimeAndResourcesSection>
-                <Section>
-                  <SectionTitle>Runtime</SectionTitle>
-                  <ItemSet>
-                    {itemsIn(
-                      [],
-                      Object.keys(rest).map((name) => ({name, isRequired: false})),
-                    )}
-                  </ItemSet>
-                </Section>
-                {(resources?.fields.length || 0) > 0 && (
-                  <Section>
-                    <SectionTitle>Resources</SectionTitle>
-                    <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
-                  </Section>
-                )}
-              </RuntimeAndResourcesSection>
+              </Box>
+            </Section>
+          )}
+        </ErrorListContainer>
+      }
+      firstInitialPercent={50}
+      firstMinSize={150}
+      second={
+        <>
+          <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
+            <RuntimeAndResourcesSection>
               <Section>
-                <SectionTitle>Solids</SectionTitle>
-                <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
+                <SectionTitle>Runtime</SectionTitle>
+                <ItemSet>
+                  {itemsIn(
+                    [],
+                    Object.keys(rest).map((name) => ({name, isRequired: false})),
+                  )}
+                </ItemSet>
               </Section>
-              <div style={{height: 50}} />
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                padding: '12px 15px 0px 10px',
-                background: 'rgba(255,255,255,0.7)',
-              }}
-            >
-              <Checkbox
-                label="Errors Only"
-                checked={errorsOnly}
-                onChange={() => this.setState({errorsOnly: !errorsOnly})}
-              />
-            </div>
-            <div style={{position: 'absolute', bottom: 14, right: 14}}>{actions}</div>
-          </>
-        }
-      />
-    );
-  }
-}
+              {(resources?.fields.length || 0) > 0 && (
+                <Section>
+                  <SectionTitle>Resources</SectionTitle>
+                  <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
+                </Section>
+              )}
+            </RuntimeAndResourcesSection>
+            <Section>
+              <SectionTitle>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</SectionTitle>
+              <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
+            </Section>
+            <div style={{height: 50}} />
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              padding: '12px 15px 0px 10px',
+              background: 'rgba(255,255,255,0.7)',
+            }}
+          >
+            <Checkbox
+              label="Errors Only"
+              checked={errorsOnly}
+              onChange={() => setErrorsOnly(!errorsOnly)}
+            />
+          </div>
+        </>
+      }
+    />
+  );
+};
 
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
@@ -486,9 +465,10 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   text-transform: uppercase;
   font-size: 12px;
+  margin-bottom: 8px;
 `;
 
 const Section = styled.div`
@@ -500,62 +480,13 @@ const ItemSet = styled.div`
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  gap: 4px;
 `;
 
 const ItemsEmptyNotice = styled.div`
   font-size: 13px;
   padding-top: 7px;
   padding-bottom: 7px;
-`;
-
-const ItemBorder = {
-  invalid: `1px solid #CE1126`,
-  missing: `1px solid #CE1126`,
-  present: `1px solid #AFCCE1`,
-  none: `1px solid ${Colors.LIGHT_GRAY2}`,
-};
-
-const ItemBackground = {
-  invalid: Colors.RED5,
-  missing: Colors.RED5,
-  present: '#C8E1F4',
-  none: Colors.LIGHT_GRAY4,
-};
-
-const ItemBackgroundHover = {
-  invalid: '#E15858',
-  missing: '#E15858',
-  present: '#AFCCE1',
-  none: Colors.LIGHT_GRAY4,
-};
-
-const ItemColor = {
-  invalid: Colors.WHITE,
-  missing: Colors.WHITE,
-  present: Colors.BLACK,
-  none: Colors.BLACK,
-};
-
-const Item = styled.div<{
-  state: 'present' | 'missing' | 'invalid' | 'none';
-}>`
-  white-space: nowrap;
-  font-size: 13px;
-  color: ${({state}) => ItemColor[state]};
-  background: ${({state}) => ItemBackground[state]};
-  border-radius: 3px;
-  border: ${({state}) => ItemBorder[state]};
-  padding: 3px 5px;
-  margin: 3px;
-  transition: background 150ms linear, color 150ms linear;
-  cursor: ${({state}) => (state === 'present' ? 'default' : 'not-allowed')};
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  &:hover {
-    transition: none;
-    background: ${({state}) => ItemBackgroundHover[state]};
-  }
 `;
 
 const ErrorListContainer = styled.div`
@@ -583,13 +514,14 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
     }
   `}
 `;
 
 const RuntimeAndResourcesSection = styled.div`
   display: flex;
+  gap: 12px;
   @media (max-width: 800px) {
     flex-direction: column;
   }
@@ -616,8 +548,8 @@ const ErrorRow: React.FunctionComponent<{
       hoverable={!!target}
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
-      <div style={{paddingRight: 8}}>
-        <Icon icon="error" iconSize={14} color={Colors.RED4} />
+      <div style={{paddingRight: 4}}>
+        <IconWIP name="error" color={ColorsWIP.Red500} />
       </div>
       <div>
         {displayed}

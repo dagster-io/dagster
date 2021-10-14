@@ -16,7 +16,7 @@ EvenDagsterType = DagsterType(
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even(_, num):
+def double_even(num):
     return num
 
 
@@ -27,7 +27,7 @@ def double_even(_, num):
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even_with_annotations(_, num: int) -> int:
+def double_even_with_annotations(num: int) -> int:
     return num
 
 
@@ -41,7 +41,8 @@ class MyClass:
     pass
 
 
-def my_solid(_) -> MyClass:
+@solid
+def my_solid() -> MyClass:
     return MyClass()
 
 

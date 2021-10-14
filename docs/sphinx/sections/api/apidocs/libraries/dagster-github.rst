@@ -77,6 +77,19 @@ Now, you can create issues in GitHub from Dagster with the GitHub resource:
 Run the above code, and you'll see the issue appear in GitHub:
 :raw-html-m2r:`<img width="636" src="https://user-images.githubusercontent.com/5943242/72079909-c6012300-32c9-11ea-8acc-19e6f5f3d067.png">`
 
+GitHub enterprise users can provide their hostname in the run config. Provide ``github_hostname``
+as part of your github config like below.
+
+.. code-block:: python
+
+   execute_pipeline(
+       github_pipeline, {'resources': {'github': {'config': {
+           "github_app_id": os.getenv('GITHUB_APP_ID'),
+           "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
+           "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
+           "github_hostname": os.getenv('GITHUB_HOSTNAME'),
+       }}}}
+
 By provisioning ``github_resource`` as a Dagster pipeline resource, you can post to GitHub from
 within any solid execution.
 

@@ -390,8 +390,8 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
       </Transition>
 
       {/* Static sidebar for desktop */}
-      <div className="relative hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900">
+      <div className="hidden z-50 lg:block fixed top-0 bottom-0 lg:flex-shrink-0">
+        <div className="h-full flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900">
           <SidebarContents />
         </div>
       </div>

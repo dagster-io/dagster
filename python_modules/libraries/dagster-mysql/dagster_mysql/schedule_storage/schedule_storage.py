@@ -6,6 +6,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
+    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_config,
@@ -39,17 +40,24 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db.pool.NullPool,
         )
 
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
         if "jobs" not in table_names:
-            with self.connect() as conn:
-                alembic_config = mysql_alembic_config(__file__)
-                retry_mysql_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
-                stamp_alembic_rev(alembic_config, conn)
+            retry_mysql_creation_fn(self._init_db)
 
         super().__init__()
+
+    def _init_db(self):
+        with self.connect() as conn:
+            with conn.begin():
+                ScheduleStorageSqlMetadata.create_all(conn)
+                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection
@@ -58,6 +66,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             self.mysql_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
+            pool_recycle=MYSQL_POOL_RECYCLE,
         )
 
     @property
@@ -75,12 +84,16 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     @staticmethod
-    def create_clean_storage(mysql_url):
+    def wipe_storage(mysql_url):
         engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
         try:
             ScheduleStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
+
+    @staticmethod
+    def create_clean_storage(mysql_url):
+        MySQLScheduleStorage.wipe_storage(mysql_url)
         return MySQLScheduleStorage(mysql_url)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument

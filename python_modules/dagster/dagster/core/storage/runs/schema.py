@@ -15,6 +15,7 @@ RunsTable = db.Table(
         db.ForeignKey("snapshots.snapshot_id", name="fk_runs_snapshot_id_snapshots_snapshot_id"),
     ),
     db.Column("pipeline_name", db.Text),
+    db.Column("mode", db.Text),
     db.Column("status", db.String(63)),
     db.Column("run_body", db.Text),
     db.Column("partition", db.Text),
@@ -71,8 +72,8 @@ BulkActionsTable = db.Table(
     db.Column("body", db.Text),
 )
 
-db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value)
-db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition)
-db.Index("idx_bulk_actions", BulkActionsTable.c.key)
-db.Index("idx_bulk_actions_status", BulkActionsTable.c.status)
-db.Index("idx_run_status", RunsTable.c.status)
+db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
+db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
+db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
+db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
+db.Index("idx_run_status", RunsTable.c.status, mysql_length=32)

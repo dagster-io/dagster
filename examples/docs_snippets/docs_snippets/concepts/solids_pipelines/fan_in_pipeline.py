@@ -6,12 +6,12 @@ from dagster import pipeline, solid
 
 
 @solid
-def return_one(_) -> int:
+def return_one() -> int:
     return 1
 
 
 @solid
-def sum_fan_in(_, nums: List[int]) -> int:
+def sum_fan_in(nums: List[int]) -> int:
     return sum(nums)
 
 

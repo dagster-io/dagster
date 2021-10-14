@@ -5,7 +5,6 @@ from unittest import mock
 
 import pytest
 from dagster import lambda_solid, pipeline, repository
-from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
@@ -47,35 +46,32 @@ def test_can_reload_on_external_repository_error():
 
                 with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
                     workspace = exit_stack.enter_context(
-                        define_out_of_process_workspace(__file__, "get_repo")
+                        define_out_of_process_workspace(__file__, "get_repo", instance)
                     )
 
                 assert not workspace.has_repository_location(main_repo_location_name())
                 assert workspace.has_repository_location_error(main_repo_location_name())
-                process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-                assert len(process_context.repository_locations) == 0
 
             workspace.reload_repository_location(main_repo_location_name())
             assert workspace.has_repository_location(main_repo_location_name())
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            assert len(process_context.repository_locations) == 1
 
 
 def test_reload_on_process_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            assert len(process_context.repository_locations) == 1
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            request_context = process_context.create_request_context()
 
             # Save the repository name
-            repository_location = process_context.repository_locations[0]
+            repository_location = request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
             repo_name = repo.name
 
             # Reload the location and save the new repository name
             process_context.reload_repository_location(repository_location.name)
-            repository_location = process_context.repository_locations[0]
+
+            new_request_context = process_context.create_request_context()
+
+            repository_location = new_request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
             new_repo_name = repo.name
 
@@ -85,36 +81,33 @@ def test_reload_on_process_context():
 
 def test_reload_on_request_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            assert len(process_context.repository_locations) == 1
-
-            # Save the repository name
-            repository_location = process_context.repository_locations[0]
-            repo = list(repository_location.get_repositories().values())[0]
-            repo_name = repo.name
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
 
             # Create a request context from the process context
             request_context = process_context.create_request_context()
 
-            # Reload the location and save the new repository name
-            process_context.reload_repository_location(repository_location.name)
-            repository_location = process_context.repository_locations[0]
-            repo = list(repository_location.get_repositories().values())[0]
-            new_repo_name = repo.name
-
-            # Save the repository name from the request context
+            # Save the repository name
             repository_location = request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
-            request_context_repo_name = repo.name
+            repo_name = repo.name
+
+            # Reload the location and save the new repository name
+            process_context.reload_repository_location(repository_location.name)
+
+            new_request_context = process_context.create_request_context()
+            repository_location = new_request_context.repository_locations[0]
+            repo = list(repository_location.get_repositories().values())[0]
+            new_repo_name = repo.name
 
             # Check that the repository has changed
             assert repo_name != new_repo_name
 
-            # Check that the repository name is still the same on the request context,
+            # Check that the repository name is still the same on the old request context,
             # confirming that the old repository location is still running
-            assert repo_name == request_context_repo_name
+            repository_location = request_context.repository_locations[0]
+            repo = list(repository_location.get_repositories().values())[0]
+            assert repo_name == repo.name
 
 
 def test_reload_on_request_context_2():
@@ -122,49 +115,40 @@ def test_reload_on_request_context_2():
     # but calls reload from the request_context instead of on the process_context
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            assert len(process_context.repository_locations) == 1
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
+
+            request_context = process_context.create_request_context()
 
             # Save the repository name
-            repository_location = process_context.repository_locations[0]
+            repository_location = request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
             repo_name = repo.name
-
-            # Create a request context from the process context
-            request_context = process_context.create_request_context()
 
             # Reload the location from the request context
             new_request_context = request_context.reload_repository_location(
                 repository_location.name
             )
 
-            # Save the repository name from the:
-            #   - Old request context
-            #   - New request context
-            #   - Process context
-            repository_location = process_context.repository_locations[0]
-            repo = list(repository_location.get_repositories().values())[0]
-            new_repo_name_process_context = repo.name
-
             repository_location = new_request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
-            new_request_context_repo_name = repo.name
+            new_repo_name = repo.name
 
+            # Check that the repository has changed
+            assert repo_name != new_repo_name
+
+            # Check that the repository name is still the same on the old request context,
+            # confirming that the old repository location is still running
             repository_location = request_context.repository_locations[0]
             repo = list(repository_location.get_repositories().values())[0]
-            request_context_repo_name = repo.name
-
-            assert repo_name == request_context_repo_name
-            assert request_context_repo_name != new_request_context_repo_name
-            assert new_repo_name_process_context == new_request_context_repo_name
+            assert repo_name == repo.name
 
 
-def test_handle_cleaup_by_workspace_context_exit():
-    with mock.patch.object(GrpcServerRepositoryLocation, "cleanup") as mock_method:
-        with define_out_of_process_workspace(__file__, "get_repo") as _:
-            pass
+def test_handle_cleanup_by_workspace_context_exit():
+    with instance_for_test() as instance:
+        with mock.patch.object(GrpcServerRepositoryLocation, "cleanup") as mock_method:
+            with define_out_of_process_workspace(__file__, "get_repo", instance):
+                pass
 
     assert mock_method.called
 
@@ -177,49 +161,19 @@ def test_handle_cleaup_by_gc_without_request_context():
         called["yup"] = True
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            assert len(process_context.repository_locations) == 1
-            process_context.repository_locations[0].cleanup = call_me
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
+
+            request_context = process_context.create_request_context()
+            request_context.repository_locations[0].cleanup = call_me
 
             # Reload the location from the request context
             assert not called["yup"]
             process_context.reload_repository_location("test_location")
+            assert not called["yup"]
+
+            request_context = None
 
             # There are no more references to the location, so it should be GC'd
-            gc.collect()
-            assert called["yup"]
-
-
-def test_handle_cleaup_by_gc_with_dangling_request_reference():
-    called = {"yup": False}
-
-    def call_me():
-        called["yup"] = True
-
-    with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            process_context.repository_locations[0].cleanup = call_me
-
-            assert len(process_context.repository_locations) == 1
-
-            assert not called["yup"]
-
-            # The request context maintains a reference to the location handle through the
-            # repository location
-            request_context = (  # pylint: disable=unused-variable
-                process_context.create_request_context()
-            )
-
-            # Even though we reload, verify the handle isn't cleaned up
-            process_context.reload_repository_location("test_location")
-            gc.collect()
-            assert not called["yup"]
-
-            # Free reference, make sure handle is cleaned up
-            request_context = None
             gc.collect()
             assert called["yup"]

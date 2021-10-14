@@ -45,3 +45,6 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     def on_subscribe(self, subscription):
         pass
+
+    def on_unsubscribe(self, subscription):
+        pass

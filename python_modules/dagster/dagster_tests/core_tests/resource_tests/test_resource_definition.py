@@ -16,6 +16,7 @@ from dagster import (
     configured,
     execute_pipeline,
     execute_pipeline_iterator,
+    fs_io_manager,
     reconstructable,
     resource,
     solid,
@@ -24,17 +25,29 @@ from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource import make_values_resource
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
-from dagster.core.events.log import EventRecord, construct_event_logger
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.test_utils import instance_for_test
+from dagster.core.utils import coerce_valid_log_level
 
 
 def define_string_resource():
     return ResourceDefinition(
         config_schema=String, resource_fn=lambda init_context: init_context.resource_config
     )
+
+
+def test_resource_decorator_no_context():
+    @resource
+    def _basic():
+        pass
+
+    # Document that it is possible to provide required resource keys and
+    # config schema, and still not provide a context.
+    @resource(required_resource_keys={"foo", "bar"}, config_schema={"foo": str})
+    def _reqs_resources():
+        pass
 
 
 def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
@@ -624,11 +637,9 @@ def test_incorrect_resource_init_error():
     def _correct_resource(_):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="expects a single positional argument"):
-
-        @resource
-        def _incorrect_resource():
-            pass
+    @resource
+    def _correct_resource_no_context():
+        pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -812,7 +823,7 @@ def test_solid_failure_resource_teardown():
 
 
 def test_solid_failure_resource_teardown_raise():
-    """ test that teardown is invoked in resources for tests that raise_on_error """
+    """test that teardown is invoked in resources for tests that raise_on_error"""
     called = []
     cleaned = []
 
@@ -929,7 +940,11 @@ def define_resource_teardown_failure_pipeline():
     return PipelineDefinition(
         name="resource_teardown_failure",
         solid_defs=[resource_solid],
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"a": resource_a, "b": resource_b, "io_manager": fs_io_manager}
+            )
+        ],
     )
 
 
@@ -939,7 +954,6 @@ def test_multiprocessing_resource_teardown_failure():
         result = execute_pipeline(
             recon_pipeline,
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
@@ -963,7 +977,7 @@ def test_single_step_resource_event_logs():
     events = []
 
     def event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         events.append(record)
 
     @solid(required_resource_keys={"a"})
@@ -990,7 +1004,7 @@ def test_single_step_resource_event_logs():
         pipeline_run = instance.create_run_for_pipeline(
             the_pipeline,
             run_config={"loggers": {"callback": {}}},
-            step_keys_to_execute=["resource_solid"],
+            solids_to_execute={"resource_solid"},
         )
 
         result = execute_run(InMemoryPipeline(the_pipeline), pipeline_run, instance)
@@ -999,7 +1013,7 @@ def test_single_step_resource_event_logs():
         log_messages = [
             event
             for event in events
-            if isinstance(event, EventRecord) and event.level == coerce_valid_log_level("INFO")
+            if isinstance(event, EventLogEntry) and event.level == coerce_valid_log_level("INFO")
         ]
         assert len(log_messages) == 2
 
@@ -1145,3 +1159,33 @@ def test_config_with_no_schema():
         my_solid()
 
     execute_pipeline(my_pipeline, run_config={"resources": {"resource": {"config": 5}}})
+
+
+def test_configured_resource_unused():
+    # Ensure that if we do not use a resource on a mode definition, then we do not apply the config
+    # schema.
+    entered = []
+
+    @resource
+    def basic_resource(_):
+        pass
+
+    @configured(basic_resource)
+    def configured_resource(_):
+        entered.append("True")
+
+    @solid(required_resource_keys={"bar"})
+    def basic_solid(_):
+        pass
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(resource_defs={"foo": configured_resource, "bar": basic_resource})
+        ]
+    )
+    def basic_pipeline():
+        basic_solid()
+
+    execute_pipeline(basic_pipeline)
+
+    assert not entered

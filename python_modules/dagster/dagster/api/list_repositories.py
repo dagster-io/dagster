@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -10,7 +11,8 @@ def sync_list_repositories_grpc(api_client):
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     result = check.inst(
-        api_client.list_repositories(), (ListRepositoriesResponse, SerializableErrorInfo)
+        deserialize_json_to_dagster_namedtuple(api_client.list_repositories()),
+        (ListRepositoriesResponse, SerializableErrorInfo),
     )
     if isinstance(result, SerializableErrorInfo):
         raise DagsterUserCodeProcessError(

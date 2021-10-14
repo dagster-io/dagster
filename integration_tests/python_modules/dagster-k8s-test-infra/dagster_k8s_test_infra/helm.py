@@ -16,7 +16,14 @@ from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, i
 
 TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"
+TEST_OTHER_CONFIGMAP_NAME = "test-other-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
+TEST_OTHER_SECRET_NAME = "test-other-env-secret"
+
+TEST_VOLUME_CONFIGMAP_NAME = "test-volume-configmap"
+
+TEST_IMAGE_PULL_SECRET_NAME = "test-image-pull-secret"
+TEST_OTHER_IMAGE_PULL_SECRET_NAME = "test-other-image-pull-secret"
 
 # By default, dagster.workers.fullname is ReleaseName-celery-workers
 CELERY_WORKER_NAME_PREFIX = "dagster-celery-workers"
@@ -66,8 +73,10 @@ def namespace(pytestconfig, should_cleanup):
 
 
 @pytest.fixture(scope="session")
-def configmap(namespace, should_cleanup):
-    print("Creating k8s test object ConfigMap %s" % (TEST_CONFIGMAP_NAME))
+def configmaps(namespace, should_cleanup):
+    print(
+        f"Creating k8s test object ConfigMaps: {TEST_CONFIGMAP_NAME}, {TEST_OTHER_CONFIGMAP_NAME}, {TEST_VOLUME_CONFIGMAP_NAME}"
+    )
     kube_api = kubernetes.client.CoreV1Api()
 
     configmap = kubernetes.client.V1ConfigMap(
@@ -78,10 +87,29 @@ def configmap(namespace, should_cleanup):
     )
     kube_api.create_namespaced_config_map(namespace=namespace, body=configmap)
 
-    yield TEST_CONFIGMAP_NAME
+    other_configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data={"TEST_OTHER_ENV_VAR": "bazquux"},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_OTHER_CONFIGMAP_NAME),
+    )
+    kube_api.create_namespaced_config_map(namespace=namespace, body=other_configmap)
+
+    volume_configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data={"volume_mounted_file.yaml": "BAR_CONTENTS"},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_VOLUME_CONFIGMAP_NAME),
+    )
+
+    kube_api.create_namespaced_config_map(namespace=namespace, body=volume_configmap)
+
+    yield
 
     if should_cleanup:
         kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
+        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
@@ -116,8 +144,8 @@ def aws_configmap(namespace, should_cleanup):
 
 
 @pytest.fixture(scope="session")
-def secret(namespace, should_cleanup):
-    print("Creating k8s test object Secret %s" % (TEST_SECRET_NAME))
+def secrets(namespace, should_cleanup):
+    print("Creating k8s test secrets")
     kube_api = kubernetes.client.CoreV1Api()
 
     # Secret values are expected to be base64 encoded
@@ -130,10 +158,43 @@ def secret(namespace, should_cleanup):
     )
     kube_api.create_namespaced_secret(namespace=namespace, body=secret)
 
-    yield TEST_SECRET_NAME
+    kube_api.create_namespaced_secret(
+        namespace=namespace,
+        body=kubernetes.client.V1Secret(
+            api_version="v1",
+            kind="Secret",
+            data={},
+            metadata=kubernetes.client.V1ObjectMeta(name=TEST_IMAGE_PULL_SECRET_NAME),
+        ),
+    )
+    kube_api.create_namespaced_secret(
+        namespace=namespace,
+        body=kubernetes.client.V1Secret(
+            api_version="v1",
+            kind="Secret",
+            data={},
+            metadata=kubernetes.client.V1ObjectMeta(name=TEST_OTHER_IMAGE_PULL_SECRET_NAME),
+        ),
+    )
+
+    other_secret_val = base64.b64encode(b"bazquux").decode("utf-8")
+    other_secret = kubernetes.client.V1Secret(
+        api_version="v1",
+        kind="Secret",
+        data={"TEST_OTHER_SECRET_ENV_VAR": other_secret_val},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_OTHER_SECRET_NAME),
+    )
+    kube_api.create_namespaced_secret(namespace=namespace, body=other_secret)
+
+    yield
 
     if should_cleanup:
         kube_api.delete_namespaced_secret(name=TEST_SECRET_NAME, namespace=namespace)
+        kube_api.delete_namespaced_secret(name=TEST_OTHER_SECRET_NAME, namespace=namespace)
+        kube_api.delete_namespaced_secret(name=TEST_IMAGE_PULL_SECRET_NAME, namespace=namespace)
+        kube_api.delete_namespaced_secret(
+            name=TEST_OTHER_IMAGE_PULL_SECRET_NAME, namespace=namespace
+        )
 
 
 @pytest.fixture(scope="session")
@@ -142,9 +203,9 @@ def helm_namespace_for_user_deployments(
     cluster_provider,
     namespace,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_user_deployments(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -156,9 +217,9 @@ def helm_namespace_for_user_deployments_subchart_disabled(
     cluster_provider,
     helm_namespace_for_user_deployments_subchart,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     namespace = helm_namespace_for_user_deployments_subchart
 
@@ -175,9 +236,9 @@ def helm_namespace_for_user_deployments_subchart(
     cluster_provider,
     namespace,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -189,9 +250,9 @@ def helm_namespace_for_daemon(
     cluster_provider,
     namespace,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -203,9 +264,9 @@ def helm_namespace(
     cluster_provider,
     namespace,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     with helm_chart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -217,9 +278,9 @@ def helm_namespace_for_k8s_run_launcher(
     cluster_provider,
     namespace,
     should_cleanup,
-    configmap,
+    configmaps,
     aws_configmap,
-    secret,
+    secrets,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_k8s_run_launcher(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -440,20 +501,12 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             "dagit": {"host": "dagit.example.com"},
             "flower": {"flower": "flower.example.com"},
         },
-        "scheduler": {
-            "type": "K8sScheduler",
-            "config": {
-                "k8sScheduler": {
-                    "schedulerNamespace": namespace,
-                    "envSecrets": [{"name": TEST_SECRET_NAME}],
-                }
-            },
-        },
+        "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": False},
+        "dagsterDaemon": {"enabled": True},
     }
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
@@ -486,31 +539,37 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
                 "periodSeconds": 10,
             },
         },
+        "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         "runLauncher": {
             "type": "K8sRunLauncher",
             "config": {
                 "k8sRunLauncher": {
                     "jobNamespace": namespace,
-                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
+                    + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
+                    "envVars": ["BUILDKITE"],
+                    "imagePullPolicy": image_pull_policy(),
+                    "volumeMounts": [
+                        {
+                            "name": "test-volume",
+                            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                            "subPath": "volume_mounted_file.yaml",
+                        }
+                    ],
+                    "volumes": [
+                        {"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}
+                    ],
                 }
             },
         },
         "rabbitmq": {"enabled": False},
-        "scheduler": {
-            "type": "K8sScheduler",
-            "config": {
-                "k8sScheduler": {
-                    "schedulerNamespace": namespace,
-                    "envSecrets": [{"name": TEST_SECRET_NAME}],
-                }
-            },
-        },
+        "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": False},
+        "dagsterDaemon": {"enabled": True},
     }
 
     with _helm_chart_helper(
@@ -601,20 +660,12 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
             },
         },
         "rabbitmq": {"enabled": True},
-        "scheduler": {
-            "type": "K8sScheduler",
-            "config": {
-                "k8sScheduler": {
-                    "schedulerNamespace": namespace,
-                    "envSecrets": [{"name": TEST_SECRET_NAME}],
-                }
-            },
-        },
+        "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": False},
+        "dagsterDaemon": {"enabled": True},
     }
 
     with _helm_chart_helper(
@@ -705,20 +756,12 @@ def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, s
             },
         },
         "rabbitmq": {"enabled": True},
-        "scheduler": {
-            "type": "K8sScheduler",
-            "config": {
-                "k8sScheduler": {
-                    "schedulerNamespace": namespace,
-                    "envSecrets": [{"name": TEST_SECRET_NAME}],
-                }
-            },
-        },
+        "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": False},
+        "dagsterDaemon": {"enabled": True},
     }
 
     with _helm_chart_helper(
@@ -851,7 +894,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "heartbeatTolerance": 180,
-            "queuedRunCoordinator": {"enabled": True},
+            "runCoordinator": {"enabled": True},
             "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],

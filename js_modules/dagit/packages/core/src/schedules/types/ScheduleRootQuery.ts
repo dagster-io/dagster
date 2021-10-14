@@ -4,60 +4,16 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
 // ====================================================
 
-export interface ScheduleRootQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export interface ScheduleRootQuery_scheduler_Scheduler {
-  __typename: "Scheduler";
-  schedulerClass: string | null;
-}
-
-export interface ScheduleRootQuery_scheduler_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface ScheduleRootQuery_scheduler_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: ScheduleRootQuery_scheduler_PythonError_cause | null;
-}
-
-export type ScheduleRootQuery_scheduler = ScheduleRootQuery_scheduler_SchedulerNotDefinedError | ScheduleRootQuery_scheduler_Scheduler | ScheduleRootQuery_scheduler_PythonError;
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PythonError {
-  __typename: "PythonError";
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runStatus: PipelineRunStatus | null;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses {
-  __typename: "PartitionStatuses";
-  results: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
-}
-
-export type ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError = ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PythonError | ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses;
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   __typename: "PartitionSet";
   id: string;
   name: string;
-  partitionStatusesOrError: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -74,17 +30,17 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_reposi
   repositoryLocationMetadata: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_SensorJobData {
-  __typename: "SensorJobData";
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData {
+  __typename: "SensorData";
   lastRunKey: string | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_ScheduleJobData {
-  __typename: "ScheduleJobData";
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData {
+  __typename: "ScheduleData";
   cronSchedule: string;
 }
 
-export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_SensorJobData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_ScheduleJobData;
+export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData;
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   __typename: "PipelineRun";
@@ -107,9 +63,9 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks {
-  __typename: "JobTick";
+  __typename: "InstigationTick";
   id: string;
-  status: JobTickStatus;
+  status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -117,25 +73,25 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
-  __typename: "JobState";
+  __typename: "InstigationState";
   id: string;
   name: string;
-  jobType: JobType;
-  status: JobStatus;
+  instigationType: InstigationType;
+  status: InstigationStatus;
   repositoryOrigin: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin;
-  jobSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData | null;
+  typeSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results {
-  __typename: "FutureJobTick";
+  __typename: "FutureInstigationTick";
   timestamp: number;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks {
-  __typename: "FutureJobTicks";
+  __typename: "FutureInstigationTicks";
   results: ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results[];
 }
 
@@ -183,7 +139,7 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastH
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
@@ -202,7 +158,6 @@ export interface ScheduleRootQuery_instance {
 }
 
 export interface ScheduleRootQuery {
-  scheduler: ScheduleRootQuery_scheduler;
   scheduleOrError: ScheduleRootQuery_scheduleOrError;
   instance: ScheduleRootQuery_instance;
 }

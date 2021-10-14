@@ -62,7 +62,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
-        "-e python_modules/libraries/dagster-cron",
         '-e "python_modules/libraries/dagster-dask[yarn,pbs,kube]"',
         "-e python_modules/libraries/dagster-datadog",
         "-e python_modules/libraries/dagster-dbt",
@@ -88,6 +87,7 @@ def main(quiet):
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         "-e python_modules/libraries/dagster-azure",
+        "-e python_modules/libraries/dagster-msteams",
         "-e helm/dagster/schema[test]",
     ]
 
@@ -107,6 +107,10 @@ def main(quiet):
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
     cmd = ["pip", "install"] + install_targets
+
+    # Second, install with dependencies. Now, pip will see that the editable installs already
+    # exist and will use them instead of trying to find the projects on pypi.
+    cmd += ["&&", "pip", "install"] + install_targets
     if quiet:
         cmd.append(quiet)
 

@@ -1,21 +1,22 @@
-import {Icon, Colors, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {usePermissions} from '../app/Permissions';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
 export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {location} = repoAddress;
-  const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
+  const {canReloadRepositoryLocation} = usePermissions();
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
@@ -25,37 +26,45 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
       >
         {repoAddressAsString(repoAddress)}
       </RepositoryName>
-      <ShortcutHandler
-        onShortcut={onClick}
-        shortcutLabel={`⌥R`}
-        shortcutFilter={(e) => e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)}
-      >
-        <ReloadTooltip content={reloading ? 'Reloading…' : `Reload location ${location}`}>
-          {reloading ? (
-            <Spinner purpose="body-text" />
-          ) : (
-            <StyledButton onClick={onClick}>
-              <Icon icon="refresh" iconSize={11} color={Colors.GRAY2} />
-            </StyledButton>
+      {canReloadRepositoryLocation ? (
+        <ReloadRepositoryLocationButton location={location}>
+          {({tryReload, reloading}) => (
+            <ReloadTooltip
+              content={
+                reloading ? (
+                  'Reloading…'
+                ) : (
+                  <>
+                    Reload location <strong>{location}</strong>
+                  </>
+                )
+              }
+            >
+              {reloading ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <StyledButton onClick={tryReload}>
+                  <IconWIP name="refresh" color={ColorsWIP.Gray400} />
+                </StyledButton>
+              )}
+            </ReloadTooltip>
           )}
-        </ReloadTooltip>
-      </ShortcutHandler>
+        </ReloadRepositoryLocationButton>
+      ) : null}
     </Box>
   );
 };
 
 const RepositoryName = styled(Link)`
-  max-width: 400px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const ReloadTooltip = styled(Tooltip)`
-  margin-left: 8px;
-  position: relative;
-  top: 1px;
+  margin-left: 4px;
 
-  .bp3-popover-target {
+  && {
     display: block;
   }
 `;
@@ -64,6 +73,7 @@ const StyledButton = styled.button`
   background-color: transparent;
   border: 0;
   cursor: pointer;
+  display: block;
   padding: 0;
   margin: 0;
 
@@ -71,15 +81,12 @@ const StyledButton = styled.button`
     outline: none;
   }
 
-  .bp3-icon {
+  & ${IconWrapper} {
     display: block;
+    transition: color 100ms linear;
   }
 
-  .bp3-icon svg {
-    transition: fill 0.1s ease-in-out;
-  }
-
-  :hover .bp3-icon svg {
-    fill: ${Colors.BLUE2};
+  :hover ${IconWrapper} {
+    color: ${ColorsWIP.Blue500};
   }
 `;

@@ -704,6 +704,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers {
 
 export interface SidebarTabbedContainerPipelineFragment_modes {
   __typename: "Mode";
+  id: string;
   name: string;
   description: string | null;
   resources: SidebarTabbedContainerPipelineFragment_modes_resources[];

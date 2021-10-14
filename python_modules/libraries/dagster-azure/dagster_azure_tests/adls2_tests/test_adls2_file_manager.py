@@ -7,8 +7,10 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
+    build_op_context,
     configured,
     execute_pipeline,
+    op,
     pipeline,
     solid,
 )
@@ -218,7 +220,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
         "adls2_prefix": "some-prefix",
     }
 
-    @solid(required_resource_keys={"file_manager"})
+    @op(required_resource_keys={"file_manager"})
     def test_solid(context):
         # test that we got back a ADLS2FileManager
         assert context.resources.file_manager == MockADLS2FileManager.return_value
@@ -235,15 +237,8 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
 
         did_it_run["it_ran"] = True
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"file_manager": configured(adls2_file_manager)(resource_config)},
-            )
-        ]
+    context = build_op_context(
+        resources={"file_manager": configured(adls2_file_manager)(resource_config)},
     )
-    def test_pipeline():
-        test_solid()
-
-    execute_pipeline(test_pipeline)
+    test_solid(context)
     assert did_it_run["it_ran"]

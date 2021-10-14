@@ -4,7 +4,10 @@ from dagster import (
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
+    reconstructable,
 )
+from dagster.core.test_utils import instance_for_test
+from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.asset_lineage import asset_lineage_pipeline
 from dagster_test.toys.composition import composition
@@ -12,11 +15,12 @@ from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.longitudinal import longitudinal_pipeline
+from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import resource_pipeline
+from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.schedules import longitudinal_schedule
 from dagster_test.toys.sleepy import sleepy_pipeline
 
@@ -31,18 +35,27 @@ def test_dynamic_pipeline():
 
 def test_longitudinal_pipeline():
     partition_set = longitudinal_schedule().get_partition_set()
-    assert execute_pipeline(
-        longitudinal_pipeline,
-        run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
-    ).success
+    try:
+        result = execute_pipeline(
+            longitudinal_pipeline,
+            run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
+        )
+        assert result.success
+    except IntentionalRandomFailure:
+        pass
 
 
 def test_many_events_pipeline():
     assert execute_pipeline(many_events).success
 
 
+def get_sleepy():
+    return sleepy_pipeline
+
+
 def test_sleepy_pipeline():
-    assert execute_pipeline(sleepy_pipeline).success
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
 
 
 def test_spew_pipeline():
@@ -94,7 +107,9 @@ def test_pyspark_assets_pipeline():
             "resources": {
                 "source_data_dir": {
                     "config": {
-                        "dir": "python_modules/dagster-test/dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                        "dir": file_relative_path(
+                            __file__, "../dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                        ),
                     }
                 },
                 "savedir": {"config": {"dir": temp_dir}},
@@ -208,4 +223,11 @@ def test_asset_lineage_pipeline():
                 "top_10_reviews": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
             }
         },
+    ).success
+
+
+def test_retry_pipeline():
+    assert execute_pipeline(
+        retry_pipeline,
+        run_config=retry_pipeline.get_preset("pass_after_retry").run_config,
     ).success

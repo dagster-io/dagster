@@ -1,16 +1,19 @@
 import pendulum
 import pytest
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-from dagster.core.definitions.job import JobType
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
-from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
+from dagster.core.test_utils import (
+    cleanup_test_instance,
+    create_test_daemon_workspace,
+    get_crash_signals,
+)
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
+from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_start
 
@@ -18,18 +21,15 @@ from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(
-                execution_datetime
-            ), ProcessGrpcServerRegistry() as grpc_server_registry:
-                with DynamicWorkspace(grpc_server_registry) as workspace:
-                    list(
-                        execute_sensor_iteration(
-                            instance,
-                            get_default_daemon_logger("SensorDaemon"),
-                            workspace,
-                            debug_crash_flags=debug_crash_flags,
-                        )
+            with pendulum.test(execution_datetime), create_test_daemon_workspace() as workspace:
+                list(
+                    execute_sensor_iteration(
+                        instance,
+                        get_default_daemon_logger("SensorDaemon"),
+                        workspace,
+                        debug_crash_flags=debug_crash_flags,
                     )
+                )
         finally:
             cleanup_test_instance(instance)
 

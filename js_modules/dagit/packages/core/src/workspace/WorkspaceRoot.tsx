@@ -1,12 +1,15 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
+import {Box} from '../ui/Box';
 import {MainContent} from '../ui/MainContent';
+import {NonIdealState} from '../ui/NonIdealState';
 
+import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
@@ -17,22 +20,25 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
     return (
-      <NonIdealState
-        icon="cube"
-        title="Invalid repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Invalid repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not a valid repository path.'}
             </div>
-            {'  is not a valid repository path.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 
@@ -52,26 +58,41 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
-      <NonIdealState
-        icon="cube"
-        title="Unknown repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Unknown repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not loaded in the current workspace.'}
             </div>
-            {'  is not loaded in the current workspace.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 
   return (
     <Switch>
       <Route
-        path="/workspace/:repoPath/pipelines/(/?.*)"
+        path="/workspace/:repoPath/jobs/(/?.*)"
         render={() => <PipelineRoot repoAddress={addressForPath} />}
+      />
+      <Route
+        path="/workspace/:repoPath/graphs/(/?.*)"
+        render={(props) => <GraphRoot {...props} repoAddress={addressForPath} />}
+      />
+      <Route
+        path="/workspace/:repoPath/pipelines/(/?.*)"
+        render={(props: RouteComponentProps) => {
+          if (flagPipelineModeTuples) {
+            return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
+          }
+          return <PipelineRoot repoAddress={addressForPath} />;
+        }}
       />
       <Route
         path="/workspace/:repoPath/schedules/:scheduleName/:runTab?"
@@ -99,25 +120,37 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   );
 };
 
-export const WorkspaceRoot = () => (
-  <MainContent>
-    <Switch>
-      <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
-      <Route
-        path="/workspace/pipelines/:pipelinePath"
-        render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-          <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
-        )}
-      />
-      <Route
-        path="/workspace/:repoPath"
-        render={(props: RouteComponentProps<{repoPath: string}>) => (
-          <RepoRouteContainer repoPath={props.match.params.repoPath} />
-        )}
-      />
-    </Switch>
-  </MainContent>
-);
+export const WorkspaceRoot = () => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  return (
+    <MainContent>
+      <Switch>
+        <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
+        <Route
+          path="/workspace/jobs/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
+          )}
+        />
+        <Route
+          path="/workspace/pipelines/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => {
+            if (flagPipelineModeTuples) {
+              return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
+            }
+            return <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />;
+          }}
+        />
+        <Route
+          path="/workspace/:repoPath"
+          render={(props: RouteComponentProps<{repoPath: string}>) => (
+            <RepoRouteContainer repoPath={props.match.params.repoPath} />
+          )}
+        />
+      </Switch>
+    </MainContent>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export

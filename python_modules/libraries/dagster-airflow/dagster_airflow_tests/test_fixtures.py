@@ -10,7 +10,7 @@ from airflow.models import TaskInstance
 from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 from dagster import file_relative_path
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list, merge_dicts
 from dagster.utils.test.postgres_instance import TestPostgresInstance
@@ -26,8 +26,8 @@ def postgres_instance(overrides=None):
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)
             TestPostgresInstance.clean_schedule_storage(pg_conn_string)
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides=merge_dicts(
                     {
                         "run_storage": {

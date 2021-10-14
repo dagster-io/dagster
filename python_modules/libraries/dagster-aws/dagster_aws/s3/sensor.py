@@ -31,7 +31,7 @@ def get_s3_keys(bucket, prefix="", since_key=None, s3_session=None):
 
     sorted_keys = [obj["Key"] for obj in sorted(contents, key=lambda x: x["LastModified"])]
 
-    if not since_key:
+    if not since_key or since_key not in sorted_keys:
         return sorted_keys
 
     for idx, key in enumerate(sorted_keys):

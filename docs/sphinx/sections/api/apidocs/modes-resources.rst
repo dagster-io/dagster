@@ -22,3 +22,5 @@ Resources
     :members:
 
 .. autofunction:: make_values_resource
+
+.. autofunction:: build_init_resource_context

@@ -5,15 +5,15 @@ Built-in loggers
 ----------------
 .. currentmodule:: dagster.loggers
 
-.. autoclass colored_console_logger
+.. autofunction:: colored_console_logger
 
-.. autoclass json_console_logger
+.. autofunction:: json_console_logger
 
-Logging from a solid
+Logging from an @op
 --------------------
 .. currentmodule:: dagster
 
-.. autoclass DagsterLogManager
+.. autoclass:: DagsterLogManager
 
 Defining custom loggers
 -----------------------
@@ -26,7 +26,4 @@ Defining custom loggers
 
 .. autoclass:: InitLoggerContext
 
-Monitoring stdout and stderr
-----------------------------
-.. currentmodule:: dagster
-
+.. autofunction:: build_init_logger_context

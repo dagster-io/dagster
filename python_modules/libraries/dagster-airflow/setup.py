@@ -13,6 +13,8 @@ def get_version() -> str:
 
 if __name__ == "__main__":
     ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-airflow",
         version=ver,
@@ -30,15 +32,13 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_airflow_tests"]),
         install_requires=[
-            "dagster=={ver}".format(ver=ver),
+            f"dagster{pin}",
             "docker",
             "python-dateutil>=2.8.0",
             "lazy_object_proxy",
             "pendulum==1.4.4",
             # https://issues.apache.org/jira/browse/AIRFLOW-6854
             'typing_extensions; python_version>="3.8"',
-            # https://github.com/dagster-io/dagster/issues/3858
-            "sqlalchemy>=1.0,<1.4.0",
         ],
         extras_require={
             "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
@@ -47,6 +47,9 @@ if __name__ == "__main__":
                 # Composer ships a fork of Airflow; we don't want to override it with our install.
                 # See https://github.com/dagster-io/dagster/issues/2701
                 "apache-airflow==1.10.10",
+                # https://github.com/dagster-io/dagster/issues/3858
+                "sqlalchemy>=1.0,<1.4.0",
+                "marshmallow-sqlalchemy<0.26.0",
                 "boto3==1.9.*",
                 "kubernetes==10.0.1",
             ],

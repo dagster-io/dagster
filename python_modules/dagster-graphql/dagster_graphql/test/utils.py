@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.cli.workspace.cli_target import PythonFileTarget
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
@@ -47,21 +47,22 @@ def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
 def define_out_of_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    with define_out_of_process_workspace(python_file, fn_name) as workspace:
-        yield WorkspaceProcessContext(
-            workspace=workspace,
-            instance=instance,
-        ).create_request_context()
+    with define_out_of_process_workspace(
+        python_file, fn_name, instance
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
 
 
-def define_out_of_process_workspace(python_file, fn_name):
-    return Workspace(
+def define_out_of_process_workspace(python_file, fn_name, instance):
+    return WorkspaceProcessContext(
+        instance,
         PythonFileTarget(
             python_file=python_file,
             attribute=fn_name,
             working_directory=None,
             location_name=main_repo_location_name(),
-        )
+        ),
+        version="",
     )
 
 
@@ -112,7 +113,7 @@ def infer_sensor_selector(graphql_context, sensor_name):
     return selector
 
 
-def infer_job_selector(graphql_context, job_name):
+def infer_instigation_selector(graphql_context, name):
     selector = infer_repository_selector(graphql_context)
-    selector.update({"jobName": job_name})
+    selector.update({"name": name})
     return selector

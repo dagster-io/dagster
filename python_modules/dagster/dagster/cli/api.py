@@ -1,49 +1,26 @@
 import os
 import sys
-import time
 from collections import namedtuple
-from contextlib import contextmanager
 
 import click
-import pendulum
-from dagster import DagsterInvariantViolationError, check, seven
+from dagster import check, seven
 from dagster.cli.workspace.cli_target import (
-    get_repository_location_from_kwargs,
-    get_repository_origin_from_kwargs,
     get_working_directory_from_kwargs,
     python_origin_target_argument,
-    repository_target_argument,
 )
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import (
-    ScheduledExecutionFailed,
-    ScheduledExecutionSkipped,
-    ScheduledExecutionSuccess,
-)
-from dagster.core.scheduler.job import JobTickData, JobTickStatus, JobType
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.tags import check_tags
-from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
-from dagster.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-    whitelist_for_serdes,
-)
-from dagster.serdes.ipc import ipc_write_stream
+from dagster.serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.seven import nullcontext
-from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-from dagster.utils.merger import merge_dicts
 
 
 @whitelist_for_serdes
@@ -51,7 +28,15 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
     pass
 
 
-@click.command(
+@click.group(name="api")
+def api_cli():
+    """
+    [INTERNAL] These commands are intended to support internal use cases. Users should generally
+    not invoke these commands interactively.
+    """
+
+
+@api_cli.command(
     name="execute_run",
     help=(
         "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
@@ -61,7 +46,7 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
     with capture_interrupts():
-        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
+        args = deserialize_as(input_json, ExecuteRunArgs)
         recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
@@ -165,7 +150,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
     return True
 
 
-@click.command(
+@api_cli.command(
     name="execute_step",
     help=(
         "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
@@ -176,7 +161,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
 def execute_step_command(input_json):
     with capture_interrupts():
 
-        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
+        args = deserialize_as(input_json, ExecuteStepArgs)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -230,41 +215,7 @@ def execute_step_command(input_json):
                 click.echo(line)
 
 
-class _ScheduleLaunchContext:
-    def __init__(self, tick, instance, stream):
-        self._instance = instance
-        self._tick = tick  # placeholder for the current tick
-        self._stream = stream
-
-    def update_state(self, status, **kwargs):
-        self._tick = self._tick.with_status(status=status, **kwargs)
-
-    def add_run(self, run_id, run_key=None):
-        self._tick = self._tick.with_run(run_id, run_key)
-
-    @property
-    def stream(self):
-        return self._stream
-
-    def write(self):
-        self._instance.update_job_tick(self._tick)
-
-
-@contextmanager
-def _schedule_tick_context(instance, stream, tick_data):
-    tick = instance.create_job_tick(tick_data)
-    context = _ScheduleLaunchContext(tick=tick, instance=instance, stream=stream)
-    try:
-        yield context
-    except Exception:  # pylint: disable=broad-except
-        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        context.update_state(JobTickStatus.FAILURE, error=error_data)
-        stream.send(ScheduledExecutionFailed(run_id=None, errors=[error_data]))
-    finally:
-        context.write()
-
-
-@click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
+@api_cli.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
 @click.option(
     "--port",
     "-p",
@@ -403,7 +354,7 @@ def grpc_command(
         server.serve()
 
 
-@click.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
+@api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
 @click.option(
     "--port",
     "-p",
@@ -438,217 +389,3 @@ def grpc_health_check_command(port=None, socket=None, host="localhost"):
     status = client.health_check_query()
     if status != "SERVING":
         sys.exit(1)
-
-
-###################################################################################################
-# WARNING: these cli args are encoded in cron, so are not safely changed without migration
-###################################################################################################
-@click.command(
-    name="launch_scheduled_execution",
-    help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
-    ),
-)
-@click.argument("output_file", type=click.Path())
-@repository_target_argument
-@click.option("--schedule_name")
-@click.option("--override-system-timezone")
-def launch_scheduled_execution(output_file, schedule_name, override_system_timezone, **kwargs):
-    with (
-        mock_system_timezone(override_system_timezone)
-        if override_system_timezone
-        else nullcontext()
-    ):
-        with ipc_write_stream(output_file) as stream:
-            with DagsterInstance.get() as instance:
-                repository_origin = get_repository_origin_from_kwargs(kwargs)
-                job_origin = repository_origin.get_job_origin(schedule_name)
-
-                # open the tick scope before we load any external artifacts so that
-                # load errors are stored in DB
-                with _schedule_tick_context(
-                    instance,
-                    stream,
-                    JobTickData(
-                        job_origin_id=job_origin.get_id(),
-                        job_name=schedule_name,
-                        job_type=JobType.SCHEDULE,
-                        status=JobTickStatus.STARTED,
-                        timestamp=time.time(),
-                    ),
-                ) as tick_context:
-                    with get_repository_location_from_kwargs(kwargs) as repo_location:
-                        repo_dict = repo_location.get_repositories()
-                        check.invariant(
-                            repo_dict and len(repo_dict) == 1,
-                            "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
-                                num_repos=len(repo_dict)
-                            ),
-                        )
-                        external_repo = next(iter(repo_dict.values()))
-                        if not schedule_name in [
-                            schedule.name for schedule in external_repo.get_external_schedules()
-                        ]:
-                            raise DagsterInvariantViolationError(
-                                "Could not find schedule named {schedule_name}".format(
-                                    schedule_name=schedule_name
-                                ),
-                            )
-
-                        external_schedule = external_repo.get_external_schedule(schedule_name)
-
-                        # Validate that the schedule's timezone matches the system timezone
-                        schedule_timezone = (
-                            external_schedule.execution_timezone
-                            if external_schedule.execution_timezone
-                            else "UTC"
-                        )
-                        system_timezone = pendulum.now().timezone.name
-
-                        if system_timezone != schedule_timezone:
-                            raise DagsterInvariantViolationError(
-                                "Schedule {schedule_name} is set to execute in {schedule_timezone}, "
-                                "but this scheduler can only run in the system timezone, "
-                                "{system_timezone}. Use DagsterDaemonScheduler if you want to be able "
-                                "to execute schedules in arbitrary timezones.".format(
-                                    schedule_name=external_schedule.name,
-                                    schedule_timezone=schedule_timezone,
-                                    system_timezone=system_timezone,
-                                ),
-                            )
-
-                        _launch_scheduled_executions(
-                            instance, repo_location, external_repo, external_schedule, tick_context
-                        )
-
-
-@telemetry_wrapper
-def _launch_scheduled_executions(
-    instance, repo_location, external_repo, external_schedule, tick_context
-):
-    pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
-        repository_name=external_repo.name,
-        pipeline_name=external_schedule.pipeline_name,
-        solid_selection=external_schedule.solid_selection,
-    )
-
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
-
-    schedule_execution_data = repo_location.get_external_schedule_execution_data(
-        instance=instance,
-        repository_handle=external_repo.handle,
-        schedule_name=external_schedule.name,
-        scheduled_execution_time=None,  # No way to know this in general for this scheduler
-    )
-
-    if not schedule_execution_data.run_requests:
-        # Update tick to skipped state and return
-        tick_context.update_state(JobTickStatus.SKIPPED)
-        tick_context.stream.send(ScheduledExecutionSkipped())
-        return
-
-    for run_request in schedule_execution_data.run_requests:
-        _launch_run(
-            instance, repo_location, external_schedule, external_pipeline, tick_context, run_request
-        )
-
-    tick_context.update_state(JobTickStatus.SUCCESS)
-
-
-def _launch_run(
-    instance, repo_location, external_schedule, external_pipeline, tick_context, run_request
-):
-    run_config = run_request.run_config
-    schedule_tags = run_request.tags
-
-    execution_plan_snapshot = None
-    errors = []
-    try:
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            run_config,
-            external_schedule.mode,
-            step_keys_to_execute=None,
-            known_state=None,
-        )
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except Exception:  # pylint: disable=broad-except
-        errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
-
-    pipeline_tags = external_pipeline.tags or {}
-    check_tags(pipeline_tags, "pipeline_tags")
-    tags = merge_dicts(pipeline_tags, schedule_tags)
-
-    # Enter the run in the DB with the information we have
-    possibly_invalid_pipeline_run = instance.create_run(
-        pipeline_name=external_schedule.pipeline_name,
-        run_id=None,
-        run_config=run_config,
-        mode=external_schedule.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
-        step_keys_to_execute=None,
-        solid_selection=external_pipeline.solid_selection,
-        status=None,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-    )
-
-    tick_context.add_run(run_id=possibly_invalid_pipeline_run.run_id, run_key=run_request.run_key)
-
-    # If there were errors, inject them into the event log and fail the run
-    if len(errors) > 0:
-        for error in errors:
-            instance.report_engine_event(
-                error.message,
-                possibly_invalid_pipeline_run,
-                EngineEventData.engine_error(error),
-            )
-        instance.report_run_failed(possibly_invalid_pipeline_run)
-        tick_context.stream.send(
-            ScheduledExecutionFailed(run_id=possibly_invalid_pipeline_run.run_id, errors=errors)
-        )
-        return
-
-    try:
-        launched_run = instance.submit_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
-    except Exception:  # pylint: disable=broad-except
-        tick_context.stream.send(
-            ScheduledExecutionFailed(
-                run_id=possibly_invalid_pipeline_run.run_id,
-                errors=[serializable_error_info_from_exc_info(sys.exc_info())],
-            )
-        )
-        return
-
-    tick_context.stream.send(ScheduledExecutionSuccess(run_id=launched_run.run_id))
-
-
-def create_api_cli_group():
-    group = click.Group(
-        name="api",
-        help=(
-            "[INTERNAL] These commands are intended to support internal use cases. Users should "
-            "generally not invoke these commands interactively."
-        ),
-    )
-
-    group.add_command(execute_run_command)
-    group.add_command(execute_step_command)
-    group.add_command(launch_scheduled_execution)
-    group.add_command(grpc_command)
-    group.add_command(grpc_health_check_command)
-    return group
-
-
-api_cli = create_api_cli_group()

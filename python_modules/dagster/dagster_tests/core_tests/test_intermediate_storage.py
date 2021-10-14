@@ -212,7 +212,7 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
             )
 
 
-def test_error_message():
+def test_yield_nothing():
     @solid
     def nothing_solid(_):
         yield Output(Nothing)
@@ -221,8 +221,7 @@ def test_error_message():
     def repro():
         nothing_solid()
 
-    with pytest.raises(DagsterObjectStoreError):
-        execute_pipeline(
-            repro,
-            run_config={"storage": {"filesystem": {}}},
-        )
+    execute_pipeline(
+        repro,
+        run_config={"storage": {"filesystem": {}}},
+    )

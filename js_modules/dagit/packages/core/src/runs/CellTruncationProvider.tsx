@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {ColorsWIP} from '../ui/Colors';
 
 const OverflowFade = styled.div`
   position: absolute;
@@ -15,19 +15,38 @@ const OverflowFade = styled.div`
   background: linear-gradient(to bottom, rgba(245, 248, 250, 0) 0%, rgba(245, 248, 250, 255) 100%);
 `;
 
-const OverflowBanner = styled.div`
+const OverflowButtonContainer = styled.div`
   position: absolute;
-  bottom: 0;
-  right: 105px;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+`;
+
+const OverflowButton = styled.button`
+  border: 0;
+  cursor: pointer;
   user-select: none;
   font-size: 12px;
-  background: ${Colors.LIGHT_GRAY3};
-  border-top-left-radius: 4px;
-  padding: 2px 12px;
-  color: ${Colors.BLACK};
+  font-weight: 500;
+  background: rgba(100, 100, 100, 0.7);
+  border-radius: 4px;
+  line-height: 32px;
+  padding: 0 12px;
+  color: ${ColorsWIP.White};
   &:hover {
-    color: ${Colors.BLACK};
-    background: ${Colors.LIGHT_GRAY1};
+    background: rgba(100, 100, 100, 0.85);
+  }
+
+  &:focus,
+  &:active {
+    outline: none;
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.7);
   }
 `;
 
@@ -90,7 +109,9 @@ export class CellTruncationProvider extends React.Component<
         {(this.state.isOverflowing || this.props.forceExpandability) && (
           <>
             <OverflowFade />
-            <OverflowBanner onClick={this.onView}>View Full Message</OverflowBanner>
+            <OverflowButtonContainer>
+              <OverflowButton onClick={this.onView}>View full message</OverflowButton>
+            </OverflowButtonContainer>
           </>
         )}
       </div>

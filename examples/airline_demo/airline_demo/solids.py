@@ -209,7 +209,7 @@ def do_prefix_column_names(df, prefix):
     input_defs=[InputDefinition(name="data_frame", dagster_type=DataFrame)],
     output_defs=[OutputDefinition(DataFrame, io_manager_key="pyspark_io_manager")],
 )
-def canonicalize_column_names(_context, data_frame):
+def canonicalize_column_names(_, data_frame):
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
@@ -222,7 +222,7 @@ def replace_values_spark(data_frame, old, new):
     input_defs=[InputDefinition(name="sfo_weather_data", dagster_type=DataFrame)],
     output_defs=[OutputDefinition(DataFrame, io_manager_key="pyspark_io_manager")],
 )
-def process_sfo_weather_data(_context, sfo_weather_data):
+def process_sfo_weather_data(_, sfo_weather_data):
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, "M", None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 

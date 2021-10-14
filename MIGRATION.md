@@ -2,6 +2,16 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 0.12.0
+
+The new experimental core API experience in Dagit uses some features that require a data migration. Before enabling the experimental core API flag in Dagit, you will first need to run this command:
+
+```
+dagster instance migrate
+```
+
+If you are not going to enable the experimental core API experience, this data migration is optional. However, you may still want to run the migration anyway, which will enable better performance in viewing the Asset catalog in Dagit.
+
 ## Migrating to 0.11.0
 
 ### Action Required: Run and event storage schema changes
@@ -20,22 +30,22 @@ Schedules now run in UTC (instead of the system timezone) if no timezone has bee
 
 ### Action Required: Asset storage
 
-If upgrading directly to `0.11.0` from `0.9.22` or lower, you might notice some asset keys missing from the catalog if they have not been materialized using a version `0.9.16` or greater.  We removed some back-compatibility for performance reasons.  If this is the case, you can either run `dagster instance reindex` or execute the appropriate pipelines to materialize those assets again.  In either case, the full history of the asset will still be maintained.
+If upgrading directly to `0.11.0` from `0.9.22` or lower, you might notice some asset keys missing from the catalog if they have not been materialized using a version `0.9.16` or greater. We removed some back-compatibility for performance reasons. If this is the case, you can either run `dagster instance reindex` or execute the appropriate pipelines to materialize those assets again. In either case, the full history of the asset will still be maintained.
 
 ### Removals of Deprecated APIs
 
-* The `instance` argument to `RunLauncher.launch_run` has been removed. If you have written a custom RunLauncher, you’ll need to update the signature of that method. You can still access the `DagsterInstance` on the `RunLauncher` via the `_instance` parameter.
-* The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
-* The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
-* The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
-* The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/repositories-workspaces/workspaces) for more information on configuring your `workspace.yaml` file.
-* [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
+- The `instance` argument to `RunLauncher.launch_run` has been removed. If you have written a custom RunLauncher, you’ll need to update the signature of that method. You can still access the `DagsterInstance` on the `RunLauncher` via the `_instance` parameter.
+- The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
+- The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
+- The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
+- The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/repositories-workspaces/workspaces) for more information on configuring your `workspace.yaml` file.
+- [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
 ### Breaking Changes
 
-* Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
-* The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only affect custom `Executor` classes.
-* Submitting partition backfills in Dagit now requires `dagster-daemon` to be running.  The instance setting in `dagster.yaml` to optionally enable daemon-based backfills has been removed, because all backfills are now daemon-based backfills.
+- Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
+- The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only affect custom `Executor` classes.
+- Submitting partition backfills in Dagit now requires `dagster-daemon` to be running. The instance setting in `dagster.yaml` to optionally enable daemon-based backfills has been removed, because all backfills are now daemon-based backfills.
 
   ```
   # removed, no longer a valid setting in dagster.yaml
@@ -46,11 +56,11 @@ If upgrading directly to `0.11.0` from `0.9.22` or lower, you might notice some 
 
 The corresponding value flag `dagsterDaemon.backfill.enabled` has also been removed from the Dagster helm chart.
 
-* The sensor daemon interval settings in `dagster.yaml` has been removed.  The sensor daemon now runs in a continuous loop so this customization is no longer useful.
+- The sensor daemon interval settings in `dagster.yaml` has been removed. The sensor daemon now runs in a continuous loop so this customization is no longer useful.
 
   ```
   # removed, no longer a valid setting in dagster.yaml
-    
+
   sensor_settings:
     interval_seconds: 10
   ```
@@ -93,12 +103,12 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
 1. Stop any currently running schedules, to prevent any dangling cron jobs from being left behind.
    You can do this through the Dagit UI, or using the following command:
 
-    ```bash
-    dagster schedule stop --location {repository_location_name} {schedule_name}
-    ```
+   ```bash
+   dagster schedule stop --location {repository_location_name} {schedule_name}
+   ```
 
-    If you do not stop running schedules before changing schedulers, Dagster will throw an exception
-    on startup due to the misconfigured running schedules.
+   If you do not stop running schedules before changing schedulers, Dagster will throw an exception
+   on startup due to the misconfigured running schedules.
 
 2. In your `dagster.yaml` file, remove the `scheduler:` entry. If there is no `scheduler:` entry,
    the `DagsterDaemonScheduler` is automatically used as the default scheduler.
@@ -123,87 +133,86 @@ more information.
 
 #### Steps to Migrate
 
-* We have deprecated the top level `"storage"` and `"intermediate_storage"` fields on `run_config`.
+- We have deprecated the top level `"storage"` and `"intermediate_storage"` fields on `run_config`.
   If you are currently executing pipelines as follows:
 
-    ```python
-    @pipeline
-    def my_pipeline():
-        ...
+  ```python
+  @pipeline
+  def my_pipeline():
+      ...
 
-    execute_pipeline(
-        my_pipeline,
-        run_config={
-            "intermediate_storage": {
-                "filesystem": {"base_dir": ...}
-            }
-        },
-    )
+  execute_pipeline(
+      my_pipeline,
+      run_config={
+          "intermediate_storage": {
+              "filesystem": {"base_dir": ...}
+          }
+      },
+  )
 
-    execute_pipeline(
-        my_pipeline,
-        run_config={
-            "storage": {
-                "filesystem": {"base_dir": ...}
-            }
-        },
-    )
-    ```
+  execute_pipeline(
+      my_pipeline,
+      run_config={
+          "storage": {
+              "filesystem": {"base_dir": ...}
+          }
+      },
+  )
+  ```
 
-    You should instead use the built-in IO manager `fs_io_manager`, which can be attached to your
-    pipeline as a resource:
+  You should instead use the built-in IO manager `fs_io_manager`, which can be attached to your
+  pipeline as a resource:
 
-    ```python
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": fs_io_manager}
-            )
-        ],
-    )
-    def my_pipeline():
-        ...
+  ```python
+  @pipeline(
+      mode_defs=[
+          ModeDefinition(
+              resource_defs={"io_manager": fs_io_manager}
+          )
+      ],
+  )
+  def my_pipeline():
+      ...
 
-    execute_pipeline(
-        my_pipeline,
-        run_config={
-            "resources": {
-                "io_manager": {"config": {"base_dir": ...}}
-            }
-        },
-    )
-    ```
+  execute_pipeline(
+      my_pipeline,
+      run_config={
+          "resources": {
+              "io_manager": {"config": {"base_dir": ...}}
+          }
+      },
+  )
+  ```
 
-    There are corresponding IO managers for other intermediate storages, such as the S3- and
-    ADLS2-based storages
+  There are corresponding IO managers for other intermediate storages, such as the S3- and
+  ADLS2-based storages
 
-* We have deprecated `IntermediateStorageDefinition` and `@intermediate_storage`.
+- We have deprecated `IntermediateStorageDefinition` and `@intermediate_storage`.
 
   If you have written custom intermediate storage, you should migrate to custom IO managers
   defined using the `@io_manager` API. We have provided a helper method,
   `io_manager_from_intermediate_storage`, to help migrate your existing custom intermediate
   storages to IO managers.
 
+  ```python
+  my_io_manager_def = io_manager_from_intermediate_storage(
+      my_intermediate_storage_def
+  )
 
-    ```python
-    my_io_manager_def = io_manager_from_intermediate_storage(
-        my_intermediate_storage_def
-    )
+  @pipeline(
+      mode_defs=[
+          ModeDefinition(
+              resource_defs={
+                  "io_manager": my_io_manager_def
+              }
+          ),
+      ],
+  )
+  def my_pipeline():
+      ...
+  ```
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": my_io_manager_def
-                }
-            ),
-        ],
-    )
-    def my_pipeline():
-        ...
-    ```
-
-* We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
+- We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
   new IO managers, which should be attached using the `resource_defs` argument.
 
 ### Removal: input_hydration_config and output_materialization_config
@@ -233,23 +242,22 @@ customize the `executable_path` in your workspace entries without needing to cha
 For example, the following workspace entry:
 
 ```yaml
-  - python_environment:
-      executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
-      target:
-        python_package:
-          package_name: dagster_examples
-          location_name: dagster_examples
+- python_environment:
+    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    target:
+      python_package:
+        package_name: dagster_examples
+        location_name: dagster_examples
 ```
 
 should now be expressed as:
 
 ```yaml
-  - python_package:
-      executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
-      package_name: dagster_examples
-      location_name: dagster_examples
+- python_package:
+    executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
+    package_name: dagster_examples
+    location_name: dagster_examples
 ```
-
 
 See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment)
 for more information and examples.
@@ -266,11 +274,10 @@ We have removed the system storage abstractions, i.e. `SystemStorageDefinition` 
 Please note that the intermediate storage abstraction is also deprecated and will be removed in
 0.11.0. [Use IO managers instead](#deprecation-intermediate-storage).
 
-* We have removed the `system_storage_defs` argument (deprecated in 0.9.0) to `ModeDefinition`, in
+- We have removed the `system_storage_defs` argument (deprecated in 0.9.0) to `ModeDefinition`, in
   favor of `intermediate_storage_defs.`
-* We have removed the built-in system storages, e.g. `default_system_storage_defs`
+- We have removed the built-in system storages, e.g. `default_system_storage_defs`
   (deprecated in 0.9.0).
-
 
 ### Removal: step_keys_to_execute
 
@@ -352,10 +359,10 @@ Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practice
 we now camel case all of our Helm values. To migrate to 0.10.0, you'll need to update your
 `values.yaml` with the following renames:
 
-* `pipeline_run` → `pipelineRun`
-* `dagster_home` → `dagsterHome`
-* `env_secrets` → `envSecrets`
-* `env_config_maps` → `envConfigMaps`
+- `pipeline_run` → `pipelineRun`
+- `dagster_home` → `dagsterHome`
+- `env_secrets` → `envSecrets`
+- `env_config_maps` → `envConfigMaps`
 
 ### Restructured: scheduler in Helm values
 
@@ -370,13 +377,16 @@ required config, additional fields will need to be specified under `scheduler.co
 For example, if your Helm values previously were set like this to enable the
 `DagsterDaemonScheduler`:
 ​
+
 ```yaml
 scheduler:
   k8sEnabled: false
 ```
+
 ​
 You should instead have:
 ​
+
 ```yaml
 scheduler:
   type: DagsterDaemonScheduler
@@ -394,6 +404,7 @@ equal `K8sRunLauncher`.
 
 For example, if your Helm values previously were set like this to enable the `K8sRunLauncher`:
 ​
+
 ```yaml
 celery:
   enabled: false
@@ -406,9 +417,11 @@ k8sRunLauncher:
   envConfigMaps: []
   envSecrets: []
 ```
+
 ​
 You should instead have:
 ​
+
 ```yaml
 runLauncher:
   type: K8sRunLauncher
@@ -429,7 +442,6 @@ by default.
 
 If you were using the `CeleryK8sRunLauncher`, one of `rabbitmq` or `redis` must now be explicitly
 enabled in your Helm values.
-
 
 ## Migrating to 0.9.0
 
@@ -617,7 +629,7 @@ load_from:
   - python_module: dagster_examples.intro_tutorial.repos
   - python_file: repos.py
   - python_environment:
-      executable_path: "/path/to/venvs/dagster-dev-3.7.6/bin/python"
+      executable_path: '/path/to/venvs/dagster-dev-3.7.6/bin/python'
       target:
         python_module:
           module_name: dagster_examples

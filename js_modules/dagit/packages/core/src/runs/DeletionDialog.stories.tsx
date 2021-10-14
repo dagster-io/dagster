@@ -2,7 +2,7 @@ import {Story, Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 
 import {DeletionDialog, Props as DeletionDialogProps} from './DeletionDialog';
 
@@ -13,9 +13,9 @@ export default {
 } as Meta;
 
 const Template: Story<DeletionDialogProps & {mocks?: any}> = ({mocks, ...props}) => (
-  <ApolloTestProvider mocks={mocks}>
+  <StorybookProvider apolloProps={{mocks}}>
     <DeletionDialog {...props} />
-  </ApolloTestProvider>
+  </StorybookProvider>
 );
 
 const ids = [

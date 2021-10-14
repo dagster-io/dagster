@@ -5,7 +5,7 @@ from dagster.core.definitions import (
     AssetMaterialization,
     EventMetadataEntry,
     Materialization,
-    SolidHandle,
+    NodeHandle,
 )
 from dagster.serdes import whitelist_for_serdes
 
@@ -45,7 +45,7 @@ class StepOutput(
     NamedTuple(
         "_StepOutput",
         [
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("name", str),
             ("dagster_type_key", str),
             ("properties", StepOutputProperties),
@@ -56,14 +56,14 @@ class StepOutput(
 
     def __new__(
         cls,
-        solid_handle: SolidHandle,
+        solid_handle: NodeHandle,
         name: str,
         dagster_type_key: str,
         properties: StepOutputProperties,
     ):
         return super(StepOutput, cls).__new__(
             cls,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             properties=check.inst_param(properties, "properties", StepOutputProperties),

@@ -3,66 +3,38 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
+from dagster import DagsterInstance
 from dagster.core.host_representation import GrpcServerRepositoryLocation
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster.core.workspace import WorkspaceProcessContext
+from dagster.core.workspace.load import (
+    load_workspace_process_context_from_yaml_paths,
+    location_origins_from_config,
+)
 from dagster.utils import file_relative_path
 
 
-def _get_single_code_pointer(workspace, location_name):
-    return next(
-        iter(workspace.get_repository_location(location_name).repository_code_pointer_dict.values())
-    )
-
-
 def test_multi_location_workspace_foo():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [file_relative_path(__file__, "multi_location.yaml")],
-    ) as cli_workspace:
-        assert isinstance(cli_workspace, Workspace)
-        assert len(cli_workspace.repository_locations) == 3
-        assert cli_workspace.has_repository_location("loaded_from_file")
-        assert cli_workspace.has_repository_location("loaded_from_module")
-        assert cli_workspace.has_repository_location("loaded_from_package")
-
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "multi_location.yaml")],
-        ) as grpc_workspace:
-            assert isinstance(grpc_workspace, Workspace)
-            assert len(grpc_workspace.repository_locations) == 3
-            assert grpc_workspace.has_repository_location("loaded_from_file")
-            assert grpc_workspace.has_repository_location("loaded_from_module")
-            assert grpc_workspace.has_repository_location("loaded_from_package")
-
-            assert serialize_dagster_namedtuple(
-                _get_single_code_pointer(cli_workspace, "loaded_from_file")
-            ) == serialize_dagster_namedtuple(
-                _get_single_code_pointer(grpc_workspace, "loaded_from_file")
-            )
-
-            assert serialize_dagster_namedtuple(
-                _get_single_code_pointer(cli_workspace, "loaded_from_module")
-            ) == serialize_dagster_namedtuple(
-                _get_single_code_pointer(grpc_workspace, "loaded_from_module")
-            )
-
-            assert serialize_dagster_namedtuple(
-                _get_single_code_pointer(cli_workspace, "loaded_from_package")
-            ) == serialize_dagster_namedtuple(
-                _get_single_code_pointer(grpc_workspace, "loaded_from_package")
-            )
+    ) as grpc_workspace:
+        assert isinstance(grpc_workspace, WorkspaceProcessContext)
+        assert grpc_workspace.repository_locations_count == 3
+        assert grpc_workspace.has_repository_location("loaded_from_file")
+        assert grpc_workspace.has_repository_location("loaded_from_module")
+        assert grpc_workspace.has_repository_location("loaded_from_package")
 
 
 def test_multi_file_extend_workspace():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "extra_location.yaml"),
         ],
     ) as workspace:
-        assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 4
+        assert isinstance(workspace, WorkspaceProcessContext)
+        assert workspace.repository_locations_count == 4
         assert workspace.has_repository_location("loaded_from_file")
         assert workspace.has_repository_location("loaded_from_module")
         assert workspace.has_repository_location("loaded_from_package")
@@ -70,19 +42,22 @@ def test_multi_file_extend_workspace():
 
 
 def test_multi_file_override_workspace():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "override_location.yaml"),
         ],
     ) as workspace:
-        assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 3
+        assert isinstance(workspace, WorkspaceProcessContext)
+        assert workspace.repository_locations_count == 3
         assert workspace.has_repository_location("loaded_from_file")
         assert workspace.has_repository_location("loaded_from_module")
         assert workspace.has_repository_location("loaded_from_package")
 
-        loaded_from_file = workspace.get_repository_location("loaded_from_file")
+        loaded_from_file = workspace.create_request_context().get_repository_location(
+            "loaded_from_file"
+        )
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -91,21 +66,24 @@ def test_multi_file_override_workspace():
 
 
 def test_multi_file_extend_and_override_workspace():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "override_location.yaml"),
             file_relative_path(__file__, "extra_location.yaml"),
         ],
     ) as workspace:
-        assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 4
+        assert isinstance(workspace, WorkspaceProcessContext)
+        assert workspace.repository_locations_count == 4
         assert workspace.has_repository_location("loaded_from_file")
         assert workspace.has_repository_location("loaded_from_module")
         assert workspace.has_repository_location("loaded_from_package")
         assert workspace.has_repository_location("extra_location")
 
-        loaded_from_file = workspace.get_repository_location("loaded_from_file")
+        loaded_from_file = workspace.create_request_context().get_repository_location(
+            "loaded_from_file"
+        )
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()

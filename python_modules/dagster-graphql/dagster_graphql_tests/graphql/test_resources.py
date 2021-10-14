@@ -37,9 +37,11 @@ query RequiredResourceQuery($selector: PipelineSelector!) {
       name
       solids {
         definition {
+          ... on SolidDefinition {
             requiredResources {
               resourceKey
             }
+          }
         }
       }
     }

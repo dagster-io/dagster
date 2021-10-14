@@ -2,7 +2,7 @@ import re
 
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = """
 query EnvironmentQuery($selector: PipelineSelector!){
@@ -47,7 +47,7 @@ def types_dict_of_result(subset_result, top_key):
     }
 
 
-class TestSolidSelections(ReadonlyGraphQLContextTestMatrix):
+class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
     def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world", ["nope"])
         result = execute_dagster_graphql(
@@ -73,7 +73,7 @@ class TestSolidSelections(ReadonlyGraphQLContextTestMatrix):
         assert re.match(
             (
                 r".*DagsterInvalidSubsetError[\s\S]*"
-                r'add a dagster_type_loader for the type "InputTypeWithoutHydration"'
+                r"add a dagster_type_loader for the type 'InputTypeWithoutHydration'"
             ),
             result.data["runConfigSchemaOrError"]["message"],
         )

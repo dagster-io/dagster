@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-ssh",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -28,7 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "sshtunnel", "paramiko"],
+        install_requires=[f"dagster{pin}", "sshtunnel", "paramiko"],
         extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
         zip_safe=False,
     )

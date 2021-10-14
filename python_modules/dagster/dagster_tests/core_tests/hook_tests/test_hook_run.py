@@ -2,12 +2,16 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
     Int,
     ModeDefinition,
     Output,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    graph,
+    op,
     pipeline,
     resource,
     solid,
@@ -16,7 +20,6 @@ from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 class SomeUserException(Exception):
@@ -427,7 +430,7 @@ def test_hook_on_pipeline_def_with_composite_solids():
     hooked_pipeline = a_pipeline.with_hooks({hook_a_generic})
     # hooked_pipeline should be a copy of the original pipeline
     assert hooked_pipeline.top_level_solid_defs == a_pipeline.top_level_solid_defs
-    assert hooked_pipeline.all_solid_defs == a_pipeline.all_solid_defs
+    assert hooked_pipeline.all_node_defs == a_pipeline.all_node_defs
 
     result = execute_pipeline(hooked_pipeline)
     assert result.success
@@ -571,7 +574,7 @@ def test_hook_resource_mismatch():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Resource "b" is required by hook "a_hook"'
+        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
     ):
 
         @a_hook
@@ -580,7 +583,7 @@ def test_hook_resource_mismatch():
             a_solid()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Resource "b" is required by hook "a_hook"'
+        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
@@ -621,3 +624,71 @@ def test_hook_subpipeline():
     result = execute_pipeline(a_pipeline, solid_selection=["solid_a"])
     assert result.success
     assert called_hook_to_solids["hook_a_generic"] == {"solid_a"}
+
+
+def test_hook_ops():
+    called_hook_to_ops = defaultdict(set)
+
+    @success_hook
+    def my_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("my_hook")
+
+    @op
+    def a_op(_):
+        pass
+
+    @graph
+    def a_graph():
+        a_op.with_hooks(hook_defs={my_hook})()
+        a_op.alias("op_with_hook").with_hooks(hook_defs={my_hook})()
+        a_op.alias("op_without_hook")()
+
+    result = a_graph.execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["my_hook"] == {"a_op", "op_with_hook"}
+
+
+def test_hook_graph():
+    called_hook_to_ops = defaultdict(set)
+
+    @success_hook
+    def a_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("a_hook")
+
+    @success_hook
+    def b_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("a_hook")
+
+    @op
+    def a_op(_):
+        pass
+
+    @op
+    def b_op(_):
+        pass
+
+    @a_hook
+    @graph
+    def sub_graph():
+        a_op()
+
+    @b_hook
+    @graph
+    def super_graph():
+        sub_graph()
+        b_op()
+
+    result = super_graph.execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"a_op"}
+    assert called_hook_to_ops["b_hook"] == {"a_op", "b_op"}
+
+    # test to_job
+    called_hook_to_ops = defaultdict(set)
+    result = super_graph.to_job().execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"a_op"}
+    assert called_hook_to_ops["b_hook"] == {"a_op", "b_op"}

@@ -1,12 +1,17 @@
 import {gql} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
+import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
+import {Markdown} from '../ui/Markdown';
+import {Tooltip} from '../ui/Tooltip';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -58,21 +63,17 @@ export const MetadataEntry: React.FC<{
   switch (entry.__typename) {
     case 'EventPathMetadataEntry':
       return (
-        <>
+        <Group direction="row" spacing={8} alignItems="center">
           <MetadataEntryAction
             title={'Copy to clipboard'}
             onClick={(e) => copyValue(e, entry.path)}
           >
             {entry.path}
-          </MetadataEntryAction>{' '}
-          <Icon
-            icon="clipboard"
-            iconSize={10}
-            color={'#a88860'}
-            style={{verticalAlign: 'initial'}}
-            onClick={(e) => copyValue(e, entry.path)}
-          />
-        </>
+          </MetadataEntryAction>
+          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+            <IconWIP name="assignment" color={ColorsWIP.Gray500} />
+          </IconButton>
+        </Group>
       );
 
     case 'EventJsonMetadataEntry':
@@ -96,25 +97,25 @@ export const MetadataEntry: React.FC<{
 
     case 'EventUrlMetadataEntry':
       return (
-        <>
-          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="__blank">
+        <Group direction="row" spacing={8} alignItems="center">
+          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="_blank">
             {entry.url}
-          </MetadataEntryAction>{' '}
-          <a href={entry.url} target="__blank">
-            <Icon icon="link" iconSize={10} color={'#a88860'} />
+          </MetadataEntryAction>
+          <a href={entry.url} target="_blank" rel="noreferrer">
+            <IconWIP name="link" color={ColorsWIP.Gray500} />
           </a>
-        </>
+        </Group>
       );
     case 'EventTextMetadataEntry':
       return <>{entry.text}</>;
     case 'EventMarkdownMetadataEntry':
       return expandSmallValues && entry.mdStr.length < 1000 ? (
-        <ReactMarkdown source={entry.mdStr} />
+        <Markdown>{entry.mdStr}</Markdown>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}
-          content={() => <ReactMarkdown source={entry.mdStr} />}
+          content={() => <Markdown>{entry.mdStr}</Markdown>}
         >
           [Show Markdown]
         </MetadataEntryModalAction>
@@ -131,6 +132,18 @@ export const MetadataEntry: React.FC<{
       return <>{entry.floatValue}</>;
     case 'EventIntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
+    case 'EventPipelineRunMetadataEntry':
+      return (
+        <MetadataEntryLink to={`/instance/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>
+      );
+    case 'EventAssetMetadataEntry':
+      return (
+        <MetadataEntryLink
+          to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
+        >
+          {entry.assetKey.path.join(' > ')}
+        </MetadataEntryLink>
+      );
     default:
       return assertUnreachable(entry);
   }
@@ -167,7 +180,23 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       intValue
       intRepr
     }
+    ... on EventPipelineRunMetadataEntry {
+      runId
+    }
+    ... on EventAssetMetadataEntry {
+      assetKey {
+        path
+      }
+    }
   }
+`;
+
+const IconButton = styled.button`
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  padding: 0;
 `;
 
 const PythonArtifactLink = ({
@@ -182,7 +211,7 @@ const PythonArtifactLink = ({
   <>
     <Tooltip
       hoverOpenDelay={100}
-      position={Position.TOP}
+      position="top"
       content={`${module}.${name}`}
       usePortal
       modifiers={{
@@ -201,48 +230,32 @@ const MetadataEntryModalAction: React.FunctionComponent<{
   content: () => React.ReactNode;
   copyContent: () => string;
 }> = (props) => {
-  const [isExpanded, setExpanded] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
   return (
     <>
-      <MetadataEntryAction onClick={() => setExpanded(true)}>{props.children}</MetadataEntryAction>
-      {isExpanded && (
-        <Dialog
-          icon="info-sign"
-          usePortal={true}
-          style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
-          title={props.label}
-          onClose={() => setExpanded(false)}
-          isOpen={true}
-        >
-          <MetadataEntryModalContent>{props.content()}</MetadataEntryModalContent>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>
-                Copy
-              </Button>
-              <Button intent="primary" autoFocus={true} onClick={() => setExpanded(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      )}
+      <MetadataEntryAction onClick={() => setOpen(true)}>{props.children}</MetadataEntryAction>
+      <DialogWIP
+        icon="info"
+        style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
+        title={props.label}
+        onClose={() => setOpen(false)}
+        isOpen={open}
+      >
+        <DialogBody>{props.content()}</DialogBody>
+        <DialogFooter>
+          <ButtonWIP onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>
+            Copy
+          </ButtonWIP>
+          <ButtonWIP intent="primary" autoFocus={true} onClick={() => setOpen(false)}>
+            Close
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };
 
-const MetadataEntryModalContent = styled.div`
-  font-size: 13px;
-  overflow: auto;
-  max-height: 500px;
-  background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
-`;
-
-export const MetadataEntryAction = styled.a`
+const MetadataEntryAction = styled.a`
   text-decoration: underline;
   color: inherit;
   &:hover {
@@ -258,21 +271,22 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-const StructuredContentTable = styled.table`
+export const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid #dbc5ad;
-  border-left: 1px solid #dbc5ad;
-  background: #fffaf5;
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
+  background: ${ColorsWIP.Gray50};
+
   td:first-child {
-    color: #a88860;
+    color: ${ColorsWIP.Gray400};
   }
-  tbody > tr > td {
-    padding: 4px;
-    padding-right: 8px;
-    border-bottom: 1px solid #dbc5ad;
-    border-right: 1px solid #dbc5ad;
+
+  &&& tbody > tr > td {
+    padding: 4px 8px;
+    border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+    border-right: 1px solid ${ColorsWIP.KeylineGray};
     vertical-align: top;
     box-shadow: none !important;
   }

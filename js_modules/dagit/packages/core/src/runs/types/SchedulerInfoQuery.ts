@@ -4,36 +4,11 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulerInfoQuery
 // ====================================================
-
-export interface SchedulerInfoQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export interface SchedulerInfoQuery_scheduler_Scheduler {
-  __typename: "Scheduler";
-  schedulerClass: string | null;
-}
-
-export interface SchedulerInfoQuery_scheduler_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface SchedulerInfoQuery_scheduler_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: SchedulerInfoQuery_scheduler_PythonError_cause | null;
-}
-
-export type SchedulerInfoQuery_scheduler = SchedulerInfoQuery_scheduler_SchedulerNotDefinedError | SchedulerInfoQuery_scheduler_Scheduler | SchedulerInfoQuery_scheduler_PythonError;
 
 export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
@@ -51,7 +26,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_last
 export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
@@ -75,29 +50,10 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   name: string;
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PythonError {
-  __typename: "PythonError";
-}
-
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runStatus: PipelineRunStatus | null;
-}
-
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses {
-  __typename: "PartitionStatuses";
-  results: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
-}
-
-export type SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PythonError | SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses;
-
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet {
   __typename: "PartitionSet";
   id: string;
   name: string;
-  partitionStatusesOrError: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -114,17 +70,17 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   repositoryLocationMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData {
-  __typename: "SensorJobData";
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData {
+  __typename: "SensorData";
   lastRunKey: string | null;
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData {
-  __typename: "ScheduleJobData";
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData {
+  __typename: "ScheduleData";
   cronSchedule: string;
 }
 
-export type SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData | SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData;
+export type SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData | SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData;
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs {
   __typename: "PipelineRun";
@@ -147,9 +103,9 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
-  __typename: "JobTick";
+  __typename: "InstigationTick";
   id: string;
-  status: JobTickStatus;
+  status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -157,25 +113,25 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
-  __typename: "JobState";
+  __typename: "InstigationState";
   id: string;
   name: string;
-  jobType: JobType;
-  status: JobStatus;
+  instigationType: InstigationType;
+  status: InstigationStatus;
   repositoryOrigin: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
-  jobSpecificData: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData | null;
+  typeSpecificData: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData | null;
   runs: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticks: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
-  __typename: "FutureJobTick";
+  __typename: "FutureInstigationTick";
   timestamp: number;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks {
-  __typename: "FutureJobTicks";
+  __typename: "FutureInstigationTicks";
   results: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results[];
 }
 
@@ -230,7 +186,6 @@ export interface SchedulerInfoQuery_repositoriesOrError_PythonError {
 export type SchedulerInfoQuery_repositoriesOrError = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection | SchedulerInfoQuery_repositoriesOrError_PythonError;
 
 export interface SchedulerInfoQuery {
-  scheduler: SchedulerInfoQuery_scheduler;
   instance: SchedulerInfoQuery_instance;
   repositoriesOrError: SchedulerInfoQuery_repositoriesOrError;
 }

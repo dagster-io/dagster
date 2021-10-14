@@ -11,7 +11,7 @@ from dagster_dbt import DbtRpcClient
 
 TEST_HOSTNAME = "127.0.0.1"
 TEST_PORT = 8580
-RPC_ESTABLISH_RETRIES = 4
+RPC_ESTABLISH_RETRIES = 10
 RPC_ESTABLISH_RETRY_INTERVAL_S = 1.5
 
 RPC_ENDPOINT = "http://{hostname}:{port}/jsonrpc".format(hostname=TEST_HOSTNAME, port=TEST_PORT)
@@ -129,60 +129,7 @@ def terminal_poll_result(rpc_logs):  # pylint: disable=redefined-outer-name
             "tags": {},
             "results": [
                 {
-                    "node": {
-                        "raw_sql": "\n\n{{\n  config(\n    unique_key='ds',\n    strategy='check',\n    check_cols='all'\n  )\n}}\n\nselect src.*\nfrom {{ source('dagster', 'daily_fulfillment_forecast') }} src\n\n",
-                        "database": "snapshots_david_wallace",
-                        "schema": "dagster",
-                        "fqn": [
-                            "dataland_dbt",
-                            "dagster",
-                            "daily_fulfillment_forecast_snapshot",
-                            "daily_fulfillment_forecast_snapshot",
-                        ],
-                        "unique_id": "snapshot.dataland_dbt.daily_fulfillment_forecast_snapshot",
-                        "package_name": "dataland_dbt",
-                        "root_path": "/Users/dwall/repos/dataland-dbt",
-                        "path": "dagster/daily_fulfillment_forecast_snapshot.sql",
-                        "original_file_path": "snapshots/dagster/daily_fulfillment_forecast_snapshot.sql",
-                        "name": "daily_fulfillment_forecast_snapshot",
-                        "resource_type": "snapshot",
-                        "alias": "daily_fulfillment_forecast_snapshot",
-                        "config": {
-                            "enabled": True,
-                            "materialized": "snapshot",
-                            "persist_docs": {},
-                            "post-hook": [],
-                            "pre-hook": [],
-                            "vars": {},
-                            "quoting": {},
-                            "column_types": {},
-                            "tags": [],
-                            "unique_key": "ds",
-                            "target_schema": "dagster",
-                            "target_database": "snapshots_david_wallace",
-                            "strategy": "check",
-                            "check_cols": "all",
-                            "transient": False,
-                        },
-                        "tags": [],
-                        "refs": [],
-                        "sources": [["dagster", "daily_fulfillment_forecast"]],
-                        "depends_on": {
-                            "nodes": ["source.dataland_dbt.dagster.daily_fulfillment_forecast"],
-                            "macros": [],
-                        },
-                        "docrefs": [],
-                        "description": "",
-                        "columns": {},
-                        "patch_path": None,
-                        "build_path": "target/run/dataland_dbt/dagster/daily_fulfillment_forecast_snapshot.sql",
-                        "compiled": True,
-                        "compiled_sql": "\n\n\n\nselect src.*\nfrom ingest_dev.dagster.daily_fulfillment_forecast src\n",
-                        "extra_ctes_injected": True,
-                        "extra_ctes": [],
-                        "injected_sql": "\n\n\n\nselect src.*\nfrom ingest_dev.dagster.daily_fulfillment_forecast src\n",
-                        "wrapped_sql": "None",
-                    },
+                    "unique_id": "source.dataland_dbt.dagster.daily_fulfillment_forecast",
                     "error": None,
                     "status": "SUCCESS 0",
                     "execution_time": 14.527844190597534,

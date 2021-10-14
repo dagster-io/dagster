@@ -25,12 +25,18 @@ def define_dagster_checker():
             "W0003": (
                 "calling pendulum.create or pendulum.datetime",
                 "pendulum-create",
-                "Use dagster.seven.create_pendulum_time instead of pendulum.create or pendulum.datetime",
+                (
+                    "Use dagster.seven.compat.pendulum.create_pendulum_time instead of "
+                    "pendulum.create or pendulum.datetime"
+                ),
             ),
             "W0004": (
                 "calling in_tz() on a pendulum datetime",
                 "pendulum-in-tz",
-                "Use dagster.seven.to_timezone instead of calling in_tz on a pendulum datetime",
+                (
+                    "Use dagster.seven.compat.pendulum.to_timezone instead of calling in_tz on a "
+                    "pendulum datetime"
+                ),
             ),
         }
         options = ()
@@ -95,7 +101,7 @@ def define_dagster_checker():
 def register_solid_transform():
     import astroid
 
-    def _is_solid(node):
+    def _is_solid_or_op(node):
         if not node.decorators:
             return False
         return (
@@ -105,6 +111,10 @@ def register_solid_transform():
             in node.decoratornames()
             or "dagster.core.definitions.decorators.composite_solid.composite_solid"
             in node.decoratornames()
+            or "dagster.core.definitions.decorators.op.op" in node.decoratornames()
+            or "dagster.core.definitions.decorators.op._Op" in node.decoratornames()
+            or "dagster.core.definitions.decorators.graph.graph" in node.decoratornames()
+            or "dagster.core.definitions.decorators.graph._Graph" in node.decoratornames()
         )
 
     @astroid.inference_tip
@@ -121,7 +131,7 @@ def register_solid_transform():
 
     # Register a new inference result for solid decorated functions which effectively
     # blanks out the inference by changing the return type to the output of an unknown function
-    astroid.MANAGER.register_transform(astroid.FunctionDef, _modify_return, _is_solid)
+    astroid.MANAGER.register_transform(astroid.FunctionDef, _modify_return, _is_solid_or_op)
 
 
 def register(linter):

@@ -12,9 +12,9 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError, define_dagstermill_solid
+from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
-from papermill import PapermillExecutionError
 
 try:
     import dagster_pandas as _
@@ -92,31 +92,6 @@ def test_hello_world_with_config():
 
 
 @pytest.mark.notebook_test
-def test_hello_world_with_output_notebook():
-    with exec_for_test("hello_world_with_output_notebook_pipeline") as result:
-        assert result.success
-        materializations = [
-            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
-        ]
-        assert len(materializations) == 1
-
-        assert result.result_for_solid("hello_world").success
-        assert "notebook" in result.result_for_solid("hello_world").output_values
-        assert os.path.exists(
-            result.result_for_solid("hello_world").output_values["notebook"].path_desc
-        )
-        assert (
-            materializations[0]
-            .event_specific_data.materialization.metadata_entries[0]
-            .entry_data.path
-            == result.result_for_solid("hello_world").output_values["notebook"].path_desc
-        )
-
-        assert result.result_for_solid("load_notebook").success
-        assert result.result_for_solid("load_notebook").output_value() is True
-
-
-@pytest.mark.notebook_test
 def test_hello_world_with_config_escape():
     with exec_for_test(
         "hello_world_config_pipeline",
@@ -166,6 +141,16 @@ def test_alias_with_config():
 
 @pytest.mark.notebook_test
 def test_reexecute_result_notebook():
+    def _strip_execution_metadata(nb):
+        cells = nb["cells"]
+        for cell in cells:
+            if "metadata" in cell:
+                if "execution" in cell["metadata"]:
+                    del cell["metadata"]["execution"]
+        nb["cells"] = cells
+
+        return nb
+
     with exec_for_test(
         "hello_world_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
@@ -181,9 +166,11 @@ def test_reexecute_result_notebook():
             with open(result_path) as fd:
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
-            ep.preprocess(nb, {})
+            ep.preprocess(nb)
             with open(result_path) as fd:
-                assert nbformat.read(fd, as_version=4) == nb
+                expected = _strip_execution_metadata(nb)
+                actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
+                assert actual == expected
 
 
 @pytest.mark.notebook_test
@@ -213,6 +200,104 @@ def test_add_pipeline():
 
 
 @pytest.mark.notebook_test
+def test_double_add_pipeline():
+    with exec_for_test(
+        "double_add_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
+    ) as result:
+        assert result.success
+        assert result.result_for_solid("add_two_numbers_1").output_value() == 3
+        assert result.result_for_solid("add_two_numbers_2").output_value() == 7
+
+
+@pytest.mark.notebook_test
+def test_fan_in_notebook_pipeline_legacy():
+    with exec_for_test(
+        "fan_in_notebook_pipeline_legacy",
+        {
+            "execution": {"multiprocess": {}},
+            "solids": {
+                "solid_1": {"inputs": {"obj": "hello"}},
+                "solid_2": {"inputs": {"obj": "world"}},
+            },
+        },
+    ) as result:
+        assert result.success
+        assert result.result_for_solid("solid_1").output_value() == "hello"
+        assert result.result_for_solid("solid_2").output_value() == "world"
+        assert result.result_for_solid("fan_in_legacy").output_value() == "hello world"
+
+
+@pytest.mark.notebook_test
+def test_composite_pipeline_legacy():
+    with exec_for_test(
+        "composite_pipeline_legacy",
+        {
+            "execution": {"multiprocess": {}},
+            "solids": {
+                "outer_legacy": {"solids": {"yield_something_legacy": {"inputs": {"obj": "hello"}}}}
+            },
+        },
+    ) as result:
+        assert result.success
+        assert (
+            result.result_for_solid("outer_legacy")
+            .result_for_solid("yield_something_legacy")
+            .output_value()
+            == "hello"
+        )
+
+
+@pytest.mark.notebook_test
+def test_fan_in_notebook_pipeline():
+    with exec_for_test(
+        "fan_in_notebook_pipeline",
+        {
+            "execution": {"multiprocess": {}},
+            "solids": {
+                "solid_1": {"inputs": {"obj": "hello"}},
+                "solid_2": {"inputs": {"obj": "world"}},
+            },
+        },
+    ) as result:
+        assert result.success
+        assert result.result_for_solid("solid_1").output_value() == "hello"
+        assert result.result_for_solid("solid_2").output_value() == "world"
+        assert result.result_for_solid("fan_in").output_value() == "hello world"
+
+
+@pytest.mark.notebook_test
+def test_composite_pipeline():
+    with exec_for_test(
+        "composite_pipeline",
+        {
+            "execution": {"multiprocess": {}},
+            "solids": {"outer": {"solids": {"yield_something": {"inputs": {"obj": "hello"}}}}},
+        },
+    ) as result:
+        assert result.success
+        assert (
+            result.result_for_solid("outer").result_for_solid("yield_something").output_value()
+            == "hello"
+        )
+
+
+@pytest.mark.notebook_test
+def test_fan_in_notebook_pipeline_in_mem():
+    with exec_for_test(
+        "fan_in_notebook_pipeline_in_mem",
+        {
+            "solids": {
+                "solid_1": {"inputs": {"obj": "hello"}},
+                "solid_2": {"inputs": {"obj": "world"}},
+            },
+        },
+        raise_on_error=False,
+    ) as result:
+        # # TODO error at definition time that dagstermill solids require "multiprocessing.shared_memory"
+        assert not result.success
+
+
+@pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
         "notebook_dag_pipeline",
@@ -225,7 +310,7 @@ def test_notebook_dag():
 
 @pytest.mark.notebook_test
 def test_error_notebook():
-    with pytest.raises(PapermillExecutionError) as exc:
+    with pytest.raises(ExecutionError) as exc:
         with exec_for_test("error_pipeline") as result:
             pass
 
@@ -233,8 +318,7 @@ def test_error_notebook():
 
     with exec_for_test("error_pipeline", raise_on_error=False) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == "ASSET_MATERIALIZATION"
-        assert result.step_event_list[2].event_type.value == "STEP_FAILURE"
+        assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
 
 
 @pytest.mark.nettest

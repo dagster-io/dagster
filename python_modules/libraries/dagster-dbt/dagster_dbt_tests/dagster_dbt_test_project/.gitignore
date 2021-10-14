@@ -1,5 +1,6 @@
 
 target/
+target_test/
 dbt_modules/
 logs/
 

@@ -1,0 +1,26 @@
+mutation ($repositoryLocationName: String!) {
+   reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
+      __typename
+      ... on WorkspaceLocationEntry {
+        name
+        locationOrLoadError {
+          __typename
+          ... on RepositoryLocation {
+            isReloadSupported
+            repositories {
+                name
+            }
+          }
+          ... on PythonError {
+            message
+          }
+        }
+      }
+      ... on ReloadNotSupported {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
+      }
+   }
+}

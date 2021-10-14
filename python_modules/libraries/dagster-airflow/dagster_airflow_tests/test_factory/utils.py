@@ -1,5 +1,5 @@
 from airflow.exceptions import AirflowSkipException
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 
 
 def validate_pipeline_execution(pipeline_exc_result):
@@ -19,7 +19,7 @@ def validate_pipeline_execution(pipeline_exc_result):
     seen_events = set()
     for result in pipeline_exc_result.values():
         for event in result:
-            if isinstance(event, EventRecord):
+            if isinstance(event, EventLogEntry):
                 seen_events.add((event.dagster_event.event_type_value, event.step_key))
             else:
                 seen_events.add((event.event_type_value, event.step_key))

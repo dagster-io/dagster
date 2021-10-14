@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 
 import {IExecutionSession, applyCreateSession, useStorage} from '../app/LocalStorage';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {useJobTitle} from '../pipelines/useJobTitle';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -16,10 +16,14 @@ interface Props {
 export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
 
-  const {pipelineName} = explorerPathFromString(pipelinePath);
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  useJobTitle(explorerPath);
 
-  const [data, onSave] = useStorage(repoAddress.name, pipelineName);
+  const {pipelineName, pipelineMode} = explorerPath;
+  const [data, onSave] = useStorage(
+    repoAddress.name,
+    `${pipelineName}${pipelineMode ? `:${pipelineMode}` : ''}`,
+  );
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {

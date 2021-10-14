@@ -40,13 +40,13 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
     error = resp.json().get("error")
     if error is not None:
         if error["code"] in [
-            DBTErrors.project_currently_compiling_error,
-            DBTErrors.runtime_error,
-            DBTErrors.server_error,
+            DBTErrors.project_currently_compiling_error.value,
+            DBTErrors.runtime_error.value,
+            DBTErrors.server_error.value,
         ]:
             context.log.warning(error["message"])
             raise RetryRequested(max_retries=5, seconds_to_wait=30)
-        elif error["code"] == DBTErrors.project_compile_failure_error:
+        elif error["code"] == DBTErrors.project_compile_failure_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
@@ -56,7 +56,7 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
                     ),
                 ],
             )
-        elif error["code"] == DBTErrors.rpc_process_killed_error:
+        elif error["code"] == DBTErrors.rpc_process_killed_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
@@ -67,7 +67,7 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
                     ),
                 ],
             )
-        elif error["code"] == DBTErrors.rpc_timeout_error:
+        elif error["code"] == DBTErrors.rpc_timeout_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[

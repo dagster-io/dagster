@@ -1,10 +1,9 @@
 import abc
-from typing import Iterable, Type
+from typing import Iterable
 
-from dagster.core.definitions.job import JobType
-from dagster.core.errors import DagsterScheduleWipeRequired
+from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import JobState, JobStatus, JobTick, JobTickData, JobTickStatus
+from dagster.core.scheduler.job import JobState, JobTick, JobTickData, JobTickStatus
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -115,27 +114,3 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
-
-    def validate_stored_schedules(self, scheduler_class: Type):
-        # Check for any running job states that reference a different scheduler,
-        # prompt the user to wipe if they don't match
-        stored_schedules = self.all_stored_job_state(job_type=JobType.SCHEDULE)
-
-        for schedule in stored_schedules:
-            if schedule.status != JobStatus.RUNNING:
-                continue
-
-            stored_scheduler_class = schedule.job_specific_data.scheduler
-
-            if stored_scheduler_class and stored_scheduler_class != scheduler_class:
-                instance_scheduler_class = scheduler_class if scheduler_class else "None"
-
-                raise DagsterScheduleWipeRequired(
-                    f"Found a running schedule using a scheduler ({stored_scheduler_class}) "
-                    + f"that differs from the scheduler on the instance ({instance_scheduler_class}). "
-                    + "The most likely reason for this error is that you changed the scheduler on "
-                    + "your instance while it was still running schedules. "
-                    + "To fix this, change the scheduler on your instance back to the previous "
-                    + "scheduler configuration and run the command 'dagster schedule wipe'. It "
-                    + f"will then be safe to change back to {instance_scheduler_class}."
-                )

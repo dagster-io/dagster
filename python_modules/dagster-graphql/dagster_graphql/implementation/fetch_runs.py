@@ -1,6 +1,7 @@
 from dagster import PipelineDefinition, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
+from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -15,7 +16,7 @@ def is_config_valid(pipeline_def, run_config, mode):
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
-    validated_config = validate_config(run_config_schema.environment_type, run_config)
+    validated_config = validate_config(run_config_schema.config_type, run_config)
     return validated_config.success
 
 
@@ -27,7 +28,7 @@ def get_validated_config(pipeline_def, run_config, mode):
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
 
-    validated_config = validate_config(run_config_schema.environment_type, run_config)
+    validated_config = validate_config(run_config_schema.config_type, run_config)
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
@@ -69,15 +70,14 @@ def get_run_group(graphene_info, run_id):
     from ..schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
-    result = instance.get_run_group(run_id)
-
-    if result is None:
+    try:
+        result = instance.get_run_group(run_id)
+    except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
-    else:
-        root_run_id, run_group = result
-        return GrapheneRunGroup(
-            root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
-        )
+    root_run_id, run_group = result
+    return GrapheneRunGroup(
+        root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
+    )
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):

@@ -1,13 +1,15 @@
-import {ApolloClient, gql} from '@apollo/client';
+import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
+import throttle from 'lodash/throttle';
 import * as React from 'react';
 
-import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunFragments} from './RunFragments';
 import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunLogsQuery} from './types/RunLogsQuery';
 import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 export interface LogFilterValue extends TokenizingFieldValue {
@@ -22,154 +24,250 @@ export interface LogFilter {
   hideNonMatches: boolean;
 }
 
+type LogNode = RunPipelineRunEventFragment & {clientsideKey: string};
+type Nodes = LogNode[];
+
 export interface LogsProviderLogs {
-  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  allNodes: LogNode[];
   loading: boolean;
 }
 
+const pipelineStatusFromMessages = (messages: RunPipelineRunEventFragment[]) => {
+  const reversed = [...messages].reverse();
+  for (const message of reversed) {
+    const {__typename} = message;
+    switch (__typename) {
+      case 'PipelineStartEvent':
+        return PipelineRunStatus.STARTED;
+      case 'PipelineEnqueuedEvent':
+        return PipelineRunStatus.QUEUED;
+      case 'PipelineStartingEvent':
+        return PipelineRunStatus.STARTING;
+      case 'PipelineCancelingEvent':
+        return PipelineRunStatus.CANCELING;
+      case 'PipelineCanceledEvent':
+        return PipelineRunStatus.CANCELED;
+      case 'PipelineSuccessEvent':
+        return PipelineRunStatus.SUCCESS;
+      case 'PipelineFailureEvent':
+        return PipelineRunStatus.FAILURE;
+    }
+  }
+  return null;
+};
+
+const BATCH_INTERVAL = 100;
+
+type State = {
+  nodes: Nodes;
+  cursor: number;
+  loading: boolean;
+};
+
+type Action =
+  | {type: 'append'; queued: RunPipelineRunEventFragment[]; hasMore: boolean}
+  | {type: 'set-cursor'}
+  | {type: 'reset'};
+
+const reducer = (state: State, action: Action) => {
+  switch (action.type) {
+    case 'append':
+      const nodes = [...state.nodes, ...action.queued].map((m, idx) => ({
+        ...m,
+        clientsideKey: `csk${idx}`,
+      }));
+      return {...state, nodes, loading: action.hasMore};
+    case 'set-cursor':
+      return {...state, cursor: state.nodes.length - 1};
+    case 'reset':
+      return {nodes: [], cursor: -1, loading: true};
+    default:
+      return state;
+  }
+};
+
+const initialState = {
+  nodes: [],
+  cursor: -1,
+  loading: true,
+};
+
+const useLogsProviderWithSubscription = (runId: string) => {
+  const client = useApolloClient();
+  const {websocketClient} = React.useContext(WebSocketContext);
+  const queue = React.useRef<RunPipelineRunEventFragment[]>([]);
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const syncPipelineStatusToApolloCache = React.useCallback(
+    (status: PipelineRunStatus) => {
+      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
+        fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
+        fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
+        id: `PipelineRun:${runId}`,
+      });
+
+      if (local) {
+        const toWrite = {...local, status};
+        if (
+          status === PipelineRunStatus.FAILURE ||
+          status === PipelineRunStatus.SUCCESS ||
+          status === PipelineRunStatus.STARTING ||
+          status === PipelineRunStatus.CANCELING ||
+          status === PipelineRunStatus.CANCELED
+        ) {
+          toWrite.canTerminate = false;
+        }
+        client.writeFragment({
+          fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
+          fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
+          id: `PipelineRun:${runId}`,
+          data: toWrite,
+        });
+      }
+    },
+    [client, runId],
+  );
+
+  // If the WebSocket disconnects, move the cursor to the end to ensure that we don't
+  // incorrectly refetch logs that we already have.
+  React.useEffect(() => {
+    const unlisten = websocketClient?.onDisconnected(() => dispatch({type: 'set-cursor'}));
+    return () => unlisten && unlisten();
+  }, [websocketClient]);
+
+  React.useEffect(() => {
+    queue.current = [];
+    dispatch({type: 'reset'});
+  }, [runId]);
+
+  // Batch the nodes together so they don't overwhelm the animation of the Gantt,
+  // which depends on a bit of a timing delay to maintain smoothness.
+  const throttledSetNodes = React.useMemo(() => {
+    return throttle((hasMore: boolean) => {
+      const queued = [...queue.current];
+      queue.current = [];
+      dispatch({type: 'append', queued, hasMore});
+    }, BATCH_INTERVAL);
+  }, []);
+
+  const {nodes, cursor, loading} = state;
+
+  useSubscription<PipelineRunLogsSubscription>(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
+    fetchPolicy: 'no-cache',
+    variables: {runId, after: cursor},
+    onSubscriptionData: ({subscriptionData}) => {
+      const logs = subscriptionData.data?.pipelineRunLogs;
+      if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
+        return;
+      }
+
+      const {messages, hasMorePastEvents} = logs;
+      const nextPipelineStatus = pipelineStatusFromMessages(messages);
+
+      // If we're still loading past events, don't sync to the cache -- event chunks could
+      // give us `status` values that don't match the actual state of the run.
+      if (nextPipelineStatus && !hasMorePastEvents) {
+        syncPipelineStatusToApolloCache(nextPipelineStatus);
+      }
+
+      // Maintain a queue of messages as they arrive, and call the throttled setter.
+      queue.current = [...queue.current, ...messages];
+      throttledSetNodes(hasMorePastEvents);
+    },
+  });
+
+  return React.useMemo(
+    () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
+    [loading, nodes],
+  );
+};
+
 interface LogsProviderProps {
-  websocketURI: string;
-  client: ApolloClient<any>;
   runId: string;
   children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-interface LogsProviderState {
-  nodes: (RunPipelineRunEventFragment & {clientsideKey: string})[] | null;
+const LogsProviderWithSubscription: React.FC<LogsProviderProps> = (props) => {
+  const state = useLogsProviderWithSubscription(props.runId);
+  return <>{props.children(state)}</>;
+};
+
+interface LogsProviderWithQueryProps {
+  runId: string;
+  children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-export class LogsProvider extends React.Component<LogsProviderProps, LogsProviderState> {
-  state: LogsProviderState = {
-    nodes: null,
-  };
+const POLL_INTERVAL = 5000;
 
-  _subscription: DirectGraphQLSubscription<PipelineRunLogsSubscription>;
+const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
+  const {children, runId} = props;
+  const [nodes, setNodes] = React.useState<LogNode[]>(() => []);
+  const [after, setAfter] = React.useState<number>(-1);
 
-  componentDidMount() {
-    this.subscribeToRun();
-  }
+  const {stopPolling, startPolling} = useQuery<RunLogsQuery>(RUN_LOGS_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    variables: {runId, after},
+    pollInterval: POLL_INTERVAL,
+    onCompleted: (data: RunLogsQuery) => {
+      // We have to stop polling in order to update the `after` value.
+      stopPolling();
 
-  componentDidUpdate(prevProps: LogsProviderProps) {
-    if (prevProps.runId !== this.props.runId) {
-      this.subscribeToRun();
-    }
-  }
-
-  componentWillUnmount() {
-    this.unsubscribeFromRun();
-  }
-
-  subscribeToRun() {
-    const {runId} = this.props;
-
-    if (this._subscription) {
-      this.unsubscribeFromRun();
-      this.setState({nodes: []});
-    }
-
-    if (!runId) {
-      return;
-    }
-
-    this._subscription = new DirectGraphQLSubscription<PipelineRunLogsSubscription>(
-      this.props.websocketURI,
-      PIPELINE_RUN_LOGS_SUBSCRIPTION,
-      {runId: runId, after: null},
-      this.onHandleMessages,
-      () => {}, // https://github.com/dagster-io/dagster/issues/2151
-    );
-  }
-
-  unsubscribeFromRun() {
-    if (this._subscription) {
-      this._subscription.close();
-    }
-  }
-
-  onHandleMessages = (messages: PipelineRunLogsSubscription[], isFirstResponse: boolean) => {
-    // Note: if the socket says this is the first response, it may be becacuse the connection
-    // was dropped and re-opened, so we reset our local state to an empty array.
-    const nextNodes = isFirstResponse ? [] : [...(this.state.nodes || [])];
-
-    let nextPipelineStatus: PipelineRunStatus | null = null;
-    for (const msg of messages) {
-      if (msg.pipelineRunLogs.__typename === 'PipelineRunLogsSubscriptionFailure') {
-        break;
-      }
-
-      // append the nodes to our local array and give each of them a unique key
-      // so we can change the row indexes they're displayed at and still track their
-      // sizes, etc.
-      nextNodes.push(
-        ...msg.pipelineRunLogs.messages.map((m, idx) =>
-          Object.assign(m, {clientsideKey: `csk${nextNodes.length + idx}`}),
-        ),
-      );
-
-      // look for changes to the pipeline's overall run status and sync that to apollo
-      for (const {__typename} of msg.pipelineRunLogs.messages) {
-        if (__typename === 'PipelineStartEvent') {
-          nextPipelineStatus = PipelineRunStatus.STARTED;
-        } else if (__typename === 'PipelineEnqueuedEvent') {
-          nextPipelineStatus = PipelineRunStatus.QUEUED;
-        } else if (__typename === 'PipelineStartingEvent') {
-          nextPipelineStatus = PipelineRunStatus.STARTING;
-        } else if (__typename === 'PipelineCancelingEvent') {
-          nextPipelineStatus = PipelineRunStatus.CANCELING;
-        } else if (__typename === 'PipelineCanceledEvent') {
-          nextPipelineStatus = PipelineRunStatus.CANCELED;
-        } else if (__typename === 'PipelineSuccessEvent') {
-          nextPipelineStatus = PipelineRunStatus.SUCCESS;
-        } else if (
-          __typename === 'PipelineFailureEvent' ||
-          __typename === 'PipelineInitFailureEvent'
-        ) {
-          nextPipelineStatus = PipelineRunStatus.FAILURE;
+      const slice = () => {
+        const count = nodes.length;
+        if (data?.pipelineRunOrError.__typename === 'PipelineRun') {
+          return data?.pipelineRunOrError.events.map((event, ii) => ({
+            ...event,
+            clientsideKey: `csk${count + ii}`,
+          }));
         }
-      }
-    }
+        return [];
+      };
 
-    if (nextPipelineStatus) {
-      this.syncPipelineStatusToApolloCache(nextPipelineStatus);
-    }
-    this.setState({nodes: nextNodes});
-  };
+      const newSlice = slice();
+      setNodes((current) => [...current, ...newSlice]);
+      setAfter((current) => current + newSlice.length);
 
-  syncPipelineStatusToApolloCache(status: PipelineRunStatus) {
-    const local = this.props.client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
-      fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
-      fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-      id: `PipelineRun.${this.props.runId}`,
-    });
+      const status =
+        data?.pipelineRunOrError.__typename === 'PipelineRun'
+          ? data?.pipelineRunOrError.status
+          : null;
 
-    if (local) {
-      const toWrite = {...local, status};
       if (
-        status === PipelineRunStatus.FAILURE ||
-        status === PipelineRunStatus.SUCCESS ||
-        status === PipelineRunStatus.STARTING ||
-        status === PipelineRunStatus.CANCELING ||
-        status === PipelineRunStatus.CANCELED
+        status &&
+        status !== PipelineRunStatus.FAILURE &&
+        status !== PipelineRunStatus.SUCCESS &&
+        status !== PipelineRunStatus.CANCELED
       ) {
-        toWrite.canTerminate = false;
+        startPolling(POLL_INTERVAL);
       }
-      this.props.client.writeFragment({
-        fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
-        fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-        id: `PipelineRun.${this.props.runId}`,
-        data: toWrite,
-      });
-    }
+    },
+  });
+
+  return (
+    <>
+      {children(
+        nodes !== null && nodes.length > 0
+          ? {allNodes: nodes, loading: false}
+          : {allNodes: [], loading: true},
+      )}
+    </>
+  );
+};
+
+export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
+  const {children, runId} = props;
+  const {availability} = React.useContext(WebSocketContext);
+
+  if (availability === 'attempting-to-connect') {
+    return <>{children({allNodes: [], loading: true})}</>;
   }
 
-  render() {
-    const {nodes} = this.state;
-
-    return this.props.children(
-      nodes !== null ? {allNodes: nodes, loading: false} : {allNodes: [], loading: true},
-    );
+  if (availability === 'unavailable') {
+    return <LogsProviderWithQuery runId={runId}>{children}</LogsProviderWithQuery>;
   }
-}
+
+  return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;
+};
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
@@ -182,6 +280,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           }
           ...RunPipelineRunEventFragment
         }
+        hasMorePastEvents
       }
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
@@ -200,4 +299,25 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
     status
     canTerminate
   }
+`;
+
+const RUN_LOGS_QUERY = gql`
+  query RunLogsQuery($runId: ID!, $after: Cursor) {
+    pipelineRunOrError(runId: $runId) {
+      ... on PipelineRun {
+        id
+        runId
+        status
+        canTerminate
+        events(after: $after) {
+          ... on MessageEvent {
+            runId
+          }
+          ...RunPipelineRunEventFragment
+          __typename
+        }
+      }
+    }
+  }
+  ${RunFragments.RunPipelineRunEventFragment}
 `;

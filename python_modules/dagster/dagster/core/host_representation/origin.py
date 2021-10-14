@@ -5,6 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from typing import Set
 
+import grpc
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
@@ -61,6 +62,13 @@ class RepositoryLocationOrigin(ABC):
     @property
     def is_reload_supported(self):
         return True
+
+    @property
+    def is_shutdown_supported(self):
+        return False
+
+    def shutdown_server(self):
+        raise NotImplementedError
 
     @abstractmethod
     def get_cli_args(self):
@@ -195,10 +203,18 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_test_location(self):
-        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
         from .grpc_server_registry import ProcessGrpcServerRegistry
+        from dagster.core.workspace.context import (
+            DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+        )
 
-        with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
+        with ProcessGrpcServerRegistry(
+            reload_interval=0,
+            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+        ) as grpc_server_registry:
             with DynamicWorkspace(grpc_server_registry) as workspace:
                 with workspace.get_location(self) as location:
                     yield location
@@ -240,7 +256,11 @@ class GrpcServerRepositoryLocationOrigin(
             )
 
     def get_display_metadata(self):
-        metadata = {"host": self.host, "port": self.port, "socket": self.socket}
+        metadata = {
+            "host": self.host,
+            "port": str(self.port) if self.port else None,
+            "socket": self.socket,
+        }
         return {key: value for key, value in metadata.items() if value is not None}
 
     def create_location(self):
@@ -263,6 +283,17 @@ class GrpcServerRepositoryLocationOrigin(
             host=self.host,
             use_ssl=bool(self.use_ssl),
         )
+
+    @property
+    def is_shutdown_supported(self):
+        return True
+
+    def shutdown_server(self):
+        try:
+            self.create_client().shutdown_server()
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            # Server already shutdown
+            pass
 
 
 @whitelist_for_serdes

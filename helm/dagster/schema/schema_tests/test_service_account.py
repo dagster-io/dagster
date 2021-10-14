@@ -5,13 +5,15 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
-
-from .helm_template import HelmTemplate
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def umbrella_helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/serviceaccount.yaml",
         model=models.V1ServiceAccount,
     )
@@ -20,7 +22,19 @@ def umbrella_helm_template() -> HelmTemplate:
 @pytest.fixture(name="subchart_template")
 def subchart_helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="charts/dagster-user-deployments/templates/serviceaccount.yaml",
+        model=models.V1ServiceAccount,
+    )
+
+
+@pytest.fixture(name="standalone_subchart_template")
+def standalone_subchart_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster/charts/dagster-user-deployments",
+        subchart_paths=[],
+        output="templates/serviceaccount.yaml",
         model=models.V1ServiceAccount,
     )
 
@@ -28,7 +42,7 @@ def subchart_helm_template() -> HelmTemplate:
 def test_service_account_name(template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterHelmValues.construct(
-        serviceAccount=ServiceAccount(name=service_account_name, create=True)
+        serviceAccount=ServiceAccount.construct(name=service_account_name, create=True)
     )
 
     service_account_templates = template.render(service_account_values)
@@ -69,10 +83,25 @@ def test_subchart_service_account_global_name(subchart_template: HelmTemplate, c
         assert "Error: could not find template" in err
 
 
+def test_standalone_subchart_service_account_name(standalone_subchart_template: HelmTemplate):
+    service_account_name = "service-account-name"
+    service_account_values = DagsterUserDeploymentsHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(name=service_account_name),
+    )
+
+    service_account_templates = standalone_subchart_template.render(service_account_values)
+
+    assert len(service_account_templates) == 1
+
+    service_account_template = service_account_templates[0]
+
+    assert service_account_template.metadata.name == service_account_name
+
+
 def test_service_account_does_not_render(template: HelmTemplate, capsys):
     with pytest.raises(subprocess.CalledProcessError):
         service_account_values = DagsterHelmValues.construct(
-            serviceAccount=ServiceAccount(name="service-account-name", create=False),
+            serviceAccount=ServiceAccount.construct(name="service-account-name", create=False),
         )
 
         template.render(service_account_values)
@@ -80,3 +109,43 @@ def test_service_account_does_not_render(template: HelmTemplate, capsys):
         _, err = capsys.readouterr()
 
         assert "Error: could not find template" in err
+
+
+def test_service_account_annotations(template: HelmTemplate):
+    service_account_name = "service-account-name"
+    service_account_annotations = {"hello": "world"}
+    service_account_values = DagsterHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(
+            name=service_account_name, create=True, annotations=service_account_annotations
+        )
+    )
+
+    service_account_templates = template.render(service_account_values)
+
+    assert len(service_account_templates) == 1
+
+    service_account_template = service_account_templates[0]
+
+    assert service_account_template.metadata.name == service_account_name
+    assert service_account_template.metadata.annotations == service_account_annotations
+
+
+def test_standalone_subchart_service_account_annotations(
+    standalone_subchart_template: HelmTemplate,
+):
+    service_account_name = "service-account-name"
+    service_account_annotations = {"hello": "world"}
+    service_account_values = DagsterUserDeploymentsHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(
+            name=service_account_name, create=True, annotations=service_account_annotations
+        ),
+    )
+
+    service_account_templates = standalone_subchart_template.render(service_account_values)
+
+    assert len(service_account_templates) == 1
+
+    service_account_template = service_account_templates[0]
+
+    assert service_account_template.metadata.name == service_account_name
+    assert service_account_template.metadata.annotations == service_account_annotations

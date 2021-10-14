@@ -1,8 +1,7 @@
-from typing import Dict, List
-
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from typing import Dict, List, Optional
 
 from ...utils import kubernetes
+from ...utils.utils import BaseModel
 
 
 class Server(BaseModel):
@@ -32,3 +31,5 @@ class Dagit(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
+    enableReadOnly: bool
+    dbStatementTimeout: Optional[int]

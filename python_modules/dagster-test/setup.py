@@ -1,20 +1,9 @@
-from typing import Dict
-
 from setuptools import find_packages, setup  # type: ignore
-
-
-def get_version() -> str:
-    version: Dict[str, str] = {}
-    with open("dagster_test/version.py") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
-
-    return version["__version__"]
-
 
 if __name__ == "__main__":
     setup(
         name="dagster-test",
-        version=get_version(),
+        version="dev",
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -28,6 +17,9 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster"],
+        install_requires=[
+            "dagster",
+            "pyspark",
+        ],
         zip_safe=False,
     )

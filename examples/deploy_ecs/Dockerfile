@@ -1,0 +1,26 @@
+# Dagster
+FROM python:3.7-slim as dagster
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+RUN mkdir -p $DAGSTER_HOME
+WORKDIR $DAGSTER_HOME
+COPY dagster.yaml workspace.yaml $DAGSTER_HOME
+# Install:
+# - dagster so we can run `dagster-daemon run`
+# - dagster-aws so we can use EcsRunLauncher
+# - dagster-postgres so we can use PostgresEventStorage,
+#   PostgresRunStorage, and PostgresScheduleStorage
+COPY requirements-dagster.txt $DAGSTER_HOME
+RUN pip install -r requirements-dagster.txt
+
+# Dagit
+FROM dagster as dagit
+COPY requirements-dagit.txt $DAGSTER_HOME
+RUN pip install -r requirements-dagit.txt
+
+# Pipelines
+# You can either include all of your repositories in this
+# stage or you can create multiple stages that each use
+# the same base - one for each repository.
+FROM dagster as pipelines
+COPY repo.py $DAGSTER_HOME

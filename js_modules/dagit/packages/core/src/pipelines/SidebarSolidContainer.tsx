@@ -2,6 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {usePipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -47,7 +49,11 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
           // should not reach here, unless the pipeline loads and then does not load in subsequent
           // requests
           console.error('Could not load pipeline solids');
-          return <span>Could not load pipeline solids.</span>;
+          return (
+            <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray500}}>
+              Could not load pipeline solids.
+            </Box>
+          );
         }
         return (
           <>
@@ -67,6 +73,7 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
               definition={pipelineOrError!.solidHandle!.solid.definition}
               getInvocations={getInvocations}
               onClickInvocation={({handleID}) => onClickSolid({path: handleID.split('.')})}
+              repoAddress={repoAddress}
             />
           </>
         );

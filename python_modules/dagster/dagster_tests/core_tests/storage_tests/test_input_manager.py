@@ -11,6 +11,7 @@ from dagster import (
     OutputDefinition,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
+    composite_solid,
     execute_pipeline,
     execute_solid,
     io_manager,
@@ -329,8 +330,8 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Input "_input" for solid "solid_requires_manager" requires root_manager_key '
-        '"not_manager", but the resource definition provided is not an '
+        match="Input '_input' for solid 'solid_requires_manager' requires root_manager_key "
+        "'not_manager', but the resource definition provided is not an "
         "IInputManagerDefinition",
     ):
         execute_pipeline(basic)
@@ -355,3 +356,50 @@ def test_mode_missing_input_manager_execute_solid():
 
     result = execute_solid(my_solid, input_values={"a": 5})
     assert result.success
+
+
+def test_no_root_manager_composite():
+    @solid(input_defs=[InputDefinition("data", dagster_type=str)])
+    def inner_solid(_, data):
+        return data
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Root input manager cannot be set on a composite solid"
+    ):
+
+        @composite_solid(
+            input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")]
+        )
+        def _(data):
+            _ = inner_solid(data=data)
+
+
+def test_root_manager_inside_composite():
+    @root_input_manager(input_config_schema={"test": str})
+    def my_root(context):
+        return context.config["test"]
+
+    @solid(input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
+    def inner_solid(_, data):
+        return data
+
+    @composite_solid
+    def my_composite_solid():
+        return inner_solid()
+
+    @pipeline(mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})])
+    def my_pipeline():
+        my_composite_solid()
+
+    result = execute_pipeline(
+        my_pipeline,
+        run_config={
+            "solids": {
+                "my_composite_solid": {
+                    "solids": {"inner_solid": {"inputs": {"data": {"test": "hello"}}}},
+                }
+            }
+        },
+    )
+
+    assert result.output_for_solid("my_composite_solid") == "hello"

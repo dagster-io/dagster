@@ -25,22 +25,35 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 # Image utils
-{{- define "image.name" }}
+{{- define "dagster.externalImage.name" }}
 {{- .repository -}}:{{- .tag -}}
+{{- end }}
+
+{{- define "dagster.dagsterImage.name" }}
+  {{- $ := index . 0 }}
+
+  {{- with index . 1 }}
+    {{- $tag := .tag | default $.Chart.Version }}
+    {{- printf "%s:%s" .repository $tag }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagster.dagit.dagitCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-{{- if $userDeployments.enabled }}
-dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }} -w /dagster-workspace/workspace.yaml
-{{- else -}}
 dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
-{{- end -}}
+{{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
+{{- with .Values.dagit.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
+{{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- if .dagitReadOnly -}} -read-only {{- end -}}
+{{- end -}}
+
+{{- define "dagster.dagit.componentName" -}}
+dagit {{- if .dagitReadOnly -}} -read-only {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagit.migrate" -}}
@@ -171,6 +184,6 @@ DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagster.postgresql.secretName" . | q
 DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
-DAGSTER_K8S_PIPELINE_RUN_IMAGE: "{{- .Values.pipelineRun.image.repository -}}:{{- .Values.pipelineRun.image.tag -}}"
+DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}
 DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPolicy }}"
 {{- end -}}

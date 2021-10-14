@@ -3,7 +3,6 @@ import os
 import random
 import string
 import sys
-import tempfile
 import time
 from contextlib import contextmanager
 
@@ -21,32 +20,28 @@ from dagster import (
     pipeline,
     repository,
     schedule,
-    seven,
     solid,
 )
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-from dagster.core.definitions.job import RunRequest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterScheduleWipeRequired
+from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
+    create_test_daemon_workspace,
     instance_for_test,
-    instance_for_test_tempdir,
     mock_system_timezone,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import create_pendulum_time, to_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
@@ -326,7 +321,7 @@ manual_partition = PartitionSetDefinition(
     pipeline_name="two_step_pipeline",
     # selects only second step
     solid_selection=["end"],
-    partition_fn=lambda: ["one"],
+    partition_fn=lambda: [Partition("one")],
     # includes config for first step - test that it is ignored
     run_config_fn_for_partition=lambda _: {"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
 )
@@ -386,10 +381,9 @@ def logger():
 @contextmanager
 def instance_with_schedules(external_repo_context, overrides=None):
     with schedule_instance(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 @contextmanager
@@ -1162,48 +1156,47 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
 
 def test_bad_load_repository_location(capfd):
-    with schedule_instance() as instance, ProcessGrpcServerRegistry() as grpc_server_registry:
-        with DynamicWorkspace(grpc_server_registry) as workspace:
-            fake_origin = _get_unloadable_schedule_origin()
-            initial_datetime = create_pendulum_time(
-                year=2019,
-                month=2,
-                day=27,
-                hour=23,
-                minute=59,
-                second=59,
+    with schedule_instance() as instance, create_test_daemon_workspace() as workspace:
+        fake_origin = _get_unloadable_schedule_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+        )
+        with pendulum.test(initial_datetime):
+            schedule_state = JobState(
+                fake_origin,
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
             )
-            with pendulum.test(initial_datetime):
-                schedule_state = JobState(
-                    fake_origin,
-                    JobType.SCHEDULE,
-                    JobStatus.RUNNING,
-                    ScheduleJobData(
-                        "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                    ),
-                )
-                instance.add_job_state(schedule_state)
+            instance.add_job_state(schedule_state)
 
-            initial_datetime = initial_datetime.add(seconds=1)
-            with pendulum.test(initial_datetime):
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        initial_datetime = initial_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
-                assert instance.get_runs_count() == 0
+            assert instance.get_runs_count() == 0
 
-                ticks = instance.get_job_ticks(fake_origin.get_id())
+            ticks = instance.get_job_ticks(fake_origin.get_id())
 
-                assert len(ticks) == 0
+            assert len(ticks) == 0
 
-                captured = capfd.readouterr()
-                assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
-                assert "doesnt_exist not found at module scope" in captured.out
+            captured = capfd.readouterr()
+            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
+            assert "doesnt_exist not found at module scope" in captured.out
 
-            initial_datetime = initial_datetime.add(days=1)
-            with pendulum.test(initial_datetime):
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-                assert instance.get_runs_count() == 0
-                ticks = instance.get_job_ticks(fake_origin.get_id())
-                assert len(ticks) == 0
+        initial_datetime = initial_datetime.add(days=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(fake_origin.get_id())
+            assert len(ticks) == 0
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -1613,58 +1606,6 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
                 "Schedules that return multiple RunRequests must specify a "
                 "run_key in each RunRequest" in captured.out
             )
-
-
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cron doesn't work on windows")
-def test_run_with_hanging_cron_schedules():
-    # Verify that the system will prompt you to wipe your schedules with the SystemCronScheduler
-    # before you can switch to DagsterDaemonScheduler
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
-            overrides={"scheduler": {"module": "dagster_cron", "class": "SystemCronScheduler"}},
-        ) as cron_instance:
-            with default_repo() as external_repo:
-                cron_instance.start_schedule_and_update_storage_state(
-                    external_repo.get_external_schedule("simple_schedule")
-                )
-
-        # Can't change scheduler to DagsterDaemonScheduler, warns you to wipe
-        with pytest.raises(DagsterScheduleWipeRequired):
-            with instance_for_test_tempdir(
-                temp_dir,
-                overrides={
-                    "scheduler": {
-                        "module": "dagster.core.scheduler",
-                        "class": "DagsterDaemonScheduler",
-                    },
-                },
-            ) as instance:
-                instance.optimize_for_dagit(statement_timeout=500)
-
-        with instance_for_test_tempdir(
-            temp_dir,
-            overrides={
-                "scheduler": {
-                    "module": "dagster_cron",
-                    "class": "SystemCronScheduler",
-                },
-            },
-        ) as cron_instance:
-            cron_instance.wipe_all_schedules()
-
-        # After wiping, now can change the scheduler to DagsterDaemonScheduler
-        with instance_for_test_tempdir(
-            temp_dir,
-            overrides={
-                "scheduler": {
-                    "module": "dagster.core.scheduler",
-                    "class": "DagsterDaemonScheduler",
-                },
-            },
-        ):
-            pass
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

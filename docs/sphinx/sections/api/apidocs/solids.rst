@@ -3,7 +3,7 @@
 Solids
 ======
 
-The foundational unit of composition in Dagster.
+The foundational unit of computation in Dagster.
 
 -----
 
@@ -14,10 +14,6 @@ Defining solids
 .. autoclass:: SolidDefinition
     :members: configured
 
-
-.. autodecorator:: lambda_solid
-
-
 -------
 
 Inputs & outputs
@@ -26,6 +22,18 @@ Inputs & outputs
 .. autoclass:: InputDefinition
 
 .. autoclass:: OutputDefinition
+
+
+-------
+
+Execution
+---------
+
+.. autoclass:: RetryPolicy
+
+.. autoclass:: Backoff
+
+.. autoclass:: Jitter
 
 -------
 

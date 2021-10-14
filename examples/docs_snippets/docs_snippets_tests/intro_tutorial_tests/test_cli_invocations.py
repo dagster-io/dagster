@@ -4,9 +4,9 @@ import runpy
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_from_workspace
+from dagit.app import create_app_from_workspace_process_context
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.workspace import get_workspace_from_kwargs
+from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import check_script, pushd, script_relative_path
@@ -42,16 +42,6 @@ cli_args = [
         None,
     ),
     (
-        "basics/configuring_solids/",
-        "configurable_pipeline.py",
-        "configurable_pipeline",
-        "run_config.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
         "basics/connecting_solids/",
         "serial_pipeline.py",
         "serial_pipeline",
@@ -75,7 +65,7 @@ cli_args = [
         "basics/e04_quality/",
         "inputs_typed.py",
         "inputs_pipeline",
-        "inputs_env.yaml",
+        None,
         None,
         None,
         0,
@@ -85,7 +75,7 @@ cli_args = [
         "basics/e04_quality/",
         "custom_types.py",
         "custom_type_pipeline",
-        "inputs_env.yaml",
+        None,
         None,
         None,
         0,
@@ -95,40 +85,10 @@ cli_args = [
         "basics/e04_quality/",
         "custom_types_2.py",
         "custom_type_pipeline",
-        "custom_types_2.yaml",
+        None,
         None,
         None,
         1,
-        Exception,
-    ),
-    (
-        "basics/e04_quality/",
-        "custom_types_4.py",
-        "custom_type_pipeline",
-        "custom_type_input.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/solids/",
-        "reusable_solids.py",
-        "reusable_solids_pipeline",
-        "reusable_solids.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/solids/",
-        "composite_solids.py",
-        "composite_solids_pipeline",
-        "composite_solids.yaml",
-        None,
-        None,
-        0,
         None,
     ),
     (
@@ -166,17 +126,7 @@ cli_args = [
         "advanced/materializations/",
         "materializations.py",
         "materialization_pipeline",
-        "inputs_env.yaml",
         None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/materializations/",
-        "output_materialization.py",
-        "output_materialization_pipeline",
-        "output_materialization.yaml",
         None,
         None,
         0,
@@ -201,8 +151,10 @@ def path_to_tutorial_file(path):
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     instance = DagsterInstance.ephemeral()
-    with get_workspace_from_kwargs(kwargs) as workspace:
-        app = create_app_from_workspace(workspace, instance)
+    with get_workspace_process_context_from_kwargs(
+        instance, version="", read_only=False, kwargs=kwargs
+    ) as workspace_process_context:
+        app = create_app_from_workspace_process_context(workspace_process_context)
 
         client = app.test_client()
 

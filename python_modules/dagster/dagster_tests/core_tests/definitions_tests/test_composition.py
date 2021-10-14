@@ -12,11 +12,10 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
-    repository,
     solid,
 )
 from dagster.core.definitions.decorators.hook import event_list_hook, success_hook
-from dagster.core.definitions.events import HookExecutionResult
+from dagster.core.definitions.events import DynamicOutput, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 
@@ -166,7 +165,7 @@ def test_composite_with_duplicate_solids():
     solid_1, solid_2 = get_duplicate_solids()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Detected conflicting solid definitions with the same name",
+        match="Detected conflicting node definitions with the same name",
     ):
 
         @composite_solid
@@ -179,7 +178,7 @@ def test_pipeline_with_duplicate_solids():
     solid_1, solid_2 = get_duplicate_solids()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Detected conflicting solid definitions with the same name",
+        match="Detected conflicting node definitions with the same name",
     ):
 
         @pipeline
@@ -458,26 +457,6 @@ def test_pipeline_has_solid_def():
     assert a_pipeline.has_solid_def("inner")
 
 
-def test_repository_has_solid_def():
-    @composite_solid(output_defs=[OutputDefinition()])
-    def inner():
-        return add_one(return_one())
-
-    @composite_solid
-    def outer():
-        add_one(inner())
-
-    @pipeline
-    def a_pipeline():
-        outer()
-
-    @repository
-    def has_solid_def_test():
-        return [a_pipeline]
-
-    assert has_solid_def_test.solid_def_named("inner")
-
-
 def test_mapping_args_ordering():
     @lambda_solid
     def take(a, b, c):
@@ -521,12 +500,6 @@ def test_unused_mapping():
         @composite_solid
         def unused_mapping(_):
             return_one()
-
-
-def test_calling_solid_outside_fn():
-    with pytest.raises(DagsterInvariantViolationError, match="outside of a composition function"):
-
-        return_one()
 
 
 @lambda_solid
@@ -935,3 +908,90 @@ def test_composition_order():
         "hook_alias_tag": {"pos": "3"},
         "alias_hook_tag": {"pos": "3"},
     }
+
+
+def test_fan_in_scalars_fails():
+    @solid
+    def fan_in_solid(_, xs):
+        return sum(xs)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Lists can only contain the output from previous solid invocations or input mappings",
+    ):
+
+        @pipeline
+        def _scalar_fan_in_pipeline():
+            fan_in_solid([1, 2, 3])
+
+
+def test_with_hooks_on_invoked_solid_fails():
+    @solid
+    def yield_1_solid(_):
+        return 1
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="attempted to call hook method for InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _bad_hooks_pipeline():
+            yield_1_solid().with_hooks({a_hook})
+
+
+def test_iterating_over_dynamic_outputs_fails():
+    @solid
+    def dynamic_output_solid(_):
+        yield DynamicOutput(1, "1")
+        yield DynamicOutput(2, "2")
+
+    @solid
+    def yield_input(_, x):
+        return x
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to iterate over an InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _iterating_over_dynamic_output_pipeline():
+            for x in dynamic_output_solid():
+                yield_input(x)
+
+
+def test_indexing_into_dynamic_outputs_fails():
+    @solid
+    def dynamic_output_solid(_):
+        yield DynamicOutput(1, "1")
+        yield DynamicOutput(2, "2")
+
+    @solid
+    def yield_input(_, x):
+        return x
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to index in to an InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _indexing_into_dynamic_output_pipeline():
+            yield_input(dynamic_output_solid()[0])
+
+
+def test_aliasing_invoked_dynamic_output_fails():
+    @solid
+    def dynamic_output_solid(_):
+        yield DynamicOutput(1, "1")
+        yield DynamicOutput(2, "2")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="attempted to call alias method for InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _alias_invoked_dynamic_output_pipeline():
+            dynamic_output_solid().alias("dynamic_output")

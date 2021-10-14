@@ -2,9 +2,10 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation.origin import ExternalJobOrigin
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -15,13 +16,16 @@ class JobStatus(Enum):
 
 
 @whitelist_for_serdes
-class SensorJobData(namedtuple("_SensorJobData", "last_tick_timestamp last_run_key min_interval")):
-    def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None):
+class SensorJobData(
+    namedtuple("_SensorJobData", "last_tick_timestamp last_run_key min_interval cursor")
+):
+    def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None, cursor=None):
         return super(SensorJobData, cls).__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
             check.opt_int_param(min_interval, "min_interval"),
+            check.opt_str_param(cursor, "cursor"),
         )
 
 
@@ -129,6 +133,12 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def with_run(self, run_id, run_key=None):
         return self._replace(job_tick_data=self.job_tick_data.with_run(run_id, run_key))
 
+    def with_cursor(self, cursor):
+        return self._replace(job_tick_data=self.job_tick_data.with_cursor(cursor))
+
+    def with_origin_run(self, origin_run_id):
+        return self._replace(job_tick_data=self.job_tick_data.with_origin_run(origin_run_id))
+
     @property
     def job_origin_id(self):
         return self.job_tick_data.job_origin_id
@@ -165,12 +175,20 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def skip_reason(self):
         return self.job_tick_data.skip_reason
 
+    @property
+    def cursor(self):
+        return self.job_tick_data.cursor
+
+    @property
+    def origin_run_ids(self):
+        return self.job_tick_data.origin_run_ids
+
 
 @whitelist_for_serdes
 class JobTickData(
     namedtuple(
         "_JobTickData",
-        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason",
+        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason cursor origin_run_ids",
     )
 ):
     def __new__(
@@ -184,6 +202,8 @@ class JobTickData(
         run_keys=None,
         error=None,
         skip_reason=None,
+        cursor=None,
+        origin_run_ids=None,
     ):
         """
         This class defines the data that is serialized and stored in ``JobStorage``. We depend
@@ -203,8 +223,8 @@ class JobTickData(
             error (SerializableErrorInfo): The error caught during job execution. This is set
                 only when the status is ``JobTickStatus.Failure``
             skip_reason (str): message for why the tick was skipped
+            origin_run_ids (List[str]): The runs originating the job.
         """
-
         _validate_job_tick_args(job_type, status, run_ids, error, skip_reason)
         return super(JobTickData, cls).__new__(
             cls,
@@ -217,48 +237,53 @@ class JobTickData(
             check.opt_list_param(run_keys, "run_keys", of_type=str),
             error,  # validated in _validate_job_tick_args
             skip_reason,  # validated in _validate_job_tick_args
+            cursor=check.opt_str_param(cursor, "cursor"),
+            origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
         )
 
     def with_status(self, status, error=None, timestamp=None):
-        check.inst_param(status, "status", JobTickStatus)
         return JobTickData(
-            job_origin_id=self.job_origin_id,
-            job_name=self.job_name,
-            job_type=self.job_type,
-            status=status,
-            timestamp=timestamp if timestamp is not None else self.timestamp,
-            run_ids=self.run_ids,
-            run_keys=self.run_keys,
-            error=error if error is not None else self.error,
-            skip_reason=self.skip_reason,
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "status": status,
+                    "timestamp": timestamp if timestamp is not None else self.timestamp,
+                    "error": error if error is not None else self.error,
+                },
+            )
         )
 
     def with_run(self, run_id, run_key=None):
         check.str_param(run_id, "run_id")
         return JobTickData(
-            job_origin_id=self.job_origin_id,
-            job_name=self.job_name,
-            job_type=self.job_type,
-            status=self.status,
-            timestamp=self.timestamp,
-            run_ids=[*self.run_ids, run_id],
-            run_keys=[*self.run_keys, run_key] if run_key else self.run_keys,
-            error=self.error,
-            skip_reason=self.skip_reason,
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "run_ids": [*self.run_ids, run_id],
+                    "run_keys": [*self.run_keys, run_key] if run_key else self.run_keys,
+                },
+            )
         )
 
     def with_reason(self, skip_reason):
-        check.opt_str_param(skip_reason, "skip_reason")
         return JobTickData(
-            job_origin_id=self.job_origin_id,
-            job_name=self.job_name,
-            job_type=self.job_type,
-            status=self.status,
-            timestamp=self.timestamp,
-            run_ids=self.run_ids,
-            run_keys=self.run_keys,
-            error=self.error,
-            skip_reason=skip_reason,
+            **merge_dicts(
+                self._asdict(), {"skip_reason": check.opt_str_param(skip_reason, "skip_reason")}
+            )
+        )
+
+    def with_cursor(self, cursor):
+        return JobTickData(
+            **merge_dicts(self._asdict(), {"cursor": check.opt_str_param(cursor, "cursor")})
+        )
+
+    def with_origin_run(self, origin_run_id):
+        check.str_param(origin_run_id, "origin_run_id")
+        return JobTickData(
+            **merge_dicts(
+                self._asdict(),
+                {"origin_run_ids": [*self.origin_run_ids, origin_run_id]},
+            )
         )
 
 

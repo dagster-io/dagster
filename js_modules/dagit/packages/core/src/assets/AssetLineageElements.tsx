@@ -1,6 +1,4 @@
-import {Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {gql} from '@apollo/client';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,15 +6,15 @@ import {Link} from 'react-router-dom';
 import {Timestamp} from '../app/time/Timestamp';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
-import {Group} from '../ui/Group';
+import {Tooltip} from '../ui/Tooltip';
 
-import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from './types/AssetQuery';
+import {AssetLineageFragment} from './types/AssetLineageFragment';
 
 const AssetLineageInfoElement: React.FC<{
-  lineage_info: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage;
+  lineage_info: AssetLineageFragment;
   timestamp: string;
 }> = ({lineage_info, timestamp}) => {
-  const partition_list_label = lineage_info.partitions.length == 1 ? 'Partition' : 'Partitions';
+  const partition_list_label = lineage_info.partitions.length === 1 ? 'Partition' : 'Partitions';
   const partition_list_str = lineage_info.partitions
     .map((partition) => `"${partition}"`)
     .join(', ');
@@ -25,7 +23,7 @@ const AssetLineageInfoElement: React.FC<{
     .join('/')}?${qs.stringify({asOf: timestamp})}`;
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Box margin={{bottom: 4}}>
       {lineage_info.partitions.length > 0
         ? `${partition_list_label} ${partition_list_str} of `
         : ''}
@@ -45,35 +43,34 @@ const AssetLineageInfoElement: React.FC<{
         <Link to={to}>
           <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
             {lineage_info.assetKey.path
-              .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-              .reduce((prev, curr, i) => [
-                prev,
-                <Box key={`separator_${i}`} padding={{horizontal: 2}}>
-                  <Icon
-                    icon={IconNames.CHEVRON_RIGHT}
-                    iconSize={11}
-                    style={{position: 'relative', top: '-1px'}}
-                  />
-                </Box>,
-                curr,
-              ])}
+              .map((p, i) => <span key={i}>{p}</span>)
+              .reduce(
+                (accum, curr, ii) => [
+                  ...accum,
+                  ii > 0 ? (
+                    <React.Fragment key={`${ii}-space`}>&nbsp;{'>'}&nbsp;</React.Fragment>
+                  ) : null,
+                  curr,
+                ],
+                [] as React.ReactNode[],
+              )}
           </Box>
         </Link>
       </Tooltip>
-    </Group>
+    </Box>
   );
 };
 
 const MAX_COLLAPSED = 5;
 
 export const AssetLineageElements: React.FunctionComponent<{
-  elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[];
+  elements: AssetLineageFragment[];
   timestamp: string;
 }> = ({elements, timestamp}) => {
   const [collapsed, setCollapsed] = React.useState(true);
 
   return (
-    <Group direction="column" spacing={4}>
+    <div>
       {elements.length > MAX_COLLAPSED && (
         <ButtonLink onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? 'Show More' : 'Show Less'}
@@ -82,6 +79,15 @@ export const AssetLineageElements: React.FunctionComponent<{
       {(collapsed ? elements.slice(elements.length - MAX_COLLAPSED) : elements).map((info, idx) => (
         <AssetLineageInfoElement key={idx} lineage_info={info} timestamp={timestamp} />
       ))}
-    </Group>
+    </div>
   );
 };
+
+export const ASSET_LINEAGE_FRAGMENT = gql`
+  fragment AssetLineageFragment on AssetLineageInfo {
+    assetKey {
+      path
+    }
+    partitions
+  }
+`;

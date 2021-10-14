@@ -14,7 +14,19 @@ import threading
 from collections import namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Generator, Generic, Iterator, Optional, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    ContextManager,
+    Generator,
+    Generic,
+    Iterator,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from warnings import warn
 
 import _thread as thread
@@ -24,6 +36,7 @@ from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvaria
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 
+from .alert import make_email_on_pipeline_failure_sensor, make_email_on_run_failure_sensor
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -356,12 +369,16 @@ def start_termination_thread(termination_event):
     int_thread.start()
 
 
+T = TypeVar("T")
+
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
-def iterate_with_context(context, iterator):
+def iterate_with_context(
+    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps
-        with context():
+        with context_fn():
             try:
                 next_output = next(iterator)
             except StopIteration:

@@ -1,11 +1,11 @@
 from typing import Any, Dict, Set
 
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
-from dagster.core.definitions.dependency import Solid
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
-from dagster.core.execution.context.system import PlanExecutionContext
+from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
@@ -20,6 +20,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: Set[str],
         solid_name: str,
+        solid_handle: NodeHandle,
         solid_config: Any = None,
     ):
         self._pipeline_context = check.inst_param(
@@ -30,6 +31,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
         self.solid_name = check.str_param(solid_name, "solid_name")
+        self.solid_handle = check.inst_param(solid_handle, "solid_handle", NodeHandle)
         self._solid_config = solid_config
 
     def has_tag(self, key: str) -> bool:
@@ -67,9 +69,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.run_config
 
     @property
-    def environment_config(self) -> EnvironmentConfig:
-        """:class:`dagster.EnvironmentConfig`: The environment_config for the context"""
-        return self._pipeline_context.environment_config
+    def resolved_run_config(self) -> ResolvedRunConfig:
+        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context"""
+        return self._pipeline_context.resolved_run_config
 
     @property
     def logging_tags(self) -> Dict[str, str]:
@@ -119,13 +121,13 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self.pipeline_def.solid_def_named(self.solid_name)
 
     @property
-    def solid(self) -> Solid:
-        """:class:`dagster.Solid`: The solid for the context.
+    def solid(self) -> Node:
+        """:class:`dagster.Node`: The solid for the context.
 
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         """
-        return self.pipeline_def.solid_named(self.solid_name)
+        return self.pipeline_def.get_solid(self.solid_handle)
 
     @property
     def solid_config(self) -> Any:
@@ -134,9 +136,27 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         if self._solid_config:
             return self._solid_config
 
-        solid_config = self.environment_config.solids.get(self.solid_name)
+        solid_config = self.resolved_run_config.solids.get(self.solid_name)
         return solid_config.config if solid_config else None
 
 
 class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
-    pass
+    def __init__(
+        self,
+        pipeline_context: PlanExecutionContext,
+        pipeline_def: PipelineDefinition,
+        resource_keys_to_init: Set[str],
+        solid_name: str,
+        step_context: StepExecutionContext,
+        solid_handle: NodeHandle,
+        solid_config: Any = None,
+    ):
+        self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
+        super().__init__(
+            pipeline_context,
+            pipeline_def,
+            resource_keys_to_init,
+            solid_name,
+            solid_handle,
+            solid_config,
+        )

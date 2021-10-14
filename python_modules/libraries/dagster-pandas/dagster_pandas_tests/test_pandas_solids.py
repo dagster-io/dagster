@@ -1,62 +1,50 @@
 import datetime
 
 import pandas as pd
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    check,
-    execute_pipeline,
-    execute_solid,
-    lambda_solid,
-    solid,
-)
+from dagster import DependencyDefinition, GraphDefinition, In, Out, check, graph, op
 from dagster_pandas import DataFrame
 
 
-def get_solid_result_value(solid_inst):
-    pipe = PipelineDefinition(
-        solid_defs=[load_num_csv_solid("load_csv"), solid_inst],
+def get_op_result_value(op_inst):
+    single_op_graph = GraphDefinition(
         name="test",
+        description=None,
+        node_defs=[load_num_csv_op("load_csv"), op_inst],
         dependencies={
-            solid_inst.name: {
-                list(solid_inst.input_dict.values())[0].name: DependencyDefinition("load_csv")
+            op_inst.name: {
+                list(op_inst.input_dict.values())[0].name: DependencyDefinition("load_csv")
             }
         },
+        input_mappings=None,
+        output_mappings=None,
+        config=None,
     )
 
-    pipeline_result = execute_pipeline(pipe)
+    result = single_op_graph.execute_in_process()
 
-    execution_result = pipeline_result.result_for_solid(solid_inst.name)
-
-    return execution_result.output_value()
+    return result.output_for_node(op_inst.name)
 
 
-def get_num_csv_environment(solids_config):
-    return {"solids": solids_config}
+def get_num_csv_environment(ops_config):
+    return {"ops": ops_config}
 
 
-@solid(
-    input_defs=[InputDefinition("num_csv", DataFrame)], output_defs=[OutputDefinition(DataFrame)]
-)
+@op(ins={"num_csv": In(DataFrame)}, out=Out(DataFrame))
 def sum_table(_, num_csv):
     check.inst_param(num_csv, "num_csv", pd.DataFrame)
     num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
     return num_csv
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("sum_df", DataFrame)], output_def=OutputDefinition(DataFrame)
-)
+@op(ins={"sum_df": In(DataFrame)}, out=Out(DataFrame))
 def sum_sq_table(sum_df):
     sum_df["sum_squared"] = sum_df["sum"] * sum_df["sum"]
     return sum_df
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("sum_table_renamed", DataFrame)],
-    output_def=OutputDefinition(DataFrame),
+@op(
+    ins={"sum_table_renamed": In(DataFrame)},
+    out=Out(DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed["sum_squared"] = sum_table_renamed["sum"] * sum_table_renamed["sum"]
@@ -64,55 +52,41 @@ def sum_sq_table_renamed_input(sum_table_renamed):
 
 
 def test_pandas_csv_in_memory():
-    df = get_solid_result_value(sum_table)
+    df = get_op_result_value(sum_table)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7]}
 
 
-def _sum_only_pipeline():
-    return PipelineDefinition(solid_defs=[sum_table, sum_sq_table], name="test", dependencies={})
-
-
-def test_two_input_solid():
-    @solid(
-        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)]
-    )
-    def two_input_solid(_, num_csv1, num_csv2):
+def test_two_input_op():
+    @op(ins={"num_csv1": In(DataFrame), "num_csv2": In(DataFrame)})
+    def two_input_op(_, num_csv1, num_csv2):
         check.inst_param(num_csv1, "num_csv1", pd.DataFrame)
         check.inst_param(num_csv2, "num_csv2", pd.DataFrame)
         num_csv1["sum"] = num_csv1["num1"] + num_csv2["num2"]
         return num_csv1
 
-    pipe = PipelineDefinition(
-        solid_defs=[
-            load_num_csv_solid("load_csv1"),
-            load_num_csv_solid("load_csv2"),
-            two_input_solid,
-        ],
-        name="test",
-        dependencies={
-            "two_input_solid": {
-                "num_csv1": DependencyDefinition("load_csv1"),
-                "num_csv2": DependencyDefinition("load_csv2"),
-            }
-        },
-    )
+    load_csv1 = load_num_csv_op("load_csv1")
+    load_csv2 = load_num_csv_op("load_csv2")
 
-    pipeline_result = execute_pipeline(pipe)
-    assert pipeline_result.success
+    @graph
+    def two_input():
+        two_input_op(load_csv1(), load_csv2())
 
-    df = pipeline_result.result_for_solid("two_input_solid").output_value()
+    result = two_input.execute_in_process()
+    assert result.success
+
+    df = result.output_for_node("two_input_op")
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7]}
 
 
-def test_no_compute_solid():
-    @solid(input_defs=[InputDefinition("num_csv", DataFrame)])
+def test_no_compute_op():
+    @op(ins={"num_csv": In(DataFrame)})
     def num_table(_, num_csv):
         return num_csv
 
-    df = get_solid_result_value(num_table)
+    df = get_op_result_value(num_table)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
 
 
@@ -128,16 +102,8 @@ def create_diamond_deps():
     }
 
 
-def _result_for_solid(results, name):
-    for result in results:
-        if result.name == name:
-            return result
-
-    check.failed("could not find name")
-
-
-def load_num_csv_solid(name):
-    @lambda_solid(name=name)
+def load_num_csv_op(name):
+    @op(name=name)
     def _return_num_csv():
         return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
@@ -145,24 +111,18 @@ def load_num_csv_solid(name):
 
 
 def test_pandas_multiple_inputs():
-    @solid(
-        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)]
-    )
+    @op(ins={"num_csv1": In(DataFrame), "num_csv2": In(DataFrame)})
     def double_sum(_, num_csv1, num_csv2):
         return num_csv1 + num_csv2
 
-    pipe = PipelineDefinition(
-        solid_defs=[load_num_csv_solid("load_one"), load_num_csv_solid("load_two"), double_sum],
-        name="test",
-        dependencies={
-            "double_sum": {
-                "num_csv1": DependencyDefinition("load_one"),
-                "num_csv2": DependencyDefinition("load_two"),
-            }
-        },
-    )
+    load_one = load_num_csv_op("load_one")
+    load_two = load_num_csv_op("load_two")
 
-    output_df = execute_pipeline(pipe).result_for_solid("double_sum").output_value()
+    @graph
+    def multiple_inputs():
+        double_sum(load_one(), load_two())
+
+    output_df = multiple_inputs.execute_in_process().output_for_node("double_sum")
 
     assert not output_df.empty
 
@@ -170,29 +130,25 @@ def test_pandas_multiple_inputs():
 
 
 def test_rename_input():
-    result = execute_pipeline(
-        PipelineDefinition(
-            solid_defs=[load_num_csv_solid("load_csv"), sum_table, sum_sq_table_renamed_input],
-            name="test",
-            dependencies={
-                "sum_table": {"num_csv": DependencyDefinition("load_csv")},
-                sum_sq_table_renamed_input.name: {
-                    "sum_table_renamed": DependencyDefinition(sum_table.name)
-                },
-            },
-        )
-    )
+    load_csv = load_num_csv_op("load_csv")
+
+    @graph
+    def rename_input():
+        sum_sq_table_renamed_input(sum_table(load_csv()))
+
+    result = rename_input.execute_in_process()
 
     assert result.success
 
     expected = {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7], "sum_squared": [9, 49]}
-    solid_result = result.result_for_solid("sum_sq_table_renamed_input")
-    assert solid_result.output_value().to_dict("list") == expected
+    op_output = result.output_for_node("sum_sq_table_renamed_input")
+    assert op_output.to_dict("list") == expected
 
 
 def test_date_column():
-    @lambda_solid(output_def=OutputDefinition(DataFrame))
+    @op(out=Out(DataFrame))
     def dataframe_constant():
         return pd.DataFrame([{datetime.date(2019, 1, 1): 0}])
 
-    assert execute_solid(dataframe_constant).success
+    df = dataframe_constant()
+    assert isinstance(df, pd.DataFrame)

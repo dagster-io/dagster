@@ -4,71 +4,52 @@ order to do metaprogramming and reflection on the built-in typing module"""
 import typing
 
 from dagster import check
-
-
-def _get_origin(ttype):
-    return getattr(ttype, "__origin__", None)
+from dagster.seven.typing import get_args, get_origin
 
 
 def is_closed_python_optional_type(ttype):
     # Optional[X] is Union[X, NoneType] which is what we match against here
-    origin = _get_origin(ttype)
-    return origin == typing.Union and len(ttype.__args__) == 2 and ttype.__args__[1] == type(None)
+    origin = get_origin(ttype)
+    args = get_args(ttype)
+    return origin is typing.Union and len(args) == 2 and args[1] is type(None)
 
 
 def is_python_dict_type(ttype):
-    if ttype is dict or ttype is typing.Dict:
-        return True
-    if ttype is None:
-        return False
-
-    origin = _get_origin(ttype)
-    # py37 origin is typing.Dict, pre-37 is dict
-    return origin == typing.Dict or origin == dict
+    origin = get_origin(ttype)
+    return ttype is dict or origin is dict
 
 
 def is_closed_python_list_type(ttype):
-    if ttype is None:
-        return False
-    if ttype is typing.List:
-        return False
-    if not hasattr(ttype, "__args__"):
-        return False
-    if ttype.__args__ is None or len(ttype.__args__) != 1:
-        return False
+    origin = get_origin(ttype)
+    args = get_args(ttype)
 
-    origin = _get_origin(ttype)
-    return origin == typing.List or origin is list
+    return (
+        origin is list
+        and args != ()
+        # py3.7 compat
+        and type(args[0]) != typing.TypeVar
+    )
 
 
 def is_closed_python_dict_type(ttype):
-    """
-
-    A "closed" generic type has all of its type parameters parameterized
+    """A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
 
     e.g.
 
-    Returns true for typing.Dict[int, str] but not for typing.Dict
+    Returns true for typing.Dict[int, str] but not for typing.Dict.
+
+    Tests document current behavior (not recursive) -- i.e., typing.Dict[str, Dict] returns True.
     """
-    if ttype is None:
-        return False
-    if ttype is typing.Dict:
-        return False
-    if not hasattr(ttype, "__args__"):
-        return False
-    if ttype.__args__ is None or len(ttype.__args__) != 2:
-        return False
+    origin = get_origin(ttype)
+    args = get_args(ttype)
 
-    key_type, value_type = ttype.__args__
-    origin = _get_origin(ttype)
-
-    # when it is a raw typing.Dict the arguments are instances of TypeVars
     return (
-        # py37 origin is typing.Dict, pre-37 is dict
-        (origin == typing.Dict or origin is dict)
-        and not isinstance(key_type, typing.TypeVar)
-        and not isinstance(value_type, typing.TypeVar)
+        origin is dict
+        and args != ()
+        # py3.7 compat
+        and type(args[0]) != typing.TypeVar
+        and type(args[1]) != typing.TypeVar
     )
 
 
@@ -81,17 +62,10 @@ def is_closed_python_tuple_type(ttype):
 
     Returns true for Tuple[int] or Tuple[str, int] but false for Tuple or tuple
     """
-    if ttype is None:
-        return False
-    if ttype is typing.Tuple:
-        return False
-    if not hasattr(ttype, "__args__"):
-        return False
-    if ttype.__args__ is None:
-        return False
+    origin = get_origin(ttype)
+    args = get_args(ttype)
 
-    origin = _get_origin(ttype)
-    return origin == typing.Tuple or origin is tuple
+    return origin is tuple and args != ()
 
 
 def is_closed_python_set_type(ttype):
@@ -103,19 +77,15 @@ def is_closed_python_set_type(ttype):
 
     Returns true for Set[string] but false for Set or set
     """
-    if ttype is None:
-        return False
-    if ttype is typing.Set:
-        return False
-    if not hasattr(ttype, "__args__"):
-        return False
-    if ttype.__args__ is None or len(ttype.__args__) != 1:
-        return False
+    origin = get_origin(ttype)
+    args = get_args(ttype)
 
-    inner_type = ttype.__args__[0]
-    origin = _get_origin(ttype)
-
-    return (origin == typing.Set or origin is set) and not isinstance(inner_type, typing.TypeVar)
+    return (
+        origin is set
+        and args != ()
+        # py3.7 compat
+        and type(args[0]) != typing.TypeVar
+    )
 
 
 def get_optional_inner_type(ttype):
@@ -123,27 +93,27 @@ def get_optional_inner_type(ttype):
         is_closed_python_optional_type(ttype), "type must pass is_closed_python_optional_type check"
     )
 
-    return ttype.__args__[0]
+    return get_args(ttype)[0]
 
 
 def get_list_inner_type(ttype):
     check.param_invariant(is_closed_python_list_type(ttype), "ttype")
-    return ttype.__args__[0]
+    return get_args(ttype)[0]
 
 
 def get_set_inner_type(ttype):
     check.param_invariant(is_closed_python_set_type(ttype), "ttype")
-    return ttype.__args__[0]
+    return get_args(ttype)[0]
 
 
 def get_tuple_type_params(ttype):
     check.param_invariant(is_closed_python_tuple_type(ttype), "ttype")
-    return ttype.__args__
+    return get_args(ttype)
 
 
 def get_dict_key_value_types(ttype):
     check.param_invariant(is_closed_python_dict_type(ttype), "ttype")
-    return (ttype.__args__[0], ttype.__args__[1])
+    return get_args(ttype)
 
 
 def is_typing_type(ttype):

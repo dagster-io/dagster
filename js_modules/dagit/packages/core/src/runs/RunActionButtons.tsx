@@ -1,13 +1,14 @@
-import {Button, IconName, Intent} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
+import {IconName, IconWIP} from '../ui/Icon';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -42,7 +43,7 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
         SharedToaster.show({
           message: error.message,
           icon: 'error',
-          intent: Intent.DANGER,
+          intent: 'danger',
         });
       }
     },
@@ -56,14 +57,14 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
   return (
     <>
       {!isFinalStatus ? (
-        <Button
-          icon={IconNames.STOP}
-          small={true}
-          text="Terminate"
+        <ButtonWIP
+          icon={<IconWIP name="cancel" />}
           intent="warning"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
-        />
+        >
+          Terminate
+        </ButtonWIP>
       ) : null}
       <TerminationDialog
         isOpen={showDialog}
@@ -108,6 +109,7 @@ function stepSelectionFromRunTags(
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
+  const {canLaunchPipelineReexecution} = usePermissions();
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);
@@ -116,10 +118,10 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const isFinalStatus = !!doneStatuses.has(run.status);
   const isFailedWithPlan =
     run.executionPlan &&
-    (run.status === PipelineRunStatus.FAILURE || run.status == PipelineRunStatus.CANCELED);
+    (run.status === PipelineRunStatus.FAILURE || run.status === PipelineRunStatus.CANCELED);
 
   const full: LaunchButtonConfiguration = {
-    icon: 'repeat',
+    icon: 'cached',
     scope: '*',
     title: 'All Steps in Root Run',
     tooltip: 'Re-execute the pipeline run from scratch',
@@ -128,7 +130,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const same: LaunchButtonConfiguration = {
-    icon: 'select',
+    icon: 'linear_scale',
     scope: selectionOfCurrentRun?.query || '*',
     title: 'Same Steps',
     disabled:
@@ -147,7 +149,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const selected: LaunchButtonConfiguration = {
-    icon: 'select',
+    icon: 'op',
     scope: selection.query,
     title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
     disabled: !selection.present || !(selection.finished || selection.failed),
@@ -165,7 +167,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const fromSelected: LaunchButtonConfiguration = {
-    icon: 'inheritance',
+    icon: 'arrow_forward',
     title: 'From Selected',
     disabled: !isFinalStatus || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
@@ -190,7 +192,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const fromFailure: LaunchButtonConfiguration = {
-    icon: 'redo',
+    icon: 'arrow_forward',
     title: 'From Failure',
     disabled: !isFailedWithPlan,
     tooltip: !isFailedWithPlan
@@ -215,18 +217,24 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     : null;
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
+  const tooltip = () => {
+    if (pipelineError?.tooltip) {
+      return pipelineError?.tooltip;
+    }
+    return canLaunchPipelineReexecution ? undefined : DISABLED_MESSAGE;
+  };
+
   return (
     <Group direction="row" spacing={8}>
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
-          small={true}
           primary={primary}
           options={options}
           title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
-          tooltip={pipelineError?.tooltip}
+          tooltip={tooltip()}
           icon={pipelineError?.icon}
-          disabled={pipelineError?.disabled}
+          disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
       <CancelRunButton run={run} isFinalStatus={isFinalStatus} />
@@ -246,7 +254,7 @@ function usePipelineAvailabilityErrorForRun(
 
   if (run?.pipeline.__typename === 'UnknownPipeline') {
     return {
-      icon: IconNames.ERROR,
+      icon: 'error',
       tooltip: `"${run.pipeline.name}" could not be found.`,
       disabled: true,
     };
@@ -255,18 +263,50 @@ function usePipelineAvailabilityErrorForRun(
   if (repoMatch) {
     const {type: matchType} = repoMatch;
 
-    // The run matches the active snapshot ID for the pipeline, so we're safe to execute the run.
-    if (matchType === 'snapshot') {
+    // The run matches the repository and active snapshot ID for the pipeline. This is the best
+    // we can do, so consider it safe to run as-is.
+    if (matchType === 'origin-and-snapshot') {
       return null;
     }
 
-    // A repo was found, but only because the pipeline name matched. The run might not work
-    // as expected.
+    // Beyond this point, we're just trying our best. Warn the user that behavior might not be what
+    // they expect.
+
+    if (matchType === 'origin-only') {
+      // Only the repo is a match.
+      return {
+        icon: 'warning',
+        tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
+        disabled: false,
+      };
+    }
+
+    if (matchType === 'snapshot-only') {
+      // Only the snapshot ID matched, but not the repo.
+      return {
+        icon: 'warning',
+        tooltip: (
+          <Group direction="column" spacing={4}>
+            <div>{`The pipeline "${run.pipeline.name}" is not in the same repository as the original pipeline run.`}</div>
+            {run.repositoryOrigin ? (
+              <div>
+                Original repository:{' '}
+                <strong>
+                  {run.repositoryOrigin.repositoryName}@
+                  {run.repositoryOrigin.repositoryLocationName}
+                </strong>
+              </div>
+            ) : null}
+          </Group>
+        ),
+        disabled: false,
+      };
+    }
+
+    // Only the pipeline name matched. This could be from any repo in the workspace.
     return {
-      icon: IconNames.WARNING_SIGN,
-      tooltip:
-        `The pipeline "${run.pipeline.name}" in the current repository is` +
-        ` a different version than the original pipeline run.`,
+      icon: 'warning',
+      tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
       disabled: false,
     };
   }
@@ -289,7 +329,7 @@ function usePipelineAvailabilityErrorForRun(
   );
 
   return {
-    icon: IconNames.ERROR,
+    icon: 'error',
     tooltip,
     disabled: true,
   };

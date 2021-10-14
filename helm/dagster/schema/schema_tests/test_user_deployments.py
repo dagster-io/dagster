@@ -4,17 +4,21 @@ from typing import List
 
 import pytest
 from kubernetes.client import models
+from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
+from schema.utils.helm_template import HelmTemplate
 
-from .helm_template import HelmTemplate
 from .utils import create_complex_user_deployment, create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="charts/dagster-user-deployments/templates/deployment-user.yaml",
         model=models.V1Deployment,
     )
@@ -22,7 +26,20 @@ def helm_template() -> HelmTemplate:
 
 @pytest.fixture(name="full_template")
 def full_helm_template() -> HelmTemplate:
-    return HelmTemplate()
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+    )
+
+
+@pytest.fixture(name="subchart_template")
+def subchart_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster/charts/dagster-user-deployments",
+        subchart_paths=[],
+        output="templates/deployment-user.yaml",
+        model=models.V1Deployment,
+    )
 
 
 def assert_user_deployment_template(
@@ -32,13 +49,18 @@ def assert_user_deployment_template(
 
     for template, deployment_values in zip(templates, values.dagsterUserDeployments.deployments):
         # Assert simple stuff
-        assert template.metadata.labels["deployment"] == deployment_values.name
         assert len(template.spec.template.spec.containers) == 1
         assert template.spec.template.spec.containers[0].image == deployment_values.image.name
         assert (
             template.spec.template.spec.containers[0].image_pull_policy
             == deployment_values.image.pullPolicy
         )
+
+        # Assert labels
+        assert template.spec.template.metadata.labels["deployment"] == deployment_values.name
+        if deployment_values.labels:
+            pod_spec_labels = template.spec.template.metadata.labels
+            assert set(deployment_values.labels.items()).issubset(pod_spec_labels.items())
 
         # Assert annotations
         if deployment_values.annotations:
@@ -406,3 +428,108 @@ def test_startup_probe_default_exec(template: HelmTemplate):
         "-p",
         str(deployment.port),
     ]
+
+
+@pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
+def test_user_deployment_default_image_tag_is_chart_version(
+    template: HelmTemplate, chart_version: str
+):
+    helm_values = DagsterHelmValues.construct()
+
+    user_deployments = template.render(helm_values, chart_version=chart_version)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    _, image_tag = image.split(":")
+
+    assert image_tag == chart_version
+
+
+def test_user_deployment_image(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    assert image_name == deployment.image.repository
+    assert image_tag == deployment.image.tag
+
+
+def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
+    image_pull_secrets = [{"name": "super-duper-secret"}]
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        imagePullSecrets=image_pull_secrets,
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+
+    assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]
+
+
+def test_subchart_postgres_password_global_override(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        postgresqlSecretName="postgresql-secret",
+        global_=Global.construct(
+            postgresqlSecretName="global-postgresql-secret",
+        ),
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "global-postgresql-secret"
+
+
+def test_subchart_postgres_password(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        postgresqlSecretName="postgresql-secret",
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "postgresql-secret"
+
+
+def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct()
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "dagster-postgresql-secret"

@@ -12,13 +12,16 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-shell",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for Dagster shell solids.",
+        description="Package for Dagster shell ops.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-shell",
         classifiers=[
             "Programming Language :: Python :: 3.6",
@@ -28,6 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster"],
+        install_requires=[f"dagster{pin}"],
+        extras_require={"test": ["psutil"]},
         zip_safe=False,
     )

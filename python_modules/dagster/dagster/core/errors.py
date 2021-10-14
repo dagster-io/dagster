@@ -116,17 +116,16 @@ class DagsterInvariantViolationError(DagsterError):
     at runtime."""
 
 
-class DagsterNoStepsToExecuteException(DagsterError):
-    """Indicates that a user has attempted to execute a pipeline where every step has been
-    memoized."""
-
-
 class DagsterExecutionStepNotFoundError(DagsterError):
     """Thrown when the user specifies execution step keys that do not exist."""
 
     def __init__(self, *args, **kwargs):
         self.step_keys = check.list_param(kwargs.pop("step_keys"), "step_keys", str)
         super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
+
+
+class DagsterExecutionPlanSnapshotNotFoundError(DagsterError):
+    """Thrown when an expected execution plan snapshot could not be found on a PipelineRun."""
 
 
 class DagsterRunNotFoundError(DagsterError):
@@ -154,7 +153,7 @@ def raise_execution_interrupts():
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
+def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
@@ -178,16 +177,12 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
     """
     check.callable_param(msg_fn, "msg_fn")
     check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
-    control_flow_exceptions = tuple(
-        check.opt_list_param(control_flow_exceptions, "control_flow_exceptions")
-    )
 
     with raise_execution_interrupts():
+        if log_manager:
+            log_manager.begin_python_log_capture()
         try:
             yield
-        except control_flow_exceptions as cf:
-            # A control flow exception has occurred and should be propagated
-            raise cf
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de
@@ -197,6 +192,9 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
             raise error_cls(
                 msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs
             ) from e
+        finally:
+            if log_manager:
+                log_manager.end_python_log_capture()
 
 
 class DagsterUserCodeExecutionError(DagsterError):
@@ -310,6 +308,13 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 
+class DagsterInvalidInvocationError(DagsterError):
+    """
+    Indicates that an error has occurred when a solid has been invoked, but before the actual
+    core compute has been reached.
+    """
+
+
 class DagsterInvalidConfigError(DagsterError):
     """Thrown when provided config is invalid (does not type check against the relevant config
     schema)."""
@@ -420,10 +425,6 @@ class DagsterBackfillFailedError(DagsterError):
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
 
 
-class DagsterScheduleWipeRequired(DagsterError):
-    """Indicates that the user must wipe their stored schedule state."""
-
-
 class DagsterInstanceMigrationRequired(DagsterError):
     """Indicates that the dagster instance must be migrated."""
 
@@ -505,19 +506,23 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterInvalidAssetKey(DagsterError):
-    """ Error raised by invalid asset key """
+    """Error raised by invalid asset key"""
 
 
 class DagsterInvalidEventMetadata(DagsterError):
-    """ Error raised by invalid event metadata parameters """
+    """Error raised by invalid event metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined hook. """
+    """Error raised during the execution of a user-defined hook."""
+
+
+class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
+    """Error raised during the execution of a user-defined run status sensor."""
 
 
 class DagsterImportError(DagsterError):
-    """ Import error raised while importing user-code. """
+    """Import error raised while importing user-code."""
 
 
 class JobError(DagsterUserCodeExecutionError):
@@ -541,4 +546,10 @@ class DagsterHomeNotSetError(DagsterError):
     """
     The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
     without setting DAGSTER_HOME env var.
+    """
+
+
+class DagsterUnknownPartitionError(DagsterError):
+    """
+    The user has tried to access run config for a partition name that does not exist.
     """

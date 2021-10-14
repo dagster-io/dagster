@@ -4,35 +4,16 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ScheduleFragment
 // ====================================================
 
-export interface ScheduleFragment_partitionSet_partitionStatusesOrError_PythonError {
-  __typename: "PythonError";
-}
-
-export interface ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runStatus: PipelineRunStatus | null;
-}
-
-export interface ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses {
-  __typename: "PartitionStatuses";
-  results: ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
-}
-
-export type ScheduleFragment_partitionSet_partitionStatusesOrError = ScheduleFragment_partitionSet_partitionStatusesOrError_PythonError | ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses;
-
 export interface ScheduleFragment_partitionSet {
   __typename: "PartitionSet";
   id: string;
   name: string;
-  partitionStatusesOrError: ScheduleFragment_partitionSet_partitionStatusesOrError;
 }
 
 export interface ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -49,17 +30,17 @@ export interface ScheduleFragment_scheduleState_repositoryOrigin {
   repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface ScheduleFragment_scheduleState_jobSpecificData_SensorJobData {
-  __typename: "SensorJobData";
+export interface ScheduleFragment_scheduleState_typeSpecificData_SensorData {
+  __typename: "SensorData";
   lastRunKey: string | null;
 }
 
-export interface ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData {
-  __typename: "ScheduleJobData";
+export interface ScheduleFragment_scheduleState_typeSpecificData_ScheduleData {
+  __typename: "ScheduleData";
   cronSchedule: string;
 }
 
-export type ScheduleFragment_scheduleState_jobSpecificData = ScheduleFragment_scheduleState_jobSpecificData_SensorJobData | ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData;
+export type ScheduleFragment_scheduleState_typeSpecificData = ScheduleFragment_scheduleState_typeSpecificData_SensorData | ScheduleFragment_scheduleState_typeSpecificData_ScheduleData;
 
 export interface ScheduleFragment_scheduleState_runs {
   __typename: "PipelineRun";
@@ -82,9 +63,9 @@ export interface ScheduleFragment_scheduleState_ticks_error {
 }
 
 export interface ScheduleFragment_scheduleState_ticks {
-  __typename: "JobTick";
+  __typename: "InstigationTick";
   id: string;
-  status: JobTickStatus;
+  status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -92,25 +73,25 @@ export interface ScheduleFragment_scheduleState_ticks {
 }
 
 export interface ScheduleFragment_scheduleState {
-  __typename: "JobState";
+  __typename: "InstigationState";
   id: string;
   name: string;
-  jobType: JobType;
-  status: JobStatus;
+  instigationType: InstigationType;
+  status: InstigationStatus;
   repositoryOrigin: ScheduleFragment_scheduleState_repositoryOrigin;
-  jobSpecificData: ScheduleFragment_scheduleState_jobSpecificData | null;
+  typeSpecificData: ScheduleFragment_scheduleState_typeSpecificData | null;
   runs: ScheduleFragment_scheduleState_runs[];
   ticks: ScheduleFragment_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface ScheduleFragment_futureTicks_results {
-  __typename: "FutureJobTick";
+  __typename: "FutureInstigationTick";
   timestamp: number;
 }
 
 export interface ScheduleFragment_futureTicks {
-  __typename: "FutureJobTicks";
+  __typename: "FutureInstigationTicks";
   results: ScheduleFragment_futureTicks_results[];
 }
 

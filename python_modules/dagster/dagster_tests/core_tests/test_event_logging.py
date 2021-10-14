@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, lambda_solid, pipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord, construct_event_logger
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.loggers import colored_console_logger
 
 
@@ -31,7 +31,7 @@ def test_empty_pipeline():
     events = defaultdict(list)
 
     def _event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 

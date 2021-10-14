@@ -10,6 +10,7 @@ from .errors import (
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
     GraphenePythonError,
+    GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
 from .pipelines.config import GraphenePipelineConfigValidationInvalid
@@ -21,6 +22,7 @@ pipeline_execution_error_types = (
     GraphenePipelineConfigValidationInvalid,
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
+    GrapheneUnauthorizedError,
     GraphenePythonError,
 ) + create_execution_params_error_types
 
@@ -51,8 +53,21 @@ class GrapheneCancelBackfillSuccess(graphene.ObjectType):
 
 class GrapheneCancelBackfillResult(graphene.Union):
     class Meta:
-        types = (GrapheneCancelBackfillSuccess, GraphenePythonError)
+        types = (GrapheneCancelBackfillSuccess, GrapheneUnauthorizedError, GraphenePythonError)
         name = "CancelBackfillResult"
+
+
+class GrapheneResumeBackfillSuccess(graphene.ObjectType):
+    backfill_id = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ResumeBackfillSuccess"
+
+
+class GrapheneResumeBackfillResult(graphene.Union):
+    class Meta:
+        types = (GrapheneResumeBackfillSuccess, GrapheneUnauthorizedError, GraphenePythonError)
+        name = "ResumeBackfillResult"
 
 
 class GrapheneBulkActionStatus(graphene.Enum):

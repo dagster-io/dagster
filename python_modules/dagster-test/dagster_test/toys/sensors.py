@@ -1,12 +1,23 @@
 import os
 
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
+from dagster.core.definitions.decorators.sensor import asset_sensor
+from dagster.core.definitions.pipeline_sensor import (
+    PipelineFailureSensorContext,
+    pipeline_failure_sensor,
+)
+from slack_sdk import WebClient
 
 
-def get_directory_files(directory_name):
+def get_directory_files(directory_name, since=None):
     check.str_param(directory_name, "directory_name")
     if not os.path.isdir(directory_name):
         return []
+
+    try:
+        since = float(since)
+    except (TypeError, ValueError):
+        since = None
 
     files = []
     for filename in os.listdir(directory_name):
@@ -14,7 +25,8 @@ def get_directory_files(directory_name):
         if not os.path.isfile(filepath):
             continue
         fstats = os.stat(filepath)
-        files.append((filename, fstats.st_mtime))
+        if not since or fstats.st_mtime > since:
+            files.append((filename, fstats.st_mtime))
 
     return files
 
@@ -24,7 +36,7 @@ def get_toys_sensors():
     directory_name = os.environ.get("DAGSTER_TOY_SENSOR_DIRECTORY")
 
     @sensor(pipeline_name="log_file_pipeline")
-    def toy_file_sensor(_):
+    def toy_file_sensor(context):
         if not directory_name:
             yield SkipReason(
                 "No directory specified at environment variable `DAGSTER_TOY_SENSOR_DIRECTORY`"
@@ -35,9 +47,9 @@ def get_toys_sensors():
             yield SkipReason(f"Directory {directory_name} not found")
             return
 
-        directory_files = get_directory_files(directory_name)
+        directory_files = get_directory_files(directory_name, context.cursor)
         if not directory_files:
-            yield SkipReason(f"No files found in {directory_name}")
+            yield SkipReason(f"No new files found in {directory_name} (after {context.cursor})")
             return
 
         for filename, mtime in directory_files:
@@ -49,29 +61,6 @@ def get_toys_sensors():
                     }
                 },
             )
-
-    @sensor(pipeline_name="log_asset_pipeline")
-    def toy_asset_sensor(context):
-        events = context.instance.events_for_asset_key(
-            AssetKey(["model"]), after_cursor=context.last_run_key, ascending=False, limit=1
-        )
-
-        if not events:
-            return
-
-        record_id, event = events[0]  # take the most recent materialization
-        from_pipeline = event.pipeline_name
-
-        yield RunRequest(
-            run_key=str(record_id),
-            run_config={
-                "solids": {
-                    "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": from_pipeline}
-                    }
-                }
-            },
-        )
 
     bucket = os.environ.get("DAGSTER_TOY_SENSOR_S3_BUCKET")
 
@@ -97,4 +86,45 @@ def get_toys_sensors():
                 },
             )
 
-    return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor]
+    @pipeline_failure_sensor(pipeline_selection=["error_monster", "unreliable_pipeline"])
+    def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
+
+        base_url = "http://localhost:3000"
+
+        slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+
+        run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
+        channel = "#yuhan-test"
+        message = "\n".join(
+            [
+                f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+                f"error: {context.failure_event.message}",
+                f"mode: {context.pipeline_run.mode}",
+                f"run_page_url: {run_page_url}",
+            ]
+        )
+
+        slack_client.chat_postMessage(
+            channel=channel,
+            blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
+        )
+
+    @asset_sensor(asset_key=AssetKey("model"), pipeline_name="log_asset_pipeline")
+    def toy_asset_sensor(context, asset_event):
+        yield RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "solids": {
+                    "read_materialization": {
+                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
+                    }
+                }
+            },
+        )
+
+    return [
+        toy_file_sensor,
+        toy_asset_sensor,
+        toy_s3_sensor,
+        custom_slack_on_pipeline_failure,
+    ]

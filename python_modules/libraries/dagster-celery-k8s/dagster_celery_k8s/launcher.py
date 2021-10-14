@@ -6,9 +6,8 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -25,13 +24,13 @@ from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
-    """In contrast to the :py:class:`K8sRunLauncher`, which launches pipeline runs as single K8s
+    """In contrast to the :py:class:`K8sRunLauncher`, which launches dagster runs as single K8s
     Jobs, this run launcher is intended for use in concert with
     :py:func:`dagster_celery_k8s.celery_k8s_job_executor`.
 
     With this run launcher, execution is delegated to:
 
-        1. A run worker Kubernetes Job, which traverses the pipeline run execution plan and
+        1. A run worker Kubernetes Job, which traverses the dagster run execution plan and
            submits steps to Celery queues for execution;
         2. The step executions which are submitted to Celery queues are picked up by Celery workers,
            and each step execution spawns a step execution Kubernetes Job. See the implementation
@@ -107,7 +106,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
+        self._fixed_batch_api = k8s_client_batch_api
 
         self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
@@ -122,6 +121,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
         self.retries = RetryMode.from_config(retries)
         super().__init__()
+
+    @property
+    def _batch_api(self):
+        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 
     @classmethod
     def config_type(cls):
@@ -148,9 +151,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
@@ -159,7 +161,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        pipeline_origin = external_pipeline.get_python_origin()
+        pipeline_origin = context.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_image = repository_origin.container_image
@@ -188,7 +190,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
             job_image = job_image_from_executor_config
 
-        env_vars = {"DAGSTER_CURRENT_IMAGE": job_image}
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,
             instance_config_map=self.instance_config_map,
@@ -199,6 +200,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=exc_config.get("service_account_name"),
             env_config_maps=exc_config.get("env_config_maps"),
             env_secrets=exc_config.get("env_secrets"),
+            volume_mounts=exc_config.get("volume_mounts"),
+            volumes=exc_config.get("volumes"),
         )
 
         self._instance.add_run_tags(
@@ -232,9 +235,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_namespace = exc_config.get("job_namespace")
 
-        self._batch_api.create_namespaced_job(body=job, namespace=job_namespace)
         self._instance.report_engine_event(
-            "Kubernetes run worker job launched",
+            "Creating Kubernetes run worker job",
             run,
             EngineEventData(
                 [
@@ -245,7 +247,20 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
-        return run
+
+        self._batch_api.create_namespaced_job(body=job, namespace=job_namespace)
+        self._instance.report_engine_event(
+            "Kubernetes run worker job created",
+            run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                ]
+            ),
+            cls=self.__class__,
+        )
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
@@ -270,7 +285,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate pipeline: can_terminate returned {}.".format(
+                message="Unable to terminate dagster job: can_terminate returned {}.".format(
                     can_terminate
                 ),
                 pipeline_run=run,
@@ -288,13 +303,13 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             termination_result = delete_job(job_name=job_name, namespace=job_namespace)
             if termination_result:
                 self._instance.report_engine_event(
-                    message="Pipeline was terminated successfully.",
+                    message="Dagster Job was terminated successfully.",
                     pipeline_run=run,
                     cls=self.__class__,
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Pipeline was not terminated successfully; delete_job returned {}".format(
+                    message="Dagster Job was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
                     pipeline_run=run,
@@ -303,7 +318,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             return termination_result
         except Exception:  # pylint: disable=broad-except
             self._instance.report_engine_event(
-                message="Pipeline was not terminated successfully; encountered error in delete_job",
+                message="Dagster Job was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())

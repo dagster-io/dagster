@@ -3,7 +3,7 @@ import json
 import pytest
 from dagit import app
 from dagster import DagsterInstance
-from dagster.cli.workspace import get_workspace_from_kwargs
+from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.test_utils import instance_for_test
 
 SMOKE_TEST_QUERY = """
@@ -30,12 +30,15 @@ SMOKE_TEST_QUERY = """
     [DagsterInstance.ephemeral, instance_for_test],
 )
 def test_smoke_app(gen_instance):
-    with get_workspace_from_kwargs(
-        dict(module_name="dagit_tests.toy.bar_repo", definition="bar")
-    ) as workspace:
+    with gen_instance() as instance:
+        with get_workspace_process_context_from_kwargs(
+            instance,
+            version="",
+            read_only=False,
+            kwargs=dict(module_name="dagit_tests.toy.bar_repo", definition="bar"),
+        ) as workspace_process_context:
 
-        with gen_instance() as instance:
-            flask_app = app.create_app_from_workspace(workspace, instance)
+            flask_app = app.create_app_from_workspace_process_context(workspace_process_context)
             client = flask_app.test_client()
 
             result = client.post(
@@ -56,7 +59,7 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert data["errors"][0]["message"] == "Must provide query string."
 
-            result = client.get("/dagit/notebook?path=foo.bar")
+            result = client.get("/dagit/notebook?path=foo.bar&repoLocName=foo_repo")
             assert result.status_code == 400
             assert result.data.decode("utf-8") == "Invalid Path"
 
@@ -66,12 +69,10 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert "must not have a sub selection" in data["errors"][0]["message"]
 
-            # Missing routes return the index.html file of the Dagit react app, so the user
+            # Missing routes redirect to the index.html file of the Dagit react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.
             result = client.get("static/foo/bar")
             assert result.status_code == 200
-            assert "You need to enable JavaScript to run this app." in result.data.decode("utf-8")
 
             result = client.get("pipelines/foo")
             assert result.status_code == 200
-            assert "You need to enable JavaScript to run this app." in result.data.decode("utf-8")

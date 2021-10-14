@@ -2,6 +2,8 @@ import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
@@ -20,20 +22,36 @@ import {
   PartitionSetNamesQueryVariables,
 } from './types/PartitionSetNamesQuery';
 
+interface PaginationState {
+  cursorStack: string[];
+  cursor: string | null;
+  pageSize: number | 'all';
+}
+
+const PaginationStateQueryConfig: QueryPersistedStateConfig<PaginationState> = {
+  encode: (state) => ({
+    cursor: state.cursor || undefined,
+    cursorStack: state.cursorStack.length ? state.cursorStack.join(',') : undefined,
+    pageSize: state.pageSize,
+  }),
+  decode: (qs) => ({
+    cursor: qs.cursor || null,
+    cursorStack: qs.cursorStack ? qs.cursorStack.split(',') : [],
+    pageSize: qs.pageSize === 'all' ? 'all' : Number(qs.pageSize || 30),
+  }),
+};
+
 interface DataState {
   runs: PartitionSetLoaderRunFragment[];
   partitionNames: string[];
   loading: boolean;
   loadingPercent: number;
-  cursorStack: string[];
-  cursor: string | null;
+  error?: PythonErrorFragment;
 }
 
 const InitialDataState: DataState = {
   runs: [],
   partitionNames: [],
-  cursor: null,
-  cursorStack: [],
   loading: false,
   loadingPercent: 0,
 };
@@ -44,7 +62,6 @@ const InitialDataState: DataState = {
  */
 export function useChunkedPartitionsQuery(
   partitionSetName: string,
-  pageSize: number | 'all',
   runsFilter: TokenizingFieldValue[],
   repoAddress: RepoAddress,
 ) {
@@ -53,7 +70,11 @@ export function useChunkedPartitionsQuery(
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const {cursor, loading, loadingPercent, cursorStack} = dataState;
+  const {loading, loadingPercent} = dataState;
+
+  const [{cursor, cursorStack, pageSize}, setPaginationState] = useQueryPersistedState(
+    PaginationStateQueryConfig,
+  );
 
   React.useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
@@ -95,7 +116,19 @@ export function useChunkedPartitionsQuery(
           namesResult.data.partitionSetOrError.partitionsOrError.results.map((r) => r.name)) ||
         [];
 
-      setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
+      if (
+        namesResult.data.partitionSetOrError.__typename === 'PartitionSet' &&
+        namesResult.data.partitionSetOrError.partitionsOrError.__typename === 'PythonError'
+      ) {
+        const partitionSet = namesResult.data.partitionSetOrError;
+        const error =
+          partitionSet.partitionsOrError.__typename === 'PythonError'
+            ? partitionSet.partitionsOrError
+            : undefined;
+        setDataState((state) => ({...state, error, partitionNames: []}));
+      } else {
+        setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
+      }
 
       // Load runs in each of these partitions incrementally, running several queries in parallel
       // to maximize the throughput we can achieve from the GraphQL interface.
@@ -189,6 +222,11 @@ export function useChunkedPartitionsQuery(
     loading,
     loadingPercent,
     partitions: assemblePartitions(dataState),
+    error: dataState.error,
+    pageSize,
+    setPageSize: (pageSize: number | 'all') => {
+      setPaginationState({cursor: null, cursorStack: [], pageSize});
+    },
     paginationProps: {
       hasPrevCursor: cursor !== null,
       hasNextCursor: dataState.partitionNames.length >= pageSize,
@@ -199,20 +237,26 @@ export function useChunkedPartitionsQuery(
         setDataState({
           loading: false,
           loadingPercent: 0,
-          cursorStack: cursorStack.slice(0, cursorStack.length - 1),
-          cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
           partitionNames: [],
           runs: [],
+        });
+        setPaginationState({
+          pageSize: pageSize,
+          cursorStack: cursorStack.slice(0, cursorStack.length - 1),
+          cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
         });
       },
       advanceCursor: () => {
         setDataState({
           loading: false,
           loadingPercent: 0,
-          cursorStack: cursor ? [...cursorStack, cursor] : cursorStack,
-          cursor: dataState.partitionNames[0],
           partitionNames: [],
           runs: [],
+        });
+        setPaginationState({
+          pageSize: pageSize,
+          cursorStack: cursor ? [...cursorStack, cursor] : cursorStack,
+          cursor: dataState.partitionNames[0],
         });
       },
       reset: () => {
@@ -313,8 +357,12 @@ const PARTITION_SET_NAMES_QUERY = gql`
               name
             }
           }
+          ... on PythonError {
+            ...PythonErrorFragment
+          }
         }
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;

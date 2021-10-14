@@ -11,7 +11,10 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
 )
+from dagster.check import CheckError
 from dagster.config.field_utils import Selector
+from dagster.core.definitions.event_metadata import parse_metadata
+from dagster.core.errors import DagsterInvalidEventMetadata
 from dagster.utils import dict_without_keys
 from dagster.utils.backcompat import experimental
 from dagster_pandas.constraints import (
@@ -167,8 +170,9 @@ def create_dagster_pandas_dataframe_type(
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         columns (Optional[List[PandasColumn]]): A list of :py:class:`~dagster.PandasColumn` objects
             which express dataframe column schemas and constraints.
-        event_metadata_fn (Optional[func]): A callable which takes your dataframe and returns a list of EventMetadata
-            which allow you to express things like summary statistics during runtime.
+        event_metadata_fn (Optional[Callable[[], Union[Dict[str, Union[str, float, int, Dict, EventMetadata]], List[EventMetadataEntry]]]]):
+            A callable which takes your dataframe and returns a dict with string label keys and
+            EventMetadata values. Can optionally return a List[EventMetadataEntry].
         dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
             :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
         loader (Optional[DagsterTypeLoader]): An instance of a class that
@@ -215,7 +219,7 @@ def create_dagster_pandas_dataframe_type(
         name=name,
         type_check_fn=_dagster_type_check,
         loader=loader if loader else dataframe_loader,
-        materializer=materializer if loader else dataframe_materializer,
+        materializer=materializer if materializer else dataframe_materializer,
         description=description,
     )
 
@@ -315,18 +319,25 @@ def _execute_summary_stats(type_name, value, event_metadata_fn):
     if not event_metadata_fn:
         return []
 
-    metadata_entries = event_metadata_fn(value)
+    metadata_or_metadata_entries = event_metadata_fn(value)
 
-    if not (
-        isinstance(metadata_entries, list)
-        and all(isinstance(item, EventMetadataEntry) for item in metadata_entries)
-    ):
-        raise DagsterInvariantViolationError(
-            (
-                "The return value of the user-defined summary_statistics function "
-                "for pandas data frame type {type_name} returned {value}. "
-                "This function must return List[EventMetadataEntry]"
-            ).format(type_name=type_name, value=repr(metadata_entries))
-        )
+    invalid_message = (
+        "The return value of the user-defined summary_statistics function for pandas "
+        f"data frame type {type_name} returned {value}. This function must return "
+        "Union[Dict[str, Union[str, float, int, Dict, EventMetadata]], List[EventMetadataEntry]]"
+    )
 
-    return metadata_entries
+    metadata = None
+    metadata_entries = None
+
+    if isinstance(metadata_or_metadata_entries, list):
+        metadata_entries = metadata_or_metadata_entries
+    elif isinstance(metadata_or_metadata_entries, dict):
+        metadata = metadata_or_metadata_entries
+    else:
+        raise DagsterInvariantViolationError(invalid_message)
+
+    try:
+        return parse_metadata(metadata, metadata_entries)
+    except (DagsterInvalidEventMetadata, CheckError):
+        raise DagsterInvariantViolationError(invalid_message)

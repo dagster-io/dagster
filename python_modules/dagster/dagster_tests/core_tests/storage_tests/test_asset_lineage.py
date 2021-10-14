@@ -1,6 +1,8 @@
 import pytest
 from dagster import (
     AssetKey,
+    DynamicOutput,
+    DynamicOutputDefinition,
     InputDefinition,
     ModeDefinition,
     Output,
@@ -14,7 +16,6 @@ from dagster.core.definitions.event_metadata import EventMetadataEntry, Partitio
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 def n_asset_keys(path, n):

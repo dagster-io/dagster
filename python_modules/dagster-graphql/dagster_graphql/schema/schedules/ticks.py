@@ -2,7 +2,7 @@ import graphene
 from dagster.core.scheduler.job import JobTickStatus
 
 from ..errors import GraphenePythonError
-from ..jobs import GrapheneJobTickStatus
+from ..instigation import GrapheneInstigationTickStatus
 
 
 class GrapheneScheduleTickSuccessData(graphene.ObjectType):
@@ -46,7 +46,7 @@ class GrapheneScheduleTickSpecificData(graphene.Union):
 
 class GrapheneScheduleTick(graphene.ObjectType):
     tick_id = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(GrapheneJobTickStatus)
+    status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     tick_specific_data = graphene.Field(GrapheneScheduleTickSpecificData)
 

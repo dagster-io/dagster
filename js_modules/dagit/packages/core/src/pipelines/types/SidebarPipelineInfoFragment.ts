@@ -704,6 +704,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers {
 
 export interface SidebarPipelineInfoFragment_modes {
   __typename: "Mode";
+  id: string;
   name: string;
   description: string | null;
   resources: SidebarPipelineInfoFragment_modes_resources[];

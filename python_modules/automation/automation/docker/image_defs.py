@@ -9,7 +9,9 @@ from dagster import check
 
 from .dagster_docker import DagsterDockerImage
 
-DAGSTER_REPO = git_repo_root()
+
+def get_dagster_repo():
+    return git_repo_root()
 
 
 @contextlib.contextmanager
@@ -17,19 +19,21 @@ def copy_directories(paths, cwd, destination="build_cache"):
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
     build_cache_dir = os.path.join(cwd, destination)
 
-    os.mkdir(build_cache_dir)
-
-    paths_to_copy = []
-    for path in paths:
-        src_path = os.path.join(DAGSTER_REPO, path)
-        check.invariant(os.path.exists(src_path), "Path for copying to image build does not exist")
-
-        _, dest_name = os.path.split(path)
-        dest_path = os.path.join(build_cache_dir, dest_name)
-
-        paths_to_copy.append((src_path, dest_path))
-
     try:
+        os.mkdir(build_cache_dir)
+
+        paths_to_copy = []
+        for path in paths:
+            src_path = os.path.join(git_repo_root(cwd), path)
+            check.invariant(
+                os.path.exists(src_path), "Path for copying to image build does not exist"
+            )
+
+            _, dest_name = os.path.split(path)
+            dest_path = os.path.join(build_cache_dir, dest_name)
+
+            paths_to_copy.append((src_path, dest_path))
+
         for src_path, dest_path in paths_to_copy:
             print("Syncing {} to build dir {}...".format(src_path, dest_path))
             if os.path.isdir(src_path):
@@ -47,7 +51,7 @@ def buildkite_integration_cm(cwd):
     """For the buildkite integration base image, we first copy over scala_modules into the image
     build directory.
     """
-    scala_modules_dir = os.path.join(DAGSTER_REPO, "scala_modules")
+    scala_modules_dir = os.path.join(get_dagster_repo(), "scala_modules")
     try:
         cmd = [
             "rsync",
@@ -92,7 +96,6 @@ def get_core_k8s_dirs():
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
-        "python_modules/libraries/dagster-cron",
         "python_modules/libraries/dagster-k8s",
     ]
 
@@ -220,27 +223,27 @@ CUSTOM_BUILD_CONTEXTMANAGERS = {
 }
 
 
-def list_images():
+def list_images(images_path=None):
     """List all images that we manage.
 
     Returns:
         List[DagsterDockerImage]: A list of all images managed by this tool.
     """
 
-    images_path = os.path.join(os.path.dirname(__file__), "images")
+    images_path = images_path or os.path.join(os.path.dirname(__file__), "images")
     image_folders = [f.name for f in os.scandir(images_path) if f.is_dir()]
 
     images = []
     for image in image_folders:
-        img = DagsterDockerImage(image)
+        img = DagsterDockerImage(image, path=os.path.join(images_path, image))
         if image in CUSTOM_BUILD_CONTEXTMANAGERS:
             img = img._replace(build_cm=CUSTOM_BUILD_CONTEXTMANAGERS[image])
         images.append(img)
     return images
 
 
-def get_image(name):
+def get_image(name, images_path=None):
     """Retrieve the image information from the list defined above."""
-    image = next((img for img in list_images() if img.image == name), None)
+    image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
     check.invariant(image is not None, "could not find image {}".format(name))
     return image

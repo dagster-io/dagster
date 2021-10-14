@@ -4,14 +4,14 @@ import graphene
 import yaml
 from dagster import check
 from dagster.core.events import StepMaterializationData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
-from ...implementation.events import construct_basic_params
+from ...implementation.events import construct_basic_params, from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
 from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_run_by_id, get_runs, get_stats, get_step_stats
@@ -27,7 +27,12 @@ from ..errors import (
 )
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
-from ..logs.events import GraphenePipelineRunStepStats, GrapheneStepMaterializationEvent
+from ..logs.events import (
+    GraphenePipelineRunEvent,
+    GraphenePipelineRunStepStats,
+    GrapheneStepMaterializationEvent,
+)
+from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
@@ -56,7 +61,7 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
 
     def __init__(self, event):
         super().__init__()
-        self._event = check.inst_param(event, "event", EventRecord)
+        self._event = check.inst_param(event, "event", EventLogEntry)
         check.invariant(
             isinstance(event.dagster_event.step_materialization_data, StepMaterializationData)
         )
@@ -85,12 +90,13 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     tags = non_null_list(GrapheneAssetTag)
+    definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, tags=None):
-        super().__init__(key=key)
+    def __init__(self, key, definition=None, tags=None):
+        super().__init__(key=key, definition=definition)
         check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
         self._tags = tags
 
@@ -121,17 +127,10 @@ class GrapheneAsset(graphene.ObjectType):
         ]
 
     def resolve_tags(self, graphene_info):
-        from ...implementation.fetch_assets import get_asset_events
-
         if self._tags is not None:
             tags = self._tags
         else:
-            events = get_asset_events(graphene_info, self.key, limit=1)
-            tags = (
-                events[0].dagster_event.step_materialization_data.materialization.tags or {}
-                if events
-                else {}
-            )
+            tags = graphene_info.context.instance.get_asset_tags(self.key)
         return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
@@ -163,6 +162,10 @@ class GraphenePipelineRun(graphene.ObjectType):
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
+    events = graphene.Field(
+        non_null_list(GraphenePipelineRunEvent),
+        after=graphene.Argument(GrapheneCursor),
+    )
 
     class Meta:
         name = "PipelineRun"
@@ -267,6 +270,10 @@ class GraphenePipelineRun(graphene.ObjectType):
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
 
+    def resolve_events(self, graphene_info, after=-1):
+        events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
+        return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
+
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
@@ -303,6 +310,7 @@ class GrapheneIPipelineSnapshotMixin:
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
+    graph_name = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -360,7 +368,11 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_modes(self, _graphene_info):
         represented_pipeline = self.get_represented_pipeline()
         return [
-            GrapheneMode(represented_pipeline.config_schema_snapshot, mode_def_snap)
+            GrapheneMode(
+                represented_pipeline.config_schema_snapshot,
+                represented_pipeline.identifying_pipeline_snapshot_id,
+                mode_def_snap,
+            )
             for mode_def_snap in sorted(
                 represented_pipeline.mode_def_snaps, key=lambda item: item.name
             )
@@ -427,6 +439,9 @@ class GrapheneIPipelineSnapshotMixin:
         else:
             return None
 
+    def resolve_graph_name(self, _graphene_info):
+        return self.get_represented_pipeline().get_graph_name()
+
 
 class GrapheneIPipelineSnapshot(graphene.Interface):
     name = graphene.NonNull(graphene.String)
@@ -447,6 +462,15 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    runs = graphene.Field(
+        non_null_list(GraphenePipelineRun),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    schedules = non_null_list(GrapheneSchedule)
+    sensors = non_null_list(GrapheneSensor)
+    parent_snapshot_id = graphene.String()
+    graph_name = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "IPipelineSnapshot"
@@ -495,11 +519,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
 class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     presets = non_null_list(GraphenePipelinePreset)
-    runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-    )
+    isJob = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -522,6 +542,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             GraphenePipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
+
+    def resolve_isJob(self, _graphene_info):
+        return self._external_pipeline.is_job
 
 
 @lru_cache(maxsize=32)

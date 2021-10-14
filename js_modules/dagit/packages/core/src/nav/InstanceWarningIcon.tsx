@@ -1,50 +1,36 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {Group} from '../ui/Group';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 
+import {WarningTooltip} from './WarningTooltip';
 import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
 export const InstanceWarningIcon = React.memo(() => {
-  const {locations} = React.useContext(WorkspaceContext);
-
   const {data: healthData} = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
     fetchPolicy: 'cache-and-network',
     pollInterval: 15 * 1000,
   });
 
-  const repoErrors = locations.filter(
-    (node) => node.__typename === 'RepositoryLocationLoadFailure',
-  );
   const daemonErrors =
     healthData?.instance.daemonHealth.allDaemonStatuses.filter(
       (daemon) => !daemon.healthy && daemon.required,
     ) || [];
 
-  if (repoErrors.length || daemonErrors.length) {
-    const content = (
-      <Group direction="column" spacing={4}>
-        {repoErrors.length ? (
-          <div>{`${repoErrors.length} ${
-            repoErrors.length === 1
-              ? 'repository location failed to load'
-              : 'repository locations failed to load'
-          }`}</div>
-        ) : null}
-        {daemonErrors.length ? (
+  if (daemonErrors.length) {
+    return (
+      <WarningTooltip
+        content={
           <div>{`${daemonErrors.length} ${
             daemonErrors.length === 1 ? 'daemon not running' : 'daemons not running'
           }`}</div>
-        ) : null}
-      </Group>
-    );
-    return (
-      <WarningTooltip content={content} position="right">
-        <Icon icon="warning-sign" iconSize={14} color={Colors.GOLD4} title="Warnings found" />
+        }
+        position="bottom"
+        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
+      >
+        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
       </WarningTooltip>
     );
   }
@@ -59,19 +45,4 @@ const INSTANCE_WARNING_QUERY = gql`
     }
   }
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const WarningTooltip = styled(Tooltip)`
-  display: block;
-  outline: none;
-
-  .bp3-popover-target,
-  .bp3-icon {
-    display: block;
-  }
-
-  .bp3-icon:focus,
-  .bp3-icon:active {
-    outline: none;
-  }
 `;

@@ -1,15 +1,12 @@
 import {gql} from '@apollo/client';
 
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 
 export const SENSOR_FRAGMENT = gql`
   fragment SensorFragment on Sensor {
     id
     jobOriginId
     name
-    pipelineName
-    solidSelection
-    mode
     description
     minIntervalSeconds
     nextTick {
@@ -17,8 +14,13 @@ export const SENSOR_FRAGMENT = gql`
     }
     sensorState {
       id
-      ...JobStateFragment
+      ...InstigationStateFragment
+    }
+    targets {
+      pipelineName
+      solidSelection
+      mode
     }
   }
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;

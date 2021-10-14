@@ -1,3 +1,4 @@
+"""isort:skip_file"""
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -8,7 +9,6 @@ from dagster import (
     PipelineExecutionResult,
     SolidExecutionResult,
     execute_pipeline,
-    execute_solid,
     pipeline,
     solid,
 )
@@ -17,19 +17,19 @@ from dagster import (
 @solid(
     input_defs=[InputDefinition(name="num", dagster_type=int, default_value=1)],
 )
-def add_one(_, num: int) -> int:
+def add_one(num: int) -> int:
     return num + 1
 
 
 @solid(
     input_defs=[InputDefinition(name="num", dagster_type=int, default_value=1)],
 )
-def add_two(_, num: int) -> int:
+def add_two(num: int) -> int:
     return num + 2
 
 
 @solid
-def subtract(_, left: int, right: int) -> int:
+def subtract(left: int, right: int) -> int:
     return left - right
 
 
@@ -42,7 +42,7 @@ def do_math():
     input_defs=[InputDefinition(name="input_num", dagster_type=int)],
     output_defs=[OutputDefinition(name="a_num", dagster_type=int)],
 )
-def emit_events_solid(_, input_num):
+def emit_events_solid(input_num):
     a_num = input_num + 1
     yield ExpectationResult(
         success=a_num > 0, label="positive", description="A num must be positive"
@@ -73,19 +73,69 @@ def test_pipeline():
 
 # end_test_pipeline_marker
 
+# start_invocation_solid_marker
+@solid
+def my_solid_to_test():
+    return 5
+
+
+# end_invocation_solid_marker
 
 # start_test_solid_marker
-def test_solid():
-    result = execute_solid(add_one)
-
-    # return type is SolidExecutionResult
-    assert isinstance(result, SolidExecutionResult)
-    assert result.success
-    # check the solid output value
-    assert result.output_value() == 2
+def test_solid_with_invocation():
+    assert my_solid_to_test() == 5
 
 
 # end_test_solid_marker
+
+# start_invocation_solid_inputs_marker
+@solid
+def my_solid_with_inputs(x, y):
+    return x + y
+
+
+# end_invocation_solid_inputs_marker
+
+# start_test_solid_with_inputs_marker
+def test_inputs_solid_with_invocation():
+    assert my_solid_with_inputs(5, 6) == 11
+
+
+# end_test_solid_with_inputs_marker
+
+# start_solid_requires_foo_marker
+@solid(required_resource_keys={"foo"})
+def solid_requires_foo(context):
+    return f"found {context.resources.foo}"
+
+
+# end_solid_requires_foo_marker
+
+# start_test_solid_context_marker
+from dagster import build_solid_context
+
+
+def test_solid_with_context():
+    context = build_solid_context(resources={"foo": "bar"})
+    assert solid_requires_foo(context) == "found bar"
+
+
+# end_test_solid_context_marker
+
+from dagster import resource
+
+# start_test_resource_def_marker
+@resource(config_schema={"my_str": str})
+def my_foo_resource(context):
+    return context.resource_config["my_str"]
+
+
+def test_solid_resource_def():
+    context = build_solid_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    assert solid_requires_foo(context) == "found bar"
+
+
+# end_test_resource_def_marker
 
 # start_test_pipeline_with_config
 def test_pipeline_with_config():

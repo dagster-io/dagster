@@ -253,7 +253,6 @@ class Lakehouse:
             output_defs=[output_def],
             config_schema=None,
             required_resource_keys=required_resource_keys,
-            positional_inputs=None,
             version=computed_asset.computation.version,
         )
 

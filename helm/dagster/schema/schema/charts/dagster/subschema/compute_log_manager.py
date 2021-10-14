@@ -8,7 +8,8 @@ from .config import StringSource
 
 
 class ComputeLogManagerType(str, Enum):
-    LOCAL = "LocalComputeLogManager"
+    NOOP = "NoOpComputeLogManager"
+    LOCAL = "LocalComputeLogManager"  # deprecated in favor of noop
     AZURE = "AzureBlobComputeLogManager"
     GCS = "GCSComputeLogManager"
     S3 = "S3ComputeLogManager"
@@ -22,17 +23,12 @@ class AzureBlobComputeLogManager(BaseModel):
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
 
-    class Config:
-        extra = Extra.forbid
-
 
 class GCSComputeLogManager(BaseModel):
     bucket: StringSource
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
-
-    class Config:
-        extra = Extra.forbid
+    jsonCredentialsEnvvar: Optional[StringSource]
 
 
 class S3ComputeLogManager(BaseModel):
@@ -43,9 +39,7 @@ class S3ComputeLogManager(BaseModel):
     verify: Optional[bool]
     verifyCertPath: Optional[StringSource]
     endpointUrl: Optional[StringSource]
-
-    class Config:
-        extra = Extra.forbid
+    skipEmptyFiles: Optional[bool]
 
 
 class ComputeLogManagerConfig(BaseModel):

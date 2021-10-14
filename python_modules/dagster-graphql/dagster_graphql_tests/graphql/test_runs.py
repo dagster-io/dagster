@@ -612,6 +612,38 @@ def test_filtered_runs_multiple_statuses():
             assert run_id_3 in run_ids
 
 
+def test_filtered_runs_multiple_filters():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+
+        started_run_with_tags = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED, tags={"foo": "bar"}
+        )
+        failed_run_with_tags = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE, tags={"foo": "bar"}
+        )
+        started_run_without_tags = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"),
+            status=PipelineRunStatus.STARTED,
+            tags={"baz": "boom"},
+        )
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_QUERY,
+                variables={
+                    "filter": {"statuses": ["STARTED"], "tags": [{"key": "foo", "value": "bar"}]}
+                },
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 1
+            assert started_run_with_tags.run_id in run_ids
+            assert failed_run_with_tags.run_id not in run_ids
+            assert started_run_without_tags.run_id not in run_ids
+
+
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()

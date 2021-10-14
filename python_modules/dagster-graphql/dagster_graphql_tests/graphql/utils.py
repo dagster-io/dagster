@@ -1,5 +1,5 @@
 from dagster import DagsterEventType, check
-from dagster.cli.workspace.context import WorkspaceRequestContext
+from dagster.core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql
 
@@ -29,6 +29,7 @@ def get_all_logs_for_finished_run_via_subscription(context, run_id):
     # remove information that changes run-to-run
     assert "pipelineRunLogs" in subscribe_result.data
     assert "messages" in subscribe_result.data["pipelineRunLogs"]
+    assert subscribe_result.data["pipelineRunLogs"]["hasMorePastEvents"] is False
     for msg in subscribe_result.data["pipelineRunLogs"]["messages"]:
         msg["runId"] = "<runId dummy value>"
         msg["timestamp"] = "<timestamp dummy value>"

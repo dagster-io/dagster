@@ -86,7 +86,10 @@ def test_resource_requirements_fail():
     def storage_with_req(init_context):
         return create_mem_system_intermediate_store(init_context)
 
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"'yup' is required by intermediate storage storage_with_req",
+    ):
 
         @pipeline(
             mode_defs=[
@@ -98,8 +101,3 @@ def test_resource_requirements_fail():
         )
         def _resource_req_pass_pipeline():
             pass
-
-    assert str(exc_info.value) == (
-        "Resource 'yup' is required by intermediate storage 'storage_with_req', but "
-        "is not provided by mode 'default'."
-    )

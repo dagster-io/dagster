@@ -8,7 +8,7 @@ from .composites_query import (
     PARENT_ID_QUERY,
     SOLID_ID_QUERY,
 )
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 # 10 total solids in the composite pipeline:
 #
@@ -27,8 +27,8 @@ from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 #       (/2)
 
 
-# this only needs readonly variants since they never execute anything
-class TestComposites(ReadonlyGraphQLContextTestMatrix):
+# this only needs non_launchable variants since they never execute anything
+class TestComposites(NonLaunchableGraphQLContextTestMatrix):
     def test_composites(self, graphql_context, snapshot):
         selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
@@ -103,3 +103,12 @@ class TestComposites(ReadonlyGraphQLContextTestMatrix):
             COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_OUTPUT_DEPENDED_BY,
             {"selector": selector},
         )
+
+    def test_composed_graph(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "composed_graph")
+        result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
+        handle_map = {}
+        for obj in result.data["pipelineOrError"]["solidHandles"]:
+            handle_map[obj["handleID"]] = obj["solid"]
+
+        assert len(handle_map) == 2

@@ -8,16 +8,18 @@ from dagster.core.definitions import (
     DynamicOutput,
     ExpectationResult,
     Materialization,
+    Node,
+    NodeHandle,
     Output,
-    Solid,
-    SolidHandle,
 )
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster.utils import iterate_with_context
 
 from .outputs import StepOutput, StepOutputProperties
+from .utils import solid_execution_error_boundary
 
 SolidOutputUnion = Union[
     DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
@@ -25,16 +27,16 @@ SolidOutputUnion = Union[
 
 
 def create_step_outputs(
-    solid: Solid, handle: SolidHandle, environment_config: EnvironmentConfig
+    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig
 ) -> List[StepOutput]:
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
+    check.inst_param(solid, "solid", Node)
+    check.inst_param(handle, "handle", NodeHandle)
 
-    # the environment config has the solid output name configured
+    # the run config has the solid output name configured
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = environment_config.solids.get(current_handle.to_string())
+        solid_config = resolved_run_config.solids[current_handle.to_string()]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
@@ -54,7 +56,7 @@ def create_step_outputs(
     ]
 
 
-def _validate_event(event: Any, solid_handle: SolidHandle) -> SolidOutputUnion:
+def _validate_event(event: Any, solid_handle: NodeHandle) -> SolidOutputUnion:
     if not isinstance(
         event,
         (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
@@ -75,7 +77,7 @@ def _validate_event(event: Any, solid_handle: SolidHandle) -> SolidOutputUnion:
     return event
 
 
-def _gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
+def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
     loop = asyncio.get_event_loop()
     while True:
         try:
@@ -104,9 +106,21 @@ def _yield_compute_results(
         return
 
     if inspect.isasyncgen(user_event_generator):
-        user_event_generator = _gen_from_async_gen(user_event_generator)
+        user_event_generator = gen_from_async_gen(user_event_generator)
 
-    for event in user_event_generator:
+    op_label = step_context.describe_op()
+
+    for event in iterate_with_context(
+        lambda: solid_execution_error_boundary(
+            DagsterExecutionStepExecutionError,
+            msg_fn=lambda: f"Error occurred while executing {op_label}:",
+            step_context=step_context,
+            step_key=step_context.step.key,
+            solid_def_name=step_context.solid_def.name,
+            solid_name=step_context.solid.name,
+        ),
+        user_event_generator,
+    ):
         yield _validate_event(event, step_context.step.solid_handle)
 
 

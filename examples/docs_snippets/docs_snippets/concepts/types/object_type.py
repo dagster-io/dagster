@@ -13,7 +13,7 @@ EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
 
 # start_use_object_type
 @solid
-def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
+def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
     return EvenType(even_num.num * 2)
 
 

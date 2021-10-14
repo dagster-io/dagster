@@ -67,7 +67,11 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
             submitted_run_ids.extend(
                 run_id
                 for run_id in submit_backfill_runs(
-                    graphene_info.context.instance, location, backfill, partition_names=chunk
+                    graphene_info.context.instance,
+                    workspace=graphene_info.context,
+                    repo_location=location,
+                    backfill_job=backfill,
+                    partition_names=chunk,
                 )
                 if run_id != None
             )
@@ -89,3 +93,15 @@ def cancel_partition_backfill(graphene_info, backfill_id):
 
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
+
+
+@capture_error
+def resume_partition_backfill(graphene_info, backfill_id):
+    from ...schema.backfill import GrapheneResumeBackfillSuccess
+
+    backfill = graphene_info.context.instance.get_backfill(backfill_id)
+    if not backfill:
+        check.failed(f"No backfill found for id: {backfill_id}")
+
+    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.REQUESTED))
+    return GrapheneResumeBackfillSuccess(backfill_id=backfill_id)

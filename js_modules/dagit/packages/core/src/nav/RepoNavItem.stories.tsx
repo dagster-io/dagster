@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 import {Box} from '../ui/Box';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -124,13 +124,13 @@ export const ManyRepos = () => {
   );
 
   return (
-    <ApolloTestProvider>
+    <StorybookProvider>
       <Box flex={{direction: 'column', justifyContent: 'center'}} style={{height: '500px'}}>
         <div style={{width: '234px'}}>
           <RepoNavItem allRepos={OPTIONS} selected={selected} onToggle={onToggle} />
         </div>
       </Box>
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };
 
@@ -153,12 +153,12 @@ export const OneRepo = () => {
   );
 
   return (
-    <ApolloTestProvider>
+    <StorybookProvider>
       <Box flex={{direction: 'column', justifyContent: 'center'}} style={{height: '500px'}}>
         <div style={{width: '234px'}}>
           <RepoNavItem allRepos={ONE_REPO} selected={selected} onToggle={onToggle} />
         </div>
       </Box>
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };

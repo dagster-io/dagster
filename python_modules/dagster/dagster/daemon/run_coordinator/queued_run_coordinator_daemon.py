@@ -2,10 +2,10 @@ import logging
 import sys
 import time
 from collections import defaultdict
+from typing import Dict
 
 from dagster import DagsterEvent, DagsterEventType, check
-from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -14,9 +14,9 @@ from dagster.core.storage.pipeline_run import (
     PipelineRunsFilter,
 )
 from dagster.core.storage.tags import PRIORITY_TAG
+from dagster.core.workspace import IWorkspace
 from dagster.daemon.daemon import DagsterDaemon
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.external import external_pipeline_from_location
 
 
 class _TagConcurrencyLimitsCounter:
@@ -28,52 +28,67 @@ class _TagConcurrencyLimitsCounter:
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
         check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
 
-        # convert currency_limits to dict
-        self._tag_concurrency_limits = {}
+        self._key_limits: Dict[str, int] = {}
+        self._key_value_limits: Dict[(str, str), int] = {}
+        self._unique_value_limits: Dict[str, int] = {}
+
         for tag_limit in tag_concurrency_limits:
-            self._tag_concurrency_limits[(tag_limit["key"], tag_limit.get("value"))] = tag_limit[
-                "limit"
-            ]
+            key = tag_limit["key"]
+            value = tag_limit.get("value")
+            limit = tag_limit["limit"]
+
+            if isinstance(value, str):
+                self._key_value_limits[(key, value)] = limit
+            elif not value or not value["applyLimitPerUniqueValue"]:
+                self._key_limits[key] = limit
+            else:
+                self._unique_value_limits[key] = limit
+
+        self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
+        self._key_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
+        self._unique_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
 
         # initialize counters based on current in progress runs
-        self._in_progress_limit_counts = defaultdict(lambda: 0)
         for run in in_progress_runs:
-            limited_tags = self._get_limited_tags(run)
-            for tag_value in limited_tags:
-                self._in_progress_limit_counts[tag_value] += 1
-
-    def _get_limited_tags(self, run):
-        """
-        Returns the tags on the run which match one of the limits
-        """
-        tags = []
-        for tag_key, tag_value in run.tags.items():
-            # Check for rules which match either just the tag key, or rules that match on both the
-            # key and value. Note that both may apply.
-            if (tag_key, None) in self._tag_concurrency_limits:
-                tags.append((tag_key, None))
-            if (tag_key, tag_value) in self._tag_concurrency_limits:
-                tags.append((tag_key, tag_value))
-        return tags
+            self.update_counters_with_launched_run(run)
 
     def is_run_blocked(self, run):
         """
         True if there are in progress runs which are blocking this run based on tag limits
         """
-        limited_tags = self._get_limited_tags(run)
-        return any(
-            tag_value
-            for tag_value in limited_tags
-            if self._in_progress_limit_counts[tag_value] >= self._tag_concurrency_limits[tag_value]
-        )
+        for key, value in run.tags.items():
+            if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
+                return True
+
+            tag_tuple = (key, value)
+            if (
+                tag_tuple in self._key_value_limits
+                and self._key_value_counts[tag_tuple] >= self._key_value_limits[tag_tuple]
+            ):
+                return True
+
+            if (
+                key in self._unique_value_limits
+                and self._unique_value_counts[tag_tuple] >= self._unique_value_limits[key]
+            ):
+                return True
+
+        return False
 
     def update_counters_with_launched_run(self, run):
         """
         Add a new in progress run to the counters
         """
-        limited_tags = self._get_limited_tags(run)
-        for tag_value in limited_tags:
-            self._in_progress_limit_counts[tag_value] += 1
+        for key, value in run.tags.items():
+            if key in self._key_limits:
+                self._key_counts[key] += 1
+
+            tag_tuple = (key, value)
+            if tag_tuple in self._key_value_limits:
+                self._key_value_counts[tag_tuple] += 1
+
+            if key in self._unique_value_limits:
+                self._unique_value_counts[tag_tuple] += 1
 
 
 class QueuedRunCoordinatorDaemon(DagsterDaemon):
@@ -82,30 +97,6 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     store and launches them.
     """
 
-    def __init__(
-        self,
-        interval_seconds,
-        max_concurrent_runs,
-        tag_concurrency_limits=None,
-    ):
-        super(QueuedRunCoordinatorDaemon, self).__init__(interval_seconds)
-        self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
-        self._tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits,
-            "tag_concurrency_limits",
-        )
-
-    @staticmethod
-    def create_from_instance(instance):
-        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
-        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
-
-        return QueuedRunCoordinatorDaemon(
-            interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
-            max_concurrent_runs=max_concurrent_runs,
-            tag_concurrency_limits=tag_concurrency_limits,
-        )
-
     @classmethod
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
@@ -113,14 +104,18 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     def run_iteration(self, instance, workspace):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(workspace, "workspace", IWorkspace)
+
+        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
+        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
+
         in_progress_runs = self._get_in_progress_runs(instance)
-        max_runs_to_launch = self._max_concurrent_runs - len(in_progress_runs)
+        max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
 
         # Possibly under 0 if runs were launched without queuing
         if max_runs_to_launch <= 0:
             self._logger.info(
                 "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                    len(in_progress_runs), self._max_concurrent_runs
+                    len(in_progress_runs), max_concurrent_runs
                 )
             )
             return
@@ -138,7 +133,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         # launch until blocked by limit rules
         num_dequeued_runs = 0
         tag_concurrency_limits_counter = _TagConcurrencyLimitsCounter(
-            self._tag_concurrency_limits, in_progress_runs
+            tag_concurrency_limits, in_progress_runs
         )
 
         for run in sorted_runs:
@@ -199,16 +194,6 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         return sorted(runs, key=get_priority, reverse=True)
 
     def _dequeue_run(self, instance, run, workspace):
-        repository_location_origin = (
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin
-        )
-
-        location = workspace.get_location(repository_location_origin)
-
-        external_pipeline = external_pipeline_from_location(
-            location, run.external_pipeline_origin, run.solid_selection
-        )
-
         # double check that the run is still queued before dequeing
         reloaded_run = instance.get_run_by_id(run.run_id)
 
@@ -224,7 +209,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
             pipeline_name=run.pipeline_name,
         )
-        event_record = EventRecord(
+        event_record = EventLogEntry(
             message="",
             user_message="",
             level=logging.INFO,
@@ -236,4 +221,4 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         )
         instance.handle_new_event(event_record)
 
-        instance.launch_run(run.run_id, external_pipeline)
+        instance.launch_run(run.run_id, workspace)

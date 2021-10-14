@@ -2,6 +2,8 @@ from math import isnan
 
 from dagster import check, seven
 from dagster.core.definitions.event_metadata import (
+    DagsterAssetMetadataEntryData,
+    DagsterPipelineRunMetadataEntryData,
     EventMetadataEntry,
     FloatMetadataEntryData,
     IntMetadataEntryData,
@@ -13,8 +15,11 @@ from dagster.core.definitions.event_metadata import (
     UrlMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
+
+MAX_INT = 2147483647
+MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries):
@@ -27,6 +32,8 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventPythonArtifactMetadataEntry,
         GrapheneEventTextMetadataEntry,
         GrapheneEventUrlMetadataEntry,
+        GrapheneEventPipelineRunMetadataEntry,
+        GrapheneEventAssetMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
@@ -83,7 +90,7 @@ def iterate_metadata_entries(metadata_entries):
         elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
             # coerce > 32 bit ints to null
             int_val = None
-            if metadata_entry.entry_data.value.bit_length() <= 32:
+            if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
                 int_val = metadata_entry.entry_data.value
 
             yield GrapheneEventIntMetadataEntry(
@@ -92,6 +99,18 @@ def iterate_metadata_entries(metadata_entries):
                 intValue=int_val,
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
+            )
+        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataEntryData):
+            yield GrapheneEventPipelineRunMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                runId=metadata_entry.entry_data.run_id,
+            )
+        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataEntryData):
+            yield GrapheneEventAssetMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                assetKey=metadata_entry.entry_data.asset_key,
             )
         else:
             # skip rest for now
@@ -121,23 +140,25 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneHookErroredEvent,
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
+        GrapheneLogsCapturedEvent,
         GrapheneObjectStoreOperationEvent,
         GraphenePipelineCanceledEvent,
         GraphenePipelineCancelingEvent,
         GraphenePipelineDequeuedEvent,
         GraphenePipelineEnqueuedEvent,
         GraphenePipelineFailureEvent,
-        GraphenePipelineInitFailureEvent,
         GraphenePipelineStartEvent,
         GraphenePipelineStartingEvent,
         GraphenePipelineSuccessEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneStepMaterializationEvent,
+        GrapheneAlertStartEvent,
+        GrapheneAlertSuccessEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     check.param_invariant(event_record.is_dagster_event, "event_record")
     check.str_param(pipeline_name, "pipeline_name")
 
@@ -186,7 +207,11 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         check.inst(dagster_event.step_failure_data, StepFailureData)
         return GrapheneExecutionStepFailureEvent(
-            error=GraphenePythonError(dagster_event.step_failure_data.error),
+            error=(
+                GraphenePythonError(dagster_event.step_failure_data.error)
+                if dagster_event.step_failure_data.error
+                else None
+            ),
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
             errorSource=dagster_event.step_failure_data.error_source,
             **basic_params,
@@ -213,13 +238,10 @@ def from_dagster_event_record(event_record, pipeline_name):
             else None,
             **basic_params,
         )
-
-    elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
-        return GraphenePipelineInitFailureEvent(
-            pipelineName=pipeline_name,
-            error=GraphenePythonError(dagster_event.pipeline_init_failure_data.error),
-            **basic_params,
-        )
+    elif dagster_event.event_type == DagsterEventType.ALERT_START:
+        return GrapheneAlertStartEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.ALERT_SUCCESS:
+        return GrapheneAlertSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.HANDLED_OUTPUT:
         return GrapheneHandledOutputEvent(
             output_name=dagster_event.event_specific_data.output_name,
@@ -258,6 +280,13 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneHookErroredEvent(
             error=GraphenePythonError(dagster_event.hook_errored_data.error), **basic_params
         )
+    elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
+        return GrapheneLogsCapturedEvent(
+            logKey=dagster_event.logs_captured_data.log_key,
+            stepKeys=dagster_event.logs_captured_data.step_keys,
+            pid=dagster_event.pid,
+            **basic_params,
+        )
     else:
         raise Exception(
             "Unknown DAGSTER_EVENT type {inner_type} found in logs".format(
@@ -269,7 +298,7 @@ def from_dagster_event_record(event_record, pipeline_name):
 def from_event_record(event_record, pipeline_name):
     from ..schema.logs.events import GrapheneLogMessageEvent
 
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     check.str_param(pipeline_name, "pipeline_name")
 
     if event_record.is_dagster_event:
@@ -281,7 +310,7 @@ def from_event_record(event_record, pipeline_name):
 def construct_basic_params(event_record):
     from ..schema.logs.log_level import GrapheneLogLevel
 
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     return {
         "runId": event_record.run_id,
         "message": event_record.dagster_event.message

@@ -112,12 +112,16 @@ class GraphenePipelineFailureEvent(graphene.ObjectType):
         name = "PipelineFailureEvent"
 
 
-class GraphenePipelineInitFailureEvent(graphene.ObjectType):
-    error = graphene.NonNull(GraphenePythonError)
-
+class GrapheneAlertStartEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineInitFailureEvent"
+        name = "AlertStartEvent"
+
+
+class GrapheneAlertSuccessEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
+        name = "AlertSuccessEvent"
 
 
 class GrapheneStepEvent(graphene.Interface):
@@ -141,7 +145,7 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
     secondsToWait = graphene.Field(graphene.Int)
 
     class Meta:
@@ -224,6 +228,22 @@ class GrapheneEventIntMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneEventMetadataEntry,)
         name = "EventIntMetadataEntry"
+
+
+class GrapheneEventPipelineRunMetadataEntry(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventPipelineRunMetadataEntry"
+
+
+class GrapheneEventAssetMetadataEntry(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventAssetMetadataEntry"
 
 
 class GrapheneObjectStoreOperationType(graphene.Enum):
@@ -336,7 +356,7 @@ class GrapheneExecutionStepFailureEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "ExecutionStepFailureEvent"
 
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
     errorSource = graphene.Field(graphene.Enum.from_enum(ErrorSource))
     failureMetadata = graphene.Field(GrapheneFailureMetadata)
 
@@ -358,7 +378,17 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "HookErroredEvent"
 
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
+
+
+class GrapheneLogsCapturedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent,)
+        name = "LogsCapturedEvent"
+
+    logKey = graphene.NonNull(graphene.String)
+    stepKeys = graphene.List(graphene.NonNull(graphene.String))
+    pid = graphene.Int()
 
 
 class GrapheneStepMaterializationEvent(graphene.ObjectType):
@@ -450,7 +480,6 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneExecutionStepRestartEvent,
             GrapheneLogMessageEvent,
             GraphenePipelineFailureEvent,
-            GraphenePipelineInitFailureEvent,
             GraphenePipelineStartEvent,
             GraphenePipelineEnqueuedEvent,
             GraphenePipelineDequeuedEvent,
@@ -460,6 +489,7 @@ class GraphenePipelineRunEvent(graphene.Union):
             GraphenePipelineSuccessEvent,
             GrapheneHandledOutputEvent,
             GrapheneLoadedInputEvent,
+            GrapheneLogsCapturedEvent,
             GrapheneObjectStoreOperationEvent,
             GrapheneStepExpectationResultEvent,
             GrapheneStepMaterializationEvent,
@@ -467,6 +497,8 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneHookCompletedEvent,
             GrapheneHookSkippedEvent,
             GrapheneHookErroredEvent,
+            GrapheneAlertStartEvent,
+            GrapheneAlertSuccessEvent,
         )
         name = "PipelineRunEvent"
 

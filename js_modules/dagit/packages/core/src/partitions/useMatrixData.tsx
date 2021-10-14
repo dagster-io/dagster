@@ -5,7 +5,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {explodeCompositesInHandleGraph} from '../pipelines/PipelineExplorerRoot';
+import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {StepEventStatus} from '../types/globalTypes';
 
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
@@ -37,6 +37,7 @@ export interface DisplayOptions {
   showFailuresAndGapsOnly: boolean;
   showPrevious: boolean;
   colorizeByAge: boolean;
+  colorizeSliceUnix: number;
 }
 
 const DYNAMIC_STEP_REGEX_SUFFIX = '\\[.*\\]';

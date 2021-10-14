@@ -118,6 +118,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefin
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_outputDefinitions[];
@@ -210,6 +211,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeS
 export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions[];

@@ -1,9 +1,11 @@
-import {ApolloConsumer} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -11,10 +13,9 @@ import {
 } from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {JobsList} from './JobsList';
+import {FlatContentList} from './FlatContentList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
-import {RepositoryContentList} from './RepositoryContentList';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
@@ -50,23 +51,28 @@ const keysFromLocalStorage = () => {
 const useNavVisibleRepos = (
   options: DagsterRepoOption[],
 ): [typeof repoDetailsForKeys, typeof toggleRepo] => {
-  // Collect keys from localStorage. Any keys that are present in our option list will be our
-  // initial state. If there are none, just grab the first option.
-  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => {
-    const keys = keysFromLocalStorage();
-    const hashes = options.map((option) => getRepositoryOptionHash(option));
-    const matches = hashes.filter((hash) => keys.has(hash));
+  // Initialize local state with an empty Set.
+  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => new Set());
 
-    if (matches.length) {
-      return new Set(matches);
-    }
+  // Collect keys from localStorage. Any keys that are present in our option list will be pushed into
+  // local state. If there are none specified in localStorage, just grab the first option.
+  React.useEffect(() => {
+    setRepoKeys(() => {
+      const keys = keysFromLocalStorage();
+      const hashes = options.map((option) => getRepositoryOptionHash(option));
+      const matches = hashes.filter((hash) => keys.has(hash));
 
-    if (hashes.length) {
-      return new Set([hashes[0]]);
-    }
+      if (matches.length) {
+        return new Set(matches);
+      }
 
-    return new Set();
-  });
+      if (hashes.length) {
+        return new Set([hashes[0]]);
+      }
+
+      return new Set();
+    });
+  }, [options]);
 
   const toggleRepo = React.useCallback((option: RepoDetails) => {
     const {repoAddress} = option;
@@ -107,6 +113,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
     | {selector: undefined; tab: undefined; rootTab: string}
   >([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
+    '/workspace/:repoPath/jobs/:selector/:tab?',
     '/workspace/:repoPath/solids/:selector',
     '/workspace/:repoPath/schedules/:selector',
     '/workspace/:repoPath/sensors/:selector',
@@ -128,35 +135,57 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
   }, [allRepos, visibleRepos]);
 
   return (
-    <div
-      className="bp3-dark"
-      style={{
-        background: `rgba(0,0,0,0.3)`,
-        color: Colors.WHITE,
-        display: 'flex',
-        flex: 1,
-        overflow: 'none',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
-    >
+    <Container>
+      <ListContainer>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 8}}
+          padding={{horizontal: 24, bottom: 12}}
+        >
+          <IconWIP name="job" />
+          <span style={{fontSize: '16px', fontWeight: 600}}>Jobs and pipelines</span>
+        </Box>
+        {visibleRepos.size ? (
+          <FlatContentList {...match?.params} repos={visibleOptions} />
+        ) : allRepos.length > 0 ? (
+          <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
+        ) : (
+          <EmptyState>
+            There are no repositories in this workspace. Add a repository to see a list of jobs and
+            pipelines.
+          </EmptyState>
+        )}
+      </ListContainer>
+      <RepositoryLocationStateObserver />
       <RepoNavItem
         allRepos={allRepos.map(buildDetails)}
         selected={visibleRepos}
         onToggle={toggleRepo}
       />
-      <ApolloConsumer>
-        {(client) => <RepositoryLocationStateObserver client={client} />}
-      </ApolloConsumer>
-      {visibleRepos.size ? (
-        <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <RepositoryContentList {...match?.params} repos={visibleOptions} />
-          <JobsList {...match?.params} repos={visibleOptions} />
-        </div>
-      ) : null}
-    </div>
+    </Container>
   );
 };
+
+const Container = styled.div`
+  background: ${ColorsWIP.Gray100};
+  display: flex;
+  flex: 1;
+  overflow: none;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const ListContainer = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const EmptyState = styled.div`
+  color: ${ColorsWIP.Gray400};
+  line-height: 20px;
+  padding: 6px 24px 0;
+`;
 
 export const LeftNavRepositorySection = React.memo(() => {
   const {allRepos, loading} = React.useContext(WorkspaceContext);

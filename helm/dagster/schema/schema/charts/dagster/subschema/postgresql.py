@@ -1,6 +1,6 @@
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
-from ...utils.kubernetes import ImageWithRegistry
+from ...utils.kubernetes import ExternalImage
 
 
 class Service(BaseModel):
@@ -8,7 +8,7 @@ class Service(BaseModel):
 
 
 class PostgreSQL(BaseModel):
-    image: ImageWithRegistry
+    image: ExternalImage
     enabled: bool
     postgresqlHost: str
     postgresqlUsername: str

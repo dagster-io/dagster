@@ -1,29 +1,30 @@
-import {
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Colors,
-  IconName,
-  MenuItem,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import {Select} from '@blueprintjs/select';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useCopyToClipboard} from '../app/browser';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
+import {ButtonWIP} from '../ui/Button';
+import {ButtonGroup} from '../ui/ButtonGroup';
+import {Checkbox} from '../ui/Checkbox';
 import {Group} from '../ui/Group';
+import {IconName, IconWIP} from '../ui/Icon';
+import {MenuItemWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
+import {TagWIP} from '../ui/TagWIP';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
+import {
+  extractLogCaptureStepsFromLegacySteps,
+  ILogCaptureInfo,
+  IRunMetadataDict,
+  IStepState,
+} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 
 export enum LogType {
@@ -40,8 +41,8 @@ interface ILogsToolbarProps {
   onSetFilter: (filter: LogFilter) => void;
   logType: LogType;
   onSetLogType: (logType: LogType) => void;
-  computeLogStep?: string;
-  onSetComputeLogStep: (step: string) => void;
+  computeLogKey?: string;
+  onSetComputeLogKey: (key: string) => void;
   computeLogUrl: string | null;
 }
 
@@ -56,27 +57,21 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     onSetFilter,
     logType,
     onSetLogType,
-    computeLogStep,
-    onSetComputeLogStep,
+    computeLogKey,
+    onSetComputeLogKey,
     computeLogUrl,
   } = props;
   return (
-    <LogsToolbarContainer>
-      <ButtonGroup>
-        <Button
-          icon="properties"
-          title="Structured event logs"
-          active={logType === LogType.structured}
-          onClick={() => onSetLogType(LogType.structured)}
-        />
-        <Button
-          icon="console"
-          title="Raw compute logs"
-          active={logType !== LogType.structured}
-          onClick={() => onSetLogType(LogType.stdout)}
-        />
-      </ButtonGroup>
-      <LogsToolbarDivider />
+    <OptionsContainer>
+      <ButtonGroup
+        activeItems={new Set([logType])}
+        buttons={[
+          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
+      <OptionsDivider />
       {logType === 'structured' ? (
         <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
       ) : (
@@ -85,112 +80,108 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           metadata={metadata}
           logType={logType}
           onSetLogType={onSetLogType}
-          computeLogStep={computeLogStep}
-          onSetComputeLogStep={onSetComputeLogStep}
+          computeLogKey={computeLogKey}
+          onSetComputeLogKey={onSetComputeLogKey}
           computeLogUrl={computeLogUrl}
         />
       )}
-    </LogsToolbarContainer>
+    </OptionsContainer>
   );
+};
+
+const resolveState = (metadata: IRunMetadataDict, logCapture: ILogCaptureInfo) => {
+  // resolves the state of potentially many steps into a single state so that we can show the
+  // execution dot representing the status of this log capture group (potentially at the process
+  // level)
+  if (logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey].state === IStepState.RUNNING)) {
+    return IStepState.RUNNING;
+  }
+  if (logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey].state === IStepState.SKIPPED)) {
+    return IStepState.SKIPPED;
+  }
+  if (
+    logCapture.stepKeys.every((stepKey) => metadata.steps[stepKey].state === IStepState.SUCCEEDED)
+  ) {
+    return IStepState.SUCCEEDED;
+  }
+  return IStepState.FAILED;
 };
 
 const ComputeLogToolbar = ({
   steps,
   metadata,
-  computeLogStep,
-  onSetComputeLogStep,
+  computeLogKey,
+  onSetComputeLogKey,
   logType,
   onSetLogType,
   computeLogUrl,
 }: {
   steps: string[];
   metadata: IRunMetadataDict;
-  computeLogStep?: string;
-  onSetComputeLogStep: (step: string) => void;
+  computeLogKey?: string;
+  onSetComputeLogKey: (step: string) => void;
   logType: LogType;
   onSetLogType: (type: LogType) => void;
   computeLogUrl: string | null;
 }) => {
-  const isValidStepSelection = steps.length && computeLogStep && metadata.steps[computeLogStep];
+  const logCaptureSteps =
+    metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
+  const isValidStepSelection = computeLogKey && logCaptureSteps[computeLogKey];
+  const logKeyText = (logKey?: string) => {
+    if (!logKey || !logCaptureSteps[logKey]) {
+      return null;
+    }
+    const captureInfo = logCaptureSteps[logKey];
+    if (captureInfo.stepKeys.length === 1 && logKey === captureInfo.stepKeys[0]) {
+      return logKey;
+    }
+    if (captureInfo.pid) {
+      return `pid: ${captureInfo.pid} (${captureInfo.stepKeys.length} steps)`;
+    }
+    return `${logKey} (${captureInfo.stepKeys.length} steps)`;
+  };
+
   return (
     <Box
       flex={{justifyContent: 'space-between', alignItems: 'center', direction: 'row'}}
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <Select
+        <SelectWIP
           disabled={!steps.length}
-          items={steps}
+          items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItem
+            <MenuItemWIP
               key={item}
               onClick={options.handleClick}
-              text={item}
+              text={logKeyText(item)}
               active={options.modifiers.active}
             />
           )}
-          activeItem={computeLogStep}
+          activeItem={computeLogKey}
           filterable={false}
-          onItemSelect={(stepKey) => {
-            onSetComputeLogStep(stepKey);
+          onItemSelect={(logKey) => {
+            onSetComputeLogKey(logKey);
           }}
         >
-          <Button
-            text={computeLogStep || 'Select a step...'}
-            disabled={!steps.length}
-            rightIcon="caret-down"
-            style={{minHeight: 25}}
-          />
-        </Select>
+          <ButtonWIP disabled={!steps.length} rightIcon={<IconWIP name="expand_more" />}>
+            {logKeyText(computeLogKey) || 'Select a step...'}
+          </ButtonWIP>
+        </SelectWIP>
         {isValidStepSelection ? (
-          <Tabs selectedTabId={LogType[logType]}>
-            <Tab
-              id={LogType[LogType.stdout]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stdout
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stdout)}
-                >
-                  stdout
-                </ButtonLink>
-              }
-            />
-            <Tab
-              id={LogType[LogType.stderr]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stderr
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stderr)}
-                >
-                  stderr
-                </ButtonLink>
-              }
-            />
+          <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
+            <Tab id={LogType.stdout} title="stdout" />
+            <Tab id={LogType.stderr} title="stderr" />
           </Tabs>
         ) : null}
       </Group>
       {isValidStepSelection ? (
         <Group direction="row" spacing={12} alignItems="center">
-          {computeLogStep && metadata.steps[computeLogStep] ? (
-            metadata.steps[computeLogStep].state === IStepState.RUNNING ? (
+          {computeLogKey && logCaptureSteps[computeLogKey] ? (
+            resolveState(metadata, logCaptureSteps[computeLogKey]) === IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
             ) : (
-              <ExecutionStateDot
-                state={metadata.steps[computeLogStep].state}
-                title={`${metadata.steps[computeLogStep].state[0].toUpperCase()}${metadata.steps[
-                  computeLogStep
-                ].state.substr(1)}`}
-              />
+              <ExecutionStateDot state={resolveState(metadata, logCaptureSteps[computeLogKey])} />
             )
           ) : null}
           {computeLogUrl ? (
@@ -198,7 +189,11 @@ const ComputeLogToolbar = ({
               aria-label="Download link"
               className="bp3-button bp3-minimal bp3-icon-download"
               href={computeLogUrl}
-              title={`Download ${computeLogStep}`}
+              title={
+                computeLogKey && logCaptureSteps[computeLogKey]?.stepKeys.length === 1
+                  ? `Download ${logCaptureSteps[computeLogKey]?.stepKeys[0]} compute logs`
+                  : `Download compute logs`
+              }
               download
             ></a>
           ) : null}
@@ -217,9 +212,11 @@ const StructuredLogToolbar = ({
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
 }) => {
-  const [copyIcon, setCopyIcon] = React.useState<IconName>(IconNames.CLIPBOARD);
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('assignment');
   const logQueryString = logQueryToString(filter.logQuery);
   const [queryString, setQueryString] = React.useState<string>(() => logQueryString);
+  const copyToClipboard = useCopyToClipboard();
+
   const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
   const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
 
@@ -245,9 +242,9 @@ const StructuredLogToolbar = ({
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
     let token: any;
-    if (copyIcon === IconNames.SAVED) {
+    if (copyIcon === 'assignment_turned_in') {
       token = setTimeout(() => {
-        setCopyIcon(IconNames.CLIPBOARD);
+        setCopyIcon('assignment');
       }, 2000);
     }
     return () => {
@@ -264,25 +261,20 @@ const StructuredLogToolbar = ({
       />
       {filterText ? (
         <NonMatchCheckbox
-          inline
           checked={filter.hideNonMatches}
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
           }
-        >
-          Hide non-matches
-        </NonMatchCheckbox>
+          label="Hide non-matches"
+        />
       ) : null}
-      <LogsToolbarDivider />
-      <div style={{display: 'flex'}}>
+      <OptionsDivider />
+      <Group direction="row" spacing={4} alignItems="center">
         {Object.keys(LogLevel).map((level) => {
           const enabled = filter.levels[level];
           return (
-            <FilterTag
+            <FilterButton
               key={level}
-              intent={enabled ? 'primary' : 'none'}
-              interactive
-              minimal={!enabled}
               onClick={() =>
                 onSetFilter({
                   ...filter,
@@ -292,40 +284,34 @@ const StructuredLogToolbar = ({
                   },
                 })
               }
-              round
             >
-              {level.toLowerCase()}
-            </FilterTag>
+              <TagWIP
+                key={level}
+                intent={enabled ? 'primary' : 'none'}
+                interactive
+                minimal={!enabled}
+                round
+              >
+                {level.toLowerCase()}
+              </TagWIP>
+            </FilterButton>
           );
         })}
-      </div>
-      {selectedStep && <LogsToolbarDivider />}
+      </Group>
+      {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <div style={{marginRight: '8px'}}>
-        <Button
-          small
-          icon={copyIcon}
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            setCopyIcon(IconNames.SAVED);
-          }}
-          text="Copy URL"
-        />
-      </div>
+      <ButtonWIP
+        icon={<IconWIP name={copyIcon} />}
+        onClick={() => {
+          copyToClipboard(window.location.href);
+          setCopyIcon('assignment_turned_in');
+        }}
+      >
+        Copy URL
+      </ButtonWIP>
     </>
   );
 };
-
-const LogsToolbarContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  background: ${Colors.WHITE};
-  align-items: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid ${Colors.GRAY4};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-  z-index: 2;
-`;
 
 const NonMatchCheckbox = styled(Checkbox)`
   &&& {
@@ -335,16 +321,15 @@ const NonMatchCheckbox = styled(Checkbox)`
   white-space: nowrap;
 `;
 
-const LogsToolbarDivider = styled.div`
-  display: inline-block;
-  width: 1px;
-  height: 30px;
-  margin: 0 8px;
-  border-right: 1px solid ${Colors.LIGHT_GRAY3};
-`;
+const FilterButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: block;
 
-const FilterTag = styled(Tag)`
-  margin-right: 8px;
-  text-transform: capitalize;
-  opacity: ${({minimal}) => (minimal ? '0.5' : '1')};
+  :focus {
+    outline: none;
+  }
 `;

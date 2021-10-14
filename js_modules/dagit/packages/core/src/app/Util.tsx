@@ -1,40 +1,6 @@
 import LRU from 'lru-cache';
 
-import {getJSONForKey} from './LocalStorage';
-
-export const DEFAULT_RESULT_NAME = 'result';
-
-export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100): T {
-  let timeout: any | null = null;
-  let args: any[] | null = null;
-  let timestamp = 0;
-  let result: ReturnType<T>;
-
-  function later() {
-    const last = Date.now() - timestamp;
-
-    if (last < wait && last >= 0) {
-      timeout = setTimeout(later, wait - last);
-    } else {
-      timeout = null;
-      // eslint-disable-next-line
-      result = func.apply(null, args);
-      args = null;
-    }
-  }
-
-  const debounced = function (...newArgs: any[]) {
-    timestamp = Date.now();
-    args = newArgs;
-    if (!timeout) {
-      timeout = setTimeout(later, wait);
-    }
-
-    return result;
-  };
-
-  return (debounced as any) as T;
-}
+import {featureEnabled, FeatureFlag} from './Flags';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
@@ -78,23 +44,6 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
   });
 }
 
-export function memoize<T, R>(
-  fn: (arg: T, ...rest: any[]) => R,
-  hashFn?: (arg: T, ...rest: any[]) => any,
-  hashSize?: number,
-): (arg: T, ...rest: any[]) => R {
-  const cache = new LRU(hashSize || 50);
-  return (arg: T, ...rest: any[]) => {
-    const key = hashFn ? hashFn(arg, ...rest) : arg;
-    if (cache.has(key)) {
-      return cache.get(key) as R;
-    }
-    const r = fn(arg, ...rest);
-    cache.set(key, r);
-    return r;
-  };
-}
-
 export function asyncMemoize<T, R>(
   fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
   hashFn?: (arg: T, ...rest: any[]) => any,
@@ -134,38 +83,12 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function titleOfIO(i: {solid: {name: string}; definition: {name: string}}) {
-  return i.solid.name !== DEFAULT_RESULT_NAME
-    ? `${i.solid.name}:${i.definition.name}`
-    : i.solid.name;
-}
-
 export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
 
-const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
-
-export enum FeatureFlag {
-  DebugConsoleLogging = 'DebugConsoleLogging',
-  LeftNav = 'LeftNav',
-}
-
-export function getFeatureFlags(): FeatureFlag[] {
-  return getJSONForKey(DAGIT_FLAGS_KEY) || [];
-}
-
-export const featureEnabled = (flag: FeatureFlag) => getFeatureFlags().includes(flag);
-
-export function setFeatureFlags(flags: FeatureFlag[]) {
-  if (!(flags instanceof Array)) {
-    throw new Error('flags must be an array');
-  }
-  localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
-}
-
 export function debugLog(...args: any[]) {
-  if (featureEnabled(FeatureFlag.DebugConsoleLogging)) {
+  if (featureEnabled(FeatureFlag.flagDebugConsoleLogging)) {
     console.log(...args);
   }
 }

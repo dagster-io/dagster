@@ -5,15 +5,19 @@ import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 import {FontFamily} from '../src/ui/styles';
+import {GlobalDialogStyle} from '../src/ui/Dialog';
+import {GlobalPopoverStyle} from '../src/ui/Popover';
 
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
+
 const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
   }
 
   body, input, textarea, button, select {
@@ -23,6 +27,10 @@ const GlobalStyle = createGlobalStyle`
   body ul, body li {
     margin: 0;
   }
+
+  .material-icons {
+    display: block;
+  }
 `;
 
 // Global decorator to apply the styles to all stories
@@ -30,6 +38,8 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalPopoverStyle />
+      <GlobalDialogStyle />
       <Story />
     </MemoryRouter>
   ),

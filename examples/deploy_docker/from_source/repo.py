@@ -4,12 +4,12 @@ from dagster import pipeline, repository, schedule, solid
 
 
 @solid
-def hello(_):
+def hello():
     return 1
 
 
 @solid
-def hanging_solid(_):
+def hanging_solid():
     while True:
         time.sleep(5)
 

@@ -1,5 +1,3 @@
-intermediate_storage:
-  filesystem:
 execution:
   celery:
     config_source:

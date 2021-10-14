@@ -48,16 +48,19 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         missing_main_table = "schedules" not in table_names and "jobs" not in table_names
         if self.should_autocreate_tables and missing_main_table:
-            with self.connect() as conn:
-                alembic_config = pg_alembic_config(__file__)
-                retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
-
-                # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(alembic_config, conn)
+            retry_pg_creation_fn(self._init_db)
 
         super().__init__()
+
+    def _init_db(self):
+        with self.connect() as conn:
+            with conn.begin():
+                ScheduleStorageSqlMetadata.create_all(conn)
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout

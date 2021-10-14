@@ -32,11 +32,12 @@ RUN apt-get update -yqq \
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    DOCKER_COMPOSE_VERSION=1.24.0 \
+    DOCKER_COMPOSE_VERSION=1.29.1 \
     KIND_VERSION=v0.9.0 \
     KUBECTL_VERSION=v1.20.1 \
     PYSPARK_VERSION=3.0.1 \
-    SBT_VERSION=1.4.6
+    SBT_VERSION=1.4.6 \
+    FOSSA_VERSION=v1.1.10
 
 # Install kubectl
 RUN echo "--- \033[32m:k8s: Install kubectl\033[0m" \
@@ -102,7 +103,7 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add - \
     # Add SBT debian pkg
-    && curl -LO "https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb" \
+    && curl -LO "https://repo.scala-sbt.org/scalasbt/debian/sbt-$SBT_VERSION.deb" \
     && dpkg -i sbt-$SBT_VERSION.deb \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
     && apt-get -yqq update \
@@ -128,6 +129,10 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
         /usr/share/doc \
         /usr/share/doc-base
 
+# Install docker compose-cli
+# https://github.com/docker/compose-cli/blob/main/INSTALL.md
+RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+
 # Install Python deps
 ADD trigger_maven.py .
 RUN pip install -U pip setuptools wheel \
@@ -143,3 +148,14 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && tar xvzf redis-stable.tar.gz \
     && cd redis-stable \
     && make install
+
+# Install FOSSA cli for analyzing our open-source dependencies
+# https://github.com/fossas/fossa-cli
+RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sh -s $FOSSA_VERSION
+
+# Install libxmlsec to use xmlsec
+RUN apt-get update -yqq \
+    && apt-get upgrade -yqq \
+    && apt-get install -yqq --no-install-recommends \
+    libxmlsec1-dev \
+    pkg-config

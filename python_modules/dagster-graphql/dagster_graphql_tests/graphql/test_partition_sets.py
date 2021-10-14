@@ -9,7 +9,7 @@ from dagster_graphql.test.utils import (
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
+    NonLaunchableGraphQLContextTestMatrix,
 )
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = """
@@ -130,7 +130,7 @@ GET_PARTITION_SET_STATUS_QUERY = """
 """
 
 
-class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
+class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
     def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(

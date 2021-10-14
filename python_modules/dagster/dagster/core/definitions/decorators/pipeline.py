@@ -2,14 +2,17 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from dagster import check
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils.backcompat import experimental_arg_warning
 
+from ..graph import GraphDefinition
 from ..hook import HookDefinition
 from ..input import InputDefinition
 from ..mode import ModeDefinition
 from ..output import OutputDefinition
 from ..pipeline import PipelineDefinition
 from ..preset import PresetDefinition
+from ..version_strategy import VersionStrategy
 
 
 class _Pipeline:
@@ -25,6 +28,8 @@ class _Pipeline:
         output_defs: Optional[List[OutputDefinition]] = None,
         config_schema: Optional[Dict[str, Any]] = None,
         config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        solid_retry_policy: Optional[RetryPolicy] = None,
+        version_strategy: Optional[VersionStrategy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
@@ -39,6 +44,12 @@ class _Pipeline:
         )
         self.config_schema = config_schema
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
+        self.solid_retry_policy = check.opt_inst_param(
+            solid_retry_policy, "solid_retry_policy", RetryPolicy
+        )
+        self.version_strategy = check.opt_inst_param(
+            version_strategy, "version_strategy", VersionStrategy
+        )
 
     def __call__(self, fn: Callable[..., Any]) -> PipelineDefinition:
         check.callable_param(fn, "fn")
@@ -46,7 +57,14 @@ class _Pipeline:
         if not self.name:
             self.name = fn.__name__
 
-        from dagster.core.definitions.decorators.composite_solid import do_composition
+        from dagster.core.definitions.decorators.composite_solid import (
+            do_composition,
+            get_validated_config_mapping,
+        )
+
+        config_mapping = get_validated_config_mapping(
+            self.name, self.config_schema, self.config_fn, decorator_name="pipeline"
+        )
 
         (
             input_mappings,
@@ -61,24 +79,28 @@ class _Pipeline:
             fn,
             self.input_defs,
             self.output_defs,
-            self.config_schema,
-            self.config_fn,
+            config_mapping,
             ignore_output_from_composition_fn=not self.did_pass_outputs,
         )
 
         pipeline_def = PipelineDefinition(
-            name=self.name,
-            dependencies=dependencies,
-            solid_defs=solid_defs,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_definitions,
-            description=self.description,
+            graph_def=GraphDefinition(
+                name=self.name,
+                description=None,  # put desc on the pipeline
+                dependencies=dependencies,
+                node_defs=solid_defs,
+                input_mappings=input_mappings,
+                output_mappings=output_mappings,
+                config=config_mapping,
+                positional_inputs=positional_inputs,
+            ),
             tags=self.tags,
+            description=self.description or fn.__doc__,
             hook_defs=self.hook_defs,
-            input_mappings=input_mappings,
-            output_mappings=output_mappings,
-            config_mapping=config_mapping,
-            positional_inputs=positional_inputs,
+            solid_retry_policy=self.solid_retry_policy,
+            version_strategy=self.version_strategy,
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
@@ -95,6 +117,8 @@ def pipeline(
     output_defs: Optional[List[OutputDefinition]] = None,
     config_schema: Optional[Dict[str, Any]] = None,
     config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+    solid_retry_policy: Optional[RetryPolicy] = None,
+    version_strategy: Optional[VersionStrategy] = None,
 ) -> Union[PipelineDefinition, _Pipeline]:
     """Create a pipeline with the specified parameters from the decorated composition function.
 
@@ -121,6 +145,11 @@ def pipeline(
         hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
             pipeline. When a hook is applied to a pipeline, it will be attached to all solid
             instances within the pipeline.
+        solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
+            this pipeline. Only used if retry policy is not defined on the solid definition or
+            solid invocation.
+        version_strategy (Optional[VersionStrategy]): The version strategy to use with this
+            pipeline. Providing a VersionStrategy will enable memoization on the pipeline.
 
     Example:
 
@@ -176,4 +205,6 @@ def pipeline(
         output_defs=output_defs,
         config_schema=config_schema,
         config_fn=config_fn,
+        solid_retry_policy=solid_retry_policy,
+        version_strategy=version_strategy,
     )

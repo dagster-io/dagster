@@ -1,12 +1,12 @@
 import logging
 import sys
 from abc import abstractclassmethod, abstractmethod
+from collections import deque
 from contextlib import AbstractContextManager
 
 import pendulum
 from dagster import DagsterInstance, check
-from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
@@ -44,7 +44,9 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._errors = []  # (SerializableErrorInfo, timestamp) tuples
+        self._errors = deque(
+            maxlen=DAEMON_HEARTBEAT_ERROR_LIMIT
+        )  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
 
@@ -59,6 +61,7 @@ class DagsterDaemon(AbstractContextManager):
 
     def run_loop(
         self,
+        instance_ref,
         daemon_uuid,
         daemon_shutdown_event,
         gen_workspace,
@@ -67,7 +70,7 @@ class DagsterDaemon(AbstractContextManager):
         until=None,
     ):
         # Each loop runs in its own thread with its own instance and IWorkspace
-        with DagsterInstance.get() as instance:
+        with DagsterInstance.from_ref(instance_ref) as instance:
             with gen_workspace(instance) as workspace:
                 check.inst_param(workspace, "workspace", IWorkspace)
 
@@ -91,9 +94,19 @@ class DagsterDaemon(AbstractContextManager):
                             until,
                         )
 
-                    self._check_add_heartbeat(
-                        instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
-                    )
+                    try:
+                        self._check_add_heartbeat(
+                            instance,
+                            daemon_uuid,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                        )
+                    except Exception:  # pylint: disable=broad-except
+                        self._logger.error(
+                            "Failed to add heartbeat: \n{}".format(
+                                serializable_error_info_from_exc_info(sys.exc_info())
+                            )
+                        )
                     daemon_shutdown_event.wait(0.5)
 
     def _run_iteration(
@@ -118,13 +131,13 @@ class DagsterDaemon(AbstractContextManager):
                 try:
                     result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
                     if result:
-                        self._errors.append((result, pendulum.now("UTC")))
+                        self._errors.appendleft((result, pendulum.now("UTC")))
                 except StopIteration:
                     break
                 except Exception:  # pylint: disable=broad-except
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     self._logger.error("Caught error:\n{}".format(error_info))
-                    self._errors.append((error_info, pendulum.now("UTC")))
+                    self._errors.appendleft((error_info, pendulum.now("UTC")))
                     break
                 finally:
                     try:
@@ -150,11 +163,11 @@ class DagsterDaemon(AbstractContextManager):
     ):
         error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
 
-        self._errors = self._errors[:DAEMON_HEARTBEAT_ERROR_LIMIT]
-
-        self._errors = [
-            (error, timestamp) for (error, timestamp) in self._errors if timestamp >= error_max_time
-        ]
+        while len(self._errors):
+            _earliest_error, earliest_timestamp = self._errors[-1]
+            if earliest_timestamp >= error_max_time:
+                break
+            self._errors.pop()
 
         curr_time = pendulum.now("UTC")
 
@@ -206,40 +219,17 @@ class DagsterDaemon(AbstractContextManager):
 
 
 class SchedulerDaemon(DagsterDaemon):
-    def __init__(
-        self,
-        interval_seconds,
-        max_catchup_runs,
-    ):
-        super(SchedulerDaemon, self).__init__(interval_seconds)
-        self._max_catchup_runs = max_catchup_runs
-
-    @staticmethod
-    def create_from_instance(instance):
-        max_catchup_runs = instance.scheduler.max_catchup_runs
-
-        from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
-
-        return SchedulerDaemon(
-            interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,
-            max_catchup_runs=max_catchup_runs,
-        )
-
     @classmethod
     def daemon_type(cls):
         return "SCHEDULER"
 
     def run_iteration(self, instance, workspace):
         yield from execute_scheduler_iteration(
-            instance, workspace, self._logger, self._max_catchup_runs
+            instance, workspace, self._logger, instance.scheduler.max_catchup_runs
         )
 
 
 class SensorDaemon(DagsterDaemon):
-    @staticmethod
-    def create_from_instance(_instance):
-        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
-
     @classmethod
     def daemon_type(cls):
         return "SENSOR"
@@ -249,12 +239,6 @@ class SensorDaemon(DagsterDaemon):
 
 
 class BackfillDaemon(DagsterDaemon):
-    @staticmethod
-    def create_from_instance(_instance):
-        from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
-
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
-
     @classmethod
     def daemon_type(cls):
         return "BACKFILL"

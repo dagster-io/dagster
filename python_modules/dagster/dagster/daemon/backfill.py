@@ -3,7 +3,6 @@ import sys
 import time
 
 from dagster import check
-from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.errors import DagsterBackfillFailedError
 from dagster.core.execution.backfill import (
     BulkActionStatus,
@@ -13,6 +12,7 @@ from dagster.core.execution.backfill import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
+from dagster.core.workspace import IWorkspace
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
@@ -89,7 +89,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                 if chunk:
 
                     for _run_id in submit_backfill_runs(
-                        instance, repo_location, backfill_job, chunk
+                        instance, workspace, repo_location, backfill_job, chunk
                     ):
                         yield
 

@@ -7,7 +7,6 @@
 -e ./python_modules/libraries/dagster-celery
 -e ./python_modules/libraries/dagster-celery-docker
 -e ./python_modules/libraries/dagster-celery-k8s
--e ./python_modules/libraries/dagster-cron
 -e ./python_modules/libraries/dagster-dask
 -e ./python_modules/libraries/dagster-databricks
 -e ./python_modules/libraries/dagster-datadog
@@ -17,6 +16,8 @@
 -e ./python_modules/libraries/dagster-ge
 -e ./python_modules/libraries/dagster-github
 -e ./python_modules/libraries/dagster-k8s
+-e ./python_modules/libraries/dagster-mlflow
+-e ./python_modules/libraries/dagster-msteams
 -e ./python_modules/libraries/dagster-mysql
 -e ./python_modules/libraries/dagster-pagerduty
 -e ./python_modules/libraries/dagster-pandas
@@ -33,6 +34,7 @@
 -e ./python_modules/libraries/dagstermill
 -e ./python_modules/libraries/lakehouse
 -e ./python_modules/automation
+docutils==0.15.2
 Sphinx==3.5.2
 sphinx-click==2.5.0
 recommonmark==0.7.1

@@ -2,7 +2,7 @@ import pendulum
 import pytest
 from dagster.core.scheduler.job import JobTickStatus
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import create_pendulum_time, to_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
 from .test_scheduler_run import (

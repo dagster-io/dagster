@@ -9,12 +9,14 @@ type QueryPersistedDataType =
   | (string | undefined | number)
   | null;
 
-interface QuerySerializer<T extends QueryPersistedDataType> {
-  decode: (raw: {[key: string]: any}) => T;
-  encode: (raw: T) => {[key: string]: any};
-}
-
 let currentQueryString: {[key: string]: any} = {};
+
+export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
+  queryKey?: string;
+  defaults?: {[key: string]: any};
+  decode?: (raw: {[key: string]: any}) => T;
+  encode?: (raw: T) => {[key: string]: any};
+};
 
 /**
  * This goal of this hook is to make it easy to replace `React.useState` with a version
@@ -24,14 +26,20 @@ let currentQueryString: {[key: string]: any} = {};
  * Examples:
  *
  * // Single (string | undefined) key saved to querystring with default value applied inline
+ *
  * const [search = '', setSearch] = useQueryPersistedState({queryKey: 'q'})
  *
  * // Object saved to querystring with default values pre-filled
+ * // Note: String and boolean values are automatically encoded / decoded, see below for others
+ *
  * const [query, setQuery] = useQueryPersistedState<{cursor: string, filter: string}>({
  *   defaults: {cursor: '', filter: ''},
  * })
  *
  * // Custom transformer mapping to / from querystring representation (for our filter tokens)
+ * // Note: `setIdeas` will be a different function on every render unless you memoize the options
+ * // passed to the hook! Pull the encode/decode functions out into a file constant or use React.useRef
+ *
  * const [ideas, setIdeas] = useQueryPersistedState<string[]>({
  *   encode: (ideas) => ({q: ideas.join(',')}),
  *   decode: ({q}) => (q || '').split(','),
@@ -41,18 +49,19 @@ let currentQueryString: {[key: string]: any} = {};
  * string BEFORE decoding.
  */
 export function useQueryPersistedState<T extends QueryPersistedDataType>(
-  options: {
-    queryKey?: string;
-    defaults?: {[key: string]: any};
-  } & Partial<QuerySerializer<T>>,
+  options: QueryPersistedStateConfig<T>,
 ): [T, (updates: T) => void] {
   const {queryKey, defaults} = options;
   let {encode, decode} = options;
 
   if (queryKey) {
     // Just a short-hand way of providing encode/decode that go from qs object => string
-    encode = (raw: T) => ({[queryKey]: raw});
-    decode = (qs: {[key: string]: any}) => qs[queryKey];
+    if (!encode) {
+      encode = (raw: T) => ({[queryKey]: raw});
+    }
+    if (!decode) {
+      decode = (qs: {[key: string]: any}) => inferTypeOfQueryParam<T>(qs[queryKey]);
+    }
   }
 
   const location = useLocation();
@@ -63,18 +72,16 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   currentQueryString = querystring.parse(location.search);
 
   const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
-  const qsDecoded = decode ? decode(qsWithDefaults) : (qsWithDefaults as T);
+
+  // Note: If you have provided defaults and no encoder/decoder, the `value` exposed by
+  // useQueryPersistedState only includes those keys so other params don't leak into your value.
+  const qsDecoded = decode ? decode(qsWithDefaults) : inferTypeOfQueryParams<T>(qsWithDefaults);
 
   // If `decode` yields a non-primitive type (eg: object or array), by default we yield
   // an object with a new identity on every render. To prevent possible render loops caused by
   // our value as a useEffect dependency, etc., we re-use the last yielded object if it isEqual.
   const valueRef = React.useRef<T>(qsDecoded);
-  if (!isEqual(valueRef.current, qsDecoded)) {
-    valueRef.current = qsDecoded;
-  }
-
-  return [
-    valueRef.current,
+  const onChangeRef = React.useCallback<(updated: T) => void>(
     (updated: T) => {
       const next = {
         ...currentQueryString,
@@ -89,5 +96,23 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       currentQueryString = next;
       history.replace(`${location.pathname}?${querystring.stringify(next)}`);
     },
-  ];
+    [history, encode, location.pathname, options],
+  );
+
+  if (!isEqual(valueRef.current, qsDecoded)) {
+    valueRef.current = qsDecoded;
+  }
+  return [valueRef.current, onChangeRef];
+}
+
+function inferTypeOfQueryParam<T>(q: any): T {
+  return q === 'false' ? false : q === 'true' ? true : q;
+}
+
+function inferTypeOfQueryParams<T>(qs: {[key: string]: any}) {
+  const result: {[key: string]: any} = {};
+  for (const key of Object.keys(qs)) {
+    result[key] = inferTypeOfQueryParam<any>(qs[key]);
+  }
+  return result as T;
 }

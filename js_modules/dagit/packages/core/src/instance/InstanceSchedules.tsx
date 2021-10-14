@@ -1,17 +1,20 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
-import {UnloadableSchedules} from '../jobs/UnloadableJobs';
-import {Group, Box} from '../main';
-import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSchedules} from '../instigation/Unloadable';
+import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
-import {JobType} from '../types/globalTypes';
+import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
-import {Subheading} from '../ui/Text';
+import {NonIdealState} from '../ui/NonIdealState';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -29,49 +32,60 @@ export const InstanceSchedules = React.memo(() => {
   });
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="schedules" queryData={queryData} />
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="schedules" queryData={queryData} />}
+      />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSchedules data={data} />}
       </Loading>
-    </Group>
+    </>
   );
 });
 
 const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
-  const {instance, scheduler, repositoriesOrError, unloadableJobStatesOrError} = data;
+  const {instance, repositoriesOrError, unloadableInstigationStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={repositoriesOrError} />;
   }
-  if (unloadableJobStatesOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={unloadableJobStatesOrError} />;
+  if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
   }
 
-  const unloadableJobs = unloadableJobStatesOrError.results;
+  const unloadable = unloadableInstigationStatesOrError.results;
   const withSchedules = repositoriesOrError.nodes.filter(
     (repository) => repository.schedules.length,
   );
 
   const loadedSchedulesSection = withSchedules.length ? (
-    <Group direction="column" spacing={32}>
-      <Group direction="column" spacing={12}>
-        <SchedulerTimezoneNote schedulerOrError={scheduler} />
-        <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
-      </Group>
+    <>
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <SchedulerInfo daemonHealth={instance.daemonHealth} />
+      </Box>
       {withSchedules.map((repository) => (
-        <Group direction="column" spacing={8} key={repository.name}>
-          <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
-          <SchedulesTable
-            repoAddress={buildRepoAddress(repository.name, repository.location.name)}
-            schedules={repository.schedules}
-          />
-        </Group>
+        <React.Fragment key={repository.name}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          </Box>
+          <Box padding={{bottom: 16}}>
+            <SchedulesTable
+              repoAddress={buildRepoAddress(repository.name, repository.location.name)}
+              schedules={repository.schedules}
+            />
+          </Box>
+        </React.Fragment>
       ))}
-    </Group>
+    </>
   ) : null;
 
-  const unloadableSchedules = unloadableJobs.filter((state) => state.jobType === JobType.SCHEDULE);
+  const unloadableSchedules = unloadable.filter(
+    (state) => state.instigationType === InstigationType.SCHEDULE,
+  );
 
   const unloadableSchedulesSection = unloadableSchedules.length ? (
     <UnloadableSchedules scheduleStates={unloadableSchedules} />
@@ -81,7 +95,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
     return (
       <Box margin={{top: 32}}>
         <NonIdealState
-          icon="time"
+          icon="schedule"
           title="No schedules found"
           description={
             <div>
@@ -93,7 +107,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
               >
                 scheduler documentation
               </a>{' '}
-              for more information about scheduling pipeline runs in Dagster.
+              for more information about scheduling runs in Dagster.
             </div>
           }
         />
@@ -129,14 +143,11 @@ const INSTANCE_SCHEDULES_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    scheduler {
-      ...SchedulerFragment
-    }
-    unloadableJobStatesOrError {
-      ... on JobStates {
+    unloadableInstigationStatesOrError {
+      ... on InstigationStates {
         results {
           id
-          ...JobStateFragment
+          ...InstigationStateFragment
         }
       }
       ...PythonErrorFragment
@@ -146,7 +157,6 @@ const INSTANCE_SCHEDULES_QUERY = gql`
   ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;

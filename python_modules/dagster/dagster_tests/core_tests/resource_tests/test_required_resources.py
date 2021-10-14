@@ -22,7 +22,7 @@ from dagster import (
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster.core.execution.api import execute_run
+from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
 
@@ -138,9 +138,13 @@ def test_execution_plan_subset_strict_resources():
 
     pipeline_def = get_resource_init_pipeline(resources_initted)
 
+    execution_plan = create_execution_plan(
+        pipeline_def, step_keys_to_execute=["consumes_resource_b"]
+    )
+
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        step_keys_to_execute=["consumes_resource_b"],
+        execution_plan=execution_plan,
     )
 
     result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
@@ -276,9 +280,13 @@ def test_execution_plan_subset_strict_resources_within_composite():
 
     instance = DagsterInstance.ephemeral()
 
+    execution_plan = create_execution_plan(
+        pipeline_def, step_keys_to_execute=["wraps_b.consumes_resource_b"]
+    )
+
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        step_keys_to_execute=["wraps_b.consumes_resource_b"],
+        execution_plan=execution_plan,
     )
 
     result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
@@ -336,9 +344,13 @@ def test_execution_plan_subset_with_aliases():
 
     instance = DagsterInstance.ephemeral()
 
+    execution_plan = create_execution_plan(
+        selective_init_test_pipeline_with_alias, step_keys_to_execute=["b_alias"]
+    )
+
     pipeline_run = instance.create_run_for_pipeline(
         selective_init_test_pipeline_with_alias,
-        step_keys_to_execute=["b_alias"],
+        execution_plan=execution_plan,
     )
 
     result = execute_run(
@@ -706,7 +718,7 @@ def test_type_missing_resource_fails():
     def custom_type_solid(_):
         return "A"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='required by type "NeedsA"'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="required by type 'NeedsA'"):
 
         @pipeline
         def _type_check_pipeline():
@@ -728,7 +740,7 @@ def test_loader_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='required by the loader on type "CustomType"'
+        DagsterInvalidDefinitionError, match="required by the loader on type 'CustomType'"
     ):
 
         @pipeline
@@ -749,7 +761,7 @@ def test_materialize_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='required by the materializer on type "CustomType"'
+        DagsterInvalidDefinitionError, match="required by the materializer on type 'CustomType'"
     ):
 
         @pipeline
@@ -760,7 +772,7 @@ def test_materialize_missing_resource_fails():
 def test_plugin_missing_resource_fails():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'required by the plugin "CustomStoragePlugin" on type "CustomType" \(used with storages',
+        match=r"required by the plugin 'CustomStoragePlugin' on type 'CustomType' \(used with storages",
     ):
         define_plugin_pipeline(mode_defines_resource=False)
 
@@ -848,3 +860,35 @@ def test_root_input_manager():
 
     with pytest.raises(DagsterInvalidSubsetError):
         _invalid = _valid.get_pipeline_subset_def({"end"})
+
+
+def test_root_input_manager_missing_fails():
+    @solid(
+        input_defs=[InputDefinition("root_input", root_manager_key="missing_root_input_manager")]
+    )
+    def requires_missing_root_input_manager(root_input: int):
+        return root_input
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"'missing_root_input_manager' is required by unsatisfied input 'root_input' of solid 'requires_missing_root_input_manager'",
+    ):
+
+        @pipeline
+        def _invalid():
+            requires_missing_root_input_manager()
+
+
+def test_io_manager_missing_fails():
+    @solid(output_defs=[OutputDefinition(int, "result", io_manager_key="missing_io_manager")])
+    def requires_missing_io_manager():
+        return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"'missing_io_manager' is required by output 'result' of solid 'requires_missing_io_manager'",
+    ):
+
+        @pipeline
+        def _invalid():
+            requires_missing_io_manager()

@@ -22,6 +22,7 @@ module.exports = {
   },
   rules: {
     curly: 'error',
+    eqeqeq: ['error', 'always', {null: 'ignore'}],
     'graphql/required-fields': [
       'error',
       {
@@ -40,6 +41,7 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
+    'no-alert': 'error',
     'no-restricted-imports': [
       'error',
       {
@@ -47,7 +49,41 @@ module.exports = {
         paths: [
           {
             name: '@blueprintjs/core',
-            importNames: ['Alert', 'Callout', 'Spinner'],
+            importNames: [
+              'Alert',
+              'Button',
+              'ButtonGroup',
+              'Callout',
+              'Checkbox',
+              'Colors',
+              'Dialog',
+              'Icon',
+              'InputGroup',
+              'Menu',
+              'MenuDivider',
+              'MenuItem',
+              'NonIdealState',
+              'Popover',
+              'Select',
+              'Suggest',
+              'Spinner',
+              'Switch',
+              'Tab',
+              'Tabs',
+              'Tag',
+              'Toast',
+              'Toaster',
+              'Tooltip',
+            ],
+            message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/popover2',
+            importNames: ['Popover2', 'Tooltip2'],
+            message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/select',
             message: 'Please use components in src/ui instead.',
           },
           {

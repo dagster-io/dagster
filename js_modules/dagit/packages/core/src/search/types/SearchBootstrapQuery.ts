@@ -8,65 +8,87 @@
 // GraphQL query operation: SearchBootstrapQuery
 // ====================================================
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_PythonError {
+export interface SearchBootstrapQuery_workspaceOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SearchBootstrapQuery_workspaceOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SearchBootstrapQuery_workspaceOrError_PythonError_cause | null;
+}
+
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
-  __typename: "RepositoryLocationLoadFailure";
-}
-
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {
-  __typename: "Pipeline";
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes {
+  __typename: "Mode";
   id: string;
   name: string;
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_schedules {
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
+  __typename: "Pipeline";
+  id: string;
+  modes: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
+  name: string;
+}
+
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules {
   __typename: "Schedule";
   id: string;
   name: string;
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_sensors {
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_partitionSets {
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets {
   __typename: "PartitionSet";
   id: string;
   name: string;
   pipelineName: string;
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories {
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories {
   __typename: "Repository";
   id: string;
   name: string;
-  pipelines: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines[];
-  schedules: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_schedules[];
-  sensors: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_sensors[];
-  partitionSets: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_partitionSets[];
+  pipelines: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines[];
+  schedules: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules[];
+  sensors: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors[];
+  partitionSets: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets[];
 }
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation {
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
-  repositories: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories[];
+  repositories: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export type SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure | SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation;
+export type SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError | SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation;
 
-export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection {
-  __typename: "RepositoryLocationConnection";
-  nodes: SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes[];
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries {
+  __typename: "WorkspaceLocationEntry";
+  id: string;
+  locationOrLoadError: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError | null;
 }
 
-export type SearchBootstrapQuery_repositoryLocationsOrError = SearchBootstrapQuery_repositoryLocationsOrError_PythonError | SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection;
+export interface SearchBootstrapQuery_workspaceOrError_Workspace {
+  __typename: "Workspace";
+  locationEntries: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries[];
+}
+
+export type SearchBootstrapQuery_workspaceOrError = SearchBootstrapQuery_workspaceOrError_PythonError | SearchBootstrapQuery_workspaceOrError_Workspace;
 
 export interface SearchBootstrapQuery {
-  repositoryLocationsOrError: SearchBootstrapQuery_repositoryLocationsOrError;
+  workspaceOrError: SearchBootstrapQuery_workspaceOrError;
 }

@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Type, TypeVar, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -8,9 +8,14 @@ from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
+from .input import NoValueSentinel
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
+
+
+class NoNameSentinel:
+    pass
 
 
 class OutputDefinition:
@@ -31,9 +36,9 @@ class OutputDefinition:
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
-            (default: "io_manager").
-        metadata (Optional[Dict[str, Any]]): (Experimental) A dict of the metadata for the output.
+        io_manager_key (Optional[str]): The resource key of the IOManager used for storing this
+            output and loading it in downstream steps (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
@@ -57,7 +62,11 @@ class OutputDefinition:
         asset_partitions=None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
-        self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+        self._name = (
+            check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+            if name is not NoNameSentinel
+            else None
+        )
         self._type_not_set = dagster_type is None
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
@@ -65,20 +74,15 @@ class OutputDefinition:
         self._manager_key = check.opt_str_param(
             io_manager_key, "io_manager_key", default="io_manager"
         )
-        if metadata:
-            experimental_arg_warning("metadata", "OutputDefinition.__init__")
         self._metadata = metadata
 
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
 
-        if callable(asset_key):
-            self._asset_key_fn = asset_key
-        elif asset_key is not None:
-            asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
-            self._asset_key_fn = lambda _: asset_key
-        else:
-            self._asset_key_fn = None
+        if not callable(asset_key):
+            check.opt_inst_param(asset_key, "asset_key", AssetKey)
+
+        self._asset_key = asset_key
 
         if asset_partitions:
             experimental_arg_warning("asset_partitions", "OutputDefinition.__init__")
@@ -130,7 +134,14 @@ class OutputDefinition:
 
     @property
     def is_asset(self):
-        return self._asset_key_fn is not None
+        return self._asset_key is not None
+
+    @property
+    def hardcoded_asset_key(self) -> Optional[AssetKey]:
+        if not callable(self._asset_key):
+            return self._asset_key
+        else:
+            return None
 
     def get_asset_key(self, context) -> Optional[AssetKey]:
         """Get the AssetKey associated with this OutputDefinition for the given
@@ -138,12 +149,12 @@ class OutputDefinition:
 
         Args:
             context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
-            in
+                in
         """
-        if self._asset_key_fn is None:
-            return None
-
-        return self._asset_key_fn(context)
+        if callable(self._asset_key):
+            return self._asset_key(context)
+        else:
+            return self.hardcoded_asset_key
 
     def get_asset_partitions(self, context) -> Optional[Set[str]]:
         """Get the set of partitions associated with this OutputDefinition for the given
@@ -199,7 +210,7 @@ class OutputDefinition:
             is_required=self._is_required,
             io_manager_key=self._manager_key,
             metadata=self._metadata,
-            asset_key=self._asset_key_fn,
+            asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
         )
 
@@ -216,7 +227,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
 
 class DynamicOutputDefinition(OutputDefinition):
     """
-    (Experimental) Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
+    Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
 
     When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
@@ -281,3 +292,118 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
             check.inst_param(definition, "definition", OutputDefinition),
             check.inst_param(maps_from, "maps_from", OutputPointer),
         )
+
+
+class Out(
+    NamedTuple(
+        "_Out",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+            ("is_required", Optional[bool]),
+            ("io_manager_key", Optional[str]),
+            ("metadata", Optional[Dict[str, Any]]),
+            ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
+            ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
+        ],
+    )
+):
+    """
+    Experimental replacement for :py:class:`OutputDefinition` intended to decrease verbosity.
+
+    Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
+            (or function that produces an AssetKey from the OutputContext) which should be associated
+            with this OutputDefinition. Used for tracking lineage information through Dagster.
+        asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
+            set of partitions of the given asset_key (or a function that produces this list of
+            partitions from the OutputContext) which should be associated with this OutputDefinition.
+    """
+
+    def __new__(
+        cls,
+        dagster_type=NoValueSentinel,
+        description=None,
+        is_required=None,
+        io_manager_key=None,
+        metadata=None,
+        asset_key=None,
+        asset_partitions=None,
+        # make sure new parameters are updated in combine_with_inferred below
+    ):
+        return super(Out, cls).__new__(
+            cls,
+            dagster_type=dagster_type,
+            description=description,
+            is_required=is_required,
+            io_manager_key=io_manager_key,
+            metadata=metadata,
+            asset_key=asset_key,
+            asset_partitions=asset_partitions,
+        )
+
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+        )
+
+        return OutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+        )
+
+
+class DynamicOut(Out):
+    """
+    Experimental replacement for :py:class:`DynamicOutputDefinition` intended to decrease verbosity.
+    Variant of :py:class:`Out` for an output that will dynamically alter the graph at runtime.
+    """
+
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+        )
+
+        return DynamicOutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+        )
+
+
+class GraphOut(NamedTuple("_GraphOut", [("description", Optional[str])])):
+    """
+    Experimental replacement for :py:class:`OutputDefinition` on graphs intended to decrease verbosity.
+    It represents the information about the outputs that the graph maps.
+
+    Args:
+        description (Optional[str]): Human-readable description of the output.
+    """
+
+    def __new__(cls, description=None):
+        return super(GraphOut, cls).__new__(cls, description=description)
+
+    def to_definition(self, name: Optional[str]) -> "OutputDefinition":
+        return OutputDefinition(name=name, description=self.description)

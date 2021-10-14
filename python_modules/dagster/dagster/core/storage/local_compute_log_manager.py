@@ -133,6 +133,9 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def on_subscribe(self, subscription):
         self._subscription_manager.add_subscription(subscription)
 
+    def on_unsubscribe(self, subscription):
+        self._subscription_manager.remove_subscription(subscription)
+
     def dispose(self):
         self._subscription_manager.dispose()
 
@@ -156,6 +159,13 @@ class LocalComputeLogSubscriptionManager:
             watch_key = self._watch_key(subscription.run_id, subscription.key)
             self._subscriptions[watch_key].append(subscription)
             self.watch(subscription.run_id, subscription.key)
+
+    def remove_subscription(self, subscription):
+        check.inst_param(subscription, "subscription", ComputeLogSubscription)
+        watch_key = self._watch_key(subscription.run_id, subscription.key)
+        if subscription in self._subscriptions[watch_key]:
+            self._subscriptions[watch_key].remove(subscription)
+            subscription.complete()
 
     def remove_all_subscriptions(self, run_id, step_key):
         watch_key = self._watch_key(run_id, step_key)

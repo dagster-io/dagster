@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-aws",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -29,7 +32,16 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         include_package_data=True,
-        install_requires=["boto3", "dagster", "packaging", "psycopg2-binary", "requests"],
-        extras_require={"pyspark": ["dagster-pyspark"], "test": ["moto==1.3.16"]},
+        install_requires=[
+            "boto3",
+            f"dagster{pin}",
+            "packaging",
+            "psycopg2-binary",
+            "requests",
+        ],
+        extras_require={
+            "pyspark": ["dagster-pyspark"],
+            "test": ["moto==1.3.16", "requests-mock"],
+        },
         zip_safe=False,
     )

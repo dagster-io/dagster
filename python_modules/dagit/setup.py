@@ -19,7 +19,8 @@ def get_version():
 
 if __name__ == "__main__":
     ver = get_version()
-
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagit",
         version=ver,
@@ -42,23 +43,33 @@ if __name__ == "__main__":
         install_requires=[
             "PyYAML",
             # cli
-            "click>=7.0",
-            "dagster=={ver}".format(ver=ver),
-            "dagster-graphql=={ver}".format(ver=ver),
+            "click>=7.0,<9.0",
+            f"dagster{pin}",
+            f"dagster-graphql{pin}",
             # server
             "flask-cors>=3.0.6",
             "Flask-GraphQL>=2.0.0",
             "Flask-Sockets>=0.2.1",
-            "flask>=0.12.4",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "flask>=0.12.4,<2.0.0",
             "gevent-websocket>=0.10.1",
             "gevent",
-            "graphql-ws>=0.3.0",
+            "graphql-ws>=0.3.0,<0.4.0",
             "requests",
             # watchdog
             "watchdog>=0.8.3",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "Werkzeug<2.0.0",
             # notebooks support
             "nbconvert>=5.4.0,<6.0.0",
         ],
+        extras_require={
+            "starlette": [
+                "starlette",
+                "uvicorn[standard]",
+                "gunicorn",
+            ],
+        },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
         },

@@ -19,8 +19,8 @@ from dagster.core.execution.resources_init import (
     single_resource_event_generator,
 )
 from dagster.core.execution.retries import RetryMode
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 
 def test_generator_exit():
@@ -44,7 +44,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         cleaned = []
 
     @resource
-    def resource_a(_):
+    def resource_a():
         try:
             called.append("A")
             yield "A"
@@ -75,6 +75,7 @@ def test_clean_event_generator_exit():
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/)
     """
     from dagster.core.execution.context.init import InitResourceContext
+    from dagster.core.definitions.resource import ScopedResourcesBuilder
 
     pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()
@@ -82,13 +83,14 @@ def test_clean_event_generator_exit():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    log_manager = DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[])
-    environment_config = EnvironmentConfig.build(pipeline_def)
+    log_manager = DagsterLogManager.create(loggers=[], pipeline_run=pipeline_run)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 
     resource_name, resource_def = next(iter(pipeline_def.get_default_mode().resource_defs.items()))
     resource_context = InitResourceContext(
         resource_def=resource_def,
+        resources=ScopedResourcesBuilder().build(None),
         resource_config=None,
         pipeline_run=pipeline_run,
         instance=instance,
@@ -97,11 +99,11 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    resource_defs = pipeline_def.get_mode_definition(environment_config.mode)
+    resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
-        resource_configs=environment_config.resources,
+        resource_configs=resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,
         pipeline_run=pipeline_run,
@@ -142,8 +144,8 @@ def test_intermediate_storage_run_config_not_required():
         intermediate_storage_defs=[intermediate_storage_def],
     )
     pipeline_def = PipelineDefinition([fake_solid], name="fakename", mode_defs=[fake_mode])
-    environment_config = EnvironmentConfig.build(pipeline_def, {}, mode="fakemode")
-    assert environment_config.intermediate_storage.intermediate_storage_name == "test_intermediate"
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, {}, mode="fakemode")
+    assert resolved_run_config.intermediate_storage.intermediate_storage_name == "test_intermediate"
 
 
 def test_intermediate_storage_definition_run_config_required():
@@ -166,12 +168,12 @@ def test_intermediate_storage_definition_run_config_required():
     )
     pipeline_def = PipelineDefinition([fake_solid], name="fakename", mode_defs=[fake_mode])
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode="fakemode")
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode="fakemode")
 
     assert (
-        environment_config.intermediate_storage.intermediate_storage_name
+        resolved_run_config.intermediate_storage.intermediate_storage_name
         == "test_intermediate_requires_config"
     )
 
     with pytest.raises(DagsterInvalidConfigError):
-        environment_config = EnvironmentConfig.build(pipeline_def, {}, mode="fakemode")
+        resolved_run_config = ResolvedRunConfig.build(pipeline_def, {}, mode="fakemode")

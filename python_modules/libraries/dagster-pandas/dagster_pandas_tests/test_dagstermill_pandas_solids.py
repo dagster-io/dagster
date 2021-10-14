@@ -8,16 +8,16 @@ from dagster.utils import file_relative_path
 
 
 def test_papermill_pandas_hello_world_pipeline():
-    pipeline = ReconstructablePipeline.for_module(
-        "dagster_pandas.examples", "papermill_pandas_hello_world_pipeline"
+    job = ReconstructablePipeline.for_module(
+        "dagster_pandas.examples", "papermill_pandas_hello_world_test"
     )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test() as instance:
             pipeline_result = execute_pipeline(
-                pipeline,
+                job,
                 {
-                    "solids": {
+                    "ops": {
                         "papermill_pandas_hello_world": {
                             "inputs": {
                                 "df": {

@@ -1,19 +1,24 @@
 import {gql} from '@apollo/client';
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
+import {Tooltip} from '../ui/Tooltip';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
 
-const timingStringForStatus = (status?: PipelineRunStatus) => {
+export const timingStringForStatus = (status?: PipelineRunStatus) => {
   switch (status) {
     case PipelineRunStatus.QUEUED:
       return 'Queued';
@@ -40,7 +45,7 @@ const LoadingOrValue: React.FC<{
   loading: boolean;
   children: () => React.ReactNode;
 }> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.GRAY3}}>Loading…</div> : <div>{children()}</div>;
+  loading ? <div style={{color: ColorsWIP.Gray400}}>Loading…</div> : <div>{children()}</div>;
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -63,7 +68,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -80,7 +85,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -97,7 +102,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -110,16 +115,29 @@ export const RunDetails: React.FC<{
 
 export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
   const [showDialog, setShowDialog] = React.useState(false);
+  const {rootServerURI} = React.useContext(AppContext);
   return (
     <div>
-      <Button onClick={() => setShowDialog(true)}>View tags and configuration</Button>
-      <Dialog
+      <Group direction="row" spacing={8}>
+        <ButtonWIP icon={<IconWIP name="local_offer" />} onClick={() => setShowDialog(true)}>
+          View tags and config
+        </ButtonWIP>
+        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
+          <ButtonWIP
+            icon={<IconWIP name="download_for_offline" />}
+            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+          >
+            Debug file
+          </ButtonWIP>
+        </Tooltip>
+      </Group>
+      <DialogWIP
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         style={{width: '800px'}}
         title="Run configuration"
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={20}>
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Tags</div>
@@ -132,15 +150,13 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
               <HighlightedCodeBlock value={run?.runConfigYaml || ''} language="yaml" />
             </Group>
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button onClick={() => setShowDialog(false)} intent="primary">
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP onClick={() => setShowDialog(false)} intent="primary">
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </div>
   );
 };

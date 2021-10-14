@@ -13,7 +13,6 @@ RUN pip install \
     -e dagster \
     -e dagster-graphql \
     -e dagster-postgres \
-    -e dagster-cron \
     -e dagster-k8s \
     -e dagster-celery[flower,redis,kubernetes] \
     -e dagster-celery-k8s \

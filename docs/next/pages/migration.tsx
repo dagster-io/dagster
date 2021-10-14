@@ -220,14 +220,6 @@ export default function MdxPage(props: Props) {
   }
 }
 
-const basePathForVersion = (version: string) => {
-  if (version === "master") {
-    return path.resolve("content");
-  }
-
-  return path.resolve(".versioned_content", version);
-};
-
 // Travel the tree to get the headings
 function getItems(node, current) {
   if (!node) {

@@ -28,13 +28,16 @@ def export_run(instance, run, output_file):
         debug_payload.write(file)
 
 
-def create_debug_cli_group():
-    group = click.Group(name="debug")
-    group.add_command(export_command)
-    return group
+@click.group(name="debug")
+def debug_cli():
+    """
+    Commands for debugging Dagster pipeline runs.
+    """
 
 
-@click.command(name="export", help="Export the relevant artifacts for a pipeline run to a file.")
+@debug_cli.command(
+    name="export", help="Export the relevant artifacts for a pipeline run to a file."
+)
 @click.argument("run_id", type=str)
 @click.argument("output_file", type=click.Path())
 def export_command(run_id, output_file):
@@ -49,6 +52,3 @@ def export_command(run_id, output_file):
             )
 
         export_run(instance, run, output_file)
-
-
-debug_cli = create_debug_cli_group()

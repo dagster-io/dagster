@@ -1,29 +1,21 @@
-import {useMutation} from '@apollo/client';
-import {Colors, Icon, Tooltip} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from '../jobs/JobTick';
-import {JobRunStatus} from '../jobs/JobUtils';
+import {TickTag} from '../instigation/InstigationTick';
+import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobStatus, JobType} from '../types/globalTypes';
-import {Group} from '../ui/Group';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {humanizeSensorInterval} from './SensorDetails';
-import {
-  displaySensorMutationErrors,
-  START_SENSOR_MUTATION,
-  STOP_SENSOR_MUTATION,
-} from './SensorMutations';
+import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
-import {StartSensor} from './types/StartSensor';
-import {StopSensor} from './types/StopSensor';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;
@@ -40,28 +32,20 @@ export const SensorsTable: React.FC<{
           <th>Sensor Name</th>
           <th style={{width: '150px'}}>Frequency</th>
           <th style={{width: '120px'}}>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
         </tr>
       </thead>
@@ -78,77 +62,47 @@ const SensorRow: React.FC<{
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
-  const {name, mode, pipelineName, sensorState} = sensor;
-  const {status, ticks} = sensorState;
+  const {name, sensorState} = sensor;
+  const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
-
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName: name,
-  };
-
-  const {jobOriginId} = sensor;
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
-    START_SENSOR_MUTATION,
-    {onCompleted: displaySensorMutationErrors},
-  );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
-
-  const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId}});
-    } else {
-      startSensor({variables: {sensorSelector}});
-    }
-  };
 
   return (
     <tr key={name}>
       <td>
-        <SwitchWithoutLabel
-          disabled={toggleOnInFlight || toggleOffInFlight}
-          large
-          innerLabelChecked="on"
-          innerLabel="off"
-          checked={status === JobStatus.RUNNING}
-          onChange={onChangeSwitch}
-        />
+        <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
       </td>
       <td>
-        <Group direction="column" spacing={4}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
-          <Group direction="row" spacing={4} alignItems="flex-start">
-            <Icon
-              icon="diagram-tree"
-              color={Colors.GRAY2}
-              iconSize={9}
-              style={{position: 'relative', top: '-3px'}}
-            />
-            <span style={{fontSize: '13px'}}>
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                mode={mode}
-              />
-            </span>
-          </Group>
-        </Group>
+          {sensor.targets && sensor.targets.length ? (
+            <Box flex={{direction: 'column', gap: 2}}>
+              {sensor.targets.map((target) => (
+                <PipelineReference
+                  key={`${target.pipelineName}:${target.mode}`}
+                  showIcon
+                  size="small"
+                  pipelineName={target.pipelineName}
+                  pipelineHrefContext={repoAddress}
+                  mode={target.mode}
+                />
+              ))}
+            </Box>
+          ) : null}
+        </Box>
       </td>
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} jobType={JobType.SENSOR} />
+          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
         <div style={{display: 'flex'}}>
-          <JobRunStatus jobState={sensorState} />
+          <InstigatedRunStatus instigationState={sensorState} />
         </div>
       </td>
     </tr>

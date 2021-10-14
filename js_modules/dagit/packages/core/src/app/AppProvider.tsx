@@ -4,26 +4,38 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {ApolloLink, ApolloClient, ApolloProvider} from '@apollo/client';
+import {
+  ApolloLink,
+  ApolloClient,
+  ApolloProvider,
+  HttpLink,
+  InMemoryCache,
+  split,
+} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
-import {Colors} from '@blueprintjs/core';
+import {getMainDefinition} from '@apollo/client/utilities';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {ColorsWIP} from '../ui/Colors';
+import {GlobalDialogStyle} from '../ui/Dialog';
+import {GlobalPopoverStyle} from '../ui/Popover';
+import {GlobalSuggestStyle} from '../ui/Suggest';
+import {GlobalToasterStyle} from '../ui/Toaster';
+import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
-import {AppCache} from './AppCache';
 import {AppContext} from './AppContext';
-import {AppErrorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
-import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
-import {WebsocketStatusProvider} from './WebsocketStatus';
+import {PermissionsProvider} from './Permissions';
+import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
+import {WebSocketProvider} from './WebSocketProvider';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -37,7 +49,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${Colors.DARK_GRAY4};
+    color: ${ColorsWIP.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -45,6 +57,12 @@ const GlobalStyle = createGlobalStyle`
     flex: 1 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  a,
+  a:hover,
+  a:active {
+    color: ${ColorsWIP.Link};
   }
 
   #root {
@@ -58,103 +76,116 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body, button, input, select, textarea {
+  body, input, select, textarea {
     font-family: ${FontFamily.default};
+  }
+
+  button {
+    font-family: inherit;
   }
 
   code, pre {
     font-family: ${FontFamily.monospace};
+    font-size: 16px;
+  }
+
+  .material-icons {
+    display: block;
+  }
+
+  /* todo dish: Remove these when we have buttons updated. */
+
+  .bp3-button .material-icons {
+    position: relative;
+    top: 1px;
+  }
+
+  .bp3-button:disabled .material-icons {
+    color: ${ColorsWIP.Gray300}
   }
 `;
 
 interface Props {
+  appCache: InMemoryCache;
   config: {
-    graphqlURI: string;
+    apolloLinks: ApolloLink[];
     basePath?: string;
-    subscriptionParams?: {[key: string]: string};
+    headers?: {[key: string]: string};
+    origin: string;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
-  const {basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
+  const {appCache, config} = props;
+  const {apolloLinks, basePath = '', headers = {}, origin} = config;
 
-  const websocketURI =
-    graphqlURI ||
-    `${document.location.protocol === 'https:' ? 'wss' : 'ws'}://${
-      document.location.host
-    }${basePath}/graphql`;
+  const graphqlPath = `${basePath}/graphql`;
+  const rootServerURI = `${origin}${basePath}`;
+  const websocketURI = `${rootServerURI.replace(/^http/, 'ws')}/graphql`;
 
-  // The address to the dagit server (eg: http://localhost:5000) based
-  // on our current "GRAPHQL_URI" env var. Note there is no trailing slash.
-  const rootServerURI = React.useMemo(
+  // Ensure that we use the same `headers` value.
+  const headersAsString = JSON.stringify(headers);
+  const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
+
+  const websocketClient = React.useMemo(
     () =>
-      websocketURI
-        .replace('wss://', 'https://')
-        .replace('ws://', 'http://')
-        .replace('/graphql', ''),
-    [websocketURI],
+      new SubscriptionClient(websocketURI, {
+        reconnect: true,
+        connectionParams: {...headerObject},
+      }),
+    [headerObject, websocketURI],
   );
 
-  const websocketClient = React.useMemo(() => {
-    return new SubscriptionClient(websocketURI, {
-      reconnect: true,
-      lazy: true,
-      connectionParams: subscriptionParams,
-    });
-  }, [subscriptionParams, websocketURI]);
-
   const apolloClient = React.useMemo(() => {
-    const logLink = new ApolloLink((operation, forward) =>
-      forward(operation).map((data) => {
-        const time = performance.now() - operation.getContext().start;
-        debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
-        return data;
-      }),
+    // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
+    const splitLink = split(
+      ({query}) => {
+        const definition = getMainDefinition(query);
+        return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
+      },
+      new WebSocketLink(websocketClient),
+      new HttpLink({uri: graphqlPath, headers: headerObject}),
     );
 
-    const timeStartLink = new ApolloLink((operation, forward) => {
-      operation.setContext({start: performance.now()});
-      return forward(operation);
-    });
-
     return new ApolloClient({
-      cache: AppCache,
-      link: ApolloLink.from([
-        logLink,
-        AppErrorLink(),
-        timeStartLink,
-        new WebSocketLink(websocketClient),
-      ]),
+      cache: appCache,
+      link: ApolloLink.from([...apolloLinks, splitLink]),
     });
-  }, [websocketClient]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
       basePath,
       rootServerURI,
-      websocketURI,
     }),
-    [basePath, rootServerURI, websocketURI],
+    [basePath, rootServerURI],
   );
 
   return (
     <AppContext.Provider value={appContextValue}>
-      <WebsocketStatusProvider websocket={websocketClient}>
+      <WebSocketProvider websocketClient={websocketClient}>
         <GlobalStyle />
+        <GlobalToasterStyle />
+        <GlobalTooltipStyle />
+        <GlobalPopoverStyle />
+        <GlobalDialogStyle />
+        <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
-          <BrowserRouter basename={basePath || ''}>
-            <TimezoneProvider>
-              <WorkspaceProvider>
-                <CustomConfirmationProvider>
-                  <LayoutProvider>{props.children}</LayoutProvider>
-                </CustomConfirmationProvider>
-                <CustomTooltipProvider />
-                <CustomAlertProvider />
-              </WorkspaceProvider>
-            </TimezoneProvider>
-          </BrowserRouter>
+          <PermissionsProvider>
+            <BrowserRouter basename={basePath || ''}>
+              <TimezoneProvider>
+                <WorkspaceProvider>
+                  <CustomConfirmationProvider>
+                    <LayoutProvider>{props.children}</LayoutProvider>
+                  </CustomConfirmationProvider>
+                  <CustomTooltipProvider />
+                  <CustomAlertProvider />
+                </WorkspaceProvider>
+              </TimezoneProvider>
+            </BrowserRouter>
+          </PermissionsProvider>
         </ApolloProvider>
-      </WebsocketStatusProvider>
+      </WebSocketProvider>
     </AppContext.Provider>
   );
 };

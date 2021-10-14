@@ -14,6 +14,10 @@ The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinato
 
 The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/deployment/dagster-daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](#limiting-run-concurrency), as well as custom run prioritization rules.
 
+### Custom Run Coordinators
+
+Note that one can subclass one of the `RunCoordinator`s to allow for a custom run queuing strategy when submitting to the [Daemon](/deployment/dagster-daemon) or to execute custom hooks before runs are submitted. For example, you can read HTTP headers to inject run tags for [Run Attribution](/guides/dagster/run-attribution).
+
 ## Limiting Run Concurrency
 
 Dagster offers several options for limiting the number of concurrent pipeline runs on your instance. This can be useful when:
@@ -41,7 +45,7 @@ If any limit would be exceeded by launching a run, then the run will stay queued
 
 For example, you can add the following to your dagster.yaml:
 
-```yaml
+```yaml file=/deploying/concurrency_limits/dagster.yaml
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
@@ -63,23 +67,41 @@ The run queue is a first-in-first-out priority queue. By default, all runs have 
 
 You can specify a custom priority using the dagster/priority tag, which you can set in code on definitions or in the Dagit playground. Note that because both tag keys and values must be strings, so you must specify the priority integer as a string. For example, if you wanted to specify a priority of -1, you would set the dagster/priority tag value to be the string "-1".
 
-```py
-# Attach a priority to a pipeline
+```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
 @pipeline(tags={"dagster/priority": "3"})
 def important_pipeline():
     ...
 
-# Attach a priority to scheduled runs
-@daily_schedule(
+
+@schedule(
+    cron_schedule="* * * * *",
     pipeline_name="my_pipeline",
-    ...
-    tags={"dagster/priority": "-1"}
+    execution_timezone="US/Central",
+    tags={"dagster/priority": "-1"},
 )
-def less_important_schedule(date):
+def less_important_schedule(_):
     ...
 ```
 
 A priority tag on the pipeline definition can be overriden when launching in the Dagit playground.
+
+#### Applying concurrency limits per unique value
+
+In some cases, you may want to apply separate limits to many possible values of a tag. Instead of enumerating each case, you can set a limit for each unique value.
+
+```yaml file=/deploying/concurrency_limits/per-unique-value-dagster.yaml
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    tag_concurrency_limits:
+      - key: "use-case"
+        value:
+          applyLimitPerUniqueValue: true
+        limit: 3
+```
+
+Here, we could have 3 runs with tag `(use-case: foo)` running concurrently with 3 runs with tag `(use-case: bar)`.
 
 #### Queuing semantics
 

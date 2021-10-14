@@ -49,7 +49,7 @@ def check():
             "Missing some query history (sub)directories:"
             f"\n\t{missing_query_history_subdirs}"
             + f"\n\t at {legacy_query_info.directory}"
-            + "\n\t Please run `dagster-graphql-client query snapshot` on the command line"
+            + "\n\t Please run `dagster-graphql-client query snapshot` on the command line "
             + "or manually resolve these issues"
         )
     for query_name in query_directories_present:
@@ -108,7 +108,9 @@ def snapshot():
             with open(os.path.join(query_dir, most_recent_query_filename), "r") as f:
                 most_recent_query = f.read()
 
-        if most_recent_query is not None and not are_queries_compatible(
+        # Create a new snapshot if it's the first one or the query is not compatible
+        # with the most recent one
+        if most_recent_query is None or not are_queries_compatible(
             current_query_body, most_recent_query
         ):
             query_filename = serialize_to_query_filename(

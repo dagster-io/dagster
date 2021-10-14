@@ -180,7 +180,9 @@ def step_run_ref_to_step_context(
 
     execution_step = cast("ExecutionStep", execution_plan.get_step_by_key(step_run_ref.step_key))
 
-    step_execution_context = execution_context.for_step(execution_step)
+    step_execution_context = execution_context.for_step(
+        execution_step, step_run_ref.prior_attempts_count
+    )
     # Since for_step is abstract for IPlanContext, its return type is IStepContext.
     # Since we are launching from a PlanExecutionContext, the type will always be
     # StepExecutionContext.
@@ -193,4 +195,4 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
-    return core_dagster_event_sequence_for_step(step_context, step_run_ref.prior_attempts_count)
+    return core_dagster_event_sequence_for_step(step_context)

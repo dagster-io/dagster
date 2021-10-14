@@ -24,7 +24,7 @@ def reconcile_scheduler_state(graphene_info, repository_selector):
 
 @capture_error
 def start_schedule(graphene_info, schedule_selector):
-    from ..schema.jobs import GrapheneJobState
+    from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -35,18 +35,18 @@ def start_schedule(graphene_info, schedule_selector):
     schedule_state = instance.start_schedule_and_update_storage_state(
         repository.get_external_schedule(schedule_selector.schedule_name)
     )
-    return GrapheneScheduleStateResult(GrapheneJobState(schedule_state))
+    return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
 @capture_error
 def stop_schedule(graphene_info, schedule_origin_id):
-    from ..schema.jobs import GrapheneJobState
+    from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     instance = graphene_info.context.instance
     schedule_state = instance.stop_schedule_and_update_storage_state(schedule_origin_id)
-    return GrapheneScheduleStateResult(GrapheneJobState(schedule_state))
+    return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
 @capture_error
@@ -118,7 +118,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
 
 
 def get_schedule_next_tick(graphene_info, schedule_state):
-    from ..schema.jobs import GrapheneFutureJobTick
+    from ..schema.instigation import GrapheneFutureInstigationTick
 
     if schedule_state.status != JobStatus.RUNNING:
         return None
@@ -141,4 +141,4 @@ def get_schedule_next_tick(graphene_info, schedule_state):
     )
 
     next_timestamp = next(time_iter).timestamp()
-    return GrapheneFutureJobTick(schedule_state, next_timestamp)
+    return GrapheneFutureInstigationTick(schedule_state, next_timestamp)

@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {FontFamily} from '../ui/styles';
 
-const PX_TO_UNITS = 0.62;
+const PX_TO_UNITS = 0.53;
 
 interface ISize {
   width: number;
@@ -126,7 +126,7 @@ interface SVGFlowLayoutChildLayout {
   compressionPriority: number;
 }
 
-function reactChildrenToArray(children: React.ReactNode) {
+function reactChildrenToArray(children: React.ReactNode): React.ReactElement<any>[] {
   const flattened: React.ReactNodeArray = [];
 
   const appendChildren = (arr: React.ReactNodeArray) => {
@@ -144,7 +144,8 @@ function reactChildrenToArray(children: React.ReactNode) {
 
   appendChildren(children instanceof Array ? children : [children]);
 
-  return flattened;
+  // Not accurate, but trying to please strict TS.
+  return flattened as React.ReactElement<any>[];
 }
 /*
 Renders a <rect> and lays out it's children along a horizontal axis using the

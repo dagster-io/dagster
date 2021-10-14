@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-databricks",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -29,6 +32,10 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         include_package_data=True,
-        install_requires=["dagster", "dagster-pyspark", "databricks_api"],
+        install_requires=[
+            f"dagster{pin}",
+            f"dagster-pyspark{pin}",
+            "databricks_api",
+        ],
         zip_safe=False,
     )

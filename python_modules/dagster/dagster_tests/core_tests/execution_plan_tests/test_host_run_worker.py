@@ -1,6 +1,14 @@
 import os
 
-from dagster import ModeDefinition, executor, pipeline, reconstructable, resource, solid
+from dagster import (
+    ModeDefinition,
+    executor,
+    fs_io_manager,
+    pipeline,
+    reconstructable,
+    resource,
+    solid,
+)
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.host_mode import execute_run_host_mode
@@ -33,8 +41,12 @@ def solid_that_uses_adder_resource(context, number):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(name="add_one", resource_defs={"adder": add_one_resource}),
-        ModeDefinition(name="add_two", resource_defs={"adder": add_two_resource}),
+        ModeDefinition(
+            name="add_one", resource_defs={"adder": add_one_resource, "io_manager": fs_io_manager}
+        ),
+        ModeDefinition(
+            name="add_two", resource_defs={"adder": add_two_resource, "io_manager": fs_io_manager}
+        ),
     ]
 )
 def pipeline_with_mode():
@@ -73,8 +85,7 @@ def test_host_run_worker():
     with instance_for_test() as instance:
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
-            "intermediate_storage": {"filesystem": {}},
-            "execution": {"multiprocess": {}},
+            "execution": {"multiprocess": None},
         }
         execution_plan = create_execution_plan(
             pipeline_with_mode,
@@ -113,18 +124,12 @@ def test_executor(_init_context):
     return MultiprocessExecutor(max_concurrent=4, retries=RetryMode.DISABLED)
 
 
-def _custom_get_executor_def_fn(executor_name):
-    assert not executor_name
-    return test_executor
-
-
 def test_custom_executor_fn():
     _explode_pid["pid"] = os.getpid()
 
     with instance_for_test() as instance:
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
-            "intermediate_storage": {"filesystem": {}},
         }
         execution_plan = create_execution_plan(
             pipeline_with_mode,
@@ -143,7 +148,7 @@ def test_custom_executor_fn():
             ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
             pipeline_run,
             instance,
-            get_executor_def_fn=_custom_get_executor_def_fn,
+            executor_defs=[test_executor],
             raise_on_error=True,
         )
 

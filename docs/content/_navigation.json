@@ -101,6 +101,10 @@
             "path": "/concepts/solids-pipelines/pipelines"
           },
           {
+            "title": "Pipeline Execution",
+            "path": "/concepts/solids-pipelines/pipeline-execution"
+          },
+          {
             "title": "Composite Solids",
             "path": "/concepts/solids-pipelines/composite-solids"
           },
@@ -203,6 +207,10 @@
           {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python Logging",
+            "path": "/concepts/logging/python-logging"
           }
         ]
       },
@@ -258,7 +266,6 @@
             "title": "Dagster Daemon",
             "path": "/deployment/dagster-daemon"
           },
-
           {
             "title": "Run Launchers",
             "path": "/deployment/run-launcher"
@@ -320,10 +327,6 @@
           {
             "title": "Executing on Dask",
             "path": "/deployment/guides/dask"
-          },
-          {
-            "title": "Executing on Airflow",
-            "path": "/deployment/guides/airflow"
           }
         ]
       }
@@ -350,8 +353,8 @@
             "path": "/integrations/great-expectations"
           },
           {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "title": "Dagster with Spark",
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",
@@ -384,6 +387,22 @@
           {
             "title": "Lakehouse with Pandas and PySpark (Experimental)",
             "path": "/guides/dagster/multi-type-lakehouse"
+          },
+          {
+            "title": "Run Attribution (Experimental)",
+            "path": "/guides/dagster/run-attribution"
+          },
+          {
+            "title": "Migrating to Graphs, Jobs, and Ops (Experimental)",
+            "path": "/guides/dagster/graph_job_op"
+          },
+          {
+            "title": "Re-execution",
+            "path": "/guides/dagster/re-execution"
+          },
+          {
+            "title": "Fully-Featured Example Project",
+            "path": "/guides/dagster/example_project"
           }
         ]
       }
@@ -454,6 +473,26 @@
             "path": "/_apidocs/hooks"
           },
           {
+            "title": "IO Managers",
+            "path": "/_apidocs/io-managers"
+          },
+          {
+            "title": "Dynamic Mapping & Collect",
+            "path": "/_apidocs/dynamic"
+          },
+          {
+            "title": "Experimental Core APIs",
+            "path": "/_apidocs/experimental"
+          },
+          {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
+            "title": "Versioning & Memoization",
+            "path": "/_apidocs/memoization"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },
@@ -495,10 +534,6 @@
             "path": "/_apidocs/libraries/dagster-celery-k8s"
           },
           {
-            "title": "Cron (dagster-cron)",
-            "path": "/_apidocs/libraries/dagster-cron"
-          },
-          {
             "title": "Dask (dagster-dask)",
             "path": "/_apidocs/libraries/dagster-dask"
           },
@@ -533,6 +568,18 @@
           {
             "title": "Kubernetes (dagster-k8s)",
             "path": "/_apidocs/libraries/dagster-k8s"
+          },
+          {
+            "title": "MLflow (dagster-mlflow)",
+            "path": "/_apidocs/libraries/dagster-mlflow"
+          },
+          {
+            "title": "Microsoft Teams (dagster-msteams)",
+            "path": "/_apidocs/libraries/dagster-msteams"
+          },
+          {
+            "title": "MySQL (dagster-mysql)",
+            "path": "/_apidocs/libraries/dagster-mysql"
           },
           {
             "title": "PagerDuty (dagster-pagerduty)",

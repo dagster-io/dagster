@@ -21,17 +21,17 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.validate import process_config
-from dagster.core.definitions import create_environment_type, create_run_config_schema
-from dagster.core.definitions.environment_configs import (
-    EnvironmentClassCreationData,
+from dagster.core.definitions import create_run_config_schema
+from dagster.core.definitions.run_config import (
+    RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster.core.system_config.objects import EnvironmentConfig, ResourceConfig, SolidConfig
+from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
 from dagster.loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):
-    return EnvironmentClassCreationData(
+    return RunConfigSchemaCreationData(
         pipeline_def.name,
         pipeline_def.solids,
         pipeline_def.dependency_structure,
@@ -39,7 +39,13 @@ def create_creation_data(pipeline_def):
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),
+        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
     )
+
+
+def create_run_config_schema_type(pipeline_def):
+    schema = create_run_config_schema(pipeline_def=pipeline_def, mode=None)
+    return schema.config_type
 
 
 def test_all_types_provided():
@@ -98,7 +104,7 @@ def test_provided_default_on_resources_config():
     def pipeline_def():
         some_solid()
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]
     assert some_resource_field.is_required is False
 
@@ -108,7 +114,7 @@ def test_provided_default_on_resources_config():
 
     assert some_resource_field.default_value == {"config": {"with_default_int": 23434}}
 
-    value = EnvironmentConfig.build(pipeline_def, {})
+    value = ResolvedRunConfig.build(pipeline_def, {})
     assert value.resources == {
         "some_resource": ResourceConfig({"with_default_int": 23434}),
     }
@@ -123,7 +129,7 @@ def test_default_environment():
     def pipeline_def():
         some_solid()
 
-    assert EnvironmentConfig.build(pipeline_def, {})
+    assert ResolvedRunConfig.build(pipeline_def, {})
 
 
 def test_solid_config():
@@ -135,7 +141,7 @@ def test_solid_config():
 def test_solid_dictionary_type():
     pipeline_def = define_test_solids_config_pipeline()
 
-    env_obj = EnvironmentConfig.build(
+    env_obj = ResolvedRunConfig.build(
         pipeline_def,
         {
             "solids": {"int_config_solid": {"config": 1}, "string_config_solid": {"config": "bar"}},
@@ -183,7 +189,7 @@ def assert_has_fields(dtype, *fields):
 
 
 def test_solid_configs_defaults():
-    env_type = create_environment_type(define_test_solids_config_pipeline())
+    env_type = create_run_config_schema_type(define_test_solids_config_pipeline())
 
     solids_field = env_type.fields["solids"]
 
@@ -218,7 +224,7 @@ def test_solid_dictionary_some_no_config():
         int_config_solid()
         no_config_solid()
 
-    env = EnvironmentConfig.build(pipeline_def, {"solids": {"int_config_solid": {"config": 1}}})
+    env = ResolvedRunConfig.build(pipeline_def, {"solids": {"int_config_solid": {"config": 1}}})
 
     assert {"int_config_solid", "no_config_solid"} == set(env.solids.keys())
     assert env.solids == {
@@ -255,7 +261,7 @@ def test_whole_environment():
         ],
     )
 
-    env = EnvironmentConfig.build(
+    env = ResolvedRunConfig.build(
         pipeline_def,
         {
             "resources": {"test_resource": {"config": 1}},
@@ -263,7 +269,7 @@ def test_whole_environment():
         },
     )
 
-    assert isinstance(env, EnvironmentConfig)
+    assert isinstance(env, ResolvedRunConfig)
     assert env.solids == {
         "int_config_solid": SolidConfig.from_dict({"config": 123}),
         "no_config_solid": SolidConfig.from_dict({}),
@@ -279,6 +285,7 @@ def test_solid_config_error():
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
+        is_using_graph_job_op_apis=False,
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type
@@ -334,7 +341,7 @@ def test_optional_solid_with_optional_scalar_config():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is False
 
@@ -342,7 +349,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_type.fields["int_config_solid"].is_required is False
 
-    env_obj = EnvironmentConfig.build(pipeline_def, {})
+    env_obj = ResolvedRunConfig.build(pipeline_def, {})
 
     assert env_obj.solids["int_config_solid"].config is None
 
@@ -364,7 +371,7 @@ def test_optional_solid_with_required_scalar_config():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is True
 
@@ -397,7 +404,7 @@ def test_required_solid_with_required_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is True
     assert env_type.fields["solids"].config_type
@@ -409,7 +416,7 @@ def test_required_solid_with_required_subfield():
 
     assert env_type.fields["execution"].is_required is False
 
-    env_obj = EnvironmentConfig.build(
+    env_obj = ResolvedRunConfig.build(
         pipeline_def,
         {"solids": {"int_config_solid": {"config": {"required_field": "foobar"}}}},
     )
@@ -439,7 +446,7 @@ def test_optional_solid_with_optional_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
 
@@ -475,7 +482,7 @@ def test_required_resource_with_required_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required
@@ -502,7 +509,7 @@ def test_all_optional_field_on_single_resource():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required is False
@@ -539,7 +546,7 @@ def test_optional_and_required_context():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
 
     assert env_type.fields["execution"].is_required is False
@@ -560,7 +567,7 @@ def test_optional_and_required_context():
         env_type, "resources", "required_resource", "config", "required_field"
     ).is_required
 
-    env_obj = EnvironmentConfig.build(
+    env_obj = ResolvedRunConfig.build(
         pipeline_def,
         {"resources": {"required_resource": {"config": {"required_field": "foo"}}}},
     )
@@ -585,7 +592,7 @@ def test_required_inputs():
         },
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     solids_type = env_type.fields["solids"].config_type
 
@@ -621,7 +628,7 @@ def test_mix_required_inputs():
         dependencies={"add_numbers": {"right": DependencyDefinition("return_three")}},
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     solids_type = env_type.fields["solids"].config_type
     add_numbers_type = solids_type.fields["add_numbers"].config_type
     inputs_fields_dict = add_numbers_type.fields["inputs"].config_type.fields
@@ -633,7 +640,7 @@ def test_mix_required_inputs():
 def test_files_default_config():
     pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert "storage" in env_type.fields
 
     config_value = process_config(env_type, {})
@@ -645,7 +652,7 @@ def test_files_default_config():
 def test_storage_in_memory_config():
     pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert "storage" in env_type.fields
 
     config_value = process_config(env_type, {"intermediate_storage": {"in_memory": {}}})
@@ -655,4 +662,4 @@ def test_storage_in_memory_config():
 
 
 def test_directly_init_environment_config():
-    EnvironmentConfig()
+    ResolvedRunConfig()

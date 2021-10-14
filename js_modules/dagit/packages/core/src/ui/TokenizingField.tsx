@@ -1,9 +1,12 @@
-import {Menu, MenuItem, Popover, TagInput} from '@blueprintjs/core';
+import {TagInput} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
+import {MenuItemWIP, MenuWIP} from './Menu';
+import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
 const MAX_SUGGESTIONS = 100;
@@ -64,8 +67,15 @@ export function tokenizedValueFromString(
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
   const parts = str.split(':');
-  if (parts.length === 2 && findProviderByToken(parts[0], providers)) {
-    return {token: parts[0], value: parts[1]};
+  const token = parts[0];
+  if (findProviderByToken(token, providers)) {
+    if (parts.length === 2) {
+      return {token, value: parts[1]};
+    }
+    // Jobs can be `pipeline:mode` tuples, so join the "value" tokens back together.
+    if (token === 'job') {
+      return {token, value: parts.slice(1).join(':')};
+    }
   }
   return {value: str};
 }
@@ -91,7 +101,6 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   onFocus,
   placeholder,
   loading,
-  small,
   className,
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
@@ -303,15 +312,14 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
   return (
     <Popover
-      minimal={true}
       isOpen={open && suggestions.length > 0 && !atMaxValues}
-      position={'bottom-left'}
+      position="bottom-left"
       content={
         suggestions.length > 0 ? (
           <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
             <StyledMenu>
               {suggestions.map((suggestion, idx) => (
-                <StyledMenuItem
+                <MenuItemWIP
                   data-idx={idx}
                   key={suggestion.text}
                   text={suggestion.text}
@@ -333,7 +341,6 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       }
     >
       <StyledTagInput
-        small={small}
         className={className}
         values={values.map((v) => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
@@ -376,33 +383,77 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   );
 };
 
-const StyledTagInput = styled(TagInput)<{small?: boolean}>`
+const StyledTagInput = styled(TagInput)`
+  border: none;
+  border-radius: 8px;
+  box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
+    ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
   max-width: 600px;
-  input {
-    font-size: 12px;
+  transition: box-shadow 150ms;
+
+  &.bp3-active {
+    box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
-  ${({small}) =>
-    small
-      ? `height: 20px;
-    min-width: 200px;
-    max-width: 800px;
-    &.bp3-tag-input {
-      min-height: 26px;
-    }
-    &.bp3-tag-input .bp3-tag-input-values {
-      height: 23px;
-      margin-top: 3px;
-    }`
-      : ``}
+  input {
+    font-size: 14px;
+    font-weight: 400;
+    padding-left: 4px;
+    padding-bottom: 2px;
+    padding-top: 2px;
+  }
+
+  && .bp3-tag-input-values:first-child .bp3-input-ghost:first-child {
+    padding-left: 8px;
+  }
+
+  && .bp3-tag-input-values {
+    margin-right: 4px;
+    margin-top: 4px;
+  }
+
+  && .bp3-tag-input-values > * {
+    margin-bottom: 4px;
+  }
+
+  .bp3-tag {
+    border-radius: 6px;
+    display: inline-flex;
+    flex-direction: row;
+    font-size: 12px;
+    line-height: 16px;
+    align-items: center;
+    max-width: 400px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 4px 8px;
+    user-select: none;
+  }
+
+  .bp3-tag.bp3-minimal:not([class*='bp3-intent-']) {
+    background-color: ${ColorsWIP.Gray100};
+    color: ${ColorsWIP.Gray900};
+  }
+
+  .bp3-tag.bp3-minimal.bp3-intent-success {
+    background-color: ${ColorsWIP.Green50};
+    color: ${ColorsWIP.Green700};
+  }
+
+  .bp3-tag.bp3-minimal.bp3-intent-warning {
+    background-color: ${ColorsWIP.Yellow50};
+    color: ${ColorsWIP.Yellow700};
+  }
+
+  .bp3-tag.bp3-minimal.bp3-intent-danger {
+    background-color: ${ColorsWIP.Red50};
+    color: ${ColorsWIP.Red700};
+  }
 `;
 
-const StyledMenu = styled(Menu)`
+const StyledMenu = styled(MenuWIP)`
   width: 400px;
-`;
-
-const StyledMenuItem = styled(MenuItem)`
-  font-size: 13px;
-  line-height: 15px;
 `;

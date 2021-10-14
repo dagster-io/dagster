@@ -6,20 +6,17 @@ import uuid
 import nbformat
 from dagster import __version__ as dagster_version
 from dagster import check
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
+from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
-from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from .format_error import format_error_with_stack_trace
@@ -36,7 +33,7 @@ MISSING_SCHEDULER_WARNING = (
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.context = check.inst_param(context, "context", WorkspaceProcessContext)
+        self.context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def get_context(self):
         return self.context.create_request_context()
@@ -44,12 +41,14 @@ class DagsterGraphQLView(GraphQLView):
     format_error = staticmethod(format_error_with_stack_trace)
 
 
-def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+def dagster_graphql_subscription_view(
+    subscription_server: DagsterSubscriptionServer, context: IWorkspaceProcessContext
+):
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(ws):
         # Even though this argument is named as the "request_context", we are passing it
-        # a `WorkspaceProcessContext`. This is a naming restriction from the underlying
+        # a `IWorkspaceProcessContext`. This is a naming restriction from the underlying
         # `GeventSubscriptionServer` which we reply on. If you view the implementation
         # for the DagsterSubscriptionServer, you will see that we create a request context
         # for every GraphQL request in the `on_start` method.
@@ -70,26 +69,30 @@ def info_view():
     )
 
 
-def notebook_view(request_args):
+def notebook_view(context, request_args):
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
+    repo_location_name = request_args["repoLocName"]
     check.dict_param(request_args, "request_args")
 
-    # This currently provides open access to your file system - the very least we can
-    # do is limit it to notebook files until we create a more permanent solution.
     path = request_args["path"]
     if not path.endswith(".ipynb"):
         return "Invalid Path", 400
 
-    with open(os.path.abspath(path)) as f:
-        read_data = f.read()
-        notebook = nbformat.reads(read_data, as_version=4)
-        html_exporter = HTMLExporter()
-        html_exporter.template_file = "basic"
-        (body, resources) = html_exporter.from_notebook_node(notebook)
-        return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
+    # get ipynb content from grpc call
+    request_context = context.create_request_context()
+    notebook_content = request_context.get_external_notebook_data(repo_location_name, path)
+    check.inst_param(notebook_content, "notebook_content", bytes)
+
+    # parse content to HTML
+    notebook = nbformat.reads(notebook_content, as_version=4)
+    html_exporter = HTMLExporter()
+    html_exporter.template_file = "basic"
+    (body, resources) = html_exporter.from_notebook_node(notebook)
+    return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
 
 
 def download_log_view(context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
@@ -118,7 +121,7 @@ def download_log_view(context):
 
 
 def download_dump_view(context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(run_id):
         run = context.instance.get_run_by_id(run_id)
@@ -138,7 +141,12 @@ def download_dump_view(context):
 
 
 def instantiate_app_with_views(
-    context, schema, app_path_prefix, target_dir=os.path.dirname(__file__)
+    context: IWorkspaceProcessContext,
+    schema,
+    app_path_prefix,
+    target_dir=os.path.dirname(__file__),
+    graphql_middleware=None,
+    include_notebook_route=False,
 ):
     app = Flask(
         "dagster-ui",
@@ -166,8 +174,8 @@ def instantiate_app_with_views(
             schema=schema,
             graphiql=True,
             graphiql_template=PLAYGROUND_TEMPLATE,
-            executor=Executor(),
             context=context,
+            middleware=graphql_middleware,
         ),
     )
 
@@ -187,12 +195,13 @@ def instantiate_app_with_views(
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     # Also grabbing the magic global request args dict so that notebook_view is testable
-    bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
+    if include_notebook_route:
+        bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(context, request.args))
     bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
-    def index_view():
+    def index_view(*args, **kwargs):  # pylint: disable=unused-argument
         try:
             with open(index_path) as f:
                 rendered_template = render_template_string(f.read())
@@ -200,6 +209,7 @@ def instantiate_app_with_views(
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
                     .replace("__PATH_PREFIX__", app_path_prefix)
+                    .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:
             raise Exception(
@@ -211,31 +221,30 @@ def instantiate_app_with_views(
                 make rebuild_dagit"""
             )
 
-    def error_redirect(_path):
-        return index_view()
-
     bp.add_url_rule("/", "index_view", index_view)
+    bp.add_url_rule("/<path:path>", "catch_all", index_view)
+
     bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
-    app.register_error_handler(404, error_redirect)
-
-    # if the user asked for a path prefix, handle the naked domain just in case they are not
-    # filtering inbound traffic elsewhere and redirect to the path prefix.
-    if app_path_prefix:
-        app.add_url_rule("/", "force-path-prefix", lambda: redirect(app_path_prefix, 301))
+    app.register_error_handler(404, index_view)
 
     CORS(app)
+
     return app
 
 
-def create_app_from_workspace(
-    workspace: Workspace, instance: DagsterInstance, path_prefix: str = ""
+def create_app_from_workspace_process_context(
+    workspace_process_context: WorkspaceProcessContext,
+    path_prefix: str = "",
 ):
-    check.inst_param(workspace, "workspace", Workspace)
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
     check.str_param(path_prefix, "path_prefix")
+
+    instance = workspace_process_context.instance
 
     if path_prefix:
         if not path_prefix.startswith("/"):
@@ -247,10 +256,10 @@ def create_app_from_workspace(
 
     print("Loading repository...")  # pylint: disable=print-call
 
-    context = WorkspaceProcessContext(instance=instance, workspace=workspace, version=__version__)
-
-    log_workspace_stats(instance, context)
+    log_workspace_stats(instance, workspace_process_context)
 
     schema = create_schema()
 
-    return instantiate_app_with_views(context, schema, path_prefix)
+    return instantiate_app_with_views(
+        workspace_process_context, schema, path_prefix, include_notebook_route=True
+    )

@@ -52,19 +52,20 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         self._index_migration_cache = {}
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
-        # Stamp and create tables if there's no previously stamped revision and the main table
-        # doesn't exist (since we used to not stamp postgres storage when it was first created)
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         if self.should_autocreate_tables and "runs" not in table_names:
-            with self.connect() as conn:
-                retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
-
-                # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(pg_alembic_config(__file__), conn)
-
-            # mark all secondary indexes as built
+            retry_pg_creation_fn(self._init_db)
             self.build_missing_indexes()
 
         super().__init__()
+
+    def _init_db(self):
+        with self.connect() as conn:
+            with conn.begin():
+                RunStorageSqlMetadata.create_all(conn)
+                # This revision may be shared by any other dagster storage classes using the same DB
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout

@@ -13,7 +13,7 @@ from .types import (
 )
 
 # wait at most 24 hours by default for run execution
-_DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
+DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
 
 
 class DatabricksError(Exception):
@@ -111,7 +111,7 @@ class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress."""
 
     def __init__(
-        self, host, token, poll_interval_sec=10, max_wait_time_sec=_DEFAULT_RUN_MAX_WAIT_TIME_SEC
+        self, host, token, poll_interval_sec=10, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
     ):
         """Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net

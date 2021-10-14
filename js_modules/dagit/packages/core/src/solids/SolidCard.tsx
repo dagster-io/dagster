@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 
 import {SolidNode, SOLID_NODE_DEFINITION_FRAGMENT} from '../graph/SolidNode';
 import {layoutSolid} from '../graph/getFullSolidLayout';
+import {Box} from '../ui/Box';
 
 import {SolidCardSolidDefinitionFragment} from './types/SolidCardSolidDefinitionFragment';
 
@@ -29,8 +30,8 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
   );
 
   return (
-    <SolidCardContainer>
-      <SVGContainer width={layout.boundingBox.width} height={layout.boundingBox.height}>
+    <Box padding={24}>
+      <SolidCardContainer style={{height: layout.boundingBox.height}}>
         <SolidNode
           invocation={undefined}
           definition={props.definition}
@@ -45,8 +46,8 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
           highlightedEdges={[]}
           dim={false}
         />
-      </SVGContainer>
-    </SolidCardContainer>
+      </SolidCardContainer>
+    </Box>
   );
 };
 
@@ -71,16 +72,8 @@ export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   ${SOLID_NODE_DEFINITION_FRAGMENT}
 `;
 
-const SVGContainer = styled.svg`
-  overflow: visible;
-  border-radius: 0;
-  display: block;
-`;
-
 const SolidCardContainer = styled.div`
   flex: 1;
-  padding: 20px;
-  margin-right: 10px;
-  margin-bottom: 10px;
   max-width: 450px;
+  position: relative;
 `;

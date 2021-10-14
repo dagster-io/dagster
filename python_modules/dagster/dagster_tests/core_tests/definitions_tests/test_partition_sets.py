@@ -1,9 +1,10 @@
 import datetime
 
 import pendulum
-from dagster import Partition, PartitionSetDefinition, ScheduleExecutionContext, SkipReason
+from dagster import Partition, PartitionSetDefinition, ScheduleEvaluationContext
+from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import create_pendulum_time
+from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils.partitions import date_partition_range
 
 
@@ -28,10 +29,12 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
-            execution_data = multi_run_schedule.get_execution_data(schedule_context)
-            assert len(execution_data) == 5
-            assert [request.run_key for request in execution_data] == [
+        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+            execution_data = multi_run_schedule.evaluate_tick(schedule_context)
+            assert isinstance(execution_data, ScheduleExecutionData)
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 5
+            assert [request.run_key for request in execution_data.run_requests] == [
                 "2020-12-27",
                 "2020-12-28",
                 "2020-12-29",
@@ -52,11 +55,11 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
-            execution_data = invalid_schedule.get_execution_data(schedule_context)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], SkipReason)
+        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+            execution_data = invalid_schedule.evaluate_tick(schedule_context)
+            assert isinstance(execution_data, ScheduleExecutionData)
+            assert execution_data.skip_message
             assert (
                 "Partition selector returned partition not in the partition set: made_up."
-                in execution_data[0].skip_message
+                in execution_data.skip_message
             )

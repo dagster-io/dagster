@@ -12,7 +12,7 @@ from dagster import Output, OutputDefinition, pipeline, solid
         OutputDefinition(name="branch_2", is_required=False),
     ]
 )
-def branching_solid(_):
+def branching_solid():
     num = random.randint(0, 1)
     if num == 0:
         yield Output(1, "branch_1")
@@ -21,12 +21,12 @@ def branching_solid(_):
 
 
 @solid
-def branch_1_solid(_, _input):
+def branch_1_solid(_input):
     pass
 
 
 @solid
-def branch_2_solid(_, _input):
+def branch_2_solid(_input):
     pass
 
 

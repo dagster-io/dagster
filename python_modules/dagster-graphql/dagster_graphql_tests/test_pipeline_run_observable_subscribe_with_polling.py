@@ -6,9 +6,9 @@ from unittest.mock import Mock
 
 import pytest
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlEventLogStorage
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunObservableSubscribe
 from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
     SqlitePollingEventLogStorage,
@@ -18,8 +18,8 @@ from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
 @contextmanager
 def create_test_instance_and_storage():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with instance_for_test_tempdir(
-            tmpdir_path,
+        with instance_for_test(
+            temp_dir=tmpdir_path,
             overrides={
                 "event_log_storage": {
                     "module": "dagster_tests.core_tests.storage_tests.test_polling_event_watcher",
@@ -46,7 +46,7 @@ class EventStorer:
 
     @staticmethod
     def create_event(count: int, run_id: str = RUN_ID):
-        return EventRecord(
+        return EventLogEntry(
             None,
             str(count),
             "debug",
@@ -93,7 +93,7 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         call_args = observable_subscribe.observer.on_next.call_args_list
 
         # wait until all events have been captured
-        most_recent_event_processed = lambda: int(call_args[-1][0][0][-1].message)
+        most_recent_event_processed = lambda: int(call_args[-1][0][0][0][-1].message)
         attempts = 10
         while (
             len(call_args) == 0 or most_recent_event_processed() < total_num_events
@@ -102,7 +102,9 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
             attempts -= 1
 
         # ensure all expected events captured, no duplicates, etc.
-        events_list = [[event_record.message for event_record in call[0][0]] for call in call_args]
+        events_list = [
+            [event_record.message for event_record in call[0][0][0]] for call in call_args
+        ]
         flattened_events_list = [int(message) for lst in events_list for message in lst]
         # PipelineRunObservableSubscribe requests ids > after_cursor + 1
         beginning_cursor = before_watch_config.after_cursor + 2

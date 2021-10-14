@@ -4,6 +4,7 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,
+    In,
     InputDefinition,
     Int,
     composite_solid,
@@ -11,6 +12,7 @@ from dagster import (
     execute_solid,
     lambda_solid,
     make_python_type_usable_as_dagster_type,
+    op,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -255,6 +257,24 @@ def test_nested_kitchen_sink():
         == "[Tuple[[Int],String,Dict[String,[String]?]]]?"
     )
 
+    assert (
+        no_execute.output_defs[0].dagster_type.typing_type
+        == Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]
+    )
+
+
+def test_infer_input_description_from_docstring_failure():
+    # docstring is invalid because has a dash instead of a colon to delimit the argument type and
+    # description
+    @solid
+    def my_solid(_arg1):
+        """
+        Args:
+            _arg1 - description of arg
+        """
+
+    assert my_solid
+
 
 def test_infer_input_description_from_docstring_rest():
     @solid
@@ -265,7 +285,7 @@ def test_infer_input_description_from_docstring_rest():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(rest.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(rest.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -293,7 +313,7 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_numpy.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -320,7 +340,7 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_google.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -335,6 +355,19 @@ def test_infer_descriptions_from_docstring_google():
     assert optional_param.description == "optional param. Defaults to 5."
 
 
+def test_infer_output_description_from_docstring_failure():
+    # docstring is invalid because has a dash instead of a colon to delimit the return type and
+    # description
+    @solid
+    def google() -> int:
+        """
+        Returns:
+            int - a number
+        """
+
+    assert google
+
+
 def test_infer_output_description_from_docstring_numpy():
     @solid
     def numpy(_context) -> int:
@@ -346,7 +379,7 @@ def test_infer_output_description_from_docstring_numpy():
             a number
         """
 
-    props = infer_output_props(numpy.compute_fn)
+    props = infer_output_props(numpy.compute_fn.decorated_fn)
     assert props.description == "a number"
     assert props.annotation == int
 
@@ -358,7 +391,7 @@ def test_infer_output_description_from_docstring_rest():
         :return int: a number
         """
 
-    props = infer_output_props(rest.compute_fn)
+    props = infer_output_props(rest.compute_fn.decorated_fn)
     assert props.description == "a number"
     assert props.annotation == int
 
@@ -371,7 +404,7 @@ def test_infer_output_description_from_docstring_google():
             int: a number
         """
 
-    props = infer_output_props(google.compute_fn)
+    props = infer_output_props(google.compute_fn.decorated_fn)
 
     assert props.description == "a number"
     assert props.annotation == int
@@ -395,6 +428,7 @@ def test_unregistered_type_annotation_output():
         return MyClass()
 
     assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
+    assert my_solid.output_defs[0].dagster_type.typing_type == MyClass
 
     @pipeline
     def my_pipeline():
@@ -419,7 +453,30 @@ def test_unregistered_type_annotation_input():
     def my_pipeline():
         solid2(solid1())
 
+    assert solid2.input_defs[0].dagster_type.display_name == "MyClass"
     execute_pipeline(my_pipeline)
+
+
+def test_unregistered_type_annotation_input_op():
+    class MyClass:
+        pass
+
+    @op
+    def op2(_, _input1: MyClass):
+        pass
+
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
+
+
+def test_unregistered_type_annotation_input_op_merge():
+    class MyClass:
+        pass
+
+    @op(ins={"_input1": In()})
+    def op2(_input1: MyClass):
+        pass
+
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
 
 
 def test_use_auto_type_twice():
@@ -495,6 +552,7 @@ def test_fan_in():
         downstream_solid([upstream_solid.alias("a")(), upstream_solid.alias("b")()])
 
     assert downstream_solid.input_defs[0].dagster_type.display_name == "[MyClass]"
+    assert downstream_solid.input_defs[0].dagster_type.typing_type == List[MyClass]
 
     execute_pipeline(my_pipeline)
 

@@ -23,6 +23,7 @@ export interface PipelinePartitionsRootQuery_partitionSetsOrError_PythonError {
 export interface PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results {
   __typename: "PartitionSet";
   id: string;
+  mode: string;
   name: string;
 }
 

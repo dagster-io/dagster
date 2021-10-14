@@ -1,21 +1,41 @@
-from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster import check
-from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_arg_warning
 
+from ..decorator_utils import get_function_params
 from .config import ConfigMapping
 from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .dependency import IDependencyDefinition, SolidHandle, SolidInvocation
+from .dependency import IDependencyDefinition, NodeHandle, SolidInvocation
 from .graph import GraphDefinition
-from .i_solid_definition import NodeDefinition
 from .input import InputDefinition, InputMapping
+from .node import NodeDefinition
 from .output import OutputDefinition, OutputMapping
+from .solid_invocation import solid_invocation_result
+
+if TYPE_CHECKING:
+    from .decorators.solid import DecoratedSolidFunction
 
 
 class SolidDefinition(NodeDefinition):
@@ -37,8 +57,8 @@ class SolidDefinition(NodeDefinition):
             optionally, an injected first argument, ``context``, a collection of information provided
             by the system.
 
-            This function must return a generator or an async generator, which must yield one
-            :py:class:`Output` for each of the solid's ``output_defs``, and additionally may
+            This function will be coerced into a generator or an async generator, which must yield
+            one :py:class:`Output` for each of the solid's ``output_defs``, and additionally may
             yield other types of Dagster events, including :py:class:`Materialization` and
             :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
@@ -52,11 +72,10 @@ class SolidDefinition(NodeDefinition):
             the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this
             solid.
-        positional_inputs (Optional[List[str]]): The positional order of the input names if it
-            differs from the order of the input definitions.
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
+        retry_policy (Optional[RetryPolicy]): The retry policy for this solid.
 
 
     Examples:
@@ -76,17 +95,23 @@ class SolidDefinition(NodeDefinition):
     def __init__(
         self,
         name: str,
-        input_defs: List[InputDefinition],
-        compute_fn: Callable[..., Any],
-        output_defs: List[OutputDefinition],
+        input_defs: Sequence[InputDefinition],
+        compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+        output_defs: Sequence[OutputDefinition],
         config_schema: Optional[Union[Dict[str, Any], IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         required_resource_keys: Optional[Union[Set[str], FrozenSet[str]]] = None,
-        positional_inputs: Optional[List[str]] = None,
         version: Optional[str] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
-        self._compute_fn = check.callable_param(compute_fn, "compute_fn")
+        from .decorators.solid import DecoratedSolidFunction
+
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            self._compute_fn: Union[Callable[..., Any], DecoratedSolidFunction] = compute_fn
+        else:
+            compute_fn = cast(Callable[..., Any], compute_fn)
+            self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -94,6 +119,13 @@ class SolidDefinition(NodeDefinition):
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "SolidDefinition.__init__")
+        self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+
+        positional_inputs = (
+            self._compute_fn.positional_inputs()
+            if isinstance(self._compute_fn, DecoratedSolidFunction)
+            else None
+        )
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -104,8 +136,69 @@ class SolidDefinition(NodeDefinition):
             positional_inputs=positional_inputs,
         )
 
+    def __call__(self, *args, **kwargs) -> Any:
+        from .composition import is_in_composition
+        from .decorators.solid import DecoratedSolidFunction
+        from ..execution.context.invocation import UnboundSolidExecutionContext
+
+        if is_in_composition():
+            return super(SolidDefinition, self).__call__(*args, **kwargs)
+        else:
+            node_label = self.node_type_str  # string "solid" for solids, "op" for ops
+
+            if not isinstance(self.compute_fn, DecoratedSolidFunction):
+                raise DagsterInvalidInvocationError(
+                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
+                    "directly invoked."
+                )
+            if self.compute_fn.has_context_arg():
+                if len(args) + len(kwargs) == 0:
+                    raise DagsterInvalidInvocationError(
+                        f"Compute function of {node_label} '{self.name}' has context argument, but no context "
+                        "was provided when invoking."
+                    )
+                if len(args) > 0:
+                    if args[0] is not None and not isinstance(
+                        args[0], UnboundSolidExecutionContext
+                    ):
+                        raise DagsterInvalidInvocationError(
+                            f"Compute function of {node_label} '{self.name}' has context argument, "
+                            "but no context was provided when invoking."
+                        )
+                    context = args[0]
+                    return solid_invocation_result(self, context, *args[1:], **kwargs)
+                # Context argument is provided under kwargs
+                else:
+                    context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
+                    if context_param_name not in kwargs:
+                        raise DagsterInvalidInvocationError(
+                            f"Compute function of {node_label} '{self.name}' has context argument "
+                            f"'{context_param_name}', but no value for '{context_param_name}' was "
+                            f"found when invoking. Provided kwargs: {kwargs}"
+                        )
+                    context = kwargs[context_param_name]
+                    kwargs_sans_context = {
+                        kwarg: val
+                        for kwarg, val in kwargs.items()
+                        if not kwarg == context_param_name
+                    }
+                    return solid_invocation_result(self, context, *args, **kwargs_sans_context)
+
+            else:
+                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                    raise DagsterInvalidInvocationError(
+                        f"Compute function of {node_label} '{self.name}' has no context argument, but "
+                        "context was provided when invoking."
+                    )
+                return solid_invocation_result(self, None, *args, **kwargs)
+
     @property
-    def compute_fn(self) -> Callable[..., Any]:
+    def node_type_str(self) -> str:
+        return "solid"
+
+    @property
+    def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
     @property
@@ -130,8 +223,8 @@ class SolidDefinition(NodeDefinition):
         yield self
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: SolidHandle
-    ) -> Tuple[OutputDefinition, SolidHandle]:
+        self, output_name: str, handle: NodeHandle
+    ) -> Tuple[OutputDefinition, NodeHandle]:
         return self.output_def_named(output_name), handle
 
     def input_has_default(self, input_name: str) -> InputDefinition:
@@ -159,9 +252,13 @@ class SolidDefinition(NodeDefinition):
             description=description or self.description,
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
-            positional_inputs=self.positional_inputs,
             version=self.version,
+            retry_policy=self.retry_policy,
         )
+
+    @property
+    def retry_policy(self) -> Optional[RetryPolicy]:
+        return self._retry_policy
 
 
 class CompositeSolidDefinition(GraphDefinition):
@@ -233,6 +330,8 @@ class CompositeSolidDefinition(GraphDefinition):
         tags: Optional[Dict[str, str]] = None,
         positional_inputs: Optional[List[str]] = None,
     ):
+        _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
+
         super(CompositeSolidDefinition, self).__init__(
             name=name,
             description=description,
@@ -242,7 +341,7 @@ class CompositeSolidDefinition(GraphDefinition):
             positional_inputs=positional_inputs,
             input_mappings=input_mappings,
             output_mappings=output_mappings,
-            config_mapping=config_mapping,
+            config=config_mapping,
         )
 
     def all_dagster_types(self) -> Iterator[DagsterType]:
@@ -258,11 +357,12 @@ class CompositeSolidDefinition(GraphDefinition):
         config_schema: IDefinitionConfigSchema,
         config_or_config_fn: Any,
     ) -> "CompositeSolidDefinition":
-        if not self.has_config_mapping:
+        config_mapping = self._config_mapping
+        if config_mapping is None:
             raise DagsterInvalidDefinitionError(
-                "Only composite solids utilizing config mapping can be pre-configured. The solid "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                "Only composite solids utilizing config mapping can be pre-configured. The "
+                'composite solid "{graph_name}" does not have a config mapping, and thus has '
+                "nothing to be configured.".format(graph_name=self.name)
             )
 
         return CompositeSolidDefinition(
@@ -271,11 +371,43 @@ class CompositeSolidDefinition(GraphDefinition):
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
             config_mapping=ConfigMapping(
-                self._config_mapping.config_fn,
+                config_mapping.config_fn,
                 config_schema=config_schema,
+                receive_processed_config_values=config_mapping.receive_processed_config_values,
             ),
             dependencies=self.dependencies,
             description=description or self.description,
             tags=self.tags,
             positional_inputs=self.positional_inputs,
         )
+
+    @property
+    def node_type_str(self):
+        return "composite solid"
+
+
+def _check_io_managers_on_composite_solid(
+    name: str,
+    input_mappings: Optional[List[InputMapping]],
+    output_mappings: Optional[List[OutputMapping]],
+):
+    # Ban root_manager_key on composite solids
+    if input_mappings:
+        for input_mapping in input_mappings:
+            input_def = input_mapping.definition
+            if input_def.root_manager_key:
+                raise DagsterInvalidDefinitionError(
+                    "Root input manager cannot be set on a composite solid: "
+                    f'root_manager_key "{input_def.root_manager_key}" '
+                    f'is set on InputDefinition "{input_def.name}" of composite solid "{name}". '
+                )
+    # Ban io_manager_key on composite solids
+    if output_mappings:
+        for output_mapping in output_mappings:
+            output_def = output_mapping.definition
+            if output_def.io_manager_key != "io_manager":
+                raise DagsterInvalidDefinitionError(
+                    "IO manager cannot be set on a composite solid: "
+                    f'io_manager_key "{output_def.io_manager_key}" '
+                    f'is set  on OutputtDefinition "{output_def.name}" of composite solid "{name}". '
+                )

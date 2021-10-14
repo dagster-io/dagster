@@ -5,12 +5,19 @@
   "scripts": {
     "dev": "PORT=3001 next-remote-watch ../content",
     "build": "next build",
+    "build-master": "VERSIONING_DISABLED=true next build",
     "start": "next start",
     "snapshot": "ts-node -O '{\"module\": \"commonjs\"}' scripts/snapshot.ts && yarn format",
     "test": "jest",
-    "format": "prettier --config ./.prettierrc.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent"
+    "format": "prettier --config ./.prettierrc.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent",
+    "crag-dev": "IS_CRAG=true PORT=3001 next-remote-watch ../content-crag",
+    "crag-build-master": "IS_CRAG=true VERSIONING_DISABLED=true next build",
+    "crag-snapshot": "IS_CRAG=true yarn snapshot",
+    "crag-format": "prettier --config ./.prettierrc.js --write \"../content-crag/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content-crag/**/*.mdx\" --output --silent",
+    "crag-test": "IS_CRAG=true jest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.18.0",
     "@docsearch/react": "^3.0.0-alpha.34",
     "@headlessui/react": "^0.2.0",
     "@jsdevtools/rehype-toc": "^3.0.2",

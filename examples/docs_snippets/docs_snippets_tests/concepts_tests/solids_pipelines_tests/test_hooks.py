@@ -8,6 +8,7 @@ from docs_snippets.concepts.solids_pipelines.solid_hooks import (
     selective_notif,
     slack_message_on_failure,
     slack_message_on_success,
+    test_my_success_hook,
 )
 from docs_snippets.concepts.solids_pipelines.solid_hooks_context import my_failure_hook
 
@@ -57,7 +58,7 @@ def test_hook_resource():
 
 def test_failure_hook_solid_exception():
     @solid
-    def failed_solid(_):
+    def failed_solid():
         raise Exception("my failure")
 
     @my_failure_hook
@@ -67,3 +68,7 @@ def test_failure_hook_solid_exception():
 
     result = execute_pipeline(foo, raise_on_error=False)
     assert not result.success
+
+
+def test_hook_testing_example():
+    test_my_success_hook()

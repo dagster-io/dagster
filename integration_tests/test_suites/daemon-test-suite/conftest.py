@@ -1,35 +1,40 @@
-import sys
-from contextlib import contextmanager
-
 import pytest
 from dagster import file_relative_path
-from dagster.core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PipelineHandle,
-)
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 
 
-@contextmanager
-def get_example_repository_location():
-    loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=file_relative_path(__file__, "repo.py"),
+@pytest.fixture(name="instance")
+def instance_fixture():
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster.core.run_coordinator",
+                "class": "QueuedRunCoordinator",
+                "config": {"dequeue_interval_seconds": 1},
+            },
+        }
+    ) as instance:
+        yield instance
+
+
+@pytest.fixture(name="foo_example_workspace")
+def foo_example_workspace_fixture(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "repo.py"),
+            attribute=None,
+            working_directory=None,
+            location_name="example_repo_location",
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+@pytest.fixture
+def foo_example_repo(foo_example_workspace):
+    return foo_example_workspace.get_repository_location("example_repo_location").get_repository(
+        "example_repo"
     )
-    location_name = "example_repo_location"
-
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
-
-    with origin.create_test_location() as location:
-        yield location
-
-
-@pytest.fixture
-def foo_example_repo():
-    with get_example_repository_location() as location:
-        yield location.get_repository("example_repo")
-
-
-@pytest.fixture
-def foo_pipeline_handle(foo_example_repo):  # pylint: disable=redefined-outer-name
-    return PipelineHandle("foo_pipeline", foo_example_repo.handle)

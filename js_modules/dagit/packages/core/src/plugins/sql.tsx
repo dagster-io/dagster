@@ -1,71 +1,54 @@
-import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
+import {ButtonWIP} from '../ui/Button';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 
-export class SidebarComponent extends React.Component<IPluginSidebarProps> {
-  state = {
-    open: false,
-  };
+export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
+  const [open, setOpen] = React.useState(false);
 
-  componentDidMount() {
-    document.addEventListener('show-kind-info', this.onClick);
+  React.useEffect(() => {
+    const onClose = () => setOpen(true);
+    document.addEventListener('show-kind-info', onClose);
+    return () => document.removeEventListener('show-kind-info', onClose);
+  }, []);
+
+  const metadata = props.definition.metadata;
+  const sql = metadata.find((m) => m.key === 'sql');
+  if (!sql) {
+    return <span />;
   }
 
-  componentWillUnmount() {
-    document.removeEventListener('show-kind-info', this.onClick);
-  }
-
-  onClick = () => {
-    this.setState({
-      open: true,
-    });
-  };
-
-  render() {
-    const metadata = this.props.definition.metadata;
-    const sql = metadata.find((m) => m.key === 'sql');
-    if (!sql) {
-      return <span />;
-    }
-
-    return (
-      <div>
-        <Button icon="duplicate" onClick={this.onClick}>
-          View SQL
-        </Button>
-        <Dialog
-          icon="info-sign"
-          onClose={() =>
-            this.setState({
-              open: false,
-            })
-          }
-          style={{width: '80vw', maxWidth: 900, height: 615}}
-          title={`SQL: ${this.props.definition.name}`}
-          usePortal={true}
-          isOpen={this.state.open}
-        >
-          <div className={Classes.DIALOG_BODY} style={{margin: 0}}>
-            <HighlightedCodeBlock
-              language="sql"
-              value={sql.value}
-              style={{
-                height: 510,
-                margin: 0,
-                overflow: 'scroll',
-                fontSize: '0.9em',
-              }}
-            />
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({open: false})}>Close</Button>
-            </div>
-          </div>
-        </Dialog>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
+        View SQL
+      </ButtonWIP>
+      <DialogWIP
+        icon="info"
+        onClose={() => setOpen(false)}
+        style={{width: '80vw', maxWidth: 900, height: 615}}
+        title={`SQL: ${props.definition.name}`}
+        isOpen={open}
+      >
+        <DialogBody>
+          <HighlightedCodeBlock
+            language="sql"
+            value={sql.value}
+            style={{
+              height: 510,
+              padding: 10,
+              overflow: 'scroll',
+              fontSize: '0.9em',
+            }}
+          />
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP onClick={() => setOpen(false)}>Close</ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
+    </div>
+  );
+};

@@ -1,3 +1,7 @@
+# See: https://github.com/dagster-io/dagster/issues/4209
+# type: ignore[valid-type]
+# type: ignore[attr-defined]
+
 import os
 import pickle
 import tempfile

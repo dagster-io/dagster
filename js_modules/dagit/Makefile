@@ -1,11 +1,8 @@
 dev_webapp:
-	REACT_APP_GRAPHQL_URI="ws://localhost:3333/graphql" yarn start
+	REACT_APP_BACKEND_ORIGIN="http://localhost:3333" yarn start
 
-download-schema:
-	REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn workspace @dagit/core download-schema
-
-generate-types: download-schema
-	yarn workspace @dagit/core generate-types
+generate-graphql:
+	yarn workspace @dagit/core generate-graphql
 
 ts:
 	yarn workspace @dagit/app ts && yarn workspace @dagit/core ts

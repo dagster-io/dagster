@@ -1,9 +1,14 @@
 import sys
+from datetime import datetime
 
 import pendulum
 import pytest
 from dagster.core.definitions import PipelineDefinition
-from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster.core.errors import (
+    DagsterRunAlreadyExists,
+    DagsterRunNotFoundError,
+    DagsterSnapshotDoesNotExist,
+)
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
@@ -129,6 +134,21 @@ class TestRunStorage:
         storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="some_other_pipeline"))
         assert len(storage.get_runs()) == 2
         some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name="some_pipeline"))
+        assert len(some_runs) == 1
+        assert some_runs[0].run_id == one
+
+    def test_fetch_by_mode(self, storage):
+        assert storage
+        one = make_new_run_id()
+        two = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(run_id=one, pipeline_name="some_pipeline", mode="foo")
+        )
+        storage.add_run(
+            TestRunStorage.build_run(run_id=two, pipeline_name="some_pipeline", mode="bar")
+        )
+        assert len(storage.get_runs()) == 2
+        some_runs = storage.get_runs(PipelineRunsFilter(mode="foo"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -541,6 +561,68 @@ class TestRunStorage:
             for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.SUCCESS]))
         } == set()
 
+    def test_fetch_records_by_update_timestamp(self, storage):
+        assert storage
+        self._skip_in_memory(storage)
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, pipeline_name="some_pipeline", status=PipelineRunStatus.STARTED
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, pipeline_name="some_pipeline", status=PipelineRunStatus.FAILURE
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, pipeline_name="some_pipeline", status=PipelineRunStatus.STARTED
+            )
+        )
+        storage.handle_run_event(
+            three,  # three succeeds
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                pipeline_name="some_pipeline",
+            ),
+        )
+        storage.handle_run_event(
+            one,  # fail one after two has fails and three has succeeded
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                pipeline_name="some_pipeline",
+            ),
+        )
+
+        record_two = storage.get_run_records(
+            filters=PipelineRunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
+        )[0]
+        run_two_update_timestamp = record_two.update_timestamp
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=PipelineRunsFilter(updated_after=run_two_update_timestamp),
+                order_by="update_timestamp",
+                ascending=True,
+            )
+        ] == [three, one]
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=PipelineRunsFilter(
+                    statuses=[PipelineRunStatus.FAILURE], updated_after=run_two_update_timestamp
+                ),
+            )
+        ] == [one]
+
     def test_fetch_by_status_cursored(self, storage):
         assert storage
         one = make_new_run_id()
@@ -818,8 +900,8 @@ class TestRunStorage:
         run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
         storage.add_run(run)
 
-        run_group_result = storage.get_run_group(make_new_run_id())
-        assert run_group_result is None
+        with pytest.raises(DagsterRunNotFoundError):
+            storage.get_run_group(make_new_run_id())
 
     def test_fetch_run_groups(self, storage):
         assert storage

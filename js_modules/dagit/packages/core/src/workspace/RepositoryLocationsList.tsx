@@ -1,120 +1,157 @@
-import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
 import React from 'react';
 
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {Timestamp} from '../app/time/Timestamp';
+import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
+import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
+import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
+import {Caption} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceContext} from './WorkspaceContext';
-import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from './types/RootRepositoriesQuery';
+import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
 
-const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
-  props,
-) => {
-  const {locationOrError, reloading} = props;
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+
+const LocationStatus: React.FC<{location: string; locationOrError: LocationOrError}> = (props) => {
+  const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
+  const {reloading, tryReload} = useRepositoryLocationReload(location);
 
-  if (reloading) {
-    return (
-      <Tag minimal intent="primary">
-        Reloading...
-      </Tag>
-    );
+  if (locationOrError.loadStatus === 'LOADING') {
+    if (locationOrError.locationOrLoadError) {
+      return (
+        <TagWIP minimal intent="primary">
+          Updating...
+        </TagWIP>
+      );
+    } else {
+      return (
+        <TagWIP minimal intent="primary">
+          Loading...
+        </TagWIP>
+      );
+    }
   }
 
-  if (locationOrError.__typename === 'RepositoryLocationLoadFailure') {
+  if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <div style={{display: 'flex', alignItems: 'start'}}>
-          <Tag minimal intent="danger">
+          <TagWIP minimal intent="danger">
             Failed
-          </Tag>
+          </TagWIP>
           <div style={{fontSize: '14px', marginLeft: '8px'}}>
             <ButtonLink onClick={() => setShowDialog(true)}>View error</ButtonLink>
           </div>
         </div>
-        <Dialog
+        <RepositoryLocationNonBlockingErrorDialog
+          location={location}
           isOpen={showDialog}
-          title="Repository location error"
-          onClose={() => setShowDialog(false)}
-          style={{width: '90%'}}
-        >
-          <div className={Classes.DIALOG_BODY}>
-            <div style={{marginBottom: '12px'}}>
-              Error loading <strong>{locationOrError.name}</strong>. Try reloading the repository
-              location after resolving the issue.
-            </div>
-            <PythonErrorInfo error={locationOrError.error} />
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => setShowDialog(false)}>OK</Button>
-            </div>
-          </div>
-        </Dialog>
+          error={locationOrError.locationOrLoadError}
+          reloading={reloading}
+          onDismiss={() => setShowDialog(false)}
+          onTryReload={() => tryReload()}
+        />
       </>
     );
   }
+
   return (
-    <Tag minimal intent="success">
+    <TagWIP minimal intent="success">
       Loaded
-    </Tag>
+    </TagWIP>
   );
 };
 
 const ReloadButton: React.FC<{
   location: string;
-  onReload: (location: string) => Promise<any>;
 }> = (props) => {
-  const {location, onReload} = props;
-  const {reloading, onClick} = useRepositoryLocationReload(location, () => onReload(location));
+  const {location} = props;
+  const {canReloadRepositoryLocation} = usePermissions();
+
+  if (!canReloadRepositoryLocation) {
+    return (
+      <Tooltip content={DISABLED_MESSAGE}>
+        <ButtonLink color={ColorsWIP.Gray400}>Reload</ButtonLink>
+      </Tooltip>
+    );
+  }
+
   return (
-    <ButtonLink onClick={onClick}>
-      <Group direction="row" spacing={4} alignItems="center">
-        Reload
-        {reloading ? <Spinner purpose="body-text" /> : null}
-      </Group>
-    </ButtonLink>
+    <ReloadRepositoryLocationButton location={location}>
+      {({reloading, tryReload}) => (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <ButtonLink onClick={() => tryReload()}>Reload</ButtonLink>
+          {reloading ? <Spinner purpose="body-text" /> : null}
+        </Box>
+      )}
+    </ReloadRepositoryLocationButton>
   );
 };
 
 export const RepositoryLocationsList = () => {
-  const {locations, loading} = React.useContext(WorkspaceContext);
-  const [reloading, setReloading] = React.useState<string | null>(null);
+  const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
-  if (loading && !locations.length) {
-    return <div style={{color: Colors.GRAY3}}>Loading…</div>;
+  if (loading && !locationEntries.length) {
+    return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
   }
 
-  if (!locations.length) {
-    return <NonIdealState icon="cube" title="No repository locations!" />;
+  if (!locationEntries.length) {
+    return (
+      <Box padding={{vertical: 32}}>
+        <NonIdealState
+          icon="folder"
+          title="No repository locations"
+          description="When you add a repository location to this workspace, it will appear here."
+        />
+      </Box>
+    );
   }
-
-  const onReload = async (name: string) => {
-    setReloading(name);
-    setReloading(null);
-  };
 
   return (
     <Table>
       <thead>
         <tr>
           <th>Repository location</th>
-          <th colSpan={2}>Status</th>
+          <th>Status</th>
+          <th colSpan={2}>Updated</th>
         </tr>
       </thead>
       <tbody>
-        {locations.map((location) => (
+        {locationEntries.map((location) => (
           <tr key={location.name}>
-            <td style={{width: '30%'}}>{location.name}</td>
-            <td style={{width: '20%'}}>
-              <LocationStatus locationOrError={location} reloading={location.name === reloading} />
+            <td style={{maxWidth: '50%'}}>
+              <Group direction="column" spacing={4}>
+                <strong>{location.name}</strong>
+                <div>
+                  {location.displayMetadata.map((metadata, idx) => (
+                    <div key={idx}>
+                      <Caption style={{wordBreak: 'break-word'}}>
+                        {`${metadata.key}: `}
+                        <span style={{color: ColorsWIP.Gray400}}>{metadata.value}</span>
+                      </Caption>
+                    </div>
+                  ))}
+                </div>
+              </Group>
             </td>
-            <td style={{width: '100%'}}>
-              <ReloadButton location={location.name} onReload={onReload} />
+            <td>
+              <LocationStatus location={location.name} locationOrError={location} />
+            </td>
+            <td style={{whiteSpace: 'nowrap'}}>
+              <Timestamp timestamp={{unix: location.updatedTimestamp}} timeFormat={TIME_FORMAT} />
+            </td>
+            <td style={{width: '180px'}}>
+              <ReloadButton location={location.name} />
             </td>
           </tr>
         ))}

@@ -1,4 +1,5 @@
 import re
+import typing
 
 import pytest
 from dagster import (
@@ -23,6 +24,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,
     PythonObjectDagsterType,
@@ -71,6 +73,13 @@ def test_python_object_type_with_custom_type_check():
     assert Int3.unique_name == "Int3"
     assert check_dagster_type(Int3, 3).success
     assert not check_dagster_type(Int3, 5).success
+
+
+def test_tuple_union_typing_type():
+
+    UnionType = PythonObjectDagsterType(python_type=(str, int, float))
+
+    assert UnionType.typing_type == typing.Union[str, int, float]
 
 
 def test_nullable_python_object_type():
@@ -394,14 +403,12 @@ def test_fan_in_custom_types_with_storage():
     def get_foo(_context, dicts):
         return dicts[0]["foo"]
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def dict_pipeline():
         # Fan-in
         get_foo([return_dict_1(), return_dict_2()])
 
-    pipeline_result = execute_pipeline(
-        dict_pipeline, run_config={"intermediate_storage": {"filesystem": {}}}
-    )
+    pipeline_result = execute_pipeline(dict_pipeline)
     assert pipeline_result.success
 
 

@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Dict, List, NamedTuple, cast
 
 from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.retries import RetryState
 from dagster.serdes import whitelist_for_serdes
 
@@ -39,7 +39,7 @@ class KnownExecutionState(
         return RetryState(self.previous_retry_attempts)
 
     @staticmethod
-    def derive_from_logs(logs: List[EventRecord]) -> "KnownExecutionState":
+    def derive_from_logs(logs: List[EventLogEntry]) -> "KnownExecutionState":
         """
         Derive the known state from iterating over the event logs
         """
@@ -82,7 +82,7 @@ class KnownExecutionState(
 
     @staticmethod
     def for_reexecution(
-        parent_run_logs: List[EventRecord], step_keys_to_execute: List[str]
+        parent_run_logs: List[EventLogEntry], step_keys_to_execute: List[str]
     ) -> "KnownExecutionState":
         """
         Copy over dynamic mappings from previous run, but drop any for steps that we intend to re-execute

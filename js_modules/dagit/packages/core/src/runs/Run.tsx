@@ -1,6 +1,4 @@
-import {ApolloClient, useMutation} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,9 +6,14 @@ import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {GanttChart, GanttChartMode, QueuedState} from '../gantt/GanttChart';
+import {showLaunchError} from '../execute/showLaunchError';
+import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -21,7 +24,6 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   getReexecutionVariables,
@@ -40,19 +42,36 @@ import {
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
-  client: ApolloClient<any>;
   runId: string;
   run?: RunFragment;
 }
 
-export const Run: React.FunctionComponent<RunProps> = (props) => {
-  const {client, run, runId} = props;
+const runStatusEmoji = (status: PipelineRunStatus) => {
+  switch (status) {
+    case PipelineRunStatus.CANCELED:
+    case PipelineRunStatus.CANCELING:
+    case PipelineRunStatus.FAILURE:
+      return '🔴';
+    case PipelineRunStatus.SUCCESS:
+      return '🟢';
+    default:
+      return '🔵';
+  }
+};
+
+export const Run: React.FC<RunProps> = (props) => {
+  const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
     defaults: {selection: ''},
   });
-  const {websocketURI} = React.useContext(AppContext);
+
+  useDocumentTitle(
+    run
+      ? `${runStatusEmoji(run.status)} ${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]`
+      : `Run: ${runId}`,
+  );
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
@@ -76,9 +95,7 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
 
   return (
     <RunContext.Provider value={run}>
-      {run && <RunStatusToPageAttributes run={run} />}
-
-      <LogsProvider websocketURI={websocketURI} key={runId} client={client} runId={runId}>
+      <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <RunMetadataProvider logs={logs.allNodes}>
             {(metadata) => (
@@ -155,19 +172,25 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const {basePath} = React.useContext(AppContext);
-  const [computeLogStep, setComputeLogStep] = React.useState<string>();
+
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: 'structured'},
   });
+
+  const [computeLogKey, setComputeLogKey] = useQueryPersistedState<string>({
+    queryKey: 'logKey',
+  });
+
   const logType = logTypeFromQuery(queryLogType);
   const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
+
   const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
   const stepKeys = React.useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
 
-  const runtimeStepKeys = Object.keys(metadata.steps);
-  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, runtimeStepKeys);
+  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, metadata.steps);
+
   const selectionStepKeys = React.useMemo(() => {
     return runtimeGraph && selectionQuery && selectionQuery !== '*'
       ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
@@ -175,20 +198,28 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   React.useEffect(() => {
-    if (!stepKeys) {
+    if (!stepKeys?.length || computeLogKey) {
       return;
     }
-    if (!computeLogStep || !stepKeys.includes(computeLogStep)) {
-      const stepKey = selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0];
-      setComputeLogStep(stepKey);
-    } else if (selectionStepKeys.length === 1 && computeLogStep !== selectionStepKeys[0]) {
-      setComputeLogStep(selectionStepKeys[0]);
-    }
-  }, [stepKeys, computeLogStep, selectionStepKeys]);
 
-  const onComputeLogStepSelect = (stepKey: string) => {
-    setComputeLogStep(stepKey);
-    onSetSelectionQuery(stepKey);
+    if (metadata.logCaptureSteps) {
+      const logKeys = Object.keys(metadata.logCaptureSteps);
+      const selectedLogKey = logKeys.find((logKey) => {
+        return selectionStepKeys.every(
+          (stepKey) =>
+            metadata.logCaptureSteps && metadata.logCaptureSteps[logKey].stepKeys.includes(stepKey),
+        );
+      });
+      setComputeLogKey(selectedLogKey || logKeys[0]);
+    } else if (!stepKeys.includes(computeLogKey)) {
+      setComputeLogKey(selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0]);
+    } else if (selectionStepKeys.length === 1 && computeLogKey !== selectionStepKeys[0]) {
+      setComputeLogKey(selectionStepKeys[0]);
+    }
+  }, [stepKeys, computeLogKey, selectionStepKeys, metadata.logCaptureSteps, setComputeLogKey]);
+
+  const onSetComputeLogKey = (logKey: string) => {
+    setComputeLogKey(logKey);
   };
 
   const logsFilterStepKeys = runtimeGraph
@@ -196,7 +227,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         .filter((v) => v.token && v.token === 'query')
         .reduce((accum, v) => {
           return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
-        }, [])
+        }, [] as string[])
     : [];
 
   const onLaunch = async (style: ReExecutionStyle) => {
@@ -210,8 +241,13 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    const result = await launchPipelineReexecution({variables});
-    handleLaunchResult(basePath, run.pipeline.name, result);
+
+    try {
+      const result = await launchPipelineReexecution({variables});
+      handleLaunchResult(basePath, run.pipeline.name, result);
+    } catch (error) {
+      showLaunchError(error as Error);
+    }
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
@@ -244,7 +280,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   const gantt = (metadata: IRunMetadataDict) => {
     if (logs.loading) {
-      return <GanttChart.LoadingState runId={runId} />;
+      return <GanttChartLoadingState runId={runId} />;
     }
 
     if (run?.status === 'QUEUED') {
@@ -257,17 +293,17 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           options={{
             mode: GanttChartMode.WATERFALL_TIMED,
           }}
-          toolbarLeftActions={
-            <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
-          }
           toolbarActions={
-            <RunActionButtons
-              run={run}
-              onLaunch={onLaunch}
-              graph={runtimeGraph}
-              metadata={metadata}
-              selection={{query: selectionQuery, keys: selectionStepKeys}}
-            />
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+              <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
+              <RunActionButtons
+                run={run}
+                onLaunch={onLaunch}
+                graph={runtimeGraph}
+                metadata={metadata}
+                selection={{query: selectionQuery, keys: selectionStepKeys}}
+              />
+            </Box>
           }
           runId={runId}
           graph={runtimeGraph}
@@ -280,17 +316,17 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       );
     }
 
-    return <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />;
+    return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
   return (
     <>
       <SplitPanelContainer
         ref={splitPanelContainer}
-        axis={'vertical'}
+        axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
-        firstMinSize={40}
+        firstMinSize={56}
         first={gantt(metadata)}
         second={
           <LogsContainer>
@@ -301,15 +337,15 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
               onSetFilter={onSetLogsFilter}
               steps={stepKeys}
               metadata={metadata}
-              computeLogStep={computeLogStep}
-              onSetComputeLogStep={onComputeLogStepSelect}
+              computeLogKey={computeLogKey}
+              onSetComputeLogKey={onSetComputeLogKey}
               computeLogUrl={computeLogUrl}
             />
             {logType !== LogType.structured ? (
               <ComputeLogPanel
                 runId={runId}
                 stepKeys={stepKeys}
-                selectedStepKey={computeLogStep}
+                computeLogKey={computeLogKey}
                 ioType={LogType[logType]}
                 setComputeLogUrl={setComputeLogUrl}
               />
@@ -333,5 +369,4 @@ const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f1f6f9;
 `;

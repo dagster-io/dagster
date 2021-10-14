@@ -2,7 +2,7 @@ type Query {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
-  repositoryLocationsOrError: RepositoryLocationsOrError!
+  workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
@@ -10,8 +10,8 @@ type Query {
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
-  jobStateOrError(jobSelector: JobSelector!): JobStateOrError!
-  unloadableJobStatesOrError(jobType: JobType): JobStatesOrError!
+  instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
+  unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
@@ -23,10 +23,13 @@ type Query {
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError: AssetsOrError!
+  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+  assetNodes: [AssetNode!]!
+  assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  permissions: [GraphenePermission!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -46,6 +49,7 @@ type Repository {
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
+  assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
 }
 
@@ -69,12 +73,14 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
+  id: ID!
   presets: [PipelinePreset!]!
+  isJob: Boolean!
 }
 
 interface SolidContainer {
@@ -95,7 +101,6 @@ interface ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
 }
 
 type MetadataItemDefinition {
@@ -116,8 +121,8 @@ type SolidDefinition implements ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
   configField: ConfigTypeField
+  requiredResources: [ResourceRequirement!]!
 }
 
 type OutputDefinition {
@@ -150,16 +155,16 @@ interface ConfigType {
   isSelector: Boolean!
 }
 
-type ResourceRequirement {
-  resourceKey: String!
-}
-
 type ConfigTypeField {
   name: String!
   description: String
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+}
+
+type ResourceRequirement {
+  resourceKey: String!
 }
 
 type Input {
@@ -186,6 +191,11 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
 }
 
 union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
@@ -228,6 +238,7 @@ type PythonError implements Error {
 }
 
 type Mode {
+  id: String!
   name: String!
   description: String
   resources: [Resource!]!
@@ -278,6 +289,7 @@ type PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
+  events(after: Cursor): [PipelineRunEvent!]!
 }
 
 type RepositoryOrigin {
@@ -420,6 +432,7 @@ type Asset {
   key: AssetKey!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   tags: [AssetTag!]!
+  definition: AssetNode
 }
 
 type AssetMaterialization {
@@ -470,7 +483,6 @@ enum DagsterEventType {
   STEP_RESTARTED
   ASSET_MATERIALIZATION
   STEP_EXPECTATION_RESULT
-  PIPELINE_INIT_FAILURE
   PIPELINE_ENQUEUED
   PIPELINE_DEQUEUED
   PIPELINE_STARTING
@@ -487,6 +499,9 @@ enum DagsterEventType {
   HOOK_COMPLETED
   HOOK_ERRORED
   HOOK_SKIPPED
+  ALERT_START
+  ALERT_SUCCESS
+  LOGS_CAPTURED
 }
 
 interface StepEvent {
@@ -511,6 +526,387 @@ type AssetTag {
   value: String!
 }
 
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  jobName: String
+  dependencies: [AssetDependency!]!
+  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetDependency {
+  inputName: String!
+  upstreamAsset: AssetNode!
+}
+
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
+
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  errorSource: ErrorSource
+  failureMetadata: FailureMetadata
+}
+
+enum ErrorSource {
+  FRAMEWORK_ERROR
+  USER_CODE_ERROR
+  UNEXPECTED_ERROR
+  INTERRUPT
+}
+
+type FailureMetadata implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+}
+
+type ExecutionStepInputEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  inputName: String!
+  typeCheck: TypeCheck!
+}
+
+type TypeCheck implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
+type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  outputName: String!
+  typeCheck: TypeCheck!
+}
+
+type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepStartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  secondsToWait: Int
+}
+
+type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type LogMessageEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type PipelineFailureEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  error: PythonError
+}
+
+interface PipelineEvent {
+  pipelineName: String!
+}
+
+type PipelineStartEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineStartingEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineCancelingEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineCanceledEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  outputName: String!
+  managerKey: String!
+}
+
+type LoadedInputEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  inputName: String!
+  managerKey: String!
+  upstreamOutputName: String
+  upstreamStepKey: String
+}
+
+type LogsCapturedEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  logKey: String!
+  stepKeys: [String!]
+  pid: Int
+}
+
+type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  operationResult: ObjectStoreOperationResult!
+}
+
+type ObjectStoreOperationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  op: ObjectStoreOperationType!
+}
+
+enum ObjectStoreOperationType {
+  SET_OBJECT
+  GET_OBJECT
+  RM_OBJECT
+  CP_OBJECT
+}
+
+type StepExpectationResultEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  expectationResult: ExpectationResult!
+}
+
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  error: PythonError
+  markerStart: String
+  markerEnd: String
+}
+
+type HookCompletedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type HookSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type HookErroredEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+}
+
+type AlertStartEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertSuccessEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+scalar Cursor
+
 type Schedule {
   id: ID!
   name: String!
@@ -520,66 +916,67 @@ type Schedule {
   mode: String!
   executionTimezone: String
   description: String
-  scheduleState: JobState!
+  scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int): FutureJobTicks!
-  futureTick(tickTimestamp: Int!): FutureJobTick!
+  futureTicks(cursor: Float, limit: Int): FutureInstigationTicks!
+  futureTick(tickTimestamp: Int!): FutureInstigationTick!
 }
 
-type JobState {
+type InstigationState {
   id: ID!
   name: String!
-  jobType: JobType!
-  status: JobStatus!
+  instigationType: InstigationType!
+  status: InstigationStatus!
   repositoryOrigin: RepositoryOrigin!
-  jobSpecificData: JobSpecificData
+  typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
-  ticks(dayRange: Int, dayOffset: Int, limit: Int): [JobTick!]!
-  nextTick: FutureJobTick
+  ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
+  nextTick: FutureInstigationTick
   runningCount: Int!
 }
 
-enum JobType {
+enum InstigationType {
   SCHEDULE
   SENSOR
 }
 
-enum JobStatus {
+enum InstigationStatus {
   RUNNING
   STOPPED
 }
 
-union JobSpecificData = SensorJobData | ScheduleJobData
+union InstigationTypeSpecificData = SensorData | ScheduleData
 
-type SensorJobData {
+type SensorData {
   lastTickTimestamp: Float
   lastRunKey: String
 }
 
-type ScheduleJobData {
+type ScheduleData {
   cronSchedule: String!
   startTimestamp: Float
 }
 
-type JobTick {
+type InstigationTick {
   id: ID!
-  status: JobTickStatus!
+  status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
   error: PythonError
   skipReason: String
   runs: [PipelineRun!]!
+  originRunIds: [String!]!
 }
 
-enum JobTickStatus {
+enum InstigationTickStatus {
   STARTED
   SKIPPED
   SUCCESS
   FAILURE
 }
 
-type FutureJobTick {
+type FutureInstigationTick {
   timestamp: Float!
   evaluationResult: TickEvaluation
 }
@@ -643,6 +1040,8 @@ input PipelineRunsFilter {
   tags: [ExecutionTag!]
   statuses: [PipelineRunStatus!]
   snapshotId: String
+  updatedAfter: String
+  mode: String
 }
 
 input ExecutionTag {
@@ -662,8 +1061,8 @@ type PartitionStatus {
   runStatus: PipelineRunStatus
 }
 
-type FutureJobTicks {
-  results: [FutureJobTick!]!
+type FutureInstigationTicks {
+  results: [FutureInstigationTick!]!
   cursor: Float!
 }
 
@@ -671,13 +1070,17 @@ type Sensor {
   id: ID!
   jobOriginId: String!
   name: String!
-  pipelineName: String!
-  solidSelection: [String]
-  mode: String!
-  sensorState: JobState!
+  targets: [Target!]
+  sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
-  nextTick: FutureJobTick
+  nextTick: FutureInstigationTick
+}
+
+type Target {
+  pipelineName: String!
+  mode: String!
+  solidSelection: [String!]
 }
 
 type PipelinePreset {
@@ -711,18 +1114,26 @@ input RepositorySelector {
   repositoryLocationName: String!
 }
 
-union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
+union WorkspaceOrError = Workspace | PythonError
 
-type RepositoryLocationConnection {
-  nodes: [RepositoryLocationOrLoadFailure!]!
+type Workspace {
+  locationEntries: [WorkspaceLocationEntry!]!
 }
 
-union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure
-
-type RepositoryLocationLoadFailure {
+type WorkspaceLocationEntry {
   id: ID!
   name: String!
-  error: PythonError!
+  locationOrLoadError: RepositoryLocationOrLoadError
+  loadStatus: RepositoryLocationLoadStatus!
+  displayMetadata: [RepositoryMetadata!]!
+  updatedTimestamp: Float!
+}
+
+union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
+
+enum RepositoryLocationLoadStatus {
+  LOADING
+  LOADED
 }
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
@@ -752,12 +1163,13 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  solidSelection: [String!]
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
+  solidSelection: [String!]
+  id: ID!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
@@ -794,11 +1206,15 @@ type Schedules {
   results: [Schedule!]!
 }
 
-union SensorOrError = Sensor | SensorNotFoundError | PythonError
+union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
 
 type SensorNotFoundError implements Error {
   message: String!
   sensorName: String!
+}
+
+type UnauthorizedError implements Error {
+  message: String!
 }
 
 input SensorSelector {
@@ -813,18 +1229,18 @@ type Sensors {
   results: [Sensor!]!
 }
 
-union JobStateOrError = JobState | PythonError
+union InstigationStateOrError = InstigationState | PythonError
 
-input JobSelector {
+input InstigationSelector {
   repositoryName: String!
   repositoryLocationName: String!
-  jobName: String!
+  name: String!
 }
 
-union JobStatesOrError = JobStates | PythonError
+union InstigationStatesOrError = InstigationStates | PythonError
 
-type JobStates {
-  results: [JobState!]!
+type InstigationStates {
+  results: [InstigationState!]!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
@@ -949,7 +1365,7 @@ type DaemonHealth {
 }
 
 type DaemonStatus {
-  daemonType: String
+  daemonType: String!
   id: ID!
   required: Boolean!
   healthy: Boolean
@@ -972,6 +1388,8 @@ type AssetNotFoundError implements Error {
 input AssetKeyInput {
   path: [String!]!
 }
+
+union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
 
@@ -1002,6 +1420,11 @@ type PartitionBackfills {
   results: [PartitionBackfill!]!
 }
 
+type GraphenePermission {
+  permission: String!
+  value: Boolean!
+}
+
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
@@ -1014,12 +1437,14 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
+  shutdownRepositoryLocation(repositoryLocationName: String!): ShutdownRepositoryLocationMutationResult!
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+  resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -1063,9 +1488,9 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
+union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
 
 type ReconcileSchedulerStateSuccess {
   message: String!
@@ -1074,16 +1499,16 @@ type ReconcileSchedulerStateSuccess {
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleStateResult {
-  scheduleState: JobState!
+  scheduleState: InstigationState!
 }
 
-union StopSensorMutationResultOrError = StopSensorMutationResult | PythonError
+union StopSensorMutationResultOrError = StopSensorMutationResult | UnauthorizedError | PythonError
 
 type StopSensorMutationResult {
-  jobState: JobState
+  instigationState: InstigationState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | UnauthorizedError | PythonError
 
 type TerminatePipelineExecutionSuccess {
   run: PipelineRun!
@@ -1099,13 +1524,13 @@ enum TerminatePipelinePolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
+union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | PipelineRunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | RepositoryLocationLoadFailure
+union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | UnauthorizedError | PythonError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1115,15 +1540,21 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
-union ReloadWorkspaceMutationResult = RepositoryLocationConnection | PythonError
+union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
-union AssetWipeMutationResult = AssetNotFoundError | PythonError | AssetWipeSuccess
+union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | UnauthorizedError | PythonError
+
+type ShutdownRepositoryLocationSuccess {
+  repositoryLocationName: String!
+}
+
+union AssetWipeMutationResult = AssetNotFoundError | UnauthorizedError | PythonError | AssetWipeSuccess
 
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1144,7 +1575,13 @@ input PartitionSetSelector {
   repositorySelector: RepositorySelector!
 }
 
-union CancelBackfillResult = CancelBackfillSuccess | PythonError
+union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError
+
+type ResumeBackfillSuccess {
+  backfillId: String!
+}
+
+union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonError
 
 type CancelBackfillSuccess {
   backfillId: String!
@@ -1161,355 +1598,13 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
   messages: [PipelineRunEvent!]!
-}
-
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
-
-type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError!
-  errorSource: ErrorSource
-  failureMetadata: FailureMetadata
-}
-
-enum ErrorSource {
-  FRAMEWORK_ERROR
-  USER_CODE_ERROR
-  UNEXPECTED_ERROR
-  INTERRUPT
-}
-
-type FailureMetadata implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-}
-
-type ExecutionStepInputEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  inputName: String!
-  typeCheck: TypeCheck!
-}
-
-type TypeCheck implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
-}
-
-type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  outputName: String!
-  typeCheck: TypeCheck!
-}
-
-type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepStartEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError!
-  secondsToWait: Int
-}
-
-type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type LogMessageEvent implements MessageEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type PipelineFailureEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-  error: PythonError
-}
-
-interface PipelineEvent {
-  pipelineName: String!
-}
-
-type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-  error: PythonError!
-}
-
-type PipelineStartEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineStartingEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineCancelingEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineCanceledEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  outputName: String!
-  managerKey: String!
-}
-
-type LoadedInputEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  inputName: String!
-  managerKey: String!
-  upstreamOutputName: String
-  upstreamStepKey: String
-}
-
-type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  operationResult: ObjectStoreOperationResult!
-}
-
-type ObjectStoreOperationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  op: ObjectStoreOperationType!
-}
-
-enum ObjectStoreOperationType {
-  SET_OBJECT
-  GET_OBJECT
-  RM_OBJECT
-  CP_OBJECT
-}
-
-type StepExpectationResultEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  expectationResult: ExpectationResult!
-}
-
-type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  error: PythonError
-  markerStart: String
-  markerEnd: String
-}
-
-type HookCompletedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type HookSkippedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type HookErroredEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError!
+  hasMorePastEvents: Boolean!
 }
 
 type PipelineRunLogsSubscriptionFailure {
   message: String!
   missingRunId: String
 }
-
-scalar Cursor
 
 enum ComputeIOType {
   STDOUT
@@ -1532,6 +1627,18 @@ enum LocationStateChangeEventType {
   LOCATION_DISCONNECTED
   LOCATION_RECONNECTED
   LOCATION_ERROR
+}
+
+type EventPipelineRunMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  runId: String!
+}
+
+type EventAssetMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  assetKey: AssetKey!
 }
 
 type EventFloatMetadataEntry implements EventMetadataEntry {
@@ -1671,6 +1778,10 @@ type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
 
+type ShutdownRepositoryLocationMutation {
+  Output: ShutdownRepositoryLocationMutationResult!
+}
+
 type TerminatePipelineExecutionMutation {
   Output: TerminatePipelineExecutionResult!
 }
@@ -1687,7 +1798,7 @@ enum ScheduleStatus {
 
 type ScheduleTick {
   tickId: String!
-  status: JobTickStatus!
+  status: InstigationTickStatus!
   timestamp: Float!
   tickSpecificData: ScheduleTickSpecificData
 }
@@ -1855,7 +1966,6 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
   solids: [Solid!]!
   inputMappings: [InputMapping!]!
   outputMappings: [OutputMapping!]!

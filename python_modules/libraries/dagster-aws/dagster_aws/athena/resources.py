@@ -229,18 +229,15 @@ def athena_resource(context):
 
         .. code-block:: python
 
-                from dagster import ModeDefinition, execute_solid, solid
+                from dagster import build_op_context, op
                 from dagster_aws.athena import athena_resource
 
-                @solid(required_resource_keys={"athena"})
-                def example_athena_solid(context):
+                @op(required_resource_keys={"athena"})
+                def example_athena_op(context):
                     return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
 
-                result = execute_solid(
-                    example_athena_solid, mode_def=ModeDefinition(resource_defs={"athena": athena_resource}),
-                )
-
-                assert result.output_value() == [("1",)]
+                context = build_op_context(resources={"athena": athena_resource})
+                assert example_athena_op(context) == [("1",)]
 
     """
     client = boto3.client(

@@ -4,61 +4,62 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_from_workspace
-from dagit.cli import host_dagit_ui_with_workspace, ui
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths
+from dagit.app import create_app_from_workspace_process_context
+from dagit.cli import host_dagit_ui_with_workspace_process_context, ui
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path
 
 
 def test_create_app_with_workspace():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [file_relative_path(__file__, "./workspace.yaml")],
-    ) as workspace:
-        assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
+    ) as workspace_process_context:
+        assert create_app_from_workspace_process_context(workspace_process_context)
 
 
 def test_create_app_with_multiple_workspace_files():
-    with load_workspace_from_yaml_paths(
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(),
         [
             file_relative_path(__file__, "./workspace.yaml"),
             file_relative_path(__file__, "./override.yaml"),
         ],
-    ) as workspace:
-        assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
+    ) as workspace_process_context:
+        assert create_app_from_workspace_process_context(workspace_process_context)
 
 
 def test_create_app_with_workspace_and_scheduler():
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with instance_for_test_tempdir(
-                temp_dir,
-                overrides={
-                    "scheduler": {
-                        "module": "dagster.utils.test",
-                        "class": "FilesystemTestScheduler",
-                        "config": {"base_dir": temp_dir},
-                    }
-                },
-            ) as instance:
-                assert create_app_from_workspace(workspace, instance)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            temp_dir=temp_dir,
+            overrides={
+                "scheduler": {
+                    "module": "dagster.utils.test",
+                    "class": "FilesystemTestScheduler",
+                    "config": {"base_dir": temp_dir},
+                }
+            },
+        ) as instance:
+            with load_workspace_process_context_from_yaml_paths(
+                instance, [file_relative_path(__file__, "./workspace.yaml")]
+            ) as workspace_process_context:
+                assert create_app_from_workspace_process_context(workspace_process_context)
 
 
 def test_notebook_view():
     notebook_path = file_relative_path(__file__, "render_uuid_notebook.ipynb")
 
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with create_app_from_workspace(
-            workspace,
-            DagsterInstance.ephemeral(),
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        with create_app_from_workspace_process_context(
+            workspace_process_context,
         ).test_client() as client:
-            res = client.get("/dagit/notebook?path={}".format(notebook_path))
+            res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
 
         assert res.status_code == 200
         # This magic guid is hardcoded in the notebook
@@ -66,12 +67,11 @@ def test_notebook_view():
 
 
 def test_index_view():
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with create_app_from_workspace(
-            workspace,
-            DagsterInstance.ephemeral(),
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        with create_app_from_workspace_process_context(
+            workspace_process_context
         ).test_client() as client:
             res = client.get("/")
 
@@ -80,15 +80,15 @@ def test_index_view():
 
 
 def test_index_view_at_path_prefix():
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with create_app_from_workspace(
-            workspace, DagsterInstance.ephemeral(), "/dagster-path"
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        with create_app_from_workspace_process_context(
+            workspace_process_context, "/dagster-path"
         ).test_client() as client:
             # / redirects to prefixed path
             res = client.get("/")
-            assert res.status_code == 301
+            assert res.status_code == 200
 
             # index contains the path meta tag
             res = client.get("/dagster-path/")
@@ -98,23 +98,22 @@ def test_index_view_at_path_prefix():
 
 
 def test_graphql_view():
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with create_app_from_workspace(
-            workspace,
-            DagsterInstance.ephemeral(),
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        with create_app_from_workspace_process_context(
+            workspace_process_context,
         ).test_client() as client:
             res = client.get("/graphql")
         assert b"Must provide query string" in res.data
 
 
 def test_graphql_view_at_path_prefix():
-    with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace:
-        with create_app_from_workspace(
-            workspace, DagsterInstance.ephemeral(), "/dagster-path"
+    with load_workspace_process_context_from_yaml_paths(
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        with create_app_from_workspace_process_context(
+            workspace_process_context, "/dagster-path"
         ).test_client() as client:
             res = client.get("/dagster-path/graphql")
             assert b"Must provide query string" in res.data
@@ -125,11 +124,14 @@ def test_successful_host_dagit_ui_from_workspace():
 
         instance = DagsterInstance.local_temp(temp_dir)
 
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
-            host_dagit_ui_with_workspace(
-                instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
+                host=None,
+                port=2343,
+                path_prefix="",
             )
 
 
@@ -137,25 +139,32 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
     with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
-        with load_workspace_from_yaml_paths(
+        with load_workspace_process_context_from_yaml_paths(
+            instance,
             [
                 file_relative_path(__file__, "./workspace.yaml"),
                 file_relative_path(__file__, "./override.yaml"),
             ],
-        ) as workspace:
-            host_dagit_ui_with_workspace(
-                instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
+                host=None,
+                port=2343,
+                path_prefix="",
             )
 
 
 def test_successful_host_dagit_ui_from_legacy_repository():
     with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
-            host_dagit_ui_with_workspace(
-                instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
+                host=None,
+                port=2343,
+                path_prefix="",
             )
 
 
@@ -181,12 +190,15 @@ def test_unknown_error():
         "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_custom_error)
     ), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
             with pytest.raises(AnException):
-                host_dagit_ui_with_workspace(
-                    instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
+                host_dagit_ui_with_workspace_process_context(
+                    workspace_process_context=workspace_process_context,
+                    host=None,
+                    port=2343,
+                    path_prefix="",
                 )
 
 
@@ -198,13 +210,12 @@ def test_port_collision():
         "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_os_error)
     ), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
             with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace(
-                    instance=instance,
-                    workspace=workspace,
+                host_dagit_ui_with_workspace_process_context(
+                    workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
                     port_lookup=False,
@@ -218,13 +229,12 @@ def test_invalid_path_prefix():
     with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
             with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace(
-                    instance=instance,
-                    workspace=workspace,
+                host_dagit_ui_with_workspace_process_context(
+                    workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
                     port_lookup=False,
@@ -233,9 +243,8 @@ def test_invalid_path_prefix():
             assert "path prefix should begin with a leading" in str(exc_info.value)
 
             with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace(
-                    instance=instance,
-                    workspace=workspace,
+                host_dagit_ui_with_workspace_process_context(
+                    workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
                     port_lookup=False,
@@ -248,12 +257,11 @@ def test_valid_path_prefix():
     with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace:
-            host_dagit_ui_with_workspace(
-                instance=instance,
-                workspace=workspace,
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
                 port_lookup=False,
@@ -267,7 +275,7 @@ def test_dagit_logs(
     caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(temp_dir):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(

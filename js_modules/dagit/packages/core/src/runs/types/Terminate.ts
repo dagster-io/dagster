@@ -32,12 +32,17 @@ export interface Terminate_terminatePipelineExecution_TerminatePipelineExecution
   run: Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run;
 }
 
+export interface Terminate_terminatePipelineExecution_UnauthorizedError {
+  __typename: "UnauthorizedError";
+  message: string;
+}
+
 export interface Terminate_terminatePipelineExecution_PythonError {
   __typename: "PythonError";
   message: string;
 }
 
-export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure | Terminate_terminatePipelineExecution_PipelineRunNotFoundError | Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess | Terminate_terminatePipelineExecution_PythonError;
+export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure | Terminate_terminatePipelineExecution_PipelineRunNotFoundError | Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;
 
 export interface Terminate {
   terminatePipelineExecution: Terminate_terminatePipelineExecution;

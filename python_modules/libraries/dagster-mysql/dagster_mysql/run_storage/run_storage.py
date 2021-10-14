@@ -8,6 +8,7 @@ from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
+    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_config,
@@ -50,19 +51,29 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         self._index_migration_cache = {}
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
 
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         if "runs" not in table_names:
-            with self.connect() as conn:
-                alembic_config = mysql_alembic_config(__file__)
-                retry_mysql_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
-                stamp_alembic_rev(alembic_config, conn)
+            retry_mysql_creation_fn(self._init_db)
             self.build_missing_indexes()
 
         super().__init__()
 
+    def _init_db(self):
+        with self.connect() as conn:
+            with conn.begin():
+                RunStorageSqlMetadata.create_all(conn)
+                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
-        self._engine = create_engine(self.mysql_url, isolation_level="AUTOCOMMIT", pool_size=1)
+        self._engine = create_engine(
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            pool_size=1,
+            pool_recycle=MYSQL_POOL_RECYCLE,
+        )
 
     @property
     def inst_data(self):
@@ -77,12 +88,16 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return MySQLRunStorage(inst_data=inst_data, mysql_url=mysql_url_from_config(config_value))
 
     @staticmethod
-    def create_clean_storage(mysql_url):
+    def wipe_storage(mysql_url):
         engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
         try:
             RunStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
+
+    @staticmethod
+    def create_clean_storage(mysql_url):
+        MySQLRunStorage.wipe_storage(mysql_url)
         return MySQLRunStorage(mysql_url)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument

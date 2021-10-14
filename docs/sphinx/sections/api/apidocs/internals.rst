@@ -105,6 +105,10 @@ Run storage
 
 .. autoclass:: PipelineRun
 
+.. autoclass:: PipelineRunStatus
+   :members:
+   :undoc-members:
+
 .. currentmodule:: dagster.core.storage.runs
 
 .. autoclass:: RunStorage
@@ -122,6 +126,14 @@ Event log storage
 -----------------
 
 .. currentmodule:: dagster.core.storage.event_log
+
+.. autoclass:: EventLogEntry
+
+.. autoclass:: EventLogRecord
+
+.. autoclass:: EventRecordsFilter
+
+.. autoclass:: RunShardedEventsCursor
 
 .. autoclass:: EventLogStorage
 
@@ -147,21 +159,6 @@ Compute log manager
 .. autoclass:: LocalComputeLogManager
 
 See also: :py:class:`dagster_aws.S3ComputeLogManager`.
-
-----
-
-Memoizable IO Manager (Experimental)
--------------------
-
-.. currentmodule:: dagster.core.storage.memoizable_io_manager
-
-.. autoclass:: MemoizableIOManager
-
-.. currentmodule:: dagster.core.storage.memoizable_io_manager
-
-.. autofunction:: versioned_filesystem_io_manager
-
-See also: :py:class:`dagster.IOManager`.
 
 ----
 
@@ -196,13 +193,6 @@ Scheduling
 .. currentmodule:: dagster.core.scheduler
 
 .. autoclass:: Scheduler
-
-.. autoclass:: DagsterDaemonScheduler
-
-.. currentmodule:: dagster_cron.cron_scheduler
-
-.. autoclass:: SystemCronScheduler
-
 
 .. currentmodule:: dagster.core.storage.schedules
 

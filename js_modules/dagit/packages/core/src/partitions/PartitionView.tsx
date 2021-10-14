@@ -1,13 +1,19 @@
-import {Button, Dialog, Colors} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useFeatureFlags} from '../app/Flags';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {OptionsContainer} from '../gantt/VizComponents';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {CursorHistoryControls} from '../ui/CursorControls';
+import {DialogWIP} from '../ui/Dialog';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionGraphSet} from './PartitionGraphSet';
@@ -23,35 +29,44 @@ type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSe
 
 interface PartitionViewProps {
   pipelineName: string;
+  pipelineMode: string;
   partitionSet: PartitionSet;
   partitionSets: PartitionSet[];
   onChangePartitionSet: (set: PartitionSet) => void;
   repoAddress: RepoAddress;
 }
 
-export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
+export const PartitionView: React.FC<PartitionViewProps> = ({
   pipelineName,
+  pipelineMode,
   partitionSet,
   partitionSets,
   onChangePartitionSet,
   repoAddress,
 }) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
-  const [pageSize, setPageSize] = useQueryPersistedState<number | 'all'>({
-    encode: (val) => ({pageSize: val}),
-    decode: (qs) => (qs.pageSize === 'all' ? 'all' : Number(qs.pageSize || 30)),
-  });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
-  const {loading, loadingPercent, partitions, paginationProps} = useChunkedPartitionsQuery(
-    partitionSet.name,
+  const {
+    loading,
+    error,
+    loadingPercent,
+    partitions,
+    paginationProps,
     pageSize,
-    runTags,
-    repoAddress,
-  );
-
+    setPageSize,
+  } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
+  const {canLaunchPartitionBackfill} = usePermissions();
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
+  React.useEffect(() => {
+    if (error) {
+      showCustomAlert({
+        body: <PythonErrorInfo error={error} />,
+      });
+    }
+  }, [error]);
 
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
@@ -62,13 +77,37 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     });
   });
 
+  const partitionSetsForMode = partitionSets.filter((result) => result.mode === pipelineMode);
+
+  const launchButton = () => {
+    if (!canLaunchPartitionBackfill) {
+      return (
+        <Tooltip content={DISABLED_MESSAGE}>
+          <ButtonWIP icon={<IconWIP name="add_circle" />} disabled>
+            Launch backfill
+          </ButtonWIP>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <ButtonWIP
+        onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+        icon={<IconWIP name="add_circle" />}
+        active={showBackfillSetup}
+      >
+        Launch backfill
+      </ButtonWIP>
+    );
+  };
+
   return (
     <div>
-      <Dialog
+      <DialogWIP
         canEscapeKeyClose={!blockDialog}
         canOutsideClickClose={!blockDialog}
         onClose={() => setShowBackfillSetup(false)}
-        style={{width: 800, background: Colors.WHITE}}
+        style={{width: 800}}
         title={`Launch ${partitionSet.name} backfill`}
         isOpen={showBackfillSetup}
       >
@@ -76,6 +115,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           <PartitionsBackfillPartitionSelector
             partitionSetName={partitionSet.name}
             pipelineName={pipelineName}
+            onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(backfillId, stepQuery) => {
               setStepQuery(stepQuery);
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
@@ -85,48 +125,35 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
             repoAddress={repoAddress}
           />
         )}
-      </Dialog>
-      <PartitionPagerContainer>
-        <PartitionSetSelector
-          selected={partitionSet}
-          partitionSets={partitionSets}
-          onSelect={onChangePartitionSet}
-        />
-        <div style={{width: 10, height: 10}} />
-        <Box flex={{justifyContent: 'space-between', alignItems: 'center'}} style={{flex: 1}}>
-          <Button
-            style={{flexShrink: 0}}
-            onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-            icon={IconNames.ADD}
-            active={showBackfillSetup}
-          >
-            Launch&nbsp;backfill
-          </Button>
-          {loading && (
-            <Box
-              margin={{horizontal: 8}}
-              flex={{alignItems: 'center'}}
-              style={{overflow: 'hidden'}}
-            >
-              <Spinner purpose="body-text" value={loadingPercent} />
-              <div style={{width: 5, flexShrink: 0}} />
-              <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                Loading&nbsp;partitions…
-              </div>
-            </Box>
-          )}
-          <div style={{flex: 1}} />
-          <PartitionPageSizeSelector
-            value={paginationProps.hasPrevCursor ? undefined : pageSize}
-            onChange={(value) => {
-              setPageSize(value);
-              paginationProps.reset();
-            }}
+      </DialogWIP>
+      <OptionsContainer style={{gap: 12}}>
+        {flagPipelineModeTuples && partitionSetsForMode.length <= 1 ? null : (
+          <PartitionSetSelector
+            selected={partitionSet}
+            partitionSets={partitionSets}
+            onSelect={onChangePartitionSet}
           />
-          <div style={{width: 10}} />
-          <CursorHistoryControls {...paginationProps} />
-        </Box>
-      </PartitionPagerContainer>
+        )}
+        {launchButton()}
+        {loading && (
+          <Box flex={{alignItems: 'center'}} style={{overflow: 'hidden'}}>
+            <Spinner purpose="body-text" value={loadingPercent} />
+            <div style={{width: 5, flexShrink: 0}} />
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+              Loading&nbsp;partitions…
+            </div>
+          </Box>
+        )}
+        <div style={{flex: 1}} />
+        <PartitionPageSizeSelector
+          value={paginationProps.hasPrevCursor ? undefined : pageSize}
+          onChange={(value) => {
+            setPageSize(value);
+            paginationProps.reset();
+          }}
+        />
+        <CursorHistoryControls {...paginationProps} />
+      </OptionsContainer>
       <div style={{position: 'relative'}}>
         <PartitionRunMatrix
           partitions={partitions}
@@ -137,21 +164,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           stepQuery={stepQuery}
           setStepQuery={setStepQuery}
         />
+        <OptionsContainer>
+          <strong>Run steps</strong>
+        </OptionsContainer>
         <PartitionGraphSet partitions={partitions} allStepKeys={Array.from(allStepKeys).sort()} />
       </div>
     </div>
   );
 };
-
-const PartitionPagerContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  flex-direction: row;
-
-  @media (max-width: 1000px) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-`;

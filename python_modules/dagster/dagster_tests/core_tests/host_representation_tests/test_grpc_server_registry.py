@@ -4,7 +4,6 @@ import time
 
 import pytest
 from dagster import file_relative_path, pipeline, repository
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.origin import (
@@ -13,6 +12,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 
 
 @pipeline
@@ -53,14 +53,35 @@ def test_error_repo_in_registry():
             python_file=file_relative_path(__file__, "error_repo.py"),
         ),
     )
-    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
-        # Repository with a loading error raises an exception with the reason why
-        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            registry.get_grpc_endpoint(error_origin)
+    with ProcessGrpcServerRegistry(
+        reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    ) as registry:
+        # Repository with a loading error does not raise an exception
+        endpoint = registry.get_grpc_endpoint(error_origin)
 
-        # the exception is idempotent
+        # But using that endpoint to load a location results in an error
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            registry.get_grpc_endpoint(error_origin)
+            with GrpcServerRepositoryLocation(
+                origin=error_origin,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                watch_server=False,
+            ):
+                pass
+
+        # that error is idempotent
+        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
+            with GrpcServerRepositoryLocation(
+                origin=error_origin,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                watch_server=False,
+            ):
+                pass
 
 
 def test_process_server_registry():
@@ -72,7 +93,9 @@ def test_process_server_registry():
         ),
     )
 
-    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
+    with ProcessGrpcServerRegistry(
+        reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    ) as registry:
         with DynamicWorkspace(registry) as workspace:
             endpoint_one = registry.get_grpc_endpoint(origin)
             location_one = workspace.get_location(origin)
@@ -147,7 +170,9 @@ def test_registry_multithreading():
         ),
     )
 
-    with ProcessGrpcServerRegistry(reload_interval=300, heartbeat_ttl=600) as registry:
+    with ProcessGrpcServerRegistry(
+        reload_interval=300, heartbeat_ttl=600, startup_timeout=30
+    ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
         threads = []
@@ -177,7 +202,7 @@ class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
     def __init__(self):
         self.mocked_loadable_target_origin = None
         super(TestMockProcessGrpcServerRegistry, self).__init__(
-            reload_interval=300, heartbeat_ttl=600
+            reload_interval=300, heartbeat_ttl=600, startup_timeout=30
         )
 
     def supports_origin(self, repository_location_origin):

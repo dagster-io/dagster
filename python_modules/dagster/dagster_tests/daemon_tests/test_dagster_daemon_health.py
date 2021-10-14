@@ -176,10 +176,17 @@ def test_error_daemon(monkeypatch):
 
         should_raise_errors = True
 
+        error_count = {"count": 0}
+
         def run_iteration_error(_, _instance, _workspace):
             if should_raise_errors:
-                raise DagsterInvariantViolationError("foobar")
+                error_count["count"] = error_count["count"] + 1
+                raise DagsterInvariantViolationError("foobar:" + str(error_count["count"]))
             yield
+
+        def _get_error_number(error):
+            error_message = error.message.strip()
+            return int(error_message.split("foobar:")[1])
 
         monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
 
@@ -216,39 +223,51 @@ def test_error_daemon(monkeypatch):
 
                     assert status.healthy == False
 
-                    # Errors build up until they hit 5
-                    if len(status.last_heartbeat.errors) == 5:
-                        assert (
-                            status.last_heartbeat.errors[0].message.strip()
-                            == "dagster.core.errors.DagsterInvariantViolationError: foobar"
-                        )
-                        assert not get_daemon_status(
-                            instance,
-                            SensorDaemon.daemon_type(),
-                            curr_time_seconds=now.float_timestamp,
-                            heartbeat_interval_seconds=heartbeat_interval_seconds,
-                        ).healthy
-                        assert get_daemon_status(
-                            instance,
-                            SensorDaemon.daemon_type(),
-                            curr_time_seconds=now.float_timestamp,
-                            heartbeat_interval_seconds=heartbeat_interval_seconds,
-                            ignore_errors=True,
-                        ).healthy
+                    # Errors build up until there are > 5, then pull off the last
+                    if len(status.last_heartbeat.errors) >= 5:
 
-                        time.sleep(3)
+                        first_error_number = _get_error_number(status.last_heartbeat.errors[0])
 
-                        status = get_daemon_status(
-                            instance,
-                            SensorDaemon.daemon_type(),
-                            now.float_timestamp,
-                            heartbeat_interval_seconds=heartbeat_interval_seconds,
-                        )
+                        if first_error_number > 5:
 
-                        # Error count does not rise above 5
-                        assert len(status.last_heartbeat.errors) == 5
+                            # Verify error numbers decrease consecutively
+                            assert [
+                                _get_error_number(error) for error in status.last_heartbeat.errors
+                            ] == list(range(first_error_number, first_error_number - 5, -1))
 
-                        break
+                            assert not get_daemon_status(
+                                instance,
+                                SensorDaemon.daemon_type(),
+                                curr_time_seconds=now.float_timestamp,
+                                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                            ).healthy
+                            assert get_daemon_status(
+                                instance,
+                                SensorDaemon.daemon_type(),
+                                curr_time_seconds=now.float_timestamp,
+                                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                                ignore_errors=True,
+                            ).healthy
+
+                            time.sleep(3)
+
+                            status = get_daemon_status(
+                                instance,
+                                SensorDaemon.daemon_type(),
+                                now.float_timestamp,
+                                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                            )
+
+                            # Error count does not rise above 5, continues to increase
+                            assert len(status.last_heartbeat.errors) == 5
+
+                            new_first_error_number = _get_error_number(
+                                status.last_heartbeat.errors[0]
+                            )
+
+                            assert new_first_error_number > first_error_number
+
+                            break
 
                 if (now - init_time).total_seconds() > 15:
                     raise Exception("timed out waiting for heartbeat error")
@@ -315,8 +334,8 @@ def test_multiple_error_daemon(monkeypatch):
                     )
 
                     if status.healthy == False and len(status.last_heartbeat.errors) == 2:
-                        assert status.last_heartbeat.errors[0].message.strip() == "foobar"
-                        assert status.last_heartbeat.errors[1].message.strip() == "bizbuz"
+                        assert status.last_heartbeat.errors[0].message.strip() == "bizbuz"
+                        assert status.last_heartbeat.errors[1].message.strip() == "foobar"
                         break
 
                 if (now - init_time).total_seconds() > 10:

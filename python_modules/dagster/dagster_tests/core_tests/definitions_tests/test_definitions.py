@@ -15,8 +15,8 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import AssetMaterialization, Solid, create_run_config_schema
-from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
+from dagster.core.definitions import AssetMaterialization, Node, create_run_config_schema
+from dagster.core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -49,7 +49,7 @@ def test_solid_def():
 
     assert len(pipeline_def.solids[0].output_handles()) == 1
 
-    assert isinstance(pipeline_def.solid_named("solid_one"), Solid)
+    assert isinstance(pipeline_def.solid_named("solid_one"), Node)
 
     solid_one_solid = pipeline_def.solid_named("solid_one")
 
@@ -157,7 +157,7 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_1.value)
-        == 'Invalid dependencies: solid "solid_b" in dependency dictionary not found in solid list'
+        == 'Invalid dependencies: node "solid_b" in dependency dictionary not found in node list'
     )
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
@@ -172,7 +172,7 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_2.value)
-        == 'Invalid dependencies: solid "solid_b" (aliased by "solid_c" in dependency dictionary) not found in solid list'
+        == 'Invalid dependencies: node "solid_b" (aliased by "solid_c" in dependency dictionary) not found in node list'
     )
 
 
@@ -186,39 +186,39 @@ def test_materialization_assign_label_from_asset_key():
 
 
 def test_rehydrate_solid_handle():
-    h = SolidHandle.from_dict({"name": "foo", "parent": None})
+    h = NodeHandle.from_dict({"name": "foo", "parent": None})
     assert h.name == "foo"
     assert h.parent is None
 
-    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    h = NodeHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == "foo"
     assert h.parent is None
 
-    h = SolidHandle.from_dict({"name": "foo", "parent": ["bar", None]})
+    h = NodeHandle.from_dict({"name": "foo", "parent": ["bar", None]})
     assert h.name == "foo"
-    assert isinstance(h.parent, SolidHandle)
+    assert isinstance(h.parent, NodeHandle)
     assert h.parent.name == "bar"
     assert h.parent.parent is None
 
-    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    h = NodeHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == "foo"
-    assert isinstance(h.parent, SolidHandle)
+    assert isinstance(h.parent, NodeHandle)
     assert h.parent.name == "bar"
     assert h.parent.parent is None
 
-    h = SolidHandle.from_dict({"name": "foo", "parent": ["bar", ["baz", None]]})
+    h = NodeHandle.from_dict({"name": "foo", "parent": ["bar", ["baz", None]]})
     assert h.name == "foo"
-    assert isinstance(h.parent, SolidHandle)
+    assert isinstance(h.parent, NodeHandle)
     assert h.parent.name == "bar"
-    assert isinstance(h.parent.parent, SolidHandle)
+    assert isinstance(h.parent.parent, NodeHandle)
     assert h.parent.parent.name == "baz"
     assert h.parent.parent.parent is None
 
-    h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
+    h = NodeHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == "foo"
-    assert isinstance(h.parent, SolidHandle)
+    assert isinstance(h.parent, NodeHandle)
     assert h.parent.name == "bar"
-    assert isinstance(h.parent.parent, SolidHandle)
+    assert isinstance(h.parent.parent, NodeHandle)
     assert h.parent.parent.name == "baz"
     assert h.parent.parent.parent is None
 
@@ -274,7 +274,7 @@ def test_composite_mapping_collision():
     def add(a, b):
         return a + b
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by solid output"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by output"):
         CompositeSolidDefinition(
             name="add_one",
             solid_defs=[return_one, add],

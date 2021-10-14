@@ -11,7 +11,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 
 class TestSubscribeToGrpcServerEvents(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env()]
+        context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
     )
 ):
     def test_grpc_server_handle_message_subscription(self, graphql_context):
@@ -19,10 +19,10 @@ class TestSubscribeToGrpcServerEvents(
         test_subscriber = LocationStateSubscriber(events.append)
         location = next(
             iter(
-                graphql_context.process_context._workspace.repository_locations  # pylint: disable=protected-access
+                graphql_context.process_context.create_request_context().repository_locations  # pylint: disable=protected-access
             )
         )
-        graphql_context.process_context._workspace.add_state_subscriber(  # pylint: disable=protected-access
+        graphql_context.process_context.add_state_subscriber(  # pylint: disable=protected-access
             test_subscriber
         )
         location.client.shutdown_server()

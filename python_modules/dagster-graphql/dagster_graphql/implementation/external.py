@@ -1,14 +1,9 @@
 import sys
 
 from dagster import check
-from dagster.cli.workspace.context import WorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.host_representation import (
-    ExternalExecutionPlan,
-    ExternalPipeline,
-    PipelineSelector,
-    RepositorySelector,
-)
+from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
+from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 
@@ -108,22 +103,6 @@ def ensure_valid_config(external_pipeline, mode, run_config):
     return validated_config
 
 
-def ensure_valid_step_keys(full_external_execution_plan, step_keys):
-    from ..schema.errors import GrapheneInvalidStepError
-
-    check.inst_param(
-        full_external_execution_plan, "full_external_execution_plan", ExternalExecutionPlan
-    )
-    check.opt_list_param(step_keys, "step_keys", of_type=str)
-
-    if not step_keys:
-        return
-
-    for step_key in step_keys:
-        if not full_external_execution_plan.has_step(step_key):
-            raise UserFacingGraphQLError(GrapheneInvalidStepError(invalid_step_key=step_key))
-
-
 def get_external_execution_plan_or_raise(
     graphene_info,
     external_pipeline,
@@ -132,18 +111,6 @@ def get_external_execution_plan_or_raise(
     step_keys_to_execute,
     known_state,
 ):
-    full_external_execution_plan = graphene_info.context.get_external_execution_plan(
-        external_pipeline=external_pipeline,
-        run_config=run_config,
-        mode=mode,
-        step_keys_to_execute=None,
-        known_state=None,
-    )
-
-    if not step_keys_to_execute:
-        return full_external_execution_plan
-
-    ensure_valid_step_keys(full_external_execution_plan, step_keys_to_execute)
 
     return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
@@ -190,30 +157,16 @@ def fetch_repository(graphene_info, repository_selector):
 
 
 @capture_error
-def fetch_repository_locations(workspace_request_context):
-    from ..schema.external import (
-        GrapheneRepositoryLocation,
-        GrapheneRepositoryLocationConnection,
-        GrapheneRepositoryLocationLoadFailure,
-    )
+def fetch_workspace(workspace_request_context):
+    from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
-        workspace_request_context, "workspace_request_context", WorkspaceRequestContext
+        workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
     )
 
-    nodes = []
+    nodes = [
+        GrapheneWorkspaceLocationEntry(entry)
+        for entry in workspace_request_context.get_workspace_snapshot().values()
+    ]
 
-    for location_name in workspace_request_context.repository_location_names:
-        node = (
-            GrapheneRepositoryLocation(
-                workspace_request_context.get_repository_location(location_name)
-            )
-            if workspace_request_context.has_repository_location(location_name)
-            else GrapheneRepositoryLocationLoadFailure(
-                location_name,
-                workspace_request_context.get_repository_location_error(location_name),
-            )
-        )
-        nodes.append(node)
-
-    return GrapheneRepositoryLocationConnection(nodes=nodes)
+    return GrapheneWorkspace(locationEntries=nodes)

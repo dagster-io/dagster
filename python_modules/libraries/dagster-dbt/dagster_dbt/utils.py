@@ -1,79 +1,110 @@
-from typing import Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional
 
+import dateutil
 from dagster import AssetMaterialization, EventMetadataEntry, check
 
-from .cli.types import DbtCliOutput
-from .rpc.types import DbtRpcOutput
+from .types import DbtOutput
+
+
+def _get_asset_materialization(
+    unique_id: str, asset_key_prefix: List[str], metadata: List[EventMetadataEntry]
+) -> AssetMaterialization:
+    return AssetMaterialization(
+        description=f"dbt node: {unique_id}",
+        metadata_entries=metadata,
+        asset_key=asset_key_prefix + unique_id.split("."),
+    )
+
+
+def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[EventMetadataEntry]:
+    return [
+        EventMetadataEntry.text(
+            text=node_result["config"]["materialized"],
+            label="Materialization Strategy",
+        ),
+        EventMetadataEntry.text(text=node_result["database"], label="Database"),
+        EventMetadataEntry.text(text=node_result["schema"], label="Schema"),
+        EventMetadataEntry.text(text=node_result["alias"], label="Alias"),
+        EventMetadataEntry.text(text=node_result["description"], label="Description"),
+    ]
+
+
+def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[EventMetadataEntry]:
+    metadata = []
+    for timing in timings:
+        if timing["name"] == "execute":
+            desc = "Execution"
+        elif timing["name"] == "compile":
+            desc = "Compilation"
+        else:
+            continue
+
+        started_at = dateutil.parser.isoparse(timing["started_at"])
+        completed_at = dateutil.parser.isoparse(timing["completed_at"])
+        duration = completed_at - started_at
+        metadata.extend(
+            [
+                EventMetadataEntry.text(
+                    text=started_at.isoformat(timespec="seconds"), label=f"{desc} Started At"
+                ),
+                EventMetadataEntry.text(
+                    text=started_at.isoformat(timespec="seconds"), label=f"{desc} Completed At"
+                ),
+                EventMetadataEntry.float(value=duration.total_seconds(), label=f"{desc} Duration"),
+            ]
+        )
+    return metadata
+
+
+def result_to_materialization(
+    result: Dict[str, Any], asset_key_prefix: List[str] = None
+) -> Optional[AssetMaterialization]:
+    """
+    This is a hacky solution that attempts to consolidate parsing many of the potential formats
+    that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
+    as well as RPC responses for a similar time period, but as the RPC response schema is not documented
+    nor enforced, this can become out of date easily.
+    """
+
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
+    # status comes from set of fields rather than "status"
+    if "fail" in result:
+        success = not result.get("fail") and not result.get("skip") and not result.get("error")
+    else:
+        success = result["status"] == "success"
+
+    if not success:
+        return None
+
+    # all versions represent timing the same way
+    metadata = [
+        EventMetadataEntry.float(value=result["execution_time"], label="Execution Time (seconds)")
+    ] + _timing_to_metadata(result["timing"])
+
+    # working with a response that contains the node block (RPC and CLI 0.18.x)
+    if "node" in result:
+
+        unique_id = result["node"]["unique_id"]
+        metadata += _node_result_to_metadata(result["node"])
+    else:
+        unique_id = result["unique_id"]
+
+    return AssetMaterialization(
+        description=f"dbt node: {unique_id}",
+        metadata_entries=metadata,
+        asset_key=asset_key_prefix + unique_id.split("."),
+    )
 
 
 def generate_materializations(
-    dbt_output: Union[DbtRpcOutput, DbtCliOutput], asset_key_prefix: Optional[List[str]] = None
+    dbt_output: DbtOutput, asset_key_prefix: Optional[List[str]] = None
 ) -> Iterator[AssetMaterialization]:
     """Yields ``AssetMaterializations`` for metadata in the dbt RPC ``DbtRpcOutput``."""
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
-    for node_result in dbt_output.result.results:
-        if node_result.node.get("resource_type", None) in ["model", "snapshot"]:
-            success = not node_result.fail and not node_result.skip and not node_result.error
-            if success:
-                entries = [
-                    EventMetadataEntry.json(data=node_result.node, label="Node"),
-                    EventMetadataEntry.text(text=str(node_result.status), label="Status"),
-                    EventMetadataEntry.float(
-                        value=node_result.execution_time,
-                        label="Execution Time (seconds)",
-                    ),
-                    EventMetadataEntry.text(
-                        text=node_result.node["config"]["materialized"],
-                        label="Materialization Strategy",
-                    ),
-                    EventMetadataEntry.text(text=node_result.node["database"], label="Database"),
-                    EventMetadataEntry.text(text=node_result.node["schema"], label="Schema"),
-                    EventMetadataEntry.text(text=node_result.node["alias"], label="Alias"),
-                    EventMetadataEntry.text(
-                        text=node_result.node["description"], label="Description"
-                    ),
-                ]
-                for step_timing in node_result.step_timings:
-                    if step_timing.name == "execute":
-                        execution_entries = [
-                            EventMetadataEntry.text(
-                                text=step_timing.started_at.isoformat(timespec="seconds"),
-                                label="Execution Started At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=step_timing.completed_at.isoformat(timespec="seconds"),
-                                label="Execution Completed At",
-                            ),
-                            EventMetadataEntry.float(
-                                # this is a value like datetime.timedelta(microseconds=51484)
-                                value=step_timing.duration.total_seconds(),
-                                label="Execution Duration",
-                            ),
-                        ]
-                        entries.extend(execution_entries)
-                    if step_timing.name == "compile":
-                        execution_entries = [
-                            EventMetadataEntry.text(
-                                text=step_timing.started_at.isoformat(timespec="seconds"),
-                                label="Compilation Started At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=step_timing.completed_at.isoformat(timespec="seconds"),
-                                label="Compilation Completed At",
-                            ),
-                            EventMetadataEntry.float(
-                                # this is a value like datetime.timedelta(microseconds=51484)
-                                value=step_timing.duration.total_seconds(),
-                                label="Compilation Duration",
-                            ),
-                        ]
-                        entries.extend(execution_entries)
-
-                unique_id = node_result.node["unique_id"]
-                yield AssetMaterialization(
-                    description="dbt node: {unique_id}".format(unique_id=unique_id),
-                    metadata_entries=entries,
-                    asset_key=asset_key_prefix + unique_id.split("."),
-                )
+    for result in dbt_output.result["results"]:
+        materialization = result_to_materialization(result, asset_key_prefix)
+        if materialization is not None:
+            yield materialization

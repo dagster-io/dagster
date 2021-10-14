@@ -1,6 +1,14 @@
+import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 import {StepKind} from '../types/globalTypes';
 
 import {toGraphQueryItems} from './toGraphQueryItems';
+
+const STATE_SUCCESS: IStepMetadata = {
+  state: IStepState.SUCCEEDED,
+  attempts: [],
+  markers: [],
+  transitions: [],
+};
 
 describe('toGraphQueryItems', () => {
   it('basic conversion', () => {
@@ -45,7 +53,7 @@ describe('toGraphQueryItems', () => {
           ],
           artifactsPersisted: false,
         },
-        ['a', 'b'],
+        {a: STATE_SUCCESS, b: STATE_SUCCESS},
       ),
     ).toEqual([
       {inputs: [], name: 'a', outputs: [{dependedBy: [{solid: {name: 'b'}}]}]},
@@ -122,7 +130,7 @@ describe('toGraphQueryItems', () => {
           ],
           artifactsPersisted: false,
         },
-        ['a', 'b[1]', 'b[2]', 'c[1]'],
+        {a: STATE_SUCCESS, 'b[1]': STATE_SUCCESS, 'b[2]': STATE_SUCCESS, 'c[1]': STATE_SUCCESS},
       ),
     ).toEqual([
       {

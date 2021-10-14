@@ -1,6 +1,7 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css} from 'styled-components/macro';
+
+import {ColorsWIP} from './Colors';
 
 type Color =
   | string
@@ -12,8 +13,9 @@ type Color =
 
 type Underline = 'never' | 'always' | 'hover';
 
-export interface Props {
+interface Props {
   color: Color;
+  disabled?: boolean;
   underline?: Underline;
 }
 
@@ -64,6 +66,7 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   font-size: inherit;
   line-height: 1;
   padding: 0;
+  text-align: left;
 
   &:active,
   &:focus {
@@ -75,6 +78,11 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
     outline-offset: 2px;
   }
 
+  &:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
   transition: 30ms color linear;
 
   ${({color}) => fontColor(color)}
@@ -82,6 +90,6 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
 `;
 
 ButtonLink.defaultProps = {
-  color: Colors.BLUE2,
+  color: ColorsWIP.Link,
   underline: 'hover',
 };

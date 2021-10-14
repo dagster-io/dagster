@@ -2,9 +2,16 @@ import sys
 from typing import Generator, Iterable, Iterator
 
 import pytest
-from dagster import AssetKey, InputDefinition, Output, OutputDefinition, solid
+from dagster import (
+    AssetKey,
+    DynamicOutput,
+    DynamicOutputDefinition,
+    InputDefinition,
+    Output,
+    OutputDefinition,
+    solid,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 def test_flex_inputs():

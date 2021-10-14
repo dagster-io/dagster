@@ -13,5 +13,5 @@ make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)

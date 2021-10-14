@@ -1,10 +1,13 @@
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional
 
+import requests.exceptions
 from dagster import check
+from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.backcompat import experimental_class_warning
 from gql import Client, gql
+from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
@@ -12,6 +15,7 @@ from .client_queries import (
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
     GET_PIPELINE_RUN_STATUS_QUERY,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
+    SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
 )
 from .utils import (
     DagsterGraphQLClientError,
@@ -19,6 +23,8 @@ from .utils import (
     PipelineInfo,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
 )
 
 
@@ -36,26 +42,61 @@ class DagsterGraphQLClient:
         client = DagsterGraphQLClient("localhost", port_number=3000)
         status = client.get_run_status(**SOME_RUN_ID**)
 
+    Args:
+        hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
+            `dagit.dagster.YOUR_ORG_HERE`.
+        port_number (Optional[int], optional): Optional port number to connect to on the host.
+            Defaults to None.
+        transport (Optional[Transport], optional): A custom transport to use to connect to the
+            GraphQL API with (e.g. for custom auth). Defaults to None.
+        use_https (bool, optional): Whether to use https in the URL connection string for the
+            GraphQL API. Defaults to False.
+
+    Raises:
+        :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
     """
 
-    def __init__(self, hostname: str, port_number: Optional[int] = None):
+    def __init__(
+        self,
+        hostname: str,
+        port_number: Optional[int] = None,
+        transport: Optional[Transport] = None,
+        use_https: bool = False,
+    ):
         experimental_class_warning(self.__class__.__name__)
+
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
+        self._use_https = check.bool_param(use_https, "use_https")
+
         self._url = (
-            "http://"
+            ("https://" if self._use_https else "http://")
             + (f"{self._hostname}:{self._port_number}" if self._port_number else self._hostname)
             + "/graphql"
         )
-        self._transport = RequestsHTTPTransport(url=self._url, use_json=True)
-        self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+
+        self._transport = check.opt_inst_param(
+            transport,
+            "transport",
+            Transport,
+            default=RequestsHTTPTransport(url=self._url, use_json=True),
+        )
+        try:
+            self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+        except requests.exceptions.ConnectionError as exc:
+            raise DagsterGraphQLClientError(
+                f"Error when connecting to url {self._url}. "
+                + f"Did you specify hostname: {self._hostname} "
+                + (f"and port_number: {self._port_number} " if self._port_number else "")
+                + "correctly?"
+            ) from exc
 
     def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
-                f"Query \n{query}\n with variables \n{variables}\n failed GraphQL validation"
+                f"Exception occured during execution of query \n{query}\n with variables \n{variables}\n"
             ) from exc
 
     def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[PipelineInfo]:
@@ -83,6 +124,7 @@ class DagsterGraphQLClient:
         run_config: Optional[Any] = None,
         mode: Optional[str] = None,
         preset: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Submits a Pipeline with attached configuration for execution.
 
@@ -103,6 +145,7 @@ class DagsterGraphQLClient:
                 defined any custom modes for your pipeline, the default mode is "default". Defaults to None.
             preset (Optional[str], optional): The name of a pre-defined preset to use instead of a
                 run config. Defaults to None.
+            tags (Optional[Dict[str, Any]], optional): A set of tags to add to the pipeline execution.
 
         Raises:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the pipeline has an invalid step
@@ -111,6 +154,8 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
                 that conflict with one another
             DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
+            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
+                This indicates that a conflicting pipeline run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the pipeline
             DagsterGraphQLClientError("PipelineNotFoundError", message): the requested pipeline does not exist
@@ -129,6 +174,7 @@ class DagsterGraphQLClient:
             "Either a mode and run_config or a preset must be specified in order to "
             f"submit the pipeline {pipeline_name} for execution",
         )
+        tags = validate_tags(tags)
 
         if not repository_location_name or not repository_name:
             pipeline_info_lst = self._get_repo_locations_and_names_with_pipeline(pipeline_name)
@@ -163,6 +209,9 @@ class DagsterGraphQLClient:
                 **variables["executionParams"],
                 "runConfigData": run_config,
                 "mode": mode,
+                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
+                if tags
+                else {},
             }
 
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
@@ -182,7 +231,7 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # or a PipelineNotFoundError, or a PythonError
+            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     def get_run_status(self, run_id: str) -> PipelineRunStatus:
@@ -206,7 +255,7 @@ class DagsterGraphQLClient:
         query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "PipelineRun":
-            return query_result["status"]
+            return PipelineRunStatus(query_result["status"])
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
@@ -230,12 +279,60 @@ class DagsterGraphQLClient:
             RELOAD_REPOSITORY_LOCATION_MUTATION,
             {"repositoryLocationName": repository_location_name},
         )
+
         query_result: Dict[str, Any] = res_data["reloadRepositoryLocation"]
         query_result_type: str = query_result["__typename"]
-        if query_result_type == "RepositoryLocation":
-            return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
+        if query_result_type == "WorkspaceLocationEntry":
+            location_or_error_type = query_result["locationOrLoadError"]["__typename"]
+            if location_or_error_type == "RepositoryLocation":
+                return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
+            else:
+                return ReloadRepositoryLocationInfo(
+                    status=ReloadRepositoryLocationStatus.FAILURE,
+                    failure_type="PythonError",
+                    message=query_result["locationOrLoadError"]["message"],
+                )
         else:
+            # query_result_type is either ReloadNotSupported or RepositoryLocationNotFound
             return ReloadRepositoryLocationInfo(
                 status=ReloadRepositoryLocationStatus.FAILURE,
-                message=query_result["error"]["message"],
+                failure_type=query_result_type,
+                message=query_result["message"],
             )
+
+    def shutdown_repository_location(
+        self, repository_location_name: str
+    ) -> ShutdownRepositoryLocationInfo:
+        """Shuts down the server that is serving metadata for the provided repository location.
+
+        This is primarily useful when you want the server to be restarted by the compute environment
+        in which it is running (for example, in Kubernetes, the pod in which the server is running
+        will automatically restart when the server is shut down, and the repository metadata will
+        be reloaded)
+
+        Args:
+            repository_location_name (str): The name of the repository location
+
+        Returns:
+            ShutdownRepositoryLocationInfo: Object with information about the result of the reload request
+        """
+        check.str_param(repository_location_name, "repository_location_name")
+
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
+            {"repositoryLocationName": repository_location_name},
+        )
+
+        query_result: Dict[str, Any] = res_data["shutdownRepositoryLocation"]
+        query_result_type: str = query_result["__typename"]
+        if query_result_type == "ShutdownRepositoryLocationSuccess":
+            return ShutdownRepositoryLocationInfo(status=ShutdownRepositoryLocationStatus.SUCCESS)
+        elif (
+            query_result_type == "RepositoryLocationNotFound" or query_result_type == "PythonError"
+        ):
+            return ShutdownRepositoryLocationInfo(
+                status=ShutdownRepositoryLocationStatus.FAILURE,
+                message=query_result["message"],
+            )
+        else:
+            raise Exception(f"Unexpected query result type {query_result_type}")

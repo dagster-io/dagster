@@ -4,7 +4,7 @@ import subprocess
 from dagster import check, resource
 from dagster.core.log_manager import DagsterLogManager
 
-from .types import SparkSolidError
+from .types import SparkOpError
 from .utils import construct_spark_shell_command
 
 
@@ -37,10 +37,10 @@ class SparkResource:
         ]
 
         if not os.path.exists(application_jar):
-            raise SparkSolidError(
+            raise SparkOpError(
                 (
                     "Application jar {} does not exist. A valid jar must be "
-                    "built before running this solid.".format(application_jar)
+                    "built before running this op.".format(application_jar)
                 )
             )
 
@@ -58,9 +58,9 @@ class SparkResource:
         retcode = subprocess.call(" ".join(spark_shell_cmd), shell=True)
 
         if retcode != 0:
-            raise SparkSolidError("Spark job failed. Please consult your logs.")
+            raise SparkOpError("Spark job failed. Please consult your logs.")
 
 
 @resource
 def spark_resource(context):
-    return SparkResource(context.log_manager)
+    return SparkResource(context.log)

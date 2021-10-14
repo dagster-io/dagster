@@ -1,0 +1,11 @@
+solids:
+  add_n_times_m_solid:
+    inputs:
+      number: 0
+    solids:
+      add_n:
+        config:
+          n: 3
+      multiply_by_m:
+        config:
+          m: 2

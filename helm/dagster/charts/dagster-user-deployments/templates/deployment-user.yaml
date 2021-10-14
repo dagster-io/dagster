@@ -21,6 +21,9 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
         component: user-deployments
         deployment: {{ $deployment.name }}
+        {{- with $deployment.labels }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
       annotations:
         checksum/dagster-user-deployment: {{ $deployment | toJson | sha256sum }}
         {{- with $deployment.annotations }}
@@ -36,12 +39,12 @@ spec:
         - name: {{ $.Chart.Name }}
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
-          image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+          image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
           command: ["dagster"]
           args: ["api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           env:
             - name: DAGSTER_CURRENT_IMAGE
-              value: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+              value: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:

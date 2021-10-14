@@ -1,16 +1,10 @@
 import tempfile
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from unittest.mock import patch
 
 import pytest
 from dagster import check, file_relative_path
-from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.cli.workspace.cli_target import (
-    GrpcServerTarget,
-    ModuleTarget,
-    PythonFileTarget,
-    WorkspaceFileTarget,
-)
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -21,11 +15,20 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
+from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test
+from dagster.core.workspace import WorkspaceProcessContext
+from dagster.core.workspace.load_target import (
+    GrpcServerTarget,
+    ModuleTarget,
+    PythonFileTarget,
+    WorkspaceFileTarget,
+)
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster_graphql import DagsterGraphQLClient
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def get_main_recon_repo():
@@ -42,8 +45,8 @@ def graphql_postgres_instance(overrides):
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)
             TestPostgresInstance.clean_schedule_storage(pg_conn_string)
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides=merge_dicts(
                     {
                         "run_storage": {
@@ -111,9 +114,9 @@ class InstanceManagers:
         return MarkedManager(_in_memory_instance, [Marks.in_memory_instance])
 
     @staticmethod
-    def readonly_in_memory_instance():
+    def non_launchable_in_memory_instance():
         @contextmanager
-        def _readonly_in_memory_instance():
+        def _non_launchable_in_memory_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
                 yield DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,
@@ -128,17 +131,17 @@ class InstanceManagers:
                 )
 
         return MarkedManager(
-            _readonly_in_memory_instance,
-            [Marks.in_memory_instance, Marks.readonly],
+            _non_launchable_in_memory_instance,
+            [Marks.in_memory_instance, Marks.non_launchable],
         )
 
     @staticmethod
-    def readonly_sqlite_instance():
+    def non_launchable_sqlite_instance():
         @contextmanager
-        def _readonly_sqlite_instance():
+        def _non_launchable_sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -153,12 +156,14 @@ class InstanceManagers:
                 ) as instance:
                     yield instance
 
-        return MarkedManager(_readonly_sqlite_instance, [Marks.sqlite_instance, Marks.readonly])
+        return MarkedManager(
+            _non_launchable_sqlite_instance, [Marks.sqlite_instance, Marks.non_launchable]
+        )
 
     @staticmethod
-    def readonly_postgres_instance():
+    def non_launchable_postgres_instance():
         @contextmanager
-        def _readonly_postgres_instance():
+        def _non_launchable_postgres_instance():
             with graphql_postgres_instance(
                 overrides={
                     "run_launcher": {
@@ -170,8 +175,8 @@ class InstanceManagers:
                 yield instance
 
         return MarkedManager(
-            _readonly_postgres_instance,
-            [Marks.postgres_instance, Marks.readonly],
+            _non_launchable_postgres_instance,
+            [Marks.postgres_instance, Marks.non_launchable],
         )
 
     @staticmethod
@@ -179,8 +184,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -204,8 +209,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -229,8 +234,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance_with_default_hijack():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -318,12 +323,13 @@ class EnvironmentManagers:
     @staticmethod
     def managed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process via grpc"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
-            with Workspace(
+            with WorkspaceProcessContext(
+                instance,
                 (
                     PythonFileTarget(
                         python_file=loadable_target_origin.python_file,
@@ -337,16 +343,18 @@ class EnvironmentManagers:
                         attribute=loadable_target_origin.attribute,
                         location_name="test",
                     )
-                )
-            ) as workspace:
-                yield workspace
+                ),
+                version="",
+                read_only=read_only,
+            ) as workspace_process_context:
+                yield workspace_process_context
 
         return MarkedManager(_mgr_fn, [Marks.managed_grpc_env])
 
     @staticmethod
     def deployed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
@@ -354,13 +362,16 @@ class EnvironmentManagers:
             server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
             try:
                 with server_process.create_ephemeral_client() as api_client:
-                    with Workspace(
+                    with WorkspaceProcessContext(
+                        instance,
                         GrpcServerTarget(
                             port=api_client.port,
                             socket=api_client.socket,
                             host=api_client.host,
                             location_name="test",
-                        )
+                        ),
+                        version="",
+                        read_only=read_only,
                     ) as workspace:
                         yield workspace
             finally:
@@ -371,12 +382,15 @@ class EnvironmentManagers:
     @staticmethod
     def multi_location():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process but same process as host process"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            with Workspace(
-                WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")])
+            with WorkspaceProcessContext(
+                instance,
+                WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
+                version="",
+                read_only=read_only,
             ) as workspace:
                 yield workspace
 
@@ -385,17 +399,20 @@ class EnvironmentManagers:
     @staticmethod
     def lazy_repository():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process but same process as host process"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            with Workspace(
+            with WorkspaceProcessContext(
+                instance,
                 PythonFileTarget(
                     python_file=file_relative_path(__file__, "setup.py"),
                     attribute="test_dict_repo",
                     working_directory=None,
                     location_name="test",
-                )
+                ),
+                version="",
+                read_only=read_only,
             ) as workspace:
                 yield workspace
 
@@ -412,7 +429,7 @@ class Marks:
     sync_run_launcher = pytest.mark.sync_run_launcher
     default_run_launcher = pytest.mark.default_run_launcher
     queued_run_coordinator = pytest.mark.queued_run_coordinator
-    readonly = pytest.mark.readonly
+    non_launchable = pytest.mark.non_launchable
 
     # Repository Location marks
     multi_location = pytest.mark.multi_location
@@ -425,6 +442,9 @@ class Marks:
 
     # Backfill daemon variants
     backfill_daemon = pytest.mark.backfill_daemon
+
+    # Readonly context variant
+    read_only = pytest.mark.read_only
 
     # Common mark to all test suite tests
     graphql_context_test_suite = pytest.mark.graphql_context_test_suite
@@ -477,15 +497,20 @@ class GraphQLContextVariant:
     All tests managed by this system are marked with "graphql_context_test_suite".
     """
 
-    def __init__(self, marked_instance_mgr, marked_environment_mgr, test_id=None):
+    def __init__(self, marked_instance_mgr, marked_environment_mgr, read_only=False, test_id=None):
         self.marked_instance_mgr = check.inst_param(
             marked_instance_mgr, "marked_instance_mgr", MarkedManager
         )
         self.marked_environment_mgr = check.inst_param(
             marked_environment_mgr, "marked_environment_mgr", MarkedManager
         )
+        self.read_only = check.bool_param(read_only, "read_only")
         self.test_id = check.opt_str_param(test_id, "test_id")
-        self.marks = marked_instance_mgr.marks + marked_environment_mgr.marks
+        self.marks = (
+            marked_instance_mgr.marks
+            + marked_environment_mgr.marks
+            + ([Marks.read_only] if read_only else [])
+        )
 
     @property
     def instance_mgr(self):
@@ -524,6 +549,15 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_read_only_with_default_run_launcher_managed_grpc_env():
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_default_run_launcher(),
+            EnvironmentManagers.managed_grpc(),
+            read_only=True,
+            test_id="sqlite_read_only_with_default_run_launcher_managed_grpc_env",
+        )
+
+    @staticmethod
     def sqlite_with_default_run_launcher_deployed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
@@ -548,83 +582,83 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def readonly_sqlite_instance_multi_location():
+    def non_launchable_sqlite_instance_multi_location():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
+            InstanceManagers.non_launchable_sqlite_instance(),
             EnvironmentManagers.multi_location(),
-            test_id="readonly_sqlite_instance_multi_location",
+            test_id="non_launchable_sqlite_instance_multi_location",
         )
 
     @staticmethod
-    def readonly_sqlite_instance_lazy_repository():
+    def non_launchable_sqlite_instance_lazy_repository():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
+            InstanceManagers.non_launchable_sqlite_instance(),
             EnvironmentManagers.lazy_repository(),
-            test_id="readonly_sqlite_instance_lazy_repository",
+            test_id="non_launchable_sqlite_instance_lazy_repository",
         )
 
     @staticmethod
-    def readonly_sqlite_instance_managed_grpc_env():
+    def non_launchable_sqlite_instance_managed_grpc_env():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
+            InstanceManagers.non_launchable_sqlite_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id="readonly_sqlite_instance_managed_grpc_env",
+            test_id="non_launchable_sqlite_instance_managed_grpc_env",
         )
 
     @staticmethod
-    def readonly_sqlite_instance_deployed_grpc_env():
+    def non_launchable_sqlite_instance_deployed_grpc_env():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
+            InstanceManagers.non_launchable_sqlite_instance(),
             EnvironmentManagers.deployed_grpc(),
-            test_id="readonly_sqlite_instance_deployed_grpc_env",
+            test_id="non_launchable_sqlite_instance_deployed_grpc_env",
         )
 
     @staticmethod
-    def readonly_postgres_instance_multi_location():
+    def non_launchable_postgres_instance_multi_location():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_postgres_instance(),
+            InstanceManagers.non_launchable_postgres_instance(),
             EnvironmentManagers.multi_location(),
-            test_id="readonly_postgres_instance_multi_location",
+            test_id="non_launchable_postgres_instance_multi_location",
         )
 
     @staticmethod
-    def readonly_postgres_instance_lazy_repository():
+    def non_launchable_postgres_instance_lazy_repository():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_postgres_instance(),
+            InstanceManagers.non_launchable_postgres_instance(),
             EnvironmentManagers.lazy_repository(),
-            test_id="readonly_postgres_instance_lazy_repository",
+            test_id="non_launchable_postgres_instance_lazy_repository",
         )
 
     @staticmethod
-    def readonly_postgres_instance_managed_grpc_env():
+    def non_launchable_postgres_instance_managed_grpc_env():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_postgres_instance(),
+            InstanceManagers.non_launchable_postgres_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id="readonly_postgres_instance_managed_grpc_env",
+            test_id="non_launchable_postgres_instance_managed_grpc_env",
         )
 
     @staticmethod
-    def readonly_in_memory_instance_multi_location():
+    def non_launchable_in_memory_instance_multi_location():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_in_memory_instance(),
+            InstanceManagers.non_launchable_in_memory_instance(),
             EnvironmentManagers.multi_location(),
-            test_id="readonly_in_memory_instance_multi_location",
+            test_id="non_launchable_in_memory_instance_multi_location",
         )
 
     @staticmethod
-    def readonly_in_memory_instance_lazy_repository():
+    def non_launchable_in_memory_instance_lazy_repository():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_in_memory_instance(),
+            InstanceManagers.non_launchable_in_memory_instance(),
             EnvironmentManagers.lazy_repository(),
-            test_id="readonly_in_memory_instance_lazy_repository",
+            test_id="non_launchable_in_memory_instance_lazy_repository",
         )
 
     @staticmethod
-    def readonly_in_memory_instance_managed_grpc_env():
+    def non_launchable_in_memory_instance_managed_grpc_env():
         return GraphQLContextVariant(
-            InstanceManagers.readonly_in_memory_instance(),
+            InstanceManagers.non_launchable_in_memory_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id="readonly_in_memory_instance_managed_grpc_env",
+            test_id="non_launchable_in_memory_instance_managed_grpc_env",
         )
 
     @staticmethod
@@ -645,20 +679,21 @@ class GraphQLContextVariant:
         return [
             GraphQLContextVariant.in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.sqlite_read_only_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
-            GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
-            GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
-            GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_postgres_instance_multi_location(),
-            GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_postgres_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_postgres_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_postgres_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_postgres_instance_lazy_repository(),
             GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
         ]
 
@@ -674,9 +709,16 @@ class GraphQLContextVariant:
     @staticmethod
     def all_readonly_variants():
         """
-        Return all readonly variants. If you try to start or launch these will error
+        Return all read only variants. If you try to run any mutation these will error
         """
-        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.readonly)
+        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
+
+    @staticmethod
+    def all_non_launchable_variants():
+        """
+        Return all non_launchable variants. If you try to start or launch these will error
+        """
+        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.non_launchable)
 
     @staticmethod
     def all_multi_location_variants():
@@ -705,10 +747,10 @@ def _variants_without_marks(variants, marks):
 def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
-        with context_variant.environment_mgr(recon_repo) as workspace:
-            yield WorkspaceProcessContext(
-                instance=instance, workspace=workspace
-            ).create_request_context()
+        with context_variant.environment_mgr(
+            recon_repo, instance, context_variant.read_only
+        ) as workspace_process_context:
+            yield workspace_process_context.create_request_context()
 
 
 class _GraphQLContextTestSuite(ABC):
@@ -792,6 +834,20 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
             with self.graphql_context_for_request(request) as graphql_context:
                 yield graphql_context
 
+        @pytest.fixture(name="graphql_client")
+        def yield_graphql_client(self, graphql_context):
+            class MockedGraphQLClient:
+                def execute(self, gql_query, variable_values=None):
+                    return execute_dagster_graphql(
+                        graphql_context,
+                        gql_query,
+                        variable_values,
+                    ).data
+
+            with patch("dagster_graphql.client.client.Client") as mock_client:
+                mock_client.return_value = MockedGraphQLClient()
+                yield DagsterGraphQLClient("localhost")
+
         def recon_repo(self):
             return recon_repo
 
@@ -800,6 +856,11 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
 
 ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_readonly_variants()
+)
+
+
+NonLaunchableGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_non_launchable_variants()
 )
 
 ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(

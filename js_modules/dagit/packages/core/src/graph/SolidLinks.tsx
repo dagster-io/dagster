@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
 
 import {IFullPipelineLayout, IFullSolidLayout, ILayoutConnection} from './getFullSolidLayout';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
@@ -110,7 +110,7 @@ const DynamicMarker: React.FunctionComponent<{
   direction: 'output' | 'collect';
 }> = ({x, y, direction}) => (
   <g
-    fill="#9e4903"
+    fill={ColorsWIP.Gray700}
     transform={`translate(${x - 35}, ${y})${
       direction === 'collect' ? ',rotate(180),translate(-20, -40)' : ''
     }`}
@@ -122,7 +122,7 @@ const DynamicMarker: React.FunctionComponent<{
 );
 
 const StyledPath = styled('path')`
-  stroke-width: 6;
-  stroke: ${Colors.BLACK};
+  stroke-width: 4;
+  stroke: ${ColorsWIP.Gray600};
   fill: none;
 `;

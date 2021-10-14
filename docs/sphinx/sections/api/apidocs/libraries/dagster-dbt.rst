@@ -9,6 +9,15 @@ This library provides a Dagster integration with `dbt <https://getdbt.com/>`_ (d
 CLI
 ~~~
 
+.. autodata:: dbt_cli_resource
+    :annotation: ResourceDefinition
+
+.. autoclass:: DbtCliResource
+    :members:
+
+.. autoclass:: DbtCliOutput
+    :members:
+
 .. autofunction:: dbt_cli_compile
 
 .. autofunction:: dbt_cli_run
@@ -21,12 +30,22 @@ CLI
 
 .. autofunction:: dbt_cli_test
 
-.. autoclass:: DbtCliOutput
-    :members:
 
 
 RPC
 ~~~
+
+.. autodata:: dbt_rpc_resource
+    :annotation: ResourceDefinition
+
+.. autodata:: local_dbt_rpc_resource
+    :annotation: ResourceDefinition
+
+.. autoclass:: DbtRpcClient
+    :members:
+
+.. autoclass:: DbtRpcOutput
+    :members:
 
 .. autofunction:: create_dbt_rpc_run_sql_solid
 
@@ -52,31 +71,14 @@ RPC
 
 .. autofunction:: dbt_rpc_test_and_wait
 
-.. autodata:: dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autodata:: local_dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoclass:: DbtRpcClient
-    :members:
-
-.. autoclass:: DbtRpcOutput
-    :members:
-
-
 Types
 ~~~~~
 
-.. autoclass:: DbtResult
+.. autoclass:: DbtOutput
     :members:
 
-.. autoclass:: NodeResult
+.. autoclass:: DbtResource
     :members:
-
-.. autoclass:: StepTiming
-    :members:
-
 
 Errors
 ~~~~~~

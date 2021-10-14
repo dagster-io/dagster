@@ -53,7 +53,9 @@ class TestDBTRunAndWaitSolid:
 
         dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(run_all_fast_poll)
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
+        executed_model_from_result = set(
+            res["node"]["unique_id"] for res in dbt_output.result["results"]
+        )
         assert executed_model_from_result == TestDBTRunAndWaitSolid.ALL_MODELS_KEY_SET
 
         materialization_asset_keys = set(
@@ -75,7 +77,9 @@ class TestDBTRunAndWaitSolid:
             run_single_fast_poll
         )
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
+        executed_model_from_result = set(
+            res["node"]["unique_id"] for res in dbt_output.result["results"]
+        )
         assert executed_model_from_result == TestDBTRunAndWaitSolid.SINGLE_MODEL_KEY_SET
 
         materialization_asset_keys = set(
@@ -115,11 +119,14 @@ class TestDBTSingleOperationSolids:
             return mocked_rpc_client
 
         response_sentinel_value = "<rpc response: {}>".format(uuid.uuid4())
-        mocked_client_op_method.return_value.text = response_sentinel_value
         request_token_sentinel_value = "<request token: {}>".format(uuid.uuid4())
-        mocked_client_op_method.return_value.json.return_value = {
+
+        mock_response = MagicMock()
+        mock_response.text = response_sentinel_value
+        mock_response.json.return_value = {
             "result": {"request_token": request_token_sentinel_value}
         }
+        mocked_client_op_method.return_value = DbtRpcOutput(response=mock_response)
 
         configured_solid = configured(op_solid, name="configured_solid")(op_config)
 

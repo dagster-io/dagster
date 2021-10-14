@@ -1,19 +1,34 @@
-import {Button, Icon} from '@blueprintjs/core';
 import * as React from 'react';
+
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
+import {Tooltip} from '../ui/Tooltip';
 
 import {useReloadWorkspace} from './useReloadWorkspace';
 
 export const ReloadAllButton = () => {
   const {reloading, onClick} = useReloadWorkspace();
+  const {canReloadWorkspace} = usePermissions();
+
+  if (!canReloadWorkspace) {
+    return (
+      <Tooltip content={DISABLED_MESSAGE}>
+        <ButtonWIP icon={<IconWIP name="refresh" />} disabled intent="none">
+          Reload all
+        </ButtonWIP>
+      </Tooltip>
+    );
+  }
 
   return (
-    <Button
+    <ButtonWIP
       onClick={onClick}
-      icon={<Icon icon="refresh" iconSize={11} />}
+      icon={<IconWIP name="refresh" />}
       loading={reloading}
-      text="Reload all"
-      small
       intent="none"
-    />
+    >
+      Reload all
+    </ButtonWIP>
   );
 };

@@ -3,16 +3,42 @@
     "description": "@generated",
     "type": "object",
     "properties": {
+        "dagsterHome": {
+            "title": "Dagsterhome",
+            "type": "string"
+        },
+        "postgresqlSecretName": {
+            "title": "Postgresqlsecretname",
+            "type": "string"
+        },
         "deployments": {
             "title": "Deployments",
             "type": "array",
             "items": {
                 "$ref": "#/definitions/UserDeployment"
             }
+        },
+        "imagePullSecrets": {
+            "title": "Imagepullsecrets",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/SecretRef"
+            }
+        },
+        "serviceAccount": {
+            "$ref": "#/definitions/ServiceAccount"
+        },
+        "global": {
+            "$ref": "#/definitions/Global"
         }
     },
     "required": [
-        "deployments"
+        "dagsterHome",
+        "postgresqlSecretName",
+        "deployments",
+        "imagePullSecrets",
+        "serviceAccount",
+        "global"
     ],
     "definitions": {
         "PullPolicy": {
@@ -35,7 +61,14 @@
                 },
                 "tag": {
                     "title": "Tag",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "pullPolicy": {
                     "$ref": "#/definitions/PullPolicy"
@@ -43,7 +76,6 @@
             },
             "required": [
                 "repository",
-                "tag",
                 "pullPolicy"
             ]
         },
@@ -195,6 +227,13 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -202,6 +241,57 @@
                 "image",
                 "dagsterApiGrpcArgs",
                 "port"
+            ]
+        },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
+        "ServiceAccount": {
+            "title": "ServiceAccount",
+            "type": "object",
+            "properties": {
+                "create": {
+                    "title": "Create",
+                    "type": "boolean"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                }
+            },
+            "required": [
+                "create",
+                "name",
+                "annotations"
+            ]
+        },
+        "Global": {
+            "title": "Global",
+            "type": "object",
+            "properties": {
+                "postgresqlSecretName": {
+                    "title": "Postgresqlsecretname",
+                    "type": "string"
+                },
+                "dagsterHome": {
+                    "title": "Dagsterhome",
+                    "type": "string"
+                },
+                "serviceAccountName": {
+                    "title": "Serviceaccountname",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "postgresqlSecretName",
+                "dagsterHome",
+                "serviceAccountName"
             ]
         }
     }

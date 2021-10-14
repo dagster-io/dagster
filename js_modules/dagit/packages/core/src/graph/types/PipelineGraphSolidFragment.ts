@@ -118,6 +118,7 @@ export interface PipelineGraphSolidFragment_definition_SolidDefinition_configFie
 export interface PipelineGraphSolidFragment_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineGraphSolidFragment_definition_SolidDefinition_metadata[];
   inputDefinitions: PipelineGraphSolidFragment_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphSolidFragment_definition_SolidDefinition_outputDefinitions[];
@@ -210,6 +211,7 @@ export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_
 export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions[];

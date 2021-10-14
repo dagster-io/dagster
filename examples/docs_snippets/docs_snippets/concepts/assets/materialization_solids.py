@@ -30,7 +30,7 @@ def calculate_bytes(df):
 
 # start_materialization_solids_marker_0
 @solid
-def my_simple_solid(_):
+def my_simple_solid():
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     return remote_storage_path

@@ -4,11 +4,19 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL fragment: RepositoryLocationsFragment
 // ====================================================
 
-export interface RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocation {
+export interface RepositoryLocationsFragment_Workspace_locationEntries_displayMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {
   __typename: "RepositoryLocation";
   id: string;
   isReloadSupported: boolean;
@@ -16,23 +24,26 @@ export interface RepositoryLocationsFragment_RepositoryLocationConnection_nodes_
   name: string;
 }
 
-export interface RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error {
+export interface RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
 }
 
-export interface RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
-  __typename: "RepositoryLocationLoadFailure";
+export type RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError = RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError_PythonError;
+
+export interface RepositoryLocationsFragment_Workspace_locationEntries {
+  __typename: "WorkspaceLocationEntry";
   id: string;
   name: string;
-  error: RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
+  displayMetadata: RepositoryLocationsFragment_Workspace_locationEntries_displayMetadata[];
+  updatedTimestamp: number;
+  locationOrLoadError: RepositoryLocationsFragment_Workspace_locationEntries_locationOrLoadError | null;
 }
 
-export type RepositoryLocationsFragment_RepositoryLocationConnection_nodes = RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocation | RepositoryLocationsFragment_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
-
-export interface RepositoryLocationsFragment_RepositoryLocationConnection {
-  __typename: "RepositoryLocationConnection";
-  nodes: RepositoryLocationsFragment_RepositoryLocationConnection_nodes[];
+export interface RepositoryLocationsFragment_Workspace {
+  __typename: "Workspace";
+  locationEntries: RepositoryLocationsFragment_Workspace_locationEntries[];
 }
 
 export interface RepositoryLocationsFragment_PythonError_cause {
@@ -48,4 +59,4 @@ export interface RepositoryLocationsFragment_PythonError {
   cause: RepositoryLocationsFragment_PythonError_cause | null;
 }
 
-export type RepositoryLocationsFragment = RepositoryLocationsFragment_RepositoryLocationConnection | RepositoryLocationsFragment_PythonError;
+export type RepositoryLocationsFragment = RepositoryLocationsFragment_Workspace | RepositoryLocationsFragment_PythonError;

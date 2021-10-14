@@ -6,19 +6,17 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     ExpectationResult,
-    Failure,
     Materialization,
     Output,
     OutputDefinition,
-    RetryRequested,
     SolidDefinition,
     TypeCheck,
 )
+from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
 from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
-    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
@@ -43,6 +41,8 @@ from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
+from .compute_generator import create_solid_compute_wrapper
+from .utils import solid_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -58,6 +58,7 @@ def _step_output_error_checked_user_event_sequence(
     check.generator_param(user_event_sequence, "user_event_sequence")
 
     step = step_context.step
+    op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs: Set[str] = set()
     seen_mapping_keys: Dict[str, Set[str]] = defaultdict(set)
@@ -69,16 +70,13 @@ def _step_output_error_checked_user_event_sequence(
 
         # do additional processing on Outputs
         output = user_event
-        if not step.has_step_output(output.output_name):
+        if not step.has_step_output(cast(str, output.output_name)):
             raise DagsterInvariantViolationError(
-                'Core compute for solid "{handle}" returned an output '
-                '"{output.output_name}" that does not exist. The available '
-                "outputs are {output_names}".format(
-                    handle=str(step.solid_handle), output=output, output_names=output_names
-                )
+                f'Core compute for {op_label} returned an output "{output.output_name}" that does '
+                f"not exist. The available outputs are {output_names}"
             )
 
-        step_output = step.step_output_named(output.output_name)
+        step_output = step.step_output_named(cast(str, output.output_name))
         output_def = step_context.pipeline_def.get_solid(step_output.solid_handle).output_def_named(
             step_output.name
         )
@@ -86,27 +84,25 @@ def _step_output_error_checked_user_event_sequence(
         if isinstance(output, Output):
             if output.output_name in seen_outputs:
                 raise DagsterInvariantViolationError(
-                    'Compute for solid "{handle}" returned an output '
-                    '"{output.output_name}" multiple times'.format(
-                        handle=str(step.solid_handle), output=output
-                    )
+                    f'Compute for {op_label} returned an output "{output.output_name}" multiple '
+                    "times"
                 )
 
             if output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
-                    f'Compute for solid "{step.solid_handle}" for output "{output.output_name}" '
-                    "defined as dynamic must yield DynamicOutput, got Output."
+                    f'Compute for {op_label} for output "{output.output_name}" defined as dynamic '
+                    "must yield DynamicOutput, got Output."
                 )
         else:
             if not output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
-                    f'Compute for solid "{step.solid_handle}" yielded a DynamicOutput, '
-                    "but did not use DynamicOutputDefinition."
+                    f"Compute for {op_label} yielded a DynamicOutput, but did not use "
+                    "DynamicOutputDefinition."
                 )
             if output.mapping_key in seen_mapping_keys[output.output_name]:
                 raise DagsterInvariantViolationError(
-                    f'Compute for solid "{step.solid_handle}" yielded a DynamicOutput with '
-                    f'mapping_key "{output.mapping_key}" multiple times.'
+                    f"Compute for {op_label} yielded a DynamicOutput with mapping_key "
+                    f'"{output.mapping_key}" multiple times.'
                 )
             seen_mapping_keys[output.output_name].add(output.mapping_key)
 
@@ -118,23 +114,21 @@ def _step_output_error_checked_user_event_sequence(
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
             if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
-                    'Emitting implicit Nothing for output "{output}" on solid {solid}'.format(
-                        output=step_output_def.name, solid={str(step.solid_handle)}
-                    )
+                    f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
                 yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
-                    'Core compute for solid "{handle}" did not return an output '
-                    'for non-optional output "{step_output_def.name}"'.format(
-                        handle=str(step.solid_handle), step_output_def=step_output_def
+                    (
+                        f"Core compute for {op_label} did not return an output for non-optional "
+                        f'output "{step_output_def.name}"'
                     ),
                     step_key=step.key,
                     output_name=step_output_def.name,
                 )
 
 
-def _do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:
+def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:
     type_check = dagster_type.type_check(context, value)
     if not isinstance(type_check, TypeCheck):
         return TypeCheck(
@@ -177,15 +171,19 @@ def _type_checked_event_sequence_for_input(
     step_input = step_context.step.step_input_named(input_name)
     input_def = step_input.source.get_input_def(step_context.pipeline_def)
     dagster_type = input_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
+    input_type = type(input_value)
+    op_label = step_context.describe_op()
+
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
-            f'Error occurred while type-checking input "{input_name}" of solid '
-            f'"{str(step_context.step.solid_handle)}", with Python type {type(input_value)} and '
-            f"Dagster type {dagster_type.display_name}"
+            f'Error occurred while type-checking input "{input_name}" of {op_label}, with Python '
+            f"type {input_type} and Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, input_value)
+        type_check = do_type_check(type_check_context, dagster_type, input_value)
 
     yield _create_step_input_event(
         step_context, input_name, type_check=type_check, success=type_check.success
@@ -196,7 +194,7 @@ def _type_checked_event_sequence_for_input(
             description=(
                 f'Type check failed for step input "{input_name}" - '
                 f'expected type "{dagster_type.display_name}". '
-                f"Description: {type_check.description}."
+                f"Description: {type_check.description}"
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -216,15 +214,19 @@ def _type_check_output(
     step_output_def = step_context.solid_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
+    op_label = step_context.describe_op()
+    output_type = type(output.value)
+
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
-            f'Error occurred while type-checking output "{output.output_name}" of solid '
-            f'"{str(step_context.step.solid_handle)}", with Python type {type(output.value)} and '
-            f"Dagster type {dagster_type.display_name}"
+            f'Error occurred while type-checking output "{output.output_name}" of {op_label}, with '
+            f"Python type {output_type} and Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
+        type_check = do_type_check(type_check_context, dagster_type, output.value)
 
     yield DagsterEvent.step_output_event(
         step_context=step_context,
@@ -255,7 +257,7 @@ def _type_check_output(
 
 
 def core_dagster_event_sequence_for_step(
-    step_context: StepExecutionContext, prior_attempt_count: int
+    step_context: StepExecutionContext,
 ) -> Iterator[DagsterEvent]:
     """
     Execute the step within the step_context argument given the in-memory
@@ -264,9 +266,9 @@ def core_dagster_event_sequence_for_step(
     of the step.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.int_param(prior_attempt_count, "prior_attempt_count")
-    if prior_attempt_count > 0:
-        yield DagsterEvent.step_restarted_event(step_context, prior_attempt_count)
+
+    if step_context.previous_attempt_count > 0:
+        yield DagsterEvent.step_restarted_event(step_context, step_context.previous_attempt_count)
     else:
         yield DagsterEvent.step_start_event(step_context)
 
@@ -296,9 +298,24 @@ def core_dagster_event_sequence_for_step(
             yield evt
 
     input_lineage = _dedup_asset_lineage(input_lineage)
+
+    # The core execution loop expects a compute generator in a specific format: a generator that
+    # takes a context and dictionary of inputs as input, yields output events. If a solid definition
+    # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
+    # into this format. If the solid definition was created directly, then it is expected that the
+    # compute_fn is already in this format.
+    if isinstance(step_context.solid_def.compute_fn, DecoratedSolidFunction):
+        core_gen = create_solid_compute_wrapper(step_context.solid_def)
+    else:
+        core_gen = step_context.solid_def.compute_fn
+
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
-            _user_event_sequence_for_step_compute_fn(step_context, inputs)
+            execute_core_compute(
+                step_context,
+                inputs,
+                core_gen,
+            )
         )
 
         # It is important for this loop to be indented within the
@@ -353,7 +370,7 @@ def _type_check_and_store_output(
 
     version = (
         resolve_step_output_versions(
-            step_context.pipeline_def, step_context.execution_plan, step_context.environment_config
+            step_context.pipeline_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
         else None
@@ -426,7 +443,9 @@ def _get_output_asset_materializations(
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List[str]] = {partition: [] for partition in asset_partitions}
+        metadata_mapping: Dict[str, List["EventMetadataEntry"]] = {
+            partition: [] for partition in asset_partitions
+        }
         for entry in all_metadata:
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
@@ -454,7 +473,9 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        yield AssetMaterialization(
+            asset_key=asset_key, metadata_entries=cast(List["EventMetadataEntry"], all_metadata)
+        )
 
 
 def _store_output(
@@ -468,22 +489,24 @@ def _store_output(
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
 
-    with user_code_error_boundary(
-        DagsterExecutionHandleOutputError,
-        control_flow_exceptions=[Failure, RetryRequested],
-        msg_fn=lambda: (
-            f'Error occurred while handling output "{output_context.name}" of '
-            f'step "{step_context.step.key}":'
-        ),
-        step_key=step_context.step.key,
-        output_name=output_context.name,
-    ):
-        handle_output_res = output_manager.handle_output(output_context, output.value)
+    handle_output_res = output_manager.handle_output(output_context, output.value)
 
     manager_materializations = []
     manager_metadata_entries = []
     if handle_output_res is not None:
-        for elt in ensure_gen(handle_output_res):
+        for elt in iterate_with_context(
+            lambda: solid_execution_error_boundary(
+                DagsterExecutionHandleOutputError,
+                msg_fn=lambda: (
+                    f'Error occurred while handling output "{output_context.name}" of '
+                    f'step "{step_context.step.key}":'
+                ),
+                step_context=step_context,
+                step_key=step_context.step.key,
+                output_name=output_context.name,
+            ),
+            ensure_gen(handle_output_res),
+        ):
             if isinstance(elt, AssetMaterialization):
                 manager_materializations.append(elt)
             elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
@@ -538,7 +561,7 @@ def _create_type_materializations(
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
-        solid_config = step_context.environment_config.solids.get(current_handle.to_string())
+        solid_config = step_context.resolved_run_config.solids.get(current_handle.to_string())
         current_handle = current_handle.parent
 
         if solid_config is None:
@@ -557,6 +580,7 @@ def _create_type_materializations(
                         f'\n    solid invocation: "{step_context.solid.name}"'
                         f'\n    solid definition: "{step_context.solid_def.name}"'
                     ),
+                    log_manager=step_context.log,
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
@@ -579,29 +603,3 @@ def _create_type_materializations(
                         )
 
                     yield DagsterEvent.asset_materialization(step_context, materialization)
-
-
-def _user_event_sequence_for_step_compute_fn(
-    step_context: StepExecutionContext, evaluated_inputs: Dict[str, Any]
-) -> Iterator[SolidOutputUnion]:
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
-
-    gen = execute_core_compute(
-        step_context,
-        evaluated_inputs,
-        step_context.solid_def.compute_fn,
-    )
-
-    for event in iterate_with_context(
-        lambda: user_code_error_boundary(
-            DagsterExecutionStepExecutionError,
-            control_flow_exceptions=[Failure, RetryRequested],
-            msg_fn=lambda: f'Error occurred while executing solid "{step_context.solid.name}":',
-            step_key=step_context.step.key,
-            solid_def_name=step_context.solid_def.name,
-            solid_name=step_context.solid.name,
-        ),
-        gen,
-    ):
-        yield event

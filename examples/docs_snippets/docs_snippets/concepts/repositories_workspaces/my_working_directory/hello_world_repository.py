@@ -2,7 +2,7 @@ from dagster import pipeline, repository, solid
 
 
 @solid
-def hello_world(_):
+def hello_world():
     pass
 
 

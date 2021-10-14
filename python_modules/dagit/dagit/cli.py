@@ -3,18 +3,23 @@ import sys
 import tempfile
 import threading
 from contextlib import contextmanager
+from typing import Optional
 
 import click
 from dagster import check
-from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
+from dagster.cli.workspace import (
+    get_workspace_process_context_from_kwargs,
+    workspace_target_argument,
+)
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
+from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from .app import create_app_from_workspace
+from .app import create_app_from_workspace_process_context
 from .telemetry import upload_logs
 from .version import __version__
 
@@ -81,8 +86,19 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     type=click.INT,
     show_default=True,
 )
+@click.option(
+    "--read-only",
+    help="Start Dagit in read-only mode, where all mutations such as launching runs and "
+    "turning schedules on/off are turned off.",
+    is_flag=True,
+)
+@click.option(
+    "--suppress-warnings",
+    help="Filter all warnings when hosting Dagit.",
+    is_flag=True,
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, db_statement_timeout, **kwargs):
+def ui(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -92,7 +108,16 @@ def ui(host, port, path_prefix, db_statement_timeout, **kwargs):
     else:
         port_lookup = False
 
-    host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup, **kwargs)
+    host_dagit_ui(
+        host,
+        port,
+        path_prefix,
+        db_statement_timeout,
+        port_lookup,
+        read_only,
+        suppress_warnings,
+        **kwargs,
+    )
 
 
 @contextmanager
@@ -101,7 +126,9 @@ def _get_instance():
         with DagsterInstance.get() as instance:
             yield instance
     else:
-        with tempfile.TemporaryDirectory() as tempdir:
+        # make the temp dir in the cwd since default temp dir roots
+        # have issues with FS notif based event log watching
+        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
             click.echo(
                 f"Using temporary directory {tempdir} for storage. This will be removed when dagit exits.\n"
                 "To persist information across sessions, set the environment variable DAGSTER_HOME to a directory to use.\n"
@@ -110,26 +137,52 @@ def _get_instance():
                 yield instance
 
 
-def host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup=True, **kwargs):
+def host_dagit_ui(
+    host,
+    port,
+    path_prefix,
+    db_statement_timeout,
+    port_lookup=True,
+    read_only=False,
+    suppress_warnings=False,
+    **kwargs,
+):
+    if suppress_warnings:
+        os.environ["PYTHONWARNINGS"] = "ignore"
 
     with _get_instance() as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout)
 
-        with get_workspace_from_kwargs(kwargs) as workspace:
-            if not workspace:
-                raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))
+        with get_workspace_process_context_from_kwargs(
+            instance,
+            version=__version__,
+            read_only=read_only,
+            kwargs=kwargs,
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context, host, port, path_prefix, port_lookup
+            )
 
-            host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup)
 
+def host_dagit_ui_with_workspace_process_context(
+    workspace_process_context: WorkspaceProcessContext,
+    host: Optional[str],
+    port: int,
+    path_prefix: str,
+    port_lookup: bool = True,
+):
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
+    check.opt_str_param(host, "host")
+    check.int_param(port, "port")
+    check.str_param(path_prefix, "path_prefix")
+    check.bool_param(port_lookup, "port_lookup")
 
-def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup=True):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", Workspace)
+    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
 
-    app = create_app_from_workspace(workspace, instance, path_prefix)
-
-    start_server(instance, host, port, path_prefix, app, port_lookup)
+    start_server(workspace_process_context.instance, host, port, path_prefix, app, port_lookup)
 
 
 @contextmanager

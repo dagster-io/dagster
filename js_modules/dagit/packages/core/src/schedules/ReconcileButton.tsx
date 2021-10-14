@@ -1,9 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
-import {Button, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {JobType} from '../types/globalTypes';
-import {Spinner} from '../ui/Spinner';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {InstigationType} from '../types/globalTypes';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -11,13 +12,14 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {ReconcileSchedulerState} from './types/ReconcileSchedulerState';
 
 export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  const {canReconcileSchedulerState} = usePermissions();
   const repositorySelector = repoAddressToSelector(repoAddress);
   const refetchQueries = [
     {
       query: SCHEDULES_ROOT_QUERY,
       variables: {
         repositorySelector: repositorySelector,
-        jobType: JobType.SCHEDULE,
+        instigationType: InstigationType.SCHEDULE,
       },
     },
   ];
@@ -27,18 +29,24 @@ export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddre
     {loading: reconcileInFlight},
   ] = useMutation<ReconcileSchedulerState>(RECONCILE_SCHEDULE_STATE_MUTATION, {refetchQueries});
 
-  if (reconcileInFlight) {
-    return <Spinner purpose="body-text" />;
+  if (!canReconcileSchedulerState) {
+    return (
+      <Tooltip content={DISABLED_MESSAGE}>
+        <ButtonLink underline="always" disabled>
+          Reconcile
+        </ButtonLink>
+      </Tooltip>
+    );
   }
 
   return (
-    <Button
-      small={true}
-      intent={Intent.SUCCESS}
+    <ButtonLink
+      underline="always"
+      disabled={reconcileInFlight}
       onClick={() => reconcileScheduleState({variables: {repositorySelector}})}
     >
       Reconcile
-    </Button>
+    </ButtonLink>
   );
 };
 

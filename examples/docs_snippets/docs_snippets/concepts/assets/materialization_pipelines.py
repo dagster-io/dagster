@@ -23,14 +23,14 @@ from dagster import solid, pipeline, OutputDefinition, AssetKey
 
 
 @solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_db.users"))])
-def scrape_users(_):
+def scrape_users():
     users_df = some_api_call()
     persist_to_db(users_df)
     return users_df
 
 
 @solid(output_defs=[OutputDefinition(asset_key=AssetKey("ml_models.user_prediction"))])
-def get_prediction_model(_, users_df):
+def get_prediction_model(users_df):
     my_ml_model = train_prediction_model(users_df)
     persist_to_model_store(my_ml_model)
     return my_ml_model

@@ -1,6 +1,8 @@
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
-import {SVGFlowLayoutFiller, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
+import {ColorsWIP} from '../ui/Colors';
+import {FontFamily} from '../ui/styles';
 
 export interface ISolidTag {
   label: string;
@@ -8,9 +10,7 @@ export interface ISolidTag {
 }
 
 interface ISolidTagsProps {
-  x: number;
-  y: number;
-  width: number;
+  style: React.CSSProperties;
   minified: boolean;
   tags: ISolidTag[];
 }
@@ -19,11 +19,17 @@ function hueForTag(text = '') {
   if (text === 'ipynb') {
     return 25;
   }
+  if (text === 'dbt') {
+    return 250;
+  }
   if (text === 'snowflake') {
     return 197;
   }
   if (text === 'pyspark' || text === 'spark') {
     return 30;
+  }
+  if (text === 'Expand') {
+    return 40;
   }
   return (
     text
@@ -33,53 +39,34 @@ function hueForTag(text = '') {
   );
 }
 
-const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({
-  tags,
-  x,
-  y,
-  width,
-  minified,
-}) => {
-  const height = minified ? 32 : 20;
-  const overhang = 10;
-
+export const SolidTags = React.memo(({tags, style, minified}: ISolidTagsProps) => {
   return (
-    <SVGFlowLayoutRect
-      x={x}
-      y={y - (height - overhang)}
-      width={width}
-      height={height}
-      fill={'transparent'}
-      stroke={'transparent'}
-      spacing={minified ? 8 : 4}
-      padding={0}
-    >
-      <SVGFlowLayoutFiller />
-      {tags.map((tag) => {
-        const hue = hueForTag(tag.label);
-        return (
-          <SVGFlowLayoutRect
-            key={tag.label}
-            rx={0}
-            ry={0}
-            height={height}
-            padding={minified ? 8 : 4}
-            fill={`hsl(${hue}, 10%, 95%)`}
-            stroke={`hsl(${hue}, 75%, 50%)`}
-            onClick={tag.onClick}
-            strokeWidth={1}
-            spacing={0}
-          >
-            <SVGMonospaceText
-              text={tag.label}
-              fill={`hsl(${hue}, 75%, 50%)`}
-              size={minified ? 24 : 14}
-            />
-          </SVGFlowLayoutRect>
-        );
-      })}
-    </SVGFlowLayoutRect>
+    <SolidTagsContainer style={style} $minified={minified}>
+      {tags.map((tag) => (
+        <div
+          key={tag.label}
+          style={{background: `hsl(${hueForTag(tag.label)}, 75%, 50%)`}}
+          onClick={tag.onClick}
+        >
+          {tag.label}
+        </div>
+      ))}
+    </SolidTagsContainer>
   );
-};
+});
 
-export const SolidTags = React.memo(SolidTagsInner);
+const SolidTagsContainer = styled.div<{$minified: boolean}>`
+  gap: 6px;
+  position: absolute;
+  display: flex;
+
+  & > div {
+    padding: 0 ${(p) => (p.$minified ? 10 : 5)}px;
+    line-height: ${(p) => (p.$minified ? 32 : 20)}px;
+    color: ${ColorsWIP.White};
+    font-family: ${FontFamily.monospace};
+    font-size: ${(p) => (p.$minified ? 24 : 14)}px;
+    font-weight: 700;
+    border-radius: 3px;
+  }
+`;

@@ -20,7 +20,7 @@ interface RunTagsTokenizingFieldProps {
 
 export const RunTagsSupportedTokens: RunFilterTokenType[] = ['tag'];
 
-export const RunTagsTokenizingField: React.FunctionComponent<RunTagsTokenizingFieldProps> = ({
+export const RunTagsTokenizingField: React.FC<RunTagsTokenizingFieldProps> = ({
   runs,
   tokens,
   onChange,

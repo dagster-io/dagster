@@ -183,7 +183,7 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
 
 def open_ipc_subprocess(parts, **kwargs):
-    """ Sets new process group flags on Windows to support graceful termination. """
+    """Sets new process group flags on Windows to support graceful termination."""
     check.list_param(parts, "parts", str)
 
     creationflags = 0
@@ -193,7 +193,7 @@ def open_ipc_subprocess(parts, **kwargs):
 
 
 def interrupt_ipc_subprocess(proc):
-    """ Send CTRL_BREAK on Windows, SIGINT on other platforms """
+    """Send CTRL_BREAK on Windows, SIGINT on other platforms"""
 
     if sys.platform == "win32":
         proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
@@ -202,7 +202,7 @@ def interrupt_ipc_subprocess(proc):
 
 
 def interrupt_ipc_subprocess_pid(pid):
-    """ Send CTRL_BREAK on Windows, SIGINT on other platforms """
+    """Send CTRL_BREAK on Windows, SIGINT on other platforms"""
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":

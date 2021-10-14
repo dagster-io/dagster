@@ -12,13 +12,16 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-gcp",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for GCP-specific Dagster framework solid and resource components.",
+        description="Package for GCP-specific Dagster framework op and resource components.",
         # pylint: disable=line-too-long
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp",
         classifiers=[
@@ -30,8 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=[
-            "dagster",
-            "dagster_pandas",
+            f"dagster{pin}",
+            f"dagster_pandas{pin}",
             "google-api-python-client<2.0.0",
             "google-cloud-bigquery>=1.19.*",
             "google-cloud-storage",

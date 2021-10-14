@@ -33,7 +33,15 @@ def test_schedules_list(gen_schedule_args):
                 raise result.exception
 
             assert result.exit_code == 0
-            assert result.output == ("Repository bar\n" "**************\n")
+            assert result.output == (
+                "Repository bar\n"
+                "**************\n"
+                "Schedule: foo_schedule [STOPPED]\n"
+                "Cron Schedule: * * * * *\n"
+                "****************************************\n"
+                "Schedule: partitioned_schedule [STOPPED]\n"
+                "Cron Schedule: * * * * *\n"
+            )
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
@@ -275,19 +283,5 @@ def test_check_repo_and_scheduler_dagster_home_not_set():
 
         with pytest.raises(
             click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
-        ):
-            check_repo_and_scheduler(repository, instance)
-
-
-def test_check_repo_and_scheduler_instance_scheduler_not_set():
-    repository = mock.MagicMock(spec=ExternalRepository)
-    repository.get_external_schedules.return_value = [mock.MagicMock()]
-    instance = mock.MagicMock(spec=DagsterInstance)
-    type(instance).scheduler = mock.PropertyMock(return_value=None)
-
-    with environ({"DAGSTER_HOME": "~/dagster_home"}):
-        with pytest.raises(
-            click.UsageError,
-            match=re.escape("A scheduler must be configured to run schedule commands."),
         ):
             check_repo_and_scheduler(repository, instance)

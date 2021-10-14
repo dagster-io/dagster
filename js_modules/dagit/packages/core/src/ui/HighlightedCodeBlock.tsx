@@ -19,6 +19,7 @@ hljs.registerLanguage('yaml', yaml);
 interface Props {
   value: string;
   language: 'yaml' | 'sql';
+  className?: string;
   style?: React.CSSProperties;
 }
 
@@ -34,7 +35,11 @@ export const HighlightedCodeBlock = (props: Props) => {
   }, [language]);
 
   return (
-    <pre ref={node} {...rest} style={{backgroundColor: 'transparent', margin: 0, padding: 0}}>
+    <pre
+      ref={node}
+      {...rest}
+      style={{backgroundColor: 'transparent', margin: 0, padding: 0, ...(rest.style || {})}}
+    >
       {value}
     </pre>
   );

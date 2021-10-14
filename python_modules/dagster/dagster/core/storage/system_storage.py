@@ -10,7 +10,7 @@ from dagster.core.storage.type_storage import (
     TypeStoragePluginRegistry,
     construct_type_storage_plugin_registry,
 )
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 from .init import InitIntermediateStorageContext
 from .intermediate_storage import IntermediateStorageAdapter, ObjectStoreIntermediateStorage
@@ -147,7 +147,7 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
         instance = init_context.instance
         pipeline_def = init_context.pipeline_def_for_backwards_compat
         # depend on InitResourceContext.instance and pipeline_def_for_backwards_compat
-        environment_config = EnvironmentConfig.build(
+        resolved_run_config = ResolvedRunConfig.build(
             pipeline_def, pipeline_run.run_config, mode=pipeline_run.mode
         )
         mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
@@ -158,12 +158,12 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
             intermediate_storage_def=intermediate_storage_def,
             pipeline_run=pipeline_run,
             instance=instance,
-            environment_config=environment_config,
+            resolved_run_config=resolved_run_config,
             type_storage_plugin_registry=construct_type_storage_plugin_registry(
                 pipeline_def, intermediate_storage_def
             ),
             resources=init_context.resources,
-            intermediate_storage_config=environment_config.intermediate_storage.intermediate_storage_config,
+            intermediate_storage_config=resolved_run_config.intermediate_storage.intermediate_storage_config,
         )
 
         intermediate_storage = intermediate_storage_def.intermediate_storage_creation_fn(

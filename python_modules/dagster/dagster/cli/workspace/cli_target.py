@@ -1,7 +1,5 @@
 import os
 import sys
-from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
 
 import click
@@ -10,22 +8,20 @@ from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation.external import ExternalRepository
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import (
-    ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin,
-)
 from dagster.core.host_representation.repository_location import RepositoryLocation
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.workspace.context import WorkspaceRequestContext
+from dagster.core.workspace.load_target import (
+    EmptyWorkspaceTarget,
+    GrpcServerTarget,
+    ModuleTarget,
+    PackageTarget,
+    PythonFileTarget,
+    WorkspaceFileTarget,
+)
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
-
-from .load import (
-    location_origin_from_module_name,
-    location_origin_from_package_name,
-    location_origin_from_python_file,
-    location_origins_from_yaml_paths,
-)
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -65,78 +61,6 @@ WORKSPACE_CLI_ARGS = (
     "grpc_port",
     "grpc_socket",
 )
-
-
-class WorkspaceLoadTarget(ABC):
-    @abstractmethod
-    def create_origins(self):
-        """ Reloads the RepositoryLocationOrigins for this workspace."""
-
-
-class WorkspaceFileTarget(namedtuple("WorkspaceFileTarget", "paths"), WorkspaceLoadTarget):
-    def create_origins(self):
-        return location_origins_from_yaml_paths(self.paths)
-
-
-class PythonFileTarget(
-    namedtuple("PythonFileTarget", "python_file attribute working_directory location_name"),
-    WorkspaceLoadTarget,
-):
-    def create_origins(self):
-        return [
-            location_origin_from_python_file(
-                python_file=self.python_file,
-                attribute=self.attribute,
-                working_directory=self.working_directory,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class ModuleTarget(
-    namedtuple("ModuleTarget", "module_name attribute location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            location_origin_from_module_name(
-                self.module_name,
-                self.attribute,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class PackageTarget(
-    namedtuple("PackageTarget", "package_name attribute location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            location_origin_from_package_name(
-                self.package_name,
-                self.attribute,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class GrpcServerTarget(
-    namedtuple("GrpcServerTarget", "host port socket location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            GrpcServerRepositoryLocationOrigin(
-                port=self.port,
-                socket=self.socket,
-                host=self.host,
-                location_name=self.location_name,
-            )
-        ]
-
-
-#  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
-class EmptyWorkspaceTarget(namedtuple("EmptyWorkspaceTarget", ""), WorkspaceLoadTarget):
-    def create_origins(self):
-        return []
 
 
 def created_workspace_load_target(kwargs):
@@ -238,10 +162,22 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def get_workspace_from_kwargs(kwargs):
-    from .workspace import Workspace
+def get_workspace_process_context_from_kwargs(
+    instance: DagsterInstance, version: str, read_only: bool, kwargs
+):
+    from dagster.core.workspace import WorkspaceProcessContext
 
-    return Workspace(created_workspace_load_target(kwargs))
+    return WorkspaceProcessContext(
+        instance, created_workspace_load_target(kwargs), version=version, read_only=read_only
+    )
+
+
+@contextmanager
+def get_workspace_from_kwargs(instance: DagsterInstance, version: str, kwargs):
+    with get_workspace_process_context_from_kwargs(
+        instance, version, read_only=False, kwargs=kwargs
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
 
 
 def python_target_click_options():
@@ -345,7 +281,21 @@ def python_pipeline_target_click_options():
     )
 
 
-def target_with_config_option(command_name):
+def python_job_target_click_options():
+    return (
+        python_target_click_options()
+        + [
+            click.option(
+                "--repository",
+                "-r",
+                help=("Repository name, necessary if more than one repository is present."),
+            )
+        ]
+        + [job_option()]
+    )
+
+
+def target_with_config_option(command_name, using_job_op_graph_apis):
     return click.option(
         "-c",
         "--config",
@@ -358,19 +308,23 @@ def target_with_config_option(command_name):
             "files at the key-level granularity. If the file is a pattern then you must "
             "enclose it in double quotes"
             "\n\nExample: "
-            "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
+            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
             '-c "pandas_hello_world/*.yaml"'
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
-            "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
+            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
             "-c pandas_hello_world/solids.yaml -c pandas_hello_world/env.yaml"
-        ).format(name=command_name),
+        ).format(
+            name=command_name,
+            pipeline_or_job="job" if using_job_op_graph_apis else "pipeline",
+            pipeline_or_job_flag="-j" if using_job_op_graph_apis else "-p",
+        ),
     )
 
 
-def python_pipeline_config_argument(command_name):
+def python_pipeline_or_job_config_argument(command_name, using_job_op_graph_apis=False):
     def wrap(f):
-        return target_with_config_option(command_name)(f)
+        return target_with_config_option(command_name, using_job_op_graph_apis)(f)
 
     return wrap
 
@@ -379,6 +333,12 @@ def python_pipeline_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
     return apply_click_params(f, *python_pipeline_target_click_options())
+
+
+def python_job_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(f, *python_job_target_click_options())
 
 
 def workspace_target_argument(f):
@@ -427,6 +387,7 @@ def pipeline_option():
     return click.option(
         "--pipeline",
         "-p",
+        "pipeline_or_job",
         help=("Pipeline within the repository, necessary if more than one pipeline is present."),
     )
 
@@ -437,20 +398,24 @@ def pipeline_target_argument(f):
     return apply_click_params(repository_target_argument(f), pipeline_option())
 
 
-def get_repository_origin_from_kwargs(kwargs):
-    provided_repo_name = kwargs.get("repository")
-
-    if not provided_repo_name:
-        raise click.UsageError("Must provide --repository to load a repository")
-
-    repository_location_origin = get_repository_location_origin_from_kwargs(kwargs)
-
-    return ExternalRepositoryOrigin(repository_location_origin, provided_repo_name)
+def job_option():
+    return click.option(
+        "--job",
+        "-j",
+        "pipeline_or_job",
+        help=("Job within the repository, necessary if more than one job is present."),
+    )
 
 
-def get_pipeline_python_origin_from_kwargs(kwargs):
+def job_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(repository_target_argument(f), job_option())
+
+
+def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_apis=False):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-    provided_pipeline_name = kwargs.get("pipeline")
+    provided_pipeline_name = kwargs.get("pipeline_or_job")
 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
@@ -462,14 +427,18 @@ def get_pipeline_python_origin_from_kwargs(kwargs):
     elif provided_pipeline_name is None:
         raise click.UsageError(
             (
-                "Must provide --pipeline as there is more than one pipeline "
+                "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
-            ).format(repository=repo_definition.name, pipelines=_sorted_quoted(pipeline_names))
+            ).format(
+                flag="--job" if using_job_op_graph_apis else "--pipeline",
+                repository=repo_definition.name,
+                pipelines=_sorted_quoted(pipeline_names),
+            )
         )
     elif not provided_pipeline_name in pipeline_names:
         raise click.UsageError(
             (
-                'Pipeline "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
                 provided_pipeline_name=provided_pipeline_name,
@@ -589,47 +558,49 @@ def get_repository_python_origin_from_kwargs(kwargs):
 
 
 @contextmanager
-def get_repository_location_from_kwargs(kwargs):
-    origin = get_repository_location_origin_from_kwargs(kwargs)
-    with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-
-        with DynamicWorkspace(grpc_server_registry) as workspace:
-            with workspace.get_location(origin) as location:
-                yield location
+def get_repository_location_from_kwargs(instance, version, kwargs):
+    # Instance isn't strictly required to load a repository location, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
+        yield get_repository_location_from_workspace(workspace, kwargs.get("location"))
 
 
-def get_repository_location_origin_from_kwargs(kwargs):
-    all_origins = created_workspace_load_target(kwargs).create_origins()
+def get_repository_location_from_workspace(
+    workspace: WorkspaceRequestContext, provided_location_name
+):
+    if provided_location_name is None:
+        if len(workspace.repository_location_names) == 1:
+            provided_location_name = workspace.repository_location_names[0]
+        elif len(workspace.repository_location_names) == 0:
+            raise click.UsageError("No locations found in workspace")
+        elif provided_location_name is None:
+            raise click.UsageError(
+                (
+                    "Must provide --location as there are multiple locations "
+                    "available. Options are: {}"
+                ).format(_sorted_quoted(workspace.repository_location_names))
+            )
 
-    origins_by_name = {origin.location_name: origin for origin in all_origins}
-
-    provided_location_name = kwargs.get("location")
-
-    if provided_location_name is None and len(origins_by_name) == 1:
-        return next(iter(origins_by_name.values()))
-
-    elif provided_location_name is None:
-        raise click.UsageError(
-            (
-                "Must provide --location as there are more than one locations "
-                "available. Options are: {}"
-            ).format(_sorted_quoted(origins_by_name.keys()))
-        )
-
-    elif not origins_by_name.get(provided_location_name):
+    if provided_location_name not in workspace.repository_location_names:
         raise click.UsageError(
             (
                 'Location "{provided_location_name}" not found in workspace. '
                 "Found {found_names} instead."
             ).format(
                 provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(origins_by_name.keys()),
+                found_names=_sorted_quoted(workspace.repository_location_names),
             )
         )
 
-    else:
-        return origins_by_name.get(provided_location_name)
+    if workspace.has_repository_location_error(provided_location_name):
+        raise click.UsageError(
+            'Error loading location "{provided_location_name}": {error_str}'.format(
+                provided_location_name=provided_location_name,
+                error_str=str(workspace.get_repository_location_error(provided_location_name)),
+            )
+        )
+
+    return workspace.get_repository_location(provided_location_name)
 
 
 def get_external_repository_from_repo_location(repo_location, provided_repo_name):
@@ -667,53 +638,66 @@ def get_external_repository_from_repo_location(repo_location, provided_repo_name
 
 
 @contextmanager
-def get_external_repository_from_kwargs(kwargs):
-    with get_repository_location_from_kwargs(kwargs) as repo_location:
+def get_external_repository_from_kwargs(instance, version, kwargs):
+    # Instance isn't strictly required to load an ExternalRepository, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_repository_location_from_kwargs(instance, version, kwargs) as repo_location:
         provided_repo_name = kwargs.get("repository")
         yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
 
 
-def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name):
+def get_external_pipeline_or_job_from_external_repo(
+    external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis=False
+):
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_str_param(provided_pipeline_name, "provided_pipeline_name")
+    check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 
     external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
 
     check.invariant(external_pipelines)
 
-    if provided_pipeline_name is None and len(external_pipelines) == 1:
+    if provided_pipeline_or_job_name is None and len(external_pipelines) == 1:
         return next(iter(external_pipelines.values()))
 
-    if provided_pipeline_name is None:
+    if provided_pipeline_or_job_name is None:
         raise click.UsageError(
             (
-                "Must provide --pipeline as there is more than one pipeline "
+                "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
-                repository=external_repo.name, pipelines=_sorted_quoted(external_pipelines.keys())
+                flag="--job" if using_job_op_graph_apis else "--pipeline",
+                repository=external_repo.name,
+                pipelines=_sorted_quoted(external_pipelines.keys()),
             )
         )
 
-    if not provided_pipeline_name in external_pipelines:
+    if not provided_pipeline_or_job_name in external_pipelines:
         raise click.UsageError(
             (
-                'Pipeline "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                '{pipeline_or_job} "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
-                provided_pipeline_name=provided_pipeline_name,
+                pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
+                provided_pipeline_name=provided_pipeline_or_job_name,
                 repository_name=external_repo.name,
                 found_names=_sorted_quoted(external_pipelines.keys()),
             )
         )
 
-    return external_pipelines[provided_pipeline_name]
+    return external_pipelines[provided_pipeline_or_job_name]
 
 
 @contextmanager
-def get_external_pipeline_from_kwargs(kwargs):
-    with get_external_repository_from_kwargs(kwargs) as external_repo:
-        provided_pipeline_name = kwargs.get("pipeline")
-        yield get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
+def get_external_pipeline_or_job_from_kwargs(
+    instance, version, kwargs, using_job_op_graph_apis=False
+):
+    # Instance isn't strictly required to load an ExternalPipeline, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
+        provided_pipeline_or_job_name = kwargs.get("pipeline_or_job")
+        yield get_external_pipeline_or_job_from_external_repo(
+            external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis
+        )
 
 
 def _sorted_quoted(strings):

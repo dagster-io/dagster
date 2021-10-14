@@ -52,20 +52,41 @@ def celery_mode_defs(resources=None):
     ]
 
 
-def k8s_mode_defs(resources=None):
-    from dagster_k8s.executor import dagster_k8s_executor
+def k8s_mode_defs(resources=None, name="default"):
+    from dagster_k8s.executor import k8s_job_executor
+
+    return [
+        ModeDefinition(
+            name=name,
+            intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+            resource_defs=resources if resources else {"s3": s3_resource},
+            executor_defs=default_executors + [k8s_job_executor],
+        )
+    ]
+
+
+def docker_mode_defs():
+    from dagster_docker import docker_executor
 
     return [
         ModeDefinition(
             intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
-            resource_defs=resources if resources else {"s3": s3_resource},
-            executor_defs=default_executors + [dagster_k8s_executor],
+            resource_defs={"s3": s3_resource},
+            executor_defs=[docker_executor],
         )
     ]
 
 
 @solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": Int})
 def multiply_the_word(context, word):
+    return word * context.solid_config["factor"]
+
+
+@solid(
+    input_defs=[InputDefinition("word", String)], config_schema={"factor": Int, "sleep_time": Int}
+)
+def multiply_the_word_slow(context, word):
+    time.sleep(context.solid_config["sleep_time"])
     return word * context.solid_config["factor"]
 
 
@@ -110,6 +131,22 @@ def hanging_pipeline():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+def define_demo_pipeline_docker():
+    @pipeline(mode_defs=docker_mode_defs())
+    def demo_pipeline_docker():
+        count_letters(multiply_the_word())
+
+    return demo_pipeline_docker
+
+
+def define_demo_pipeline_docker_slow():
+    @pipeline(mode_defs=docker_mode_defs())
+    def demo_pipeline_docker_slow():
+        count_letters(multiply_the_word_slow())
+
+    return demo_pipeline_docker_slow
 
 
 def define_demo_pipeline_celery():
@@ -239,9 +276,9 @@ def resource_req_solid(context):
     context.log.info("running")
 
 
-def define_resources_limit_pipeline_celery():
+def define_resources_limit_pipeline():
     @pipeline(
-        mode_defs=celery_mode_defs(),
+        mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"),
         tags={
             "dagster-k8s/config": {
                 "container_config": {
@@ -253,10 +290,10 @@ def define_resources_limit_pipeline_celery():
             }
         },
     )
-    def resources_limit_pipeline_celery():
+    def resources_limit_pipeline():
         resource_req_solid()
 
-    return resources_limit_pipeline_celery
+    return resources_limit_pipeline
 
 
 def define_schedules():
@@ -289,7 +326,7 @@ def define_schedules():
             if key in os.environ
         },
     )
-    def frequent_large_grpc_pipe(_):
+    def frequent_large_grpc_pipe():
         from dagster_celery_k8s.config import get_celery_engine_grpc_config
 
         cfg = get_celery_engine_grpc_config()
@@ -318,7 +355,7 @@ def define_schedules():
             if key in os.environ
         },
     )
-    def frequent_large_pipe(_):
+    def frequent_large_pipe():
         from dagster_celery_k8s.config import get_celery_engine_config
 
         cfg = get_celery_engine_config()
@@ -329,7 +366,7 @@ def define_schedules():
         pipeline_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
-    def frequent_celery(_):
+    def frequent_celery():
         from dagster_celery_k8s.config import get_celery_engine_config
 
         additional_env_config_maps = ["test-aws-env-configmap"] if not IS_BUILDKITE else []
@@ -375,7 +412,7 @@ def define_slow_pipeline():
     def slow_solid(_):
         time.sleep(100)
 
-    @pipeline(mode_defs=celery_mode_defs())
+    @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
     def slow_pipeline():
         slow_solid()
 
@@ -504,19 +541,39 @@ def define_demo_k8s_executor_pipeline():
     return demo_k8s_executor_pipeline
 
 
+@solid
+def check_volume_mount(context):
+    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+        contents = mounted_file.read()
+        context.log.info(f"Contents of mounted file: {contents}")
+        assert contents == "BAR_CONTENTS"
+
+
+def define_volume_mount_pipeline():
+    @pipeline(
+        mode_defs=k8s_mode_defs(),
+    )
+    def volume_mount_pipeline():
+        check_volume_mount()
+
+    return volume_mount_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
         return {
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
+                "demo_pipeline_docker": define_demo_pipeline_docker,
+                "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,
                 "demo_pipeline": demo_pipeline,
                 "demo_pipeline_gcs": demo_pipeline_gcs,
                 "demo_error_pipeline": demo_error_pipeline,
-                "resources_limit_pipeline_celery": define_resources_limit_pipeline_celery,
+                "resources_limit_pipeline": define_resources_limit_pipeline,
                 "retry_pipeline": define_step_retry_pipeline,
                 "slow_pipeline": define_slow_pipeline,
                 "fan_in_fan_out_pipeline": define_fan_in_fan_out_pipeline,
@@ -526,6 +583,7 @@ def define_demo_execution_repo():
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
+                "volume_mount_pipeline": define_volume_mount_pipeline,
             },
             "schedules": define_schedules(),
         }

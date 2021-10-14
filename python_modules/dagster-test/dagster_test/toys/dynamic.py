@@ -25,8 +25,8 @@ def emit_ten(_):
 
 
 @solid
-def sum_numbers(_, nums):
-    return sum(nums)
+def sum_numbers(_, base, nums):
+    return base + sum(nums)
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
@@ -38,4 +38,4 @@ def emit(_):
 @pipeline
 def dynamic_pipeline():
     result = emit().map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
-    multiply_by_two.alias("double_total")(sum_numbers(result.collect()))
+    multiply_by_two.alias("double_total")(sum_numbers(emit_ten(), result.collect()))

@@ -1,7 +1,7 @@
-import {Position, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {Tag} from '../ui/Tag';
+import {Tooltip} from '../ui/Tooltip';
 
 export enum DagsterTag {
   Namespace = 'dagster/',
@@ -38,12 +38,7 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
 
   if (isDagsterTag) {
     return (
-      <Tooltip
-        content={`${tag.key}=${tag.value}`}
-        wrapperTagName="div"
-        targetTagName="div"
-        position={Position.LEFT}
-      >
+      <Tooltip content={`${tag.key}=${tag.value}`} targetTagName="div" placement="top">
         <Tag isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />
       </Tooltip>
     );

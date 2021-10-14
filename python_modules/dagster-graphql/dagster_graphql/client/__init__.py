@@ -4,6 +4,8 @@ from .utils import (
     InvalidOutputErrorInfo,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
 )
 
 __all__ = [
@@ -11,4 +13,6 @@ __all__ = [
     "DagsterGraphQLClientError",
     "ReloadRepositoryLocationInfo",
     "ReloadRepositoryLocationStatus",
+    "ShutdownRepositoryLocationInfo",
+    "ShutdownRepositoryLocationStatus",
 ]

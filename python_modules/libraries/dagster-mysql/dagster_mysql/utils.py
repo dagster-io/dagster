@@ -9,6 +9,9 @@ import sqlalchemy as db
 from dagster import Field, IntSource, Selector, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
+# 1 hr - anything less than 8 hrs (MySQL's default `wait_timeout` should work)
+MYSQL_POOL_RECYCLE = 3600
+
 
 class DagsterMySQLException(Exception):
     pass
@@ -111,6 +114,7 @@ def retry_mysql_connection_fn(fn, retry_limit=5, retry_wait=0.2):
             mysql.OperationalError,
             db.exc.DatabaseError,
             db.exc.OperationalError,
+            mysql.errors.InterfaceError,
         ) as exc:
             logging.warning("Retrying failed database connection")
             if retry_limit == 0:

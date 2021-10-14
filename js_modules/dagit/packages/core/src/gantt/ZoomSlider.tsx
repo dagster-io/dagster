@@ -1,4 +1,8 @@
 import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
+import {SliderStyles} from '../ui/Slider';
 
 /**
  * Renders a horizontal slider that lets you adjust the graph's relative zoom from 1-100.
@@ -10,7 +14,8 @@ export const ZoomSlider: React.FunctionComponent<{
   onChange: (v: number) => void;
 }> = React.memo((props) => {
   return (
-    <div
+    <ZoomSliderContainer
+      $fillColor={ColorsWIP.Gray600}
       className="bp3-slider bp3-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
         const rect = e.currentTarget.closest('.bp3-slider')!.getBoundingClientRect();
@@ -48,6 +53,10 @@ export const ZoomSlider: React.FunctionComponent<{
         style={{left: `calc(${props.value}% - 8px)`}}
         tabIndex={0}
       />
-    </div>
+    </ZoomSliderContainer>
   );
 });
+
+const ZoomSliderContainer = styled.div`
+  ${SliderStyles}
+`;

@@ -14,7 +14,7 @@ def file_cache_folder():
 
 
 @solid
-def cache_file_from_s3(_, s3_coord: S3Coordinate) -> str:
+def cache_file_from_s3(s3_coord: S3Coordinate) -> str:
     # we default the target_key to the last component of the s3 key.
     target_key = s3_coord["key"].split("/")[-1]
 
@@ -38,7 +38,7 @@ def test_cache_file_from_s3_step_one_one():
     ), mock.patch("boto3.client", new=lambda *_args, **_kwargs: boto_s3):
 
         @solid
-        def emit_value(_):
+        def emit_value():
             return {"bucket": "some-bucket", "key": "some-key"}
 
         @pipeline

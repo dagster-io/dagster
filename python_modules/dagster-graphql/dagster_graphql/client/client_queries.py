@@ -21,6 +21,9 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
+    ... on PipelineRunConflict {
+      message
+    }
     ... on PipelineConfigValidationInvalid {
       errors {
         __typename
@@ -65,18 +68,26 @@ RELOAD_REPOSITORY_LOCATION_MUTATION = """
 mutation ($repositoryLocationName: String!) {
    reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
       __typename
-      ... on RepositoryLocation {
+      ... on WorkspaceLocationEntry {
         name
-        repositories {
-            name
-        }
-        isReloadSupported
-      }
-      ... on RepositoryLocationLoadFailure {
-          name
-          error {
-              message
+        locationOrLoadError {
+          __typename
+          ... on RepositoryLocation {
+            isReloadSupported
+            repositories {
+                name
+            }
           }
+          ... on PythonError {
+            message
+          }
+        }
+      }
+      ... on ReloadNotSupported {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
       }
    }
 }
@@ -96,5 +107,19 @@ query($runId: ID!) {
       message
     }
   }
+}
+"""
+
+SHUTDOWN_REPOSITORY_LOCATION_MUTATION = """
+mutation ($repositoryLocationName: String!) {
+   shutdownRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
+      __typename
+      ... on PythonError {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
+      }
+   }
 }
 """

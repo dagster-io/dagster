@@ -139,13 +139,14 @@ def resolve_to_config_type(dagster_type):
         is_supported_config_python_builtin,
     )
 
+    if BuiltinEnum.contains(dagster_type):
+        return ConfigType.from_builtin_enum(dagster_type)
+
     if is_supported_config_python_builtin(dagster_type):
         return remap_python_builtin_for_config(dagster_type)
 
     if dagster_type is None:
         return ConfigAnyInstance
-    if BuiltinEnum.contains(dagster_type):
-        return ConfigType.from_builtin_enum(dagster_type)
 
     # This means that this is an error and we are return False to a callsite
     # We do the error reporting there because those callsites have more context

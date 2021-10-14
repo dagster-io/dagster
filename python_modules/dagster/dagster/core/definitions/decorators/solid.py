@@ -1,9 +1,8 @@
-import inspect
-from functools import update_wrapper, wraps
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union, cast
+from functools import lru_cache, update_wrapper
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.seven import funcsigs
 
@@ -13,29 +12,60 @@ from ...decorator_utils import (
     positional_arg_name_list,
     validate_expected_params,
 )
-from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
 from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
+from ..policy import RetryPolicy
 from ..solid import SolidDefinition
+
+
+class DecoratedSolidFunction(NamedTuple):
+    """Wrapper around the decorated solid function to provide commonly used util methods"""
+
+    decorated_fn: Callable[..., Any]
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return is_context_provided(get_function_params(self.decorated_fn))
+
+    @lru_cache(maxsize=1)
+    def positional_inputs(self) -> List[str]:
+        params = get_function_params(self.decorated_fn)
+        input_args = params[1:] if self.has_context_arg() else params
+        return positional_arg_name_list(input_args)
+
+
+class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
+    """Wrapper around a decorated solid function, when the decorator does not permit a context
+    parameter (such as lambda_solid).
+    """
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return False
 
 
 class _Solid:
     def __init__(
         self,
         name: Optional[str] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         version: Optional[str] = None,
+        decorator_takes_context: Optional[bool] = True,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", OutputDefinition
+        )
+        self.decorator_takes_context = check.bool_param(
+            decorator_takes_context, "decorator_takes_context"
         )
 
         self.description = check.opt_str_param(description, "description")
@@ -44,6 +74,7 @@ class _Solid:
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.version = version
+        self.retry_policy = retry_policy
 
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
@@ -61,21 +92,19 @@ class _Solid:
         else:
             output_defs = self.output_defs
 
-        (
-            resolved_input_defs,
-            positional_inputs,
-            context_arg_provided,
-        ) = resolve_checked_solid_fn_inputs(
+        compute_fn = (
+            DecoratedSolidFunction(decorated_fn=fn)
+            if self.decorator_takes_context
+            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+        )
+
+        resolved_input_defs = resolve_checked_solid_fn_inputs(
             decorator_name="@solid",
             fn_name=self.name,
-            compute_fn=fn,
+            compute_fn=compute_fn,
             explicit_input_defs=self.input_defs,
-            has_context_arg=True,
-            context_required=bool(self.required_resource_keys) or bool(self.config_schema),
+            context_required=bool(self.config_schema),
             exclude_nothing=True,
-        )
-        compute_fn = _create_solid_compute_wrapper(
-            fn, resolved_input_defs, output_defs, context_arg_provided
         )
 
         solid_def = SolidDefinition(
@@ -87,22 +116,23 @@ class _Solid:
             description=self.description or fn.__doc__,
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
-            positional_inputs=positional_inputs,
             version=self.version,
+            retry_policy=self.retry_policy,
         )
-        update_wrapper(solid_def, fn)
+        update_wrapper(solid_def, compute_fn.decorated_fn)
         return solid_def
 
 
 def solid(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Union[_Solid, SolidDefinition]:
     """Create a solid with the specified parameters from the decorated function.
 
@@ -146,12 +176,12 @@ def solid(
             set, Dagster will accept any config provided for the solid.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
-            expect and require certain metadata to be attached to a solid. Users should generally
-            not set metadata directly. Values that are not strings will be json encoded and must meet
-            the criteria that `json.loads(json.dumps(value)) == value`.
+            expect and require certain metadata to be attached to a solid. Values that are not strings
+            will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
+        retry_policy (Optional[RetryPolicy]): The retry policy for this solid.
 
 
     Examples:
@@ -225,126 +255,36 @@ def solid(
         required_resource_keys=required_resource_keys,
         tags=tags,
         version=version,
+        retry_policy=retry_policy,
     )
-
-
-def _coerce_solid_output_to_iterator(result, context, output_defs):
-    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: If you are returning an AssetMaterialization "
-                "or an ExpectationResult from solid you must yield them to avoid "
-                "ambiguity with an implied result from returning a value.".format(
-                    solid_name=context.solid.name
-                )
-            )
-        )
-
-    if isinstance(result, Output):
-        yield result
-    elif len(output_defs) == 1:
-        if result is None and output_defs[0].is_required is False:
-            context.log.warn(
-                'Value "None" returned for non-required output "{output_name}". '
-                "This value will be passed to downstream solids. For conditional execution use\n"
-                '  yield Output(value, "{output_name}")\n'
-                "when you want the downstream solids to execute, "
-                "and do not yield it when you want downstream solids to skip.".format(
-                    output_name=output_defs[0].name
-                )
-            )
-        yield Output(value=result, output_name=output_defs[0].name)
-    elif result is not None:
-        if not output_defs:
-            raise DagsterInvariantViolationError(
-                (
-                    "Error in solid {solid_name}: Unexpectedly returned output {result} "
-                    "of type {type_}. Solid is explicitly defined to return no "
-                    "results."
-                ).format(solid_name=context.solid.name, result=result, type_=type(result))
-            )
-
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: Solid unexpectedly returned "
-                "output {result} of type {type_}. Should "
-                "be a generator, containing or yielding "
-                "{n_results} results: {{{expected_results}}}."
-            ).format(
-                solid_name=context.solid.name,
-                result=result,
-                type_=type(result),
-                n_results=len(output_defs),
-                expected_results=", ".join(
-                    [
-                        "'{result_name}': {dagster_type}".format(
-                            result_name=output_def.name,
-                            dagster_type=output_def.dagster_type,
-                        )
-                        for output_def in output_defs
-                    ]
-                ),
-            )
-        )
-
-
-async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
-    result = await awaitable
-    for event in _coerce_solid_output_to_iterator(result, context, output_defs):
-        yield event
-
-
-def _create_solid_compute_wrapper(
-    fn: Callable,
-    input_defs: List[InputDefinition],
-    output_defs: List[OutputDefinition],
-    context_arg_provided: bool,
-):
-    check.callable_param(fn, "fn")
-    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
-    check.list_param(output_defs, "output_defs", of_type=OutputDefinition)
-
-    input_names = [
-        input_def.name
-        for input_def in input_defs
-        if not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-    ]
-
-    @wraps(fn)
-    def compute(context, input_defs) -> Generator[Output, None, None]:
-        kwargs = {}
-        for input_name in input_names:
-            kwargs[input_name] = input_defs[input_name]
-
-        result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-
-        if inspect.isgenerator(result):
-            return result
-        elif inspect.isasyncgen(result):
-            return result
-        elif inspect.iscoroutine(result):
-            return _coerce_async_solid_to_async_gen(result, context, output_defs)
-        else:
-            return _coerce_solid_output_to_iterator(result, context, output_defs)
-
-    return compute
 
 
 def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
-    compute_fn: Callable[..., Any],
+    compute_fn: DecoratedSolidFunction,
     explicit_input_defs: List[InputDefinition],
-    has_context_arg: bool,
     context_required: bool,
-    exclude_nothing: bool,  # should Nothing type inputs be excluded from compute_fn args
-) -> Tuple[List[InputDefinition], List[str], bool]:
+    exclude_nothing: bool,
+) -> List[InputDefinition]:
     """
-    Validate provided input definitions and infer the remaining from the type signature of the compute_fn
-    Returns the resolved set of InputDefinitions and the positions of input names (which is used
-    during graph composition).
+    Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
+    Returns the resolved set of InputDefinitions.
+
+    Args:
+        decorator_name (str): Name of the decorator that is wrapping the solid function.
+        fn_name (str): Name of the decorated function.
+        compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
+            DecoratedSolidFunction wrapper.
+        explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
+            provided in the decorator.
+        context_required (bool): True if a context argument is required due to environment
+            information being provided in the decorator (ie: resources, config).
+        exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
+            arguments.
     """
-    expected_positionals = ["context"] if has_context_arg else []
+
+    expected_positionals = ["context"] if context_required or compute_fn.has_context_arg() else []
 
     if exclude_nothing:
         explicit_names = set(
@@ -361,9 +301,7 @@ def resolve_checked_solid_fn_inputs(
         explicit_names = set(inp.name for inp in explicit_input_defs)
         nothing_names = set()
 
-    params = get_function_params(compute_fn)
-
-    is_context_provided = _is_context_provided(params)
+    params = get_function_params(compute_fn.decorated_fn)
 
     if context_required:
 
@@ -373,7 +311,7 @@ def resolve_checked_solid_fn_inputs(
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function requires positional parameter "
                 "'{missing_param}', but it was not provided. '{missing_param}' is required because "
-                "either 'required_resource_keys' or 'config_schema' was specified.".format(
+                "'config_schema' was specified.".format(
                     decorator_name=decorator_name, solid_name=fn_name, missing_param=missing_param
                 )
             )
@@ -381,7 +319,7 @@ def resolve_checked_solid_fn_inputs(
         input_args = params[len(expected_positionals) :]
 
     else:
-        input_args = params[1:] if is_context_provided and has_context_arg else params
+        input_args = params[1:] if compute_fn.has_context_arg() else params
 
     # Validate input arguments
     used_inputs = set()
@@ -394,9 +332,9 @@ def resolve_checked_solid_fn_inputs(
         elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
             raise DagsterInvalidDefinitionError(
                 f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
-                f"'{param}'. Solid functions should only have keyword arguments that match "
-                "input names and, if system information is required, a first positional "
-                "parameter named 'context'."
+                f"'{param}'. {decorator_name} decorated functions should only have keyword "
+                "arguments that match input names and, if system information is required, a first "
+                "positional parameter named 'context'."
             )
 
         else:
@@ -404,7 +342,7 @@ def resolve_checked_solid_fn_inputs(
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
                         f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
-                        "one of the solid input_defs of type 'Nothing' which should not be included since "
+                        "one of the input_defs of type 'Nothing' which should not be included since "
                         "no data will be passed for it. "
                     )
                 else:
@@ -418,14 +356,14 @@ def resolve_checked_solid_fn_inputs(
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
-            f"'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
-            "should only have keyword arguments that match input names and, if system information "
-            "is required, a first positional parameter named 'context'."
+            f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
+            "decorated functions should only have keyword arguments that match input names and, if "
+            "system information is required, a first positional parameter named 'context'."
         )
 
     inferred_props = {
         inferred.name: inferred
-        for inferred in infer_input_props(compute_fn, is_context_provided and has_context_arg)
+        for inferred in infer_input_props(compute_fn.decorated_fn, compute_fn.has_context_arg())
     }
     input_defs = []
     for input_def in explicit_input_defs:
@@ -443,10 +381,79 @@ def resolve_checked_solid_fn_inputs(
         if inferred.name in inputs_to_infer
     )
 
-    return input_defs, positional_arg_name_list(input_args), is_context_provided and has_context_arg
+    return input_defs
 
 
-def _is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     if len(params) == 0:
         return False
     return params[0].name in get_valid_name_permutations("context")
+
+
+def lambda_solid(
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    description: Optional[str] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_def: Optional[OutputDefinition] = None,
+) -> Union[_Solid, SolidDefinition]:
+    """Create a simple solid from the decorated function.
+
+    This shortcut allows the creation of simple solids that do not require
+    configuration and whose implementations do not require a
+    :py:class:`context <SolidExecutionContext>`.
+
+    Lambda solids take any number of inputs and produce a single output.
+
+    Inputs can be defined using :class:`InputDefinition` and passed to the ``input_defs`` argument
+    of this decorator, or inferred from the type signature of the decorated function.
+
+    The single output can be defined using :class:`OutputDefinition` and passed as the
+    ``output_def`` argument of this decorator, or its type can be inferred from the type signature
+    of the decorated function.
+
+    The body of the decorated function should return a single value, which will be yielded as the
+    solid's output.
+
+    Args:
+        name (str): Name of solid.
+        description (str): Solid description.
+        input_defs (List[InputDefinition]): List of input_defs.
+        output_def (OutputDefinition): The output of the solid. Defaults to
+            :class:`OutputDefinition() <OutputDefinition>`.
+
+    Examples:
+
+    .. code-block:: python
+
+        @lambda_solid
+        def hello_world():
+            return 'hello'
+
+        @lambda_solid(
+            input_defs=[InputDefinition(name='foo', str)],
+            output_def=OutputDefinition(str)
+        )
+        def hello_world(foo):
+            # explicitly type and name inputs and outputs
+            return foo
+
+        @lambda_solid
+        def hello_world(foo: str) -> str:
+            # same as above inferred from signature
+            return foo
+
+    """
+    if callable(name):
+        check.invariant(input_defs is None)
+        check.invariant(description is None)
+        return _Solid(
+            output_defs=[output_def] if output_def else None, decorator_takes_context=False
+        )(name)
+
+    return _Solid(
+        name=name,
+        input_defs=input_defs,
+        output_defs=[output_def] if output_def else None,
+        description=description,
+        decorator_takes_context=False,
+    )

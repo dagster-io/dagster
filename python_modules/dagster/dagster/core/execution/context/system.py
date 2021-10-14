@@ -4,15 +4,16 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
-import warnings
-from abc import ABC, abstractmethod, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, Union, cast
+from abc import ABC, abstractproperty
+from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
@@ -25,7 +26,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterType
 
 from .input import InputContext
@@ -33,11 +34,12 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-    from dagster.core.definitions.dependency import Solid, SolidHandle
+    from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.definitions.resource import Resources
+    from .hook import HookContext
 
 
 class IPlanContext(ABC):
@@ -48,10 +50,6 @@ class IPlanContext(ABC):
 
     @abstractproperty
     def plan_data(self) -> "PlanData":
-        raise NotImplementedError()
-
-    @abstractmethod
-    def for_step(self, step: ExecutionStep) -> "IStepContext":
         raise NotImplementedError()
 
     @property
@@ -73,6 +71,10 @@ class IPlanContext(ABC):
     @property
     def pipeline_name(self) -> str:
         return self.pipeline_run.pipeline_name
+
+    @property
+    def job_name(self) -> str:
+        return self.pipeline_name
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -100,15 +102,15 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Dict[str, str]:
-        return self.log.logging_tags
+        return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return key in self.logging_tags
+        return key in self.log.logging_metadata.pipeline_tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.logging_tags.get(key)
+        return self.log.logging_metadata.pipeline_tags.get(key)
 
 
 class PlanData(NamedTuple):
@@ -136,7 +138,7 @@ class ExecutionData(NamedTuple):
     scoped_resources_builder: ScopedResourcesBuilder
     intermediate_storage: "IntermediateStorage"
     intermediate_storage_def: "IntermediateStorageDefinition"
-    environment_config: EnvironmentConfig
+    resolved_run_config: ResolvedRunConfig
     pipeline_def: PipelineDefinition
     mode_def: ModeDefinition
 
@@ -149,7 +151,7 @@ class IStepContext(IPlanContext):
         raise NotImplementedError()
 
     @abstractproperty
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
 
@@ -223,7 +225,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
 
@@ -254,13 +256,15 @@ class PlanExecutionContext(IPlanContext):
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
-    def for_step(self, step: ExecutionStep) -> IStepContext:
+    def for_step(self, step: ExecutionStep, previous_attempt_count: int = 0) -> IStepContext:
+
         return StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
             log_manager=self._log_manager.with_tags(**step.logging_tags),
             step=step,
             output_capture=self.output_capture,
+            previous_attempt_count=previous_attempt_count,
         )
 
     @property
@@ -268,8 +272,8 @@ class PlanExecutionContext(IPlanContext):
         return self._execution_data.pipeline_def
 
     @property
-    def environment_config(self) -> EnvironmentConfig:
-        return self._execution_data.environment_config
+    def resolved_run_config(self) -> ResolvedRunConfig:
+        return self._execution_data.resolved_run_config
 
     @property
     def intermediate_storage_def(self) -> "IntermediateStorageDefinition":
@@ -288,7 +292,9 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
-        return TypeCheckContext(self, dagster_type)
+        return TypeCheckContext(
+            self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
+        )
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
@@ -305,6 +311,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         log_manager: DagsterLogManager,
         step: ExecutionStep,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
+        previous_attempt_count: int,
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -319,12 +326,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.environment_config,
             execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
+        self._previous_attempt_count = previous_attempt_count
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -343,7 +350,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
-        self._step_exception = None
+        self._step_exception: Optional[BaseException] = None
         self._step_output_capture: Dict[StepOutputHandle, Any] = {}
 
     @property
@@ -351,7 +358,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
     @property
@@ -368,7 +375,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid_def(self) -> SolidDefinition:
-        return self.solid.definition
+        return self.solid.definition.ensure_solid_def()
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -379,8 +386,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._execution_data.mode_def
 
     @property
-    def solid(self) -> "Solid":
+    def solid(self) -> "Node":
         return self.pipeline_def.get_solid(self._step.solid_handle)
+
+    @property
+    def solid_retry_policy(self) -> Optional[RetryPolicy]:
+        return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
+
+    def describe_op(self):
+        if isinstance(self.solid_def, OpDefinition):
+            return f'op "{str(self.solid_handle)}"'
+
+        return f'solid "{str(self.solid_handle)}"'
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
@@ -413,17 +430,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return get_output_context(
             self.execution_plan,
             self.pipeline_def,
-            self.environment_config,
+            self.resolved_run_config,
             step_output_handle,
             self._get_source_run_id(step_output_handle),
             log_manager=self.log,
             step_context=self,
+            resources=None,
+            version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
         )
 
     def for_input_manager(
         self,
         name: str,
-        config: dict,
+        config: Any,
         metadata: Any,
         dagster_type: DagsterType,
         source_handle: Optional[StepOutputHandle] = None,
@@ -445,26 +464,52 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
+        from .hook import HookContext
+
         return HookContext(self, hook_def)
 
+    def can_load(self, step_output_handle: StepOutputHandle) -> bool:
+        # Whether IO Manager can load the source
+        # FIXME https://github.com/dagster-io/dagster/issues/3511
+        # This is a stopgap which asks the instance to check the event logs to find out step skipping
+
+        from dagster.core.events import DagsterEventType
+
+        # can load from upstream in the same run
+        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT):
+            if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
+                return True
+
+        # can load from a previous run
+        if self._get_source_run_id_from_logs(step_output_handle):
+            return True
+
+        return False
+
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        from dagster.core.events import DagsterEventType
+
         # walk through event logs to find the right run_id based on the run lineage
+        run_group = self.instance.get_run_group(self.run_id)
+        if run_group is None:
+            check.failed(f"Failed to load run group {self.run_id}")
 
-        from dagster.core.events import get_step_output_event
-
-        _, runs = self.instance.get_run_group(self.run_id)
+        _, runs = run_group
         run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
         source_run_id = self.pipeline_run.parent_run_id
         while source_run_id:
             # note: this would cost N db calls where N = number of parent runs
-            logs = self.instance.all_logs(source_run_id)
+            step_output_record = self.instance.all_logs(
+                source_run_id, of_type=DagsterEventType.STEP_OUTPUT
+            )
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
-            if get_step_output_event(
-                events=[e.dagster_event for e in logs if e.is_dagster_event],
-                step_key=step_output_handle.step_key,
-                output_name=step_output_handle.output_name,
-            ):
+            if [
+                r
+                for r in step_output_record
+                if r.dagster_event.step_key == step_output_handle.step_key
+                and r.dagster_event.step_output_data.output_name == step_output_handle.output_name
+            ]:
                 return source_run_id
             else:
                 # else, keep looking backwards
@@ -501,6 +546,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def step_output_capture(self) -> Dict[StepOutputHandle, Any]:
         return self._step_output_capture
 
+    @property
+    def previous_attempt_count(self) -> int:
+        return self._previous_attempt_count
+
 
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType.
@@ -513,13 +562,14 @@ class TypeCheckContext:
 
     def __init__(
         self,
-        plan_execution_context: PlanExecutionContext,
+        run_id: str,
+        log_manager: DagsterLogManager,
+        scoped_resources_builder: ScopedResourcesBuilder,
         dagster_type: DagsterType,
     ):
-        self._plan_execution_context = plan_execution_context
-        self._resources = plan_execution_context.scoped_resources_builder.build(
-            dagster_type.required_resource_keys
-        )
+        self._run_id = run_id
+        self._log = log_manager
+        self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
     @property
     def resources(self) -> "Resources":
@@ -527,124 +577,8 @@ class TypeCheckContext:
 
     @property
     def run_id(self) -> str:
-        return self._plan_execution_context.run_id
+        return self._run_id
 
     @property
     def log(self) -> DagsterLogManager:
-        return self._plan_execution_context.log
-
-
-class HookContext:
-    """The ``context`` object available to a hook function on an DagsterEvent.
-
-    Attributes:
-        log (DagsterLogManager): Centralized log dispatch from user code.
-        hook_def (HookDefinition): The hook that the context object belongs to.
-        solid (Solid): The solid instance associated with the hook.
-        step_key (str): The key for the step where this hook is being triggered.
-        resources (NamedTuple): Resources available in the hook context.
-        solid_config (Any): The parsed config specific to this solid.
-        pipeline_name (str): The name of the pipeline where this hook is being triggered.
-        run_id (str): The id of the run where this hook is being triggered.
-        mode_def (ModeDefinition): The mode with which the pipeline is being run.
-    """
-
-    def __init__(
-        self,
-        step_execution_context: StepExecutionContext,
-        hook_def: HookDefinition,
-    ):
-        self._step_execution_context = step_execution_context
-        self._hook_def = check.inst_param(hook_def, "hook_def", HookDefinition)
-        self._required_resource_keys = hook_def.required_resource_keys
-        self._resources = step_execution_context.scoped_resources_builder.build(
-            self._required_resource_keys
-        )
-
-    @property
-    def pipeline_name(self) -> str:
-        return self._step_execution_context.pipeline_name
-
-    @property
-    def run_id(self) -> str:
-        return self._step_execution_context.run_id
-
-    @property
-    def hook_def(self) -> HookDefinition:
-        return self._hook_def
-
-    @property
-    def solid(self) -> "Solid":
-        return self._step_execution_context.solid
-
-    @property
-    def step(self) -> ExecutionStep:
-        warnings.warn(
-            "The step property of HookContext has been deprecated, and will be removed "
-            "in a future release."
-        )
-        return self._step_execution_context.step
-
-    @property
-    def step_key(self) -> str:
-        return self._step_execution_context.step.key
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        return self._step_execution_context.mode_def
-
-    @property
-    def required_resource_keys(self) -> Set[str]:
-        return self._required_resource_keys
-
-    @property
-    def resources(self) -> "Resources":
-        return self._resources
-
-    @property
-    def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.environment_config.solids.get(
-            str(self._step_execution_context.step.solid_handle)
-        )
-        return solid_config.config if solid_config else None
-
-    # Because of the fact that we directly use the log manager of the step, if a user calls
-    # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
-    # This is not problematic because the hook only runs after the step has been completed.
-    @property
-    def log(self) -> DagsterLogManager:
-        return self._step_execution_context.log
-
-    @property
-    def solid_exception(self) -> Optional[BaseException]:
-        """The thrown exception in a failed solid.
-
-        Returns:
-            Optional[BaseException]: the exception object, None if the solid execution succeeds.
-        """
-
-        return self._step_execution_context.step_exception
-
-    @property
-    def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
-        """The computed output values.
-
-        Returns a dictionary where keys are output names and the values are:
-            * the output values in the normal case
-            * a dictionary from mapping key to corresponding value in the mapped case
-        """
-        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
-
-        # make the returned values more user-friendly
-        for step_output_handle, value in self._step_execution_context.step_output_capture.items():
-            if step_output_handle.mapping_key:
-                if results.get(step_output_handle.output_name) is None:
-                    results[step_output_handle.output_name] = {
-                        step_output_handle.mapping_key: value
-                    }
-                else:
-                    results[step_output_handle.output_name][step_output_handle.mapping_key] = value
-            else:
-                results[step_output_handle.output_name] = value
-
-        return results
+        return self._log

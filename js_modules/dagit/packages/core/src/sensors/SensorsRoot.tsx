@@ -1,17 +1,15 @@
 import {useQuery, gql} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
-import {UnloadableSensors} from '../jobs/UnloadableJobs';
-import {JobType} from '../types/globalTypes';
-import {Group} from '../ui/Group';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSensors} from '../instigation/Unloadable';
+import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
-import {Page} from '../ui/Page';
+import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,7 +30,7 @@ export const SensorsRoot = (props: Props) => {
   const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
     variables: {
       repositorySelector: repositorySelector,
-      jobType: JobType.SENSOR,
+      instigationType: InstigationType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
@@ -40,27 +38,29 @@ export const SensorsRoot = (props: Props) => {
   });
 
   return (
-    <Page>
-      <Loading queryResult={queryResult} allowStaleData={true}>
-        {(result) => {
-          const {sensorsOrError, unloadableJobStatesOrError, instance} = result;
-          const content = () => {
-            if (sensorsOrError.__typename === 'PythonError') {
-              return <PythonErrorInfo error={sensorsOrError} />;
-            } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
-              return <PythonErrorInfo error={unloadableJobStatesOrError} />;
-            } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
-              return (
+    <Loading queryResult={queryResult} allowStaleData={true}>
+      {(result) => {
+        const {sensorsOrError, unloadableInstigationStatesOrError, instance} = result;
+        const content = () => {
+          if (sensorsOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={sensorsOrError} />;
+          } else if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
+          } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
+            return (
+              <Box padding={{vertical: 64}}>
                 <NonIdealState
-                  icon={IconNames.ERROR}
+                  icon="error"
                   title="Repository not found"
                   description="Could not load this repository."
                 />
-              );
-            } else if (!sensorsOrError.results.length) {
-              return (
+              </Box>
+            );
+          } else if (!sensorsOrError.results.length) {
+            return (
+              <Box padding={{vertical: 64}}>
                 <NonIdealState
-                  icon={IconNames.AUTOMATIC_UPDATES}
+                  icon="sensors"
                   title="No Sensors Found"
                   description={
                     <p>
@@ -76,29 +76,34 @@ export const SensorsRoot = (props: Props) => {
                     </p>
                   }
                 />
-              );
-            } else {
-              return (
-                <Group direction="column" spacing={20}>
-                  {sensorsOrError.results.length > 0 && (
+              </Box>
+            );
+          } else {
+            return (
+              <>
+                {sensorsOrError.results.length > 0 && (
+                  <Box padding={{horizontal: 24, vertical: 16}}>
                     <SensorInfo daemonHealth={instance.daemonHealth} />
-                  )}
-                  <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
-                  <UnloadableSensors sensorStates={unloadableJobStatesOrError.results} />
-                </Group>
-              );
-            }
-          };
+                  </Box>
+                )}
+                <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
+                <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />
+              </>
+            );
+          }
+        };
 
-          return <div>{content()}</div>;
-        }}
-      </Loading>
-    </Page>
+        return <div>{content()}</div>;
+      }}
+    </Loading>
   );
 };
 
 const SENSORS_ROOT_QUERY = gql`
-  query SensorsRootQuery($repositorySelector: RepositorySelector!, $jobType: JobType!) {
+  query SensorsRootQuery(
+    $repositorySelector: RepositorySelector!
+    $instigationType: InstigationType!
+  ) {
     sensorsOrError(repositorySelector: $repositorySelector) {
       __typename
       ...PythonErrorFragment
@@ -109,11 +114,11 @@ const SENSORS_ROOT_QUERY = gql`
         }
       }
     }
-    unloadableJobStatesOrError(jobType: $jobType) {
-      ... on JobStates {
+    unloadableInstigationStatesOrError(instigationType: $instigationType) {
+      ... on InstigationStates {
         results {
           id
-          ...JobStateFragment
+          ...InstigationStateFragment
         }
       }
       ...PythonErrorFragment
@@ -123,7 +128,7 @@ const SENSORS_ROOT_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
   ${SENSOR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

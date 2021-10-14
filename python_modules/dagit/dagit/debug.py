@@ -1,12 +1,19 @@
 from gzip import GzipFile
 
 import click
+import uvicorn
 from dagster import DagsterInstance, check
 from dagster.cli.debug import DebugRunPayload
-from dagster.cli.workspace import Workspace
+from dagster.core.workspace import WorkspaceProcessContext
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
-from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_workspace
+from .cli import (
+    DEFAULT_DAGIT_HOST,
+    DEFAULT_DAGIT_PORT,
+    host_dagit_ui_with_workspace_process_context,
+)
+from .starlette import DagitWebserver
+from .version import __version__
 
 
 @click.command(
@@ -21,7 +28,12 @@ from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_work
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
     default=DEFAULT_DAGIT_PORT,
 )
-def dagit_debug_command(input_files, port):
+@click.option(
+    "--asgi",
+    is_flag=True,
+    help="Launch asgi webserver with uvicorn",
+)
+def dagit_debug_command(input_files, port, asgi):
     debug_payloads = []
     for input_file in input_files:
         click.echo("Loading {} ...".format(input_file))
@@ -39,14 +51,22 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    host_dagit_ui_with_workspace(
-        workspace=Workspace(None),
-        instance=instance,
-        port=port,
-        port_lookup=True,
-        host=DEFAULT_DAGIT_HOST,
-        path_prefix="",
-    )
+
+    if asgi:
+        uvicorn.run(
+            DagitWebserver(
+                WorkspaceProcessContext(instance, None, version=__version__)
+            ).create_asgi_app(debug=True),
+            port=port,
+        )
+    else:
+        host_dagit_ui_with_workspace_process_context(
+            workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
+            port=port,
+            port_lookup=True,
+            host=DEFAULT_DAGIT_HOST,
+            path_prefix="",
+        )
 
 
 def main():

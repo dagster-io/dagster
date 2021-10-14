@@ -29,14 +29,16 @@ class S3Callback:
 
 
 def construct_s3_client(
-    max_attempts, region_name=None, endpoint_url=None, use_unsigned_session=False
+    max_attempts, region_name=None, endpoint_url=None, use_unsigned_session=False, profile_name=None
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
     check.opt_str_param(endpoint_url, "endpoint_url")
     check.bool_param(use_unsigned_session, "use_unsigned_session")
+    check.opt_str_param(profile_name, "profile_name")
 
-    s3_client = boto3.resource(
+    client_session = boto3.session.Session(profile_name=profile_name)
+    s3_client = client_session.resource(
         "s3",
         region_name=region_name,
         use_ssl=True,

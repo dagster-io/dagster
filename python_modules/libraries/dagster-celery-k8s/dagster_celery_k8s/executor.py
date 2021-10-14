@@ -17,7 +17,7 @@ from dagster import (
 from dagster.cli.api import ExecuteStepArgs
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -70,8 +70,8 @@ def celery_k8s_job_executor(init_context):
 
     In the most common case, you may want to modify the ``broker`` and ``backend`` (e.g., to use
     Redis instead of RabbitMQ). We expect that ``config_source`` will be less frequently
-    modified, but that when solid executions are especially fast or slow, or when there are
-    different requirements around idempotence or retry, it may make sense to execute pipelines
+    modified, but that when op executions are especially fast or slow, or when there are
+    different requirements around idempotence or retry, it may make sense to execute dagster jobs
     with variations on these settings.
 
     If you'd like to configure a Celery Kubernetes Job executor in addition to the
@@ -125,6 +125,8 @@ def celery_k8s_job_executor(init_context):
         service_account_name=exc_cfg.get("service_account_name"),
         env_config_maps=exc_cfg.get("env_config_maps"),
         env_secrets=exc_cfg.get("env_secrets"),
+        volume_mounts=exc_cfg.get("volume_mounts"),
+        volumes=exc_cfg.get("volumes"),
     )
 
     # Set on the instance but overrideable here
@@ -215,8 +217,10 @@ class CeleryK8sJobExecutor(Executor):
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
+    pipeline_origin = pipeline_context.reconstructable_pipeline.get_python_origin()
+
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
+        pipeline_origin=pipeline_origin,
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
@@ -225,10 +229,17 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_sta
         should_verify_step=True,
     )
 
+    job_config = pipeline_context.executor.job_config
+    if not job_config.job_image:
+        job_config = job_config.with_image(pipeline_origin.repository_origin.container_image)
+
+    if not job_config.job_image:
+        raise Exception("No image included in either executor config or the dagster job")
+
     task = create_k8s_job_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        job_config_dict=pipeline_context.executor.job_config.to_dict(),
+        job_config_dict=job_config.to_dict(),
         job_namespace=pipeline_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
@@ -253,7 +264,7 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
             user_failure_data=UserFailureData(label="K8sError"),
         ),
     )
-    event_record = EventRecord(
+    event_record = EventLogEntry(
         message=str(err),
         user_message=str(err),
         level=logging.ERROR,
@@ -343,7 +354,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         if pipeline_run.status != PipelineRunStatus.STARTED:
             instance.report_engine_event(
-                "Not scheduling step because pipeline run status is not STARTED",
+                "Not scheduling step because dagster run status is not STARTED",
                 pipeline_run,
                 EngineEventData(
                     [
@@ -454,7 +465,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             events.append(step_failure_event)
         except DagsterK8sPipelineStatusException:
             instance.report_engine_event(
-                "Terminating Kubernetes Job because pipeline run status is not STARTED",
+                "Terminating Kubernetes Job because dagster run status is not STARTED",
                 pipeline_run,
                 EngineEventData(
                     [

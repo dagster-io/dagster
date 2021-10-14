@@ -1,8 +1,10 @@
-import {Colors, Popover} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {Popover} from '../ui/Popover';
+import {TextInput} from '../ui/TextInput';
 import {SuggestionProvider} from '../ui/TokenizingField';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
@@ -140,11 +142,8 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         }
     }
   };
-
   return (
     <Popover
-      minimal
-      usePortal
       isOpen={shown && suggestions.length > 0}
       position="bottom-left"
       content={
@@ -161,7 +160,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
       }
     >
       <FilterInput
-        type="text"
         placeholder="Filter…"
         spellCheck={false}
         autoCorrect="off"
@@ -170,7 +168,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         onFocus={() => dispatch({type: 'show-popover'})}
         onBlur={() => dispatch({type: 'hide-popover'})}
         onKeyDown={onKeyDown}
-        style={{}}
       />
     </Popover>
   );
@@ -204,11 +201,7 @@ const ResultItem: React.FC<{
   );
 };
 
-const FilterInput = styled.input`
-  border: 1px solid ${Colors.GRAY5};
-  border-radius: 3px;
-  padding: 4px 6px;
-  font-size: 12px;
+const FilterInput = styled(TextInput)`
   width: 300px;
 `;
 
@@ -219,7 +212,7 @@ const Results = styled.ul`
   max-width: 800px;
   min-width: 300px;
   overflow-y: auto;
-  padding: 0;
+  padding: 4px 0;
 `;
 
 interface HighlightableTextProps {
@@ -228,8 +221,8 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -241,6 +234,6 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
   }
 `;

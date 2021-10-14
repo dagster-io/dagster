@@ -1,30 +1,26 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  Classes,
-  NonIdealState,
-  Colors,
-  Button,
-  Menu,
-  MenuItem,
-  Popover,
-  Dialog,
-  Icon,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
+import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
-import {JobStatus} from '../types/globalTypes';
+import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {NonIdealState} from '../ui/NonIdealState';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
@@ -50,6 +46,7 @@ interface ScheduleTick {
 export const SchedulesNextTicks: React.FC<{
   repos: RepositorySchedulesFragment[];
 }> = React.memo(({repos}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const nextTicks: ScheduleTick[] = [];
 
   repos.forEach((repo) => {
@@ -61,7 +58,8 @@ export const SchedulesNextTicks: React.FC<{
 
     const futureTickSchedules = schedules.filter(
       (schedule) =>
-        schedule.futureTicks.results.length && schedule.scheduleState.status === JobStatus.RUNNING,
+        schedule.futureTicks.results.length &&
+        schedule.scheduleState.status === InstigationStatus.RUNNING,
     );
 
     const minMaxTimestamp = Math.min(
@@ -84,8 +82,9 @@ export const SchedulesNextTicks: React.FC<{
 
   if (!nextTicks.length) {
     return (
-      <Box margin={{top: 32}}>
+      <Box padding={{vertical: 32}}>
         <NonIdealState
+          icon="error"
           title="No scheduled ticks"
           description="There are no running schedules. Start a schedule to see scheduled ticks."
         />
@@ -99,7 +98,7 @@ export const SchedulesNextTicks: React.FC<{
         <tr>
           <th style={{width: '200px'}}>Timestamp</th>
           <th style={{width: '30%'}}>Schedule</th>
-          <th>Pipeline</th>
+          <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
           <th style={{textAlign: 'right'}}>Metadata</th>
         </tr>
       </thead>
@@ -179,7 +178,7 @@ const NextTickMenu: React.FC<{
   return (
     <>
       <Popover
-        content={<Menu>{menuItems}</Menu>}
+        content={<MenuWIP>{menuItems}</MenuWIP>}
         position="bottom-right"
         onOpening={() => {
           if (!called) {
@@ -187,7 +186,7 @@ const NextTickMenu: React.FC<{
           }
         }}
       >
-        <Button small minimal icon="chevron-down" style={{position: 'relative', top: '-4px'}} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
       <NextTickDialog
         repoAddress={repoAddress}
@@ -209,32 +208,32 @@ const NextTickMenuItems: React.FC<{
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
   if (!evaluationResult) {
-    return <MenuItem text="Could not preview tick for this schedule" />;
+    return <MenuItemWIP text="Could not preview tick for this schedule" />;
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItem text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {
-    return <MenuItem text="View error..." onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text="View error..." onClick={() => onItemOpen(true)} />;
   }
 
   if (!evaluationResult.runRequests || !evaluationResult.runRequests.length) {
-    return <MenuItem text="No runs requested for this projected schedule tick" />;
+    return <MenuItemWIP text="No runs requested for this projected schedule tick" />;
   }
 
-  if (evaluationResult.runRequests.length == 1) {
+  if (evaluationResult.runRequests.length === 1) {
     const runRequest = evaluationResult.runRequests[0];
     const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
     return (
       <>
-        <MenuItem
+        <MenuItemWIP
           text={loading ? 'Loading Configuration...' : 'View Configuration...'}
-          icon="share"
+          icon="open_in_new"
           onClick={() => onItemOpen(true)}
         />
-        <MenuItem
+        <MenuItemWIP
           text="Open in Playground..."
           icon="edit"
           target="_blank"
@@ -252,7 +251,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   return (
-    <MenuItem
+    <MenuItemWIP
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
       target="_blank"
@@ -274,7 +273,7 @@ const NextTickDialog: React.FC<{
     selectedRunRequest,
     setSelectedRunRequest,
   ] = React.useState<ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests | null>(
-    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length == 1
+    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
       ? evaluationResult.runRequests[0]
       : null,
   );
@@ -282,7 +281,7 @@ const NextTickDialog: React.FC<{
     if (
       evaluationResult &&
       evaluationResult.runRequests &&
-      evaluationResult.runRequests.length == 1
+      evaluationResult.runRequests.length === 1
     ) {
       setSelectedRunRequest(evaluationResult.runRequests[0]);
     }
@@ -298,98 +297,102 @@ const NextTickDialog: React.FC<{
     body = null;
   } else if (selectedRunRequest) {
     body = (
-      <>
-        {selectedRunRequest.tags.length ? (
-          <Box padding={12}>
-            <RunTags tags={selectedRunRequest.tags} />
-          </Box>
-        ) : null}
-        <ConfigBody>
-          <div ref={configRef}>
-            <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
-          </div>
-        </ConfigBody>
-      </>
+      <DialogBody>
+        <Group direction="column" spacing={12}>
+          {selectedRunRequest.tags.length ? <RunTags tags={selectedRunRequest.tags} /> : null}
+          <ConfigBody>
+            <div ref={configRef}>
+              <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
+            </div>
+          </ConfigBody>
+        </Group>
+      </DialogBody>
     );
   } else if (evaluationResult.error) {
     body = (
-      <Box margin={24}>
+      <DialogBody>
         <PythonErrorInfo error={evaluationResult.error} />
-      </Box>
+      </DialogBody>
     );
   } else if (evaluationResult.skipReason) {
     body = (
-      <Box margin={24}>
+      <DialogBody>
         <SkipWrapper>{evaluationResult.skipReason}</SkipWrapper>
-      </Box>
+      </DialogBody>
     );
   } else if (evaluationResult.runRequests) {
     body = (
-      <RunRequestBody>
-        <Table>
-          <thead>
-            <tr>
-              <th>Run key</th>
-              <th>Config</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evaluationResult.runRequests.map((runRequest, idx) => {
-              if (!runRequest) {
-                return null;
-              }
-              return (
-                <tr key={idx}>
-                  <td>{runRequest.runKey || <span>&mdash;</span>}</td>
-                  <td>
-                    <ButtonLink onClick={() => setSelectedRunRequest(runRequest)} underline={false}>
-                      <Group direction="row" spacing={8} alignItems="center">
-                        <Icon icon={IconNames.SHARE} iconSize={12} />
-                        <span>View config</span>
-                      </Group>
-                    </ButtonLink>
-                  </td>
-                  <td>
-                    <Popover
-                      content={
-                        <Menu>
-                          <MenuItem
-                            text="Open in Playground..."
-                            icon="edit"
-                            target="_blank"
-                            href={workspacePathFromAddress(
-                              repoAddress,
-                              `/pipelines/${schedule.pipelineName}/playground/setup?${qs.stringify({
-                                mode: schedule.mode,
-                                config: runRequest.runConfigYaml,
-                                solidSelection: schedule.solidSelection,
-                              })}`,
-                            )}
-                          />
-                        </Menu>
-                      }
-                      position="bottom"
-                    >
-                      <Button small minimal icon="chevron-down" />
-                    </Popover>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </RunRequestBody>
+      <DialogBody>
+        <RunRequestBody>
+          <Table>
+            <thead>
+              <tr>
+                <th>Run key</th>
+                <th>Config</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evaluationResult.runRequests.map((runRequest, idx) => {
+                if (!runRequest) {
+                  return null;
+                }
+                return (
+                  <tr key={idx}>
+                    <td>{runRequest.runKey || <span>&mdash;</span>}</td>
+                    <td>
+                      <ButtonLink
+                        onClick={() => setSelectedRunRequest(runRequest)}
+                        underline={false}
+                      >
+                        <Group direction="row" spacing={8} alignItems="center">
+                          <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
+                          <span>View config</span>
+                        </Group>
+                      </ButtonLink>
+                    </td>
+                    <td>
+                      <Popover
+                        content={
+                          <MenuWIP>
+                            <MenuItemWIP
+                              text="Open in Playground..."
+                              icon="edit"
+                              target="_blank"
+                              href={workspacePathFromAddress(
+                                repoAddress,
+                                `/pipelines/${
+                                  schedule.pipelineName
+                                }/playground/setup?${qs.stringify({
+                                  mode: schedule.mode,
+                                  config: runRequest.runConfigYaml,
+                                  solidSelection: schedule.solidSelection,
+                                })}`,
+                              )}
+                            />
+                          </MenuWIP>
+                        }
+                        position="bottom"
+                      >
+                        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+                      </Popover>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </RunRequestBody>
+      </DialogBody>
     );
   }
 
   return (
-    <Dialog
-      usePortal={true}
+    <DialogWIP
       onClose={() => close()}
       style={{width: '50vw'}}
       title={
-        <Box flex={{direction: 'row'}}>
+        <Box flex={{direction: 'row', gap: 4}}>
           <TimestampDisplay timestamp={tickTimestamp} timezone={schedule.executionTimezone} />
           {selectedRunRequest?.runKey ? <div>: {selectedRunRequest?.runKey}</div> : null}
         </Box>
@@ -397,27 +400,22 @@ const NextTickDialog: React.FC<{
       isOpen={isOpen}
     >
       {body}
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          {selectedRunRequest ? (
-            <Button
-              autoFocus={false}
-              onClick={(e: React.MouseEvent<any, MouseEvent>) => {
-                copyValue(
-                  e,
-                  configRef && configRef.current ? configRef.current.innerText : '' || '',
-                );
-              }}
-            >
-              Copy
-            </Button>
-          ) : null}
-          <Button intent="primary" autoFocus={true} onClick={() => close()}>
-            OK
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+      <DialogFooter>
+        {selectedRunRequest ? (
+          <ButtonWIP
+            autoFocus={false}
+            onClick={(e: React.MouseEvent<any, MouseEvent>) => {
+              copyValue(e, configRef && configRef.current ? configRef.current.innerText : '' || '');
+            }}
+          >
+            Copy
+          </ButtonWIP>
+        ) : null}
+        <ButtonWIP intent="primary" autoFocus={true} onClick={() => close()}>
+          OK
+        </ButtonWIP>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 
@@ -451,27 +449,17 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
 const ConfigBody = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
-  font-size: 13px;
+  font-size: 14px;
   overflow: scroll;
-  background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
+  background: ${ColorsWIP.White};
 `;
 
 const RunRequestBody = styled.div`
   font-size: 13px;
-  background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
 `;
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  padding: 1em 2em;
-  border: 1px solid ${Colors.GOLD5};
+  border: 1px solid ${ColorsWIP.Yellow500};
   border-radius: 3px;
 `;

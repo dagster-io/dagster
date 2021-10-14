@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import ModeDefinition, execute_solid, solid
+from dagster import build_op_context, op
 from dagster_datadog import datadog_resource
 
 
@@ -26,8 +26,8 @@ def test_datadog_resource(
     timed,
     timing,
 ):
-    @solid(required_resource_keys={"datadog"})
-    def datadog_solid(context):
+    @op(required_resource_keys={"datadog"})
+    def datadog_op(context):
         assert context.resources.datadog
 
         # event
@@ -67,12 +67,11 @@ def test_datadog_resource(
 
         run_fn()
         timed.assert_called_with("run_fn")
+        return True
 
-    result = execute_solid(
-        datadog_solid,
-        run_config={
-            "resources": {"datadog": {"config": {"api_key": "NOT_USED", "app_key": "NOT_USED"}}}
-        },
-        mode_def=ModeDefinition(resource_defs={"datadog": datadog_resource}),
+    context = build_op_context(
+        resources={
+            "datadog": datadog_resource.configured({"api_key": "NOT_USED", "app_key": "NOT_USED"})
+        }
     )
-    assert result.success
+    assert datadog_op(context)

@@ -34,7 +34,7 @@ from dagster import pipeline, solid
 
 
 @solid
-def download_cereals(_):
+def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
@@ -51,7 +51,7 @@ def serial_pipeline():
     find_sugariest(download_cereals())
 ```
 
-You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset.
+You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset. We no longer log from this solid, so we no longer need the context argument here.
 
 We've defined our new solid, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
 displayText="context" /> object.
@@ -84,14 +84,14 @@ Solids don't need to be wired together serially. The output of one solid can be 
 
 ```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py startafter=start_complex_pipeline_marker_0 endbefore=end_complex_pipeline_marker_0
 @solid
-def download_cereals(_):
+def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
 
 @solid
-def find_highest_calorie_cereal(_, cereals):
+def find_highest_calorie_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["calories"])
     )
@@ -99,7 +99,7 @@ def find_highest_calorie_cereal(_, cereals):
 
 
 @solid
-def find_highest_protein_cereal(_, cereals):
+def find_highest_protein_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["protein"])
     )
@@ -121,7 +121,7 @@ def complex_pipeline():
     )
 ```
 
-First we introduce the intermediate variable `cereals` into our pipeline definition to represent the output of the `load_cereals` solid. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+First we introduce the intermediate variable `cereals` into our pipeline definition to represent the output of the `download_cereals` solid. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
 
 Let's visualize this pipeline in Dagit:
 
@@ -136,6 +136,6 @@ width={1680}
 height={946}
 />
 
-When you execute this example from Dagit, you'll see that `load_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal`—in any order—and that `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed.
+When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal`—in any order—and that `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed.
 
-In more sophisticated execution environments, `find_highest_calorie_cereal` and `find_highest_protein_cereal` could execute not just in any order, but at the same time, since they don't depend on each other's outputs—but both would still have to execute after `load_cereals` (because they depend on its output) and before `display_results` (because `display_results` depends on both of their outputs).
+In more sophisticated execution environments, `find_highest_calorie_cereal` and `find_highest_protein_cereal` could execute not just in any order, but at the same time, since they don't depend on each other's outputs—but both would still have to execute after `download_cereals` (because they depend on its output) and before `display_results` (because `display_results` depends on both of their outputs).

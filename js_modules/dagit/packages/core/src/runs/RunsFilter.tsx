@@ -19,7 +19,7 @@ import {
 
 type PipelineRunTags = RunsSearchSpaceQuery_pipelineRunTags[];
 
-export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
+export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
 
 const RUN_PROVIDERS_EMPTY = [
   {
@@ -32,6 +32,10 @@ const RUN_PROVIDERS_EMPTY = [
   },
   {
     token: 'pipeline',
+    values: () => [],
+  },
+  {
+    token: 'job',
     values: () => [],
   },
   {
@@ -53,14 +57,19 @@ const RUN_PROVIDERS_EMPTY = [
  * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
  */
 export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
-  return useQueryPersistedState<TokenizingFieldValue[]>({
-    encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
-    decode: ({q = ''}) =>
-      tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
-        (t) =>
-          !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-      ),
-  });
+  return useQueryPersistedState<TokenizingFieldValue[]>(
+    React.useMemo(
+      () => ({
+        encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
+        decode: ({q = ''}) =>
+          tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
+            (t) =>
+              !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
+          ),
+      }),
+      [enabledFilters],
+    ),
+  );
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
@@ -89,6 +98,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key, value}];
       }
+    } else if (item.token === 'job') {
+      const [pipeline, mode = 'default'] = item.value.split(':');
+      obj.pipelineName = pipeline;
+      obj.mode = mode;
     }
   }
 
@@ -100,9 +113,18 @@ function searchSuggestionsForRuns(
   pipelineRunTags?: PipelineRunTags,
   enabledFilters?: RunFilterTokenType[],
 ): SuggestionProvider[] {
-  const pipelineNames = repositoryOptions.reduce((accum, option) => {
-    return [...accum, ...option.repository.pipelines.map((p) => p.name)];
-  }, []);
+  const pipelineNames = new Set<string>();
+  const jobNames = new Set<string>();
+
+  for (const option of repositoryOptions) {
+    const {repository} = option;
+    for (const pipeline of repository.pipelines) {
+      pipelineNames.add(pipeline.name);
+      for (const mode of pipeline.modes) {
+        jobNames.add(`${pipeline.name}${mode.name === 'default' ? '' : `:${mode.name}`}`);
+      }
+    }
+  }
 
   const suggestions: {token: RunFilterTokenType; values: () => string[]}[] = [
     {
@@ -115,7 +137,11 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'pipeline',
-      values: () => pipelineNames,
+      values: () => Array.from(pipelineNames),
+    },
+    {
+      token: 'job',
+      values: () => Array.from(jobNames),
     },
     {
       token: 'tag',
@@ -147,7 +173,7 @@ interface RunsFilterProps {
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
+export const RunsFilter: React.FC<RunsFilterProps> = ({
   loading,
   tokens,
   onChange,
@@ -179,7 +205,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
     }
 
     // Can only have one filter value for pipeline or id
-    const limitedTokens = new Set<string>(['id', 'pipeline', 'snapshotId']);
+    const limitedTokens = new Set<string>(['id', 'job', 'pipeline', 'snapshotId']);
     const presentLimitedTokens = tokens.filter((token) => limitedTokens.has(token));
 
     return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));

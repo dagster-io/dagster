@@ -5,8 +5,8 @@ BASE_DIR="${ROOT}/examples/deploy_docker/from_source"
 
 function cleanup {
     rm -rf "${BASE_DIR}/python_modules"
-    rm -rf "${BASE_DIR}/js_modules"
     set +ux
+    shopt -u expand_aliases
 }
 
 cleanup
@@ -15,27 +15,39 @@ cleanup
 trap cleanup INT TERM EXIT ERR
 
 set -ux
+shopt -s expand_aliases
 
 pushd $BASE_DIR
 
 mkdir -p python_modules
 mkdir -p python_modules/libraries/
-mkdir -p js_modules
+
+if [[ -z ${DAGIT_DONT_BUILD_JS_BUNDLE+x} ]]; then
+    echo -e "--- \033[32m:wrench: Building JS bundle\033[0m"
+    echo -e "(set DAGIT_DONT_BUILD_JS_BUNDLE to skip)"
+    pushd ${ROOT}
+    make rebuild_dagit
+    popd
+fi
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
-cp -R $ROOT/python_modules/dagster \
-      $ROOT/python_modules/dagit \
-      $ROOT/python_modules/dagster-graphql \
-      python_modules/
+alias copy_py="rsync -av \
+      --progress \
+      --exclude *.egginfo \
+      --exclude *.tox \
+      --exclude dist \
+      --exclude __pycache__ \
+      --exclude *.pyc \
+      --exclude .coverage"
 
-cp -R $ROOT/js_modules/dagit \
-      js_modules/
+copy_py $ROOT/python_modules/dagster \
+        $ROOT/python_modules/dagit \
+        $ROOT/python_modules/dagster-graphql \
+        python_modules/
 
-cp -R $ROOT/python_modules/libraries/dagster-postgres \
-      $ROOT/python_modules/libraries/dagster-docker \
-      python_modules/libraries/
-
-find ./python_modules/ \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
+copy_py $ROOT/python_modules/libraries/dagster-postgres \
+        $ROOT/python_modules/libraries/dagster-docker \
+        python_modules/libraries/
 
 echo -e "--- \033[32m:docker: Building Docker images\033[0m"
 docker-compose build

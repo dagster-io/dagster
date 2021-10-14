@@ -40,7 +40,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         try:
             execution_result = self.execute(
                 # Even though this object is referred to as the "request_context", it is
-                # actually a WorkspaceProcessContext. This is a naming restriction from the underlying
+                # actually a IWorkspaceProcessContext. This is a naming restriction from the underlying
                 # GeventSubscriptionServer. Here, we create a new request context for every
                 # incoming GraphQL request
                 connection_context.request_context.create_request_context(),
@@ -56,13 +56,17 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
                 connection_context.register_operation(op_id, None)
             else:
                 observable = execution_result
+
+                # This registered operation will get overwritten below, but is necessary to handle
+                # the messages that get emitted as soon as the subscription is made (e.g. handling
+                # subscription events that are already queued up)
                 connection_context.register_operation(op_id, observable)
 
             def on_complete(conn_context):
                 # unsubscribe from the completed operation
                 self.on_stop(conn_context, op_id)
 
-            observable.subscribe(
+            disposable = observable.subscribe(
                 SubscriptionObserver(
                     connection_context,
                     op_id,
@@ -71,6 +75,10 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
                     on_complete,
                 )
             )
+
+            # replace the registered operation with the subscribed observer, to ensure that it gets
+            # cleaned up upon connection close
+            connection_context.register_operation(op_id, disposable)
 
         # appropriate to catch all errors here
         except Exception as e:  # pylint: disable=W0703

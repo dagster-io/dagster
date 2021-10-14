@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.events import DagsterEvent
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     register_serdes_tuple_fallbacks,
@@ -19,9 +19,9 @@ from dagster.utils.log import (
 
 
 @whitelist_for_serdes
-class EventRecord(
+class EventLogEntry(
     NamedTuple(
-        "_EventRecord",
+        "_EventLogEntry",
         [
             ("error_info", Optional[SerializableErrorInfo]),
             ("message", str),
@@ -73,7 +73,7 @@ class EventRecord(
         pipeline_name=None,
         dagster_event=None,
     ):
-        return super(EventRecord, cls).__new__(
+        return super(EventLogEntry, cls).__new__(
             cls,
             check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
             check.str_param(message, "message"),
@@ -113,7 +113,7 @@ class EventRecord(
 def construct_event_record(logger_message):
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
-    return EventRecord(
+    return EventLogEntry(
         message=logger_message.message,
         level=logger_message.level,
         user_message=logger_message.meta["orig_message"],
@@ -165,10 +165,12 @@ def construct_json_event_logger(json_path):
 register_serdes_tuple_fallbacks(
     {
         # These were originally distinguished from each other but ended up being empty subclasses
-        # of EventRecord -- instead of using the subclasses we were relying on
-        # EventRecord.is_dagster_event to distinguish events that originate in the logging
+        # of EventLogEntry -- instead of using the subclasses we were relying on
+        # EventLogEntry.is_dagster_event to distinguish events that originate in the logging
         # machinery from events that are yielded by user code
-        "DagsterEventRecord": EventRecord,
-        "LogMessageRecord": EventRecord,
+        "DagsterEventRecord": EventLogEntry,
+        "LogMessageRecord": EventLogEntry,
+        # renamed EventRecord -> EventLogEntry
+        "EventRecord": EventLogEntry,
     }
 )

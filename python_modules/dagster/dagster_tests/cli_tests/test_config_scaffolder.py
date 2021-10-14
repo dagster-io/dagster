@@ -9,7 +9,7 @@ from dagster import (
 )
 from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.config import config_type
-from dagster.core.definitions import create_environment_type
+from dagster.core.definitions import create_run_config_schema
 
 
 def fail_me():
@@ -37,7 +37,7 @@ def test_basic_solids_config(snapshot):
         ],
     )
 
-    env_config_type = create_environment_type(pipeline_def)
+    env_config_type = create_run_config_schema(pipeline_def).config_type
 
     assert env_config_type.fields["solids"].is_required
     solids_config_type = env_config_type.fields["solids"].config_type

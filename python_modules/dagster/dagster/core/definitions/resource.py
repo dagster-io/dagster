@@ -1,11 +1,27 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterUnknownResourceError,
+)
+from dagster.seven import funcsigs
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
@@ -18,9 +34,14 @@ from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
+from .resource_invocation import resource_invocation_result
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
+
+
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+    return len(params) >= 1
 
 
 class ResourceDefinition(AnonymousConfigurableDefinition):
@@ -55,13 +76,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
 
     def __init__(
         self,
-        resource_fn: Optional[Callable[["InitResourceContext"], Any]] = None,
+        resource_fn: Callable[["InitResourceContext"], Any],
         config_schema: Optional[Union[Any, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
     ):
-        self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
+        self._resource_fn = check.callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
         self._required_resource_keys = check.opt_set_param(
@@ -72,7 +93,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
-    def resource_fn(self) -> Optional[Callable[["InitResourceContext"], Any]]:
+    def resource_fn(self) -> Callable[..., Any]:
         return self._resource_fn
 
     @property
@@ -88,7 +109,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         return self._version
 
     @property
-    def required_resource_keys(self) -> Optional[AbstractSet[str]]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
     @staticmethod
@@ -108,7 +129,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         """A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
 
         Args:
-            value (Any): A hardcoded object which helps mock the resource.
+            value (Any): The value that will be accessible via context.resources.resource_name.
             description ([Optional[str]]): The description of the resource. Defaults to None.
 
         Returns:
@@ -129,8 +150,8 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         """
         from unittest import mock
 
-        return ResourceDefinition.hardcoded_resource(
-            value=mock.MagicMock(), description=description
+        return ResourceDefinition(
+            resource_fn=lambda _init_context: mock.MagicMock(), description=description
         )
 
     @staticmethod
@@ -149,12 +170,43 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             description=description or self.description,
             resource_fn=self.resource_fn,
             required_resource_keys=self.required_resource_keys,
+            version=self.version,
         )
 
-    # This allows us to pass resource definition off as a function, so that it can inherit the
-    # metadata of the wrapped function.
     def __call__(self, *args, **kwargs):
-        return self
+        from dagster.core.execution.resources_init import InitResourceContext
+
+        context_provided = is_context_provided(get_function_params(self.resource_fn))
+
+        if context_provided:
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Resource initialization function has context argument, but no context was provided "
+                    "when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Initialization of resource received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self.resource_fn)[0].name
+
+            if args:
+                check.opt_inst_param(args[0], context_param_name, InitResourceContext)
+                return resource_invocation_result(self, args[0])
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Resource initialization expected argument '{context_param_name}'."
+                    )
+                check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, InitResourceContext
+                )
+
+                return resource_invocation_result(self, kwargs[context_param_name])
+        else:
+            return resource_invocation_result(self, None)
 
 
 class _ResourceDecoratorCallable:
@@ -175,7 +227,7 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: Callable[["InitResourceContext"], Any]):
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"]
+        any_name = ["*"] if is_context_provided(get_function_params(resource_fn)) else []
 
         params = get_function_params(resource_fn)
 
@@ -206,6 +258,21 @@ class _ResourceDecoratorCallable:
         update_wrapper(resource_def, wrapped=resource_fn)
 
         return resource_def
+
+
+@overload
+def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDefinition:
+    ...
+
+
+@overload
+def resource(
+    config_schema: Optional[Dict[str, Any]] = None,
+    description: Optional[str] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    version=None,
+) -> Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"]:
+    ...
 
 
 def resource(
@@ -262,18 +329,30 @@ class Resources:
     provides a workaround."""
 
 
-class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
+class IContainsGenerator:
+    """This class adds an additional tag to indicate that the resources object has at least one
+    resource that has been yielded from a generator, and thus may require teardown."""
+
+
+class ScopedResourcesBuilder(
+    namedtuple("ScopedResourcesBuilder", "resource_instance_dict contains_generator")
+):
     """There are concepts in the codebase (e.g. solids, system storage) that receive
     only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
     only those required resources and returning an instance of that class."""
 
-    def __new__(cls, resource_instance_dict: Optional[Dict[str, Any]] = None):
+    def __new__(
+        cls,
+        resource_instance_dict: Optional[Dict[str, Any]] = None,
+        contains_generator: Optional[bool] = False,
+    ):
         return super(ScopedResourcesBuilder, cls).__new__(
             cls,
             resource_instance_dict=check.opt_dict_param(
                 resource_instance_dict, "resource_instance_dict", key_type=str
             ),
+            contains_generator=contains_generator,
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
@@ -302,13 +381,30 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             if key in self.resource_instance_dict
         }
 
-        class _ScopedResources(
-            namedtuple("_ScopedResources", list(resource_instance_dict.keys())), Resources  # type: ignore[misc]
-        ):
-            def __getattr__(self, attr):
-                raise DagsterUnknownResourceError(attr)
+        # If any of the resources are generators, add the IContainsGenerator subclass to flag that
+        # this is the case.
+        if self.contains_generator:
 
-        return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+            class _ScopedResourcesContainsGenerator(
+                namedtuple("_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                Resources,
+                IContainsGenerator,
+            ):
+                def __getattr__(self, attr):
+                    raise DagsterUnknownResourceError(attr)
+
+            return _ScopedResourcesContainsGenerator(**resource_instance_dict)  # type: ignore[call-arg]
+
+        else:
+
+            class _ScopedResources(
+                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                Resources,
+            ):
+                def __getattr__(self, attr):
+                    raise DagsterUnknownResourceError(attr)
+
+            return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
 
 
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:

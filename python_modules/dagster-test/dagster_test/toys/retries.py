@@ -8,15 +8,10 @@ def echo(x):
     return x
 
 
-_ATTEMPTS = 0
-
-
-@solid(config_schema={"max_retries": int, "delay": int, "work_on_attempt": int})
+@solid(config_schema={"max_retries": int, "delay": float, "work_on_attempt": int})
 def retry_solid(context):
-    time.sleep(1)
-    global _ATTEMPTS  # pylint: disable=global-statement
-    _ATTEMPTS += 1
-    if _ATTEMPTS >= context.solid_config["work_on_attempt"]:
+    time.sleep(0.1)
+    if (context.retry_number + 1) >= context.solid_config["work_on_attempt"]:
         return "success"
     else:
         raise RetryRequested(
@@ -33,7 +28,7 @@ def retry_solid(context):
                 "solids": {
                     "retry_solid": {
                         "config": {
-                            "delay": 2,
+                            "delay": 0.2,
                             "work_on_attempt": 2,
                             "max_retries": 1,
                         }

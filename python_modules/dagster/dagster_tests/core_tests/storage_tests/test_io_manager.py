@@ -1,31 +1,41 @@
 import os
 import tempfile
 
+import mock
 import pytest
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Field,
     IOManagerDefinition,
+    In,
     InputDefinition,
     ModeDefinition,
+    Out,
     OutputDefinition,
+    build_input_context,
+    build_output_context,
     composite_solid,
     execute_pipeline,
+    graph,
+    op,
     pipeline,
     reexecute_pipeline,
     resource,
     solid,
 )
+from dagster.check import CheckError
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.input import InputContext
-from dagster.core.execution.context.output import OutputContext
+from dagster.core.execution.context.output import get_output_context
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 
 def test_io_manager_with_config():
@@ -291,7 +301,6 @@ def execute_pipeline_with_steps(
     plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
-        step_keys_to_execute=step_keys_to_execute,
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
@@ -357,18 +366,18 @@ def test_multi_materialization():
             self.values = {}
 
         def handle_output(self, context, obj):
-            keys = tuple(context.get_run_scoped_output_identifier())
+            keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
             yield AssetMaterialization(asset_key="yield_one")
             yield AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
+            keys = tuple(context.upstream_output.get_output_identifier())
             return self.values[keys]
 
         def has_asset(self, context):
-            keys = tuple(context.get_run_scoped_output_identifier())
+            keys = tuple(context.get_output_identifier())
             return keys in self.values
 
     @io_manager
@@ -549,16 +558,9 @@ def test_configured():
 
 def test_mem_io_manager_execution():
     mem_io_manager_instance = InMemoryIOManager()
-    output_context = OutputContext(
-        step_key="step_key",
-        name="output_name",
-        pipeline_name="foo",
-    )
+    output_context = build_output_context(step_key="step_key", name="output_name")
     mem_io_manager_instance.handle_output(output_context, 1)
-    input_context = InputContext(
-        pipeline_name="foo",
-        upstream_output=output_context,
-    )
+    input_context = build_input_context(upstream_output=output_context)
     assert mem_io_manager_instance.load_input(input_context) == 1
 
 
@@ -660,3 +662,101 @@ def test_hardcoded_io_manager():
     result = execute_pipeline(basic_pipeline)
     assert result.success
     assert result.output_for_solid("basic_solid") == 5
+
+
+def test_get_output_context_with_resources():
+    @solid
+    def basic_solid():
+        pass
+
+    @pipeline
+    def basic_pipeline():
+        basic_solid()
+
+    with pytest.raises(
+        CheckError,
+        match="Expected either resources or step context to be set, but "
+        "received both. If step context is provided, resources for IO manager will be "
+        "retrieved off of that.",
+    ):
+        get_output_context(
+            execution_plan=create_execution_plan(basic_pipeline),
+            pipeline_def=basic_pipeline,
+            resolved_run_config=ResolvedRunConfig.build(basic_pipeline),
+            step_output_handle=StepOutputHandle("basic_solid", "result"),
+            run_id=None,
+            log_manager=None,
+            step_context=mock.MagicMock(),
+            resources=mock.MagicMock(),
+            version=None,
+        )
+
+
+def test_error_boundary_with_gen():
+    class ErrorIOManager(IOManager):
+        def load_input(self, context):
+            pass
+
+        def handle_output(self, context, obj):
+            yield AssetMaterialization(asset_key="a")
+            raise ValueError("handle output error")
+
+    @io_manager
+    def error_io_manager(_):
+        return ErrorIOManager()
+
+    @solid
+    def basic_solid():
+        return 5
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": error_io_manager})])
+    def single_solid_pipeline():
+        basic_solid()
+
+    result = execute_pipeline(single_solid_pipeline, raise_on_error=False)
+    step_failure = [
+        event for event in result.event_list if event.event_type_value == "STEP_FAILURE"
+    ][0]
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+
+
+def test_output_identifier_dynamic_memoization():
+    context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
+
+    with pytest.raises(
+        CheckError,
+        match="Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
+        "mapping is not supported when using versioning.",
+    ):
+        context.get_output_identifier()
+
+
+def test_asset_key():
+    in_asset_key = AssetKey(["a", "b"])
+    out_asset_key = AssetKey(["c", "d"])
+
+    @op(out=Out(asset_key=out_asset_key))
+    def before():
+        pass
+
+    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
+    def after(a):
+        assert a
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.asset_key == in_asset_key
+            assert context.upstream_output.asset_key == out_asset_key
+            return 1
+
+        def handle_output(self, context, obj):
+            assert context.asset_key == out_asset_key
+
+    @graph
+    def my_graph():
+        after(before())
+
+    result = my_graph.to_job(
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
+    ).execute_in_process()
+    assert result.success

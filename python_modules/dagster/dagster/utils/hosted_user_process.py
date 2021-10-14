@@ -21,13 +21,13 @@ from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 def recon_pipeline_from_origin(origin):
     check.inst_param(origin, "origin", PipelinePythonOrigin)
-    recon_repo = ReconstructableRepository(origin.get_repo_pointer())
+    recon_repo = recon_repository_from_origin(origin.repository_origin)
     return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
 
 
 def recon_repository_from_origin(origin):
     check.inst_param(origin, "origin", RepositoryPythonOrigin)
-    return ReconstructableRepository(origin.code_pointer)
+    return ReconstructableRepository(origin.code_pointer, origin.container_image)
 
 
 def external_repo_from_def(repository_def, repository_handle):

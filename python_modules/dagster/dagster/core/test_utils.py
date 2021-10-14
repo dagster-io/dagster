@@ -3,20 +3,28 @@ import signal
 import sys
 import tempfile
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
-from dagster import Shape, check, composite_solid, pipeline, solid
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.host_representation.origin import ExternalPipelineOrigin
+from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
+from dagster.config import Field
+from dagster.config.config_type import Array
+from dagster.core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    InProcessRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.run_coordinator import RunCoordinator
+from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.telemetry import cleanup_telemetry_logger
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.workspace.load_target import WorkspaceLoadTarget
+from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.serdes import ConfigurableClass
-from dagster.seven import create_pendulum_time, mock_pendulum_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -83,35 +91,33 @@ def environ(env):
 
 
 @contextmanager
-def instance_for_test(overrides=None):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(temp_dir, overrides) as instance:
-            yield instance
+def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
+    with ExitStack() as stack:
+        if not temp_dir:
+            temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
 
+        # If using the default run launcher, wait for any grpc processes that created runs
+        # during test disposal to finish, since they might also be using this instance's tempdir
+        instance_overrides = merge_dicts(
+            {
+                "run_launcher": {
+                    "class": "DefaultRunLauncher",
+                    "module": "dagster.core.launcher.default_run_launcher",
+                    "config": {
+                        "wait_for_processes": True,
+                    },
+                }
+            },
+            (overrides if overrides else {}),
+        )
 
-@contextmanager
-def instance_for_test_tempdir(temp_dir, overrides=None):
-    # If using the default run launcher, wait for any grpc processes that created runs
-    # during test disposal to finish, since they might also be using this instance's tempdir
-    instance_overrides = merge_dicts(
-        {
-            "run_launcher": {
-                "class": "DefaultRunLauncher",
-                "module": "dagster.core.launcher.default_run_launcher",
-                "config": {
-                    "wait_for_processes": True,
-                },
-            }
-        },
-        (overrides if overrides else {}),
-    )
+        if set_dagster_home:
+            stack.enter_context(environ({"DAGSTER_HOME": temp_dir}))
 
-    # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
-    # DagsterInstance.get() is called from a different process
-    with environ({"DAGSTER_HOME": temp_dir}):
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
-        with DagsterInstance.get() as instance:
+
+        with DagsterInstance.from_config(temp_dir) as instance:
             try:
                 yield instance
             except:
@@ -151,6 +157,7 @@ def create_run_for_test(
     execution_plan_snapshot=None,
     parent_pipeline_snapshot=None,
     external_pipeline_origin=None,
+    pipeline_code_origin=None,
 ):
     return instance.create_run(
         pipeline_name,
@@ -167,6 +174,7 @@ def create_run_for_test(
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
+        pipeline_code_origin=pipeline_code_origin,
     )
 
 
@@ -286,7 +294,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return ExplodingRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, context):
         raise NotImplementedError("The entire purpose of this is to throw on launch")
 
     def join(self, timeout=30):
@@ -300,16 +308,21 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data=None, bad_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
+        self._bad_run_ids = bad_run_ids
 
         super().__init__()
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, context):
+        run = context.pipeline_run
         check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.invariant(run.status == PipelineRunStatus.STARTING)
+
+        if self._bad_run_ids and run.run_id in self._bad_run_ids:
+            raise Exception(f"Bad run {run.run_id}")
+
         self._queue.append(run)
         return run
 
@@ -318,13 +331,11 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return Shape({})
+        return Shape({"bad_run_ids": Field(Array(str), is_required=False)})
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
-        return cls(
-            inst_data=inst_data,
-        )
+        return cls(inst_data=inst_data, **config_value)
 
     @property
     def inst_data(self):
@@ -344,9 +355,8 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
         super().__init__()
 
-    def submit_run(self, pipeline_run, external_pipeline):
-        check.inst_param(pipeline_run, "run", PipelineRun)
-        check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def submit_run(self, context: SubmitRunContext):
+        pipeline_run = context.pipeline_run
         check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
         self._queue.append(pipeline_run)
         return pipeline_run
@@ -405,3 +415,48 @@ def mock_system_timezone(override_timezone):
 
 def get_mocked_system_timezone():
     return _mocked_system_timezone["timezone"]
+
+
+# Test utility for creating a test workspace for a function
+class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+    def __init__(self, origin: InProcessRepositoryLocationOrigin):
+        self._origin = origin
+
+    def create_origins(self):
+        return [self._origin]
+
+
+@contextmanager
+def in_process_test_workspace(instance, recon_repo):
+    with WorkspaceProcessContext(
+        instance, TestInProcessWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+@contextmanager
+def create_test_daemon_workspace():
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    with create_daemon_grpc_server_registry() as grpc_server_registry:
+        with DynamicWorkspace(grpc_server_registry) as workspace:
+            yield workspace
+
+
+def remove_none_recursively(obj):
+    """Remove none values from a dict. This can be used to support comparing provided config vs.
+    config we retrive from kubernetes, which returns all fields, even those which have no value
+    configured.
+    """
+    if isinstance(obj, (list, tuple, set)):
+        return type(obj)(remove_none_recursively(x) for x in obj if x is not None)
+    elif isinstance(obj, dict):
+        return type(obj)(
+            (remove_none_recursively(k), remove_none_recursively(v))
+            for k, v in obj.items()
+            if k is not None and v is not None
+        )
+    else:
+        return obj
+
+
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})

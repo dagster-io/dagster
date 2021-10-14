@@ -3,7 +3,6 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.utils.error import SerializableErrorInfo
 
-from ..implementation.utils import PipelineSelector
 from .util import non_null_list
 
 
@@ -85,6 +84,8 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
+        from ..implementation.utils import PipelineSelector
+
         super().__init__()
         check.inst_param(selector, "selector", PipelineSelector)
         self.pipeline_name = selector.pipeline_name
@@ -272,6 +273,16 @@ class GrapheneAssetNotFoundError(graphene.ObjectType):
         self.message = f"Asset key {asset_key.to_string()} not found."
 
 
+class GrapheneUnauthorizedError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "UnauthorizedError"
+
+    def __init__(self, message=None):
+        super().__init__()
+        self.message = message if message else "Authorization failed"
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -288,6 +299,7 @@ types = [
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
+    GrapheneUnauthorizedError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,

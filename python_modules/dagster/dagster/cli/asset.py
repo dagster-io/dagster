@@ -3,25 +3,28 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.instance import DagsterInstance
 
 
-def create_asset_cli_group():
-    group = click.Group(name="asset")
-    group.add_command(asset_wipe_command)
-    return group
+@click.group(name="asset")
+def asset_cli():
+    """
+    Commands for working with Dagster assets.
+    """
 
 
-@click.command(
-    name="wipe",
-    help=(
-        "Eliminate asset key indexes from event logs. Warning: Cannot be undone\n\n"
-        "Usage: \n\n"
-        "  dagster asset wipe --all\n\n"
-        "  dagster asset wipe <unstructured_asset_key_name>\n\n"
-        "  dagster asset wipe <json_string_of_structured_asset_key>\n\n"
-    ),
-)
+@asset_cli.command(name="wipe")
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
 def asset_wipe_command(key, **cli_args):
+    """
+    Eliminate asset key indexes from event logs.
+
+    Warning: Cannot be undone.
+
+    \b
+    Usage:
+      dagster asset wipe --all
+      dagster asset wipe <unstructured_asset_key_name>
+      dagster asset wipe <json_string_of_structured_asset_key>
+    """
     if not cli_args.get("all") and len(key) == 0:
         raise click.UsageError(
             "Error, you must specify an asset key or use `--all` to wipe all asset keys."
@@ -48,6 +51,3 @@ def asset_wipe_command(key, **cli_args):
                 click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")
-
-
-asset_cli = create_asset_cli_group()

@@ -22,6 +22,8 @@ import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { Readable } from "stream";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -79,7 +81,8 @@ export const VersionNotice = () => {
           ) : (
             <p>
               This documentation is for an older version ({version}) of Dagster.
-              You can view the version of this page from our latest release below.
+              You can view the version of this page from our latest release
+              below.
             </p>
           )}
         </div>
@@ -247,26 +250,69 @@ export default function MdxPage(props: Props) {
   }
 }
 
-const basePathForVersion = (version: string) => {
-  if (version === "master") {
-    return path.resolve("../content");
+async function streamToString(stream: Readable): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+  });
+}
+const useS3Client = () => {
+  if (process.env.VERCEL) {
+    // If the app is running on Vercel, AWS creds need to be set via env vars
+    return new S3Client({
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_DOCS,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_DOCS,
+      },
+      region: "us-west-1",
+    });
+  } else {
+    return new S3Client({ region: "us-west-1" });
   }
-
-  return path.resolve(".versioned_content", version);
 };
+
+const s3Client = useS3Client();
+
+async function getVersionedContent(version: string, asPath: string) {
+  // get versioned content from remote public s3 bucket
+  const command = new GetObjectCommand({
+    Bucket: "dagster-docs-versioned-content",
+    Key: path.join("versioned_content", version, asPath),
+  });
+  const { Body } = await s3Client.send(command);
+  const content = await streamToString(Body as Readable);
+  return content;
+}
+
+async function getContent(version: string, asPath: string) {
+  if (version == "master") {
+    // render files from the local content folder
+    const basePath = __IS_CRAG__
+      ? path.resolve("../content-crag") // CRAG
+      : path.resolve("../content");
+    const pathToFile = path.join(basePath, asPath);
+    const buffer = await fs.readFile(pathToFile);
+    const contentString = buffer.toString();
+    return contentString;
+  } else {
+    // render versioned files from remote bucket
+    const contentString = await getVersionedContent(version, asPath);
+    return contentString;
+  }
+}
 
 async function getSphinxData(
   sphinxPrefix: SphinxPrefix,
   version: string,
   page: string[]
 ) {
-  const basePath = basePathForVersion(version);
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
-    const pathToFile = path.resolve(basePath, "api/sections.json");
-    const buffer = await fs.readFile(pathToFile);
+    const content = await getContent(version, "api/sections.json");
     const {
       api: { apidocs: data },
-    } = JSON.parse(buffer.toString());
+    } = JSON.parse(content);
 
     let curr = data;
     for (const part of page) {
@@ -279,9 +325,8 @@ async function getSphinxData(
       props: { type: PageType.HTML, data: { body, toc } },
     };
   } else {
-    const pathToFile = path.resolve(basePath, "api/modules.json");
-    const buffer = await fs.readFile(pathToFile);
-    const data = JSON.parse(buffer.toString());
+    const content = await getContent(version, "api/modules.json");
+    const data = JSON.parse(content);
     let curr = data;
     for (const part of page) {
       curr = curr[part];
@@ -310,8 +355,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     }
   }
 
-  const basePath = basePathForVersion(version);
-  const pathToMdxFile = path.join(basePath, "/", asPath + ".mdx");
   const githubLink = new URL(
     path.join(
       "dagster-io/dagster/tree/master/docs/content",
@@ -321,15 +364,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     "https://github.com"
   ).href;
 
-  const pathToSearchindex = path.resolve(basePath, "api/searchindex.json");
-
   try {
     // 1. Read and parse versioned search
-    const buffer = await fs.readFile(pathToSearchindex);
-    const searchIndex = JSON.parse(buffer.toString());
+    const searchContent = await getContent(version, "api/searchindex.json");
+    const searchIndex = JSON.parse(searchContent);
 
     // 2. Read and parse versioned MDX content
-    const source = await fs.readFile(pathToMdxFile);
+    const source = await getContent(version, asPath + ".mdx");
     const { content, data } = matter(source);
 
     // 3. Extract table of contents from MDX

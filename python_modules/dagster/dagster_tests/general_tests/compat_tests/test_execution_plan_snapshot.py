@@ -1,6 +1,8 @@
 import os
 
 from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
     InputDefinition,
     List,
     ModeDefinition,
@@ -28,7 +30,6 @@ from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root_input_manager import root_input_manager
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 

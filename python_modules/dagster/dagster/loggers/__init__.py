@@ -4,7 +4,7 @@ import coloredlogs
 from dagster import seven
 from dagster.config import Field
 from dagster.core.definitions.logger import logger
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.log import default_format_string
 
 
@@ -16,6 +16,9 @@ from dagster.utils.log import default_format_string
     description="The default colored console logger.",
 )
 def colored_console_logger(init_context):
+    """This logger provides support for sending Dagster logs to stdout in a colored format. It is
+    included by default on jobs which do not otherwise specify loggers.
+    """
     level = coerce_valid_log_level(init_context.logger_config["log_level"])
     name = init_context.logger_config["name"]
 
@@ -39,6 +42,25 @@ def colored_console_logger(init_context):
     description="A JSON-formatted console logger",
 )
 def json_console_logger(init_context):
+    """This logger provides support for sending Dagster logs to stdout in json format.
+
+    Example:
+
+        .. code-block:: python
+
+            from dagster import op, job
+            from dagster.loggers import json_console_logger
+
+            @op
+            def hello_op(context):
+                context.log.info('Hello, world!')
+                context.log.error('This is an error')
+
+            @job(logger_defs={'json_logger': json_console_logger})])
+            def json_logged_job():
+                hello_op()
+
+    """
     level = coerce_valid_log_level(init_context.logger_config["log_level"])
     name = init_context.logger_config["name"]
 

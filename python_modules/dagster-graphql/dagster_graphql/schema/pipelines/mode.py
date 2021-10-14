@@ -8,6 +8,7 @@ from .resource import GrapheneResource
 
 
 class GrapheneMode(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     resources = non_null_list(GrapheneResource)
@@ -16,11 +17,17 @@ class GrapheneMode(graphene.ObjectType):
     class Meta:
         name = "Mode"
 
-    def __init__(self, config_schema_snapshot, mode_def_snap):
+    def __init__(self, config_schema_snapshot, pipeline_snapshot_id, mode_def_snap):
         super().__init__()
         self._mode_def_snap = check.inst_param(mode_def_snap, "mode_def_snap", ModeDefSnap)
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+        )
+        self._pipeline_snapshot_id = pipeline_snapshot_id
+
+    def resolve_id(self, _graphene_info):
+        return "{pipeline}-{mode}".format(
+            pipeline=self._pipeline_snapshot_id, mode=self._mode_def_snap.name
         )
 
     def resolve_name(self, _graphene_info):

@@ -1,14 +1,16 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
+import {useFeatureFlags} from '../app/Flags';
 import {breakOnUnderscores} from '../app/Util';
 import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
+import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
 import {
@@ -35,17 +37,17 @@ interface SidebarSolidDefinitionProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
   showingSubsolids: boolean;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  repoAddress?: RepoAddress;
 }
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (props) => {
-  const {definition, getInvocations, showingSubsolids, onClickInvocation} = props;
+  const {definition, getInvocations, showingSubsolids, onClickInvocation, repoAddress} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
-
-  const {rootServerURI} = React.useContext(AppContext);
 
   const inputMappings: SolidMappingTable = {};
   const outputMappings: SolidMappingTable = {};
@@ -67,71 +69,93 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
     );
   }
 
-  const hasRequiredResources = !!(
-    definition.requiredResources && definition.requiredResources.length
-  );
+  let requiredResources = null;
+  if (definition.__typename === 'SolidDefinition') {
+    requiredResources = definition.requiredResources;
+  }
+
+  const subheadString = React.useMemo(() => {
+    if (flagPipelineModeTuples) {
+      return isComposite ? 'Graph' : 'Op';
+    }
+    return isComposite ? 'Composite solid' : 'Solid';
+  }, [flagPipelineModeTuples, isComposite]);
 
   return (
     <div>
       <SidebarSection title={'Definition'}>
-        <SidebarSubhead>{isComposite ? 'Composite Solid' : 'Solid'}</SidebarSubhead>
-        <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
-        <SolidTypeSignature definition={definition} />
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <SidebarSubhead>{subheadString}</SidebarSubhead>
+          <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
+          <SolidTypeSignature definition={definition} />
+        </Box>
       </SidebarSection>
       {definition.description && (
         <SidebarSection title={'Description'}>
-          <Description description={definition.description} />
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Description description={definition.description} />
+          </Box>
         </SidebarSection>
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
-          <Plugin.SidebarComponent definition={definition} rootServerURI={rootServerURI} />
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
+          </Box>
         </SidebarSection>
       )}
       {configField && (
         <SidebarSection title={'Config'}>
-          <ConfigTypeSchema
-            type={configField.configType}
-            typesInScope={configField.configType.recursiveConfigTypes}
-          />
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <ConfigTypeSchema
+              type={configField.configType}
+              typesInScope={configField.configType.recursiveConfigTypes}
+            />
+          </Box>
         </SidebarSection>
       )}
-      {hasRequiredResources && (
+      {requiredResources && (
         <SidebarSection title={'Required Resources'}>
-          {[...definition.requiredResources].sort().map((requirement) => (
-            <ResourceContainer key={requirement.resourceKey}>
-              <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
-              <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-            </ResourceContainer>
-          ))}
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            {[...requiredResources].sort().map((requirement) => (
+              <ResourceContainer key={requirement.resourceKey}>
+                <IconWIP name="resource" color={ColorsWIP.Gray700} />
+                <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+              </ResourceContainer>
+            ))}
+          </Box>
         </SidebarSection>
       )}
       <SidebarSection title={'Inputs'}>
-        {definition.inputDefinitions.map((inputDef, idx) => (
-          <SectionItemContainer key={idx}>
-            <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
-            <TypeWrapper>
-              <TypeWithTooltip type={inputDef.type} />
-            </TypeWrapper>
-            <Description description={inputDef.description} />
-            <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
-          </SectionItemContainer>
-        ))}
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          {definition.inputDefinitions.map((inputDef, idx) => (
+            <SectionItemContainer key={idx}>
+              <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
+              <TypeWrapper>
+                <TypeWithTooltip type={inputDef.type} />
+              </TypeWrapper>
+              <Description description={inputDef.description} />
+              <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
+            </SectionItemContainer>
+          ))}
+        </Box>
       </SidebarSection>
       <SidebarSection title={'Outputs'}>
-        {definition.outputDefinitions.map((outputDef, idx) => (
-          <SectionItemContainer key={idx}>
-            <SectionSmallHeader>
-              {breakOnUnderscores(outputDef.name)}
-              {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
-            </SectionSmallHeader>
-            <TypeWrapper>
-              <TypeWithTooltip type={outputDef.type} />
-            </TypeWrapper>
-            <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
-            <Description description={outputDef.description} />
-          </SectionItemContainer>
-        ))}
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          {definition.outputDefinitions.map((outputDef, idx) => (
+            <SectionItemContainer key={idx}>
+              <SectionSmallHeader>
+                {breakOnUnderscores(outputDef.name)}
+                {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
+              </SectionSmallHeader>
+              <TypeWrapper>
+                <TypeWithTooltip type={outputDef.type} />
+              </TypeWrapper>
+              <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <Description description={outputDef.description} />
+            </SectionItemContainer>
+          ))}
+        </Box>
       </SidebarSection>
       {getInvocations && (
         <SidebarSection title={'All Invocations'}>
@@ -155,9 +179,6 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       key
       value
     }
-    requiredResources {
-      resourceKey
-    }
     outputDefinitions {
       name
       description
@@ -174,6 +195,9 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       }
     }
     ... on SolidDefinition {
+      requiredResources {
+        resourceKey
+      }
       configField {
         configType {
           ...ConfigTypeSchemaFragment

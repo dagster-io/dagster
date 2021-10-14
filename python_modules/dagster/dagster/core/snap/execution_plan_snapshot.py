@@ -1,7 +1,8 @@
 from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.definitions import SolidHandle
+from dagster.core.definitions import NodeHandle
 from dagster.core.execution.plan.inputs import (
     StepInput,
     StepInputSourceTypes,
@@ -33,9 +34,17 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot):
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshot(
-    namedtuple(
+    NamedTuple(
         "_ExecutionPlanSnapshot",
-        "steps artifacts_persisted pipeline_snapshot_id step_keys_to_execute initial_known_state snapshot_version",
+        [
+            ("steps", List["ExecutionStepSnap"]),
+            ("artifacts_persisted", bool),
+            ("pipeline_snapshot_id", str),
+            ("step_keys_to_execute", List[str]),
+            ("initial_known_state", Optional[KnownExecutionState]),
+            ("snapshot_version", Optional[int]),
+            ("step_output_versions", List[str]),
+        ],
     )
 ):
     # serdes log
@@ -43,14 +52,16 @@ class ExecutionPlanSnapshot(
     # added initial_known_state
     # added snapshot_version (if >=1, can be used to fully reconstruct the ExecutionPlan -
     #   can be used to track breaking changes to snapshot execution format if needed)
+    # added step_output_versions
     def __new__(
         cls,
-        steps,
-        artifacts_persisted,
-        pipeline_snapshot_id,
-        step_keys_to_execute=None,
-        initial_known_state=None,
-        snapshot_version=None,
+        steps: List[str],
+        artifacts_persisted: bool,
+        pipeline_snapshot_id: str,
+        step_keys_to_execute: Optional[List[str]] = None,
+        initial_known_state: Optional[KnownExecutionState] = None,
+        snapshot_version: Optional[int] = None,
+        step_output_versions: Optional[List["StepOutputVersionData"]] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -66,6 +77,9 @@ class ExecutionPlanSnapshot(
                 KnownExecutionState,
             ),
             snapshot_version=check.opt_int_param(snapshot_version, "snapshot_version"),
+            step_output_versions=check.opt_list_param(
+                step_output_versions, "step_output_versions", of_type=StepOutputVersionData
+            ),
         )
 
     @property
@@ -92,6 +106,12 @@ class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
+
+
+@whitelist_for_serdes
+class StepOutputVersionData(NamedTuple):
+    step_output_handle: StepOutputHandle
+    version: str
 
 
 @whitelist_for_serdes
@@ -165,7 +185,7 @@ class ExecutionStepOutputSnap(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
-            check.opt_inst_param(solid_handle, "solid_handle", SolidHandle),
+            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
             check.opt_inst_param(properties, "properties", StepOutputProperties),
         )
 
@@ -241,6 +261,18 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
 
+    step_output_versions = check.opt_dict_param(
+        execution_plan.step_output_versions,
+        "execution_plan.step_output_versions",
+        key_type=StepOutputHandle,
+        value_type=str,
+    )
+
+    step_output_versions_list = [
+        StepOutputVersionData(step_output_handle=step_output_handle, version=version)
+        for step_output_handle, version in step_output_versions.items()
+    ]
+
     return ExecutionPlanSnapshot(
         steps=sorted(
             list(map(_snapshot_from_execution_step, execution_plan.steps)), key=lambda es: es.key
@@ -250,4 +282,5 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
         step_keys_to_execute=execution_plan.step_keys_to_execute,
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
+        step_output_versions=step_output_versions_list,
     )

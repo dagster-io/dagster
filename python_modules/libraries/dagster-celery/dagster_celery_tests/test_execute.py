@@ -17,7 +17,7 @@ from dagster import (
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEventType
-from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import send_interrupt
 from dagster_celery_tests.repo import COMPOSITE_DEPTH
 from dagster_celery_tests.utils import start_celery_worker
@@ -116,9 +116,9 @@ def test_terminate_pipeline_on_celery(rabbitmq):
         with tempfile.TemporaryDirectory() as tempdir:
             pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_pipeline")
 
-            with instance_for_test_tempdir(tempdir) as instance:
+            with instance_for_test(temp_dir=tempdir) as instance:
                 run_config = {
-                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
                     "execution": {"celery": {}},
                 }
 
@@ -293,14 +293,12 @@ def test_engine_error():
     ):
         with pytest.raises(DagsterSubprocessError):
             with tempfile.TemporaryDirectory() as tempdir:
-                with instance_for_test_tempdir(tempdir) as instance:
+                with instance_for_test(temp_dir=tempdir) as instance:
                     storage = os.path.join(tempdir, "flakey_storage")
                     execute_pipeline(
                         ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
                         run_config={
-                            "intermediate_storage": {
-                                "filesystem": {"config": {"base_dir": storage}}
-                            },
+                            "resources": {"io_manager": {"config": {"base_dir": storage}}},
                             "execution": {
                                 "celery": {"config": {"config_source": {"task_always_eager": True}}}
                             },

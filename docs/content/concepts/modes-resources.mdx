@@ -9,11 +9,13 @@ Resources provide a way to manage dependencies to external APIs. Together with m
 
 ## Relevant APIs
 
-| Name                                     | Description                                                                                                                                                                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="resource" decorator /> | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                        |
-| <PyObject object="ResourceDefinition" /> | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
-| <PyObject object="ModeDefinition"     /> | Base class used to define a pipeline mode.                                                                                                                                                                         |
+| Name                                             | Description                                                                                                                                                                                                                 |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="resource" decorator />         | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                                 |
+| <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
+| <PyObject object="ModeDefinition"     />         | Class used to define a pipeline mode.                                                                                                                                                                                       |
+| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
+| <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 
 ## Overview
 
@@ -41,6 +43,68 @@ class ExternalCerealFetcher:
 @resource
 def cereal_fetcher(init_context):
     return ExternalCerealFetcher()
+```
+
+## Accessing Resources in Solids
+
+Solids use resource keys to access resources, like so:
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_solid_with_resources_example endbefore=end_solid_with_resources_example
+CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
+
+
+@solid(required_resource_keys={"database"})
+def solid_requires_resources(context):
+    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+```
+
+## Testing Resource Initialization
+
+You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource_testing endbefore=end_resource_testing
+@resource
+def my_resource(_):
+    return "foo"
+
+
+def test_my_resource():
+    assert my_resource(None) == "foo"
+```
+
+If your resource requires other resources or config, then you can provide a <PyObject object="InitResourceContext" /> object by using the <PyObject object="build_init_resource_context" /> function.
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource_testing_with_context endbefore=end_resource_testing_with_context
+@resource(required_resource_keys={"foo"}, config_schema={"bar": str})
+def my_resource_requires_context(init_context):
+    return init_context.resources.foo, init_context.resource_config["bar"]
+
+
+from dagster import build_init_resource_context
+
+
+def test_my_resource_with_context():
+    init_context = build_init_resource_context(
+        resources={"foo": "foo_str"}, config={"bar": "bar_str"}
+    )
+    assert my_resource_requires_context(init_context) == ("foo_str", "bar_str")
+```
+
+If your resource is a context manager, then you can open it as one using python's `with` syntax.
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_cm_resource_testing endbefore=end_cm_resource_testing
+from contextlib import contextmanager
+
+
+@resource
+@contextmanager
+def my_cm_resource(_):
+    yield "foo"
+
+
+def test_cm_resource():
+    with my_cm_resource(None) as initialized_resource:
+        assert initialized_resource == "foo"
 ```
 
 ## Defining a Mode
@@ -90,9 +154,9 @@ height={2414}
 
 ### Dagster CLI
 
-When launching a pipeline via the CLI, you can use the `-d` option to specify the mode.
+When launching a pipeline via the CLI, you can use the `--mode` option to specify the mode.
 
-    $ dagster pipeline execute -d prod_mode my_pipeline
+    $ dagster pipeline execute --mode prod_mode my_pipeline
 
 ## Examples
 

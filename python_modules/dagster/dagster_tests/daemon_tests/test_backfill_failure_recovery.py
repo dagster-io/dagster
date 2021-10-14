@@ -1,13 +1,16 @@
 import pendulum
 import pytest
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
+from dagster.core.test_utils import (
+    cleanup_test_instance,
+    create_test_daemon_workspace,
+    get_crash_signals,
+)
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
+from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import instance_for_context, repos
 
@@ -23,18 +26,15 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(
-                execution_datetime
-            ), ProcessGrpcServerRegistry() as grpc_server_registry:
-                with DynamicWorkspace(grpc_server_registry) as workspace:
-                    list(
-                        execute_backfill_iteration(
-                            instance,
-                            workspace,
-                            get_default_daemon_logger("BackfillDaemon"),
-                            debug_crash_flags=debug_crash_flags,
-                        )
+            with pendulum.test(execution_datetime), create_test_daemon_workspace() as workspace:
+                list(
+                    execute_backfill_iteration(
+                        instance,
+                        workspace,
+                        get_default_daemon_logger("BackfillDaemon"),
+                        debug_crash_flags=debug_crash_flags,
                     )
+                )
         finally:
             cleanup_test_instance(instance)
 

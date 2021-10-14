@@ -1,7 +1,7 @@
 import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 
 import {SearchDialog} from './SearchDialog';
 
@@ -12,9 +12,9 @@ export default {
 } as Meta;
 
 const Template: Story = (props) => (
-  <ApolloTestProvider>
-    <SearchDialog theme="light" searchPlaceholder="" {...props} />
-  </ApolloTestProvider>
+  <StorybookProvider>
+    <SearchDialog searchPlaceholder="" {...props} />
+  </StorybookProvider>
 );
 
 export const Simple = Template.bind({});

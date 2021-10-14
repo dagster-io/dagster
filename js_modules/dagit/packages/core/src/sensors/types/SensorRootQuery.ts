@@ -4,18 +4,18 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { SensorSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorRootQuery
 // ====================================================
 
 export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "PythonError";
+  __typename: "SensorNotFoundError" | "UnauthorizedError" | "PythonError";
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
-  __typename: "FutureJobTick";
+  __typename: "FutureInstigationTick";
   timestamp: number;
 }
 
@@ -33,17 +33,17 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrig
   repositoryLocationMetadata: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData {
-  __typename: "SensorJobData";
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData {
+  __typename: "SensorData";
   lastRunKey: string | null;
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_ScheduleJobData {
-  __typename: "ScheduleJobData";
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData {
+  __typename: "ScheduleData";
   cronSchedule: string;
 }
 
-export type SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData | SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_ScheduleJobData;
+export type SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData | SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
   __typename: "PipelineRun";
@@ -66,9 +66,9 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error {
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
-  __typename: "JobTick";
+  __typename: "InstigationTick";
   id: string;
-  status: JobTickStatus;
+  status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -76,16 +76,23 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
-  __typename: "JobState";
+  __typename: "InstigationState";
   id: string;
   name: string;
-  jobType: JobType;
-  status: JobStatus;
+  instigationType: InstigationType;
+  status: InstigationStatus;
   repositoryOrigin: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin;
-  jobSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData | null;
+  typeSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
   runningCount: number;
+}
+
+export interface SensorRootQuery_sensorOrError_Sensor_targets {
+  __typename: "Target";
+  pipelineName: string;
+  solidSelection: string[] | null;
+  mode: string;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor {
@@ -93,13 +100,11 @@ export interface SensorRootQuery_sensorOrError_Sensor {
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string;
-  solidSelection: (string | null)[] | null;
-  mode: string;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: SensorRootQuery_sensorOrError_Sensor_nextTick | null;
   sensorState: SensorRootQuery_sensorOrError_Sensor_sensorState;
+  targets: SensorRootQuery_sensorOrError_Sensor_targets[] | null;
 }
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;
@@ -120,7 +125,7 @@ export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHea
 export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

@@ -16,6 +16,7 @@ module.exports = {
   },
   rules: {
     curly: 'error',
+    eqeqeq: 'error',
     'import/no-cycle': 'error',
     'import/no-default-export': 'error',
     'import/no-duplicates': 'error',
@@ -35,6 +36,11 @@ module.exports = {
             name: '@blueprintjs/core',
             importNames: ['Alert', 'Callout', 'Spinner'],
             message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/core',
+            importNames: ['Tooltip'],
+            message: 'Please use `Tooltip2` in `@blueprintjs/popover2` instead.',
           },
           {
             name: 'styled-components',
