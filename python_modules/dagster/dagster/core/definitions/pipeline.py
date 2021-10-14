@@ -35,7 +35,6 @@ from .dependency import (
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
-from .op import OpDefinition
 from .preset import PresetDefinition
 from .solid import NodeDefinition
 from .utils import validate_tags
@@ -181,8 +180,6 @@ class PipelineDefinition:
                 description=None,
             )
 
-        self._is_using_graph_job_op_apis = _is_using_graph_job_op_apis(self._graph_def.solids)
-
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple pipelines/jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
@@ -266,6 +263,10 @@ class PipelineDefinition:
     @property
     def target_type(self):
         return "pipeline"
+
+    @property
+    def is_job(self) -> bool:
+        return False
 
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
@@ -1059,7 +1060,7 @@ def _create_run_config_schema(
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,
             required_resources=required_resources,
-            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+            is_using_graph_job_op_apis=pipeline_def.target_type == "job",
         )
     )
 
@@ -1082,14 +1083,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
-
-
-def _is_using_graph_job_op_apis(node_list: List[Node]):
-    """Recursively determine if any node definitions were constructed using the `op` decorator."""
-    for node in node_list:
-        if isinstance(node.definition, OpDefinition):
-            return True
-        elif isinstance(node.definition, GraphDefinition):
-            if _is_using_graph_job_op_apis(node.definition.solids):
-                return True
-    return False

@@ -69,7 +69,7 @@ from .intermediate_storage import IntermediateStorageDefinition, intermediate_st
 from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
-from .op import OpDefinition
+from .op_def import OpDefinition
 from .output import (
     DynamicOut,
     DynamicOutputDefinition,

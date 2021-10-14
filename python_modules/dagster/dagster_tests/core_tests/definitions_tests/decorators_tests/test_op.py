@@ -16,7 +16,7 @@ from dagster import (
     op,
     solid,
 )
-from dagster.core.definitions.op import OpDefinition
+from dagster.core.definitions.op_def import OpDefinition
 
 
 def execute_op_in_graph(an_op):

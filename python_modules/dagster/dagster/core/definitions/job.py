@@ -47,8 +47,12 @@ class JobDefinition(PipelineDefinition):
         )
 
     @property
-    def target_type(self):
+    def target_type(self) -> str:
         return "job"
+
+    @property
+    def is_job(self) -> bool:
+        return True
 
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"

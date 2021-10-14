@@ -9,7 +9,7 @@ from ...definitions.decorators.graph import graph
 from ...definitions.dependency import Node
 from ...definitions.hook import HookDefinition
 from ...definitions.mode import ModeDefinition
-from ...definitions.op import OpDefinition
+from ...definitions.op_def import OpDefinition
 from ...definitions.resource import IContainsGenerator, Resources
 from ...definitions.solid import SolidDefinition
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError

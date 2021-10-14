@@ -183,7 +183,7 @@ class Node:
 
     def describe_node(self) -> str:
         from .solid import CompositeSolidDefinition, SolidDefinition
-        from .op import OpDefinition
+        from .op_def import OpDefinition
 
         if isinstance(self.definition, CompositeSolidDefinition):
             return f"composite solid '{self.name}'"
