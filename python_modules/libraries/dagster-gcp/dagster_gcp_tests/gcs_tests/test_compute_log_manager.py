@@ -126,7 +126,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 result = execute_pipeline(simple, instance=instance)
                 compute_steps = [
                     event.step_key
-                    for event in result.all_node_events
+                    for event in result.step_event_list
                     if event.event_type == DagsterEventType.STEP_START
                 ]
                 assert len(compute_steps) == 1
