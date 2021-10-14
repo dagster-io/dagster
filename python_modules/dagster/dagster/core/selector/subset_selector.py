@@ -19,7 +19,7 @@ class OpSelectionData(
         "_OpSelectionData",
         [
             ("resolved_op_selection", Optional[AbstractSet[str]]),
-            ("ignored_solids", Optional[List[Node]]),
+            ("ignored_solids", List[Node]),
         ],
     )
 ):

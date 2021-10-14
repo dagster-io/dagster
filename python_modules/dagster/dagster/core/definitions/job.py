@@ -149,7 +149,7 @@ class JobDefinition(PipelineDefinition):
         )
 
     @property
-    def op_selection_data(self) -> OpSelectionData:
+    def op_selection_data(self) -> Optional[OpSelectionData]:
         return self._op_selection_data
 
     def get_job_subset_def(
