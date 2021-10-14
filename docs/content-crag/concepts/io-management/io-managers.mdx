@@ -51,7 +51,7 @@ height={1040}
 
 This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
 
-The default IOManager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="mem_io_manager"/> (which works only for the single process executor), <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
+The default IOManager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IOManager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which only works with the single process executor. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
 IOManagers are [resources](/concepts/resources), which means users can supply different IOManagers for the same op outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a job and an S3IOManager in production.
 
@@ -88,10 +88,11 @@ def my_job():
 
 Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the IOManager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `mem_io_manager`.
+To select the IOManager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster import Out, fs_io_manager, in_process_executor, job, mem_io_manager, op
+from dagster import Out, fs_io_manager, in_process_executor, job, op
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 
 @op(out=Out(io_manager_key="fs"))
@@ -99,12 +100,12 @@ def op_1():
     return 1
 
 
-@op(out=Out(io_manager_key="mem"))
+@op(out=Out(io_manager_key="s3_io"))
 def op_2(a):
     return a + 1
 
 
-@job(resource_defs={"fs": fs_io_manager, "mem": mem_io_manager}, executor_def=in_process_executor)
+@job(resource_defs={"fs": fs_io_manager, "s3_io": s3_pickle_io_manager, "s3": s3_resource})
 def my_job():
     op_2(op_1())
 ```

@@ -1,5 +1,6 @@
 # start_marker
-from dagster import Out, fs_io_manager, in_process_executor, job, mem_io_manager, op
+from dagster import Out, fs_io_manager, in_process_executor, job, op
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 
 @op(out=Out(io_manager_key="fs"))
@@ -7,12 +8,12 @@ def op_1():
     return 1
 
 
-@op(out=Out(io_manager_key="mem"))
+@op(out=Out(io_manager_key="s3_io"))
 def op_2(a):
     return a + 1
 
 
-@job(resource_defs={"fs": fs_io_manager, "mem": mem_io_manager}, executor_def=in_process_executor)
+@job(resource_defs={"fs": fs_io_manager, "s3_io": s3_pickle_io_manager, "s3": s3_resource})
 def my_job():
     op_2(op_1())
 
