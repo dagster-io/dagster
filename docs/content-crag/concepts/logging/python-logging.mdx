@@ -49,10 +49,10 @@ python_logs:
 Once this key is set, Dagster will treat any normal python log call from one of the listed loggers in the exact same way as a `context.log` call, which means you should be able to see this log statement in Dagit:
 
 <Image
-  alt="log-python-error"
-  src="/images/concepts/logging/log-python-error.png"
-  width={1165}
-  height={250}
+alt="log-python-error"
+src="/images/concepts/logging/log-python-error.png"
+width={1165}
+height={250}
 />
 
 Please note that you should generally be fairly selective about which logs you wish to capture, especially in a production context. It is possible to overload the event log storage with these events, which may cause certain pages in Dagit to take a long time to load. Consider only capturing the most critical logs, and avoid including debug information if you expect to maintain a large amount of run history.
@@ -137,12 +137,12 @@ python_logs:
       myHandler:
         class: logging.FileHandler
         level: INFO
-        filename: "my_dagster_logs.log"
-        mode: "a"
+        filename: 'my_dagster_logs.log'
+        mode: 'a'
         formatter: timeFormatter
     formatters:
       timeFormatter:
-        format: "%(asctime)s :: %(message)s"
+        format: '%(asctime)s :: %(message)s'
 ```
 
 Then, we execute the following pipeline:
@@ -161,8 +161,8 @@ def file_log_pipeline():
 After execution, we can read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log!
 
 <Image
-  alt="log-file-output"
-  src="/images/concepts/logging/log-file-output.png"
-  width={4032}
-  height={945}
+alt="log-file-output"
+src="/images/concepts/logging/log-file-output.png"
+width={4032}
+height={945}
 />
