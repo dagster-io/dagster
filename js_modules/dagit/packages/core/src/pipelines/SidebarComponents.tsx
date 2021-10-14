@@ -50,21 +50,24 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
-  margin: 0;
-  margin-bottom: 16px;
+  margin: 0 0 12px;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  :first-child:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 export const SectionHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 18px;
+  font-size: 16px;
   margin: 2px 0 0 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   margin: 2px 0;
 `;
@@ -76,21 +79,20 @@ export const SidebarSubhead = styled.div`
 
 export const SectionItemContainer = styled.div`
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   font-size: 0.8rem;
   &:last-child {
     border-bottom: none;
     margin-bottom: 0;
-    padding-bottom: 5px;
+    padding-bottom: 0;
   }
 `;
 
-// Internal
-
-const CollapsingHeaderBar = styled.div`
+export const CollapsingHeaderBar = styled.div`
   height: 32px;
   padding-left: 24px;
+  padding-right: 8px;
   background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
@@ -102,7 +104,4 @@ const CollapsingHeaderBar = styled.div`
   font-size: 12px;
   font-weight: 700;
   user-select: none;
-  &:first-child {
-    border-top: 0;
-  }
 `;

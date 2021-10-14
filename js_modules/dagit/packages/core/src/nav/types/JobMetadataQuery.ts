@@ -23,6 +23,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleSta
 export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
   __typename: "Schedule";
   id: string;
+  cronSchedule: string;
   mode: string;
   name: string;
   scheduleState: JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState;

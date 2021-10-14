@@ -15,6 +15,7 @@ from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
+    DagsterUnknownPartitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
@@ -439,8 +440,9 @@ class PartitionSetDefinition(Generic[T]):
                 determines whether a schedule should execute. Defaults to a function that always returns
                 ``True``.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
-            execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-                with DagsterDaemonScheduler, and must be set when using that scheduler.
+            execution_timezone (Optional[str]): Timezone in which the schedule should run.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
             description (Optional[str]): A human-readable description of the schedule.
 
         Returns:
@@ -638,6 +640,92 @@ class PartitionedConfig(Generic[T]):
     @property
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Dict[str, Any]]:
         return self._run_config_for_partition_fn
+
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
+        return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
+
+    def get_run_config(self, partition_key: str) -> Dict[str, Any]:
+        matching = [
+            partition
+            for partition in self.partitions_def.get_partitions()
+            if partition.name == partition_key
+        ]
+        if not matching:
+            raise DagsterUnknownPartitionError(
+                f"Could not find a partition with key `{partition_key}`"
+            )
+        return self.run_config_for_partition_fn(matching[0])
+
+
+def static_partitioned_config(
+    partition_keys: List[str],
+) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    """Creates a static partitioned config for a job.
+
+    The provided partition_keys returns a static list of strings identifying the set of partitions,
+    given an optional datetime argument (representing the current time).  The list of partitions
+    is static, so while the run config returned by the decorated function may change over time, the
+    list of valid partition keys does not.
+
+    This has performance advantages over `dynamic_partitioned_config` in terms of loading different
+    partition views in Dagit.
+
+    The decorated function takes in a partition key and returns a valid run config for a particular
+    target job.
+
+    Args:
+        partition_keys (List[str]): A list of valid partition keys, which serve as the range of
+            values that can be provided to the decorated run config function.
+    """
+
+    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
+        check.callable_param(fn, "fn")
+
+        partitions_list = [Partition(key) for key in partition_keys]
+
+        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+            return fn(partition.name)
+
+        return PartitionedConfig(
+            partitions_def=StaticPartitionsDefinition(partitions_list),
+            run_config_for_partition_fn=_run_config_wrapper,
+        )
+
+    return inner
+
+
+def dynamic_partitioned_config(
+    partition_fn: Callable[[Optional[datetime]], List[str]],
+) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    """Creates a dynamic partitioned config for a job.
+
+    The provided partition_fn returns a list of strings identifying the set of partitions, given
+    an optional datetime argument (representing the current time).  The list of partitions returned
+    may change over time.
+
+    The decorated function takes in a partition key and returns a valid run config for a particular
+    target job.
+
+    Args:
+        partition_fn (Callable[[datetime.datetime], Sequence[str]]): A function that generates a
+            list of valid partition keys, which serve as the range of values that can be provided
+            to the decorated run config function.
+    """
+
+    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
+        def _partitions_wrapper(current_time: Optional[datetime] = None):
+            partition_keys = partition_fn(current_time)
+            return [Partition(key) for key in partition_keys]
+
+        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+            return fn(partition.name)
+
+        return PartitionedConfig(
+            partitions_def=DynamicPartitionsDefinition(_partitions_wrapper),
+            run_config_for_partition_fn=_run_config_wrapper,
+        )
+
+    return inner
 
 
 def get_cron_schedule(

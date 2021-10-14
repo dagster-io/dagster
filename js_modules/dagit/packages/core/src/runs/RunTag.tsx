@@ -38,7 +38,7 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
 
   if (isDagsterTag) {
     return (
-      <Tooltip content={`${tag.key}=${tag.value}`} targetTagName="div" position="left">
+      <Tooltip content={`${tag.key}=${tag.value}`} targetTagName="div" placement="top">
         <Tag isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />
       </Tooltip>
     );

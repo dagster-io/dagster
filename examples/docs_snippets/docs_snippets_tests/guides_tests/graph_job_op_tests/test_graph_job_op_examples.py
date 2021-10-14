@@ -34,9 +34,9 @@ from docs_snippets.guides.dagster.graph_job_op import (
 
 jobs = [
     (simple_graph, "do_it_all"),
-    (graph_with_resources, "do_it_all_job"),
-    (graph_with_config, "do_it_all_job"),
-    (graph_job_test, "do_it_all_job"),
+    (graph_with_resources, "do_it_all"),
+    (graph_with_config, "do_it_all"),
+    (graph_job_test, "do_it_all"),
     (nested_graphs, "do_it_all"),
     (nested_graphs_ins_out, "do_it_all"),
     (nested_graphs_multi_out, "do_it_all"),

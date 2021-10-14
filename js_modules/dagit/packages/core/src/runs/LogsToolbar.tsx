@@ -169,17 +169,9 @@ const ComputeLogToolbar = ({
           </ButtonWIP>
         </SelectWIP>
         {isValidStepSelection ? (
-          <Tabs selectedTabId={LogType[logType]} size="small">
-            <Tab
-              id={LogType[LogType.stdout]}
-              title="stdout"
-              onClick={() => onSetLogType(LogType.stdout)}
-            />
-            <Tab
-              id={LogType[LogType.stderr]}
-              title="stderr"
-              onClick={() => onSetLogType(LogType.stderr)}
-            />
+          <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
+            <Tab id={LogType.stdout} title="stdout" />
+            <Tab id={LogType.stderr} title="stderr" />
           </Tabs>
         ) : null}
       </Group>
@@ -273,9 +265,8 @@ const StructuredLogToolbar = ({
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
           }
-        >
-          Hide non-matches
-        </NonMatchCheckbox>
+          label="Hide non-matches"
+        />
       ) : null}
       <OptionsDivider />
       <Group direction="row" spacing={4} alignItems="center">
@@ -309,18 +300,15 @@ const StructuredLogToolbar = ({
       </Group>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <div style={{marginRight: '8px'}}>
-        <ButtonWIP
-          small
-          icon={<IconWIP name={copyIcon} />}
-          onClick={() => {
-            copyToClipboard(window.location.href);
-            setCopyIcon('assignment_turned_in');
-          }}
-        >
-          Copy URL
-        </ButtonWIP>
-      </div>
+      <ButtonWIP
+        icon={<IconWIP name={copyIcon} />}
+        onClick={() => {
+          copyToClipboard(window.location.href);
+          setCopyIcon('assignment_turned_in');
+        }}
+      >
+        Copy URL
+      </ButtonWIP>
     </>
   );
 };

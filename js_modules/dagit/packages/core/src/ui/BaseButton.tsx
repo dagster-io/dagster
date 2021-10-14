@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 import {ColorsWIP} from './Colors';
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
+import {FontFamily} from './styles';
 
 interface Props extends React.ComponentPropsWithRef<'button'> {
   icon?: React.ReactNode;
@@ -61,6 +62,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   cursor: pointer;
   display: inline-flex;
   flex-direction: row;
+  font-family: ${FontFamily.default};
   font-size: 14px;
   line-height: 20px;
   padding: 6px 12px;
@@ -96,9 +98,14 @@ const StyledButton = styled.button<StyledButtonProps>`
     box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
   }
 
-  ${SpinnerWrapper},
+  ${SpinnerWrapper} {
+    align-self: center;
+    display: block;
+  }
+
   ${IconWrapper} {
     color: ${({$textColor}) => $textColor};
+    background-color: ${({$textColor}) => $textColor};
     align-self: center;
     display: block;
   }
@@ -117,11 +124,8 @@ const StyledButton = styled.button<StyledButtonProps>`
 
   ${SpinnerWrapper}:first-child:last-child {
     margin: 2px -4px;
-   }
-   ${IconWrapper}:first-child:last-child {
-      margin: 0px -5px;
-      width: 20px;
-      height: 20px;
-    }
+  }
+  ${IconWrapper}:first-child:last-child {
+    margin: 2px -4px;
   }
 `;

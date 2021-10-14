@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
+import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -61,11 +62,13 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
 
   if (error || !pipelinesForTable) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Unable to load pipelines"
-        description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
-      />
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Unable to load pipelines"
+          description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
+        />
+      </Box>
     );
   }
 

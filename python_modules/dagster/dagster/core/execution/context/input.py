@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -33,6 +34,7 @@ class InputContext:
         resources (Optional[Resources]): The resources required by the resource that initializes the
             input manager. If using the :py:func:`@root_input_manager` decorator, these resources
             correspond to those requested with the `required_resource_keys` parameter.
+        op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
     """
 
     def __init__(
@@ -48,13 +50,17 @@ class InputContext:
         resource_config: Optional[Dict[str, Any]] = None,
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
+        op_def: Optional["OpDefinition"] = None,
     ):
         from dagster.core.definitions.resource import Resources, IContainsGenerator
         from dagster.core.execution.build_resources import build_resources
 
         self._name = name
         self._pipeline_name = pipeline_name
-        self._solid_def = solid_def
+        check.invariant(
+            solid_def is None or op_def is None, "Can't provide both a solid_def and an op_def arg"
+        )
+        self._solid_def = solid_def or op_def
         self._config = config
         self._metadata = metadata
         self._upstream_output = upstream_output
@@ -122,6 +128,16 @@ class InputContext:
             )
 
         return self._solid_def
+
+    @property
+    def op_def(self) -> "OpDefinition":
+        if self._solid_def is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access op_def, "
+                "but it was not provided when constructing the InputContext"
+            )
+
+        return cast(OpDefinition, self._solid_def)
 
     @property
     def config(self) -> Any:
@@ -204,6 +220,7 @@ def build_input_context(
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
+    op_def: Optional[OpDefinition] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -226,6 +243,7 @@ def build_input_context(
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
         asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
 
     Examples:
 
@@ -246,11 +264,11 @@ def build_input_context(
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
+    op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
 
     return InputContext(
         name=name,
         pipeline_name=None,
-        solid_def=None,
         config=config,
         metadata=metadata,
         upstream_output=upstream_output,
@@ -259,4 +277,5 @@ def build_input_context(
         resource_config=resource_config,
         resources=resources,
         step_context=None,
+        op_def=op_def,
     )

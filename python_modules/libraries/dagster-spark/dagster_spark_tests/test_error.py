@@ -34,7 +34,7 @@ def test_jar_not_found():
     )
     assert result.failure_data
     assert (
-        "does not exist. A valid jar must be built before running this solid."
+        "does not exist. A valid jar must be built before running this op."
         in result.failure_data.error.cause.message
     )
 

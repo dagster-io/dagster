@@ -196,7 +196,12 @@ class GrapheneQuery(graphene.ObjectType):
 
     instance = graphene.NonNull(GrapheneInstance)
 
-    assetsOrError = graphene.NonNull(GrapheneAssetsOrError)
+    assetsOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetsOrError),
+        prefix=graphene.List(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
 
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
@@ -376,8 +381,13 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
-    def resolve_assetsOrError(self, graphene_info):
-        return get_assets(graphene_info)
+    def resolve_assetsOrError(self, graphene_info, **kwargs):
+        return get_assets(
+            graphene_info,
+            prefix=kwargs.get("prefix"),
+            cursor=kwargs.get("cursor"),
+            limit=kwargs.get("limit"),
+        )
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))

@@ -68,8 +68,8 @@ export function useEnforceModeInPipelinePath() {
   const history = useHistory();
 
   const match = useRouteMatch<{repoPath: string; pipelinePath: string}>([
-    '/workspace/:repoPath/pipelines/:pipelinePath',
-    '/workspace/:repoPath/jobs/:pipelinePath',
+    '/workspace/:repoPath/pipelines/:pipelinePath/(/?.*)',
+    '/workspace/:repoPath/jobs/:pipelinePath/(/?.*)',
   ]);
 
   const pipelinePath = match?.params.pipelinePath;
@@ -111,6 +111,7 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   pipelineName: string;
   pipelineMode: string;
   snapshotId: string;
+  size: 'small' | 'normal';
 }> = (props) => {
   const snapshotLink = `/instance/snapshots/${explorerPathToString({
     pipelineName: props.pipelineName,
@@ -121,7 +122,7 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   })}`;
 
   return (
-    <Mono>
+    <Mono style={{fontSize: props.size === 'small' ? '14px' : '16px'}}>
       <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
     </Mono>
   );

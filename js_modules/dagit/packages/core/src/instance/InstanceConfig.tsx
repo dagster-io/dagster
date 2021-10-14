@@ -9,7 +9,7 @@ import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
 import {PageHeader} from '../ui/PageHeader';
 import {Spinner} from '../ui/Spinner';
-import {Heading, Subheading} from '../ui/Text';
+import {Code, Heading, Subheading} from '../ui/Text';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
@@ -20,8 +20,18 @@ const YamlShimStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .hljs-attr {
-    color: ${ColorsWIP.Blue700};
+  .config-yaml {
+    .hljs-attr {
+      color: ${ColorsWIP.Blue700};
+    }
+
+    .hljs-string {
+      color: ${ColorsWIP.Green700};
+    }
+
+    .hljs-number {
+      color: ${ColorsWIP.Red700};
+    }
   }
 `;
 
@@ -55,7 +65,11 @@ export const InstanceConfig = React.memo(() => {
   }, [history]);
 
   if (!data) {
-    return <Spinner purpose="section" />;
+    return (
+      <Box padding={{vertical: 64}}>
+        <Spinner purpose="section" />
+      </Box>
+    );
   }
 
   // Split by top-level yaml keys
@@ -64,21 +78,31 @@ export const InstanceConfig = React.memo(() => {
   return (
     <>
       <PageHeader title={<Heading>Instance status</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading>
+          Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
+        </Subheading>
+      </Box>
+      <YamlShimStyle />
       <Box padding={{vertical: 16, horizontal: 24}}>
-        <Box padding={{bottom: 16}}>
-          <Subheading>{`Dagster ${data.version}`}</Subheading>
-        </Box>
-        <YamlShimStyle />
         {sections.map((section) => {
           const [id] = section.split(/\:/);
           const hashForSection = `#${id}`;
           return (
-            <Box flex={{direction: 'row', alignItems: 'flex-start'}} padding={8} key={id} id={id}>
+            <Box
+              flex={{direction: 'row', alignItems: 'flex-start'}}
+              padding={{vertical: 8}}
+              key={id}
+              id={id}
+            >
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
                 <IconWIP name="link" color={ColorsWIP.Gray300} />
               </ConfigLink>
               <ConfigSection highlighted={hash === hashForSection}>
-                <HighlightedCodeBlock value={section} language="yaml" />
+                <HighlightedCodeBlock value={section} language="yaml" className="config-yaml" />
               </ConfigSection>
             </Box>
           );

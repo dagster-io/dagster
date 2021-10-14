@@ -62,8 +62,7 @@ class _Job:
             provided_input_defs=[],
             provided_output_defs=[],
             ignore_output_from_composition_fn=False,
-            config_schema=None,
-            config_fn=None,
+            config_mapping=None,
         )
 
         graph_def = GraphDefinition(
@@ -73,7 +72,7 @@ class _Job:
             description=self.description or fn.__doc__,
             input_mappings=input_mappings,
             output_mappings=output_mappings,
-            config_mapping=config_mapping,
+            config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
         )

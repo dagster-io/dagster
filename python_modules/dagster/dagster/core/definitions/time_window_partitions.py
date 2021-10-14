@@ -4,8 +4,9 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 import pendulum
 from dagster import check
 from dagster.utils.backcompat import experimental_fn_warning
+from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster.utils.schedules import schedule_execution_time_iterator
 
-from ...utils.schedules import schedule_execution_time_iterator
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -111,6 +112,8 @@ def daily_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -169,11 +172,13 @@ def hourly_partitioned_config(
             provide in either a datetime or string format.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
     """
 
     experimental_fn_warning("hourly_partitioned_config")
 
-    _fmt = fmt or DEFAULT_DATE_FORMAT
+    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
     _timezone = timezone or "UTC"
 
     if isinstance(start_date, str):
@@ -221,6 +226,8 @@ def monthly_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -277,6 +284,8 @@ def weekly_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current

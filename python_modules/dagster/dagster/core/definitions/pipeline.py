@@ -177,7 +177,7 @@ class PipelineDefinition:
                 node_defs=solid_defs,
                 input_mappings=None,
                 output_mappings=None,
-                config_mapping=None,
+                config=None,
                 description=None,
             )
 
@@ -1059,6 +1059,7 @@ def _create_run_config_schema(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
             solids=pipeline_def.graph.solids,
+            graph_def=pipeline_def.graph,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,

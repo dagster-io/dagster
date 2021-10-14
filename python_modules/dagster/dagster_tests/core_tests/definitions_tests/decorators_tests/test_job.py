@@ -1,6 +1,6 @@
 import logging
 
-from dagster import DagsterInstance, Field, JobDefinition, job, logger, op, resource
+from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
 from dagster.core.utils import coerce_valid_log_level
 
 
@@ -48,6 +48,25 @@ def test_job_config():
 
     basic_job.execute_in_process()
     assert called["basic"] == "foo"
+
+
+def test_job_config_mapping():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"ops": {"my_op": {"config": outer["foo_schema"]}}}
+
+    config_mapping = ConfigMapping(config_fn=_config_fn, config_schema={"foo_schema": str})
+
+    @job(config=config_mapping)
+    def my_job():
+        my_op()
+
+    result = my_job.execute_in_process(run_config={"foo_schema": "foo"})
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
 
 
 def test_job_tags():

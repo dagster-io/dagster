@@ -7,6 +7,7 @@ import toPlainText from 'remark-plain-text';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
+import {FontFamily} from './styles';
 
 interface Props {
   children: string;
@@ -36,19 +37,29 @@ export const markdownToPlaintext = (md: string) => {
 };
 
 const Container = styled.div`
-  table tr th {
+  &&& table {
+    border: none;
+    font-family: ${FontFamily.monospace};
+    font-size: 16px;
+  }
+
+  &&& table tr th {
+    box-shadow: none !important;
     color: ${ColorsWIP.Gray400};
+    font-family: ${FontFamily.default};
+    font-size: 12px;
     font-weight: normal;
-    padding: 4px 16px 4px 0;
+    padding: 2px 8px;
     text-align: left;
   }
 
-  table tr td {
-    padding: 2px 16px 2px 0;
+  &&& table tr td {
+    box-shadow: none !important;
+    padding: 2px 8px;
   }
 
-  table tr th:last-child,
-  table tr td:last-child {
+  &&& table tr th:last-child,
+  &&& table tr td:last-child {
     padding-right: 0;
   }
 `;

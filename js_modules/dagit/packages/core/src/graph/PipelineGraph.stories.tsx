@@ -43,6 +43,7 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
     definition: {
       __typename: 'SolidDefinition',
       name: sname,
+      description: '',
       metadata: [],
       inputDefinitions: ins.map((iname) => ({
         __typename: 'InputDefinition',

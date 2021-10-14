@@ -2,7 +2,7 @@
 import json
 import logging
 
-from dagster import Field, ModeDefinition, logger, pipeline, solid
+from dagster import Field, logger, job, op
 
 # start_custom_logger_marker_0
 
@@ -33,13 +33,13 @@ def json_console_logger(init_context):
     return logger_
 
 
-@solid
+@op
 def hello_logs(context):
     context.log.info("Hello, world!")
 
 
-@pipeline(mode_defs=[ModeDefinition(logger_defs={"my_json_logger": json_console_logger})])
-def demo_pipeline():
+@job(logger_defs={"my_json_logger": json_console_logger})
+def demo_job():
     hello_logs()
 
 

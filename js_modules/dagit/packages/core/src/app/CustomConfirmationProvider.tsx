@@ -27,7 +27,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <DialogBody>{description}</DialogBody>
       <DialogFooter>
         <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
-        <ButtonWIP onClick={onSubmit} intent="warning">
+        <ButtonWIP onClick={onSubmit} intent="danger">
           Confirm
         </ButtonWIP>
       </DialogFooter>

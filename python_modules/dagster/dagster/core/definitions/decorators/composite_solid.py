@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
 
-from ..composition import do_composition
+from ..composition import do_composition, get_validated_config_mapping
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import CompositeSolidDefinition
@@ -33,6 +33,10 @@ class _CompositeSolid:
         if not self.name:
             self.name = fn.__name__
 
+        config_mapping = get_validated_config_mapping(
+            self.name, self.config_schema, self.config_fn, decorator_name="composite_solid"
+        )
+
         (
             input_mappings,
             output_mappings,
@@ -46,8 +50,7 @@ class _CompositeSolid:
             fn,
             self.input_defs,
             self.output_defs,
-            self.config_schema,
-            self.config_fn,
+            config_mapping,
             ignore_output_from_composition_fn=False,
         )
 

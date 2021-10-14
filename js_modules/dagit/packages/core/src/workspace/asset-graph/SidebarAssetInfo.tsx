@@ -27,7 +27,7 @@ export const SidebarAssetInfo: React.FC<{
   return (
     <div style={{overflowY: 'auto'}}>
       <SidebarSection title="Definition">
-        <Box margin={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarTitle>{assetKeyToString(node.assetKey)}</SidebarTitle>
           <Description description={node.description || null} />
         </Box>

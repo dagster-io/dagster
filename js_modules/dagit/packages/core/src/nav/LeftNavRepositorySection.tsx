@@ -146,8 +146,13 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
         </Box>
         {visibleRepos.size ? (
           <FlatContentList {...match?.params} repos={visibleOptions} />
-        ) : (
+        ) : allRepos.length > 0 ? (
           <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
+        ) : (
+          <EmptyState>
+            There are no repositories in this workspace. Add a repository to see a list of jobs and
+            pipelines.
+          </EmptyState>
         )}
       </ListContainer>
       <RepositoryLocationStateObserver />
@@ -162,7 +167,6 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
 
 const Container = styled.div`
   background: ${ColorsWIP.Gray100};
-  color: ${ColorsWIP.Gray900};
   display: flex;
   flex: 1;
   overflow: none;

@@ -51,9 +51,11 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
         {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
           <SnapshotWarning asset={data.assetOrError} asOf={asOf} />
         )}
-        {data?.assetNodeOrError && data.assetNodeOrError.__typename === 'AssetNode' && (
-          <AssetNodeDefinition assetNode={data.assetNodeOrError} />
-        )}
+        {data?.assetOrError &&
+          data.assetOrError.__typename === 'Asset' &&
+          data.assetOrError.definition && (
+            <AssetNodeDefinition assetNode={data.assetOrError.definition} />
+          )}
         <Box padding={{vertical: 16, horizontal: 24}}>
           <Subheading>
             {isPartitioned ? 'Latest materialized partition' : 'Latest materialization'}
@@ -73,21 +75,6 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
 
 const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        description
-        opName
-        jobName
-
-        ...AssetNodeDefinitionFragment
-      }
-
-      ... on AssetNotFoundError {
-        message
-      }
-    }
-
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
@@ -98,6 +85,15 @@ const ASSET_QUERY = gql`
 
         assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
           ...LatestMaterializationMetadataFragment
+        }
+
+        definition {
+          id
+          description
+          opName
+          jobName
+
+          ...AssetNodeDefinitionFragment
         }
       }
     }

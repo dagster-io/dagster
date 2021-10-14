@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled, {css} from 'styled-components/macro';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
@@ -8,8 +8,9 @@ import {
   applySelectSession,
   IStorageData,
 } from '../app/LocalStorage';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 
 interface ExecutationTabProps {
   canRemove?: boolean;
@@ -57,7 +58,7 @@ const ExecutionTab = (props: ExecutationTabProps) => {
   }, [editing]);
 
   return (
-    <TabContainer active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
+    <TabContainer $active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
       {editing ? (
         <input
           ref={input}
@@ -66,13 +67,14 @@ const ExecutionTab = (props: ExecutationTabProps) => {
           onChange={handleChange}
           onBlur={handleBlur}
           value={value}
+          placeholder="Type a tab name…"
         />
       ) : (
         title
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <IconWIP name="close" />
+          <IconWIP name="close" color={ColorsWIP.Olive500} />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -110,68 +112,94 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
   };
 
   return (
-    <ExecutionTabsContainer>
-      {sessionKeys.map((key) => (
-        <ExecutionTab
-          canRemove={sessionCount > 1}
-          key={key}
-          active={key === data.current}
-          title={sessions[key].name}
-          onClick={() => onApply(applySelectSession, key)}
-          onChange={(name) => onApply(applyChangesToSession, key, {name})}
-          onRemove={() => onRemove(key)}
-        />
-      ))}
-      <ExecutionTab title="Add..." onClick={onCreate} />
-    </ExecutionTabsContainer>
+    <Box
+      border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      padding={{horizontal: 12, top: 12}}
+    >
+      <ExecutionTabsContainer>
+        {sessionKeys.map((key) => (
+          <ExecutionTab
+            canRemove={sessionCount > 1}
+            key={key}
+            active={key === data.current}
+            title={sessions[key].name || 'Unnamed'}
+            onClick={() => onApply(applySelectSession, key)}
+            onChange={(name) => onApply(applyChangesToSession, key, {name})}
+            onRemove={() => onRemove(key)}
+          />
+        ))}
+        <ExecutionTab title="+ Add..." onClick={onCreate} />
+      </ExecutionTabsContainer>
+    </Box>
   );
 };
 
 const ExecutionTabsContainer = styled.div`
-  padding-left: 20px;
-  padding-top: 12px;
-  display; flex;
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  gap: 8px;
   z-index: 1;
   flex-direction: row;
-  border-bottom: 1px solid ${ColorsWIP.Gray200};
 `;
 
-const TabContainer = styled.div<{active: boolean}>`
-  position: relative;
-  padding: 6px 8px;
-  display: inline-flex;
-  flex-direction: row;
+const TabContainer = styled.div<{$active: boolean}>`
   align-items: center;
-  background: ${({active}) => (active ? ColorsWIP.White : ColorsWIP.Gray100)};
-  color: ${({active}) => (active ? ColorsWIP.Dark : ColorsWIP.Gray800)};
   user-select: none;
-  top: 1px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 
-  border: 1px solid ${ColorsWIP.Gray200};
-  border-bottom: 1px solid ${({active}) => (active ? 'transparent' : ColorsWIP.Gray200)};
-  border-right: 0;
+  ${({$active}) =>
+    $active
+      ? css`
+          font-weight: 600;
+          background-color: ${ColorsWIP.Gray100};
+          color: ${ColorsWIP.ForestGreen};
+          box-shadow: ${ColorsWIP.ForestGreen} 0 -2px 0 inset;
+        `
+      : css`
+          font-weight: normal;
+          background-color: ${ColorsWIP.Gray50};
+          color: ${ColorsWIP.Gray300};
+          box-shadow: ${ColorsWIP.Olive200} 0 -1px 0 inset;
+
+          &:hover {
+            background-color: ${ColorsWIP.Gray100};
+            box-shadow: ${ColorsWIP.Olive500} 0 -1px 0 inset;
+            color: ${ColorsWIP.Olive500};
+          }
+        `}
+
   &:last-child {
-    border-right: 1px solid ${ColorsWIP.Gray200};
+    padding-right: 12px;
   }
-  &:hover {
-    background: ${({active}) => (active ? ColorsWIP.White : ColorsWIP.Gray50)};
-  }
+
   input {
-    line-height: 1.28581;
-    font-size: 14px;
+    background-color: transparent;
+    font-size: 13px;
     border: 0;
     outline: none;
+    padding: 0;
   }
-  cursor: ${({active}) => (!active ? 'pointer' : 'inherit')};
+
+  cursor: ${({$active}) => (!$active ? 'pointer' : 'inherit')};
 `;
 
 const RemoveButton = styled.button`
+  background-color: transparent;
   border: 0;
   cursor: pointer;
-  margin-left: 4px;
-  opacity: 0.2;
   padding: 0;
-  &:hover {
-    opacity: 0.6;
+
+  ${IconWrapper} {
+    transition: background-color 100ms;
+  }
+
+  &:hover ${IconWrapper} {
+    background-color: ${ColorsWIP.Olive700};
   }
 `;

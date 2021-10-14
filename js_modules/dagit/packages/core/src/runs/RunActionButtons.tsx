@@ -1,5 +1,3 @@
-import {IconName} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
@@ -10,7 +8,7 @@ import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
+import {IconName, IconWIP} from '../ui/Icon';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -123,7 +121,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     (run.status === PipelineRunStatus.FAILURE || run.status === PipelineRunStatus.CANCELED);
 
   const full: LaunchButtonConfiguration = {
-    icon: 'repeat',
+    icon: 'cached',
     scope: '*',
     title: 'All Steps in Root Run',
     tooltip: 'Re-execute the pipeline run from scratch',
@@ -132,7 +130,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const same: LaunchButtonConfiguration = {
-    icon: 'select',
+    icon: 'linear_scale',
     scope: selectionOfCurrentRun?.query || '*',
     title: 'Same Steps',
     disabled:
@@ -151,7 +149,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const selected: LaunchButtonConfiguration = {
-    icon: 'select',
+    icon: 'op',
     scope: selection.query,
     title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
     disabled: !selection.present || !(selection.finished || selection.failed),
@@ -169,7 +167,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const fromSelected: LaunchButtonConfiguration = {
-    icon: 'inheritance',
+    icon: 'arrow_forward',
     title: 'From Selected',
     disabled: !isFinalStatus || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
@@ -194,7 +192,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   };
 
   const fromFailure: LaunchButtonConfiguration = {
-    icon: 'redo',
+    icon: 'arrow_forward',
     title: 'From Failure',
     disabled: !isFailedWithPlan,
     tooltip: !isFailedWithPlan
@@ -231,7 +229,6 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
-          small={true}
           primary={primary}
           options={options}
           title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
@@ -257,7 +254,7 @@ function usePipelineAvailabilityErrorForRun(
 
   if (run?.pipeline.__typename === 'UnknownPipeline') {
     return {
-      icon: IconNames.ERROR,
+      icon: 'error',
       tooltip: `"${run.pipeline.name}" could not be found.`,
       disabled: true,
     };
@@ -278,7 +275,7 @@ function usePipelineAvailabilityErrorForRun(
     if (matchType === 'origin-only') {
       // Only the repo is a match.
       return {
-        icon: IconNames.WARNING_SIGN,
+        icon: 'warning',
         tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
         disabled: false,
       };
@@ -287,7 +284,7 @@ function usePipelineAvailabilityErrorForRun(
     if (matchType === 'snapshot-only') {
       // Only the snapshot ID matched, but not the repo.
       return {
-        icon: IconNames.WARNING_SIGN,
+        icon: 'warning',
         tooltip: (
           <Group direction="column" spacing={4}>
             <div>{`The pipeline "${run.pipeline.name}" is not in the same repository as the original pipeline run.`}</div>
@@ -308,7 +305,7 @@ function usePipelineAvailabilityErrorForRun(
 
     // Only the pipeline name matched. This could be from any repo in the workspace.
     return {
-      icon: IconNames.WARNING_SIGN,
+      icon: 'warning',
       tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
       disabled: false,
     };
@@ -332,7 +329,7 @@ function usePipelineAvailabilityErrorForRun(
   );
 
   return {
-    icon: IconNames.ERROR,
+    icon: 'error',
     tooltip,
     disabled: true,
   };

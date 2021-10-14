@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -191,11 +192,9 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
         firstMinSize={420}
         first={
           <SolidListColumnContainer>
-            <div
-              style={{
-                padding: '15px 10px',
-                borderBottom: `1px solid ${ColorsWIP.Gray100}`,
-              }}
+            <Box
+              padding={{vertical: 12, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             >
               <TokenizingField
                 values={search}
@@ -203,7 +202,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
                 suggestionProviders={suggestions}
                 placeholder={'Filter by name or input/output type...'}
               />
-            </div>
+            </Box>
             <div style={{flex: 1}}>
               <AutoSizer nonce={window.__webpack_nonce__}>
                 {({height, width}) => (
@@ -231,15 +230,17 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
               />
             </SolidDetailScrollContainer>
           ) : (
-            <NonIdealState
-              icon="no-results"
-              title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
-              description={
-                flagPipelineModeTuples
-                  ? 'Select an op to see its definition and invocations'
-                  : 'Select a solid to see its definition and invocations.'
-              }
-            />
+            <Box padding={{vertical: 64}}>
+              <NonIdealState
+                icon="no-results"
+                title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
+                description={
+                  flagPipelineModeTuples
+                    ? 'Select an op to see its definition and invocations'
+                    : 'Select a solid to see its definition and invocations.'
+                }
+              />
+            </Box>
           )
         }
       />
@@ -270,31 +271,40 @@ const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
   const selectedIndex = selected ? items.findIndex((item) => item === selected) : undefined;
 
   return (
-    <List
-      width={props.width}
-      height={props.height}
-      rowCount={props.items.length}
-      rowHeight={cache.current.rowHeight}
-      scrollToIndex={selectedIndex}
-      rowRenderer={({parent, index, key, style}) => {
-        const solid = props.items[index];
-        return (
-          <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
-            <SolidListItem
-              style={style}
-              selected={solid === props.selected}
-              onClick={() => props.onClickSolid(solid.definition.name)}
-            >
-              <SolidName>{solid.definition.name}</SolidName>
-              <SolidTypeSignature definition={solid.definition} />
-            </SolidListItem>
-          </CellMeasurer>
-        );
-      }}
-      overscanRowCount={10}
-    />
+    <Container>
+      <List
+        width={props.width}
+        height={props.height}
+        rowCount={props.items.length}
+        rowHeight={cache.current.rowHeight}
+        scrollToIndex={selectedIndex}
+        className="solids-list"
+        rowRenderer={({parent, index, key, style}) => {
+          const solid = props.items[index];
+          return (
+            <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
+              <SolidListItem
+                style={style}
+                selected={solid === props.selected}
+                onClick={() => props.onClickSolid(solid.definition.name)}
+              >
+                <SolidName>{solid.definition.name}</SolidName>
+                <SolidTypeSignature definition={solid.definition} />
+              </SolidListItem>
+            </CellMeasurer>
+          );
+        }}
+        overscanRowCount={10}
+      />
+    </Container>
   );
 };
+
+const Container = styled.div`
+  .solids-list:focus {
+    outline: none;
+  }
+`;
 
 const SOLIDS_ROOT_QUERY = gql`
   query SolidsRootQuery($repositorySelector: RepositorySelector!) {
@@ -322,16 +332,19 @@ const SOLIDS_ROOT_QUERY = gql`
 `;
 
 const SolidListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? ColorsWIP.Blue500 : ColorsWIP.White)};
-  color: ${({selected}) => (selected ? ColorsWIP.White : ColorsWIP.Gray800)};
+  background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
+  box-shadow: ${({selected}) => (selected ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0 inset,
+    ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
+  color: ${ColorsWIP.Gray800};
+  cursor: pointer;
   font-size: 14px;
   display: flex;
   flex-direction: column;
-  padding: 10px 15px;
+  padding: 12px 24px;
   user-select: none;
-  border-bottom: 1px solid ${ColorsWIP.Gray100};
+
   & > code.bp3-code {
-    color: ${({selected}) => (selected ? ColorsWIP.White : ColorsWIP.Gray800)};
+    color: ${ColorsWIP.Gray800};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

@@ -176,13 +176,8 @@ export const StepSelector: React.FC<{
   };
 
   return (
-    <>
-      <NavSectionHeader>
-        Run steps
-        <div style={{flex: 1}} />
-        <span style={{fontSize: 13, opacity: 0.5}}>Tip: Shift-click to multi-select</span>
-      </NavSectionHeader>
-      <NavSection>
+    <div style={{width: 330, flexShrink: 0}}>
+      <StepsList>
         {[jobLabel, ...all].map((stepKey) => (
           <Item
             key={stepKey}
@@ -191,12 +186,8 @@ export const StepSelector: React.FC<{
             color={stepKey === jobLabel ? ColorsWIP.Gray500 : colorHash(stepKey)}
           >
             <div
+              className="color-dot"
               style={{
-                display: 'inline-block',
-                marginRight: 5,
-                borderRadius: 5,
-                height: 10,
-                width: 10,
                 backgroundColor: !hidden.includes(stepKey)
                   ? stepKey === jobLabel
                     ? ColorsWIP.Gray500
@@ -207,29 +198,32 @@ export const StepSelector: React.FC<{
             {stepKey}
           </Item>
         ))}
-      </NavSection>
-    </>
+      </StepsList>
+    </div>
   );
 };
 
-const NavSectionHeader = styled.div`
-  border-bottom: 1px solid ${ColorsWIP.Gray200};
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  display: flex;
-`;
-
-const NavSection = styled.div`
-  margin-bottom: 30px;
+const StepsList = styled.div`
+  padding-left: 24px;
 `;
 
 const Item = styled.div`
   list-style-type: none;
-  padding: 5px 2px;
   cursor: pointer;
   text-decoration: ${({shown}: {shown: boolean}) => (shown ? 'none' : 'line-through')};
   user-select: none;
   font-size: 12px;
-  color: ${(props) => (props.shown ? props.color : '#aaaaaa')};
+  line-height: 32px;
+  color: ${(props) => (props.shown ? ColorsWIP.Gray900 : ColorsWIP.Gray400)};
   white-space: nowrap;
+  align-items: center;
+  display: flex;
+
+  & .color-dot {
+    display: inline-block;
+    margin-right: 5px;
+    height: 7px;
+    width: 14px;
+    border-radius: 2px;
+  }
 `;

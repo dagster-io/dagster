@@ -85,6 +85,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
                     pipelineHrefContext={repoAddress || 'repo-unknown'}
                     snapshotId={snapshotID}
                     mode={run?.mode}
+                    size="small"
                   />
                 </TagWIP>
                 <RunStatusTag status={run.status} />

@@ -21,7 +21,8 @@ interface SVGViewportProps {
   interactor: SVGViewportInteractor;
   maxZoom: number;
   maxAutocenterZoom: number;
-  onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onDoubleClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   children: (state: SVGViewportState) => React.ReactNode;
 }
@@ -41,8 +42,8 @@ interface Point {
 export const DETAIL_ZOOM = 0.75;
 const DEFAULT_MAX_AUTOCENTER_ZOOM = 0.39;
 
-const MIN_AUTOCENTER_ZOOM = 0.15;
-const MIN_ZOOM = 0.015;
+const MIN_AUTOCENTER_ZOOM = 0.17;
+const MIN_ZOOM = 0.17;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
@@ -316,7 +317,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   };
 
   render() {
-    const {children, onKeyDown, onDoubleClick, interactor, backgroundColor} = this.props;
+    const {children, onKeyDown, onClick, onDoubleClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
     return (
@@ -326,6 +327,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onWheel={(e) => interactor.onWheel(this, e)}
         onDoubleClick={onDoubleClick}
+        onClick={onClick}
         onKeyDown={onKeyDown}
         tabIndex={-1}
       >

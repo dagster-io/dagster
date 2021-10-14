@@ -22,6 +22,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {ColorsWIP} from '../ui/Colors';
 import {GlobalDialogStyle} from '../ui/Dialog';
 import {GlobalPopoverStyle} from '../ui/Popover';
+import {GlobalSuggestStyle} from '../ui/Suggest';
 import {GlobalToasterStyle} from '../ui/Toaster';
 import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
@@ -75,7 +76,7 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body,input, select, textarea {
+  body, input, select, textarea {
     font-family: ${FontFamily.default};
   }
 
@@ -168,6 +169,7 @@ export const AppProvider: React.FC<Props> = (props) => {
         <GlobalTooltipStyle />
         <GlobalPopoverStyle />
         <GlobalDialogStyle />
+        <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>

@@ -271,21 +271,22 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-const StructuredContentTable = styled.table`
+export const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid #dbc5ad;
-  border-left: 1px solid #dbc5ad;
-  background: #fffaf5;
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
+  background: ${ColorsWIP.Gray50};
+
   td:first-child {
-    color: #a88860;
+    color: ${ColorsWIP.Gray400};
   }
-  tbody > tr > td {
-    padding: 4px;
-    padding-right: 8px;
-    border-bottom: 1px solid #dbc5ad;
-    border-right: 1px solid #dbc5ad;
+
+  &&& tbody > tr > td {
+    padding: 4px 8px;
+    border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+    border-right: 1px solid ${ColorsWIP.KeylineGray};
     vertical-align: top;
     box-shadow: none !important;
   }

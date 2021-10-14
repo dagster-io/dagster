@@ -9,6 +9,7 @@ import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
 import {SVGLabeledRect} from './SVGComponents';
 import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, SolidIOBox} from './SolidIOBox';
+import {position} from './SolidNode';
 import {IFullPipelineLayout} from './getFullSolidLayout';
 import {Edge} from './highlighting';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
@@ -121,7 +122,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (p
               minified={minified}
               colorKey="input"
               item={input}
-              layout={parentLayout.inputs[input.name].layout}
+              style={position(parentLayout.inputs[input.name].layout)}
             />
           </React.Fragment>
         );
@@ -151,7 +152,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (p
               minified={minified}
               colorKey="output"
               item={output}
-              layout={parentLayout.outputs[output.name].layout}
+              style={position(parentLayout.outputs[output.name].layout)}
             />
           </React.Fragment>
         );

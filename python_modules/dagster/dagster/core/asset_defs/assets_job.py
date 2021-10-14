@@ -85,7 +85,7 @@ def build_assets_job(
         description=description,
         input_mappings=None,
         output_mappings=None,
-        config_mapping=None,
+        config=None,
     ).to_job(
         resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
         config=config,
@@ -177,6 +177,7 @@ def build_root_manager(
             config=input_context.config,
             dagster_type=input_context.dagster_type,
             upstream_output=output_context,
+            op_def=input_context.op_def,
         )
 
         io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)

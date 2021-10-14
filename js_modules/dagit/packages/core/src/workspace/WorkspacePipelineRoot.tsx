@@ -40,18 +40,20 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
   const reposWithMatch = findRepoContainingPipeline(options, pipelineName);
   if (reposWithMatch.length === 0) {
     return (
-      <NonIdealState
-        icon="no-results"
-        title={flagPipelineModeTuples ? 'No matching jobs' : 'No matching pipelines'}
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="no-results"
+          title={flagPipelineModeTuples ? 'No matching jobs' : 'No matching pipelines'}
+          description={
             <div>
-              <strong>{pipelineName}</strong>
+              <div>
+                <strong>{pipelineName}</strong>
+              </div>
+              was not found in any repositories in this workspace.
             </div>
-            was not found in any repositories in this workspace.
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 

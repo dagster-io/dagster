@@ -51,11 +51,11 @@ export interface SolidCardSolidDefinitionFragment_SolidDefinition_configField {
 export interface SolidCardSolidDefinitionFragment_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidCardSolidDefinitionFragment_SolidDefinition_metadata[];
   inputDefinitions: SolidCardSolidDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidCardSolidDefinitionFragment_SolidDefinition_outputDefinitions[];
   configField: SolidCardSolidDefinitionFragment_SolidDefinition_configField | null;
-  description: string | null;
 }
 
 export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition_metadata {
@@ -144,12 +144,12 @@ export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outpu
 export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_metadata[];
   inputDefinitions: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];
   inputMappings: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputMappings[];
-  description: string | null;
 }
 
 export type SolidCardSolidDefinitionFragment = SolidCardSolidDefinitionFragment_SolidDefinition | SolidCardSolidDefinitionFragment_CompositeSolidDefinition;

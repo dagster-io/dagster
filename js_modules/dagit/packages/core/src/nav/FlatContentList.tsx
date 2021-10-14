@@ -275,8 +275,4 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
-
-  :hover {
-    background-color: ${ColorsWIP.Gray10};
-  }
 `;

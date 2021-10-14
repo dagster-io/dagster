@@ -20,18 +20,18 @@ export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({pipeli
   const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <div>
-      <Box padding={12}>
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <SidebarSubhead>{flagPipelineModeTuples ? 'Graph' : 'Pipeline'}</SidebarSubhead>
         <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
       </Box>
       <SidebarSection title={'Description'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
         </Box>
       </SidebarSection>
       {!flagPipelineModeTuples && (
         <SidebarSection title={'Modes'} collapsedByDefault={true}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             {pipeline.modes.map((mode) => (
               <SidebarModeSection key={mode.name} mode={mode} />
             ))}

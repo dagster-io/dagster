@@ -2,7 +2,6 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {unmountComponentAtNode} from 'react-dom';
 import {act} from 'react-dom/test-utils';
-import * as TestRenderer from 'react-test-renderer';
 
 import {TokenizingField} from './TokenizingField';
 
@@ -55,32 +54,6 @@ function expectOptions(expected: string[]) {
 
   expect(actual).toEqual(expected);
 }
-
-it('renders empty [snapshot]', () => {
-  const onChange = jest.fn();
-  const component = TestRenderer.create(
-    <TokenizingField
-      values={[]}
-      maxValues={1}
-      onChange={onChange}
-      suggestionProviders={suggestions}
-    />,
-  );
-  expect(component.toJSON()).toMatchSnapshot();
-});
-
-it('renders with tokens [snapshot]', () => {
-  const onChange = jest.fn();
-  const component = TestRenderer.create(
-    <TokenizingField
-      values={[{token: 'pipeline', value: 'composition'}, {value: 'freeform'}]}
-      maxValues={2}
-      onChange={onChange}
-      suggestionProviders={suggestions}
-    />,
-  );
-  expect(component.toJSON()).toMatchSnapshot();
-});
 
 // These tests render into a real DOM node so we can test interactions
 

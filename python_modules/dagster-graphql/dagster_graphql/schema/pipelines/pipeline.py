@@ -90,12 +90,13 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     tags = non_null_list(GrapheneAssetTag)
+    definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, tags=None):
-        super().__init__(key=key)
+    def __init__(self, key, definition=None, tags=None):
+        super().__init__(key=key, definition=definition)
         check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
         self._tags = tags
 
@@ -461,6 +462,15 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    runs = graphene.Field(
+        non_null_list(GraphenePipelineRun),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    schedules = non_null_list(GrapheneSchedule)
+    sensors = non_null_list(GrapheneSensor)
+    parent_snapshot_id = graphene.String()
+    graph_name = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "IPipelineSnapshot"
@@ -509,11 +519,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
 class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     presets = non_null_list(GraphenePipelinePreset)
-    runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-    )
+    isJob = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -536,6 +542,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             GraphenePipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
+
+    def resolve_isJob(self, _graphene_info):
+        return self._external_pipeline.is_job
 
 
 @lru_cache(maxsize=32)

@@ -4,6 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
@@ -11,18 +12,18 @@ import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
+import {FontFamily} from '../ui/styles';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionProgress} from './PartitionProgress';
 import {PartitionRunListForStep} from './PartitionRunListForStep';
 import {
+  BOX_SIZE,
   GridColumn,
   GridFloatingContainer,
   GridScrollContainer,
@@ -49,9 +50,7 @@ const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of
 
 const TITLE_FINAL_FAILURES = 'This step failed to run successfully for this percent of partitions.';
 
-const BOX_COL_WIDTH = 23;
-
-const OVERSCROLL = 150;
+const OVERSCROLL = 200;
 
 const SORT_FINAL_ASC = 'FINAL_ASC';
 const SORT_FINAL_DESC = 'FINAL_DESC';
@@ -80,6 +79,19 @@ const _backfillIdFromTags = (runTags: TokenizingFieldValue[]) => {
   return backfillId;
 };
 
+const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) => {
+  let [minUnix, maxUnix] = [Date.now() / 1000, 1];
+  for (const partition of partitionColumns) {
+    for (const step of partition.steps) {
+      if (step.unix === 0) {
+        continue;
+      }
+      [minUnix, maxUnix] = [Math.min(minUnix, step.unix), Math.max(maxUnix, step.unix)];
+    }
+  }
+  return [minUnix, maxUnix] as const;
+};
+
 const PartitionRunSelectionQueryConfig: QueryPersistedStateConfig<PartitionRunSelection | null> = {
   encode: (val) => ({partitionName: val?.partitionName, stepName: val?.stepName}),
   decode: (qs) =>
@@ -92,19 +104,20 @@ const DisplayOptionsQueryConfig: QueryPersistedStateConfig<DisplayOptions> = {
   decode: (qs) => ({
     showPrevious: qs.showPrevious === 'true',
     colorizeByAge: qs.colorizeByAge === 'true',
+    colorizeSliceUnix: Number(qs.colorizeSliceUnix || 0),
     showFailuresAndGapsOnly: qs.showFailuresAndGapsOnly === 'true',
   }),
   defaults: {
     showPrevious: false,
     colorizeByAge: false,
     showFailuresAndGapsOnly: false,
+    colorizeSliceUnix: 0,
   },
 };
 
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
   const {basePath} = React.useContext(AppContext);
   const {viewport, containerProps} = useViewport();
-  const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
   const [focused, setFocused] = useQueryPersistedState(PartitionRunSelectionQueryConfig);
   const [stepSort = '', setStepSort] = useQueryPersistedState<string>({queryKey: 'stepSort'});
@@ -152,22 +165,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
     return stepRows.map((stepRow) => stepsByName[stepRow.name]);
   };
 
-  const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / BOX_COL_WIDTH));
-  const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / BOX_COL_WIDTH);
+  const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / BOX_SIZE));
+  const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / BOX_SIZE);
   const visibleColumns = partitionColumns.slice(
     visibleRangeStart,
     visibleRangeStart + visibleCount,
   );
-
-  let [minUnix, maxUnix] = [Date.now() / 1000, 1];
-  for (const partition of partitionColumns) {
-    for (const step of partition.steps) {
-      if (step.unix === 0) {
-        continue;
-      }
-      [minUnix, maxUnix] = [Math.min(minUnix, step.unix), Math.max(maxUnix, step.unix)];
-    }
-  }
+  const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
 
   return (
     <PartitionRunMatrixContainer>
@@ -202,21 +206,17 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
           </ButtonWIP>
         </DialogFooter>
       </DialogWIP>
-      <Box
-        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-        padding={{vertical: 4}}
-      >
-        <Group direction="row" alignItems="center" spacing={12}>
-          <strong>Run Matrix</strong>
-          <RunTagsTokenizingField
-            runs={partitions.reduce(
-              (a, b) => [...a, ...b.runs],
-              [] as {tags: {key: string; value: string}[]}[],
-            )}
-            onChange={props.setRunTags}
-            tokens={props.runTags}
-          />
-        </Group>
+      <OptionsContainer>
+        <strong>Run Matrix</strong>
+        <OptionsDivider />
+        <RunTagsTokenizingField
+          runs={partitions.reduce(
+            (a, b) => [...a, ...b.runs],
+            [] as {tags: {key: string; value: string}[]}[],
+          )}
+          onChange={props.setRunTags}
+          tokens={props.runTags}
+        />
         {props.runTags.length && _backfillIdFromTags(props.runTags) ? (
           <Box flex={{grow: 1}} margin={{left: 12, right: 8}}>
             <PartitionProgress
@@ -226,90 +226,30 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             />
           </Box>
         ) : null}
-        <Popover
-          position="bottom-left"
-          content={
-            <MenuWIP>
-              <MenuItemWIP
-                text="Show previous status"
-                icon={
-                  <IconWIP
-                    name="done"
-                    color={options.showPrevious ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
-                  />
-                }
-                onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
-                shouldDismissPopover={false}
-              />
-              <MenuItemWIP
-                text="Only show failures and gaps"
-                icon={
-                  <IconWIP
-                    name="done"
-                    color={options.showFailuresAndGapsOnly ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
-                  />
-                }
-                onClick={() =>
-                  setOptions({
-                    ...options,
-                    showFailuresAndGapsOnly: !options.showFailuresAndGapsOnly,
-                  })
-                }
-                shouldDismissPopover={false}
-              />
-              <MenuItemWIP
-                tagName="div"
-                text={
-                  <Group direction="column" spacing={8}>
-                    <div>Colorize by age</div>
-                    {options.colorizeByAge ? (
-                      <SliceSlider
-                        disabled={false}
-                        value={Math.max(minUnix, colorizeSliceUnix)}
-                        onChange={setColorizeSliceUnix}
-                        maxUnix={maxUnix}
-                        minUnix={minUnix}
-                      />
-                    ) : null}
-                  </Group>
-                }
-                icon={
-                  <IconWIP
-                    name="done"
-                    color={options.colorizeByAge ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
-                  />
-                }
-                onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
-                shouldDismissPopover={false}
-              />
-            </MenuWIP>
-          }
-        >
-          <ButtonWIP icon={<IconWIP name="tune" />}>Settings</ButtonWIP>
-        </Popover>
-      </Box>
+        <div style={{flex: 1}} />
+
+        <RunMatrixSettings
+          options={options}
+          setOptions={setOptions}
+          minUnix={minUnix}
+          maxUnix={maxUnix}
+        />
+      </OptionsContainer>
       <div
         style={{
           position: 'relative',
           display: 'flex',
-          border: `1px solid ${ColorsWIP.Gray200}`,
-          borderLeft: 0,
+          borderBottom: `1px solid ${ColorsWIP.KeylineGray}`,
         }}
       >
         <GridFloatingContainer floating={viewport.left > 0}>
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
-            <TopLabel>
-              <GraphQueryInput
-                width={260}
-                items={solidHandles.map((h) => h.solid)}
-                value={props.stepQuery}
-                placeholder="Type a Step Subset"
-                onChange={props.setStepQuery}
-              />
-            </TopLabel>
+            <TopLabel></TopLabel>
+            <LeftLabel style={{paddingLeft: 24}}>Number of Runs</LeftLabel>
+            <Divider />
             {stepRows.map((step) => (
               <LeftLabel
-                style={{paddingLeft: step.x}}
+                style={{paddingLeft: 8 + step.x}}
                 key={step.name}
                 data-tooltip={step.name}
                 hovered={step.name === hovered?.stepName}
@@ -317,62 +257,76 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 {step.name}
               </LeftLabel>
             ))}
-            <Divider />
-            <LeftLabel style={{paddingLeft: 5}}>Runs</LeftLabel>
           </GridColumn>
           {options.showPrevious && (
             <GridColumn disabled>
-              <TopLabel>
-                <div
-                  style={{cursor: 'pointer'}}
-                  className="square failure-blank"
-                  title={TITLE_TOTAL_FAILURES}
-                  onClick={() =>
-                    setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
-                  }
+              <TopLabel />
+              <LeftLabel
+                style={{width: 32, textAlign: 'right'}}
+                onClick={() =>
+                  setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
+                }
+              >
+                <IconSorter
+                  $sorting={[SORT_TOTAL_DESC, SORT_TOTAL_ASC].includes(stepSort)}
+                  $asc={stepSort === SORT_TOTAL_ASC}
                 />
-              </TopLabel>
+              </LeftLabel>
+              <Divider />
               {stepRows.map(({totalFailurePercent, name}, idx) => (
                 <LeftLabel
                   key={idx}
                   title={TITLE_TOTAL_FAILURES}
                   hovered={name === hovered?.stepName}
-                  redness={totalFailurePercent / 100}
                 >
-                  {`${totalFailurePercent}%`}
+                  <RedBox
+                    $filled={totalFailurePercent > 0}
+                    style={{background: `rgba(255, 0, 0, ${(totalFailurePercent / 100) * 0.6})`}}
+                  >
+                    {`${totalFailurePercent}%`}
+                  </RedBox>
                 </LeftLabel>
               ))}
               <Divider />
             </GridColumn>
           )}
           <GridColumn disabled>
-            <TopLabel>
-              <div
-                style={{cursor: 'pointer'}}
-                className="square failure"
-                title={TITLE_FINAL_FAILURES}
-                onClick={() =>
-                  setStepSort(stepSort === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
-                }
+            <TopLabel />
+            <LeftLabel
+              style={{width: 42}}
+              onClick={() =>
+                setStepSort(stepSort === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
+              }
+            >
+              <IconSorter
+                $sorting={[SORT_FINAL_DESC, SORT_FINAL_ASC].includes(stepSort)}
+                $asc={stepSort === SORT_FINAL_ASC}
               />
-            </TopLabel>
+            </LeftLabel>
+            <Divider />
             {stepRows.map(({finalFailurePercent, name}, idx) => (
               <LeftLabel
                 key={idx}
                 title={TITLE_FINAL_FAILURES}
                 hovered={name === hovered?.stepName}
-                redness={finalFailurePercent / 100}
               >
-                {`${finalFailurePercent}%`}
+                <RedBox
+                  $filled={finalFailurePercent > 0}
+                  style={{
+                    background: `rgba(255, 0, 0, ${(finalFailurePercent / 100) * 0.6})`,
+                    right: 12,
+                  }}
+                >
+                  {`${finalFailurePercent}%`}
+                </RedBox>
               </LeftLabel>
             ))}
-            <Divider />
           </GridColumn>
         </GridFloatingContainer>
         <GridScrollContainer {...containerProps}>
           <div
             style={{
-              width: partitionColumns.length * BOX_COL_WIDTH,
+              width: partitionColumns.length * BOX_SIZE,
               position: 'relative',
               height: '100%',
             }}
@@ -382,72 +336,29 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 key={p.name}
                 style={{
                   zIndex: visibleColumns.length - idx,
-                  width: BOX_COL_WIDTH,
+                  width: BOX_SIZE,
                   position: 'absolute',
-                  left: (idx + visibleRangeStart) * BOX_COL_WIDTH,
+                  left: (idx + visibleRangeStart) * BOX_SIZE,
                 }}
-                dimSuccesses={!options.colorizeByAge}
               >
                 <TopLabelTilted label={p.name} />
-                {sortPartitionSteps(p.steps).map(({name, color, unix}) => (
-                  <Popover
-                    key={name}
-                    disabled={p.runs.length === 0}
-                    interactionKind="click"
-                    placement="bottom-start"
-                    content={
-                      p.runs.length ? (
-                        <MenuWIP>
-                          <MenuItemWIP
-                            icon="open_in_new"
-                            text="Show Logs From Last Run"
-                            href={`${basePath}/instance/runs/${
-                              p.runs[p.runs.length - 1].runId
-                            }?${qs.stringify({
-                              selection: name,
-                              logs: `step:${name}`,
-                            })}`}
-                          />
-                          <MenuItemWIP
-                            icon="settings_backup_restore"
-                            text={`View Runs (${p.runs.length})`}
-                            onClick={() =>
-                              p.runs.length > 0 &&
-                              setFocused({stepName: name, partitionName: p.name})
-                            }
-                          />
-                        </MenuWIP>
-                      ) : (
-                        <span />
-                      )
-                    }
-                  >
-                    <div
-                      className={`
-                      square
-                      ${p.runs.length === 0 && 'empty'}
-                      ${(options.showPrevious
-                        ? color
-                        : StatusSquareFinalColor[color] || color
-                      ).toLowerCase()}
-                    `}
-                      onMouseEnter={() => setHovered({stepName: name, partitionName: p.name})}
-                      onMouseLeave={() => setHovered(null)}
-                      style={
-                        options.colorizeByAge
-                          ? {
-                              opacity:
-                                unix >= colorizeSliceUnix
-                                  ? 0.3 + 0.7 * ((unix - minUnix) / (maxUnix - minUnix))
-                                  : 0.08,
-                            }
-                          : {}
-                      }
-                    />
-                  </Popover>
-                ))}
-                <Divider />
                 <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
+                <Divider />
+                {sortPartitionSteps(p.steps).map((s) => (
+                  <PartitionStepSquare
+                    key={s.name}
+                    step={s}
+                    runs={p.runs}
+                    options={options}
+                    minUnix={minUnix}
+                    maxUnix={maxUnix}
+                    basePath={basePath}
+                    hovered={hovered}
+                    setHovered={setHovered}
+                    setFocused={setFocused}
+                    partitionName={p.name}
+                  />
+                ))}
               </GridColumn>
             ))}
           </div>
@@ -465,7 +376,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${ColorsWIP.Gray200};
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
 `;
 
 export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
@@ -534,3 +445,186 @@ const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
   }
   ${PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
+
+const RunMatrixSettings: React.FC<{
+  options: DisplayOptions;
+  setOptions: (options: DisplayOptions) => void;
+  minUnix: number;
+  maxUnix: number;
+}> = ({options, setOptions, minUnix, maxUnix}) => {
+  return (
+    <Popover
+      position="bottom-left"
+      content={
+        <MenuWIP>
+          <MenuItemWIP
+            text="Show previous status"
+            icon={
+              <IconWIP
+                name="done"
+                color={options.showPrevious ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
+              />
+            }
+            onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
+            shouldDismissPopover={false}
+          />
+          <MenuItemWIP
+            text="Only show failures and gaps"
+            icon={
+              <IconWIP
+                name="done"
+                color={options.showFailuresAndGapsOnly ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
+              />
+            }
+            onClick={() =>
+              setOptions({
+                ...options,
+                showFailuresAndGapsOnly: !options.showFailuresAndGapsOnly,
+              })
+            }
+            shouldDismissPopover={false}
+          />
+          <MenuItemWIP
+            tagName="div"
+            text={
+              <Box flex={{direction: 'column', gap: 8}}>
+                <div>Colorize by age</div>
+                {options.colorizeByAge ? (
+                  <div style={{marginLeft: '9px'}}>
+                    <SliceSlider
+                      disabled={false}
+                      value={Math.max(minUnix, options.colorizeSliceUnix)}
+                      onChange={(v) => setOptions({...options, colorizeSliceUnix: v})}
+                      maxUnix={maxUnix}
+                      minUnix={minUnix}
+                    />
+                  </div>
+                ) : null}
+              </Box>
+            }
+            icon={
+              <IconWIP
+                name="done"
+                color={options.colorizeByAge ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
+              />
+            }
+            onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
+            shouldDismissPopover={false}
+          />
+        </MenuWIP>
+      }
+    >
+      <ButtonWIP icon={<IconWIP name="tune" />}>Settings</ButtonWIP>
+    </Popover>
+  );
+};
+
+const RedBox = styled.div<{$filled: boolean}>`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  color: ${(p) => (p.$filled ? ColorsWIP.Red500 : ColorsWIP.Gray300)};
+  line-height: 20px;
+  padding: ${(p) => (p.$filled ? `0 4px;` : `0`)};
+  border-radius: 3px;
+  display: inline-block;
+  font-family: ${FontFamily.monospace};
+`;
+
+const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sorting}) => (
+  <IconWIP
+    name="arrow_drop_down"
+    size={24}
+    style={{
+      transform: $asc ? 'rotate(-180deg)' : 'rotate(0deg)',
+      opacity: $sorting ? 1 : 0.25,
+      marginTop: 4,
+      marginLeft: 'auto',
+      marginRight: 8,
+    }}
+  />
+);
+
+const PartitionStepSquare: React.FC<{
+  step: MatrixStep;
+  runs: PartitionRunMatrixRunFragment[];
+  options: DisplayOptions;
+  basePath: string;
+  hovered: PartitionRunSelection | null;
+  minUnix: number;
+  maxUnix: number;
+  partitionName: string;
+  setHovered: (hovered: PartitionRunSelection | null) => void;
+  setFocused: (hovered: PartitionRunSelection | null) => void;
+}> = ({
+  step,
+  runs,
+  options,
+  hovered,
+  setHovered,
+  setFocused,
+  minUnix,
+  maxUnix,
+  basePath,
+  partitionName,
+}) => {
+  const [opened, setOpened] = React.useState(false);
+  const {name, color, unix} = step;
+
+  const className = `square
+  ${runs.length === 0 && 'empty'}
+  ${(options.showPrevious ? color : StatusSquareFinalColor[color] || color).toLowerCase()}`;
+
+  const content = (
+    <div
+      className={className}
+      onMouseEnter={() => setHovered({stepName: name, partitionName})}
+      onMouseLeave={() => setHovered(null)}
+      style={
+        options.colorizeByAge
+          ? {
+              opacity:
+                unix >= options.colorizeSliceUnix
+                  ? 0.3 + 0.7 * ((unix - minUnix) / (maxUnix - minUnix))
+                  : 0.08,
+            }
+          : {}
+      }
+    />
+  );
+
+  if (
+    !opened &&
+    (!runs.length || hovered?.stepName !== name || hovered?.partitionName !== partitionName)
+  ) {
+    return content;
+  }
+
+  const lastRunHref = `${basePath}/instance/runs/${runs[runs.length - 1].runId}?${qs.stringify({
+    selection: name,
+    logs: `step:${name}`,
+  })}`;
+
+  return (
+    <Popover
+      interactionKind="click"
+      placement="bottom-start"
+      onOpened={() => setOpened(true)}
+      onClosed={() => setOpened(false)}
+      content={
+        <MenuWIP>
+          <MenuItemWIP icon="open_in_new" text="Show Logs From Last Run" href={lastRunHref} />
+          <MenuItemWIP
+            icon="settings_backup_restore"
+            text={`View Runs (${runs.length})`}
+            onClick={() => setFocused({stepName: name, partitionName})}
+          />
+        </MenuWIP>
+      }
+    >
+      {content}
+    </Popover>
+  );
+};

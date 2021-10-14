@@ -24,7 +24,11 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
 
     @pytest.fixture(scope="function", name="storage")
     def event_log_storage(self):  # pylint: disable=arguments-differ
-        return InMemoryEventLogStorage()
+        storage = InMemoryEventLogStorage()
+        try:
+            yield storage
+        finally:
+            storage.dispose()
 
 
 class TestSqliteEventLogStorage(TestEventLogStorage):

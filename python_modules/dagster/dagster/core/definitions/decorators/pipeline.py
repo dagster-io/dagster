@@ -57,7 +57,14 @@ class _Pipeline:
         if not self.name:
             self.name = fn.__name__
 
-        from dagster.core.definitions.decorators.composite_solid import do_composition
+        from dagster.core.definitions.decorators.composite_solid import (
+            do_composition,
+            get_validated_config_mapping,
+        )
+
+        config_mapping = get_validated_config_mapping(
+            self.name, self.config_schema, self.config_fn, decorator_name="pipeline"
+        )
 
         (
             input_mappings,
@@ -72,8 +79,7 @@ class _Pipeline:
             fn,
             self.input_defs,
             self.output_defs,
-            self.config_schema,
-            self.config_fn,
+            config_mapping,
             ignore_output_from_composition_fn=not self.did_pass_outputs,
         )
 
@@ -87,7 +93,7 @@ class _Pipeline:
                 node_defs=solid_defs,
                 input_mappings=input_mappings,
                 output_mappings=output_mappings,
-                config_mapping=config_mapping,
+                config=config_mapping,
                 positional_inputs=positional_inputs,
             ),
             tags=self.tags,

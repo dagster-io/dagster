@@ -52,38 +52,40 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <IconWIP name="folder" />
-          <div style={{userSelect: 'none'}}>{summary()}</div>
+          <SummaryText>{summary()}</SummaryText>
         </Box>
         {allRepos.length > 1 ? (
-          <DialogWIP
-            canOutsideClickClose
-            canEscapeKeyClose
-            isOpen={open}
-            style={{width: 'auto'}}
-            onClose={() => setOpen(false)}
-          >
-            <DialogHeader icon="repo" label="Repositories" />
-            <div>
-              <Box padding={{vertical: 8, horizontal: 24}}>
-                {`${selected.size} of ${allRepos.length} selected`}
-              </Box>
-              <RepoSelector
-                options={allRepos}
-                onBrowse={() => setOpen(false)}
-                onToggle={onToggle}
-                selected={selected}
-              />
-            </div>
-            <DialogFooter>
-              <Box padding={{top: 8}}>
-                <ButtonWIP intent="none" onClick={() => setOpen(false)}>
-                  Done
-                </ButtonWIP>
-              </Box>
-            </DialogFooter>
-          </DialogWIP>
+          <>
+            <DialogWIP
+              canOutsideClickClose
+              canEscapeKeyClose
+              isOpen={open}
+              style={{width: 'auto'}}
+              onClose={() => setOpen(false)}
+            >
+              <DialogHeader icon="repo" label="Repositories" />
+              <div>
+                <Box padding={{vertical: 8, horizontal: 24}}>
+                  {`${selected.size} of ${allRepos.length} selected`}
+                </Box>
+                <RepoSelector
+                  options={allRepos}
+                  onBrowse={() => setOpen(false)}
+                  onToggle={onToggle}
+                  selected={selected}
+                />
+              </div>
+              <DialogFooter>
+                <Box padding={{top: 8}}>
+                  <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+                    Done
+                  </ButtonWIP>
+                </Box>
+              </DialogFooter>
+            </DialogWIP>
+            <ButtonWIP onClick={() => setOpen(true)}>Filter</ButtonWIP>
+          </>
         ) : null}
-        <ButtonWIP onClick={() => setOpen(true)}>Filter</ButtonWIP>
       </Box>
     </Box>
   );
@@ -136,6 +138,13 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
     </Group>
   );
 };
+
+const SummaryText = styled.div`
+  user-select: none;
+
+  /* Line-height preserves container height even when no button is visible. */
+  line-height: 32px;
+`;
 
 const SingleRepoNameLink = styled(Link)`
   color: ${ColorsWIP.Gray900};

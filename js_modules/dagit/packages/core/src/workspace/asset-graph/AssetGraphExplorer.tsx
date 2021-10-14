@@ -52,12 +52,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   });
 
   const selectNode = React.useCallback(
-    (node: Node) => {
+    (node: Node | null) => {
       onChangeExplorerPath(
         {
           ...explorerPath,
-          pathSolids: [node.definition.opName!],
-          pipelineName: node.definition.jobName || explorerPath.pipelineName,
+          pathSolids: node ? [node.definition.opName!] : [],
+          pipelineName: node?.definition.jobName || explorerPath.pipelineName,
         },
         'replace',
       );
@@ -114,7 +114,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                 graphWidth={layout.width}
                 graphHeight={layout.height}
                 onKeyDown={() => {}}
-                onDoubleClick={() => {}}
+                onClick={() => selectNode(null)}
                 maxZoom={1.2}
                 maxAutocenterZoom={1.0}
               >
@@ -134,7 +134,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                         <path d="M 0 0 L 10 5 L 0 10 z" fill={ColorsWIP.Gray200} />
                       </marker>
                     </defs>
-                    <g opacity={0.8}>
+                    <g opacity={0.2}>
                       {layout.edges.map((edge, idx) => (
                         <StyledPath
                           key={idx}
@@ -156,7 +156,10 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                           y={layoutNode.y}
                           width={width}
                           height={height}
-                          onClick={() => selectNode(graphNode)}
+                          onClick={(e) => {
+                            selectNode(graphNode);
+                            e.stopPropagation();
+                          }}
                         >
                           {graphNode.hidden ? (
                             <ForeignNode assetKey={graphNode.assetKey} />
@@ -274,7 +277,7 @@ const SVGContainer = styled.svg`
 `;
 const StyledPath = styled('path')<{dashed: boolean}>`
   stroke-width: 4;
-  stroke: ${ColorsWIP.Gray200};
+  stroke: ${ColorsWIP.Gray600};
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;

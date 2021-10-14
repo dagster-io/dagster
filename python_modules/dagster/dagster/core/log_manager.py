@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
+from dagster.utils.log import get_dagster_logger
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance, PipelineRun
@@ -245,8 +246,8 @@ class DagsterLogHandler(logging.Handler):
         # user-defined @loggers
         for logger in self._loggers:
             logger.log(
-                level=dagster_record.levelno,
-                msg=dagster_record.msg,
+                dagster_record.levelno,
+                dagster_record.msg,
                 exc_info=dagster_record.exc_info,
                 extra=self._extract_extra(record),
             )
@@ -299,21 +300,22 @@ class DagsterLogManager(logging.Logger):
         """Create a DagsterLogManager with a set of subservient loggers."""
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
+
+        managed_loggers = [get_dagster_logger()]
+        python_log_level = logging.NOTSET
+
         if instance:
             handlers += instance.get_handlers()
-            managed_loggers = [
+            managed_loggers += [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers
             ]
             if instance.python_log_level is not None:
                 python_log_level = coerce_valid_log_level(instance.python_log_level)
+
                 # set all loggers to the declared logging level
                 for logger in managed_loggers:
                     logger.setLevel(python_log_level)
-            else:
-                python_log_level = logging.NOTSET
-        else:
-            managed_loggers, python_log_level = [], logging.NOTSET
 
         if pipeline_run:
             logging_metadata = DagsterLoggingMetadata(

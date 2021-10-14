@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import 'codemirror/addon/comment/comment';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
@@ -21,6 +22,7 @@ import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
@@ -53,6 +55,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     flex: 1;
     position: relative;
   }
+  
   .react-codemirror2 .CodeMirror {
     position: absolute;
     top: 0;
@@ -68,6 +71,15 @@ const CodeMirrorShimStyle = createGlobalStyle`
       color: #999;
     }
   }
+  .CodeMirror-gutter-elt {
+    .CodeMirror-lint-marker-error {
+      background-image: none;
+      background: ${ColorsWIP.Red500};
+      mask-image: url(${require('../ui/icon-svgs/error.svg').default});
+      mask-size: cover;
+      margin-bottom: 2px;
+    }
+  }
 
   .CodeMirror-hint,
   .CodeMirror-lint-marker-error,
@@ -77,7 +89,62 @@ const CodeMirrorShimStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
+
+  .react-codemirror2 .CodeMirror.cm-s-dagit {
+    .cm-atom {
+      color: ${ColorsWIP.Blue700};
+    }
+
+    .cm-comment {
+      color: ${ColorsWIP.Gray400};
+    }
+
+    .cm-meta {
+      color: ${ColorsWIP.Gray700};
+    }
+
+    .cm-number {
+      color: ${ColorsWIP.Red700};
+    }
+
+    .cm-string {
+      color: ${ColorsWIP.Green700};
+    }
+
+    .cm-string-2 {
+      color: ${ColorsWIP.Olive700};
+    }
+
+    .cm-variable-2 {
+      color: ${ColorsWIP.Blue500};
+    }
+
+    .cm-keyword {
+      color: ${ColorsWIP.Yellow700};
+    }
+
+    .CodeMirror-selected {
+      background-color: ${ColorsWIP.Blue50};
+    }
+
+    .CodeMirror-gutters {
+      background-color: ${ColorsWIP.Gray50};
+    }
+  }
+
+  div.CodeMirror-lint-tooltip {
+    background: rgba(255, 247, 231, 1);
+    border: 1px solid ${ColorsWIP.Gray200};
+  }
+
+  .CodeMirror-lint-message {
+    background: transparent;
+  }
+  .CodeMirror-lint-message.CodeMirror-lint-message-error {
+    background: transparent;
+  }
 `;
+
 const CodeMirrorWhitespaceStyle = createGlobalStyle`
 .cm-whitespace {
   /*
@@ -86,10 +153,13 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
     in Firefox and Chrome and doesn't change on zoom in / out, but may need to be
     modified if we change the Codemirror font.
   */
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.0px 8.0px repeat-x;
+  opacity: 1;
+  background-position-x: 0px;
+  background-position-y: 5.5px;
 }
 .cm-whitespace.CodeMirror-lint-mark-error {
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.0px 8.0px repeat-x;
 }
 `;
 
@@ -180,7 +250,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           options={
             {
               mode: 'yaml',
-              theme: 'default',
+              theme: 'dagit',
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,

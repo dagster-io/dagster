@@ -113,7 +113,6 @@ export class PipelineGraphContents extends React.PureComponent<
       onEnterCompositeSolid = NoOp,
       highlightedSolids,
       selectedSolid,
-      selectedHandleID,
     } = this.props;
 
     return (
@@ -127,7 +126,7 @@ export class PipelineGraphContents extends React.PureComponent<
             minified={minified}
           />
         )}
-        {selectedSolid && layout.solids[selectedSolid.name] && (
+        {/* {selectedSolid && layout.solids[selectedSolid.name] && (
           // this rect is hidden beneath the user's selection with a React key so that
           // when they expand the composite solid React sees this component becoming
           // the one above and re-uses the DOM node. This allows us to animate the rect's
@@ -139,7 +138,7 @@ export class PipelineGraphContents extends React.PureComponent<
             fill={ColorsWIP.Gray50}
             minified={true}
           />
-        )}
+        )} */}
 
         {parentSolid && (
           <ParentSolidNode
@@ -181,27 +180,29 @@ export class PipelineGraphContents extends React.PureComponent<
             strokeWidth={2}
           />
         ))}
-        {solids.map((solid) => (
-          <SolidNode
-            key={solid.name}
-            invocation={solid}
-            definition={solid.definition}
-            minified={minified}
-            onClick={() => onClickSolid({name: solid.name})}
-            onDoubleClick={() => onDoubleClickSolid({name: solid.name})}
-            onEnterComposite={() => onEnterCompositeSolid({name: solid.name})}
-            onHighlightEdges={this.onHighlightEdges}
-            layout={layout.solids[solid.name]}
-            selected={selectedSolid === solid}
-            focused={focusSolids.includes(solid)}
-            highlightedEdges={
-              isSolidHighlighted(this.state.highlighted, solid.name)
-                ? this.state.highlighted
-                : EmptyHighlightedArray
-            }
-            dim={highlightedSolids.length > 0 && highlightedSolids.indexOf(solid) === -1}
-          />
-        ))}
+        <foreignObject width={layout.width} height={layout.height}>
+          {solids.map((solid) => (
+            <SolidNode
+              key={solid.name}
+              invocation={solid}
+              definition={solid.definition}
+              minified={minified}
+              onClick={() => onClickSolid({name: solid.name})}
+              onDoubleClick={() => onDoubleClickSolid({name: solid.name})}
+              onEnterComposite={() => onEnterCompositeSolid({name: solid.name})}
+              onHighlightEdges={this.onHighlightEdges}
+              layout={layout.solids[solid.name]}
+              selected={selectedSolid === solid}
+              focused={focusSolids.includes(solid)}
+              highlightedEdges={
+                isSolidHighlighted(this.state.highlighted, solid.name)
+                  ? this.state.highlighted
+                  : EmptyHighlightedArray
+              }
+              dim={highlightedSolids.length > 0 && highlightedSolids.indexOf(solid) === -1}
+            />
+          ))}
+        </foreignObject>
       </>
     );
   }
@@ -307,14 +308,6 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     e.stopPropagation();
   };
 
-  unfocusOutsideContainer = (e: React.MouseEvent<any>) => {
-    if (this.props.parentSolid && this.props.onLeaveCompositeSolid) {
-      this.props.onLeaveCompositeSolid();
-    } else {
-      this.unfocus(e);
-    }
-  };
-
   componentDidUpdate(prevProps: IPipelineGraphProps) {
     if (prevProps.parentSolid !== this.props.parentSolid) {
       this.viewportEl.current!.cancelAnimations();
@@ -342,21 +335,18 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       <SVGViewport
         ref={this.viewportEl}
         key={pipelineName}
+        maxZoom={1.2}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
-        onDoubleClick={this.unfocusOutsideContainer}
+        onClick={onClickBackground}
+        onDoubleClick={this.unfocus}
       >
         {({scale}: any) => (
           <>
-            <SVGContainer
-              width={layout.width}
-              height={layout.height + 200}
-              onClick={onClickBackground}
-              onDoubleClick={this.unfocus}
-            >
+            <SVGContainer width={layout.width} height={layout.height + 200}>
               <PipelineGraphContents
                 {...this.props}
                 layout={layout}

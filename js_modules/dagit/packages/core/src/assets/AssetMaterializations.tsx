@@ -144,9 +144,9 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
           padding={{horizontal: 24}}
           border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Tabs selectedTabId={activeTab}>
-            <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
-            <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
+          <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
+            <Tab id="graphs" title="Graphs" />
+            <Tab id="list" title="List" />
           </Tabs>
         </Box>
       ) : null}
@@ -173,18 +173,16 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
   return (
     <>
       {!props.asSidebarSection && (
-        <Box padding={{horizontal: 24}}>
-          <AssetMaterializationMatrix
-            isPartitioned={isPartitioned}
-            materializations={assetMaterializations}
-            xAxis={xAxis}
-            xHover={xHover}
-            onHoverX={(x) => x !== xHover && setXHover(x)}
-            graphDataByMetadataLabel={graphDataByMetadataLabel}
-            graphedLabels={graphedLabels}
-            setGraphedLabels={setGraphedLabels}
-          />
-        </Box>
+        <AssetMaterializationMatrix
+          isPartitioned={isPartitioned}
+          materializations={assetMaterializations}
+          xAxis={xAxis}
+          xHover={xHover}
+          onHoverX={(x) => x !== xHover && setXHover(x)}
+          graphDataByMetadataLabel={graphDataByMetadataLabel}
+          graphedLabels={graphedLabels}
+          setGraphedLabels={setGraphedLabels}
+        />
       )}
       <div
         style={{
@@ -207,10 +205,10 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
         ))}
       </div>
       {xAxis === 'partition' && (
-        <div style={{color: ColorsWIP.Gray400, fontSize: '0.85rem'}}>
+        <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
           When graphing values by partition, the highest data point for each materialized event
           label is displayed.
-        </div>
+        </Box>
       )}
     </>
   );

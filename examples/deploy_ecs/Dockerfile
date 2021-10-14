@@ -18,9 +18,9 @@ FROM dagster as dagit
 COPY requirements-dagit.txt $DAGSTER_HOME
 RUN pip install -r requirements-dagit.txt
 
-# Pipelines
+# User Code gRPC Server
 # You can either include all of your repositories in this
 # stage or you can create multiple stages that each use
 # the same base - one for each repository.
-FROM dagster as pipelines
+FROM dagster as user_code
 COPY repo.py $DAGSTER_HOME

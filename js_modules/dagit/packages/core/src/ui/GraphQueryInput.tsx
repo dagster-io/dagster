@@ -88,10 +88,11 @@ const intentToStrokeColor = (intent: Intent | undefined) => {
 };
 
 export const GraphQueryInput = React.memo(
-  (props: GraphQueryInputProps) => {
+  React.forwardRef((props: GraphQueryInputProps, ref) => {
     const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
     const [focused, setFocused] = React.useState<boolean>(false);
     const [pendingValue, setPendingValue] = React.useState<string>(props.value);
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
       // props.value is our source of truth, but we hold "un-committed" changes in
@@ -153,6 +154,14 @@ export const GraphQueryInput = React.memo(
         setActive({text: nextText, idx: nextIdx});
       }
     }, [active, suggestions]);
+
+    React.useImperativeHandle(ref, () => ({
+      focus() {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      },
+    }));
 
     const onKeyDown = (e: React.KeyboardEvent<any>) => {
       if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
@@ -238,6 +247,7 @@ export const GraphQueryInput = React.memo(
             onKeyUp={onKeyUp}
             style={{width: props.width || '30vw'}}
             className={props.className}
+            ref={inputRef}
           />
         </Popover>
         {props.presets &&
@@ -246,6 +256,7 @@ export const GraphQueryInput = React.memo(
               icon={<IconWIP name="layers" />}
               rightIcon={<IconWIP name="cancel" />}
               onClick={() => props.onChange('*')}
+              intent="none"
             />
           ) : (
             <Popover
@@ -269,12 +280,13 @@ export const GraphQueryInput = React.memo(
               <ButtonWIP
                 icon={<IconWIP name="layers" />}
                 rightIcon={<IconWIP name="expand_less" />}
+                intent="none"
               />
             </Popover>
           ))}
       </Box>
     );
-  },
+  }),
 
   (prevProps, nextProps) =>
     prevProps.items === nextProps.items &&
@@ -282,15 +294,3 @@ export const GraphQueryInput = React.memo(
     prevProps.value === nextProps.value &&
     isEqual(prevProps.presets, nextProps.presets),
 );
-
-// const GraphQueryInputField = styled(InputGroup)`
-//   font-size: 14px;
-//   & > input {
-//     transition: width 100ms ease-in-out;
-//   }
-
-//   &.has-step {
-//     box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
-//     border-radius: 3px;
-//   }
-// `;

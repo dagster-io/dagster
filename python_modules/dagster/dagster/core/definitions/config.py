@@ -29,19 +29,19 @@ class ConfigMapping(
         ],
     )
 ):
-    """Defines a config mapping for a composite solid.
+    """Defines a config mapping for a graph.
 
     By specifying a config mapping function, you can override the configuration for the child
-    solids contained within a composite solid.
+    ops contained within a graph.
 
     Config mappings require the configuration schema to be specified as ``config_schema``, which will
-    be exposed as the configuration schema for the composite solid, as well as a configuration mapping
-    function, ``config_fn``, which maps the config provided to the composite solid to the config
-    that will be provided to the child solids.
+    be exposed as the configuration schema for the graph, as well as a configuration mapping
+    function, ``config_fn``, which maps the config provided to the graph to the config
+    that will be provided to the child ops.
 
     Args:
         config_fn (Callable[[dict], dict]): The function that will be called
-            to map the composite config to a config appropriate for the child solids.
+            to map the composite config to a config appropriate for the child ops.
         config_schema (ConfigSchema): The schema of the composite config.
         receive_processed_config_values (Optional[bool]): If true, config values provided to the config_fn
             will be converted to their dagster types before being passed in. For example, if this

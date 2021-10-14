@@ -10,6 +10,8 @@ from dagster import (
     Field,
     Output,
     execute_pipeline,
+    job,
+    op,
     pipeline,
     solid,
 )
@@ -392,6 +394,53 @@ def test_asset_materialization_tags(asset_aware_context):
         tags = event_log_storage.get_asset_tags(AssetKey("asset_tags"))
         assert len(tags) == 1
         assert tags["foo"] == "NOT_FOO"
+
+
+@asset_test
+def test_get_asset_keys(asset_aware_context):
+    @op
+    def gen_op():
+        yield AssetMaterialization(asset_key=AssetKey(["a"]))
+        yield AssetMaterialization(asset_key=AssetKey(["c"]))
+        yield AssetMaterialization(asset_key=AssetKey(["banana"]))
+        yield AssetMaterialization(asset_key=AssetKey(["b", "x"]))
+        yield AssetMaterialization(asset_key=AssetKey(["b", "y"]))
+        yield AssetMaterialization(asset_key=AssetKey(["b", "z"]))
+        yield Output(1)
+
+    @job
+    def gen_everything():
+        gen_op()
+
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        gen_everything.execute_in_process(instance=instance)
+
+        asset_keys = event_log_storage.get_asset_keys()
+        assert len(asset_keys) == 6
+        # should come out sorted
+        assert [asset_key.to_string() for asset_key in asset_keys] == [
+            '["a"]',
+            '["b", "x"]',
+            '["b", "y"]',
+            '["b", "z"]',
+            '["banana"]',
+            '["c"]',
+        ]
+
+        # pagination fields
+        asset_keys = event_log_storage.get_asset_keys(cursor='["b", "y"]', limit=1)
+        assert len(asset_keys) == 1
+        assert asset_keys[0].to_string() == '["b", "z"]'
+
+        # prefix filter
+        asset_keys = event_log_storage.get_asset_keys(prefix=["b"])
+        assert len(asset_keys) == 3
+        assert [asset_key.to_string() for asset_key in asset_keys] == [
+            '["b", "x"]',
+            '["b", "y"]',
+            '["b", "z"]',
+        ]
 
 
 def _materialization_event_record(run_id, asset_key):

@@ -7,6 +7,12 @@ description: Dagster is compatible and configurable with Python's logging module
 
 Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). At the moment, you can access the configuration options through your `dagster.yaml` file, which will apply the contained settings to any run launched from your instance. These settings include which python loggers you'd like to capture from, what log level to set your loggers to, and which handlers / formatters you'd like to use to process log messages produced from your runs.
 
+## Relevant APIs
+
+| Name                                                               | Description                                                                             |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| <PyObject module="dagster.utils.log" object="get_dagster_logger"/> | A function that returns a python logger that will automatically be captured by Dagster. |
+
 ## Capturing Python Logs <Experimental />
 
 By default, logs generated using the python logging module are not captured into the Dagster ecosystem. This means that they are not stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run id, etc.), and will not show up in the default view of Dagit.
@@ -15,13 +21,11 @@ For example, imagine you have the following code:
 
 ```python file=/concepts/logging/python_logger.py startafter=start_python_logger endbefore=end_python_logger dedent=4
 import logging
-from dagster import solid
+from dagster import op
 
-my_logger = logging.getLogger("my_logger")
-
-@solid
-def ambitious_solid():
-
+@op
+def ambitious_op():
+    my_logger = logging.getLogger("my_logger")
     try:
         x = 1 / 0
         return x
@@ -42,14 +46,6 @@ python_logs:
     - my_other_logger
 ```
 
-If you would like to capture logs from ALL python loggers, you can simply include `root` in your list, as python loggers are arranged in a hierarchy, with `root` as the parent of all other loggers:
-
-```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
-python_logs:
-  managed_python_loggers:
-    - root
-```
-
 Once this key is set, Dagster will treat any normal python log call from one of the listed loggers in the exact same way as a `context.log` call, which means you should be able to see this log statement in Dagit:
 
 <Image
@@ -60,6 +56,36 @@ height={250}
 />
 
 Note: if a `python_log_level` is set (see: [Configuring A Python Log Level](#configuring-a-python-log-level)), then the loggers listed here will be set to the given level before a run is launched.
+
+### Example: Creating a captured python logger without modifying `dagster.yaml`
+
+If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster.utils.log" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
+
+```python file=/concepts/logging/python_logger.py startafter=start_get_logger endbefore=end_get_logger dedent=4
+from dagster.utils.log import get_dagster_logger
+from dagster import op
+
+@op
+def ambitious_op():
+    my_logger = get_dagster_logger()
+    try:
+        x = 1 / 0
+        return x
+    except ZeroDivisionError:
+        my_logger.error("Couldn't divide by zero!")
+
+    return None
+```
+
+### Example: Capturing logs from all python loggers
+
+If you would like to capture logs from ALL python loggers, you can simply include `root` in your list, as python loggers are arranged in a hierarchy, with `root` as the parent of all other loggers:
+
+```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
+python_logs:
+  managed_python_loggers:
+    - root
+```
 
 ## Configuring A Python Log Level <Experimental />
 
