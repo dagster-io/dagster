@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -97,7 +98,7 @@ class _Pipeline:
                 positional_inputs=positional_inputs,
             ),
             tags=self.tags,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             hook_defs=self.hook_defs,
             solid_retry_policy=self.solid_retry_policy,
             version_strategy=self.version_strategy,

@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 
 from ....seven.typing import get_origin
 from ....utils.backcompat import experimental_decorator
@@ -113,7 +114,7 @@ class _Op:
             output_defs=resolved_output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             version=self.version,
