@@ -3,6 +3,7 @@ from dagster import (
     In,
     Int,
     Out,
+    Output,
     PipelineRun,
     build_input_context,
     build_output_context,
@@ -136,16 +137,10 @@ def define_multiple_output_job():
         }
     )
     def baz():
-        yield 5
-        yield 10
+        yield Output(5, "foo")
+        yield Output(10, "foobar")
 
-    
-    @job(
-        resource_defs={
-            "io_manager" = s3_pickle_io_manager,
-            "s3": test_s3_resource
-            }
-    )
+    @job(resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource})
     def output_prefix_execution_plan():
         baz()
 
@@ -153,55 +148,15 @@ def define_multiple_output_job():
 
 
 def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
+    assert not len(list(mock_s3_bucket.objects.all()))
 
     prefixy_job = define_multiple_output_job()
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
 
-    run_id = make_new_run_id()
+    result = prefixy_job.execute_in_process(run_config)
 
-    resolved_run_config = ResolvedRunConfig.build(prefixy_job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(prefixy_job), resolved_run_config)
+    assert result.output_for_node("baz", "foo") == 5
+    assert result.output_for_node("baz", "foobar") == 10
 
-    assert execution_plan.get_step_by_key("baz")
-
-    instance = DagsterInstance.ephemeral()
-
-
-    step_keys = ["baz"]
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=prefixy_job.name, run_id=run_id, run_config=run_config)
-
-    baz_step_events = list(
-        execute_plan(
-            execution_plan.build_subset_plan(step_keys, prefixy_job, resolved_run_config),
-            pipeline=InMemoryPipeline(prefixy_job),
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-    )
-    
-    five = get_step_output(baz_step_events, "baz", "foo")
-    ten = get_step_output(baz_step_events, "baz", "foobar")
-
-    assert five and ten
-    assert five == 5 and ten == 10
-
-    mocked_s3_client = construct_s3_client(max_attempts=5)
-    io_manager = PickledObjectS3IOManager(
-        mock_s3_bucket.name, mocked_s3_client, s3_prefix="dagster"
-    )
-
-    step_output_handle = StepOutputHandle("baz")
-    context = build_output_context(
-            step_key = step_output_handle.step_key,
-            name = step_output_handle.output_name,
-            run_id = run_id
-    )
-    io_manager.handle_output(context, five)
-    io_manager.handle_output(context, ten)
-    
-    assert mocked_s3_client.get_object(Bucket=mock_s3_bucket.name, Key="five")
-    assert mocked_s3_client.get_object(Bucket=mock_s3_bucket.name, Key="ten")
-
+    assert len(list(mock_s3_bucket.objects.all())) == 2
