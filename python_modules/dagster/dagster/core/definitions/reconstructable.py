@@ -235,41 +235,46 @@ class ReconstructableSchedule(
 
 def reconstructable(target):
     """
-    Create a :py:class:`~dagster.core.definitions.reconstructable.ReconstructablePipeline` from a
-    function that returns a :py:class:`~dagster.PipelineDefinition`, or a function decorated with
-    :py:func:`@pipeline <dagster.pipeline>`
+    Creates a reconstructable version of a pipeline or job from a
+    function that returns a :py:class:`~dagster.JobDefinition`, or a function decorated with
+    :py:func:`@job <dagster.job>`.
 
+    This function will also work with legacy APIs :py:class:`~dagster.PipelineDefinition` and
+    :py:func:`@pipeline <dagster.pipeline>`.
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
-    This function implements a very conservative strategy for reconstructing pipelines, so that
+    This function implements a very conservative strategy for reconstructing jobs, so that
     its behavior is easy to predict, but as a consequence it is not able to reconstruct certain
-    kinds of pipelines, such as those defined by lambdas, in nested scopes (e.g., dynamically
+    kinds of jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically
     within a method call), or in interactive environments such as the Python REPL or Jupyter
     notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, you should use
-    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
-    which allows you to specify your own strategy for reconstructing a pipeline.
+    If you need to reconstruct jobs constructed in these ways, you should use
+    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_job` instead,
+    which allows you to specify your own strategy for reconstructing a job.
 
     Examples:
 
     .. code-block:: python
 
-        from dagster import PipelineDefinition, pipeline, reconstructable
+        from dagster import job, reconstructable
 
-        @pipeline
-        def foo_pipeline():
+        @job
+        def foo():
             ...
 
-        reconstructable_foo_pipeline = reconstructable(foo_pipeline)
+        reconstructable_foo_job = reconstructable(foo)
 
 
-        def make_bar_pipeline():
-            return PipelineDefinition(...)
+        def make_bar_job():
+            @job
+            def bar():
+                ...
+            return bar
 
-        reconstructable_bar_pipeline = reconstructable(bar_pipeline)
+        reconstructable_bar_job = reconstructable(make_bar_job)
     """
     from dagster.core.definitions import PipelineDefinition
 
@@ -283,7 +288,7 @@ def reconstructable(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
-            "build_reconstructable_pipeline."
+            "build_reconstructable_job."
         )
 
     if seven.qualname_differs(target):
@@ -291,7 +296,7 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_pipeline.".format(
+            "defined at module scope instead, or use build_reconstructable_job.".format(
                 target=target
             )
         )
@@ -312,7 +317,7 @@ def reconstructable(target):
             "reconstructable() can not reconstruct pipelines defined in interactive environments "
             "like <stdin>, IPython, or Jupyter notebooks. "
             "Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_pipeline."
+            "use build_reconstructable_job."
         )
 
     pointer = FileCodePointer(
@@ -323,37 +328,37 @@ def reconstructable(target):
 
 
 @experimental
-def build_reconstructable_pipeline(
+def build_reconstructable_job(
     reconstructor_module_name,
     reconstructor_function_name,
     reconstructable_args=None,
     reconstructable_kwargs=None,
 ):
     """
-    Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
+    Create a reconstructable version of a job (also works with legacy pipeline API).
 
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
-    This function allows you to use the strategy of your choice for reconstructing pipelines, so
+    This function allows you to use the strategy of your choice for reconstructing jobs, so
     that you can reconstruct certain kinds of pipelines that are not supported by
     :py:func:`~dagster.reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
     dynamically within a method call), or in interactive environments such as the Python REPL or
     Jupyter notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, use this function instead of
+    If you need to reconstruct jobs constructed in these ways, use this function instead of
     :py:func:`~dagster.reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to
-            reconstruct the pipeline.
+            reconstruct the job.
         reconstructor_function_name (str): The name of the function to use to reconstruct the
-            pipeline.
-        reconstructable_args (Tuple): Args to the function to use to reconstruct the pipeline.
+            job.
+        reconstructable_args (Tuple): Args to the function to use to reconstruct the job.
             Values of the tuple must be JSON serializable.
         reconstructable_kwargs (Dict[str, Any]): Kwargs to the function to use to reconstruct the
-            pipeline. Values of the dict must be JSON serializable.
+            job. Values of the dict must be JSON serializable.
 
     Examples:
 
@@ -361,34 +366,34 @@ def build_reconstructable_pipeline(
 
         # module: mymodule
 
-        from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
+        from dagster import job, build_reconstructable_job
 
-        class PipelineFactory:
-            def make_pipeline(*args, **kwargs):
+        class JobFactory:
+            def make_job(*args, **kwargs):
 
-                @pipeline
-                def _pipeline(...):
+                @job
+                def _job(...):
                     ...
 
-                return _pipeline
+                return _job
 
-        def reconstruct_pipeline(*args):
-            factory = PipelineFactory()
-            return factory.make_pipeline(*args)
+        def reconstruct_job(*args):
+            factory = JobFactory()
+            return factory.make_job(*args)
 
-        factory = PipelineFactory()
+        factory = JobFactory()
 
-        foo_pipeline_args = (...,...)
+        foo_job_args = (...,...)
 
-        foo_pipeline_kwargs = {...:...}
+        foo_job_kwargs = {...:...}
 
-        foo_pipeline = factory.make_pipeline(*foo_pipeline_args, **foo_pipeline_kwargs)
+        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        reconstructable_foo_pipeline = build_reconstructable_pipeline(
+        reconstructable_foo_job = build_reconstructable_job(
             'mymodule',
-            'reconstruct_pipeline',
-            foo_pipeline_args,
-            foo_pipeline_kwargs,
+            'reconstruct_job',
+            foo_job_args,
+            foo_job_kwargs,
         )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
@@ -416,6 +421,9 @@ def build_reconstructable_pipeline(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
         pipeline_name=pipeline_def.name,
     )
+
+
+build_reconstructable_pipeline = build_reconstructable_job
 
 
 def bootstrap_standalone_recon_pipeline(pointer):
