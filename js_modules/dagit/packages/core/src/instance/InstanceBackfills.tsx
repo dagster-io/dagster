@@ -41,7 +41,8 @@ import {Heading, Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePipelinePath} from '../workspace/workspacePath';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -496,10 +497,10 @@ const PartitionSetReference: React.FunctionComponent<{
       >
         {partitionSet.name}
       </Link>
-      <span style={{color: ColorsWIP.Gray600}}>
-        {partitionSet.repositoryOrigin.repositoryName}@
-        {partitionSet.repositoryOrigin.repositoryLocationName}
-      </span>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <IconWIP name="repo" color={ColorsWIP.Gray400} />
+        <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
+      </Box>
       <PipelineReference
         showIcon
         size="small"
