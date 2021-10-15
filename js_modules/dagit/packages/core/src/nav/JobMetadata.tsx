@@ -15,12 +15,13 @@ import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
+import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {StyledTable} from '../ui/MetadataTable';
+import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
-import {Code} from '../ui/Text';
+import {Subheading} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
+import {FontFamily} from '../ui/styles';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -143,22 +144,82 @@ const ScheduleOrSensorTag: React.FC<{job: Job; mode: string; repoAddress: RepoAd
           canOutsideClickClose
           canEscapeKeyClose
           isOpen={open}
+          style={{width: '50vw', minWidth: '600px', maxWidth: '800px'}}
           onClose={() => setOpen(false)}
         >
-          <DialogBody>
-            <Group direction="column" spacing={16}>
-              {matchingSchedules.map((schedule) => (
-                <MatchingSchedule
-                  key={schedule.name}
-                  schedule={schedule}
-                  repoAddress={repoAddress}
-                />
-              ))}
-              {matchingSensors.map((sensor) => (
-                <MatchingSensor key={sensor.name} sensor={sensor} repoAddress={repoAddress} />
-              ))}
-            </Group>
-          </DialogBody>
+          <Box padding={{bottom: 12}}>
+            {matchingSchedules.length ? (
+              <>
+                {matchingSensors.length ? (
+                  <Box padding={{vertical: 16, horizontal: 24}}>
+                    <Subheading>Schedules ({matchingSchedules.length})</Subheading>
+                  </Box>
+                ) : null}
+                <Table>
+                  <thead>
+                    <tr>
+                      <th style={{width: '80px'}} />
+                      <th>Schedule name</th>
+                      <th>Schedule</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchingSchedules.map((schedule) => (
+                      <tr key={schedule.name}>
+                        <td>
+                          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                        </td>
+                        <td>
+                          <Link
+                            to={workspacePathFromAddress(
+                              repoAddress,
+                              `/schedules/${schedule.name}`,
+                            )}
+                          >
+                            {schedule.name}
+                          </Link>
+                        </td>
+                        <td>{humanCronString(schedule.cronSchedule)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </>
+            ) : null}
+            {matchingSensors.length ? (
+              <>
+                {matchingSchedules.length ? (
+                  <Box padding={{vertical: 16, horizontal: 24}}>
+                    <Subheading>Sensors ({matchingSensors.length})</Subheading>
+                  </Box>
+                ) : null}
+                <Table>
+                  <thead>
+                    <tr>
+                      <th style={{width: '80px'}} />
+                      <th>Sensor name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchingSensors.map((sensor) => (
+                      <tr key={sensor.name}>
+                        <td>
+                          <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                        </td>
+                        <td>
+                          <Link
+                            to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
+                          >
+                            {sensor.name}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </>
+            ) : null}
+          </Box>
           <DialogFooter>
             <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
               OK
@@ -190,7 +251,7 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Schedule:
         <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-          {schedule.name}
+          {humanCronString(schedule.cronSchedule)}
         </Link>
         <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
       </Box>
@@ -201,10 +262,17 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
     <Tooltip
       placement="bottom"
       content={
-        <div>
-          <span>{humanCronString(schedule.cronSchedule)}</span>
-          <Code style={{marginLeft: '4px'}}>({schedule.cronSchedule})</Code>
-        </div>
+        <Box flex={{direction: 'column', gap: 4}}>
+          <div>
+            Name: <strong>{schedule.name}</strong>
+          </div>
+          <div>
+            Cron:{' '}
+            <span style={{fontFamily: FontFamily.monospace, marginLeft: '4px'}}>
+              ({schedule.cronSchedule})
+            </span>
+          </div>
+        </Box>
       }
     >
       {tag}
@@ -343,15 +411,25 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <DialogBody>
-          <Group direction="column" spacing={16}>
-            {keys.map((key) => (
-              <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
-                {key}
-              </Link>
-            ))}
-          </Group>
-        </DialogBody>
+        <Box padding={{bottom: 12}}>
+          <Table>
+            <tbody>
+              {keys.map((key) => (
+                <tr key={key}>
+                  <td>
+                    <Link
+                      key={key}
+                      to={`/instance/assets/${key}`}
+                      style={{wordBreak: 'break-word'}}
+                    >
+                      {key}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Box>
         <DialogFooter>
           <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
             OK
