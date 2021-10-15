@@ -12,7 +12,7 @@ A job is a graph plus a set of resources and configuration.
 | Name                                                  | Description                                                                                                                                                                                                    |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="GraphDefinition" method="to_job" /> | The method used to create a job from a graph.                                                                                                                                                                  |
-| <PyObject object="JobDefinition" />                   | A job definition.  Includes a graph, [resources](/concepts/resources), default [configuration](/concepts/configuration/config-schema), tags, [hooks](/concepts/solids-pipelines/solid-hooks), and an executor. |
+| <PyObject object="JobDefinition" />                   | A job definition.  Includes a graph, [resources](/concepts/resources), default [configuration](/concepts/configuration/config-schema), tags, [hooks](/concepts/solids-pipelines/op-hooks), and an executor. |
 
 Dagster is built around the observation that any data DAG typically contains a logical core of transformation (the graph), which is reusable across a set of environments or scenarios. The graph usually needs to be "customized" for each environment, by plugging in configuration and services that are specific to that environment.
 
