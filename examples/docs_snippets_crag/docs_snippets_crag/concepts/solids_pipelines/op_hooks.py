@@ -5,7 +5,7 @@ from dagster_slack import slack_resource
 from dagster import (
     ResourceDefinition,
     file_relative_path,
-    graph,
+    job,
     op,
     repository,
 )
@@ -42,22 +42,18 @@ def b():
 
 
 # start_repo_marker_1
-@graph
+@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
 def notif_all():
     # the hook "slack_message_on_failure" is applied on every op instance within this graph
     a()
     b()
 
 
-notif_all_job = notif_all.to_job(
-    hooks={slack_message_on_failure}, resource_defs={"slack": slack_resource}
-)
 # end_repo_marker_1
 
 
 # start_repo_marker_3
-notif_all_prod = notif_all.to_job(
-    name="notif_all_prod",
+@job(
     resource_defs={
         "slack": ResourceDefinition.hardcoded_resource(
             slack_resource_mock, "do not send messages in dev"
@@ -65,15 +61,22 @@ notif_all_prod = notif_all.to_job(
     },
     hooks={slack_message_on_failure},
 )
+def notif_all_prod():
+    a()
+    b()
 
-notif_all_dev = notif_all.to_job(
-    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
-)
+
+@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
+def notif_all_dev():
+    a()
+    b()
+
+
 # end_repo_marker_3
 
 
 # start_repo_marker_2
-@graph
+@job(resource_defs={"slack": slack_resource})
 def selective_notif():
     # only op "a" triggers hooks: a slack message will be sent when it fails or succeeds
     a.with_hooks({slack_message_on_failure, slack_message_on_success})()
@@ -81,13 +84,12 @@ def selective_notif():
     b()
 
 
-selective_notif_job = selective_notif.to_job(resource_defs={"slack": slack_resource})
 # end_repo_marker_2
 
 
 @repository
 def repo():
-    return [notif_all_job, selective_notif_job]
+    return [notif_all, selective_notif]
 
 
 # start_repo_main

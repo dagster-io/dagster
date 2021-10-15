@@ -63,35 +63,27 @@ Dagster provides different ways to trigger op hooks.
 
 For example, you want to send a slack message to a channel when any op fails in a job. In this case, we will be applying a hook on a job, which will apply the hook on every op instance within in that job.
 
-The `to_job` function accepts hooks as a parameter. You can pass the "slack_message_on_failure" hook above in a set as a parameter to `to_job`. Then, slack messages will be sent when any op in the job fails.
+The <PyObject module="dagster" object="job" displayText="@job" /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the `to_job` function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject module="dagster" object="job" displayText="@job" />. Then, slack messages will be sent when any op in the job fails.
 
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_1 endbefore=end_repo_marker_1
-@graph
+@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
 def notif_all():
     # the hook "slack_message_on_failure" is applied on every op instance within this graph
     a()
     b()
-
-
-notif_all_job = notif_all.to_job(
-    hooks={slack_message_on_failure}, resource_defs={"slack": slack_resource}
-)
 ```
 
 ### Applying a hook on an op
 
-However, sometimes a job is a shared responsibility or you only want to be alerted on high-priority op executions. So we also provide a way to set up hooks on op instances which enables you to apply policies on a per-op basis.
+Sometimes a job is a shared responsibility or you only want to be alerted on high-priority op executions. So we also provide a way to set up hooks on op instances which enables you to apply policies on a per-op basis.
 
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_2 endbefore=end_repo_marker_2
-@graph
+@job(resource_defs={"slack": slack_resource})
 def selective_notif():
     # only op "a" triggers hooks: a slack message will be sent when it fails or succeeds
     a.with_hooks({slack_message_on_failure, slack_message_on_success})()
     # op "b" won't trigger any hooks
     b()
-
-
-selective_notif_job = selective_notif.to_job(resource_defs={"slack": slack_resource})
 ```
 
 In this case, op "b" won't trigger any hooks, while when op "a" fails or succeeds it will send a slack message.
@@ -148,8 +140,7 @@ It also enables you to switch resource values in different jobs so that, for exa
 In this case, we can mock the `slack_resource` using a helper function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
 
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_3 endbefore=end_repo_marker_3
-notif_all_prod = notif_all.to_job(
-    name="notif_all_prod",
+@job(
     resource_defs={
         "slack": ResourceDefinition.hardcoded_resource(
             slack_resource_mock, "do not send messages in dev"
@@ -157,10 +148,15 @@ notif_all_prod = notif_all.to_job(
     },
     hooks={slack_message_on_failure},
 )
+def notif_all_prod():
+    a()
+    b()
 
-notif_all_dev = notif_all.to_job(
-    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
-)
+
+@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
+def notif_all_dev():
+    a()
+    b()
 ```
 
 When we switch to production, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
