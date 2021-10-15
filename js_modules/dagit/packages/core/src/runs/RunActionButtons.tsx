@@ -59,7 +59,7 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
       {!isFinalStatus ? (
         <ButtonWIP
           icon={<IconWIP name="cancel" />}
-          intent="warning"
+          intent="danger"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
         >
