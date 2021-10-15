@@ -9,7 +9,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_job_test,
     graph_with_config,
     graph_with_config_and_schedule,
-    graph_with_config_mapping,
+    job_with_config_mapping,
     graph_with_partition_schedule,
     graph_with_resources,
     graph_with_schedule,
@@ -48,7 +48,7 @@ job_repos = [
     (pipeline_with_partition_schedule, "my_repo"),
 ]
 functions = [
-    (graph_with_config_mapping, "execute_do_it_all"),
+    (job_with_config_mapping, "execute_do_it_all"),
     (graph_job_test, "test_do_it_all"),
     (pipeline_mode_test, "test_do_it_all"),
 ]

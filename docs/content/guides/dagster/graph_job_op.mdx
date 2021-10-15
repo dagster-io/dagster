@@ -9,9 +9,20 @@ Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and 
 
 A detailed API reference for the new APIs can be found [here](/\_apidocs/experimental).
 
-Migrating a pipeline to jobs does not require migrating all your other pipelines to jobs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
+Migrating a pipeline to jobs does not require migrating all your other pipelines to jobs. Graphs, jobs, and pipelines can co-exist peacefully in Python, and pipelines will continue to be recognized in Dagit.
 
-In Dagit, jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
+# Step-by-step migration
+
+Using this doc and the dagster documentation at large as a guide, this is the order we recommend migrating your dagster code to the new APIs:
+
+1. Migrate all composite solids to graphs, starting with composite solids that don't contain other composite solids.
+Users who are not using composite solid can skip this step. Composite solids are not compatible with the new APIs, and so they will need to be switched over before anything else.
+2. A pipeline with n modes becomes n different jobs.
+If you only have one mode on your pipeline, the `@job` decorator may be the most convenient way to do this. If using more than one mode, then the most natural way is to first create a graph, and then create multiple graphs from that.
+3. (Optional) Convert each solid into an op.
+While this step is not required to start using the job API, `solid` is now a deprecated API, and may have feature gaps with `op` in the future. We recommend switching each solid to use the new op API.
+4. (Optional) Reorganize repositories based upon new job splits.
+Splitting a pipeline into n different jobs provides a good opportunity to re-organize repositories around different execution environments.
 
 ## A simple pipeline
 
@@ -325,7 +336,7 @@ Unlike with presets, this config will be used, by default, any time the job is l
 
 Alternatively, you can provide "partial" config via a <PyObject module="dagster" object="ConfigMapping" />.
 
-```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start endbefore=end
+```python file=/guides/dagster/graph_job_op/job_with_config_mapping.py startafter=start endbefore=end
 @config_mapping(config_schema={"arg": str})
 def my_config_mapping(conf):
     return {"solids": {"do_something": {"config": {"param": conf["arg"]}}}}
@@ -338,7 +349,7 @@ def do_it_all():
 
 Then, when running the job, you only need to supply more compact config:
 
-```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start_execute endbefore=end_execute
+```python file=/guides/dagster/graph_job_op/job_with_config_mapping.py startafter=start_execute endbefore=end_execute
 do_it_all.execute_in_process(run_config={"arg": "some_value"})
 ```
 
@@ -754,7 +765,7 @@ def do_it_all():
     do_yet_more(do_two_things(one()))
 ```
 
-Note that graphs no longer require information about the inputs they map to, but they still need infomration about the outputs they map to. Besides, inputs and outputs of a graph now respect the types specified on the underlying `Op` instead.
+Note that graphs no longer require information about the inputs they map to, but they still need information about the outputs they map to. The inputs and outputs of a graph now respect the types specified on the underlying `Op` instead of specifying those types directly on the graph. That is, `arg1` in the above graph will expect the same type, `Int` as the input `arg1` on `do_something_else`.
 
 ### A composite solid with multiple outputs
 
@@ -829,4 +840,97 @@ def do_yet_more(arg1, arg2):
 def do_it_all():
     one, two = do_two_things()
     do_yet_more(one, two)
+```
+
+### A composite solid with config
+
+Consider the following composite solid whose nested solid requires config.
+
+```python file=/guides/dagster/graph_job_op/composite_solid_requires_config.py
+
+```
+
+In order to provide config for the nested solid, your config document would look like this:
+```yaml
+
+solids:
+  nests_solids:
+    solids:
+      requires_config:
+        config: "foo"
+```
+
+Consider an equivalent graph whose nested solid requires config:
+```python file=/guides/dagster/graph_job_op/graph_requires_config.py
+
+```
+
+The config document looks like so:
+```yaml
+
+graph:
+  nests_solids:
+    requires_config:
+      config: "foo"
+```
+In addition to changing the top-level key to `graph`, we remove the layer of indirection, the additional `solids` key, between the composite and its constituent solids.
+
+### A composite solid with input and/or output config
+
+Composite solids can specify their inputs via config. Consider the following composite solid:
+
+```python file=/guides/dagster/graph_job_op/composite_solid_input_config.py
+```
+
+You can provide input values in config like so:
+
+```yaml
+graph:
+  my_composite:
+    inputs:
+      feeds_x:
+        value: 5
+```
+
+With the graph API, input values provided via config must be pushed down into the nested solids/ops.
+
+The following is the converted graph version of `my_composite`:
+
+```python file=/guides/dagster/graph_job_op/graph_input_config.py
+```
+
+I would provide the following config to provide input values:
+
+```yaml
+graph:
+  my_composite:
+    my_solid:
+      inputs:
+        x:
+          value: 5
+    other_solid:
+      inputs:
+        x:
+          value: 5
+```
+
+The config must be repeated for each solid which is accepting the input.
+
+
+### A composite solid with config mapping
+
+If your composite solid utilized config mapping, that can be carried over to the equivalent graph. There are slight differences in the config schema between the two.
+
+Consider the following composite solid
+
+```python file=/guides/dagster/graph_job_op/composite_solid_with_config_mapping.py
+```
+
+Which you would configure like so:
+```yaml
+```
+
+In order to create the equivalent graph, you would first construct a config mapping object, and then pass that to the graph's definition.
+
+```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py
 ```
