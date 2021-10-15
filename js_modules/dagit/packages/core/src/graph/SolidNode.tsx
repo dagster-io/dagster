@@ -114,13 +114,11 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         $minified={minified}
         $selected={selected}
         $secondaryHighlight={focused}
+        $dim={dim}
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
       >
-        <div
-          className="highlight-box"
-          style={{...position(layout.boundingBox), opacity: dim ? 0.3 : 1}}
-        />
+        <div className="highlight-box" style={{...position(layout.boundingBox)}} />
         {composite && <div className="composite-marker" style={{...position(layout.solid)}} />}
 
         {invocation?.isDynamicMapped && (
@@ -293,7 +291,10 @@ const NodeContainer = styled.div<{
   $minified: boolean;
   $selected: boolean;
   $secondaryHighlight: boolean;
+  $dim: boolean;
 }>`
+  opacity: ${({$dim}) => ($dim ? 0.3 : 1)};
+
   .highlight-box {
     border: ${(p) =>
       p.$selected
@@ -333,7 +334,7 @@ const NodeContainer = styled.div<{
     display: flex;
     gap: 5px;
     padding: 4px ${(p) => (p.$minified ? '8px' : '3px')};
-    font-size: ${(p) => (p.$minified ? '28px' : '14px')};
+    font-size: ${(p) => (p.$minified ? '32px' : '14px')};
     font-family: ${FontFamily.monospace};
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;

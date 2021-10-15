@@ -20,7 +20,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   return (
     <div>
       <SidebarSubhead />
-      <Box padding={12}>
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <SidebarTitle>
           <Link to="?tab=types">{flagPipelineModeTuples ? 'Graph types' : 'Pipeline types'}</Link>{' '}
           {'>'} {name}

@@ -115,6 +115,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
           <PartitionsBackfillPartitionSelector
             partitionSetName={partitionSet.name}
             pipelineName={pipelineName}
+            onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(backfillId, stepQuery) => {
               setStepQuery(stepQuery);
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);

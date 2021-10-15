@@ -93,11 +93,13 @@ export const InstanceBackfills = () => {
 
           if (!partitionBackfillsOrError.results.length) {
             return (
-              <NonIdealState
-                icon="no-results"
-                title="No backfills found"
-                description={<p>This instance does not have any backfill jobs.</p>}
-              />
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="no-results"
+                  title="No backfills found"
+                  description={<p>This instance does not have any backfill jobs.</p>}
+                />
+              </Box>
             );
           }
 
@@ -445,10 +447,10 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   return (
     <span
       style={{
-        fontSize: 36,
-        fontWeight: 'bold',
+        lineHeight: '32px',
+        fontSize: '36px',
+        fontWeight: 600,
         color: ColorsWIP.Gray600,
-        fontVariantNumeric: 'tabular-nums',
       }}
     >
       {numTotal ? Math.floor((100 * numCompleted) / numTotal) : '-'}%
@@ -499,7 +501,7 @@ const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
   } = React.useMemo(() => getProgressCounts(backfill), [backfill]);
 
   return (
-    <Table style={{marginRight: 20, maxWidth: 250}}>
+    <StyledTable>
       <tbody>
         <BackfillStatusTableRow label="Queued" count={numQueued} />
         <BackfillStatusTableRow label="In progress" count={numInProgress} />
@@ -513,9 +515,29 @@ const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
         )}
         <BackfillStatusTableRow label="Total" count={numTotal} isTotal={true} />
       </tbody>
-    </Table>
+    </StyledTable>
   );
 };
+
+const StyledTable = styled.table`
+  max-width: 250px;
+  border-collapse: collapse;
+
+  &&& tr td {
+    box-shadow: none !important;
+    padding: 0 24px 4px 0;
+    margin: 0;
+  }
+
+  &&& tr td:last-child {
+    padding-right: 0;
+    text-align: right;
+  }
+
+  &&& tr.total td {
+    font-weight: 600;
+  }
+`;
 
 const BackfillStatusTableRow = ({
   label,
@@ -530,32 +552,9 @@ const BackfillStatusTableRow = ({
     return null;
   }
   return (
-    <tr
-      style={{
-        boxShadow: 'none',
-        fontVariant: 'tabular-nums',
-      }}
-    >
-      <td
-        style={{
-          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
-          maxWidth: '100px',
-          padding: '3px 5px',
-        }}
-      >
-        <Group direction="row" spacing={8} alignItems="center">
-          <div>{label}</div>
-        </Group>
-      </td>
-      <td
-        style={{
-          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
-          maxWidth: '50px',
-          padding: '3px 5px',
-        }}
-      >
-        <Box flex={{justifyContent: 'flex-end'}}>{count}</Box>
-      </td>
+    <tr className={isTotal ? 'total' : undefined}>
+      <td>{label}</td>
+      <td>{count}</td>
     </tr>
   );
 };

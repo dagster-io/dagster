@@ -24,31 +24,22 @@ class PickledObjectS3IOManager(IOManager):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
 
-        def delete_for_results(store, results):
-            store.s3.delete_objects(
-                Bucket=store.bucket,
-                Delete={"Objects": [{"Key": result["Key"]} for result in results["Contents"]]},
-            )
-
-        if self._has_object(key):
-            results = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=key)
-            delete_for_results(self, results)
-
-            continuation = results["IsTruncated"]
-            while continuation:
-                continuation_token = results["NextContinuationToken"]
-                results = self.s3.list_objects_v2(
-                    Bucket=self.bucket, Prefix=key, ContinuationToken=continuation_token
-                )
-                delete_for_results(self, results)
-                continuation = results["IsTruncated"]
+        # delete_object wont fail even if the item has been deleted.
+        self.s3.delete_object(Bucket=self.bucket, Key=key)
 
     def _has_object(self, key):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
 
-        key_count = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=key)["KeyCount"]
-        return bool(key_count > 0)
+        found_object = False
+
+        try:
+            self.s3.get_object(Bucket=self.bucket, Key=key)
+            found_object = True
+        except self.s3.exceptions.NoSuchKey:
+            found_object = False
+
+        return found_object
 
     def _uri_for_key(self, key):
         check.str_param(key, "key")

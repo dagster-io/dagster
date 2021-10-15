@@ -12,7 +12,6 @@ import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
@@ -488,18 +487,20 @@ const RunMatrixSettings: React.FC<{
           <MenuItemWIP
             tagName="div"
             text={
-              <Group direction="column" spacing={8}>
+              <Box flex={{direction: 'column', gap: 8}}>
                 <div>Colorize by age</div>
                 {options.colorizeByAge ? (
-                  <SliceSlider
-                    disabled={false}
-                    value={Math.max(minUnix, options.colorizeSliceUnix)}
-                    onChange={(v) => setOptions({...options, colorizeSliceUnix: v})}
-                    maxUnix={maxUnix}
-                    minUnix={minUnix}
-                  />
+                  <div style={{marginLeft: '9px'}}>
+                    <SliceSlider
+                      disabled={false}
+                      value={Math.max(minUnix, options.colorizeSliceUnix)}
+                      onChange={(v) => setOptions({...options, colorizeSliceUnix: v})}
+                      maxUnix={maxUnix}
+                      minUnix={minUnix}
+                    />
+                  </div>
                 ) : null}
-              </Group>
+              </Box>
             }
             icon={
               <IconWIP

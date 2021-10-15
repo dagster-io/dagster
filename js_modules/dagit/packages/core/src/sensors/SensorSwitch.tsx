@@ -20,10 +20,11 @@ import {StopSensor} from './types/StopSensor';
 interface Props {
   repoAddress: RepoAddress;
   sensor: SensorSwitchFragment;
+  size?: 'small' | 'large';
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
-  const {repoAddress, sensor} = props;
+  const {repoAddress, sensor, size = 'large'} = props;
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
@@ -58,6 +59,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
         disabled={toggleOnInFlight || toggleOffInFlight}
         checked={running || toggleOnInFlight}
         onChange={onChangeSwitch}
+        size={size}
       />
     );
   }
@@ -71,6 +73,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
       disabled={disabled}
       checked={running || toggleOnInFlight}
       onChange={onChangeSwitch}
+      size={size}
     />
   );
 

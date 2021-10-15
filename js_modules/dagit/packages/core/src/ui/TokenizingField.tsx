@@ -386,13 +386,15 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 const StyledTagInput = styled(TagInput)`
   border: none;
   border-radius: 8px;
-  box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px;
+  box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
+    ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
   max-width: 600px;
   transition: box-shadow 150ms;
 
   &.bp3-active {
-    box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
   input {

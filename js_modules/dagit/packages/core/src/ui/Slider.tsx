@@ -30,14 +30,17 @@ export const SliderStyles = css<{$fillColor: string}>`
     .bp3-slider-progress {
       background-color: ${(p) => p.$fillColor};
       opacity: 0.2;
+      height: 8px;
     }
     .bp3-slider-progress.bp3-intent-primary {
       background-color: ${(p) => p.$fillColor};
       opacity: 1;
+      height: 8px;
     }
   }
   &.bp3-vertical .bp3-slider-track,
   &.bp3-vertical .bp3-slider-track .bp3-slider-progress {
+    height: initial;
     width: 8px;
   }
   .bp3-slider-handle {

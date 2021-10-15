@@ -148,7 +148,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                 );
               })}
             </Box>
-            <Box margin={{left: 2}} flex={{direction: 'row', justifyContent: 'center'}}>
+            <Box margin={{left: 2}} flex={{direction: 'row'}}>
               <ButtonWIP onClick={addTagEntry} icon={<IconWIP name="add_circle" />}>
                 Add custom tag
               </ButtonWIP>
@@ -223,13 +223,12 @@ const Container = styled.div`
   align-items: flex-start;
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid #ececec;
-  padding: 4px 8px;
 `;
 const TagList = styled.div`
   display: flex;
   flex: 1;
   flex-wrap: wrap;
+  gap: 4px;
 `;
 const Link = styled.div`
   color: #666;

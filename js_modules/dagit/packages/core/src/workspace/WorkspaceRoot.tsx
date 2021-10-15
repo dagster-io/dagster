@@ -25,18 +25,20 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Invalid repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Invalid repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not a valid repository path.'}
             </div>
-            {'  is not a valid repository path.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 

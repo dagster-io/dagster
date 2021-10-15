@@ -84,7 +84,6 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
               style={{
                 marginLeft: Math.max(0, idx * 15 - 9),
                 fontWeight: idx === parts.length - 1 ? 600 : 300,
-                paddingRight: 15,
               }}
             >
               {idx > 0 ? '↳' : ''}
@@ -98,7 +97,7 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
   );
 };
 
-const SolidColumnContainer = styled.div`
+export const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
   padding: 4px 12px;

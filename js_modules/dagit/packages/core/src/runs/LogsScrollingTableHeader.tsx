@@ -113,7 +113,7 @@ class Header extends React.Component<HeaderProps, HeaderState> {
         >
           <div />
         </HeaderDragHandle>
-        {this.props.children}
+        <HeaderLabel>{this.props.children}</HeaderLabel>
       </HeaderContainer>
     );
   }
@@ -181,4 +181,10 @@ const HeaderDragHandle = styled.div<{
     height: 100%;
     background: ${({isDragging}) => (isDragging ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
   }
+`;
+
+const HeaderLabel = styled.div`
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;

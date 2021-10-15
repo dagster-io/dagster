@@ -677,6 +677,7 @@ def static_partitioned_config(
         partition_keys (List[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
     """
+    check.list_param(partition_keys, "partition_keys", str)
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -711,6 +712,7 @@ def dynamic_partitioned_config(
             list of valid partition keys, which serve as the range of values that can be provided
             to the decorated run config function.
     """
+    check.callable_param(partition_fn, "partition_fn")
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         def _partitions_wrapper(current_time: Optional[datetime] = None):

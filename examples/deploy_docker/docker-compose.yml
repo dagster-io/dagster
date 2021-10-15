@@ -13,27 +13,27 @@ services:
     networks:
       - docker_example_network
 
-  # This service runs the gRPC server that loads and executes your pipelines, in both dagit
+  # This service runs the gRPC server that loads your user code, in both dagit
   # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
   # run launcher to use this same image when launching runs in a new container as well.
   # Multiple containers like this can be deployed separately - each just needs to run on
   # its own port, and have its own entry in the workspace.yaml file that's loaded by dagit.
-  docker_example_pipelines:
+  docker_example_user_code:
     build:
       context: .
-      dockerfile: ./Dockerfile_pipelines
-    container_name: docker_example_pipelines
-    image: docker_example_pipelines_image
+      dockerfile: ./Dockerfile_user_code
+    container_name: docker_example_user_code
+    image: docker_example_user_code_image
     restart: always
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
-      DAGSTER_CURRENT_IMAGE: "docker_example_pipelines_image"
+      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
     networks:
       - docker_example_network
 
-  # This service runs dagit, which loads the pipelines from the user code container.
+  # This service runs dagit, which loads your user code from the user code container.
   # Since our instance uses the QueuedRunCoordinator, any runs submitted from dagit will be put on
   # a queue and later dequeued and launched by dagster-daemon.
   docker_example_dagit:
@@ -63,7 +63,7 @@ services:
       - docker_example_network
     depends_on:
       - docker_example_postgresql
-      - docker_example_pipelines
+      - docker_example_user_code
 
   # This service runs the dagster-daemon process, which is responsible for taking runs
   # off of the queue and launching them, as well as creating runs from schedules or sensors.
@@ -86,7 +86,7 @@ services:
       - docker_example_network
     depends_on:
       - docker_example_postgresql
-      - docker_example_pipelines
+      - docker_example_user_code
 
 networks:
   docker_example_network:

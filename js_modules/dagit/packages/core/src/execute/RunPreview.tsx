@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Code, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -20,6 +20,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {TagWIP} from '../ui/TagWIP';
+import {Code} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 
 import {
@@ -158,13 +159,13 @@ const ScaffoldConfigButton = ({
 
   const onClick = async () => {
     await confirm({
-      title: 'Scaffold extra config',
+      title: 'Scaffold missing config',
       description: confirmationMessage,
     });
     onScaffoldMissingConfig();
   };
 
-  return <ButtonWIP onClick={onClick}>Scaffold Missing Config</ButtonWIP>;
+  return <ButtonWIP onClick={onClick}>Scaffold missing config</ButtonWIP>;
 };
 
 interface RunPreviewProps {

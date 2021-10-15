@@ -19,8 +19,11 @@ export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
   const explorerPath = explorerPathFromString(pipelinePath);
   useJobTitle(explorerPath);
 
-  const {pipelineName} = explorerPath;
-  const [data, onSave] = useStorage(repoAddress.name, pipelineName);
+  const {pipelineName, pipelineMode} = explorerPath;
+  const [data, onSave] = useStorage(
+    repoAddress.name,
+    `${pipelineName}${pipelineMode ? `:${pipelineMode}` : ''}`,
+  );
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {

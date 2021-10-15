@@ -58,7 +58,7 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
 
   return (
     <Item isHighlight={isHighlight} ref={element}>
-      <ResultLink to={item.href} onClick={onClick}>
+      <ResultLink to={item.href} onMouseDown={onClick}>
         <IconWIP
           name={iconForType(item.type)}
           color={isHighlight ? ColorsWIP.Gray800 : ColorsWIP.Gray500}

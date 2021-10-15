@@ -1,10 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
+import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -46,19 +46,19 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
       {({partitionSetsOrError}) => {
         if (partitionSetsOrError.__typename !== 'PartitionSets') {
           return (
-            <Wrapper>
+            <Box padding={{vertical: 64}}>
               <NonIdealState
                 icon="error"
                 title="Partitions"
                 description={partitionSetsOrError.message}
               />
-            </Wrapper>
+            </Box>
           );
         }
 
         if (!partitionSetsOrError.results.length) {
           return (
-            <Wrapper>
+            <Box padding={{vertical: 64}}>
               <NonIdealState
                 icon="error"
                 title="Partitions"
@@ -68,7 +68,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
                   </p>
                 }
               />
-            </Wrapper>
+            </Box>
           );
         }
 
@@ -115,10 +115,4 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       }
     }
   }
-`;
-
-const Wrapper = styled.div`
-  width: 100%;
-  height: 100%;
-  min-width: 0;
 `;

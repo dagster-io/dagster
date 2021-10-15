@@ -52,12 +52,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   });
 
   const selectNode = React.useCallback(
-    (node: Node) => {
+    (node: Node | null) => {
       onChangeExplorerPath(
         {
           ...explorerPath,
-          pathSolids: [node.definition.opName!],
-          pipelineName: node.definition.jobName || explorerPath.pipelineName,
+          pathSolids: node ? [node.definition.opName!] : [],
+          pipelineName: node?.definition.jobName || explorerPath.pipelineName,
         },
         'replace',
       );
@@ -114,7 +114,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                 graphWidth={layout.width}
                 graphHeight={layout.height}
                 onKeyDown={() => {}}
-                onDoubleClick={() => {}}
+                onClick={() => selectNode(null)}
                 maxZoom={1.2}
                 maxAutocenterZoom={1.0}
               >
@@ -156,7 +156,10 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                           y={layoutNode.y}
                           width={width}
                           height={height}
-                          onClick={() => selectNode(graphNode)}
+                          onClick={(e) => {
+                            selectNode(graphNode);
+                            e.stopPropagation();
+                          }}
                         >
                           {graphNode.hidden ? (
                             <ForeignNode assetKey={graphNode.assetKey} />

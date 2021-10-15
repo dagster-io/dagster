@@ -94,11 +94,13 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <NonIdealState
-                  icon="error"
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
             const runs = pipelineRunsOrError.results;

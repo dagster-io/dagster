@@ -19,7 +19,6 @@ interface ISidebarSolidInvocationProps {
 
 export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (props) => {
   const {solid, onEnterCompositeSolid} = props;
-  console.log(solid.inputs.length, solid.outputs);
   const showInputs = solid.inputs.some((o) => o.dependsOn.length);
   const showOutputs = solid.outputs.some((o) => o.dependedBy.length);
 

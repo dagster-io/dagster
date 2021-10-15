@@ -1,4 +1,5 @@
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {Box} from './Box';
 import {ColorsWIP} from './Colors';
@@ -17,20 +18,30 @@ interface Props {
 export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
-    <Box
+    <PageHeaderContainer
       background={ColorsWIP.Gray50}
       padding={{top: 16, left: 24, right: 12}}
       border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-      style={{width: '100%'}}
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12}}>
           {title}
           {tags}
         </Box>
         {right}
       </Box>
       {tabs}
-    </Box>
+    </PageHeaderContainer>
   );
 };
+
+const PageHeaderContainer = styled(Box)`
+  width: 100%;
+
+  /**
+   * Blueprint breadcrumbs annoyingly have a built-in height.
+   */
+  .bp3-breadcrumbs {
+    height: auto;
+  }
+`;
