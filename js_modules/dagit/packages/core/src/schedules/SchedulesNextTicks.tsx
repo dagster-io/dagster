@@ -107,9 +107,9 @@ export const SchedulesNextTicks: React.FC<{
     <Table>
       <thead>
         <tr>
-          <th style={{width: '200px'}}>Timestamp</th>
+          <th style={{width: '260px'}}>Timestamp</th>
           <th style={{width: '30%'}}>Schedule</th>
-          <th>{anyPipelines ? 'Job / pipeline' : 'Job'}</th>
+          <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
           <th style={{textAlign: 'right'}}>Metadata</th>
         </tr>
       </thead>
