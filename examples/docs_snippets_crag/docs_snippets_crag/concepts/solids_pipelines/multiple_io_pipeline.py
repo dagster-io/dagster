@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument, no-value-for-parameter
 
 # start_marker
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -19,7 +19,7 @@ def adder(context, a: int, b: int) -> int:
     return a + b
 
 
-@graph
+@job
 def inputs_and_outputs():
     value = return_one()
     a = add_one(value)

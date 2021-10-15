@@ -5,7 +5,7 @@ description: Ops are the functional unit of computation in Dagster and contain t
 
 # Ops
 
-Ops are the functional unit of work in Dagster. An op's responsibility is to read its inputs, perform an action, and emit outputs. Multiple ops can be connected to create a [Job](/concepts/solids-pipelines/jobs).
+Ops are the functional unit of work in Dagster. An op's responsibility is to read its inputs, perform an action, and emit outputs. Multiple ops can be connected to create a [Job](/concepts/solids-pipelines/pipelines).
 
 <Image alt="ops" src="/images/solids.png" width={3200} height={1040} />
 
@@ -21,7 +21,7 @@ Ops are the functional unit of work in Dagster. An op's responsibility is to rea
 
 ## Overview
 
-Ops are used to define computations. Ops can later be assembled into [Jobs](/concepts/solids-pipelines/jobs). Ops generally perform one specific action and are used for batch computations. For example, you can use an op to:
+Ops are used to define computations. Ops can later be assembled into [Jobs](/concepts/solids-pipelines/pipelines). Ops generally perform one specific action and are used for batch computations. For example, you can use an op to:
 
 - Derive a data set from some other data sets.
 - Execute a database query.
@@ -143,7 +143,7 @@ def my_configurable_op(context):
 
 ## Using an op
 
-Ops are used within a [Job](/concepts/solids-pipelines/jobs) or [Graph](/concepts/solids-pipelines/pipelines). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
+Ops are used within a [Job or Graph](/concepts/solids-pipelines/pipelines). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
 
 ## Patterns
 
