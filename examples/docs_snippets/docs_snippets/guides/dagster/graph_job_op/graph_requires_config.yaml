@@ -1,0 +1,4 @@
+ops:
+  nests_solids:
+    requires_config:
+      config: "foo"

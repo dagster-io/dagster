@@ -16,13 +16,8 @@ Migrating a pipeline to jobs does not require migrating all your other pipelines
 Using this doc and the dagster documentation at large as a guide, this is the order we recommend migrating your dagster code to the new APIs:
 
 1. Migrate all composite solids to graphs, starting with composite solids that don't contain other composite solids.
-Users who are not using composite solid can skip this step. Composite solids are not compatible with the new APIs, and so they will need to be switched over before anything else.
-2. A pipeline with n modes becomes n different jobs.
-If you only have one mode on your pipeline, the `@job` decorator may be the most convenient way to do this. If using more than one mode, then the most natural way is to first create a graph, and then create multiple graphs from that.
-3. (Optional) Convert each solid into an op.
-While this step is not required to start using the job API, `solid` is now a deprecated API, and may have feature gaps with `op` in the future. We recommend switching each solid to use the new op API.
-4. (Optional) Reorganize repositories based upon new job splits.
-Splitting a pipeline into n different jobs provides a good opportunity to re-organize repositories around different execution environments.
+
+Users who are not using composite solid can skip this step. Composite solids are not compatible with the new APIs, and so they will need to be switched over before anything else. 2. A pipeline with n modes becomes n different jobs. If you only have one mode on your pipeline, the `@job` decorator may be the most convenient way to do this. If using more than one mode, then the most natural way is to first create a graph, and then create multiple graphs from that. 3. (Optional) Convert each solid into an op. While this step is not required to start using the job API, `solid` is now a deprecated API, and may have feature gaps with `op` in the future. We recommend switching each solid to use the new op API. 4. (Optional) Reorganize repositories based upon new job splits. Splitting a pipeline into n different jobs provides a good opportunity to re-organize repositories around different execution environments.
 
 ## A simple pipeline
 
@@ -280,6 +275,10 @@ workspace.yaml for the dev instance:
           attribute: dev_repo
 
 ## Config
+
+### The solids keyword becomes ops
+
+When using the job API, the top-level keyword for configuring your solids/ops changes from `solids` to `ops`. For backcompatibility purposes, and those who may still be using solids within their jobs, the `solids` keyword will still work, but the dagit playground will autosuggest in terms of `ops` for jobs.
 
 ### A pipeline with a preset
 
@@ -847,12 +846,22 @@ def do_it_all():
 Consider the following composite solid whose nested solid requires config.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_requires_config.py
+from dagster import composite_solid, solid
 
+
+@solid(config_schema=str)
+def requires_config(context):
+    return context.solid_config
+
+
+@composite_solid
+def nests_solids():
+    requires_config()
 ```
 
 In order to provide config for the nested solid, your config document would look like this:
-```yaml
 
+```yaml file=/guides/dagster/graph_job_op/composite_solid_requires_config.yaml
 solids:
   nests_solids:
     solids:
@@ -861,31 +870,60 @@ solids:
 ```
 
 Consider an equivalent graph whose nested solid requires config:
-```python file=/guides/dagster/graph_job_op/graph_requires_config.py
 
+```python file=/guides/dagster/graph_job_op/graph_requires_config.py
+from dagster import graph, solid
+
+
+@solid(config_schema=str)
+def requires_config(context):
+    return context.solid_config
+
+
+@graph
+def nests_solids():
+    requires_config()
 ```
 
-The config document looks like so:
-```yaml
+The config document looks like:
 
-graph:
+```yaml file=/guides/dagster/graph_job_op/graph_requires_config.yaml
+ops:
   nests_solids:
     requires_config:
       config: "foo"
 ```
-In addition to changing the top-level key to `graph`, we remove the layer of indirection, the additional `solids` key, between the composite and its constituent solids.
+
+In addition to changing the top-level key to `ops`, we remove the layer of indirection, the additional `solids` key, between the composite and its constituent solids.
 
 ### A composite solid with input and/or output config
 
 Composite solids can specify their inputs via config. Consider the following composite solid:
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_input_config.py
+from dagster import InputDefinition, composite_solid, solid
+
+
+@solid(input_defs=[InputDefinition("x", dagster_type=int)])
+def my_solid(x):
+    return x + 1
+
+
+@solid(input_defs=[InputDefinition("x", dagster_type=int)])
+def other_solid(x):
+    return x + 1
+
+
+@composite_solid(input_defs=[InputDefinition("feeds_x", dagster_type=int)])
+def my_composite(feeds_x):
+    my_solid(feeds_x)
+    other_solid(feeds_x)
 ```
 
 You can provide input values in config like so:
 
-```yaml
-graph:
+```yaml file=/guides/dagster/graph_job_op/composite_solid_input_config.yaml
+solids:
   my_composite:
     inputs:
       feeds_x:
@@ -897,12 +935,29 @@ With the graph API, input values provided via config must be pushed down into th
 The following is the converted graph version of `my_composite`:
 
 ```python file=/guides/dagster/graph_job_op/graph_input_config.py
+from dagster import InputDefinition, graph, solid, GraphIn
+
+
+@solid(input_defs=[InputDefinition("x", dagster_type=int)])
+def my_solid(x):
+    return x + 1
+
+
+@solid(input_defs=[InputDefinition("x", dagster_type=int)])
+def other_solid(x):
+    return x + 1
+
+
+@graph(ins={"feeds_x": GraphIn()})
+def my_composite(feeds_x):
+    my_solid(feeds_x)
+    other_solid(feeds_x)
 ```
 
 I would provide the following config to provide input values:
 
-```yaml
-graph:
+```yaml file=/guides/dagster/graph_job_op/graph_input_config.yaml
+ops:
   my_composite:
     my_solid:
       inputs:
@@ -916,21 +971,62 @@ graph:
 
 The config must be repeated for each solid which is accepting the input.
 
-
 ### A composite solid with config mapping
 
 If your composite solid utilized config mapping, that can be carried over to the equivalent graph. There are slight differences in the config schema between the two.
 
-Consider the following composite solid
+Consider the following composite solid:
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_with_config_mapping.py
+from dagster import composite_solid, solid
+
+
+@solid(config_schema=str)
+def requires_config(context):
+    return context.solid_config
+
+
+def _config_mapping(outer):
+    return {"solids": {"requires_config": outer}}
+
+
+@composite_solid(config_fn=_config_mapping, config_schema=str)
+def nests():
+    requires_config()
 ```
 
 Which you would configure like so:
-```yaml
+
+```yaml file=/guides/dagster/graph_job_op/composite_solid_with_config_mapping.yaml
+solids:
+  nests:
+    config: foo
 ```
 
 In order to create the equivalent graph, you would first construct a config mapping object, and then pass that to the graph's definition.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py
+from dagster import config_mapping, graph, op
+
+
+@op(config_schema=str)
+def requires_config(context):
+    return context.op_config
+
+
+@config_mapping(config_schema=str)
+def _config_mapping(outer):
+    return {"requires_config": outer}
+
+
+@graph(config=_config_mapping)
+def nests():
+    requires_config()
+```
+
+When configuring this graph, the config key is not necessary:
+
+```yaml file=/guides/dagster/graph_job_op/graph_with_config_mapping.yaml
+ops:
+  nests: foo
 ```

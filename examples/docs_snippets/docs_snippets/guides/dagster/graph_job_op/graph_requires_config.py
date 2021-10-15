@@ -1,4 +1,4 @@
-from dagster import solid, graph
+from dagster import graph, solid
 
 
 @solid(config_schema=str)

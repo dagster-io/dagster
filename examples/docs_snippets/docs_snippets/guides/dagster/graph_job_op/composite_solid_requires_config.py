@@ -1,4 +1,4 @@
-from dagster import solid, composite_solid
+from dagster import composite_solid, solid
 
 
 @solid(config_schema=str)

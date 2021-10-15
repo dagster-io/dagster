@@ -1,0 +1,10 @@
+ops:
+  my_composite:
+    my_solid:
+      inputs:
+        x:
+          value: 5
+    other_solid:
+      inputs:
+        x:
+          value: 5

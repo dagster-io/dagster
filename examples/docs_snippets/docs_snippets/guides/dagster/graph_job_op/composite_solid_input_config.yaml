@@ -1,0 +1,5 @@
+solids:
+  my_composite:
+    inputs:
+      feeds_x:
+        value: 5

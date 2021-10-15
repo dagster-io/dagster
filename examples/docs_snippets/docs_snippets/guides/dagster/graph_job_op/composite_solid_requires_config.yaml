@@ -1,0 +1,5 @@
+solids:
+  nests_solids:
+    solids:
+      requires_config:
+        config: "foo"

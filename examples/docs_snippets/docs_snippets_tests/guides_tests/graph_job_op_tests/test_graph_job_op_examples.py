@@ -1,6 +1,12 @@
 from datetime import datetime
 
-from dagster import build_schedule_context, execute_pipeline
+from dagster import (
+    build_schedule_context,
+    execute_pipeline,
+    config_from_files,
+    pipeline,
+    CompositeSolidDefinition,
+)
 from docs_snippets.guides.dagster.graph_job_op import (
     composite_solid,
     composite_solid_ins_out,
@@ -25,6 +31,12 @@ from docs_snippets.guides.dagster.graph_job_op import (
     pipeline_with_resources,
     pipeline_with_schedule,
     pipeline_with_schedule_return_config,
+    composite_solid_requires_config,
+    graph_requires_config,
+    composite_solid_input_config,
+    graph_input_config,
+    composite_solid_with_config_mapping,
+    graph_with_config_mapping,
     prod_dev_jobs,
     prod_dev_modes,
     simple_graph,
@@ -57,6 +69,16 @@ job_schedules = [
     (graph_with_config_and_schedule, "do_it_all_schedule", None),
     (graph_with_partition_schedule, "do_it_all_schedule", None),
     (graph_with_schedule_return_config, "do_it_all_schedule", datetime(2020, 1, 1)),
+]
+composites_with_yaml = [
+    (composite_solid_requires_config, "nests_solids", "composite_solid_requires_config.yaml"),
+    (composite_solid_input_config, "my_composite", "composite_solid_input_config.yaml"),
+    (composite_solid_with_config_mapping, "nests", "composite_solid_with_config_mapping.yaml"),
+]
+graphs_with_yaml = [
+    (graph_with_config_mapping, "nests", "graph_with_config_mapping.yaml"),
+    (graph_requires_config, "nests_solids", "graph_requires_config.yaml"),
+    (graph_input_config, "my_composite", "graph_input_config.yaml"),
 ]
 pipelines = [
     (simple_pipeline, "do_it_all"),
@@ -171,3 +193,21 @@ def test_execute_nested_graph():
 
 def test_execute_simple_graph():
     execute_simple_graph.execute_simple_graph()
+
+
+def test_composites_with_yaml():
+
+    for module, attr_name, yaml_path in composites_with_yaml:
+        composite = getattr(module, attr_name)
+        run_config = config_from_files(yaml_path)
+
+        @pipeline
+        def _wraps():
+            composite()  # pylint: disable=cell-var-from-loop
+
+        try:
+            assert execute_pipeline(_wraps, run_config=run_config).success
+        except Exception as ex:
+            raise Exception(
+                f"Error while executing composite '{composite.name}' from module '{module.__name__}'"
+            ) from ex
