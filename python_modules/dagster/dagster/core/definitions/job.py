@@ -61,10 +61,10 @@ class JobDefinition(PipelineDefinition):
         raise_on_error: bool = True,
     ) -> "ExecuteInProcessResult":
         """
-        (Experimental) Execute the Job in-process, gathering results in-memory.
+        Execute the Job in-process, gathering results in-memory.
 
-        The executor_def on the Job will be ignored, and replaced with the in-process executor.
-        If using the default io_manager, it will switch from filesystem to in-memory.
+        The `executor_def` on the Job will be ignored, and replaced with the in-process executor.
+        If using the default `io_manager`, it will switch from filesystem to in-memory.
 
 
         Args:

@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {
@@ -24,9 +24,12 @@ interface Props {
 export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
-  const {pipelineName, pipelineMode} = explorerPath;
-  const {flagPipelineModeTuples} = useFeatureFlags();
-  useJobTitle(explorerPath);
+  const {pipelineName} = explorerPath;
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
+
+  useJobTitle(explorerPath, isJob);
   useStripSnapshotFromPath(props);
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
@@ -56,13 +59,13 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
     return pipelineName !== '' ? (
       <ExecutionSessionContainerError
         icon="error"
-        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+        title={isJob ? 'Job not found' : 'Pipeline not found'}
         description={message}
       />
     ) : (
       <ExecutionSessionContainerError
         icon="no-results"
-        title={flagPipelineModeTuples ? 'Select a job' : 'Select a pipeline'}
+        title={isJob ? 'Select a job' : 'Select a pipeline'}
       />
     );
   }
@@ -94,7 +97,6 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
     <React.Suspense fallback={<div />}>
       <ExecutionSessionContainer
         pipeline={pipelineOrError}
-        pipelineMode={flagPipelineModeTuples ? pipelineMode : undefined}
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
       />
@@ -105,6 +107,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
   fragment ExecutionSessionContainerPipelineFragment on Pipeline {
     id
+    isJob
     ...ConfigEditorGeneratorPipelineFragment
     modes {
       id

@@ -23,7 +23,6 @@ module.exports = {
     config.plugins.push(
       new webpack.DefinePlugin({
         __VERSIONING_DISABLED__: process.env.VERSIONING_DISABLED === "true",
-        __IS_CRAG__: process.env.IS_CRAG === "true",
       })
     );
     return config;

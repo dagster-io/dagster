@@ -9,9 +9,7 @@ const DAGSTER_REPO =
 
 const DOCS_SNIPPET = path.join(
   DAGSTER_REPO,
-  process.env.IS_CRAG === "true"
-    ? "/examples/docs_snippets_crag/docs_snippets_crag"
-    : "/examples/docs_snippets/docs_snippets"
+  "/examples/docs_snippets_crag/docs_snippets_crag"
 );
 
 export interface SnapshotStats {

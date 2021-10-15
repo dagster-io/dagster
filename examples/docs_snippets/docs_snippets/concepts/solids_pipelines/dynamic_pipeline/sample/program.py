@@ -1,2 +1,0 @@
-def calculate():
-    return "yes"

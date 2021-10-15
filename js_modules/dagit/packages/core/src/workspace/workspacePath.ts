@@ -6,27 +6,30 @@ export const workspacePath = (repoName: string, repoLocation: string, path = '')
   return `/workspace/${buildRepoPath(repoName, repoLocation)}${finalPath}`;
 };
 
-export const workspacePipelinePath = (
-  repoName: string,
-  repoLocation: string,
-  pipelineName: string,
-  pipelineMode: string,
-  path = '',
-) => {
-  const finalPath = path.startsWith('/') ? path : `/${path}`;
-  return `/workspace/${buildRepoPath(
-    repoName,
-    repoLocation,
-  )}/pipelines/${pipelineName}:${pipelineMode}${finalPath}`;
+type PathConfig = {
+  repoName: string;
+  repoLocation: string;
+  pipelineName: string;
+  isJob: boolean;
+  path?: string;
 };
 
-export const workspacePipelinePathGuessRepo = (
-  pipelineName: string,
-  pipelineMode: string,
+export const workspacePipelinePath = ({
+  repoName,
+  repoLocation,
+  pipelineName,
+  isJob,
   path = '',
-) => {
+}: PathConfig) => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
-  return `/workspace/pipelines/${pipelineName}:${pipelineMode}${finalPath}`;
+  return `/workspace/${buildRepoPath(repoName, repoLocation)}/${
+    isJob ? 'jobs' : 'pipelines'
+  }/${pipelineName}${finalPath}`;
+};
+
+export const workspacePipelinePathGuessRepo = (pipelineName: string, isJob = false, path = '') => {
+  const finalPath = path.startsWith('/') ? path : `/${path}`;
+  return `/workspace/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}${finalPath}`;
 };
 
 export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') => {

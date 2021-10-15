@@ -53,6 +53,7 @@ export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes {
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
+  isJob: boolean;
   name: string;
   presets: PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets[];
   tags: PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags[];

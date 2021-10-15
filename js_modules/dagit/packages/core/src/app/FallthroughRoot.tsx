@@ -23,12 +23,12 @@ export const FallthroughRoot = () => {
             const first = firstRepo.repository.pipelines[0];
             return (
               <Redirect
-                to={workspacePipelinePath(
-                  firstRepo.repository.name,
-                  firstRepo.repositoryLocation.name,
-                  first.name,
-                  first.modes[0].name,
-                )}
+                to={workspacePipelinePath({
+                  repoName: firstRepo.repository.name,
+                  repoLocation: firstRepo.repositoryLocation.name,
+                  pipelineName: first.name,
+                  isJob: first.isJob,
+                })}
               />
             );
           }

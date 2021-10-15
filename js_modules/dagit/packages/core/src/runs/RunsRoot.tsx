@@ -3,7 +3,6 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -57,7 +56,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -92,9 +90,14 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   };
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
-    ? ['status', 'tag', 'snapshotId', 'id', 'job']
-    : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
+  const enabledFilters: RunFilterTokenType[] = [
+    'status',
+    'tag',
+    'snapshotId',
+    'id',
+    'job',
+    'pipeline',
+  ];
 
   return (
     <Page>

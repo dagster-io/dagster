@@ -26,6 +26,7 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
   __typename: "Pipeline";
   id: string;
   name: string;
+  isJob: boolean;
   graphName: string;
   pipelineSnapshotId: string;
   modes: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];

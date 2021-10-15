@@ -1,7 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {getJSONForKey} from '../app/LocalStorage';
 import {ColorsWIP} from '../ui/Colors';
 
@@ -121,11 +120,10 @@ class Header extends React.Component<HeaderProps, HeaderState> {
 
 export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
-  const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <HeadersContainer>
       <Header width={widths.solid} onResize={(width) => widths.onChange({...widths, solid: width})}>
-        {flagPipelineModeTuples ? 'Op' : 'Solid'}
+        Op
       </Header>
       <Header
         width={widths.eventType}

@@ -52,6 +52,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   __typename: "Pipeline";
   id: string;
   description: string | null;
+  isJob: boolean;
   name: string;
   modes: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_modes[];
   runs: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs[];

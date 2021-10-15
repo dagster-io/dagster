@@ -10,6 +10,18 @@ import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes
 // GraphQL query operation: LaunchedRunListQuery
 // ====================================================
 
+export interface LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -50,8 +62,10 @@ export interface LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: LaunchedRunListQuery_pipelineRunsOrError_PipelineRuns_results_stats;

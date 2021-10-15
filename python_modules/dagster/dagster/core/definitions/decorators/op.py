@@ -2,9 +2,9 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 
 from ....seven.typing import get_origin
-from ....utils.backcompat import experimental_decorator
 from ...errors import DagsterInvariantViolationError
 from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
@@ -113,7 +113,7 @@ class _Op:
             output_defs=resolved_output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             version=self.version,
@@ -163,7 +163,6 @@ def _resolve_output_defs_from_outs(
         return output_defs
 
 
-@experimental_decorator
 def op(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
@@ -178,11 +177,25 @@ def op(
     output_defs: Optional[List[OutputDefinition]] = None,
 ) -> Union[_Op, SolidDefinition]:
     """
-    Op is an experimental replacement for solid, intended to decrease verbosity and have a more
-    intuitive name.
+    Create an op with the specified parameters from the decorated function.
 
-    Ops are currently implemented as :py:class:`SolidDefinition` , so are likely to be called
-    solids throughout the product.
+    Input and output definitions will be inferred from the type signature of the decorated function
+    if not explicitly provided.
+
+    The decorated function will be used as the op's compute function. The signature of the
+    decorated function is more flexible than that of the ``compute_fn`` in the core API; it may:
+
+    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the compute function.
+    2. Return an :py:class:`Output`. This output will be yielded by the compute function.
+    3. Yield :py:class:`Output` or other :ref:`event objects <events>`. Same as default compute behavior.
+
+    Note that options 1) and 2) are incompatible with yielding other events -- if you would like
+    to decorate a function that yields events, it must also wrap its eventual output in an
+    :py:class:`Output` and yield it.
+
+    @op supports ``async def`` functions as well, including async generators when yielding multiple
+    events or outputs. Note that async solids will generally be run on their own unless using a custom
+    :py:class:`Executor` implementation that supports running them together.
 
     Args:
         name (Optional[str]): Name of op. Must be unique within any :py:class:`GraphDefinition`

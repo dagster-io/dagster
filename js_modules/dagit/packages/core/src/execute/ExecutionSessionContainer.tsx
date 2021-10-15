@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {
   applyChangesToSession,
   applyCreateSession,
@@ -65,7 +64,6 @@ type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 interface IExecutionSessionContainerProps {
   pipeline: ExecutionSessionContainerPipelineFragment;
   partitionSets: ExecutionSessionContainerPartitionSetsFragment;
-  pipelineMode?: string;
   repoAddress: RepoAddress;
 }
 
@@ -131,7 +129,7 @@ const initialState: IExecutionSessionContainerState = {
 };
 
 const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
-  const {partitionSets, pipeline, pipelineMode, repoAddress} = props;
+  const {partitionSets, pipeline, repoAddress} = props;
 
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -140,34 +138,25 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
   const editor = React.useRef<ConfigEditor | null>(null);
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
-  const {presets} = pipeline;
+  const {isJob, presets} = pipeline;
 
   const initialDataForMode = React.useMemo(() => {
-    if (flagPipelineModeTuples) {
-      const presetsForMode = presets.filter((preset) => preset.mode === pipelineMode);
-      const partitionSetsForMode = partitionSets.results.filter(
-        (partitionSet) => partitionSet.mode === pipelineMode,
-      );
+    const presetsForMode = isJob ? (presets.length ? [presets[0]] : []) : presets;
+    const partitionSetsForMode = partitionSets.results;
 
-      if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
-        return {runConfigYaml: presetsForMode[0].runConfigYaml};
-      }
+    if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
+      return {runConfigYaml: presetsForMode[0].runConfigYaml};
+    }
 
-      if (!presetsForMode.length && partitionSetsForMode.length === 1) {
-        return {base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null}};
-      }
+    if (!presetsForMode.length && partitionSetsForMode.length === 1) {
+      return {base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null}};
     }
 
     return {};
-  }, [flagPipelineModeTuples, partitionSets, pipelineMode, presets]);
+  }, [isJob, partitionSets.results, presets]);
 
-  const [data, onSave] = useStorage(
-    repoAddress.name || '',
-    flagPipelineModeTuples ? `${pipeline.name}:${pipelineMode}` : pipeline.name,
-    initialDataForMode,
-  );
+  const [data, onSave] = useStorage(repoAddress.name || '', pipeline.name, initialDataForMode);
 
   const currentSession = data.sessions[data.current];
 
@@ -281,10 +270,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     if (!currentSession) {
       return;
     }
-    const mode = pipelineMode || currentSession.mode;
-    if (!mode) {
-      return;
-    }
+
     const tags = currentSession.tags || [];
     let runConfigData = {};
     try {
@@ -300,7 +286,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       executionParams: {
         runConfigData,
         selector: pipelineSelector,
-        mode,
+        mode: currentSession.mode || 'default',
         executionMetadata: {
           tags: [
             ...tags.map((tag) => ({key: tag.key, value: tag.value})),
@@ -354,7 +340,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       variables: {
         runConfigData: configJSON,
         pipeline: pipelineSelector,
-        mode: pipelineMode || currentSession.mode || 'default',
+        mode: currentSession.mode || 'default',
       },
     });
 
@@ -546,7 +532,6 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             <SessionSettingsBar>
               <ConfigEditorConfigPicker
                 pipeline={pipeline}
-                pipelineMode={pipelineMode}
                 partitionSets={partitionSets.results}
                 base={currentSession.base}
                 onSaveSession={onSaveSession}
@@ -567,7 +552,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 onChange={onSolidSelectionChange}
                 repoAddress={repoAddress}
               />
-              {pipelineMode ? (
+              {isJob ? (
                 <span />
               ) : (
                 <>

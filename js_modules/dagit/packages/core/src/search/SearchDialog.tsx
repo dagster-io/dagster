@@ -4,7 +4,6 @@ import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
@@ -62,7 +61,6 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const location = useLocation();
   const history = useHistory();
   const {loading, performSearch} = useRepoSearch();
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
@@ -173,11 +171,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
               spellCheck={false}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder={
-                flagPipelineModeTuples
-                  ? 'Search jobs, schedules, sensors…'
-                  : 'Search pipelines, schedules, sensors…'
-              }
+              placeholder="Search jobs, schedules, sensors…"
               type="text"
               value={queryString}
             />

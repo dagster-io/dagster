@@ -4,7 +4,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {IExecutionSession} from '../app/LocalStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -55,7 +54,6 @@ interface ConfigEditorConfigPickerProps {
 export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> = (props) => {
   const {
     pipeline,
-    pipelineMode,
     base,
     onSaveSession,
     onSelectPreset,
@@ -64,14 +62,12 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
     repoAddress,
   } = props;
 
-  const {presets} = pipeline;
+  const {isJob, presets} = pipeline;
 
   const configGenerators: ConfigGenerator[] = React.useMemo(() => {
     const byName = (a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name);
-    return [...presets, ...partitionSets]
-      .filter(({mode}) => !pipelineMode || mode === pipelineMode)
-      .sort(byName);
-  }, [presets, partitionSets, pipelineMode]);
+    return [...presets, ...partitionSets].sort(byName);
+  }, [presets, partitionSets]);
 
   const label = () => {
     if (!base) {
@@ -107,7 +103,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
 
   return (
     <PickerContainer>
-      {(pipelineMode && configGenerators.length === 1) || configGenerators.length < 1 ? null : (
+      {isJob || configGenerators.length < 1 ? null : (
         <ConfigEditorConfigGeneratorPicker
           label={label()}
           configGenerators={configGenerators}
@@ -259,9 +255,7 @@ interface ConfigEditorConfigGeneratorPickerProps {
 const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   (props) => {
     const {configGenerators, label, onSelect} = props;
-    const {flagPipelineModeTuples} = useFeatureFlags();
     const button = React.useRef<HTMLButtonElement>(null);
-    const itemLabel = flagPipelineModeTuples ? 'Ops' : 'Solids';
 
     return (
       <div>
@@ -311,9 +305,9 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                       {[
                         item.solidSelection
                           ? item.solidSelection.length === 1
-                            ? `${itemLabel}: ${item.solidSelection[0]}`
-                            : `${itemLabel}: ${item.solidSelection.length}`
-                          : `${itemLabel}: All`,
+                            ? `Ops: ${item.solidSelection[0]}`
+                            : `Ops: ${item.solidSelection.length}`
+                          : `Ops: All`,
                         `Mode: ${item.mode}`,
                       ].join(' - ')}
                     </div>
@@ -368,6 +362,7 @@ const PickerContainer = styled.div`
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
     id
+    isJob
     name
     presets {
       __typename

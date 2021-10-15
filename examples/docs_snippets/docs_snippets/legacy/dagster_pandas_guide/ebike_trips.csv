@@ -1,5 +1,0 @@
-bike_id,color,start_time,end_time,station,amount_paid,was_member
-1,red,2020-02-10 18:43:04.853383,2020-02-10 19:43:04.853383,civic center,20,True
-2,green,2020-02-10 19:43:04.853383,2020-02-10 20:43:04.853383,montgomery,10,False
-3,blue,2020-02-12 23:43:04.853383,2020-02-13 01:43:04.853383,civic center,0,False
-1,red,2020-02-10 21:43:04.853383,2020-02-10 22:43:04.853383,mission,5,False

@@ -11,7 +11,7 @@ def get_database_connection():
 
 
 # start_marker
-from dagster import In, Nothing, graph, op
+from dagster import In, Nothing, job, op
 
 
 @op
@@ -24,7 +24,7 @@ def create_table_2():
     get_database_connection().execute("create table_2 as select * from table_1")
 
 
-@graph
+@job
 def nothing_dependency():
     create_table_2(start=create_table_1())
 

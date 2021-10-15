@@ -90,19 +90,15 @@
     "path": "/concepts",
     "children": [
       {
-        "title": "Ops, Graphs, and Jobs",
+        "title": "Ops, Jobs, and Graphs",
         "children": [
           {
             "title": "Ops",
             "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Graphs",
+            "title": "Jobs & Graphs",
             "path": "/concepts/solids-pipelines/pipelines"
-          },
-          {
-            "title": "Jobs",
-            "path": "/concepts/solids-pipelines/jobs"
           },
           {
             "title": "Pipeline Execution",
@@ -288,16 +284,16 @@
             "path": "/deployment/guides/kubernetes/deploying-with-helm"
           },
           {
-            "title": "Deploying Dagster with Helm, Advanced",
-            "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
-          },
-          {
             "title": "Customizing your Kubernetes Deployment",
             "path": "/deployment/guides/kubernetes/customizing-your-deployment"
           },
           {
             "title": "How to Migrate Your Instance",
             "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
+          },
+          {
+            "title": "Per-Op Limits in Kubernetes",
+            "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
           }
         ]
       },
@@ -417,20 +413,20 @@
         "title": "Core",
         "children": [
           {
-            "title": "Solids",
-            "path": "/_apidocs/solids"
+            "title": "Jobs",
+            "path": "/_apidocs/jobs"
           },
           {
-            "title": "Pipelines",
-            "path": "/_apidocs/pipeline"
+            "title": "Ops",
+            "path": "/_apidocs/ops"
           },
           {
-            "title": "Modes & Resources",
-            "path": "/_apidocs/modes-resources"
+            "title": "Graphs",
+            "path": "/_apidocs/graphs"
           },
           {
-            "title": "Presets",
-            "path": "/_apidocs/presets"
+            "title": "Resources",
+            "path": "/_apidocs/resources"
           },
           {
             "title": "Loggers",
@@ -481,10 +477,6 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Experimental Core APIs",
-            "path": "/_apidocs/experimental"
-          },
-          {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
           },
@@ -495,6 +487,27 @@
           {
             "title": "Internals",
             "path": "/_apidocs/internals"
+          }
+        ]
+      },
+      {
+        "title": "Legacy",
+        "children": [
+          {
+            "title": "Solids",
+            "path": "/_apidocs/solids"
+          },
+          {
+            "title": "Pipelines",
+            "path": "/_apidocs/pipeline"
+          },
+          {
+            "title": "Modes",
+            "path": "/_apidocs/modes"
+          },
+          {
+            "title": "Presets",
+            "path": "/_apidocs/presets"
           }
         ]
       },

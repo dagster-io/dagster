@@ -3,7 +3,6 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
 
@@ -151,9 +150,9 @@ export const StepSelector: React.FC<{
   all: string[];
   hidden: string[];
   onChangeHidden: (hidden: string[]) => void;
-}> = ({all, hidden, onChangeHidden}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-  const jobLabel = flagPipelineModeTuples ? 'Total job' : 'Total pipeline';
+  isJob: boolean;
+}> = ({all, hidden, isJob, onChangeHidden}) => {
+  const jobLabel = isJob ? 'Total job' : 'Total pipeline';
 
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {

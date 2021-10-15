@@ -184,8 +184,8 @@ class MlFlow(metaclass=MlflowMeta):
 
     def cleanup_on_error(self):
         """Method ends mlflow run with correct exit status for failed runs. Note that
-        this method does not work when a pipeline running in dagit fails, it seems
-        that in this case a different process runs the pipeline and when it fails
+        this method does not work when a job running in dagit fails, it seems
+        that in this case a different process runs the job and when it fails
         the stack trace is therefore not available. For this case we can use the
         cleanup_on_failure hook defined below.
         """
@@ -227,7 +227,7 @@ class MlFlow(metaclass=MlflowMeta):
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):
     """
-    This resource initializes an MLflow run that's used for all steps within a Dagster pipeline run.
+    This resource initializes an MLflow run that's used for all steps within a Dagster run.
 
     This resource provides access to all of mlflow's methods as well as the mlflow tracking client's
     methods.
@@ -235,56 +235,52 @@ def mlflow_tracking(context):
     Usage:
 
     1. Add the mlflow resource to any solids in which you want to invoke mlflow tracking APIs.
-    2. Add the `end_mlflow_run_on_pipeline_finished` hook to your pipeline to end the MLflow run
-       when the Dagster pipeline run finished.
+    2. Add the `end_mlflow_on_run_finished` hook to your pipeline to end the MLflow run
+       when the Dagster run is finished.
 
     Examples:
 
         .. code-block:: python
 
-            from dagster_mlflow import end_mlflow_run_on_pipeline_finished, mlflow_tracking
+            from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking
 
-            @solid(required_resource_keys={"mlflow"})
+            @op(required_resource_keys={"mlflow"})
             def mlflow_solid(context):
                 mlflow.log_params(some_params)
                 mlflow.tracking.MlflowClient().create_registered_model(some_model_name)
 
-            @end_mlflow_run_on_pipeline_finished
-            @pipeline(mode_defs=[ModeDefinition(resource_defs={"mlflow": mlflow_tracking})])
-            def mlf_pipeline():
-                mlflow_solid()
+            @end_mlflow_on_run_finished
+            @job(resource_defs={"mlflow": mlflow_tracking})
+            def mlf_example():
+                mlflow_op()
 
-            # example pipeline using an mlflow instance with s3 storage
-            result = execute_pipeline(
-                mlf_pipeline,
-                run_config = {
-                    "resources": {
-                        "mlflow": {
-                            "config": {
-                                "experiment_name": my_experiment,
-                                "mlflow_tracking_uri": "http://localhost:5000",
+            # example using an mlflow instance with s3 storage
+            mlf_example.execute_in_process(run_config={
+                "resources": {
+                    "mlflow": {
+                        "config": {
+                            "experiment_name": my_experiment,
+                            "mlflow_tracking_uri": "http://localhost:5000",
 
-                                # if want to run a nested run, provide parent_run_id
-                                "parent_run_id": an_existing_mlflow_run_id,
+                            # if want to run a nested run, provide parent_run_id
+                            "parent_run_id": an_existing_mlflow_run_id,
 
-                                # env variables to pass to mlflow
-                                "env": {
-                                    "MLFLOW_S3_ENDPOINT_URL": my_s3_endpoint,
-                                    "AWS_ACCESS_KEY_ID": my_aws_key_id,
-                                    "AWS_SECRET_ACCESS_KEY": my_secret,
-                                },
+                            # env variables to pass to mlflow
+                            "env": {
+                                "MLFLOW_S3_ENDPOINT_URL": my_s3_endpoint,
+                                "AWS_ACCESS_KEY_ID": my_aws_key_id,
+                                "AWS_SECRET_ACCESS_KEY": my_secret,
+                            },
 
-                                # env variables you want to log as mlflow tags
-                                "env_to_tag": ["DOCKER_IMAGE_TAG"],
+                            # env variables you want to log as mlflow tags
+                            "env_to_tag": ["DOCKER_IMAGE_TAG"],
 
-                                # key-value tags to add to your experiment
-                                "extra_tags": {"super": "experiment"},
-                            }
+                            # key-value tags to add to your experiment
+                            "extra_tags": {"super": "experiment"},
                         }
                     }
                 }
-            )
-
+            })
     """
     mlf = MlFlow(context)
     yield mlf

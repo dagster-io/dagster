@@ -4,7 +4,6 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PipelineRunTag} from '../app/LocalStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -28,6 +27,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {TextInput} from '../ui/TextInput';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -137,7 +137,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     reexecute: false,
     fromFailure: false,
   });
-  const {flagPipelineModeTuples} = useFeatureFlags();
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
 
   const {containerProps} = useViewport({
     initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
@@ -207,7 +209,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       <Box margin={20}>
         <NonIdealState
           icon="error"
-          title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+          title={isJob ? 'Job not found' : 'Pipeline not found'}
           description={data.pipelineSnapshotOrError.message}
         />
       </Box>
@@ -218,7 +220,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       <Box margin={20}>
         <NonIdealState
           icon="error"
-          title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+          title={isJob ? 'Job not found' : 'Pipeline not found'}
           description={data.pipelineSnapshotOrError.message}
         />
       </Box>

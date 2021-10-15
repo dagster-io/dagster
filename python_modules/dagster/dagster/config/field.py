@@ -167,7 +167,7 @@ class Field:
     a default value, or to mark it as not required.
 
     Config fields are parsed according to their schemas in order to yield values available at
-    pipeline execution time through the config system. Config fields can be set on solids, on
+    job execution time through the config system. Config fields can be set on ops, on
     loaders and materializers for custom, and on other pluggable components of the system, such as
     resources, loggers, and executors.
 
@@ -222,14 +222,14 @@ class Field:
 
     .. code-block:: python
 
-        @solid(
+        @op(
             config_schema={
                 'word': Field(str, description='I am a word.'),
                 'repeats': Field(Int, default_value=1, is_required=False),
             }
         )
         def repeat_word(context):
-            return context.solid_config['word'] * context.solid_config['repeats']
+            return context.op_config['word'] * context.op_config['repeats']
     """
 
     def _resolve_config_arg(self, config):

@@ -166,7 +166,8 @@ class ScheduleDefinition:
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         description (Optional[str]): A human-readable description of the schedule.
-        job (Optional[Union[GraphDefinition, PipelineDefinition]]): Experimental
+        job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
+            schedule runs.
     """
 
     def __init__(

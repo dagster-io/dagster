@@ -12,8 +12,8 @@ import {PipelineSnapshotLink} from './PipelinePathUtils';
 interface Props {
   pipelineName: string;
   pipelineHrefContext: 'repo-unknown' | RepoAddress | 'no-link';
+  isJob: boolean;
   snapshotId?: string | null;
-  mode: string;
   showIcon?: boolean;
   size?: 'small' | 'normal';
 }
@@ -21,36 +21,26 @@ interface Props {
 export const PipelineReference: React.FC<Props> = ({
   pipelineName,
   pipelineHrefContext,
-  mode,
+  isJob,
   snapshotId,
   showIcon,
   size = 'normal',
 }) => {
-  const modeLabel =
-    mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
-
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={workspacePipelinePathGuessRepo(pipelineName, mode)}>
-        {pipelineName}
-        {modeLabel}
-      </Link>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{pipelineName}</Link>
     ) : pipelineHrefContext === 'no-link' ? (
-      <>
-        {pipelineName}
-        {modeLabel}
-      </>
+      <>{pipelineName}</>
     ) : (
       <Link
-        to={workspacePipelinePath(
-          pipelineHrefContext.name,
-          pipelineHrefContext.location,
+        to={workspacePipelinePath({
+          repoName: pipelineHrefContext.name,
+          repoLocation: pipelineHrefContext.location,
           pipelineName,
-          mode,
-        )}
+          isJob,
+        })}
       >
         {pipelineName}
-        {modeLabel}
       </Link>
     );
 
@@ -65,12 +55,7 @@ export const PipelineReference: React.FC<Props> = ({
         {pipeline}
         {snapshotId && ' @ '}
         {snapshotId && (
-          <PipelineSnapshotLink
-            snapshotId={snapshotId}
-            pipelineName={pipelineName}
-            pipelineMode={mode}
-            size={size}
-          />
+          <PipelineSnapshotLink snapshotId={snapshotId} pipelineName={pipelineName} size={size} />
         )}
       </span>
     </Box>

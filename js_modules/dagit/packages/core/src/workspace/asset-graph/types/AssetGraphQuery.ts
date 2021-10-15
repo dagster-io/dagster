@@ -46,6 +46,13 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
 
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
@@ -53,6 +60,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  repositoryOrigin: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun_repositoryOrigin | null;
   status: PipelineRunStatus;
 }
 

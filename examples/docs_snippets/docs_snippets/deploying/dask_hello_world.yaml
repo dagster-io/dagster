@@ -1,5 +1,0 @@
-execution:
-  dask:
-    config:
-      cluster:
-        local:
