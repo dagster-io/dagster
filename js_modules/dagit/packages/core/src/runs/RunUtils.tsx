@@ -275,7 +275,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
       return <Timestamp timestamp={{unix: stats.enqueuedTime}} />;
     }
 
-    switch (status) {
+    switch (run.status) {
       case PipelineRunStatus.FAILURE:
         return 'Failed to start';
       case PipelineRunStatus.CANCELED:
