@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Slider} from '../ui/Slider';
 
 export interface SVGViewportInteractor {
@@ -44,6 +44,7 @@ const DEFAULT_MAX_AUTOCENTER_ZOOM = 0.39;
 
 const MIN_AUTOCENTER_ZOOM = 0.17;
 const MIN_ZOOM = 0.17;
+const BUTTON_INCREMENT = 0.05;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
@@ -110,7 +111,12 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             onClick={() => {
               const x = viewport.element.current!.clientWidth / 2;
               const y = viewport.element.current!.clientHeight / 2;
-              viewport.adjustZoomRelativeToScreenPoint(viewport.getMaxZoom(), {x, y});
+              const scale = Math.min(
+                viewport.getMaxZoom(),
+                viewport.state.scale + BUTTON_INCREMENT,
+              );
+              const adjusted = Math.round((scale + Number.EPSILON) * 100) / 100;
+              viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
             }}
           >
             <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
@@ -134,7 +140,8 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             onClick={() => {
               const x = viewport.element.current!.clientWidth / 2;
               const y = viewport.element.current!.clientHeight / 2;
-              viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
+              const scale = Math.max(MIN_ZOOM, viewport.state.scale - BUTTON_INCREMENT);
+              viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
             }}
           >
             <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
@@ -152,6 +159,18 @@ const IconButton = styled.button`
   padding: 0;
   position: relative;
   left: -4px;
+
+  :focus {
+    outline: none;
+  }
+
+  ${IconWrapper} {
+    transition: background 100ms;
+  }
+
+  :focus ${IconWrapper}, :hover ${IconWrapper}, :active ${IconWrapper} {
+    background-color: ${ColorsWIP.Blue500};
+  }
 `;
 
 const NoneInteractor: SVGViewportInteractor = {
@@ -316,8 +335,16 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     }
   };
 
+  onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Don't allow double-click events on the zoom slider to trigger this.
+    if (event.target instanceof HTMLElement && event.target.closest('#zoom-slider-container')) {
+      return;
+    }
+    this.props.onDoubleClick && this.props.onDoubleClick(event);
+  };
+
   render() {
-    const {children, onKeyDown, onClick, onDoubleClick, interactor, backgroundColor} = this.props;
+    const {children, onKeyDown, onClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
     return (
@@ -326,7 +353,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         style={Object.assign({backgroundColor}, SVGViewportStyles)}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onWheel={(e) => interactor.onWheel(this, e)}
-        onDoubleClick={onDoubleClick}
+        onDoubleClick={this.onDoubleClick}
         onClick={onClick}
         onKeyDown={onKeyDown}
         tabIndex={-1}
