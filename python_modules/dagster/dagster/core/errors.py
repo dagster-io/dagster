@@ -256,6 +256,7 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     """Indicates an error occurred while executing the body of an execution step."""
 
     def __init__(self, *args, **kwargs):
+        self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
         self.op_name = check.str_param(kwargs.pop("op_name"), "op_name")
         self.op_def_name = check.str_param(kwargs.pop("op_def_name"), "op_def_name")
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
