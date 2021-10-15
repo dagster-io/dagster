@@ -22,7 +22,7 @@ Execution results
 -----------------
 .. currentmodule:: dagster
 
-.. autoclass:: InProcessExecutionResult
+.. autoclass:: ExecuteInProcessResult
    :members:
    :inherited-members:
 
@@ -49,12 +49,6 @@ Executors
 .. autodata:: multiprocess_executor
   :annotation: ExecutorDefinition
 
-.. autodata:: default_executors
-  :annotation: List[ExecutorDefinition]
-
-  The default executors available on any :py:class:`ModeDefinition` that does not provide custom
-  executors. These are currently [:py:class:`in_process_executor`,
-  :py:class:`multiprocess_executor`].
 
 Contexts
 --------
@@ -74,8 +68,7 @@ Job configuration
 
 Run Config Schema
 ^^^^^^^^^^^^^^^^^^^^^^^
-  The ``run_config`` used by :py:func:`execute_pipeline` and
-  :py:func:`execute_pipeline_iterator` has the following schema:
+  The ``run_config`` used for jobs has the following schema:
 
   ::
 
@@ -115,10 +108,10 @@ Run Config Schema
           ...
         },
 
-        # configuration for underlying graph, required if ops require config
-        graph: {
+        # configuration for underlying ops, required if ops require config
+        ops: {
 
-          # these keys align with the names of the ops, or their alias in this pipeline
+          # these keys align with the names of the ops, or their alias in this job
           __op_name__: {
 
             # pass any data that was defined via config_field

@@ -22,6 +22,13 @@ Executing pipelines
    :members:
    :inherited-members:
 
+.. autodata:: default_executors
+  :annotation: List[ExecutorDefinition]
+
+  The default executors available on any :py:class:`ModeDefinition` that does not provide custom
+  executors. These are currently [:py:class:`in_process_executor`,
+  :py:class:`multiprocess_executor`].
+
 
 Re-executing pipelines
 -------------------
@@ -36,15 +43,18 @@ Reconstructable pipelines
 
 .. autoclass:: reconstructable
    :noindex:
-   :members:
 
 .. currentmodule:: dagster.core.definitions.reconstructable
+
+.. autofunction:: build_reconstructable_pipeline
 
 .. autoclass:: ReconstructablePipeline
    :members:
 
 Dependencies and aliases
 ------------------------
+.. currentmodule:: dagster
+
 .. autoclass:: DependencyDefinition
 
 .. autoclass:: MultiDependencyDefinition

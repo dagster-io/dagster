@@ -256,9 +256,8 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     """Indicates an error occurred while executing the body of an execution step."""
 
     def __init__(self, *args, **kwargs):
-        self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
-        self.solid_name = check.str_param(kwargs.pop("solid_name"), "solid_name")
-        self.solid_def_name = check.str_param(kwargs.pop("solid_def_name"), "solid_def_name")
+        self.op_name = check.str_param(kwargs.pop("op_name"), "op_name")
+        self.op_def_name = check.str_param(kwargs.pop("op_def_name"), "op_def_name")
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
 
 
@@ -466,11 +465,10 @@ class DagsterRunConflict(DagsterError):
 class DagsterTypeCheckDidNotPass(DagsterError):
     """Indicates that a type check failed.
 
-    This is raised when ``raise_on_error`` is ``True`` in calls to the synchronous pipeline and
-    solid execution APIs (:py:func:`~dagster.execute_pipeline`, :py:func:`~dagster.execute_solid`,
-    etc.), that is, typically in test, and  a :py:class:`~dagster.DagsterType`'s type check fails
-    by returning either ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success``
-    member is ``False``.
+    This is raised when ``raise_on_error`` is ``True`` in calls to the synchronous job and
+    graph execution APIs (e.g. `graph.execute_in_process()`, `job.execute_in_process()` -- typically
+    within a test), and a :py:class:`~dagster.DagsterType`'s type check fails by returning either
+    ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success`` member is ``False``.
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
@@ -531,7 +529,7 @@ class JobError(DagsterUserCodeExecutionError):
 
 
 class DagsterUnknownStepStateError(DagsterError):
-    """When pipeline execution complete with steps in an unknown state"""
+    """When job execution completes with steps in an unknown state"""
 
 
 class DagsterObjectStoreError(DagsterError):

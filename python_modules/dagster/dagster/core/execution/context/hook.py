@@ -388,6 +388,8 @@ def build_hook_context(
         mode_def (Optional[ModeDefinition]): The mode definition used with the context.
         solid (Optional[SolidDefinition, PendingNodeInvocation]): The solid definition which the
             hook may be associated with.
+        op (Optional[OpDefinition, PendingNodeInvocation]): The op definition which the
+            hook may be associated with.
 
     Examples:
         .. code-block:: python
@@ -400,7 +402,6 @@ def build_hook_context(
     """
     check.invariant(not (solid and op), "cannot set both `solid` and `op`")
     if op:
-        experimental_arg_warning("op", "build_hook_context")
         return UnboundHookContext(
             resources=check.opt_dict_param(resources, "resources", key_type=str),
             mode_def=None,
