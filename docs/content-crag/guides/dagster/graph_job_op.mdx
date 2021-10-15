@@ -117,7 +117,7 @@ def do_it_all():
 
 # start_execute_graph
 def execute_graph_in_process():
-    result = do_it_all_job.execute_in_process()
+    result = do_it_all.execute_in_process()
     assert result.output_for_node("do_something")
 
 
