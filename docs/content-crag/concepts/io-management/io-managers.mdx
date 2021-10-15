@@ -34,9 +34,8 @@ Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io
 ### Outputs and downstream inputs
 
 <PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects
-that are responsible for storing the output of an op and loading it as input to
-downstream ops. For example, an IO Manager might store and load objects from files
-on a filesystem.
+that are responsible for storing the output of an op and loading it as input to downstream
+ops. For example, an IO Manager might store and load objects from files on a filesystem.
 
 Each op output can have its own IOManager, or multiple op outputs can share an IOManager. The IOManager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
