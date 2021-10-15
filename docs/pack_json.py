@@ -101,7 +101,6 @@ def main():
         os.path.join(json_directory, "_modules"): "modules.json",
     }
 
-    # TODO remove the double write logic once CRAG is public
     for directory, output_file in directories_to_pack.items():
         data = pack_directory_json(directory)
         write_json(os.path.join(content_dir, output_file), data)
