@@ -238,7 +238,7 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     )
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for solid ",
+            f"Error in config for {solid_def.node_type_str} ",
             config_evr.errors,
             solid_config,
         )
@@ -246,7 +246,9 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     mapped_config_evr = solid_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for solid ", mapped_config_evr.errors, solid_config
+            f"Error in config for {solid_def.node_type_str} ",
+            mapped_config_evr.errors,
+            solid_config,
         )
     validated_config = mapped_config_evr.value.get("config")
     return validated_config
