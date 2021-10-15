@@ -84,7 +84,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
                 {name}
                 {isJob ? null : (
                   <Tooltip content="Legacy pipeline" placement="top">
-                    <IconWIP name="nightlight" color={ColorsWIP.Gray300} />
+                    <IconWIP name="job" color={ColorsWIP.Gray300} />
                   </Tooltip>
                 )}
               </Label>
