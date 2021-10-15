@@ -270,10 +270,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     if (!currentSession) {
       return;
     }
-    const mode = currentSession.mode;
-    if (!mode) {
-      return;
-    }
+
     const tags = currentSession.tags || [];
     let runConfigData = {};
     try {
@@ -289,7 +286,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       executionParams: {
         runConfigData,
         selector: pipelineSelector,
-        mode,
+        mode: currentSession.mode || 'default',
         executionMetadata: {
           tags: [
             ...tags.map((tag) => ({key: tag.key, value: tag.value})),
