@@ -225,7 +225,7 @@ export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobNam
   return !!pipelineOrJob?.isJob;
 };
 
-export const usePipelineSelector = (
+export const buildPipelineSelector = (
   repoAddress: RepoAddress | null,
   pipelineName: string,
   solidSelection?: string[],
