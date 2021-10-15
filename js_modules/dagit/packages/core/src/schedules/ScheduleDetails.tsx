@@ -98,14 +98,16 @@ export const ScheduleDetails: React.FC<{
                 />
               </TagWIP>
             ) : null}
-            <Tooltip content={copyText}>
-              <ButtonLink
-                color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
-                onClick={copyId}
-              >
-                <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
-              </ButtonLink>
-            </Tooltip>
+            <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
+              <Tooltip content={copyText}>
+                <ButtonLink
+                  color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
+                  onClick={copyId}
+                >
+                  <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
+                </ButtonLink>
+              </Tooltip>
+            </Box>
           </>
         }
         right={
