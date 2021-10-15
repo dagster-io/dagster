@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
@@ -78,7 +79,7 @@ class _Graph:
             name=self.name,
             dependencies=dependencies,
             node_defs=solid_defs,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config=config_mapping,
