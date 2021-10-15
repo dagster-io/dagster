@@ -146,16 +146,19 @@ class SensorDefinition:
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        pipeline_name (Optional[str]): The name of the pipeline to execute when the sensor fires.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
-            (default: 'default')
+        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
+            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
+        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
+            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
+            Cannot be used in conjunction with `job` or `jobs` parameters.
+        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this
+            sensor. Cannot be used in conjunction with `job` or `jobs` parameters. (default:
+            'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[GraphDefinition, JobDefinition]): Experimental
-        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): Experimental
+        job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
     """
 
     def __init__(
@@ -509,7 +512,8 @@ class AssetSensorDefinition(SensorDefinition):
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): The name of the pipeline to execute when the sensor fires.
+        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
+            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
@@ -517,14 +521,18 @@ class AssetSensorDefinition(SensorDefinition):
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
-            (default: 'default')
+        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
+            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
+            Cannot be used in conjunction with `job` or `jobs` parameters.
+        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this sensor.
+            (default: 'default').
+            Cannot be used in conjunction with `job` or `jobs` parameters.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): Experimental
+        job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+
     """
 
     def __init__(
@@ -541,6 +549,7 @@ class AssetSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -586,6 +595,7 @@ class AssetSensorDefinition(SensorDefinition):
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
+            jobs=jobs,
         )
 
     @property
