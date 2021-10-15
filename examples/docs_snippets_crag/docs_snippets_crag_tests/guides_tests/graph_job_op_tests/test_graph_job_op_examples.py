@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import build_schedule_context, execute_pipeline
-from docs_snippets.guides.dagster.graph_job_op import (
+from docs_snippets_crag.guides.dagster.graph_job_op import (
     composite_solid,
     composite_solid_ins_out,
     composite_solid_multi_out,
