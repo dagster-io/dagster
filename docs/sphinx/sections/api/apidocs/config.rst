@@ -41,21 +41,25 @@ builtin types above.
 
    .. code-block:: python
 
-        @solid(config_schema=StringSource)
-        def secret_solid(context) -> str:
-            return context.solid_config
+        from dagster import job, op, StringSource
 
-        execute_solid(
-            secret_solid,
+        @op(config_schema=StringSource)
+        def secret_op(context) -> str:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_op()
+
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_solid': {'config': 'test_value'}}
+                'graph': {'secret_op': {'config': 'test_value'}}
             }
         )
 
-        execute_solid(
-            secret_solid,
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
+                'graph': {'secret_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
             }
         )
 
@@ -69,21 +73,25 @@ builtin types above.
 
    .. code-block:: python
 
-        @solid(config_schema=IntSource)
-        def secret_int_solid(context) -> str:
-            return context.solid_config
+        from dagster import job, op, IntSource
 
-        execute_solid(
-            secret_int_solid,
+        @op(config_schema=IntSource)
+        def secret_int_op(context) -> str:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_op()
+
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_int_solid': {'config': 3}}
+                'graph': {'secret_int_op': {'config': 'test_value'}}
             }
         )
 
-        execute_solid(
-            secret_int_solid,
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_int_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
+                'graph': {'secret_int_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
             }
         )
 
@@ -98,25 +106,32 @@ builtin types above.
 
    .. code-block:: python
 
-        @solid(config_schema=BoolSource)
-        def secret_bool_solid(context) -> str:
-            return context.solid_config
+        from dagster import job, op, BoolSource
 
-        execute_solid(
-            secret_bool_solid,
+        @op(config_schema=BoolSource)
+        def secret_bool_op(context) -> str:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_op()
+
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_bool_solid': {'config': True}}
+                'graph': {'secret_bool_op': {'config': 'test_value'}}
             }
         )
 
-        execute_solid(
-            secret_bool_solid,
+        secret_job.execute_in_process(
             run_config={
-                'solids': {'secret_bool_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
+                'graph': {'secret_bool_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
             }
         )
+
 
 Config Utilities
 ----------------
+
+.. autoclass:: ConfigMapping
 
 .. autodecorator:: configured

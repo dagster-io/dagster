@@ -1,9 +1,10 @@
 .. currentmodule:: dagster
 
-Solids
-======
+[Legacy] Solids
+===============
 
-The foundational unit of computation in Dagster.
+As of Dagster 0.13.0, we recommend `Ops` as an alternative to `Solids`. They can generally be used
+interchangeably.
 
 -----
 
@@ -29,11 +30,15 @@ Inputs & outputs
 Execution
 ---------
 
+
 .. autoclass:: RetryPolicy
+    :noindex:
 
 .. autoclass:: Backoff
+    :noindex:
 
 .. autoclass:: Jitter
+    :noindex:
 
 -------
 
@@ -49,6 +54,7 @@ Composing solids
 .. autoclass:: OutputMapping
 
 .. autoclass:: ConfigMapping
+    :noindex:
 
 
 
@@ -69,21 +75,27 @@ Event types
 ^^^^^^^^^^^
 
 .. autoclass:: Output
+    :noindex:
     :members:
 
 .. autoclass:: AssetMaterialization
+    :noindex:
     :members:
 
 .. autoclass:: ExpectationResult
+    :noindex:
     :members:
 
 .. autoclass:: TypeCheck
+    :noindex:
     :members:
 
 .. autoclass:: Failure
+    :noindex:
     :members:
 
 .. autoclass:: RetryRequested
+    :noindex:
 
 -------
 
@@ -94,9 +106,11 @@ Dagster uses event metadata to communicate arbitrary user-specified metadata abo
 events.
 
 .. autoclass:: EventMetadata
+    :noindex:
     :members:
 
 .. autoclass:: EventMetadataEntry
+    :noindex:
     :members:
 
 Metadata types
@@ -106,27 +120,35 @@ The type alias for the union of the structured event metadata types is `EventMet
 This consists of the following data types:
 
 .. autoclass:: JsonMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: MarkdownMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PathMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: TextMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: UrlMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: FloatMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: IntMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PythonArtifactMetadataEntryData
+    :noindex:
     :members:
 
 -------
@@ -139,4 +161,5 @@ Assets materialized with an :py:class:`AssetKey` are highlighted in `dagit` on t
 dashboard.
 
 .. autoclass:: AssetKey
+    :noindex:
     :members:

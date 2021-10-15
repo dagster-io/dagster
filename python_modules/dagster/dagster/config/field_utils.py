@@ -161,9 +161,9 @@ class Permissive(_ConfigHasFields):
 
     .. code-block:: python
 
-        @solid(config_schema=Field(Permissive({'required': Field(String)})))
+        @op(config_schema=Field(Permissive({'required': Field(String)})))
         def partially_specified_config(context) -> List:
-            return sorted(list(context.solid_config.items()))
+            return sorted(list(context.op_config.items()))
     """
 
     def __new__(cls, fields=None, description=None):
@@ -208,7 +208,7 @@ class Selector(_ConfigHasFields):
 
     .. code-block:: python
 
-        @solid(
+        @op(
             config_schema=Field(
                 Selector(
                     {
@@ -222,12 +222,12 @@ class Selector(_ConfigHasFields):
             )
         )
         def hello_world_with_default(context):
-            if 'haw' in context.solid_config:
-                return 'Aloha {whom}!'.format(whom=context.solid_config['haw']['whom'])
-            if 'cn' in context.solid_config:
-                return '你好，{whom}!'.format(whom=context.solid_config['cn']['whom'])
-            if 'en' in context.solid_config:
-                return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
+            if 'haw' in context.op_config:
+                return 'Aloha {whom}!'.format(whom=context.op_config['haw']['whom'])
+            if 'cn' in context.op_config:
+                return '你好，{whom}!'.format(whom=context.op_config['cn']['whom'])
+            if 'en' in context.op_config:
+                return 'Hello, {whom}!'.format(whom=context.op_config['en']['whom'])
     """
 
     def __new__(cls, fields, description=None):

@@ -8,12 +8,15 @@
     "isort": {
       "type": "isort",
       "include": "(\\.py$)",
-      "exclude": "(examples/docs_snippets/docs_snippets/intro_tutorial/)"
+      "exclude": "(examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/)"
     },
     "eslint": {
       "type": "eslint",
       "include": "(js_modules/dagit/.*\\.(ts|tsx)$)",
-      "flags": ["--resolve-plugins-relative-to", "./js_modules/dagit"],
+      "flags": [
+        "--resolve-plugins-relative-to",
+        "./js_modules/dagit"
+      ],
       "bin": "./js_modules/dagit/node_modules/.bin/eslint",
       "eslint.config": "./js_modules/dagit/.eslintrc.js"
     },

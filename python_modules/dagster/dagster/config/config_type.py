@@ -234,7 +234,7 @@ class Enum(ConfigType):
 
     .. code-block:: python
 
-        @solid(
+        @op(
             config_schema=Field(
                 Enum(
                     'CowboyType',
@@ -301,7 +301,7 @@ class Enum(ConfigType):
                 GREEN = enum.auto()
                 BLUE = enum.auto()
 
-            @solid(
+            @op(
                 config_schema={"color": Field(Enum.from_python_enum(Color))}
             )
             def select_color(context):
@@ -336,7 +336,7 @@ class ScalarUnion(ConfigType):
 
     .. code-block:: yaml
 
-        solids:
+        graph:
           transform_word:
             inputs:
               word:
@@ -348,7 +348,7 @@ class ScalarUnion(ConfigType):
 
     .. code-block:: yaml
 
-        solids:
+        graph:
           transform_word:
             inputs:
               word: foobar

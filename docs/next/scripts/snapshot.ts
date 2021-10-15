@@ -13,11 +13,7 @@ import { parse as yaml } from "yaml";
 
 // Main
 (async () => {
-  const stream = fg.stream([
-    process.env.IS_CRAG === "true"
-      ? "../content-crag/**/*.mdx"
-      : "../content/**/*.mdx", // CRAG
-  ]);
+  const stream = fg.stream(["../content-crag/**/*.mdx"]);
 
   let stats: SnapshotStats & ImageStats = {
     totalSnapshots: 0,

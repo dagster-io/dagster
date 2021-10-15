@@ -69,9 +69,9 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
 ```python file=/deploying/aws/io_manager.py
+from dagster import Int, Out, job, op
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
-from dagster import job, op, Out, Int
 
 
 @op(out=Out(Int))
