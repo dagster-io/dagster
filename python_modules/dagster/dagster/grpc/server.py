@@ -263,7 +263,7 @@ class DagsterApiServer(DagsterApiServicer):
 
                         # the process died in an unexpected manner. inform the system
                         message = (
-                            f"Pipeline execution process for {run.run_id} unexpectedly "
+                            f"Run execution process for {run.run_id} unexpectedly "
                             f"exited with exit code {process.exitcode}."
                         )
 

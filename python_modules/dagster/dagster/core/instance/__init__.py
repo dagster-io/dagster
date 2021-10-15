@@ -1246,7 +1246,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "message",
-            "Sending pipeline termination request.",
+            "Sending run termination request.",
         )
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
@@ -1280,7 +1280,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "mesage",
-            "This pipeline run has been marked as canceled from outside the execution context.",
+            "This run has been marked as canceled from outside the execution context.",
         )
 
         dagster_event = DagsterEvent(
@@ -1311,7 +1311,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "message",
-            "This pipeline run has been marked as failed from outside the execution context.",
+            "This run has been marked as failed from outside the execution context.",
         )
 
         dagster_event = DagsterEvent(

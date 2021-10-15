@@ -57,7 +57,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         title: 'Error',
         body: <PythonErrorInfo error={node.engineError} />,
       });
-    } else if (node.__typename === 'PipelineFailureEvent' && node.pipelineFailureError) {
+    } else if (node.__typename === 'RunFailureEvent' && node.pipelineFailureError) {
       showCustomAlert({
         title: 'Error',
         body: (
@@ -90,7 +90,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 }
 
 export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
-  fragment LogsRowStructuredFragment on PipelineRunEvent {
+  fragment LogsRowStructuredFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
       message
@@ -111,7 +111,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         }
       }
     }
-    ... on PipelineFailureEvent {
+    ... on RunFailureEvent {
       pipelineFailureError: error {
         ...PythonErrorFragment
       }
@@ -250,7 +250,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 }
 
 export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
-  fragment LogsRowUnstructuredFragment on PipelineRunEvent {
+  fragment LogsRowUnstructuredFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
       message

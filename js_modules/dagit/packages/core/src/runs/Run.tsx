@@ -34,11 +34,11 @@ import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
 } from './types/LaunchPipelineReexecution';
-import {RunFragment} from './types/RunFragment';
 import {
-  RunPipelineRunEventFragment,
-  RunPipelineRunEventFragment_ExecutionStepFailureEvent,
-} from './types/RunPipelineRunEventFragment';
+  RunDagsterRunEventFragment,
+  RunDagsterRunEventFragment_ExecutionStepFailureEvent,
+} from './types/RunDagsterRunEventFragment';
+import {RunFragment} from './types/RunFragment';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
@@ -73,10 +73,10 @@ export const Run: React.FC<RunProps> = (props) => {
       : `Run: ${runId}`,
   );
 
-  const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
+  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
+    ) as RunDagsterRunEventFragment_ExecutionStepFailureEvent;
 
     if (errorNode) {
       showCustomAlert({
@@ -127,7 +127,7 @@ interface RunWithDataProps {
   metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
   onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
+  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
 }
 
 const logTypeFromQuery = (queryLogType: string) => {

@@ -72,8 +72,8 @@ export const RunFragments = {
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
     ${RUN_DETAILS_FRAGMENT}
   `,
-  RunPipelineRunEventFragment: gql`
-    fragment RunPipelineRunEventFragment on PipelineRunEvent {
+  RunDagsterRunEventFragment: gql`
+    fragment RunDagsterRunEventFragment on DagsterRunEvent {
       ... on MessageEvent {
         message
         timestamp

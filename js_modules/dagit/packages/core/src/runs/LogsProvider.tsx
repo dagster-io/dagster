@@ -9,8 +9,8 @@ import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {RunFragments} from './RunFragments';
 import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 import {RunLogsQuery} from './types/RunLogsQuery';
-import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -24,7 +24,7 @@ export interface LogFilter {
   hideNonMatches: boolean;
 }
 
-type LogNode = RunPipelineRunEventFragment & {clientsideKey: string};
+type LogNode = RunDagsterRunEventFragment & {clientsideKey: string};
 type Nodes = LogNode[];
 
 export interface LogsProviderLogs {
@@ -32,24 +32,24 @@ export interface LogsProviderLogs {
   loading: boolean;
 }
 
-const pipelineStatusFromMessages = (messages: RunPipelineRunEventFragment[]) => {
+const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
   const reversed = [...messages].reverse();
   for (const message of reversed) {
     const {__typename} = message;
     switch (__typename) {
-      case 'PipelineStartEvent':
+      case 'RunStartEvent':
         return PipelineRunStatus.STARTED;
-      case 'PipelineEnqueuedEvent':
+      case 'RunEnqueuedEvent':
         return PipelineRunStatus.QUEUED;
-      case 'PipelineStartingEvent':
+      case 'RunStartingEvent':
         return PipelineRunStatus.STARTING;
-      case 'PipelineCancelingEvent':
+      case 'RunCancelingEvent':
         return PipelineRunStatus.CANCELING;
-      case 'PipelineCanceledEvent':
+      case 'RunCanceledEvent':
         return PipelineRunStatus.CANCELED;
-      case 'PipelineSuccessEvent':
+      case 'RunSuccessEvent':
         return PipelineRunStatus.SUCCESS;
-      case 'PipelineFailureEvent':
+      case 'RunFailureEvent':
         return PipelineRunStatus.FAILURE;
     }
   }
@@ -65,7 +65,7 @@ type State = {
 };
 
 type Action =
-  | {type: 'append'; queued: RunPipelineRunEventFragment[]; hasMore: boolean}
+  | {type: 'append'; queued: RunDagsterRunEventFragment[]; hasMore: boolean}
   | {type: 'set-cursor'}
   | {type: 'reset'};
 
@@ -95,7 +95,7 @@ const initialState = {
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
   const {websocketClient} = React.useContext(WebSocketContext);
-  const queue = React.useRef<RunPipelineRunEventFragment[]>([]);
+  const queue = React.useRef<RunDagsterRunEventFragment[]>([]);
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
@@ -278,7 +278,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           ... on MessageEvent {
             runId
           }
-          ...RunPipelineRunEventFragment
+          ...RunDagsterRunEventFragment
         }
         hasMorePastEvents
       }
@@ -289,7 +289,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
     }
   }
 
-  ${RunFragments.RunPipelineRunEventFragment}
+  ${RunFragments.RunDagsterRunEventFragment}
 `;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
@@ -313,11 +313,11 @@ const RUN_LOGS_QUERY = gql`
           ... on MessageEvent {
             runId
           }
-          ...RunPipelineRunEventFragment
+          ...RunDagsterRunEventFragment
           __typename
         }
       }
     }
   }
-  ${RunFragments.RunPipelineRunEventFragment}
+  ${RunFragments.RunDagsterRunEventFragment}
 `;

@@ -16,7 +16,8 @@ import {
 } from './LogsRow';
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
-import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
+import {eventTypeToDisplayType} from './getRunFilterProviders';
+import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 
 const LOGS_PADDING_BOTTOM = 50;
 
@@ -37,8 +38,8 @@ interface ILogsScrollingTableSizedProps {
   width: number;
   height: number;
 
-  filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-  textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  filteredNodes: (RunDagsterRunEventFragment & {clientsideKey: string})[];
+  textMatchNodes: (RunDagsterRunEventFragment & {clientsideKey: string})[];
 
   filterKey: string;
   loading: boolean;
@@ -72,7 +73,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
               return node.stepKey && node.stepKey === f.value;
             }
             if (f.token === 'type') {
-              return node.eventType === f.value;
+              return node.eventType && f.value === eventTypeToDisplayType(node.eventType);
             }
             return node.message.toLowerCase().includes(f.value.toLowerCase());
           })
@@ -90,6 +91,7 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
   const {filterKey, filterStepKeys, metadata, filter, logs} = props;
   const table = React.useRef<LogsScrollingTableSized>(null);
 
+  console.log(filter);
   return (
     <ColumnWidthsProvider onWidthsChanged={() => table.current && table.current.didResize()}>
       <Headers />
@@ -114,7 +116,7 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
 };
 
 export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
-  fragment LogsScrollingTableMessageFragment on PipelineRunEvent {
+  fragment LogsScrollingTableMessageFragment on DagsterRunEvent {
     __typename
     ...LogsRowStructuredFragment
     ...LogsRowUnstructuredFragment
