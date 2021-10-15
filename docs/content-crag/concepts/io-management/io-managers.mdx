@@ -51,7 +51,7 @@ height={1040}
 
 This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
 
-The default IOManager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IOManager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which only works with the single process executor. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
+The default IOManager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IOManager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
 IOManagers are [resources](/concepts/resources), which means users can supply different IOManagers for the same op outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a job and an S3IOManager in production.
 
@@ -192,7 +192,8 @@ def my_io_manager(_):
 Then, when executing a job, you can pass in this per-output config.
 
 ```python file=/concepts/io_management/output_config.py startafter=execute_start_marker endbefore=execute_end_marker
-@job(resource_defs={"io_manager": my_io_manager})
+def execute_my_job_with_config():
+    @job(resource_defs={"io_manager": my_io_manager})
     def my_job():
         op_2(op_1())
 

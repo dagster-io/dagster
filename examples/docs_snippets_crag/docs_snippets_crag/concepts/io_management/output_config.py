@@ -41,9 +41,8 @@ def my_io_manager(_):
 
 # io_manager_end_marker
 
-
-def execute_with_config():
-    # execute_start_marker
+# execute_start_marker
+def execute_my_job_with_config():
     @job(resource_defs={"io_manager": my_io_manager})
     def my_job():
         op_2(op_1())
@@ -57,4 +56,5 @@ def execute_with_config():
         },
     )
 
-    # execute_end_marker
+
+# execute_end_marker
