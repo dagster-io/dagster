@@ -11,15 +11,11 @@ When upgrading your Dagster version, you may also need to migrate your Dagster i
 
 Here, we walk you through the migration process in a Kubernetes environment.
 
-## Prerequisites
-
-We expect familiarity with the [basic guide](/deployment/guides/kubernetes/deploying-with-helm) and [advanced guide](/deployment/guides/kubernetes/deploying-with-helm-advanced) on deploying Dagster with Helm.
-
 ## Walkthrough
 
 For simplicity, we assume that you have only installed one release of the Dagster Helm chart in your Kubernetes cluster. All commands should be run in the proper namespace.
 
-1. Before running the migration, check the [migration document](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for any additional steps you may need to take as part of the migraiton.
+1. Before running the migration, check the [migration document](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for any additional steps you may need to take as part of the migration.
 2. Make sure you backup the data in your PostgreSQL database!
 3. Run `helm upgrade` with your desired Dagster chart version and Helm values.
 4. Scale down the Dagit and Daemon Deployments. We do not want any ongoing job runs to be writing to the database as the migration is happening. As we scale down the Deployments, we note each Deployment's replica count to scale each back up after the migration is complete.

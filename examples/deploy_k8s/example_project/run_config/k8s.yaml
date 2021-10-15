@@ -1,13 +1,12 @@
 execution:
-  celery-k8s:
+  k8s:
     config:
       image_pull_policy: "Always"
       env_config_maps:
         - "dagster-pipeline-env"
-      repo_location_name: "example_repo"
 
 resources:
   io_manager:
     config:
-      s3_bucket: "YOUR_BUCKET"
-      s3_prefix: "dagster-k8s-test"
+      s3_bucket: "dagster-test"
+      s3_prefix: "dagster-k8s"
