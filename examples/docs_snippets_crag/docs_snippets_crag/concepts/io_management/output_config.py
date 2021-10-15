@@ -1,4 +1,4 @@
-from dagster import IOManager, ModeDefinition, execute_pipeline, io_manager, pipeline, solid
+from dagster import IOManager, io_manager, job, op
 
 
 def connect():
@@ -13,13 +13,13 @@ def read_dataframe_from_table(**_kwargs):
     pass
 
 
-@solid
-def solid1():
+@op
+def op_1():
     """Return a Pandas DataFrame"""
 
 
-@solid
-def solid2(_input_dataframe):
+@op
+def op_2(_input_dataframe):
     """Return a Pandas DataFrame"""
 
 
@@ -41,21 +41,20 @@ def my_io_manager(_):
 
 # io_manager_end_marker
 
+# execute_start_marker
+def execute_my_job_with_config():
+    @job(resource_defs={"io_manager": my_io_manager})
+    def my_job():
+        op_2(op_1())
 
-def execute_with_config():
-    # execute_start_marker
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
-    def my_pipeline():
-        solid2(solid1())
-
-    execute_pipeline(
-        my_pipeline,
+    my_job.execute_in_process(
         run_config={
-            "solids": {
-                "solid1": {"outputs": {"result": {"table": "table1"}}},
-                "solid2": {"outputs": {"result": {"table": "table2"}}},
+            "ops": {
+                "op_1": {"outputs": {"result": {"table": "table1"}}},
+                "op_2": {"outputs": {"result": {"table": "table2"}}},
             }
         },
     )
 
-    # execute_end_marker
+
+# execute_end_marker
