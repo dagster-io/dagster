@@ -79,17 +79,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <Page>
-        <Box
-          flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          padding={{vertical: 16, horizontal: 24}}
-        >
-          <Box flex={{direction: 'row', gap: 8}}>
-            {permanentTokens.map(({token, value}) => (
-              <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
-            ))}
-          </Box>
-          <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-        </Box>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
@@ -108,6 +97,17 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
             const {hasNextCursor, hasPrevCursor} = paginationProps;
             return (
               <>
+                <Box
+                  flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
+                  padding={{top: 8, horizontal: 24}}
+                >
+                  <Box flex={{direction: 'row', gap: 8}}>
+                    {permanentTokens.map(({token, value}) => (
+                      <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                    ))}
+                  </Box>
+                  <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+                </Box>
                 <RunTable
                   runs={displayed}
                   onSetFilter={setFilterTokens}
