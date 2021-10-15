@@ -1,3 +1,0 @@
-run_coordinator:
-  module: run_attribution_example
-  class: CustomRunCoordinator

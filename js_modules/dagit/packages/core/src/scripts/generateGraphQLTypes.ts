@@ -18,7 +18,7 @@ const result = execSync(
   `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
     descriptions: false,
   })}'`,
-  {cwd: '../../../../examples/docs_snippets/'},
+  {cwd: '../../../../examples/docs_snippets_crag/'},
 ).toString();
 
 const schemaJson = JSON.parse(result).data;

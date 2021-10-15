@@ -137,12 +137,12 @@ python_logs:
       myHandler:
         class: logging.FileHandler
         level: INFO
-        filename: 'my_dagster_logs.log'
-        mode: 'a'
+        filename: "my_dagster_logs.log"
+        mode: "a"
         formatter: timeFormatter
     formatters:
       timeFormatter:
-        format: '%(asctime)s :: %(message)s'
+        format: "%(asctime)s :: %(message)s"
 ```
 
 Then, we execute the following pipeline:

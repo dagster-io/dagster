@@ -285,7 +285,7 @@ height={1356}
 
 A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
 
-One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job  that caused it.
+One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
 
 Dagster provides a special asset sensor definition format for sensors that fire a single RunRequest based on a single asset materialization. Here is an example of a sensor that generates a RunRequest for every materialization for the asset key `my_table`:
 
@@ -417,8 +417,8 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
 **Dagster also provides the following out-of-box job failure sensors:**
 
-<PyObject module="dagster_slack" object="make_slack_on_run_failure_sensor" /> helps you create a job
-failure sensor that will message a given Slack channel:
+<PyObject module="dagster_slack" object="make_slack_on_run_failure_sensor" /> helps
+you create a job failure sensor that will message a given Slack channel:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
@@ -426,8 +426,8 @@ from dagster_slack import make_slack_on_run_failure_sensor
 slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
 ```
 
-<PyObject module="dagster.utils" object="make_email_on_job_failure_sensor" /> helps you create a job
-failure sensor that will send emails via the SMTP protocol:
+<PyObject module="dagster.utils" object="make_email_on_job_failure_sensor" /> helps
+you create a job failure sensor that will send emails via the SMTP protocol:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_email_marker endbefore=end_email_marker
 from dagster.utils import make_email_on_run_failure_sensor

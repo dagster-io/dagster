@@ -11,7 +11,6 @@ MYPY_EXCLUDES = [
     "python_modules/libraries/dagster-dbt",
     "python_modules/libraries/dagster-docker",
     "python_modules/libraries/lakehouse",
-    "examples/docs_snippets",
     "examples/docs_snippets_crag",
 ]
 
