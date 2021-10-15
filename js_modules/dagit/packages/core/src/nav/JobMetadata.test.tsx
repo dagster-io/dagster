@@ -41,6 +41,7 @@ describe('JobMetadata', () => {
     Schedule: () => ({
       name: () => 'cool_schedule',
       mode: () => 'my_mode',
+      cronSchedule: () => '(*/5 * * * *)',
     }),
     Sensor: () => ({
       name: () => 'cool_sensor',
@@ -92,16 +93,13 @@ describe('JobMetadata', () => {
             schedules: () => new MockList(1),
             sensors: () => new MockList(0),
           }),
-          Schedule: () => ({
-            name: () => 'cool_schedule',
-          }),
         };
 
         renderWithMocks(mocks);
 
         await waitFor(() => {
           expect(screen.getByText(/schedule:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
+          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
 
@@ -210,7 +208,7 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
         await waitFor(() => {
           expect(screen.queryByText(/schedule:/i)).toBeNull();
-          expect(screen.queryByRole('link', {name: /cool_schedule/i})).toBeNull();
+          expect(screen.queryByRole('link', {name: /every 5 minutes/i})).toBeNull();
         });
       });
 
@@ -226,7 +224,7 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
         await waitFor(() => {
           expect(screen.getByText(/schedule:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
+          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
 
