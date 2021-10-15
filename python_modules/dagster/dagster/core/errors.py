@@ -50,8 +50,8 @@ class DagsterInvalidDefinitionError(DagsterError):
 
 class DagsterInvalidSubsetError(DagsterError):
     """Indicates that a subset of a pipeline is invalid because either:
-    - One or more solids in the specified subset do not exist on the pipeline.'
-    - The subset produces an invalid pipeline.
+    - One or more ops in the specified subset do not exist on the job.'
+    - The subset produces an invalid job.
     """
 
 
@@ -229,7 +229,7 @@ class DagsterUserCodeExecutionError(DagsterError):
 
 
 class DagsterTypeCheckError(DagsterUserCodeExecutionError):
-    """Indicates an error in the solid type system at runtime. E.g. a solid receives an
+    """Indicates an error in the op type system at runtime. E.g. a op receives an
     unexpected input, or produces an output that does not match the type of the output definition.
     """
 
@@ -272,7 +272,8 @@ class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     """
     Indicates that an unexpected error occurred while executing the body of a config mapping
-    function defined in a :py:class:`~dagster.CompositeSolidDefinition` during config parsing.
+    function defined in a :py:class:`~dagster.JobDefinition` or `~dagster.GraphDefinition` during
+    config parsing.
     """
 
 
@@ -295,8 +296,8 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method
     """Indicates that an unknown resource was accessed in the body of an execution step. May often
-    happen by accessing a resource in the compute function of a solid without first supplying the
-    solid with the correct `required_resource_keys` argument.
+    happen by accessing a resource in the compute function of an op without first supplying the
+    op with the correct `required_resource_keys` argument.
     """
 
     def __init__(self, resource_name, *args, **kwargs):
@@ -310,7 +311,7 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
 
 class DagsterInvalidInvocationError(DagsterError):
     """
-    Indicates that an error has occurred when a solid has been invoked, but before the actual
+    Indicates that an error has occurred when an op has been invoked, but before the actual
     core compute has been reached.
     """
 

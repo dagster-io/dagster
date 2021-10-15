@@ -79,7 +79,7 @@ class JobDefinition(PipelineDefinition):
                 Defaults to ``True``.
 
         Returns:
-            ExecuteInProcessResult
+            `~dagster.ExecuteInProcessResult`
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor

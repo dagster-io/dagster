@@ -557,7 +557,7 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            ExecuteInProcessResult
+            `~dagster.ExecuteInProcessResult`
         """
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
