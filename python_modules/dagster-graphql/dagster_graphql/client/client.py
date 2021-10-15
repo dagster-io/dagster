@@ -274,18 +274,18 @@ class DagsterGraphQLClient:
 
         Args:
             job_name (str): The job's name
-            repository_location_name (Optional[str], optional): The name of the repository location where
+            repository_location_name (Optional[str]): The name of the repository location where
                 the job is located. If omitted, the client will try to infer the repository location
                 from the available options on the Dagster deployment. Defaults to None.
-            repository_name (Optional[str], optional): The name of the repository where the job is located.
+            repository_name (Optional[str]): The name of the repository where the job is located.
                 If omitted, the client will try to infer the repository from the available options
                 on the Dagster deployment. Defaults to None.
-            run_config (Optional[Any], optional): This is the run config to execute the job with.
+            run_config (Optional[Dict[str, Any]]): This is the run config to execute the job with.
                 Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
                 an arbitrary object for run config. However, it must conform to the constraints of the config
                 schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of
                 JobConfigValidationInvalid. Defaults to None.
-            tags (Optional[Dict[str, Any]], optional): A set of tags to add to the job execution.
+            tags (Optional[Dict[str, Any]]): A set of tags to add to the job execution.
 
         Raises:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
