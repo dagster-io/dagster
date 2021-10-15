@@ -99,7 +99,7 @@ def test_solid_invocation_context_arg():
 def test_solid_invocation_empty_run_config():
     @solid
     def basic_solid(context):
-        assert context.run_config
+        assert context.run_config is not None
         assert context.run_config == {}
 
     basic_solid(context=build_solid_context())
@@ -109,7 +109,7 @@ def test_solid_invocation_run_config_with_config():
     @solid(config_schema={"foo": str})
     def basic_solid(context):
         assert context.run_config
-        assert context.run_config["solid"] == {"basic_solid": {"config": {"foo": "bar"}}}
+        assert context.run_config["solids"] == {"basic_solid": {"config": {"foo": "bar"}}}
 
     basic_solid(build_solid_context(config={"foo": "bar"}))
 
@@ -613,7 +613,6 @@ def test_output_sent_multiple_times():
     [
         ("pipeline_run", None),
         ("step_launcher", None),
-        ("run_config", None),
         ("pipeline_def", None),
         ("pipeline_name", None),
         ("mode_def", None),
