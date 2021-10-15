@@ -110,7 +110,7 @@ export const SchedulesNextTicks: React.FC<{
           <th style={{width: '260px'}}>Timestamp</th>
           <th style={{width: '30%'}}>Schedule</th>
           <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
-          <th style={{textAlign: 'right'}}>Metadata</th>
+          <th>Metadata</th>
         </tr>
       </thead>
       <tbody>
@@ -137,7 +137,7 @@ export const SchedulesNextTicks: React.FC<{
                   isJob={!!repo && isThisThingAJob(repo, schedule.pipelineName)}
                 />
               </td>
-              <td style={{textAlign: 'right'}}>
+              <td>
                 <NextTickMenu
                   repoAddress={repoAddress}
                   schedule={schedule}
