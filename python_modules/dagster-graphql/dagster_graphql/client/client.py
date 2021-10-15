@@ -291,9 +291,9 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
             DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the job.
                 The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
-            DagsterGraphQLClientError("JobRunConflict", message): a `DagsterRunConflict` occured during execution.
+            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
                 This indicates that a conflicting job run already exists in run storage.
-            DagsterGraphQLClientError("JobConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
+            DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the job
             DagsterGraphQLClientError("JobNotFoundError", message): the requested job does not exist
             DagsterGraphQLClientError("PythonError", message): an internal framework error occurred
