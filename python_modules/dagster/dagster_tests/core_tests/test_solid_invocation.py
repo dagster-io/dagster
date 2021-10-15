@@ -114,15 +114,6 @@ def test_solid_invocation_run_config_with_config():
     basic_solid(build_solid_context(config={"foo": "bar"}))
 
 
-def test_solid_invocation_run_config_with_resources():
-    @solid(required_resource_keys={"foo"})
-    def basic_solid(context):
-        assert context.run_config
-        assert context.run_config["resources"] == {"foo": "bar"}
-
-    basic_solid(build_solid_context(resources={"foo": "bar"}))
-
-
 def test_solid_invocation_out_of_order_input_defs():
     @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
     def check_correct_order(y, x):
