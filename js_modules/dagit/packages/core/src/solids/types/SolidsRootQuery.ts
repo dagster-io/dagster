@@ -50,6 +50,7 @@ export interface SolidsRootQuery_repositoryOrError_Repository_usedSolids_definit
 export interface SolidsRootQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline {
   __typename: "Pipeline";
   id: string;
+  isJob: boolean;
   name: string;
 }
 

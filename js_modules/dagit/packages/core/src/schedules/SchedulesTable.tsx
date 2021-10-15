@@ -15,6 +15,7 @@ import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Code} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -143,6 +144,8 @@ const ScheduleRow: React.FC<{
   repoAddress: RepoAddress;
 }> = (props) => {
   const {repoAddress, schedule} = props;
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, schedule.pipelineName);
 
   const {
     name,
@@ -150,7 +153,6 @@ const ScheduleRow: React.FC<{
     executionTimezone,
     futureTicks,
     pipelineName,
-    mode,
     scheduleState,
   } = schedule;
   const {status, ticks, runningCount: runningScheduleCount} = scheduleState;
@@ -175,7 +177,7 @@ const ScheduleRow: React.FC<{
             size="small"
             pipelineName={pipelineName}
             pipelineHrefContext={repoAddress}
-            mode={mode}
+            isJob={isJob}
           />
         </Box>
       </td>
@@ -226,7 +228,7 @@ const ScheduleRow: React.FC<{
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
-                    `/pipelines/${pipelineName}/partitions`,
+                    `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions`,
                   )}
                 />
                 <MenuItemWIP
@@ -235,7 +237,7 @@ const ScheduleRow: React.FC<{
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
-                    `/pipelines/${pipelineName}/partitions`,
+                    `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions`,
                   )}
                 />
               </MenuWIP>

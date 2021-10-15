@@ -56,11 +56,7 @@ describe('JobMetadata', () => {
   const renderWithMocks = (mocks?: any) => {
     render(
       <TestProvider apolloProps={{mocks: mocks ? [defaultMocks, mocks] : defaultMocks}}>
-        <JobMetadata
-          pipelineName={PIPELINE_NAME}
-          pipelineMode={PIPELINE_MODE}
-          repoAddress={REPO_ADDRESS}
-        />
+        <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
       </TestProvider>,
     );
   };

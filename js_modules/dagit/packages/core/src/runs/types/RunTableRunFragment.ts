@@ -10,6 +10,18 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunTableRunFragment
 // ====================================================
 
+export interface RunTableRunFragment_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface RunTableRunFragment_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface RunTableRunFragment_tags {
   __typename: "PipelineTag";
   key: string;
@@ -50,8 +62,10 @@ export interface RunTableRunFragment {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: RunTableRunFragment_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: RunTableRunFragment_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: RunTableRunFragment_tags[];
   stats: RunTableRunFragment_stats;

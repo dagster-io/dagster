@@ -53,6 +53,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors {
 export interface JobMetadataQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
+  isJob: boolean;
   name: string;
   schedules: JobMetadataQuery_pipelineOrError_Pipeline_schedules[];
   sensors: JobMetadataQuery_pipelineOrError_Pipeline_sensors[];

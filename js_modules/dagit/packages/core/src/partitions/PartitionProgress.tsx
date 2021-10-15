@@ -189,7 +189,7 @@ export const PartitionProgress = (props: Props) => {
                     <Link
                       to={workspacePathFromAddress(
                         repoAddress,
-                        `/pipelines/${pipelineName}/runs?${qs.stringify({
+                        `/pipeline_or_job/${pipelineName}/runs?${qs.stringify({
                           q: stringFromValue([
                             {token: 'tag', value: `dagster/backfill=${backfillId}`},
                           ]),

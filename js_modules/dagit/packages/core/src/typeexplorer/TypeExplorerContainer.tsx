@@ -43,7 +43,12 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
           data.pipelineOrError.dagsterTypeOrError &&
           data.pipelineOrError.dagsterTypeOrError.__typename === 'RegularDagsterType'
         ) {
-          return <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />;
+          return (
+            <TypeExplorer
+              isGraph={data.pipelineOrError.isJob}
+              type={data.pipelineOrError.dagsterTypeOrError}
+            />
+          );
         } else {
           return <div>Type Not Found</div>;
         }
@@ -61,6 +66,7 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
       __typename
       ... on Pipeline {
         id
+        isJob
         dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
           __typename
           ... on RegularDagsterType {

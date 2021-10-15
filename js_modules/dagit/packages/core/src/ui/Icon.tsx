@@ -73,6 +73,7 @@ const Icons = {
   menu: require('./icon-svgs/menu.svg'),
   menu_book: require('./icon-svgs/menu_book.svg'),
   more_horiz: require('./icon-svgs/more_horiz.svg'),
+  nightlight: require('./icon-svgs/nightlight.svg'),
   open_in_new: require('./icon-svgs/open_in_new.svg'),
   people: require('./icon-svgs/people.svg'),
   refresh: require('./icon-svgs/refresh.svg'),

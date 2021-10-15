@@ -31,10 +31,11 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
 
 interface Props {
   repoAddress: RepoAddress;
+  display: 'jobs' | 'pipelines';
 }
 
 export const RepositoryPipelinesList: React.FC<Props> = (props) => {
-  const {repoAddress} = props;
+  const {display, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery<RepositoryPipelinesListQuery>(
@@ -50,11 +51,15 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     if (!repo || repo.__typename !== 'Repository') {
       return null;
     }
-    return repo.pipelines.map((pipeline) => ({
-      pipeline,
-      repoAddress,
-    }));
-  }, [repo, repoAddress]);
+    return repo.pipelines
+      .map((pipelineOrJob) => ({
+        pipelineOrJob,
+        repoAddress,
+      }))
+      .filter(({pipelineOrJob}) =>
+        display === 'jobs' ? pipelineOrJob.isJob : !pipelineOrJob.isJob,
+      );
+  }, [display, repo, repoAddress]);
 
   if (loading) {
     return null;
@@ -72,5 +77,5 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     );
   }
 
-  return <PipelineTable pipelines={pipelinesForTable} showRepo={false} />;
+  return <PipelineTable pipelinesOrJobs={pipelinesForTable} showRepo={false} />;
 };

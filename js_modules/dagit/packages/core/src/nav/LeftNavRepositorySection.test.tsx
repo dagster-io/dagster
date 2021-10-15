@@ -264,7 +264,7 @@ describe('Repository options', () => {
         </TestProvider>,
       );
 
-      // One repo by default, so three pipelines.
+      // Three links: two pipelines, one repo.
       await waitFor(() => {
         expect(screen.queryAllByRole('link')).toHaveLength(3);
       });

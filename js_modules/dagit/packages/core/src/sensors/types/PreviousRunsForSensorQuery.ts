@@ -14,6 +14,18 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineR
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -54,8 +66,10 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_res
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats;

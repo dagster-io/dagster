@@ -3,7 +3,6 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {StatusTable} from '../instigation/InstigationUtils';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -11,6 +10,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Caption} from '../ui/Text';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -48,10 +48,11 @@ export const SchedulePartitionStatus: React.FC<{
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
 }> = React.memo(({repoAddress, schedule}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-  const {name: scheduleName, mode, partitionSet, pipelineName} = schedule;
+  const repo = useRepository(repoAddress);
+  const {name: scheduleName, partitionSet, pipelineName} = schedule;
 
   const partitionSetName = partitionSet?.name;
+  const isJob = isThisThingAJob(repo, pipelineName);
 
   const partitionPath = React.useMemo(() => {
     const query = partitionSetName
@@ -62,10 +63,8 @@ export const SchedulePartitionStatus: React.FC<{
           {addQueryPrefix: true},
         )
       : '';
-    return `/${
-      flagPipelineModeTuples ? 'jobs' : 'pipelines'
-    }/${pipelineName}:${mode}/partitions${query}`;
-  }, [flagPipelineModeTuples, pipelineName, mode, partitionSetName]);
+    return `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions${query}`;
+  }, [partitionSetName, isJob, pipelineName]);
 
   const partitionURL = workspacePathFromAddress(repoAddress, partitionPath);
 

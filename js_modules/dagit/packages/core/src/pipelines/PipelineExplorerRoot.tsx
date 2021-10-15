@@ -32,23 +32,20 @@ export const PipelineExplorerRegexRoot: React.FC<
   RouteComponentProps & {repoAddress: RepoAddress}
 > = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const history = useHistory();
 
-  useDocumentTitle(
-    `${flagPipelineModeTuples ? 'Graph' : 'Pipeline'}: ${explorerPath.pipelineName}`,
-  );
+  useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
 
   return (
     <PipelineExplorerContainer
       explorerPath={explorerPath}
       repoAddress={props.repoAddress}
+      isGraph
       onChangeExplorerPath={(path, mode) => {
-        const tab = flagPipelineModeTuples ? 'graphs' : 'pipelines';
-        const fullPath = props.repoAddress
-          ? workspacePathFromAddress(props.repoAddress, `/${tab}/${explorerPathToString(path)}`)
-          : `/workspace/${tab}/${explorerPathToString(path)}`;
-
+        const fullPath = workspacePathFromAddress(
+          props.repoAddress,
+          `/graphs/${explorerPathToString(path)}`,
+        );
         if (mode === 'push') {
           history.push(fullPath);
         } else {
@@ -80,7 +77,8 @@ export const PipelineExplorerContainer: React.FC<{
   explorerPath: PipelineExplorerPath;
   onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
   repoAddress?: RepoAddress;
-}> = ({explorerPath, repoAddress, onChangeExplorerPath}) => {
+  isGraph?: boolean;
+}> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,
   });
@@ -110,10 +108,10 @@ export const PipelineExplorerContainer: React.FC<{
     <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
       {({pipelineSnapshotOrError: result, repositoryOrError}) => {
         if (result.__typename !== 'PipelineSnapshot') {
-          return <NonIdealPipelineQueryResult result={result} />;
+          return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
         }
         if (repositoryOrError.__typename !== 'Repository' && !explorerPath.snapshotId) {
-          return <NonIdealPipelineQueryResult result={repositoryOrError} />;
+          return <NonIdealPipelineQueryResult isGraph={isGraph} result={repositoryOrError} />;
         }
 
         const parentHandle = result.solidHandle;
@@ -172,6 +170,7 @@ export const PipelineExplorerContainer: React.FC<{
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
             selectedHandle={selectedHandle}
+            isGraph={isGraph}
             getInvocations={(definitionName) =>
               displayedHandles
                 .filter((s) => s.solid.definition.name === definitionName)
