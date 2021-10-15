@@ -1,5 +1,21 @@
 # Changelog
 
+# 0.12.15
+
+### Community Contributions
+
+* You can now configure credentials for the `GCSComputeLogManager` using a string or environment variable instead of passing a path to a credentials file. Thanks @silentsokolov!
+* Fixed a bug in the dagster-dbt integration that caused the DBT RPC solids not to retry when they received errors from the server.  Thanks @cdchan!
+* Improved helm schema for the QueuedRunCoordinator config. Thanks @cvb!
+
+### Bugfixes
+
+* Fixed a bug where `dagster instance migrate` would run out of memory when migrating over long run histories.
+
+### Experimental
+
+* Fixed broken links in the Dagit workspace table view for the experimental software-defined assets feature.
+
 # 0.12.14
 
 ### Community Contributions
