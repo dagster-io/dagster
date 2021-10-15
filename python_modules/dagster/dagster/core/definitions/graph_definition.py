@@ -553,7 +553,7 @@ class GraphDefinition(NodeDefinition):
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
-    ):
+    ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
 
