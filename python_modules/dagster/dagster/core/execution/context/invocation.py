@@ -328,7 +328,7 @@ class BoundSolidExecutionContext(SolidExecutionContext):
     def run_config(self) -> dict:
         run_config = {}
         if self._solid_config:
-            run_config["solids"] = {self._solid_def.name: self._solid_config}
+            run_config["solids"] = {self._solid_def.name: {"config": self._solid_config}}
         return run_config
 
     @property
