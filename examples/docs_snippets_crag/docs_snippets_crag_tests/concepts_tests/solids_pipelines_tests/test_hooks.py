@@ -4,6 +4,8 @@ from dagster import DagsterEventType, ResourceDefinition, job, op
 from docs_snippets_crag.concepts.solids_pipelines.op_hooks import (
     a,
     notif_all,
+    notif_all_dev,
+    notif_all_prod,
     selective_notif,
     slack_message_on_failure,
     slack_message_on_success,
@@ -39,6 +41,36 @@ def test_selective_notif():
                 assert event.step_key == "a"
             if event.event_type == DagsterEventType.HOOK_COMPLETED:
                 assert event.step_key == "a"
+
+
+def test_notif_all_dev():
+    result = notif_all_dev.execute_in_process(
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+    )
+    assert not result.success
+
+    for event in result.all_node_events:
+        if event.is_hook_event:
+            if event.event_type == DagsterEventType.HOOK_SKIPPED:
+                assert event.step_key == "a"
+
+            if event.event_type == DagsterEventType.HOOK_COMPLETED:
+                assert event.step_key == "b"
+
+
+def test_notif_all_prod():
+    result = notif_all_prod.execute_in_process(
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+    )
+    assert not result.success
+
+    for event in result.all_node_events:
+        if event.is_hook_event:
+            if event.event_type == DagsterEventType.HOOK_SKIPPED:
+                assert event.step_key == "a"
+
+            if event.event_type == DagsterEventType.HOOK_COMPLETED:
+                assert event.step_key == "b"
 
 
 def test_hook_resource():

@@ -63,7 +63,7 @@ Dagster provides different ways to trigger op hooks.
 
 For example, you want to send a slack message to a channel when any op fails in a job. In this case, we will be applying a hook on a job, which will apply the hook on every op instance within in that job.
 
-The <PyObject module="dagster" object="job" displayText="@job" /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the `to_job` function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject module="dagster" object="job" displayText="@job" />. Then, slack messages will be sent when any op in the job fails.
+The <PyObject module="dagster" object="job" displayText="@job" /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the <PyObject object="GraphDefinition" method="to_job" /> function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject module="dagster" object="job" displayText="@job" />. Then, slack messages will be sent when any op in the job fails.
 
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_1 endbefore=end_repo_marker_1
 @job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
@@ -137,10 +137,19 @@ Hooks use resource keys to access resources. After including the resource key in
 
 It also enables you to switch resource values in different jobs so that, for example, you can send slack messages only while executing a production job and mock the slack resource while testing.
 
+Because executing a production job and a testing job share the same core of business logic, we can build these jobs from a shared [graph](/concepts/solids-pipelines/pipelines#from-a-graph). In the <PyObject object="GraphDefinition" method="to_job" /> method, which builds a job from a graph, you can specify environment-specific hooks and resources.
+
 In this case, we can mock the `slack_resource` using a helper function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
 
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_3 endbefore=end_repo_marker_3
-@job(
+@graph
+def slack_notif_all():
+    a()
+    b()
+
+
+notif_all_prod = slack_notif_all.to_job(
+    name="notif_all_prod",
     resource_defs={
         "slack": ResourceDefinition.hardcoded_resource(
             slack_resource_mock, "do not send messages in dev"
@@ -148,15 +157,10 @@ In this case, we can mock the `slack_resource` using a helper function <PyObject
     },
     hooks={slack_message_on_failure},
 )
-def notif_all_prod():
-    a()
-    b()
 
-
-@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
-def notif_all_dev():
-    a()
-    b()
+notif_all_dev = slack_notif_all.to_job(
+    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
+)
 ```
 
 When we switch to production, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.

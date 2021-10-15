@@ -5,6 +5,7 @@ from dagster_slack import slack_resource
 from dagster import (
     ResourceDefinition,
     file_relative_path,
+    graph,
     job,
     op,
     repository,
@@ -53,7 +54,14 @@ def notif_all():
 
 
 # start_repo_marker_3
-@job(
+@graph
+def slack_notif_all():
+    a()
+    b()
+
+
+notif_all_prod = slack_notif_all.to_job(
+    name="notif_all_prod",
     resource_defs={
         "slack": ResourceDefinition.hardcoded_resource(
             slack_resource_mock, "do not send messages in dev"
@@ -61,15 +69,10 @@ def notif_all():
     },
     hooks={slack_message_on_failure},
 )
-def notif_all_prod():
-    a()
-    b()
 
-
-@job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
-def notif_all_dev():
-    a()
-    b()
+notif_all_dev = slack_notif_all.to_job(
+    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
+)
 
 
 # end_repo_marker_3
