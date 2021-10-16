@@ -113,8 +113,8 @@
             "path": "/concepts/solids-pipelines/op-events"
           },
           {
-            "title": "Solid Hooks",
-            "path": "/concepts/solids-pipelines/solid-hooks"
+            "title": "Op Hooks",
+            "path": "/concepts/solids-pipelines/op-hooks"
           }
         ]
       },

@@ -53,7 +53,7 @@ def do_stuff():
     add_one(return_five())
 ```
 
-When a defining job, you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/solid-hooks), tags, and an [executor](/deployment/executors) (follow the links for explanation of how to use each of these).
+When a defining job, you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/op-hooks), tags, and an [executor](/deployment/executors) (follow the links for explanation of how to use each of these).
 
 ### From a graph
 
@@ -89,7 +89,7 @@ prod_job = do_stuff.to_job(resource_defs={"server": prod_server})
 local_job = do_stuff.to_job(resource_defs={"local": local_server})
 ```
 
-`to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/solid-hooks), tags, and an [executor](/deployment/executors).
+`to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/op-hooks), tags, and an [executor](/deployment/executors).
 
 ## Including a job in a repository
 
