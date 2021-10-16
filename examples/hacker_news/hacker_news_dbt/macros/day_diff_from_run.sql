@@ -2,6 +2,6 @@
     DATEDIFF(
         day,
         "{{start}}"::timestamp,
-        '{{ var("run_date") }}'::timestamp
+        current_date()
     )
 {% endmacro %}
