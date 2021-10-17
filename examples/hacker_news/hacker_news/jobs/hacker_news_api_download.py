@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
 
-from dagster import ResourceDefinition, graph, hourly_partitioned_config
+from dagster import ResourceDefinition, graph, hourly_partitioned_config, in_process_executor
+from dagster.seven.temp_dir import get_system_temp_directory
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
-from hacker_news.resources.hn_resource import hn_api_subsample_client
+from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
 
@@ -37,6 +38,16 @@ configured_pyspark = pyspark_resource.configured(
         }
     }
 )
+
+DOWNLOAD_RESOURCES_LOCAL = {
+    "partition_start": ResourceDefinition.string_resource(),
+    "partition_end": ResourceDefinition.string_resource(),
+    "parquet_io_manager": partitioned_parquet_io_manager,
+    "warehouse_io_manager": partitioned_parquet_io_manager,
+    "pyspark": configured_pyspark,
+    "hn_client": hn_snapshot_client,
+}
+
 
 DOWNLOAD_RESOURCES_STAGING = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": "hackernews-elementl-dev"}),
@@ -116,4 +127,16 @@ download_staging_job = hacker_news_api_download.to_job(
     resource_defs=DOWNLOAD_RESOURCES_STAGING,
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
+)
+
+download_local_job = hacker_news_api_download.to_job(
+    resource_defs=DOWNLOAD_RESOURCES_LOCAL,
+    config={
+        "resources": dict(
+            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
+            warehouse_io_manager={"config": {"base_path": get_system_temp_directory()}},
+            **DEFAULT_PARTITION_RESOURCE_CONFIG,
+        )
+    },
+    executor_def=in_process_executor,
 )
