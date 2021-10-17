@@ -3,5 +3,5 @@ from docs_snippets_crag.concepts.io_management.load_custom_type_from_config impo
 )
 
 
-def test_execute_pipeline():
+def test_execute_job():
     execute_with_config()

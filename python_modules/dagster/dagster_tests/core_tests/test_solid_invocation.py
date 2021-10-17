@@ -96,6 +96,24 @@ def test_solid_invocation_context_arg():
     basic_solid(context=build_solid_context())
 
 
+def test_solid_invocation_empty_run_config():
+    @solid
+    def basic_solid(context):
+        assert context.run_config is not None
+        assert context.run_config == {}
+
+    basic_solid(context=build_solid_context())
+
+
+def test_solid_invocation_run_config_with_config():
+    @solid(config_schema={"foo": str})
+    def basic_solid(context):
+        assert context.run_config
+        assert context.run_config["solids"] == {"basic_solid": {"config": {"foo": "bar"}}}
+
+    basic_solid(build_solid_context(config={"foo": "bar"}))
+
+
 def test_solid_invocation_out_of_order_input_defs():
     @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
     def check_correct_order(y, x):
@@ -595,7 +613,6 @@ def test_output_sent_multiple_times():
     [
         ("pipeline_run", None),
         ("step_launcher", None),
-        ("run_config", None),
         ("pipeline_def", None),
         ("pipeline_name", None),
         ("mode_def", None),

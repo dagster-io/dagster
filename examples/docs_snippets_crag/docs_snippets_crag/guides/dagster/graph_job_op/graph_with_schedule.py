@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, graph, op
+from dagster import ScheduleDefinition, job, op
 
 
 @op
@@ -6,7 +6,7 @@ def do_something():
     ...
 
 
-@graph
+@job
 def do_it_all():
     do_something()
 

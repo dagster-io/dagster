@@ -32,7 +32,6 @@ DBT_RESOURCES_PROD = {
     "dbt_assets": ResourceDefinition.hardcoded_resource(
         SnowflakeQueryDbtAssetResource(SNOWFLAKE_CONF, "hacker_news_dbt")
     ),
-    "run_date": ResourceDefinition.string_resource(),
 }
 
 DBT_RESOURCES_STAGING = {
@@ -44,7 +43,6 @@ DBT_RESOURCES_STAGING = {
     "dbt_assets": ResourceDefinition.hardcoded_resource(
         SnowflakeQueryDbtAssetResource(SNOWFLAKE_CONF, "hacker_news_dbt_dev")
     ),
-    "run_date": ResourceDefinition.string_resource(),
 }
 
 
