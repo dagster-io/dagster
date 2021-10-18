@@ -14,7 +14,9 @@ def download_csv(context):
 
 @op
 def sort_by_calories(context, cereals):
-    sorted_cereals = sorted(cereals, key=lambda cereal: int(cereal["calories"]))
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal["calories"])
+    )
 
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
@@ -29,7 +31,11 @@ def configurable_job():
 if __name__ == "__main__":
     # start_run_config_marker
     run_config = {
-        "ops": {"download_csv": {"config": {"url": "https://docs.dagster.io/assets/cereal.csv"}}}
+        "ops": {
+            "download_csv": {
+                "config": {"url": "https://docs.dagster.io/assets/cereal.csv"}
+            }
+        }
     }
     # end_run_config_marker
     # start_execute_marker
