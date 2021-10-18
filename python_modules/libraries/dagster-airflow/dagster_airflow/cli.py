@@ -17,6 +17,7 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     }
 
     pipeline_def = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
+    check_storage_specified(pipeline_def, pipeline_def.get_default_mode())
 
     if preset_name:
         if config:
@@ -28,7 +29,6 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
         config = list(config)
         run_config = load_yaml_from_glob_list(config) if config else {}
 
-    check_storage_specified(pipeline_def, pipeline_def.get_default_mode(), run_config)
     return run_config
 
 
