@@ -1,21 +1,24 @@
 ---
 title: Executors | Dagster
-description: Executors are responsible for executing steps within a pipeline run.
+description: Executors are responsible for executing steps within a job run.
 ---
 
 # Executors
 
 ## Relevant APIs
 
-| Name                                     | Description                             |
-| ---------------------------------------- | --------------------------------------- |
-| <PyObject object="executor" decorator /> | The decorator used to define executors. |
+| Name                                     | Description                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| <PyObject object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject object="ExecutorDefinition" />. |
+| <PyObject object="ExecutorDefinition" /> | An executor definition.                                                                      |
 
 ## Overview
 
-Executors are responsible for executing steps within a pipeline run. Once a run has launched and the process for the run, or run worker, has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
+Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run, or run worker, has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
 
-What executor is used is determined by two things. First, modes provide the _possible_ set of executors one can use. In order to set this, use the `executor_defs` property on <PyObject module="dagster" object="ModeDefinition" />. Second, the `execution` config section of the run config determines the actual executor.
+Every job has an executor. The default executor is the <PyObject object="multiprocess_executor" />, which executes each step in its own process. You can choose the executor for a job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
+
+Executing a job via <PyObject object="JobDefinition" method="execute_in_process" />, overrides the job's executor and uses <PyObject object="in_process_executor" /> instead.
 
 Example executors include:
 
@@ -34,7 +37,7 @@ Example executors include:
   Executes each step within a ephemeral kubernetes pod, using celery as a
   control plane for prioritization, queuing, and so forth.
 - <PyObject module="dagster_k8s" object="k8s_job_executor" />: Executes each
-  step within an ephemeral kubernetes pod
+  step within an ephemeral kubernetes pod.
 
 ## Custom Executors
 
