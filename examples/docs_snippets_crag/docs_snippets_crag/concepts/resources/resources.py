@@ -84,27 +84,36 @@ def test_cm_resource():
 
 # end_cm_resource_testing
 
-resource_a = ResourceDefinition.hardcoded_resource(1)
-resource_b = ResourceDefinition.hardcoded_resource(2)
-
-
-@op(required_resource_keys={"a", "b"})
-def basic_op(_):
-    pass
+database_resource = ResourceDefinition.mock_resource()
+database_resource_a = ResourceDefinition.mock_resource()
+database_resource_b = ResourceDefinition.mock_resource()
 
 
 # start_job_example
+from dagster import job
+
+
+@job(resource_defs={"database": database_resource})
+def do_database_stuff_job():
+    op_requires_resources()
+
+
+# end_job_example
+
+# start_graph_example
 from dagster import graph
 
 
 @graph
-def basic_graph():
-    basic_op()
+def do_database_stuff():
+    op_requires_resources()
 
 
-job = basic_graph.to_job(resource_defs={"a": resource_a, "b": resource_b})
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 
-# end_job_example
+
+# end_graph_example
 
 
 class Client:
@@ -129,7 +138,7 @@ def client(init_context):
 
 # end_resource_dep_example
 
-# start_resource_dep_graph
+# start_resource_dep_op
 from dagster import graph, op
 
 
@@ -138,18 +147,16 @@ def get_client(context):
     return context.resources.client
 
 
-@graph
-def connect():
-    return get_client()
-
-
-# end_resource_dep_graph
+# end_resource_dep_op
 
 # start_resource_dep_job
+@job(resource_defs={"credentials": credentials, "client": client})
+def connect():
+    get_client()
 
-connect_job = connect.to_job(resource_defs={"credentials": credentials, "client": client})
 
 # end_resource_dep_job
+
 
 # start_resource_config
 class DatabaseConnection:

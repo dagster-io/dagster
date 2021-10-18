@@ -5,7 +5,7 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources provide a way to manage dependencies to external APIs. Together with jobs, they can be used to represent multiple different execution environments for a graph.
+Resources provide a way to manage dependencies to external components and share implementations across multiple ops in a job.
 
 ## Relevant APIs
 
@@ -62,6 +62,55 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
+## Providing Resources to a Job
+
+Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
+
+Supplying resources when using <PyObject object="GraphDefinition" method="to_job" /> is especially common, because you can build multiple jobs from the same graph that are distinguished by their different resources.
+
+```python file=/concepts/resources/resources.py startafter=start_graph_example endbefore=end_graph_example
+from dagster import graph
+
+
+@graph
+def do_database_stuff():
+    op_requires_resources()
+
+
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
+```
+
+Supplying resources to the <PyObject object="job" decorator />, i.e. when there aren't multiple jobs for the same graph, is also useful. For example, if you want to use an off-the-shelf resource or supply configuration in one place instead of in every solid.
+
+```python file=/concepts/resources/resources.py startafter=start_job_example endbefore=end_job_example
+from dagster import job
+
+
+@job(resource_defs={"database": database_resource})
+def do_database_stuff_job():
+    op_requires_resources()
+```
+
+## Resource Configuration
+
+<PyObject object="ResourceDefinition" pluralize /> can have a config schema, which
+allows you to customize behavior at runtime through run configuration.
+
+For example, let's say we wanted to pass a connection string to our `DatabaseConnection` resource.
+
+```python file=/concepts/resources/resources.py startafter=start_resource_config endbefore=end_resource_config
+class DatabaseConnection:
+    def __init__(self, connection: str):
+        self.connection = connection
+
+
+@resource(config_schema={"connection": str})
+def db_resource(init_context):
+    connection = init_context.resource_config["connection"]
+    return DatabaseConnection(connection)
+```
+
 ## Testing Resource Initialization
 
 You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
@@ -115,44 +164,7 @@ def test_cm_resource():
         assert initialized_resource == "foo"
 ```
 
-## Providing Resources to a Job
-
-When creating a job, resource definitions can be provided via the `resource_defs` argument on the <PyObject object="GraphDefinition" method="to_job"/> function.
-
-```python file=/concepts/resources/resources.py startafter=start_job_example endbefore=end_job_example
-from dagster import graph
-
-
-@graph
-def basic_graph():
-    basic_op()
-
-
-job = basic_graph.to_job(resource_defs={"a": resource_a, "b": resource_b})
-```
-
-## Examples
-
-### Resource Configuration
-
-<PyObject object="ResourceDefinition" pluralize /> can have a config schema, which
-allows you to customize behavior at runtime through pipeline configuration.
-
-For example, let's say we wanted to pass a connection string to our `DatabaseConnection` resource.
-
-```python file=/concepts/resources/resources.py startafter=start_resource_config endbefore=end_resource_config
-class DatabaseConnection:
-    def __init__(self, connection: str):
-        self.connection = connection
-
-
-@resource(config_schema={"connection": str})
-def db_resource(init_context):
-    connection = init_context.resource_config["connection"]
-    return DatabaseConnection(connection)
-```
-
-### Resource to Resource Dependencies
+## Resource to Resource Dependencies
 
 Resources can depend upon other resources. Use the `required_resource_keys` parameter of the <PyObject object="resource" decorator/> decorator to specify which resources to depend upon. Access the required resources through the context object provided to the wrapped function.
 
@@ -171,24 +183,21 @@ def client(init_context):
     return Client(username, password)
 ```
 
-Now, consider a graph whose ops will use the `client` resource.
+Now, consider an op that will use the `client` resource.
 
-```python file=/concepts/resources/resources.py startafter=start_resource_dep_graph endbefore=end_resource_dep_graph
+```python file=/concepts/resources/resources.py startafter=start_resource_dep_op endbefore=end_resource_dep_op
 from dagster import graph, op
 
 
 @op(required_resource_keys={"client"})
 def get_client(context):
     return context.resources.client
-
-
-@graph
-def connect():
-    return get_client()
 ```
 
-When constructing a job out of `connect`, we provide the resource `client`, but also `credentials`, as `client` requires it.
+When constructing a job that includes that op, we provide the resource `client`, but also `credentials`, because `client` requires it.
 
 ```python file=/concepts/resources/resources.py startafter=start_resource_dep_job endbefore=end_resource_dep_job
-connect_job = connect.to_job(resource_defs={"credentials": credentials, "client": client})
+@job(resource_defs={"credentials": credentials, "client": client})
+def connect():
+    get_client()
 ```

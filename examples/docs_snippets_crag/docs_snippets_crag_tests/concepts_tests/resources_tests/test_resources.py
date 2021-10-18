@@ -1,8 +1,11 @@
 from dagster import build_init_resource_context, build_op_context
 from docs_snippets_crag.concepts.resources.resources import (
     cereal_fetcher,
-    connect_job,
+    connect,
     db_resource,
+    do_database_stuff_dev,
+    do_database_stuff_job,
+    do_database_stuff_prod,
     op_requires_resources,
     test_cm_resource,
     test_my_resource,
@@ -29,10 +32,16 @@ def test_resource_testing_examples():
 
 
 def test_resource_deps_job():
-    result = connect_job.execute_in_process()
+    result = connect.execute_in_process()
     assert result.success
 
 
 def test_resource_config_example():
     dbconn = db_resource(build_init_resource_context(config={"connection": "foo"}))
     assert dbconn.connection == "foo"
+
+
+def test_jobs():
+    assert do_database_stuff_job.execute_in_process().success
+    assert do_database_stuff_dev.execute_in_process().success
+    assert do_database_stuff_prod.execute_in_process().success
