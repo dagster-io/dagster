@@ -177,14 +177,14 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
     def _get_cleanup_statement(self, table: str, resources):
         return f"""
         DELETE FROM {table} WHERE
-            TO_TIMESTAMP("time") BETWEEN
+            TO_TIMESTAMP(time::INT) BETWEEN
                 '{resources.partition_start}' AND '{resources.partition_end}';
         """
 
     def _get_select_statement(self, resources, metadata: Dict[str, Any]):
         return f"""
         SELECT * FROM {metadata["table"]} WHERE
-            TO_TIMESTAMP("time") BETWEEN
+            TO_TIMESTAMP(time::INT) BETWEEN
                 '{resources.partition_start}' AND '{resources.partition_end}';
         """
 

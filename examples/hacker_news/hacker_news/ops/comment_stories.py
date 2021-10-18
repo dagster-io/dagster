@@ -12,7 +12,7 @@ from pandas import DataFrame, Series
             root_manager_key="warehouse_loader",
             metadata={
                 "table": "hackernews.comments",
-                "columns": ["id", "by", "parent"],
+                "columns": ["id", "user_id", "parent"],
             },
         ),
     },
@@ -29,7 +29,7 @@ def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     - story_id (int)
     - commenter_id (str)
     """
-    comments.rename(columns={"by": "commenter_id", "id": "comment_id"}, inplace=True)
+    comments.rename(columns={"user_id": "commenter_id", "id": "comment_id"}, inplace=True)
     comments = comments.set_index("comment_id")[["commenter_id", "parent"]]
     stories = stories.set_index("id")[[]]
 
