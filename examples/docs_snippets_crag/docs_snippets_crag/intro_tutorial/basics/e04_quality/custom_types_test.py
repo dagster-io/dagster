@@ -9,9 +9,8 @@ from dagster import (
     String,
     check_dagster_type,
     dagster_type_loader,
-    execute_pipeline,
-    pipeline,
-    solid,
+    job,
+    op,
 )
 
 
@@ -29,9 +28,7 @@ def less_simple_data_frame_type_check(_, value):
         if not isinstance(row, dict):
             raise Failure(
                 "LessSimpleDataFrame should be a list of dicts, "
-                "got {type_} for row {idx}".format(
-                    type_=type(row), idx=(i + 1)
-                )
+                "got {type_} for row {idx}".format(type_=type(row), idx=(i + 1))
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
@@ -65,48 +62,35 @@ else:
     )
 
 
-@solid
+@op
 def sort_by_calories(context, cereals: LessSimpleDataFrame):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(
-        "Least caloric cereal: {least_caloric}".format(
-            least_caloric=sorted_cereals[0]["name"]
-        )
+        "Least caloric cereal: {least_caloric}".format(least_caloric=sorted_cereals[0]["name"])
     )
     context.log.info(
-        "Most caloric cereal: {most_caloric}".format(
-            most_caloric=sorted_cereals[-1]["name"]
-        )
+        "Most caloric cereal: {most_caloric}".format(most_caloric=sorted_cereals[-1]["name"])
     )
 
 
-@pipeline
-def custom_type_pipeline():
+@job
+def custom_type_job():
     sort_by_calories()
 
 
 if __name__ == "__main__":
-    execute_pipeline(
-        custom_type_pipeline,
-        {
-            "solids": {
-                "sort_by_calories": {
-                    "inputs": {"cereals": {"csv_path": "cereal.csv"}}
-                }
-            }
+    custom_type_job.execute_in_process(
+        run_config={
+            "ops": {"sort_by_calories": {"inputs": {"cereals": {"csv_path": "cereal.csv"}}}}
         },
     )
 
 
 # start_custom_types_test_marker_0
 def test_less_simple_data_frame():
-    assert check_dagster_type(
-        LessSimpleDataFrame, [{"foo": 1}, {"foo": 2}]
-    ).success
+    assert check_dagster_type(LessSimpleDataFrame, [{"foo": 1}, {"foo": 2}]).success
 
-    type_check = check_dagster_type(
-        LessSimpleDataFrame, [{"foo": 1}, {"bar": 2}]
-    )
+    type_check = check_dagster_type(LessSimpleDataFrame, [{"foo": 1}, {"bar": 2}])
     assert not type_check.success
     assert type_check.description == (
         "Rows in LessSimpleDataFrame should have the same fields, "

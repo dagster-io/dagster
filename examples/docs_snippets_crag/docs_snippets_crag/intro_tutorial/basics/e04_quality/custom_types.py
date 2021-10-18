@@ -1,20 +1,12 @@
 import csv
 
 import requests
-from dagster import (
-    DagsterType,
-    InputDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster import DagsterType, In, Out, job, op
 
 
 # start_custom_types_marker_0
 def is_list_of_dicts(_, value):
-    return isinstance(value, list) and all(
-        isinstance(element, dict) for element in value
-    )
+    return isinstance(value, list) and all(isinstance(element, dict) for element in value)
 
 
 SimpleDataFrame = DagsterType(
@@ -28,7 +20,7 @@ SimpleDataFrame = DagsterType(
 # start_custom_types_marker_1
 
 
-@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+@op(out=Out(SimpleDataFrame))
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -36,7 +28,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 
 
-@solid(input_defs=[InputDefinition("cereals", SimpleDataFrame)])
+@op(ins={"cereals": In(SimpleDataFrame)})
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
@@ -45,6 +37,6 @@ def sort_by_calories(context, cereals):
 # end_custom_types_marker_1
 
 
-@pipeline
-def custom_type_pipeline():
+@job
+def custom_type_job():
     sort_by_calories(download_csv())
