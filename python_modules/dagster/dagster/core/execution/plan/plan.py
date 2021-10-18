@@ -1316,7 +1316,7 @@ def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
             for key in step.resolved_by_step_keys:
                 if key not in step_keys_to_execute:
                     raise DagsterInvariantViolationError(
-                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{step.resolved_by_step_key}" '
+                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
                         "which is not part of the current step selection"
                     )
 
