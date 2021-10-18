@@ -14,6 +14,18 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelin
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -54,8 +66,10 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_r
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats;

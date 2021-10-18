@@ -223,6 +223,7 @@ const ButtonContainer = styled(ButtonWIP)<{
     joined === 'left' ? `1px solid rgba(255,255,255,0.2)` : 'transparent'};
   cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
   margin-left: ${({joined}) => (joined ? '0' : '6px')};
+  ${({joined}) => (joined === 'right' ? 'padding-right: 8px;' : null)}
 `;
 
 const MaxwidthText = styled.div`

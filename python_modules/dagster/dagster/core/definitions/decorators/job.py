@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
@@ -69,7 +70,7 @@ class _Job:
             name=self.name,
             dependencies=dependencies,
             node_defs=solid_defs,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config=config_mapping,
@@ -78,7 +79,7 @@ class _Job:
         )
         update_wrapper(graph_def, fn)
         return graph_def.to_job(
-            description=self.description,
+            description=self.description or format_docstring_for_description(fn),
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,

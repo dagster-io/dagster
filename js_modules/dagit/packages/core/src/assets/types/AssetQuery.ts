@@ -10,21 +10,6 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: AssetQuery
 // ====================================================
 
-export interface AssetQuery_assetNodeOrError_AssetNode {
-  __typename: "AssetNode";
-  id: string;
-  description: string | null;
-  opName: string | null;
-  jobName: string | null;
-}
-
-export interface AssetQuery_assetNodeOrError_AssetNotFoundError {
-  __typename: "AssetNotFoundError";
-  message: string;
-}
-
-export type AssetQuery_assetNodeOrError = AssetQuery_assetNodeOrError_AssetNode | AssetQuery_assetNodeOrError_AssetNotFoundError;
-
 export interface AssetQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
@@ -159,6 +144,13 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
 
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
@@ -166,6 +158,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  repositoryOrigin: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin | null;
 }
 
 export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
@@ -177,18 +170,26 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   runOrError: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError;
 }
 
+export interface AssetQuery_assetOrError_Asset_definition {
+  __typename: "AssetNode";
+  id: string;
+  description: string | null;
+  opName: string | null;
+  jobName: string | null;
+}
+
 export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
   id: string;
   key: AssetQuery_assetOrError_Asset_key;
   mostRecentMaterialization: AssetQuery_assetOrError_Asset_mostRecentMaterialization[];
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
+  definition: AssetQuery_assetOrError_Asset_definition | null;
 }
 
 export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetNotFoundError | AssetQuery_assetOrError_Asset;
 
 export interface AssetQuery {
-  assetNodeOrError: AssetQuery_assetNodeOrError;
   assetOrError: AssetQuery_assetOrError;
 }
 

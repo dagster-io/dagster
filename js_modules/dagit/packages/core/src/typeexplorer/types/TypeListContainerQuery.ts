@@ -25,6 +25,7 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline_dagsterTypes {
 export interface TypeListContainerQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
+  isJob: boolean;
   name: string;
   dagsterTypes: TypeListContainerQuery_pipelineOrError_Pipeline_dagsterTypes[];
 }

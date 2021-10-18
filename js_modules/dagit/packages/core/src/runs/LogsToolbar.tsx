@@ -61,10 +61,16 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     onSetComputeLogKey,
     computeLogUrl,
   } = props;
+
+  const activeItems = React.useMemo(
+    () => new Set([logType === LogType.structured ? logType : LogType.stdout]),
+    [logType],
+  );
+
   return (
     <OptionsContainer>
       <ButtonGroup
-        activeItems={new Set([logType])}
+        activeItems={activeItems}
         buttons={[
           {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
           {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
@@ -265,9 +271,8 @@ const StructuredLogToolbar = ({
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
           }
-        >
-          Hide non-matches
-        </NonMatchCheckbox>
+          label="Hide non-matches"
+        />
       ) : null}
       <OptionsDivider />
       <Group direction="row" spacing={4} alignItems="center">
@@ -301,18 +306,15 @@ const StructuredLogToolbar = ({
       </Group>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <div style={{marginRight: '8px'}}>
-        <ButtonWIP
-          small
-          icon={<IconWIP name={copyIcon} />}
-          onClick={() => {
-            copyToClipboard(window.location.href);
-            setCopyIcon('assignment_turned_in');
-          }}
-        >
-          Copy URL
-        </ButtonWIP>
-      </div>
+      <ButtonWIP
+        icon={<IconWIP name={copyIcon} />}
+        onClick={() => {
+          copyToClipboard(window.location.href);
+          setCopyIcon('assignment_turned_in');
+        }}
+      >
+        Copy URL
+      </ButtonWIP>
     </>
   );
 };

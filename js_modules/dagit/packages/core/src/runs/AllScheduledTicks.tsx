@@ -54,12 +54,15 @@ export const AllScheduledTicks = () => {
           );
         }
         return (
-          <Group direction="column" spacing={16}>
-            <Box padding={{horizontal: 24}}>
+          <div>
+            <Box
+              padding={{horizontal: 24, vertical: 16}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            >
               <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>
             <SchedulesNextTicks repos={repositoriesOrError.nodes} />
-          </Group>
+          </div>
         );
       }}
     </Loading>

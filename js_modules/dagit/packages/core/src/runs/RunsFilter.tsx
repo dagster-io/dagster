@@ -80,7 +80,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
   const obj: PipelineRunsFilter = {};
 
   for (const item of search) {
-    if (item.token === 'pipeline') {
+    if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
       obj.runIds = [item.value];
@@ -98,10 +98,6 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key, value}];
       }
-    } else if (item.token === 'job') {
-      const [pipeline, mode = 'default'] = item.value.split(':');
-      obj.pipelineName = pipeline;
-      obj.mode = mode;
     }
   }
 
@@ -119,9 +115,10 @@ function searchSuggestionsForRuns(
   for (const option of repositoryOptions) {
     const {repository} = option;
     for (const pipeline of repository.pipelines) {
-      pipelineNames.add(pipeline.name);
-      for (const mode of pipeline.modes) {
-        jobNames.add(`${pipeline.name}${mode.name === 'default' ? '' : `:${mode.name}`}`);
+      if (pipeline.isJob) {
+        jobNames.add(pipeline.name);
+      } else {
+        pipelineNames.add(pipeline.name);
       }
     }
   }

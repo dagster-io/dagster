@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Menu, MenuDivider, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -85,10 +86,22 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   line-height: 20px;
   padding: 6px 8px 6px 12px;
   transition: background-color 50ms, box-shadow 150ms;
-  align-items: center;
+  align-items: flex-start;
+
+  /**
+   * Use margin instead of align-items: center because the contents of the menu item may wrap 
+   * in unusual circumstances.
+   */
+  ${IconWrapper} {
+    margin-top: 2px;
+  }
 
   &.bp3-intent-primary.bp3-active {
     background-color: ${ColorsWIP.Blue500};
+
+    ${IconWrapper} {
+      background-color: ${ColorsWIP.White};
+    }
   }
 
   &.bp3-disabled ${IconWrapper} {

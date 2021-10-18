@@ -2,8 +2,8 @@
 version: "3.8"
 
 services:
-  # This service runs dagit. It has no pipeline code; instead it loads its
-  # pipelines from the gRPC server running in the pipelines service.
+  # This service runs dagit. It has no user code; instead it loads its
+  # jobs from the gRPC server running in the user_code service.
   # Because our instance uses the QueuedRunCoordinator, any runs submitted from
   # dagit will be put on a queue and later dequeued and launched by
   # the dagster-daemon service.
@@ -24,7 +24,7 @@ services:
       DAGSTER_POSTGRES_USER: "postgres_user"
     depends_on:
       - postgresql
-      - pipelines
+      - user_code
     x-aws-role:
       Statement:
         - Effect: "Allow"
@@ -60,7 +60,7 @@ services:
       DAGSTER_POSTGRES_DB: "postgres_db"
     depends_on:
       - postgresql
-      - pipelines
+      - user_code
     x-aws-role:
       Statement:
         - Effect: "Allow"
@@ -87,20 +87,20 @@ services:
   # run launcher to use this same image when launching runs in a new container.
   # Multiple containers like this can be deployed separately - each needs to
   # run on its own port and have its own entry in the workspace.yaml file.
-  pipelines:
+  user_code:
     build:
       context: .
       dockerfile: ./Dockerfile
-      target: pipelines
-    image: "$REGISTRY_URL/deploy_ecs/pipelines"
-    container_name: pipelines
+      target: user_code
+    image: "$REGISTRY_URL/deploy_ecs/user_code"
+    container_name: user_code
     command: "dagster api grpc -h 0.0.0.0 -p 4000 -f repo.py"
     environment:
       DAGSTER_POSTGRES_DB: "postgres_db"
       DAGSTER_POSTGRES_HOSTNAME: "postgresql"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_USER: "postgres_user"
-      DAGSTER_CURRENT_IMAGE: "$REGISTRY_URL/deploy_ecs/pipelines"
+      DAGSTER_CURRENT_IMAGE: "$REGISTRY_URL/deploy_ecs/user_code"
 
 
   # This service runs the postgres DB used by dagster for run storage, schedule

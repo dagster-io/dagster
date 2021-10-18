@@ -147,13 +147,15 @@ export const TickHistory = ({
     return (
       <>
         <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          padding={{top: 16, horizontal: 24}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
           <Subheading>Tick History</Subheading>
           {tabs}
         </Box>
-        <Spinner purpose="section" />
+        <Box padding={{vertical: 64}}>
+          <Spinner purpose="section" />
+        </Box>
       </>
     );
   }
@@ -203,12 +205,20 @@ export const TickHistory = ({
   const now = Date.now();
   return (
     <>
-      <Box
-        padding={{top: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-      >
+      <Box padding={{top: 16, horizontal: 24}}>
         <Subheading>Tick History</Subheading>
-        {tabs}
+        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+          {tabs}
+          {ticks.length ? (
+            <Box flex={{direction: 'row', gap: 16}}>
+              <StatusFilter status={InstigationTickStatus.SUCCESS} />
+              <StatusFilter status={InstigationTickStatus.FAILURE} />
+              {instigationType === InstigationType.SCHEDULE ? (
+                <StatusFilter status={InstigationTickStatus.SKIPPED} />
+              ) : null}
+            </Box>
+          ) : null}
+        </Box>
       </Box>
       <Box padding={{bottom: 16}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
         {showRecent && selectedTab === 'recent' ? (
@@ -219,29 +229,18 @@ export const TickHistory = ({
             onSelectTick={onTickClick}
           />
         ) : ticks.length ? (
-          <>
-            <Box flex={{justifyContent: 'flex-end'}}>
-              <Group direction="row" spacing={16}>
-                <StatusFilter status={InstigationTickStatus.SUCCESS} />
-                <StatusFilter status={InstigationTickStatus.FAILURE} />
-                {instigationType === InstigationType.SCHEDULE ? (
-                  <StatusFilter status={InstigationTickStatus.SKIPPED} />
-                ) : null}
-              </Group>
-            </Box>
-            <TickHistoryGraph
-              ticks={displayedTicks}
-              selectedTick={selectedTick}
-              onSelectTick={onTickClick}
-              onHoverTick={onTickHover}
-              selectedTab={selectedTab}
-              maxBounds={
-                selectedTab === 'all'
-                  ? undefined
-                  : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
-              }
-            />
-          </>
+          <TickHistoryGraph
+            ticks={displayedTicks}
+            selectedTick={selectedTick}
+            onSelectTick={onTickClick}
+            onHoverTick={onTickHover}
+            selectedTab={selectedTab}
+            maxBounds={
+              selectedTab === 'all'
+                ? undefined
+                : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
+            }
+          />
         ) : (
           <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
             <NonIdealState

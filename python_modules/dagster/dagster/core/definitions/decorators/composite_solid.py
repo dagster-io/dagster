@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 
 from ..composition import do_composition, get_validated_config_mapping
 from ..input import InputDefinition
@@ -60,7 +61,7 @@ class _CompositeSolid:
             output_mappings=output_mappings,
             dependencies=dependencies,
             solid_defs=solid_defs,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             config_mapping=config_mapping,
             positional_inputs=positional_inputs,
         )

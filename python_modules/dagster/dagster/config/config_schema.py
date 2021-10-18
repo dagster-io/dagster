@@ -6,16 +6,16 @@ class ConfigSchema:
        (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
        or :py:class:`~python:str`). For example:
 
-       * ``@solid(config_schema=int)``
-       * ``@solid(config_schema=str)``
+       * ``@op(config_schema=int)``
+       * ``@op(config_schema=str)``
 
     #. A built-in python collection (:py:class:`~python:list`, or :py:class:`~python:dict`).
        :py:class:`~python:list` is exactly equivalent to :py:class:`~dagster.Array` [
        :py:class:`~dagster.Any` ] and :py:class:`~python:dict` is equivalent to
        :py:class:`~dagster.Permissive`. For example:
 
-       * ``@solid(config_schema=list)``
-       * ``@solid(config_schema=dict)``
+       * ``@op(config_schema=list)``
+       * ``@op(config_schema=dict)``
 
     #. A Dagster config type:
 

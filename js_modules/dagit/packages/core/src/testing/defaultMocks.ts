@@ -23,8 +23,11 @@ export const defaultMocks = {
   }),
   Pipeline: () => ({
     id: randomId,
+    isJob: () => false,
     name: hyphenatedName,
     pipelineSnapshotId: randomId,
+    schedules: () => new MockList(0),
+    sensors: () => new MockList(0),
     solids: () => new MockList(2),
     modes: () => new MockList(1),
   }),

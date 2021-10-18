@@ -5,11 +5,12 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -32,20 +33,20 @@ export const SensorsTable: React.FC<{
           <th>Sensor Name</th>
           <th style={{width: '150px'}}>Frequency</th>
           <th style={{width: '120px'}}>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
                 <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
                 <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
         </tr>
       </thead>
@@ -62,6 +63,7 @@ const SensorRow: React.FC<{
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
+  const repo = useRepository(repoAddress);
   const {name, sensorState} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
@@ -72,25 +74,25 @@ const SensorRow: React.FC<{
         <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
       </td>
       <td>
-        <Group direction="column" spacing={4}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
           {sensor.targets && sensor.targets.length ? (
-            <Group direction="column" spacing={2}>
+            <Box flex={{direction: 'column', gap: 2}}>
               {sensor.targets.map((target) => (
                 <PipelineReference
-                  key={`${target.pipelineName}:${target.mode}`}
+                  key={target.pipelineName}
                   showIcon
                   size="small"
                   pipelineName={target.pipelineName}
                   pipelineHrefContext={repoAddress}
-                  mode={target.mode}
+                  isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                 />
               ))}
-            </Group>
+            </Box>
           ) : null}
-        </Group>
+        </Box>
       </td>
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
       <td>

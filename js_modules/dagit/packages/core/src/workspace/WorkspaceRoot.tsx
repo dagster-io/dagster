@@ -1,7 +1,6 @@
 import * as React from 'react';
-import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
@@ -20,23 +19,24 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Invalid repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Invalid repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not a valid repository path.'}
             </div>
-            {'  is not a valid repository path.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 
@@ -76,21 +76,16 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   return (
     <Switch>
       <Route
-        path="/workspace/:repoPath/jobs/(/?.*)"
-        render={() => <PipelineRoot repoAddress={addressForPath} />}
-      />
-      <Route
         path="/workspace/:repoPath/graphs/(/?.*)"
         render={(props) => <GraphRoot {...props} repoAddress={addressForPath} />}
       />
       <Route
-        path="/workspace/:repoPath/pipelines/(/?.*)"
-        render={(props: RouteComponentProps) => {
-          if (flagPipelineModeTuples) {
-            return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
-          }
-          return <PipelineRoot repoAddress={addressForPath} />;
-        }}
+        path={[
+          '/workspace/:repoPath/pipelines/(/?.*)',
+          '/workspace/:repoPath/jobs/(/?.*)',
+          '/workspace/:repoPath/pipeline_or_job/(/?.*)',
+        ]}
+        render={() => <PipelineRoot repoAddress={addressForPath} />}
       />
       <Route
         path="/workspace/:repoPath/schedules/:scheduleName/:runTab?"
@@ -119,25 +114,15 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
 };
 
 export const WorkspaceRoot = () => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <MainContent>
       <Switch>
         <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
         <Route
-          path="/workspace/jobs/:pipelinePath"
+          path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}
           render={(props: RouteComponentProps<{pipelinePath: string}>) => (
             <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
           )}
-        />
-        <Route
-          path="/workspace/pipelines/:pipelinePath"
-          render={(props: RouteComponentProps<{pipelinePath: string}>) => {
-            if (flagPipelineModeTuples) {
-              return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
-            }
-            return <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />;
-          }}
         />
         <Route
           path="/workspace/:repoPath"

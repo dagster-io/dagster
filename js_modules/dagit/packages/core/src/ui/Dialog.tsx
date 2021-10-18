@@ -42,7 +42,7 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   return (
     <Box
       background={ColorsWIP.White}
-      padding={{vertical: 16, horizontal: 20}}
+      padding={{vertical: 16, horizontal: 24}}
       border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
     >
       <Group direction="row" spacing={8} alignItems="center">
@@ -68,7 +68,7 @@ interface DialogFooterProps {
 export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
   return (
     <Box
-      padding={{bottom: 20, top: 8, horizontal: 20}}
+      padding={{bottom: 20, top: 8, horizontal: 24}}
       background={ColorsWIP.White}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >

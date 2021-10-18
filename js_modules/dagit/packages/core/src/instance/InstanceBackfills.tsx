@@ -39,7 +39,10 @@ import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading, Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
-import {workspacePipelinePath} from '../workspace/workspacePath';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -93,11 +96,13 @@ export const InstanceBackfills = () => {
 
           if (!partitionBackfillsOrError.results.length) {
             return (
-              <NonIdealState
-                icon="no-results"
-                title="No backfills found"
-                description={<p>This instance does not have any backfill jobs.</p>}
-              />
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="no-results"
+                  title="No backfills found"
+                  description={<p>This instance does not have any backfill jobs.</p>}
+                />
+              </Box>
             );
           }
 
@@ -276,17 +281,30 @@ const BackfillRow = ({
     q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
   })}`;
 
-  const partitionSetBackfillUrl = backfill.partitionSet
-    ? workspacePipelinePath(
+  const repoAddress = backfill.partitionSet
+    ? buildRepoAddress(
         backfill.partitionSet.repositoryOrigin.repositoryName,
         backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-        backfill.partitionSet.pipelineName,
-        backfill.partitionSet.mode,
-        `/partitions?${qs.stringify({
+      )
+    : null;
+  const repo = useRepository(repoAddress);
+  const isJob = !!(
+    repo &&
+    backfill.partitionSet &&
+    isThisThingAJob(repo, backfill.partitionSet.pipelineName)
+  );
+
+  const partitionSetBackfillUrl = backfill.partitionSet
+    ? workspacePipelinePath({
+        repoName: backfill.partitionSet.repositoryOrigin.repositoryName,
+        repoLocation: backfill.partitionSet.repositoryOrigin.repositoryLocationName,
+        pipelineName: backfill.partitionSet.pipelineName,
+        path: `/partitions?${qs.stringify({
           partitionSet: backfill.partitionSet.name,
           q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
         })}`,
-      )
+        isJob,
+      })
     : null;
 
   const canCancel = backfill.runs.some((run) => run.canTerminate);
@@ -445,10 +463,10 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   return (
     <span
       style={{
-        fontSize: 36,
-        fontWeight: 'bold',
+        lineHeight: '32px',
+        fontSize: '36px',
+        fontWeight: 600,
         color: ColorsWIP.Gray600,
-        fontVariantNumeric: 'tabular-nums',
       }}
     >
       {numTotal ? Math.floor((100 * numCompleted) / numTotal) : '-'}%
@@ -458,35 +476,44 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
 
 const PartitionSetReference: React.FunctionComponent<{
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
-}> = ({partitionSet}) => (
-  <Box flex={{direction: 'column', gap: 8}}>
-    <Link
-      to={workspacePipelinePath(
-        partitionSet.repositoryOrigin.repositoryName,
-        partitionSet.repositoryOrigin.repositoryLocationName,
-        partitionSet.pipelineName,
-        partitionSet.mode,
-        `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
-      )}
-    >
-      {partitionSet.name}
-    </Link>
-    <span style={{color: ColorsWIP.Gray600}}>
-      {partitionSet.repositoryOrigin.repositoryName}@
-      {partitionSet.repositoryOrigin.repositoryLocationName}
-    </span>
-    <PipelineReference
-      showIcon
-      size="small"
-      pipelineName={partitionSet.pipelineName}
-      pipelineHrefContext={{
-        name: partitionSet.repositoryOrigin.repositoryName,
-        location: partitionSet.repositoryOrigin.repositoryLocationName,
-      }}
-      mode={partitionSet.mode}
-    />
-  </Box>
-);
+}> = ({partitionSet}) => {
+  const repoAddress = buildRepoAddress(
+    partitionSet.repositoryOrigin.repositoryName,
+    partitionSet.repositoryOrigin.repositoryLocationName,
+  );
+  const repo = useRepository(repoAddress);
+  const isJob = !!(repo && isThisThingAJob(repo, partitionSet.pipelineName));
+
+  return (
+    <Box flex={{direction: 'column', gap: 8}}>
+      <Link
+        to={workspacePipelinePath({
+          repoName: partitionSet.repositoryOrigin.repositoryName,
+          repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
+          pipelineName: partitionSet.pipelineName,
+          isJob,
+          path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+        })}
+      >
+        {partitionSet.name}
+      </Link>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <IconWIP name="repo" color={ColorsWIP.Gray400} />
+        <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
+      </Box>
+      <PipelineReference
+        showIcon
+        size="small"
+        pipelineName={partitionSet.pipelineName}
+        pipelineHrefContext={{
+          name: partitionSet.repositoryOrigin.repositoryName,
+          location: partitionSet.repositoryOrigin.repositoryLocationName,
+        }}
+        isJob={isJob}
+      />
+    </Box>
+  );
+};
 const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
   const {
     numQueued,
@@ -499,7 +526,7 @@ const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
   } = React.useMemo(() => getProgressCounts(backfill), [backfill]);
 
   return (
-    <Table style={{marginRight: 20, maxWidth: 250}}>
+    <StyledTable>
       <tbody>
         <BackfillStatusTableRow label="Queued" count={numQueued} />
         <BackfillStatusTableRow label="In progress" count={numInProgress} />
@@ -513,9 +540,29 @@ const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
         )}
         <BackfillStatusTableRow label="Total" count={numTotal} isTotal={true} />
       </tbody>
-    </Table>
+    </StyledTable>
   );
 };
+
+const StyledTable = styled.table`
+  max-width: 250px;
+  border-collapse: collapse;
+
+  &&& tr td {
+    box-shadow: none !important;
+    padding: 0 24px 4px 0;
+    margin: 0;
+  }
+
+  &&& tr td:last-child {
+    padding-right: 0;
+    text-align: right;
+  }
+
+  &&& tr.total td {
+    font-weight: 600;
+  }
+`;
 
 const BackfillStatusTableRow = ({
   label,
@@ -530,32 +577,9 @@ const BackfillStatusTableRow = ({
     return null;
   }
   return (
-    <tr
-      style={{
-        boxShadow: 'none',
-        fontVariant: 'tabular-nums',
-      }}
-    >
-      <td
-        style={{
-          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
-          maxWidth: '100px',
-          padding: '3px 5px',
-        }}
-      >
-        <Group direction="row" spacing={8} alignItems="center">
-          <div>{label}</div>
-        </Group>
-      </td>
-      <td
-        style={{
-          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
-          maxWidth: '50px',
-          padding: '3px 5px',
-        }}
-      >
-        <Box flex={{justifyContent: 'flex-end'}}>{count}</Box>
-      </td>
+    <tr className={isTotal ? 'total' : undefined}>
+      <td>{label}</td>
+      <td>{count}</td>
     </tr>
   );
 };

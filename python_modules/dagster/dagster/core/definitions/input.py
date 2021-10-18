@@ -330,7 +330,10 @@ class In(
     )
 ):
     """
-    Experimental replacement for :py:class:`InputDefinition`, intended to decrease verbosity.
+    Defines an argument to an op's compute function.
+
+    Inputs may flow from previous op's outputs, or be stubbed using config. They may optionally
+    be typed using the Dagster type system.
 
     Args:
         dagster_type (Optional[Union[Type, DagsterType]]]):
@@ -344,10 +347,10 @@ class In(
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
-            with this InputDefinition. Used for tracking lineage information through Dagster.
+            with this In. Used for tracking lineage information through Dagster.
         asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
-            partitions from the InputContext) which should be associated with this InputDefinition.
+            partitions from the InputContext) which should be associated with this In.
     """
 
     def __new__(
@@ -387,8 +390,7 @@ class In(
 
 class GraphIn(NamedTuple("_GraphIn", [("description", Optional[str])])):
     """
-    Experimental replacement for :py:class:`InputDefinition` on graphs intended to decrease verbosity.
-    It represents the information about the inputs that the graph maps.
+    Represents information about an input that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the input.

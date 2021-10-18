@@ -3,16 +3,19 @@ from dagster.core.definitions.events import HookExecutionResult
 from mlflow.entities.run_status import RunStatus
 
 
-@event_list_hook(required_resource_keys={"mlflow"})
-def end_mlflow_run_on_pipeline_finished(context, event_list):
-    for event in event_list:
-        if event.is_step_success:
-            _cleanup_on_success(context)
-        elif event.is_step_failure:
-            mlf = context.resources.mlflow
-            mlf.end_run(status=RunStatus.to_string(RunStatus.FAILED))
+def _create_mlflow_run_hook(name):
+    @event_list_hook(name=name, required_resource_keys={"mlflow"})
+    def _hook(context, event_list):
+        for event in event_list:
+            if event.is_step_success:
+                _cleanup_on_success(context)
+            elif event.is_step_failure:
+                mlf = context.resources.mlflow
+                mlf.end_run(status=RunStatus.to_string(RunStatus.FAILED))
 
-    return HookExecutionResult(hook_name="end_mlflow_run_on_pipeline_finished", is_skipped=False)
+        return HookExecutionResult(hook_name=name, is_skipped=False)
+
+    return _hook
 
 
 def _cleanup_on_success(context):
@@ -26,3 +29,7 @@ def _cleanup_on_success(context):
 
     if context.solid.name == last_solid_name:
         context.resources.mlflow.end_run()
+
+
+end_mlflow_run_on_pipeline_finished = _create_mlflow_run_hook("end_mlflow_run_on_pipeline_finished")
+end_mlflow_on_run_finished = _create_mlflow_run_hook("end_mlflow_on_run_finished")

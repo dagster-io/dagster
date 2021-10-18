@@ -70,7 +70,7 @@ export const SensorRoot: React.FC<{
             />
             <Box
               padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             >
               <SensorInfo daemonHealth={instance.daemonHealth} />
             </Box>

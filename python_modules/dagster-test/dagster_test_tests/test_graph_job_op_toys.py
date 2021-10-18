@@ -5,6 +5,7 @@ from dagster import (
     execute_pipeline,
     reconstructable,
 )
+from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
@@ -20,7 +21,7 @@ from dagster_test.graph_job_op_toys.error_monster import (
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew_job
 from dagster_test.graph_job_op_toys.longitudinal import IntentionalRandomFailure, longitudinal_job
-from dagster_test.graph_job_op_toys.many_events import many_events_job
+from dagster_test.graph_job_op_toys.many_events import many_events_job, many_events_subset_job
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     dir_resources,
     pyspark_assets,
@@ -53,6 +54,18 @@ def test_longitudinal_job():
 
 def test_many_events_job():
     assert many_events_job.execute_in_process().success
+
+
+def test_many_events_subset_job():
+    result = many_events_subset_job.execute_in_process()
+    assert result.success
+
+    executed_step_keys = [
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
+    ]
+    assert len(executed_step_keys) == 3
 
 
 def get_sleepy():

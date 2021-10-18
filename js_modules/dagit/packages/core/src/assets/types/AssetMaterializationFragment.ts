@@ -14,11 +14,19 @@ export interface AssetMaterializationFragment_runOrError_PipelineRunNotFoundErro
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
 
+export interface AssetMaterializationFragment_runOrError_PipelineRun_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface AssetMaterializationFragment_runOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   mode: string;
+  repositoryOrigin: AssetMaterializationFragment_runOrError_PipelineRun_repositoryOrigin | null;
   status: PipelineRunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;

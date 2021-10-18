@@ -372,7 +372,6 @@ export default {
     graph: {control: {disable: true}},
     selection: {control: {disable: true}},
     toolbarActions: {control: {disable: true}},
-    toolbarLeftActions: {control: {disable: true}},
   },
 } as Meta;
 

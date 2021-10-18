@@ -3,15 +3,7 @@ from typing import Tuple
 from dagster import Out, Output, op
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql.types import (
-    ArrayType,
-    BooleanType,
-    DoubleType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 HN_ACTION_SCHEMA = StructType(
     [
@@ -22,7 +14,6 @@ HN_ACTION_SCHEMA = StructType(
         StructField("by", StringType()),
         StructField("text", StringType()),
         StructField("kids", ArrayType(LongType())),
-        StructField("dead", BooleanType()),
         StructField("score", DoubleType()),
         StructField("title", StringType()),
         StructField("descendants", DoubleType()),

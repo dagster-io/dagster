@@ -7,7 +7,7 @@ module.exports = {
     "./pages/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
     "./layouts/**/*.{js,jsx,ts,tsx}",
-    "../content/**/*.mdx",
+    "../content-crag/**/*.mdx",
   ],
   darkMode: "class",
   variants: {
@@ -55,7 +55,7 @@ module.exports = {
             "code::after": {
               content: '""',
             },
-            'pre a': {
+            "pre a": {
               backgroundColor: theme("colors.yellow.100"),
               marginRight: 8,
             },

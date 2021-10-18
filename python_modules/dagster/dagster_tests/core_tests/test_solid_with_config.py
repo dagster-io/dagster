@@ -204,6 +204,12 @@ def test_extra_config_input_bug():
         solid_selection=["root"],
     ).success
 
+    # subselected pipeline shouldn't require the unselected solid's config
+    assert execute_pipeline(
+        my_pipeline,
+        solid_selection=["root"],
+    ).success
+
 
 def test_extra_config_unsatisfied_input():
     @solid

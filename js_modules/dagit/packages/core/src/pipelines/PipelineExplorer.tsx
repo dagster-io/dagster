@@ -6,7 +6,6 @@ import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
@@ -44,6 +43,7 @@ interface PipelineExplorerProps {
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
+  isGraph: boolean;
 }
 
 export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
@@ -58,9 +58,9 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     selectedHandle,
     setOptions,
     repoAddress,
+    isGraph,
   } = props;
   const [highlighted, setHighlighted] = React.useState('');
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const handleQueryChange = (solidsQuery: string) => {
     onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
@@ -178,7 +178,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
               <GraphQueryInput
                 items={solids}
                 value={explorerPath.solidsQuery}
-                placeholder={flagPipelineModeTuples ? 'Type an op subset' : 'Type a solid subset'}
+                placeholder="Type an op subset…"
                 onChange={handleQueryChange}
               />
             </PipelineGraphQueryInputContainer>
@@ -208,7 +208,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
               />
             </OptionsOverlay>
           )}
-          {solids.length === 0 ? <EmptyDAGNotice /> : null}
+          {solids.length === 0 ? <EmptyDAGNotice isGraph={isGraph} /> : null}
           {solids.length > 0 &&
             queryResultSolids.all.length === 0 &&
             !explorerPath.solidsQuery.length && <LargeDAGNotice />}
@@ -335,15 +335,14 @@ const LargeDAGNotice = () => (
   </LargeDAGContainer>
 );
 
-const EmptyDAGNotice = () => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
+const EmptyDAGNotice: React.FC<{isGraph: boolean}> = ({isGraph}) => {
   return (
     <NonIdealState
       icon="no-results"
-      title={flagPipelineModeTuples ? 'Empty graph' : 'Empty pipeline'}
+      title={isGraph ? 'Empty graph' : 'Empty pipeline'}
       description={
         <>
-          <div>This {flagPipelineModeTuples ? 'graph' : 'pipeline'} is empty.</div>
+          <div>This {isGraph ? 'graph' : 'pipeline'} is empty.</div>
           <div>Solids will appear here when you add them.</div>
         </>
       }

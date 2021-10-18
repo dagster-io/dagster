@@ -680,7 +680,11 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 def _get_execution_plan_from_run(
     pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
 ) -> ExecutionPlan:
-    if pipeline_run.execution_plan_snapshot_id:
+    if (
+        # need to rebuild execution plan so it matches the subsetted graph
+        pipeline.solids_to_execute is None
+        and pipeline_run.execution_plan_snapshot_id
+    ):
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             pipeline_run.execution_plan_snapshot_id
         )

@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
@@ -14,6 +13,7 @@ import {DialogWIP} from '../ui/Dialog';
 import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionGraphSet} from './PartitionGraphSet';
@@ -29,7 +29,6 @@ type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSe
 
 interface PartitionViewProps {
   pipelineName: string;
-  pipelineMode: string;
   partitionSet: PartitionSet;
   partitionSets: PartitionSet[];
   onChangePartitionSet: (set: PartitionSet) => void;
@@ -38,13 +37,11 @@ interface PartitionViewProps {
 
 export const PartitionView: React.FC<PartitionViewProps> = ({
   pipelineName,
-  pipelineMode,
   partitionSet,
   partitionSets,
   onChangePartitionSet,
   repoAddress,
 }) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
@@ -68,6 +65,9 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     }
   }, [error]);
 
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
+
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
     partition.runs.forEach((run) => {
@@ -76,8 +76,6 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
       });
     });
   });
-
-  const partitionSetsForMode = partitionSets.filter((result) => result.mode === pipelineMode);
 
   const launchButton = () => {
     if (!canLaunchPartitionBackfill) {
@@ -115,6 +113,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
           <PartitionsBackfillPartitionSelector
             partitionSetName={partitionSet.name}
             pipelineName={pipelineName}
+            onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(backfillId, stepQuery) => {
               setStepQuery(stepQuery);
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
@@ -126,7 +125,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
         )}
       </DialogWIP>
       <OptionsContainer style={{gap: 12}}>
-        {flagPipelineModeTuples && partitionSetsForMode.length <= 1 ? null : (
+        {partitionSets.length <= 1 ? null : (
           <PartitionSetSelector
             selected={partitionSet}
             partitionSets={partitionSets}
@@ -166,7 +165,11 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
         <OptionsContainer>
           <strong>Run steps</strong>
         </OptionsContainer>
-        <PartitionGraphSet partitions={partitions} allStepKeys={Array.from(allStepKeys).sort()} />
+        <PartitionGraphSet
+          isJob={isJob}
+          partitions={partitions}
+          allStepKeys={Array.from(allStepKeys).sort()}
+        />
       </div>
     </div>
   );

@@ -27,7 +27,8 @@ interface Props {
 }
 
 type JobItem = {
-  job: [string, string];
+  name: string;
+  isJob: boolean;
   label: React.ReactNode;
   repoAddress: RepoAddress;
   schedule: NavScheduleFragment | null;
@@ -72,38 +73,32 @@ export const FlatContentList: React.FC<Props> = (props) => {
         }
 
         for (const pipeline of repo.pipelines) {
-          const {name, modes, schedules, sensors} = pipeline;
-          modes.forEach((mode) => {
-            const modeName = mode.name;
-            const tuple: [string, string] = [name, modeName];
-            const schedule = schedules.find((schedule) => schedule.mode === modeName) || null;
-            const sensor =
-              sensors.find((sensor) =>
-                sensor.targets?.some(
-                  (target) => target.mode === modeName && target.pipelineName === name,
-                ),
-              ) || null;
-            items.push({
-              job: tuple,
-              label: (
-                <Label $hasIcon={!!(schedule || sensor)}>
-                  {name}
-                  {modeName !== 'default' ? (
-                    <span style={{color: ColorsWIP.Gray600}}>{` : ${modeName}`}</span>
-                  ) : null}
-                </Label>
-              ),
-              repoAddress: address,
-              schedule,
-              sensor,
-            });
+          const {isJob, name, schedules, sensors} = pipeline;
+          const schedule = schedules[0] || null;
+          const sensor = sensors[0] || null;
+          items.push({
+            name,
+            isJob,
+            label: (
+              <Label $hasIcon={!!(schedule || sensor)}>
+                {name}
+                {isJob ? null : (
+                  <Tooltip content="Legacy pipeline" placement="top">
+                    <IconWIP name="job" color={ColorsWIP.Gray300} />
+                  </Tooltip>
+                )}
+              </Label>
+            ),
+            repoAddress: address,
+            schedule,
+            sensor,
           });
         }
       }
     }
 
     return items.sort((a, b) =>
-      a.job[0].toLocaleLowerCase().localeCompare(b.job[0].toLocaleLowerCase()),
+      a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()),
     );
   }, [loading, data, activeRepoAddresses]);
 
@@ -115,7 +110,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
     <Items style={{height: 'calc(100% - 226px)'}}>
       {jobs.map((job) => (
         <JobItem
-          key={`${job.job[0]}:${job.job[1]}-${repoAddressAsString(job.repoAddress)}`}
+          key={`${job.name}-${repoAddressAsString(job.repoAddress)}`}
           job={job}
           repoPath={repoPath}
           selector={selector}
@@ -133,9 +128,8 @@ interface JobItemProps {
 
 const JobItem: React.FC<JobItemProps> = (props) => {
   const {job: jobItem, repoPath, selector} = props;
-  const {job, label, repoAddress, schedule, sensor} = jobItem;
+  const {name, isJob, label, repoAddress, schedule, sensor} = jobItem;
 
-  const jobName = `${job[0]}:${job[1]}`;
   const jobRepoPath = repoAddressAsString(repoAddress);
 
   const icon = () => {
@@ -171,9 +165,9 @@ const JobItem: React.FC<JobItemProps> = (props) => {
   return (
     <ItemContainer>
       <Item
-        key={jobName}
-        className={`${jobName === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
-        to={workspacePathFromAddress(repoAddress, `/jobs/${jobName}`)}
+        key={name}
+        className={`${name === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
+        to={workspacePathFromAddress(repoAddress, `/${isJob ? 'jobs' : 'pipelines'}/${name}`)}
       >
         <div>{label}</div>
       </Item>
@@ -226,6 +220,7 @@ const NAV_QUERY = gql`
                 name
                 pipelines {
                   id
+                  isJob
                   name
                   modes {
                     id
@@ -257,6 +252,11 @@ const NAV_QUERY = gql`
 `;
 
 const Label = styled.div<{$hasIcon: boolean}>`
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   width: ${({$hasIcon}) => ($hasIcon ? '218px' : '236px')};

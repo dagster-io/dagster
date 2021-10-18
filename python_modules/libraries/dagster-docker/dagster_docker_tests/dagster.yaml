@@ -1,0 +1,21 @@
+# for debugging local tests in Dagit
+
+run_storage:
+  module: dagster_postgres.run_storage.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      hostname: localhost
+      db_name: test
+      username: test
+      password: test
+
+event_log_storage:
+  module: dagster_postgres.event_log.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      hostname: localhost
+      db_name: test
+      username: test
+      password: test

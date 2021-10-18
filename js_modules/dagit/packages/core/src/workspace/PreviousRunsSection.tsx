@@ -29,7 +29,7 @@ export const PreviousRunsSection: React.FC<{
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row'}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
       >
         <Subheading>Latest runs</Subheading>
       </Box>

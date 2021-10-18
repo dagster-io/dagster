@@ -20,7 +20,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
+  const {flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -29,7 +29,7 @@ export const WorkspaceOverviewRoot = () => {
 
     if (error) {
       return (
-        <Box padding={{vertical: 32}}>
+        <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="error"
             title="Error loading repositories"
@@ -41,7 +41,7 @@ export const WorkspaceOverviewRoot = () => {
 
     if (!options.length) {
       return (
-        <Box padding={{vertical: 32}}>
+        <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="folder"
             title="No repositories"
@@ -51,20 +51,19 @@ export const WorkspaceOverviewRoot = () => {
       );
     }
 
+    const anyPipelinesInWorkspace = options.some((option) =>
+      option.repository.pipelines.some((p) => !p.isJob),
+    );
+
     return (
       <Table>
         <thead>
           <tr>
             <th>Repository</th>
-            {flagPipelineModeTuples ? (
-              <>
-                <th>Jobs</th>
-                <th>Graphs</th>
-              </>
-            ) : (
-              <th>Pipelines</th>
-            )}
-            <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            <th>Jobs</th>
+            {anyPipelinesInWorkspace ? <th>Pipelines</th> : null}
+            <th>Graphs</th>
+            <th>Ops</th>
             {flagAssetGraph ? <th>Assets</th> : null}
             <th>Schedules</th>
             <th>Sensors</th>
@@ -73,33 +72,31 @@ export const WorkspaceOverviewRoot = () => {
         <tbody>
           {options.map((repository) => {
             const {
-              repository: {name},
+              repository: {name, pipelines},
               repositoryLocation: {name: location},
             } = repository;
             const repoString = buildRepoPath(name, location);
+            const anyPipelines = pipelines.some((pipelineOrJob) => !pipelineOrJob.isJob);
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
-                {flagPipelineModeTuples ? (
-                  <>
-                    <td>
-                      <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
-                    </td>
-                    <td>
-                      <Link to={workspacePath(name, location, '/graphs')}>Graphs</Link>
-                    </td>
-                  </>
-                ) : (
+                <td>
+                  <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
+                </td>
+                {anyPipelines ? (
                   <td>
                     <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
                   </td>
+                ) : (
+                  <td>
+                    <span style={{color: ColorsWIP.Gray400}}>None</span>
+                  </td>
                 )}
                 <td>
-                  <Link
-                    to={workspacePath(name, location, flagPipelineModeTuples ? '/ops' : '/solids')}
-                  >
-                    {flagPipelineModeTuples ? 'Ops' : 'Solids'}
-                  </Link>
+                  <Link to={workspacePath(name, location, '/graphs')}>Graphs</Link>
+                </td>
+                <td>
+                  <Link to={workspacePath(name, location, '/ops')}>Ops</Link>
                 </td>
                 {flagAssetGraph ? (
                   <td>

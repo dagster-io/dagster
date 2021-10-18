@@ -1,11 +1,10 @@
 import {gql} from '@apollo/client';
-import {Code, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
@@ -20,6 +19,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {TagWIP} from '../ui/TagWIP';
+import {Code} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 
 import {
@@ -158,13 +158,13 @@ const ScaffoldConfigButton = ({
 
   const onClick = async () => {
     await confirm({
-      title: 'Scaffold extra config',
+      title: 'Scaffold missing config',
       description: confirmationMessage,
     });
     onScaffoldMissingConfig();
   };
 
-  return <ButtonWIP onClick={onClick}>Scaffold Missing Config</ButtonWIP>;
+  return <ButtonWIP onClick={onClick}>Scaffold missing config</ButtonWIP>;
 };
 
 interface RunPreviewProps {
@@ -189,7 +189,6 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     runConfigSchema,
   } = props;
   const [errorsOnly, setErrorsOnly] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const rootCompositeChildren = React.useMemo(() => {
     if (!runConfigSchema) {
@@ -388,7 +387,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</SectionTitle>
+              <SectionTitle>Ops</SectionTitle>
               <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
             </Section>
             <div style={{height: 50}} />

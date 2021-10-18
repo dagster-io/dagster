@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
-import {SolidColumn} from '../runs/LogsRowComponents';
+import {SolidColumn, SolidColumnContainer} from '../runs/LogsRowComponents';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
@@ -140,15 +140,22 @@ const DependencyHeaderCell = styled.td`
 `;
 
 const InvocationContainer = styled.div`
-  margin: 0 -10px;
-  padding: 10px;
-  pointer: default;
-  border-bottom: 1px solid ${ColorsWIP.Gray100};
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+
   &:last-child {
     border-bottom: none;
   }
+
   &:hover {
     background: ${ColorsWIP.Gray50};
   }
+
   font-family: ${FontFamily.monospace};
+
+  ${SolidColumnContainer} {
+    margin-left: -12px;
+  }
 `;

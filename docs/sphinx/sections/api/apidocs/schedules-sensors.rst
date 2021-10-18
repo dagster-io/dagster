@@ -9,10 +9,10 @@ Schedules
 =========
 
 .. autodecorator:: schedule
-.. autodecorator:: monthly_schedule
-.. autodecorator:: weekly_schedule
-.. autodecorator:: hourly_schedule
-.. autodecorator:: daily_schedule
+.. autodecorator:: hourly_partitioned_config
+.. autodecorator:: daily_partitioned_config
+.. autodecorator:: weekly_partitioned_config
+.. autodecorator:: monthly_partitioned_config
 
 .. autoclass:: ScheduleDefinition
 

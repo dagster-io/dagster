@@ -2,7 +2,6 @@ import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
-import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
@@ -26,7 +25,6 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     return new Fuse([]);
   }
 
-  const pipelineMode = featureEnabled(FeatureFlag.flagPipelineModeTuples);
   const {locationEntries} = data.workspaceOrError;
   const manyRepos = locationEntries.length > 1;
 
@@ -44,24 +42,23 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPath(name, locationName);
 
-        const allPipelines = pipelineMode
-          ? pipelines.reduce((flat, pipeline) => {
-              const jobs = pipeline.modes.map((mode) => ({
-                key: `${repoPath}-${pipeline.name}-${mode.name}`,
-                label: `${pipeline.name} : ${mode.name}`,
-                description: manyRepos ? `Job in ${repoPath}` : 'Job',
-                href: workspacePath(name, locationName, `/pipelines/${pipeline.name}:${mode.name}`),
-                type: SearchResultType.Pipeline,
-              }));
-              return [...flat, ...jobs];
-            }, [] as SearchResult[])
-          : pipelines.map((pipeline) => ({
-              key: `${repoPath}-${pipeline.name}`,
-              label: pipeline.name,
-              description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
-              href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
+        const allPipelinesAndJobs = pipelines.reduce((flat, pipelineOrJob) => {
+          const {name, isJob} = pipelineOrJob;
+          return [
+            ...flat,
+            {
+              key: `${repoPath}-${name}`,
+              label: name,
+              description: manyRepos
+                ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
+                : isJob
+                ? 'Job'
+                : 'Pipeline',
+              href: workspacePath(name, locationName, `/${isJob ? 'jobs' : 'pipelines'}/${name}`),
               type: SearchResultType.Pipeline,
-            }));
+            },
+          ];
+        }, [] as SearchResult[]);
 
         const allSchedules = schedules.map((schedule) => ({
           key: `${repoPath}-${schedule.name}`,
@@ -86,12 +83,18 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           href: workspacePath(
             name,
             locationName,
-            `/pipelines/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
+            `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
           ),
           type: SearchResultType.PartitionSet,
         }));
 
-        return [...inner, ...allPipelines, ...allSchedules, ...allSensors, ...allPartitionSets];
+        return [
+          ...inner,
+          ...allPipelinesAndJobs,
+          ...allSchedules,
+          ...allSensors,
+          ...allPartitionSets,
+        ];
       }, [] as SearchResult[]),
     ];
   }, [] as SearchResult[]);
@@ -157,6 +160,28 @@ export const useRepoSearch = () => {
   return {loading, performSearch};
 };
 
+export const useAssetSearch = () => {
+  const [performQuery, {data, loading, called}] = useLazyQuery<SearchSecondaryQuery>(
+    SEARCH_SECONDARY_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
+  );
+
+  const fuse = React.useMemo(() => secondaryDataToSearchResults(data), [data]);
+  const performSearch = React.useCallback(
+    (queryString: string): Fuse.FuseResult<SearchResult>[] => {
+      if (!called) {
+        performQuery();
+      }
+      return fuse.search(queryString);
+    },
+    [fuse, performQuery, called],
+  );
+
+  return {loading, performSearch};
+};
+
 const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
@@ -179,10 +204,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                   name
                   pipelines {
                     id
-                    modes {
-                      id
-                      name
-                    }
+                    isJob
                     name
                   }
                   schedules {

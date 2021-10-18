@@ -1,6 +1,7 @@
 import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
@@ -22,16 +23,24 @@ export const FallthroughRoot = () => {
             const first = firstRepo.repository.pipelines[0];
             return (
               <Redirect
-                to={workspacePipelinePath(
-                  firstRepo.repository.name,
-                  firstRepo.repositoryLocation.name,
-                  first.name,
-                  first.modes[0].name,
-                )}
+                to={workspacePipelinePath({
+                  repoName: firstRepo.repository.name,
+                  repoLocation: firstRepo.repositoryLocation.name,
+                  pipelineName: first.name,
+                  isJob: first.isJob,
+                })}
               />
             );
           }
-          return <Route render={() => <NonIdealState icon="no-results" title="No pipelines" />} />;
+          return (
+            <Route
+              render={() => (
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState icon="no-results" title="No pipelines" />
+                </Box>
+              )}
+            />
+          );
         }}
       </WorkspaceContext.Consumer>
     </Switch>

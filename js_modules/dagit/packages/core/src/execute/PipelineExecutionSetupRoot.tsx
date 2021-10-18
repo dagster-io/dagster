@@ -5,6 +5,7 @@ import {Redirect} from 'react-router-dom';
 import {IExecutionSession, applyCreateSession, useStorage} from '../app/LocalStorage';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -17,9 +18,13 @@ export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);
-  useJobTitle(explorerPath);
-
   const {pipelineName} = explorerPath;
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
+
+  useJobTitle(explorerPath, isJob);
+
   const [data, onSave] = useStorage(repoAddress.name, pipelineName);
   const qs = querystring.parse(window.location.search);
 
@@ -48,7 +53,10 @@ export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
   return (
     <Redirect
       to={{
-        pathname: workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/playground`),
+        pathname: workspacePathFromAddress(
+          repoAddress,
+          `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/playground`,
+        ),
       }}
     />
   );

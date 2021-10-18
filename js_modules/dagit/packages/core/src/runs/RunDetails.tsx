@@ -113,7 +113,7 @@ export const RunDetails: React.FC<{
   );
 };
 
-export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
+export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
   return (
@@ -142,7 +142,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Tags</div>
               <div>
-                <RunTags tags={run.tags} />
+                <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
               </div>
             </Group>
             <Group direction="column" spacing={12}>

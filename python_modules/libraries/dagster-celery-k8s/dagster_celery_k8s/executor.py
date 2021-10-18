@@ -190,7 +190,7 @@ class CeleryK8sJobExecutor(Executor):
         )
 
         self.kubeconfig_file = check.opt_str_param(kubeconfig_file, "kubeconfig_file")
-        self.repo_location_name = check.str_param(repo_location_name, "repo_location_name")
+        self.repo_location_name = check.opt_str_param(repo_location_name, "repo_location_name")
         self.job_wait_timeout = check.float_param(job_wait_timeout, "job_wait_timeout")
 
     @property

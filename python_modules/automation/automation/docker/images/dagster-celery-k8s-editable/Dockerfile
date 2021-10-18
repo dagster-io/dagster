@@ -3,10 +3,6 @@ FROM "${BASE_IMAGE}"
 
 ARG DAGSTER_VERSION
 
-# remove once daemon scheduler is default
-RUN apt-get update -yqq && \
-    apt-get install -yqq --no-install-recommends cron
-
 COPY build_cache/ /
 
 RUN pip install \

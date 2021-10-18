@@ -1,11 +1,10 @@
-import {MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {ButtonWIP} from '../ui/Button';
 import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 
 import {PipelineExplorerSolidHandleFragment_solid} from './types/PipelineExplorerSolidHandleFragment';
@@ -17,7 +16,6 @@ interface SolidJumpBarProps {
 }
 
 export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const {solids, selectedSolid, onChange} = props;
   const button = React.useRef<HTMLButtonElement | null>(null);
 
@@ -31,15 +29,11 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
         items={solids.map((s) => s.name)}
         itemRenderer={BasicStringRenderer}
         itemListPredicate={BasicStringPredicate}
-        noResults={<MenuItem disabled={true} text="No results." />}
+        noResults={<MenuItemWIP disabled text="No results." />}
         onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
       >
         <SelectButton ref={button} rightIcon={<IconWIP name="unfold_more" />}>
-          {selectedSolid
-            ? selectedSolid.name
-            : flagPipelineModeTuples
-            ? 'Select an op…'
-            : 'Select a solid…'}
+          {selectedSolid ? selectedSolid.name : 'Select an op…'}
         </SelectButton>
       </SelectWIP>
     </ShortcutHandler>
@@ -70,7 +64,7 @@ const BasicStringPredicate = (text: string, items: string[]) =>
   items.filter((i) => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
 
 const BasicStringRenderer = (item: string, options: {handleClick: any; modifiers: any}) => (
-  <MenuItem
+  <MenuItemWIP
     key={item}
     text={item}
     active={options.modifiers.active}

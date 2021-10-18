@@ -1,16 +1,16 @@
-from dagster import ModeDefinition, fs_io_manager, pipeline, solid
+from dagster import fs_io_manager, job, op
 
 
-@solid
-def solid1():
+@op
+def op_1():
     return 1
 
 
-@solid
-def solid2(a):
+@op
+def op_2(a):
     return a + 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
-def my_pipeline():
-    solid2(solid1())
+@job(resource_defs={"io_manager": fs_io_manager})
+def my_job():
+    op_2(op_1())

@@ -45,6 +45,10 @@ config:
   {{- if $gcsComputeLogManagerConfig.prefix }}
   prefix: {{ include "stringSource" $gcsComputeLogManagerConfig.prefix }}
   {{- end }}
+
+  {{- if $gcsComputeLogManagerConfig.jsonCredentialsEnvvar }}
+  json_credentials_envvar: {{ include "stringSource" $gcsComputeLogManagerConfig.jsonCredentialsEnvvar }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.s3" }}

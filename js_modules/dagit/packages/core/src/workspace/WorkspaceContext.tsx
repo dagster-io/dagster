@@ -65,6 +65,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
                 pipelines {
                   id
                   name
+                  isJob
                   graphName
                   pipelineSnapshotId
                   modes {
@@ -189,13 +190,22 @@ export const useRepositoryOptions = () => {
   return {options, loading, error};
 };
 
-export const useRepository = (repoAddress: RepoAddress) => {
+export const useRepository = (repoAddress: RepoAddress | null) => {
   const {options} = useRepositoryOptions();
-  return options.find(
-    (option) =>
-      option.repository.name === repoAddress.name &&
-      option.repositoryLocation.name === repoAddress.location,
-  );
+  return findRepositoryAmongOptions(options, repoAddress) || null;
+};
+
+export const findRepositoryAmongOptions = (
+  options: DagsterRepoOption[],
+  repoAddress: RepoAddress | null,
+) => {
+  return repoAddress
+    ? options.find(
+        (option) =>
+          option.repository.name === repoAddress.name &&
+          option.repositoryLocation.name === repoAddress.location,
+      )
+    : null;
 };
 
 export const useActivePipelineForName = (pipelineName: string, snapshotId?: string) => {
@@ -208,7 +218,14 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
   return null;
 };
 
-export const usePipelineSelector = (
+export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobName: string) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.isJob;
+};
+
+export const buildPipelineSelector = (
   repoAddress: RepoAddress | null,
   pipelineName: string,
   solidSelection?: string[],

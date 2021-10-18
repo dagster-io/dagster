@@ -6,7 +6,6 @@ import {Link} from 'react-router-dom';
 import {Timestamp} from '../app/time/Timestamp';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
-import {Group} from '../ui/Group';
 import {Tooltip} from '../ui/Tooltip';
 
 import {AssetLineageFragment} from './types/AssetLineageFragment';
@@ -24,7 +23,7 @@ const AssetLineageInfoElement: React.FC<{
     .join('/')}?${qs.stringify({asOf: timestamp})}`;
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Box margin={{bottom: 4}}>
       {lineage_info.partitions.length > 0
         ? `${partition_list_label} ${partition_list_str} of `
         : ''}
@@ -58,7 +57,7 @@ const AssetLineageInfoElement: React.FC<{
           </Box>
         </Link>
       </Tooltip>
-    </Group>
+    </Box>
   );
 };
 
@@ -71,7 +70,7 @@ export const AssetLineageElements: React.FunctionComponent<{
   const [collapsed, setCollapsed] = React.useState(true);
 
   return (
-    <Group direction="column" spacing={4}>
+    <div>
       {elements.length > MAX_COLLAPSED && (
         <ButtonLink onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? 'Show More' : 'Show Less'}
@@ -80,7 +79,7 @@ export const AssetLineageElements: React.FunctionComponent<{
       {(collapsed ? elements.slice(elements.length - MAX_COLLAPSED) : elements).map((info, idx) => (
         <AssetLineageInfoElement key={idx} lineage_info={info} timestamp={timestamp} />
       ))}
-    </Group>
+    </div>
   );
 };
 

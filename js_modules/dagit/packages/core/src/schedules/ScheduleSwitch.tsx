@@ -20,10 +20,11 @@ import {StopSchedule} from './types/StopSchedule';
 interface Props {
   repoAddress: RepoAddress;
   schedule: ScheduleSwitchFragment;
+  size?: 'small' | 'large';
 }
 
 export const ScheduleSwitch: React.FC<Props> = (props) => {
-  const {repoAddress, schedule} = props;
+  const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
   const {status, id} = scheduleState;
 
@@ -68,6 +69,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
         checked={running || toggleOnInFlight}
         disabled={toggleOffInFlight || toggleOnInFlight}
         onChange={onStatusChange}
+        size={size}
       />
     );
   }
@@ -81,6 +83,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
       checked={running || toggleOnInFlight}
       disabled={disabled}
       onChange={onStatusChange}
+      size={size}
     />
   );
 

@@ -104,11 +104,12 @@ export const Tab = styled(({id, title, count, icon, selected, disabled, to, onCl
   box-shadow: ${({selected}) => (selected ? ColorsWIP.Blue500 : 'transparent')} 0 -2px 0 inset;
   display: flex;
   align-items: center;
+  cursor: pointer;
   gap: 6px;
 
   &,
   & a {
-    cursor: default;
+    cursor: pointer;
     user-select: none;
     color: ${({selected, disabled}) =>
       selected ? ColorsWIP.Blue500 : disabled ? ColorsWIP.Gray300 : ColorsWIP.Gray700};

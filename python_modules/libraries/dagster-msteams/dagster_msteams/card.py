@@ -2,7 +2,7 @@ from typing import Dict
 
 
 class Card:
-    """ Class to contruct a MS Teams Hero card for posting dagster messages. """
+    """Class to contruct a MS Teams Hero card for posting dagster messages."""
 
     def __init__(self):
         self.payload = {"type": "message", "attachments": []}

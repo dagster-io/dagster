@@ -3,7 +3,6 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -11,7 +10,6 @@ import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -57,7 +55,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -92,9 +89,14 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   };
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
-    ? ['status', 'tag', 'snapshotId', 'id', 'job']
-    : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
+  const enabledFilters: RunFilterTokenType[] = [
+    'status',
+    'tag',
+    'snapshotId',
+    'id',
+    'job',
+    'pipeline',
+  ];
 
   return (
     <Page>
@@ -138,36 +140,35 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         }
       />
       {selectedTab === 'queued' ? (
-        <Group direction="column" spacing={8} padding={{horizontal: 24, vertical: 16}}>
+        <Box
+          flex={{direction: 'column', gap: 8}}
+          padding={{horizontal: 24, vertical: 16}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Alert
             intent="info"
             title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
           />
           <QueueDaemonAlert />
-        </Group>
+        </Box>
       ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <NonIdealState
-                  icon="error"
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
 
             if (showScheduled) {
-              return (
-                <Box
-                  padding={{vertical: 16}}
-                  border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-                >
-                  <AllScheduledTicks />
-                </Box>
-              );
+              return <AllScheduledTicks />;
             }
 
             return (

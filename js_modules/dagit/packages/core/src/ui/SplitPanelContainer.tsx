@@ -144,10 +144,12 @@ export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) =>
         {
           id: 'first-pane',
           icon: axis === 'vertical' ? 'vertical_align_bottom' : 'vertical_align_bottom',
+          tooltip: axis === 'vertical' ? 'Show only top pane' : 'Show only left pane',
         },
         {
           id: 'second-pane',
           icon: axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top',
+          tooltip: axis === 'vertical' ? 'Show only bottom pane' : 'Show only right pane',
         },
       ]}
       onClick={(id) => container.current?.onChangeSize(id === 'first-pane' ? 100 : 0)}

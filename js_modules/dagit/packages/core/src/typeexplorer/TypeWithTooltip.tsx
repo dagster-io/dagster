@@ -19,9 +19,9 @@ export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
   // TODO: link to most inner type
   if (name) {
     return (
-      <Link to={{search: `?tab=types&typeName=${displayName}`}}>
+      <TypeLink to={{search: `?tab=types&typeName=${displayName}`}}>
         <TypeName>{displayName}</TypeName>
-      </Link>
+      </TypeLink>
     );
   }
 
@@ -33,6 +33,12 @@ export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
     name
     displayName
     description
+  }
+`;
+
+const TypeLink = styled(Link)`
+  :hover {
+    text-decoration: none;
   }
 `;
 

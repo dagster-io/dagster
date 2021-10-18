@@ -5,7 +5,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
@@ -24,6 +23,12 @@ import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
+import {
+  findRepositoryAmongOptions,
+  isThisThingAJob,
+  useRepository,
+  useRepositoryOptions,
+} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -46,8 +51,10 @@ interface ScheduleTick {
 export const SchedulesNextTicks: React.FC<{
   repos: RepositorySchedulesFragment[];
 }> = React.memo(({repos}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const nextTicks: ScheduleTick[] = [];
+  let anyPipelines = false;
+
+  const {options} = useRepositoryOptions();
 
   repos.forEach((repo) => {
     const {schedules} = repo;
@@ -76,6 +83,10 @@ export const SchedulesNextTicks: React.FC<{
         }
       });
     });
+
+    if (!anyPipelines) {
+      anyPipelines = schedules.some((schedule) => !!schedule.mode);
+    }
   });
 
   nextTicks.sort((a, b) => a.timestamp - b.timestamp);
@@ -96,43 +107,46 @@ export const SchedulesNextTicks: React.FC<{
     <Table>
       <thead>
         <tr>
-          <th style={{width: '200px'}}>Timestamp</th>
+          <th style={{width: '260px'}}>Timestamp</th>
           <th style={{width: '30%'}}>Schedule</th>
-          <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
-          <th style={{textAlign: 'right'}}>Metadata</th>
+          <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
+          <th>Metadata</th>
         </tr>
       </thead>
       <tbody>
-        {nextTicks.map(({schedule, timestamp, repoAddress}) => (
-          <tr key={`${schedule.id}:${timestamp}`}>
-            <td>
-              <TimestampDisplay
-                timestamp={timestamp}
-                timezone={schedule.executionTimezone}
-                timeFormat={{showSeconds: false, showTimezone: true}}
-              />
-            </td>
-            <td>
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-                {schedule.name}
-              </Link>
-            </td>
-            <td>
-              <PipelineReference
-                pipelineName={schedule.pipelineName}
-                pipelineHrefContext={repoAddress}
-                mode={schedule.mode}
-              />
-            </td>
-            <td style={{textAlign: 'right'}}>
-              <NextTickMenu
-                repoAddress={repoAddress}
-                schedule={schedule}
-                tickTimestamp={timestamp}
-              />
-            </td>
-          </tr>
-        ))}
+        {nextTicks.map(({schedule, timestamp, repoAddress}) => {
+          const repo = findRepositoryAmongOptions(options, repoAddress);
+          return (
+            <tr key={`${schedule.id}:${timestamp}`}>
+              <td>
+                <TimestampDisplay
+                  timestamp={timestamp}
+                  timezone={schedule.executionTimezone}
+                  timeFormat={{showSeconds: false, showTimezone: true}}
+                />
+              </td>
+              <td>
+                <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
+                  {schedule.name}
+                </Link>
+              </td>
+              <td>
+                <PipelineReference
+                  pipelineName={schedule.pipelineName}
+                  pipelineHrefContext={repoAddress}
+                  isJob={!!repo && isThisThingAJob(repo, schedule.pipelineName)}
+                />
+              </td>
+              <td>
+                <NextTickMenu
+                  repoAddress={repoAddress}
+                  schedule={schedule}
+                  tickTimestamp={timestamp}
+                />
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </Table>
   );
@@ -239,7 +253,7 @@ const NextTickMenuItems: React.FC<{
           target="_blank"
           href={workspacePathFromAddress(
             repoAddress,
-            `/pipelines/${schedule.pipelineName}/playground/setup?${qs.stringify({
+            `/pipeline_or_job/${schedule.pipelineName}/playground/setup?${qs.stringify({
               mode: schedule.mode,
               config: runConfigYaml,
               solidSelection: schedule.solidSelection,
@@ -277,6 +291,10 @@ const NextTickDialog: React.FC<{
       ? evaluationResult.runRequests[0]
       : null,
   );
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, schedule.pipelineName);
+
   React.useEffect(() => {
     if (
       evaluationResult &&
@@ -299,7 +317,9 @@ const NextTickDialog: React.FC<{
     body = (
       <DialogBody>
         <Group direction="column" spacing={12}>
-          {selectedRunRequest.tags.length ? <RunTags tags={selectedRunRequest.tags} /> : null}
+          {selectedRunRequest.tags.length ? (
+            <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
+          ) : null}
           <ConfigBody>
             <div ref={configRef}>
               <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
@@ -361,7 +381,7 @@ const NextTickDialog: React.FC<{
                               target="_blank"
                               href={workspacePathFromAddress(
                                 repoAddress,
-                                `/pipelines/${
+                                `/${isJob ? 'jobs' : 'pipelines'}/${
                                   schedule.pipelineName
                                 }/playground/setup?${qs.stringify({
                                   mode: schedule.mode,

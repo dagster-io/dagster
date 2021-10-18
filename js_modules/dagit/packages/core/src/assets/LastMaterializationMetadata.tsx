@@ -15,6 +15,8 @@ import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {LatestMaterializationMetadataFragment} from './types/LatestMaterializationMetadataFragment';
@@ -23,6 +25,13 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: LatestMaterializationMetadataFragment | undefined;
   asOf: string | null;
 }> = ({latest, asOf}) => {
+  const latestRun = latest?.runOrError.__typename === 'PipelineRun' ? latest?.runOrError : null;
+  const repositoryOrigin = latestRun?.repositoryOrigin;
+  const repoAddress = repositoryOrigin
+    ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)
+    : null;
+  const repo = useRepository(repoAddress);
+
   if (!latest) {
     if (!asOf) {
       return (
@@ -56,8 +65,7 @@ export const LatestMaterializationMetadata: React.FC<{
     );
   }
 
-  const latestEvent = latest.materializationEvent;
-  const latestRun = latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : null;
+  const latestEvent = latest?.materializationEvent;
   const latestAssetLineage = latestEvent?.assetLineage;
 
   return (
@@ -81,13 +89,13 @@ export const LatestMaterializationMetadata: React.FC<{
                     <PipelineReference
                       showIcon
                       pipelineName={latestRun.pipelineName}
-                      pipelineHrefContext="repo-unknown"
+                      pipelineHrefContext={repoAddress || 'repo-unknown'}
                       snapshotId={latestRun.pipelineSnapshotId}
-                      mode={latestRun.mode}
+                      isJob={isThisThingAJob(repo, latestRun.pipelineName)}
                     />
                   </Box>
                   <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                    <IconWIP name="linear_scale" color={ColorsWIP.Gray500} />
+                    <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
                     <Link
                       to={`/instance/runs/${latestRun.runId}?${qs.stringify({
                         selection: latestEvent.stepKey,
@@ -165,6 +173,11 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
         mode
         pipelineName
         pipelineSnapshotId
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
       }
     }
     materializationEvent {

@@ -2,6 +2,7 @@ from functools import lru_cache, update_wrapper
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.seven import funcsigs
@@ -113,7 +114,7 @@ class _Solid:
             output_defs=output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             version=self.version,

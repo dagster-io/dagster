@@ -48,31 +48,35 @@ export const SensorsRoot = (props: Props) => {
             return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
           } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
             return (
-              <NonIdealState
-                icon="error"
-                title="Repository not found"
-                description="Could not load this repository."
-              />
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="error"
+                  title="Repository not found"
+                  description="Could not load this repository."
+                />
+              </Box>
             );
           } else if (!sensorsOrError.results.length) {
             return (
-              <NonIdealState
-                icon="sensors"
-                title="No Sensors Found"
-                description={
-                  <p>
-                    This repository does not have any sensors defined. Visit the{' '}
-                    <a
-                      href="https://docs.dagster.io/overview/schedules-sensors/sensors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      sensors documentation
-                    </a>{' '}
-                    for more information about creating sensors in Dagster.
-                  </p>
-                }
-              />
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="sensors"
+                  title="No Sensors Found"
+                  description={
+                    <p>
+                      This repository does not have any sensors defined. Visit the{' '}
+                      <a
+                        href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        sensors documentation
+                      </a>{' '}
+                      for more information about creating sensors in Dagster.
+                    </p>
+                  }
+                />
+              </Box>
             );
           } else {
             return (

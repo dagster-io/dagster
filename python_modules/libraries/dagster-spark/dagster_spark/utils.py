@@ -3,7 +3,7 @@ import os
 
 from dagster import check
 
-from .types import SparkSolidError
+from .types import SparkOpError
 
 
 def flatten_dict(d):
@@ -62,7 +62,7 @@ def construct_spark_shell_command(
 
     spark_home = spark_home if spark_home else os.environ.get("SPARK_HOME")
     if spark_home is None:
-        raise SparkSolidError(
+        raise SparkOpError(
             (
                 "No spark home set. You must either pass spark_home in config or "
                 "set $SPARK_HOME in your environment (got None)."

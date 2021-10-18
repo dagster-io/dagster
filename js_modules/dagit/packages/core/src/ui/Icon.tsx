@@ -73,6 +73,7 @@ const Icons = {
   menu: require('./icon-svgs/menu.svg'),
   menu_book: require('./icon-svgs/menu_book.svg'),
   more_horiz: require('./icon-svgs/more_horiz.svg'),
+  nightlight: require('./icon-svgs/nightlight.svg'),
   open_in_new: require('./icon-svgs/open_in_new.svg'),
   people: require('./icon-svgs/people.svg'),
   refresh: require('./icon-svgs/refresh.svg'),
@@ -107,6 +108,10 @@ const Icons = {
 
 export type IconName = keyof typeof Icons;
 
+const rotations: {[key in IconName]?: string} = {
+  waterfall_chart: '-90deg',
+};
+
 export const IconNames = Object.keys(Icons) as IconName[];
 
 interface Props {
@@ -129,6 +134,7 @@ export const IconWIP = React.memo((props: Props) => {
       $size={size}
       $img={img}
       $color={color}
+      $rotation={rotations[name] || null}
       aria-label={name}
       style={style}
     />
@@ -139,6 +145,7 @@ interface WrapperProps {
   $color: string;
   $size: number;
   $img: string;
+  $rotation: string | null;
 }
 
 export const IconWrapper = styled.div<WrapperProps>`
@@ -151,4 +158,6 @@ export const IconWrapper = styled.div<WrapperProps>`
   mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;
+
+  ${({$rotation}) => ($rotation ? `transform: rotate(${$rotation});` : null)}
 `;

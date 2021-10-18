@@ -35,7 +35,6 @@ from dagster.core.types.dagster_type import (
     construct_dagster_type_dictionary,
 )
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
@@ -392,7 +391,6 @@ class GraphDefinition(NodeDefinition):
     def node_names(self):
         return list(self._node_dict.keys())
 
-    @experimental
     def to_job(
         self,
         name: Optional[str] = None,
@@ -404,6 +402,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -447,7 +446,7 @@ class GraphDefinition(NodeDefinition):
                 provided, memoizaton will be enabled for this job.
 
         Returns:
-            JobDefinition: The "Job" currently implemented as a single-mode job
+            JobDefinition
         """
         from .job import JobDefinition
         from .partition import PartitionedConfig
@@ -468,6 +467,7 @@ class GraphDefinition(NodeDefinition):
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
         presets = []
         config_mapping = None
         partitioned_config = None
@@ -507,7 +507,7 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             hook_defs=hooks,
             version_strategy=version_strategy,
-        )
+        ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work

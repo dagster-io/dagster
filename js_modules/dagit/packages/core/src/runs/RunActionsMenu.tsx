@@ -11,8 +11,9 @@ import {IconWIP} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
@@ -62,6 +63,26 @@ export const RunActionsMenu: React.FC<{
 
   const repoMatch = useRepositoryForRun(pipelineRun);
   const isFinished = doneStatuses.has(run.status);
+  const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
+
+  const playgroundPath = () => {
+    const path = `/playground/setup?${qs.stringify({
+      config: runConfigYaml,
+      solidSelection: run.solidSelection,
+    })}`;
+
+    if (repoMatch) {
+      return workspacePipelinePath({
+        repoName: repoMatch.match.repository.name,
+        repoLocation: repoMatch.match.repositoryLocation.name,
+        pipelineName: run.pipelineName,
+        isJob,
+        path,
+      });
+    }
+
+    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
+  };
 
   const infoReady = called ? !loading : false;
   return (
@@ -92,15 +113,7 @@ export const RunActionsMenu: React.FC<{
                   text="Open in Playground..."
                   disabled={!infoReady}
                   icon="edit"
-                  target="_blank"
-                  href={workspacePipelinePathGuessRepo(
-                    run.pipelineName,
-                    run.mode,
-                    `/playground/setup?${qs.stringify({
-                      config: runConfigYaml,
-                      solidSelection: run.solidSelection,
-                    })}`,
-                  )}
+                  href={playgroundPath()}
                 />
               </Tooltip>
               <Tooltip
@@ -162,7 +175,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="more_horiz" />} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
       {canTerminatePipelineExecution ? (
         <TerminationDialog

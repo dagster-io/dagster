@@ -1,7 +1,6 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
@@ -19,6 +18,8 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {TagWIP} from '../ui/TagWIP';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
@@ -29,27 +30,26 @@ const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
 
 interface Props {
   pipelinePath: string;
+  repoAddress?: RepoAddress;
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
-  const {pipelinePath} = props;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {pipelinePath, repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
-  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
-  useJobTitle(explorerPath);
+  const {pipelineName, snapshotId} = explorerPath;
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
+
+  useJobTitle(explorerPath, isJob);
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = React.useMemo(() => {
     return [
-      flagPipelineModeTuples
-        ? {
-            token: 'job',
-            value: `${pipelineName}${pipelineMode === 'default' ? '' : `:${pipelineMode}`}`,
-          }
-        : {token: 'pipeline', value: pipelineName},
+      isJob ? {token: 'job', value: pipelineName} : {token: 'pipeline', value: pipelineName},
       snapshotId ? {token: 'snapshotId', value: snapshotId} : null,
     ].filter(Boolean) as TokenizingFieldValue[];
-  }, [flagPipelineModeTuples, pipelineName, pipelineMode, snapshotId]);
+  }, [isJob, pipelineName, snapshotId]);
 
   const allTokens = [...filterTokens, ...permanentTokens];
 
@@ -79,26 +79,17 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <Page>
-        <Box
-          flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          padding={{vertical: 16, horizontal: 24}}
-        >
-          <Box flex={{direction: 'row', gap: 8}}>
-            {permanentTokens.map(({token, value}) => (
-              <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
-            ))}
-          </Box>
-          <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-        </Box>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <NonIdealState
-                  icon="error"
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
             const runs = pipelineRunsOrError.results;
@@ -106,6 +97,17 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
             const {hasNextCursor, hasPrevCursor} = paginationProps;
             return (
               <>
+                <Box
+                  flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
+                  padding={{top: 8, horizontal: 24}}
+                >
+                  <Box flex={{direction: 'row', gap: 8}}>
+                    {permanentTokens.map(({token, value}) => (
+                      <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                    ))}
+                  </Box>
+                  <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+                </Box>
                 <RunTable
                   runs={displayed}
                   onSetFilter={setFilterTokens}

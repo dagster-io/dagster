@@ -16,7 +16,7 @@ This directory contains annotated files for deploying Dagster with an EcsRunLaun
   ```sh
   aws ecr create-repository --repository-name deploy_ecs/dagit
   aws ecr create-repository --repository-name deploy_ecs/daemon
-  aws ecr create-repository --repository-name deploy_ecs/pipelines
+  aws ecr create-repository --repository-name deploy_ecs/user_code
   ```
 7. [Log in to your ECR Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html):
   ```sh

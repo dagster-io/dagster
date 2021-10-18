@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
@@ -8,6 +7,7 @@ import {TypeListContainer} from '../typeexplorer/TypeListContainer';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Tab, Tabs} from '../ui/Tabs';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
@@ -53,6 +53,9 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
 
   const jobContext = React.useContext(PipelineExplorerJobContext);
 
+  const repo = useRepository(repoAddress || null);
+  const isJob = isThisThingAJob(repo, pipeline.name);
+
   const activeTab = tab || 'info';
 
   const TabDefinitions: Array<TabDefinition> = [
@@ -85,7 +88,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
         ) : jobContext ? (
           jobContext.sidebarTab
         ) : (
-          <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />
+          <SidebarPipelineInfo isGraph={isJob} pipeline={pipeline} key={pipeline.name} />
         ),
     },
     {
@@ -112,7 +115,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
       >
         <Tabs selectedTabId={activeTab}>
           {TabDefinitions.map(({name, key}) => (
-            <Tab id={key} key={key} title={<Link to={{search: `?tab=${key}`}}>{name}</Link>} />
+            <Tab id={key} key={key} to={{search: `?tab=${key}`}} title={name} />
           ))}
         </Tabs>
       </Box>

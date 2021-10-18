@@ -183,8 +183,8 @@ Dagster also provides some op-specific exception classes, which can be raised to
 
 <PyObject object="Failure" /> exceptions may be raised to indicate that an op has
 failed in an unrecoverable way, and that execution should stop. This may be useful
-if, in the body of your op, you detect an issue that would not raise an error
-on its own, but would still cause problems if the execution were to continue.
+if, in the body of your op, you detect an issue that would not raise an error on
+its own, but would still cause problems if the execution were to continue.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_op endbefore=end_failure_op
 @op
