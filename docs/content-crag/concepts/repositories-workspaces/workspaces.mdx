@@ -20,8 +20,8 @@ A Dagster Workspace can contain multiple [repositories](/concepts/repositories-w
 The repositories in a workspace are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
 
 - When there is an update to user code, Dagit can pick up the change without a restart.
-- You can use multiple repositories to organize pipelines, but still work on all of your repositories using a single running Dagit.
-- The Dagit process can run in a separate Python environment from user code so pipeline dependencies do not need to be installed into the Dagit environment.
+- You can use multiple repositories to organize jobs, but still work on all of your repositories using a single running Dagit.
+- The Dagit process can run in a separate Python environment from user code so job dependencies do not need to be installed into the Dagit environment.
 - Each repository can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
 
 ---
@@ -41,22 +41,22 @@ If you want to load repositories from Python code, use the `python_file` or `pyt
 If you use `python_file`, it must specify a path relative to the workspace file leading to a file containing at least one repository definition. For example, the repository defined in `repository.py` here:
 
 ```python file=/concepts/repositories_workspaces/hello_world_repository.py
-from dagster import pipeline, repository, solid
+from dagster import job, op, repository
 
 
-@solid
+@op
 def hello_world():
     pass
 
 
-@pipeline
-def hello_world_pipeline():
+@job
+def hello_world_job():
     hello_world()
 
 
 @repository
 def hello_world_repository():
-    return [hello_world_pipeline]
+    return [hello_world_job]
 ```
 
 could be loaded using the following `workspace.yaml` file in the same folder:

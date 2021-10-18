@@ -1,51 +1,26 @@
-# pylint: disable=unused-argument
-
-import datetime
-
-from dagster import InputDefinition, RunRequest, daily_schedule, pipeline, repository, sensor, solid
+from dagster import RunRequest, ScheduleDefinition, job, repository, sensor
 
 
-@solid
-def return_one():
-    return 1
+@job
+def job1():
+    ...
 
 
-@solid
-def return_two():
-    return 2
+@job
+def job2():
+    ...
 
 
-@solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
-def add(left, right):
-    return left + right
+@job
+def job3():
+    ...
 
 
-@solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
-def subtract(left, right):
-    return left - right
+job1_schedule = ScheduleDefinition(job=job1, cron_schedule="0 0 * * *")
 
 
-# start_repository_definition_marker_0
-@pipeline
-def addition_pipeline():
-    return add(return_one(), return_two())
-
-
-@pipeline
-def subtraction_pipeline():
-    return subtract(return_one(), return_two())
-
-
-@daily_schedule(
-    pipeline_name="addition_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-)
-def daily_addition_schedule(date):
-    return {}
-
-
-@sensor(pipeline_name="addition_pipeline")
-def addition_sensor(context):
+@sensor(job=job2)
+def job2_sensor():
     should_run = True
     if should_run:
         yield RunRequest(run_key=None, run_config={})
@@ -54,11 +29,7 @@ def addition_sensor(context):
 @repository
 def my_repository():
     return [
-        addition_pipeline,
-        subtraction_pipeline,
-        daily_addition_schedule,
-        addition_sensor,
+        job1_schedule,
+        job2_sensor,
+        job3,
     ]
-
-
-# end_repository_definition_marker_0

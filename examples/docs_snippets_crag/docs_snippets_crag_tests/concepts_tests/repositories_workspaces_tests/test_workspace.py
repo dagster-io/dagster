@@ -1,14 +1,14 @@
-from dagster import DagsterInstance, execute_pipeline
+from dagster import DagsterInstance
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path
 from docs_snippets_crag.concepts.repositories_workspaces.hello_world_repository import (
-    hello_world_pipeline,
+    hello_world_job,
     hello_world_repository,
 )
 
 
-def test_pipelines():
-    result = execute_pipeline(hello_world_pipeline)
+def test_jobs():
+    result = hello_world_job.execute_in_process()
     assert result.success
 
 
