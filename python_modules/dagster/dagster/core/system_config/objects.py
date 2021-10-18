@@ -212,11 +212,7 @@ class ResolvedRunConfig(
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
 
-        node_key = (
-            "ops"
-            if pipeline_def._is_using_graph_job_op_apis  # pylint: disable=protected-access
-            else "solids"
-        )
+        node_key = "ops" if pipeline_def.is_job else "solids"
         solid_config_dict = composite_descent(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )

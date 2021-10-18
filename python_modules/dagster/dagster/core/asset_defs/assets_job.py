@@ -13,7 +13,7 @@ from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.node import NodeDefinition
-from dagster.core.definitions.op import OpDefinition
+from dagster.core.definitions.op_def import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig
 from dagster.core.definitions.resource import ResourceDefinition

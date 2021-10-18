@@ -1,7 +1,7 @@
 from dagster import Array, Output, graph, op
 
 
-@op(config_schema={"asset_key": Array(str), "graph": str})
+@op(config_schema={"asset_key": Array(str), "ops": str})
 def read_materialization(context):
     asset_key = context.op_config["asset_key"]
     from_graph = context.op_config["graph"]

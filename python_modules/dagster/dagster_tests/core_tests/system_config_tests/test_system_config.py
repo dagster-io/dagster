@@ -39,7 +39,7 @@ def create_creation_data(pipeline_def):
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),
-        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+        is_using_graph_job_op_apis=pipeline_def.is_job,
     )
 
 
