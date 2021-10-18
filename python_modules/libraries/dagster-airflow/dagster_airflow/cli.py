@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import click
 import yaml
+from dagster import check
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
@@ -17,7 +18,7 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     }
 
     pipeline_def = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
-    check_storage_specified(pipeline_def, pipeline_def.get_default_mode())
+    # check_storage_specified(pipeline_def, pipeline_def.get_default_mode())
 
     if preset_name:
         if config:
