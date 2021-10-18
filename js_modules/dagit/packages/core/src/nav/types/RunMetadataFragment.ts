@@ -46,7 +46,7 @@ export interface RunMetadataFragment_stats_PythonError {
 export type RunMetadataFragment_stats = RunMetadataFragment_stats_PipelineRunStatsSnapshot | RunMetadataFragment_stats_PythonError;
 
 export interface RunMetadataFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   status: PipelineRunStatus;
   assets: RunMetadataFragment_assets[];

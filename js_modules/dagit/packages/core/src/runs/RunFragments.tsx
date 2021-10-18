@@ -8,7 +8,7 @@ import {RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
-  fragment RunFragmentForRepositoryMatch on PipelineRun {
+  fragment RunFragmentForRepositoryMatch on Run {
     id
     pipeline {
       name
@@ -24,7 +24,7 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
 
 export const RunFragments = {
   RunFragment: gql`
-    fragment RunFragment on PipelineRun {
+    fragment RunFragment on Run {
       id
       runConfigYaml
       runId

@@ -18,7 +18,7 @@ const APOLLO_MOCKS = {
     rootRunId: 'r1',
     runs: [
       {
-        __typename: 'PipelineRun',
+        __typename: 'Run',
         id: 'r1',
         runId: 'r1',
         parentRunId: null,
@@ -36,7 +36,7 @@ const APOLLO_MOCKS = {
         },
       },
       {
-        __typename: 'PipelineRun',
+        __typename: 'Run',
         id: 'r2',
         runId: 'r2',
         parentRunId: 'r1',

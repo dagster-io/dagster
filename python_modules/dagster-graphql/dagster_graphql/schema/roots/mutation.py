@@ -30,16 +30,16 @@ from ..backfill import (
 from ..errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
-    GraphenePipelineRunNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
+    GrapheneRunNotFoundError,
     GrapheneUnauthorizedError,
 )
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
-from ..pipelines.pipeline import GraphenePipelineRun
+from ..pipelines.pipeline import GrapheneRun
 from ..runs import GrapheneLaunchPipelineExecutionResult, GrapheneLaunchPipelineReexecutionResult
 from ..schedules import (
     GrapheneReconcileSchedulerStateMutation,
@@ -131,7 +131,7 @@ class GrapheneDeletePipelineRunResult(graphene.Union):
             GrapheneDeletePipelineRunSuccess,
             GrapheneUnauthorizedError,
             GraphenePythonError,
-            GraphenePipelineRunNotFoundError,
+            GrapheneRunNotFoundError,
         )
         name = "DeletePipelineRunResult"
 
@@ -153,14 +153,14 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
 
 
 class GrapheneTerminatePipelineExecutionSuccess(graphene.ObjectType):
-    run = graphene.Field(graphene.NonNull(GraphenePipelineRun))
+    run = graphene.Field(graphene.NonNull(GrapheneRun))
 
     class Meta:
         name = "TerminatePipelineExecutionSuccess"
 
 
 class GrapheneTerminatePipelineExecutionFailure(graphene.ObjectType):
-    run = graphene.NonNull(GraphenePipelineRun)
+    run = graphene.NonNull(GrapheneRun)
     message = graphene.NonNull(graphene.String)
 
     class Meta:
@@ -172,7 +172,7 @@ class GrapheneTerminatePipelineExecutionResult(graphene.Union):
         types = (
             GrapheneTerminatePipelineExecutionSuccess,
             GrapheneTerminatePipelineExecutionFailure,
-            GraphenePipelineRunNotFoundError,
+            GrapheneRunNotFoundError,
             GrapheneUnauthorizedError,
             GraphenePythonError,
         )

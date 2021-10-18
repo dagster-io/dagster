@@ -89,7 +89,7 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
 export type InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData = InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData | InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData;
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;
@@ -212,7 +212,7 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
 export type InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData = InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData | InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData;
 
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

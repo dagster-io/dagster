@@ -46,7 +46,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificDa
 export type SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData | SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

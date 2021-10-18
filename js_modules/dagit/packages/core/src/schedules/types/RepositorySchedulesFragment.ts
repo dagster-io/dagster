@@ -49,7 +49,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecifi
 export type RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData = RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_SensorData | RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_ScheduleData;
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

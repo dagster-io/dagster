@@ -17,7 +17,7 @@ describe('RunDetails', () => {
   const RUN_DETAILS_TEST_QUERY = gql`
     query RunDetailsTestQuery {
       pipelineRunOrError(runId: "abc") {
-        ... on PipelineRun {
+        ... on Run {
           id
           ...RunDetailsFragment
         }
@@ -31,11 +31,7 @@ describe('RunDetails', () => {
       fetchPolicy: 'no-cache',
     });
 
-    if (
-      !data ||
-      !data?.pipelineRunOrError ||
-      data?.pipelineRunOrError.__typename !== 'PipelineRun'
-    ) {
+    if (!data || !data?.pipelineRunOrError || data?.pipelineRunOrError.__typename !== 'Run') {
       return null;
     }
     return <RunDetails loading={loading} run={data.pipelineRunOrError} />;
@@ -50,7 +46,7 @@ describe('RunDetails', () => {
   const buildMocks = (config: MockConfig) => {
     const {status, startTime, endTime} = config;
     return {
-      PipelineRun: () => ({
+      Run: () => ({
         id: () => 'abc',
         status: () => status,
       }),

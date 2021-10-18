@@ -65,18 +65,18 @@ export interface JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterE
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets_key {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets {
   __typename: "Asset";
   id: string;
-  key: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets_key;
+  key: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
@@ -85,35 +85,35 @@ export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats
   endTime: number | null;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats = JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
+export type JobMetadataQuery_pipelineRunsOrError_Runs_results_stats = JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results {
+  __typename: "Run";
   id: string;
   status: PipelineRunStatus;
-  assets: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets[];
-  stats: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  assets: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets[];
+  stats: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results[];
+export interface JobMetadataQuery_pipelineRunsOrError_Runs {
+  __typename: "Runs";
+  results: JobMetadataQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type JobMetadataQuery_pipelineRunsOrError = JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | JobMetadataQuery_pipelineRunsOrError_PipelineRuns;
+export type JobMetadataQuery_pipelineRunsOrError = JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | JobMetadataQuery_pipelineRunsOrError_Runs;
 
 export interface JobMetadataQuery {
   pipelineOrError: JobMetadataQuery_pipelineOrError;

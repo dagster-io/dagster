@@ -97,10 +97,19 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         )
 
 
-class GraphenePipelineRunNotFoundError(graphene.ObjectType):
+class GraphenePipelineRunNotFoundError(graphene.Interface):
     class Meta:
         interfaces = (GrapheneError,)
         name = "PipelineRunNotFoundError"
+
+    run_id = graphene.NonNull(graphene.String)
+    message = graphene.String(required=True)
+
+
+class GrapheneRunNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GraphenePipelineRunNotFoundError, GrapheneError)
+        name = "RunNotFoundError"
 
     run_id = graphene.NonNull(graphene.String)
 
@@ -304,6 +313,7 @@ types = [
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
     GrapheneRunGroupNotFoundError,
+    GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,

@@ -7,7 +7,7 @@ RUN_QUERY = """
 query RunQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on Run {
       status
       stats {
         ... on PipelineRunStatsSnapshot {
@@ -41,7 +41,7 @@ class TestBasicLaunch(
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
 
     def test_run_launcher_subset(self, graphql_context):
@@ -69,6 +69,6 @@ class TestBasicLaunch(
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
         assert result.data["pipelineRunOrError"]["stats"]["stepsSucceeded"] == 1

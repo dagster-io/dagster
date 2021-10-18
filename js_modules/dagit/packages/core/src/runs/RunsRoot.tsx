@@ -61,13 +61,13 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     RunsRootQueryVariables
   >({
     nextCursorForResult: (runs) => {
-      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
       return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
-      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
         return [];
       }
       return data.pipelineRunsOrError.results;
@@ -109,7 +109,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <Tab
                 title="Queued"
                 count={
-                  queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
+                  queryResult.data?.queuedCount?.__typename === 'Runs'
                     ? queryResult.data?.queuedCount.count
                     : 'indeterminate'
                 }
@@ -119,7 +119,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <Tab
                 title="In progress"
                 count={
-                  queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
+                  queryResult.data?.inProgressCount?.__typename === 'Runs'
                     ? queryResult.data?.inProgressCount.count
                     : 'indeterminate'
                 }
@@ -155,7 +155,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+            if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
                 <Box padding={{vertical: 64}}>
                   <NonIdealState
@@ -202,7 +202,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
 };
 
 const COUNT_FRAGMENT = gql`
-  fragment CountFragment on PipelineRuns {
+  fragment CountFragment on Runs {
     count
   }
 `;
@@ -216,7 +216,7 @@ const RUNS_ROOT_QUERY = gql`
     $inProgressFilter: PipelineRunsFilter!
   ) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...RunTableRunFragment

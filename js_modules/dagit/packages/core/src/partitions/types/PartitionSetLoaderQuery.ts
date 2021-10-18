@@ -10,13 +10,13 @@ import { PipelineRunsFilter, PipelineRunStatus, StepEventStatus } from "./../../
 // GraphQL query operation: PartitionSetLoaderQuery
 // ====================================================
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_tags {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
   startTime: number | null;
@@ -24,53 +24,53 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_result
   materializations: number;
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats = PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
+export type PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats = PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_materializations {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_materializations {
   __typename: "Materialization";
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_expectationResults {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_expectationResults {
   __typename: "ExpectationResult";
   success: boolean;
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats {
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats {
   __typename: "PipelineRunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;
   status: StepEventStatus | null;
-  materializations: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_materializations[];
-  expectationResults: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_expectationResults[];
+  materializations: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_materializations[];
+  expectationResults: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_expectationResults[];
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results {
+  __typename: "Run";
   id: string;
   status: PipelineRunStatus;
-  tags: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
+  tags: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_tags[];
   runId: string;
-  stats: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stats;
-  stepStats: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_stepStats[];
+  stats: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats;
+  stepStats: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats[];
 }
 
-export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results[];
+export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs {
+  __typename: "Runs";
+  results: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results[];
 }
 
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
@@ -91,7 +91,7 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_PythonError {
   cause: PartitionSetLoaderQuery_pipelineRunsOrError_PythonError_cause | null;
 }
 
-export type PartitionSetLoaderQuery_pipelineRunsOrError = PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns | PartitionSetLoaderQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PartitionSetLoaderQuery_pipelineRunsOrError_PythonError;
+export type PartitionSetLoaderQuery_pipelineRunsOrError = PartitionSetLoaderQuery_pipelineRunsOrError_Runs | PartitionSetLoaderQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PartitionSetLoaderQuery_pipelineRunsOrError_PythonError;
 
 export interface PartitionSetLoaderQuery {
   pipelineRunsOrError: PartitionSetLoaderQuery_pipelineRunsOrError;

@@ -59,7 +59,7 @@ export interface PartitionGraphSetRunFragment_stepStats {
 }
 
 export interface PartitionGraphSetRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   status: PipelineRunStatus;
   tags: PartitionGraphSetRunFragment_tags[];

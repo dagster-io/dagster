@@ -17,7 +17,7 @@ export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfi
 }
 
 export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   canTerminate: boolean;
   status: PipelineRunStatus;

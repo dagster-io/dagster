@@ -21,12 +21,12 @@ export interface RunStatsQuery_pipelineRunOrError_PythonError {
   cause: RunStatsQuery_pipelineRunOrError_PythonError_cause | null;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError";
+export interface RunStatsQuery_pipelineRunOrError_RunNotFoundError {
+  __typename: "RunNotFoundError";
   message: string;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot {
+export interface RunStatsQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
   stepsSucceeded: number;
@@ -35,30 +35,30 @@ export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunS
   materializations: number;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PythonError_cause {
+export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PythonError {
+export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PythonError_cause | null;
+  cause: RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_cause | null;
 }
 
-export type RunStatsQuery_pipelineRunOrError_PipelineRun_stats = RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot | RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PythonError;
+export type RunStatsQuery_pipelineRunOrError_Run_stats = RunStatsQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot | RunStatsQuery_pipelineRunOrError_Run_stats_PythonError;
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface RunStatsQuery_pipelineRunOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   pipelineName: string;
-  stats: RunStatsQuery_pipelineRunOrError_PipelineRun_stats;
+  stats: RunStatsQuery_pipelineRunOrError_Run_stats;
 }
 
-export type RunStatsQuery_pipelineRunOrError = RunStatsQuery_pipelineRunOrError_PythonError | RunStatsQuery_pipelineRunOrError_PipelineRunNotFoundError | RunStatsQuery_pipelineRunOrError_PipelineRun;
+export type RunStatsQuery_pipelineRunOrError = RunStatsQuery_pipelineRunOrError_PythonError | RunStatsQuery_pipelineRunOrError_RunNotFoundError | RunStatsQuery_pipelineRunOrError_Run;
 
 export interface RunStatsQuery {
   pipelineRunOrError: RunStatsQuery_pipelineRunOrError;

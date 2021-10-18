@@ -21,7 +21,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   mode: string;
   runId: string;

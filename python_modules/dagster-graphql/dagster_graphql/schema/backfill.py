@@ -94,7 +94,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun"),
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
@@ -113,11 +113,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_runs(self, graphene_info, **kwargs):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneRun
 
         filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
         return [
-            GraphenePipelineRun(r)
+            GrapheneRun(r)
             for r in graphene_info.context.instance.get_runs(
                 filters=filters,
                 limit=kwargs.get("limit"),

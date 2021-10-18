@@ -16,7 +16,7 @@ import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {
   Terminate,
-  Terminate_terminatePipelineExecution_PipelineRunNotFoundError,
+  Terminate_terminatePipelineExecution_RunNotFoundError,
   Terminate_terminatePipelineExecution_PythonError,
   Terminate_terminatePipelineExecution_UnauthorizedError,
   Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
@@ -32,7 +32,7 @@ export interface Props {
 
 type Error =
   | Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure
-  | Terminate_terminatePipelineExecution_PipelineRunNotFoundError
+  | Terminate_terminatePipelineExecution_RunNotFoundError
   | Terminate_terminatePipelineExecution_UnauthorizedError
   | Terminate_terminatePipelineExecution_PythonError
   | undefined;

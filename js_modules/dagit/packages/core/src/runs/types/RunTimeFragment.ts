@@ -35,7 +35,7 @@ export interface RunTimeFragment_stats_PythonError {
 export type RunTimeFragment_stats = RunTimeFragment_stats_PipelineRunStatsSnapshot | RunTimeFragment_stats_PythonError;
 
 export interface RunTimeFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   status: PipelineRunStatus;
   stats: RunTimeFragment_stats;

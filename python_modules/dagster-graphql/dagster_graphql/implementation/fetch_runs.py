@@ -41,15 +41,15 @@ def get_validated_config(pipeline_def, run_config, mode):
 
 
 def get_run_by_id(graphene_info, run_id):
-    from ..schema.errors import GraphenePipelineRunNotFoundError
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.errors import GrapheneRunNotFoundError
+    from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
     if not run:
-        return GraphenePipelineRunNotFoundError(run_id)
+        return GrapheneRunNotFoundError(run_id)
     else:
-        return GraphenePipelineRun(run)
+        return GrapheneRun(run)
 
 
 def get_run_tags(graphene_info):
@@ -66,7 +66,7 @@ def get_run_tags(graphene_info):
 @capture_error
 def get_run_group(graphene_info, run_id):
     from ..schema.errors import GrapheneRunGroupNotFoundError
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
@@ -75,13 +75,11 @@ def get_run_group(graphene_info, run_id):
     except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
     root_run_id, run_group = result
-    return GrapheneRunGroup(
-        root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
-    )
+    return GrapheneRunGroup(root_run_id=root_run_id, runs=[GrapheneRun(run) for run in run_group])
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneRun
 
     check.opt_inst_param(filters, "filters", PipelineRunsFilter)
     check.opt_str_param(cursor, "cursor")
@@ -105,7 +103,7 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     else:
         runs = instance.get_runs(cursor=cursor, limit=limit)
 
-    return [GraphenePipelineRun(run) for run in runs]
+    return [GrapheneRun(run) for run in runs]
 
 
 def get_runs_count(graphene_info, filters):
@@ -113,7 +111,7 @@ def get_runs_count(graphene_info, filters):
 
 
 def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
 
     check.opt_inst_param(filters, "filters", PipelineRunsFilter)
@@ -125,7 +123,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
     for root_run_id in run_groups:
         run_groups[root_run_id]["runs"] = [
-            GraphenePipelineRun(run) for run in run_groups[root_run_id]["runs"]
+            GrapheneRun(run) for run in run_groups[root_run_id]["runs"]
         ]
 
     return [

@@ -19,7 +19,7 @@ from .errors import (
     GraphenePythonError,
 )
 from .inputs import GraphenePipelineRunsFilter
-from .pipelines.pipeline import GraphenePipelineRun
+from .pipelines.pipeline import GrapheneRun
 from .pipelines.status import GraphenePipelineRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
@@ -82,7 +82,7 @@ class GraphenePartition(graphene.ObjectType):
     runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
     tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneRun),
         filter=graphene.Argument(GraphenePipelineRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),

@@ -113,7 +113,7 @@ export const RunList: React.FunctionComponent<{
     return <Spinner purpose="section" />;
   }
 
-  if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+  if (data.pipelineRunsOrError.__typename !== 'Runs') {
     return (
       <NonIdealState
         icon="error"

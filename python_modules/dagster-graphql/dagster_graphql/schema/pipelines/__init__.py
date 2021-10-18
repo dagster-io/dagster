@@ -31,7 +31,8 @@ def types():
         GraphenePipeline,
         GraphenePipelinePreset,
         GraphenePipelineRun,
-        GraphenePipelineRunOrError,
+        GrapheneRunOrError,
+        GrapheneRun,
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
@@ -70,7 +71,7 @@ def types():
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionPayload,
         GraphenePipelineRunLogsSubscriptionSuccess,
-        GraphenePipelineRunOrError,
+        GrapheneRunOrError,
         GraphenePipelineRunStatsOrError,
         GraphenePipelineRunStatsSnapshot,
         GraphenePipelineRunStatus,
@@ -78,6 +79,7 @@ def types():
         GraphenePipelineSnapshotOrError,
         GrapheneResource,
         GrapheneRuntimeMismatchConfigError,
+        GrapheneRun,
         GrapheneSelectorTypeConfigError,
         GrapheneUnknownPipeline,
     ]

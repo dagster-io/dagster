@@ -17,7 +17,7 @@ export interface PipelineTableFragment_modes {
 }
 
 export interface PipelineTableFragment_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   mode: string;
   runId: string;

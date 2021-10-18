@@ -17,7 +17,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   canTerminate: boolean;
   status: PipelineRunStatus;

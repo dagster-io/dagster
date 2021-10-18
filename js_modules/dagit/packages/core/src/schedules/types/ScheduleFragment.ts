@@ -43,7 +43,7 @@ export interface ScheduleFragment_scheduleState_typeSpecificData_ScheduleData {
 export type ScheduleFragment_scheduleState_typeSpecificData = ScheduleFragment_scheduleState_typeSpecificData_SensorData | ScheduleFragment_scheduleState_typeSpecificData_ScheduleData;
 
 export interface ScheduleFragment_scheduleState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

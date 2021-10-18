@@ -214,7 +214,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
 
       const slice = () => {
         const count = nodes.length;
-        if (data?.pipelineRunOrError.__typename === 'PipelineRun') {
+        if (data?.pipelineRunOrError.__typename === 'Run') {
           return data?.pipelineRunOrError.events.map((event, ii) => ({
             ...event,
             clientsideKey: `csk${count + ii}`,
@@ -228,9 +228,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
       setAfter((current) => current + newSlice.length);
 
       const status =
-        data?.pipelineRunOrError.__typename === 'PipelineRun'
-          ? data?.pipelineRunOrError.status
-          : null;
+        data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
 
       if (
         status &&
@@ -293,7 +291,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
 `;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
-  fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
+  fragment PipelineRunLogsSubscriptionStatusFragment on Run {
     id
     runId
     status
@@ -304,7 +302,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
 const RUN_LOGS_QUERY = gql`
   query RunLogsQuery($runId: ID!, $after: Cursor) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on Run {
         id
         runId
         status

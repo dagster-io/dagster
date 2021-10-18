@@ -344,7 +344,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
 
         non_engine_event_types = [
             message["__typename"]
@@ -390,7 +390,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+            assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
             return events_result.data["pipelineRunOrError"]["events"]
 
         full_logs = []

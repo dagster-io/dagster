@@ -63,13 +63,13 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       filter: {...runsFilterForSearchTokens(allTokens), pipelineName, snapshotId},
     },
     nextCursorForResult: (runs) => {
-      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
       return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
-      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
         return [];
       }
       return data.pipelineRunsOrError.results;
@@ -81,7 +81,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+            if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
                 <Box padding={{vertical: 64}}>
                   <NonIdealState
@@ -137,7 +137,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 const PIPELINE_RUNS_ROOT_QUERY = gql`
   query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...RunTableRunFragment

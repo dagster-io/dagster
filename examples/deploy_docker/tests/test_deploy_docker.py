@@ -108,7 +108,7 @@ mutation($runId: String!) {
       }
       message
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       runId
     }
     ... on PythonError {

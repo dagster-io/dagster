@@ -61,7 +61,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   }, [data]);
 
   const runs = React.useMemo(() => {
-    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'PipelineRuns') {
+    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs') {
       return data.pipelineRunsOrError.results;
     }
     return [];

@@ -26,7 +26,7 @@ mutation($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
       }
       message
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       runId
     }
     ... on PythonError {
@@ -163,7 +163,7 @@ class TestRunVariantTermination(
         result = execute_dagster_graphql(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": "nope"}
         )
-        assert result.data["terminatePipelineExecution"]["__typename"] == "PipelineRunNotFoundError"
+        assert result.data["terminatePipelineExecution"]["__typename"] == "RunNotFoundError"
 
     def test_terminate_failed(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")

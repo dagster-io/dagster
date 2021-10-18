@@ -14,25 +14,25 @@ export interface PreviousRunsFragment_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_pipeline {
+export interface PreviousRunsFragment_Runs_results_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_repositoryOrigin {
+export interface PreviousRunsFragment_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_tags {
+export interface PreviousRunsFragment_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
+export interface PreviousRunsFragment_Runs_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
@@ -41,23 +41,23 @@ export interface PreviousRunsFragment_PipelineRuns_results_stats_PipelineRunStat
   endTime: number | null;
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_stats_PythonError_cause {
+export interface PreviousRunsFragment_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface PreviousRunsFragment_PipelineRuns_results_stats_PythonError {
+export interface PreviousRunsFragment_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PreviousRunsFragment_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: PreviousRunsFragment_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsFragment_PipelineRuns_results_stats = PreviousRunsFragment_PipelineRuns_results_stats_PipelineRunStatsSnapshot | PreviousRunsFragment_PipelineRuns_results_stats_PythonError;
+export type PreviousRunsFragment_Runs_results_stats = PreviousRunsFragment_Runs_results_stats_PipelineRunStatsSnapshot | PreviousRunsFragment_Runs_results_stats_PythonError;
 
-export interface PreviousRunsFragment_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface PreviousRunsFragment_Runs_results {
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;
@@ -66,18 +66,18 @@ export interface PreviousRunsFragment_PipelineRuns_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PreviousRunsFragment_PipelineRuns_results_pipeline;
+  pipeline: PreviousRunsFragment_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
-  repositoryOrigin: PreviousRunsFragment_PipelineRuns_results_repositoryOrigin | null;
+  repositoryOrigin: PreviousRunsFragment_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
-  tags: PreviousRunsFragment_PipelineRuns_results_tags[];
-  stats: PreviousRunsFragment_PipelineRuns_results_stats;
+  tags: PreviousRunsFragment_Runs_results_tags[];
+  stats: PreviousRunsFragment_Runs_results_stats;
 }
 
-export interface PreviousRunsFragment_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: PreviousRunsFragment_PipelineRuns_results[];
+export interface PreviousRunsFragment_Runs {
+  __typename: "Runs";
+  results: PreviousRunsFragment_Runs_results[];
 }
 
-export type PreviousRunsFragment = PreviousRunsFragment_InvalidPipelineRunsFilterError | PreviousRunsFragment_PipelineRuns;
+export type PreviousRunsFragment = PreviousRunsFragment_InvalidPipelineRunsFilterError | PreviousRunsFragment_Runs;

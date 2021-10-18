@@ -13,7 +13,7 @@ import {NavigationBlock} from './NavitationBlock';
 import {DELETE_MUTATION} from './RunUtils';
 import {
   Delete,
-  Delete_deletePipelineRun_PipelineRunNotFoundError,
+  Delete_deletePipelineRun_RunNotFoundError,
   Delete_deletePipelineRun_PythonError,
   Delete_deletePipelineRun_UnauthorizedError,
 } from './types/Delete';
@@ -31,7 +31,7 @@ type SelectedRuns = {[id: string]: boolean};
 type Error =
   | Delete_deletePipelineRun_PythonError
   | Delete_deletePipelineRun_UnauthorizedError
-  | Delete_deletePipelineRun_PipelineRunNotFoundError
+  | Delete_deletePipelineRun_RunNotFoundError
   | undefined;
 
 type DeletionDialogState = {

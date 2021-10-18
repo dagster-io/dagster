@@ -14,8 +14,8 @@ type Query {
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
-  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
-  pipelineRunOrError(runId: ID!): PipelineRunOrError!
+  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunsOrError!
+  pipelineRunOrError(runId: ID!): RunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
@@ -73,7 +73,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  runs(cursor: String, limit: Int): [PipelineRun!]!
+  runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
@@ -191,7 +191,7 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  runs(cursor: String, limit: Int): [PipelineRun!]!
+  runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
@@ -268,7 +268,31 @@ type PipelineTag {
   value: String!
 }
 
-type PipelineRun {
+type Run implements PipelineRun {
+  id: ID!
+  runId: String!
+  pipelineSnapshotId: String
+  repositoryOrigin: RepositoryOrigin
+  status: PipelineRunStatus!
+  pipeline: PipelineReference!
+  pipelineName: String!
+  solidSelection: [String!]
+  stats: PipelineRunStatsOrError!
+  stepStats: [PipelineRunStepStats!]!
+  computeLogs(stepKey: String!): ComputeLogs!
+  executionPlan: ExecutionPlan
+  stepKeysToExecute: [String!]
+  runConfigYaml: String!
+  mode: String!
+  tags: [PipelineTag!]!
+  rootRunId: String
+  parentRunId: String
+  canTerminate: Boolean!
+  assets: [Asset!]!
+  events(after: Cursor): [DagsterRunEvent!]!
+}
+
+interface PipelineRun {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
@@ -437,7 +461,7 @@ type Asset {
 
 type AssetMaterialization {
   materializationEvent: StepMaterializationEvent!
-  runOrError: PipelineRunOrError!
+  runOrError: RunOrError!
   partition: String
 }
 
@@ -522,11 +546,16 @@ type AssetLineageInfo {
   partitions: [String!]!
 }
 
-union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
+union RunOrError = Run | RunNotFoundError | PythonError
 
-type PipelineRunNotFoundError implements Error {
-  message: String!
+type RunNotFoundError implements PipelineRunNotFoundError & Error {
   runId: String!
+  message: String!
+}
+
+interface PipelineRunNotFoundError {
+  runId: String!
+  message: String!
 }
 
 type AssetTag {
@@ -937,7 +966,7 @@ type InstigationState {
   status: InstigationStatus!
   repositoryOrigin: RepositoryOrigin!
   typeSpecificData: InstigationTypeSpecificData
-  runs(limit: Int): [PipelineRun!]!
+  runs(limit: Int): [Run!]!
   runsCount: Int!
   ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
   nextTick: FutureInstigationTick
@@ -973,7 +1002,7 @@ type InstigationTick {
   runIds: [String!]!
   error: PythonError
   skipReason: String
-  runs: [PipelineRun!]!
+  runs: [Run!]!
   originRunIds: [String!]!
 }
 
@@ -1026,7 +1055,7 @@ type Partition {
   mode: String!
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
-  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
+  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [Run!]!
   status: PipelineRunStatus
 }
 
@@ -1171,7 +1200,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  runs(cursor: String, limit: Int): [PipelineRun!]!
+  runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
@@ -1264,10 +1293,15 @@ type PartitionSetNotFoundError implements Error {
   partitionSetName: String!
 }
 
-union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+union RunsOrError = Runs | InvalidPipelineRunsFilterError | PythonError
 
-type PipelineRuns {
-  results: [PipelineRun!]!
+type Runs implements PipelineRuns {
+  results: [Run!]!
+  count: Int
+}
+
+interface PipelineRuns {
+  results: [Run!]!
   count: Int
 }
 
@@ -1284,7 +1318,7 @@ union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
 
 type RunGroup {
   rootRunId: String!
-  runs: [PipelineRun]
+  runs: [Run]
 }
 
 type RunGroupNotFoundError implements Error {
@@ -1411,7 +1445,7 @@ type PartitionBackfill {
   partitionSetName: String!
   timestamp: Float!
   partitionSet: PartitionSet
-  runs(limit: Int): [PipelineRun!]!
+  runs(limit: Int): [Run!]!
   error: PythonError
 }
 
@@ -1455,7 +1489,7 @@ type Mutation {
 union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
-  run: PipelineRun!
+  run: Run!
 }
 
 type InvalidStepError {
@@ -1516,14 +1550,14 @@ type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | UnauthorizedError | PythonError
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | RunNotFoundError | UnauthorizedError | PythonError
 
 type TerminatePipelineExecutionSuccess {
-  run: PipelineRun!
+  run: Run!
 }
 
 type TerminatePipelineExecutionFailure {
-  run: PipelineRun!
+  run: Run!
   message: String!
 }
 
@@ -1532,7 +1566,7 @@ enum TerminatePipelinePolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | PipelineRunNotFoundError
+union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | RunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
@@ -1604,7 +1638,7 @@ type Subscription {
 union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
-  run: PipelineRun!
+  run: Run!
   messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
 }
@@ -1814,7 +1848,7 @@ type ScheduleTick {
 union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
 
 type ScheduleTickSuccessData {
-  run: PipelineRun
+  run: Run
 }
 
 type ScheduleTickFailureData {

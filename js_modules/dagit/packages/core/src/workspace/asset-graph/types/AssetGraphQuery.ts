@@ -42,29 +42,29 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_depende
   upstreamAsset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun_repositoryOrigin {
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
-  repositoryOrigin: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun_repositoryOrigin | null;
+  repositoryOrigin: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin | null;
   status: PipelineRunStatus;
 }
 
-export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_PipelineRun;
+export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run;
 
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_stepStats {
   __typename: "PipelineRunStepStats";

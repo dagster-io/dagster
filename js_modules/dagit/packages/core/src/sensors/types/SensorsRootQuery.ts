@@ -59,7 +59,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typ
 export type SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData = SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_SensorData | SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;
@@ -154,7 +154,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export type SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData = SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData | SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData;
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

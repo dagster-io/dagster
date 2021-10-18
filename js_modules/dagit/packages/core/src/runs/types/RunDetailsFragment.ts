@@ -24,7 +24,7 @@ export interface RunDetailsFragment_stats_PipelineRunStatsSnapshot {
 export type RunDetailsFragment_stats = RunDetailsFragment_stats_PythonError | RunDetailsFragment_stats_PipelineRunStatsSnapshot;
 
 export interface RunDetailsFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   stats: RunDetailsFragment_stats;
   status: PipelineRunStatus;

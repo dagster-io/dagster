@@ -35,7 +35,7 @@ def test_get_run_status_fails_with_python_error(mock_client: MockClient):
 
 @python_client_test_suite
 def test_get_run_status_fails_with_pipeline_run_not_found_error(mock_client: MockClient):
-    error_type, error_msg = "PipelineRunNotFoundError", "The specified pipeline run does not exist"
+    error_type, error_msg = "RunNotFoundError", "The specified pipeline run does not exist"
     response = {"pipelineRunOrError": {"__typename": error_type, "message": error_msg}}
     mock_client.mock_gql_client.execute.return_value = response
 

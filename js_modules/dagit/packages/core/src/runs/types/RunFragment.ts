@@ -79,7 +79,7 @@ export interface RunFragment_stats_PipelineRunStatsSnapshot {
 export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_PipelineRunStatsSnapshot;
 
 export interface RunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runConfigYaml: string;
   runId: string;

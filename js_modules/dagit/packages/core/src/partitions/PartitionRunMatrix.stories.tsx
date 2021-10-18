@@ -82,7 +82,7 @@ function buildRun(
   const id = faker.random.uuid().slice(0, 8);
   const startTime = new Date(isoDateString).getTime() / 1000;
   const result: PartitionRunMatrixRunFragment = {
-    __typename: 'PipelineRun',
+    __typename: 'Run',
     id: id,
     runId: id,
     stats: {

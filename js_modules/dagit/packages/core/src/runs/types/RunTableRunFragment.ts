@@ -53,7 +53,7 @@ export interface RunTableRunFragment_stats_PythonError {
 export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
 
 export interface RunTableRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

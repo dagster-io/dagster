@@ -100,7 +100,7 @@ query($runId: ID!) {
     ... on PipelineRun {
         status
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       message
     }
     ... on PythonError {

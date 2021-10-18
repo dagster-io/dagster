@@ -15,13 +15,13 @@ export interface Terminate_terminatePipelineExecution_TerminatePipelineExecution
   message: string;
 }
 
-export interface Terminate_terminatePipelineExecution_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError";
+export interface Terminate_terminatePipelineExecution_RunNotFoundError {
+  __typename: "RunNotFoundError";
   message: string;
 }
 
 export interface Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   canTerminate: boolean;
@@ -42,7 +42,7 @@ export interface Terminate_terminatePipelineExecution_PythonError {
   message: string;
 }
 
-export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure | Terminate_terminatePipelineExecution_PipelineRunNotFoundError | Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;
+export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure | Terminate_terminatePipelineExecution_RunNotFoundError | Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;
 
 export interface Terminate {
   terminatePipelineExecution: Terminate_terminatePipelineExecution;

@@ -96,7 +96,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     runIds = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
-    runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+    runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     originRunIds = non_null_list(graphene.String)
 
     class Meta:
@@ -118,17 +118,17 @@ class GrapheneInstigationTick(graphene.ObjectType):
         return "%s:%s" % (self._job_tick.job_origin_id, self._job_tick.timestamp)
 
     def resolve_runs(self, graphene_info):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
         if self._job_tick.origin_run_ids:
             return [
-                GraphenePipelineRun(instance.get_run_by_id(run_id))
+                GrapheneRun(instance.get_run_by_id(run_id))
                 for run_id in self._job_tick.origin_run_ids
                 if instance.has_run(run_id)
             ]
         return [
-            GraphenePipelineRun(instance.get_run_by_id(run_id))
+            GrapheneRun(instance.get_run_by_id(run_id))
             for run_id in self._job_tick.run_ids
             if instance.has_run(run_id)
         ]
@@ -257,7 +257,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
     typeSpecificData = graphene.Field(GrapheneInstigationTypeSpecificData)
     runs = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun"),
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
     )
     runsCount = graphene.NonNull(graphene.Int)
@@ -299,14 +299,14 @@ class GrapheneInstigationState(graphene.ObjectType):
         return None
 
     def resolve_runs(self, graphene_info, **kwargs):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneRun
 
         if self._job_state.job_type == JobType.SENSOR:
             filters = PipelineRunsFilter.for_sensor(self._job_state)
         else:
             filters = PipelineRunsFilter.for_schedule(self._job_state)
         return [
-            GraphenePipelineRun(r)
+            GrapheneRun(r)
             for r in graphene_info.context.instance.get_runs(
                 filters=filters,
                 limit=kwargs.get("limit"),

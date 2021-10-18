@@ -42,7 +42,7 @@ export interface SensorFragment_sensorState_typeSpecificData_ScheduleData {
 export type SensorFragment_sensorState_typeSpecificData = SensorFragment_sensorState_typeSpecificData_SensorData | SensorFragment_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorFragment_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

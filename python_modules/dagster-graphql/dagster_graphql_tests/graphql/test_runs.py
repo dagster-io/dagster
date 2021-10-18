@@ -277,7 +277,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             read_context, DELETE_RUN_MUTATION, variables={"runId": run_id_two}
         )
-        assert result.data["deletePipelineRun"]["__typename"] == "PipelineRunNotFoundError"
+        assert result.data["deletePipelineRun"]["__typename"] == "RunNotFoundError"
 
 
 def get_repo_at_time_1():

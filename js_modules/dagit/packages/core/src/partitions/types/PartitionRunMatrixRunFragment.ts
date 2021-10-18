@@ -46,7 +46,7 @@ export interface PartitionRunMatrixRunFragment_stepStats {
 }
 
 export interface PartitionRunMatrixRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   tags: PartitionRunMatrixRunFragment_tags[];

@@ -37,7 +37,7 @@ export interface InstigationStateFragment_typeSpecificData_ScheduleData {
 export type InstigationStateFragment_typeSpecificData = InstigationStateFragment_typeSpecificData_SensorData | InstigationStateFragment_typeSpecificData_ScheduleData;
 
 export interface InstigationStateFragment_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

@@ -15,7 +15,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStep
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   pipelineName: string;

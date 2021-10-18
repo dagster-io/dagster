@@ -60,15 +60,15 @@ from ..instigation import (
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
-from ..pipelines.pipeline import GraphenePipelineRunOrError
+from ..pipelines.pipeline import GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
-    GraphenePipelineRuns,
-    GraphenePipelineRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
     GrapheneRunGroupsOrError,
+    GrapheneRuns,
+    GrapheneRunsOrError,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
@@ -143,16 +143,14 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     pipelineRunsOrError = graphene.Field(
-        graphene.NonNull(GraphenePipelineRunsOrError),
+        graphene.NonNull(GrapheneRunsOrError),
         filter=graphene.Argument(GraphenePipelineRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
-
     pipelineRunOrError = graphene.Field(
-        graphene.NonNull(GraphenePipelineRunOrError), runId=graphene.NonNull(graphene.ID)
+        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
     )
-
     pipelineRunTags = non_null_list(GraphenePipelineTagAndValues)
 
     runGroupOrError = graphene.Field(
@@ -309,7 +307,7 @@ class GrapheneQuery(graphene.ObjectType):
         if filters is not None:
             filters = filters.to_selector()
 
-        return GraphenePipelineRuns(
+        return GrapheneRuns(
             filters=filters,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),

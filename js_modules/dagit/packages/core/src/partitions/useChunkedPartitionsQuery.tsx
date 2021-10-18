@@ -276,7 +276,7 @@ async function fetchRunsForFilter(
     variables,
   });
   return (
-    (result.data.pipelineRunsOrError.__typename === 'PipelineRuns' &&
+    (result.data.pipelineRunsOrError.__typename === 'Runs' &&
       result.data.pipelineRunsOrError.results) ||
     []
   );
@@ -318,7 +318,7 @@ const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
 const PARTITION_SET_LOADER_QUERY = gql`
   query PartitionSetLoaderQuery($filter: PipelineRunsFilter!, $cursor: String, $limit: Int) {
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...PartitionSetLoaderRunFragment

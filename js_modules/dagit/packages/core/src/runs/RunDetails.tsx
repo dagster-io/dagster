@@ -162,7 +162,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 };
 
 export const RUN_DETAILS_FRAGMENT = gql`
-  fragment RunDetailsFragment on PipelineRun {
+  fragment RunDetailsFragment on Run {
     id
     stats {
       ... on PipelineRunStatsSnapshot {

@@ -40,7 +40,7 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
 
 
 def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
-    from ...schema.pipelines.pipeline import GraphenePipelineRun
+    from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.runs import GrapheneLaunchPipelineRunSuccess
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -49,4 +49,4 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     run = do_launch(graphene_info, execution_params, is_reexecuted)
 
-    return GrapheneLaunchPipelineRunSuccess(run=GraphenePipelineRun(run))
+    return GrapheneLaunchPipelineRunSuccess(run=GrapheneRun(run))

@@ -43,7 +43,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSp
 export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData;
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   status: PipelineRunStatus;

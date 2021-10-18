@@ -55,7 +55,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
     return <Spinner purpose="section" />;
   }
 
-  if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+  if (data.pipelineRunsOrError.__typename !== 'Runs') {
     return (
       <NonIdealState
         icon="error"

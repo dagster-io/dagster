@@ -140,28 +140,28 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializa
   assetLineage: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[];
 }
 
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin {
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
-  repositoryOrigin: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin | null;
+  repositoryOrigin: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_Run_repositoryOrigin | null;
 }
 
-export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
+export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_Run;
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   __typename: "AssetMaterialization";

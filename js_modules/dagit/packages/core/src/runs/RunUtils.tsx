@@ -183,7 +183,7 @@ export const DELETE_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PipelineRunNotFoundError {
+      ... on RunNotFoundError {
         message
       }
     }
@@ -197,7 +197,7 @@ export const TERMINATE_MUTATION = gql`
       ... on TerminatePipelineExecutionFailure {
         message
       }
-      ... on PipelineRunNotFoundError {
+      ... on RunNotFoundError {
         message
       }
       ... on TerminatePipelineExecutionSuccess {
@@ -306,7 +306,7 @@ export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
 });
 
 export const RUN_TIME_FRAGMENT = gql`
-  fragment RunTimeFragment on PipelineRun {
+  fragment RunTimeFragment on Run {
     id
     status
     stats {

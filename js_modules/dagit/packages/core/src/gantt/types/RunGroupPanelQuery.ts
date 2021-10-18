@@ -50,7 +50,7 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonEr
 export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   parentRunId: string | null;
