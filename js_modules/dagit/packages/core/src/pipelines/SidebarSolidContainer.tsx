@@ -5,7 +5,7 @@ import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerPath} from './PipelinePathUtils';
@@ -33,7 +33,7 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
   onClickSolid,
   repoAddress,
 }) => {
-  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {

@@ -56,8 +56,10 @@ export const RunTable = (props: RunTableProps) => {
   if (runs.length === 0) {
     return (
       <div>
-        <Box padding={{vertical: 8, left: 24, right: 12}}>{actionBarComponents}</Box>
-        <Box margin={{vertical: 64}}>
+        {actionBarComponents ? (
+          <Box padding={{vertical: 8, left: 24, right: 12}}>{actionBarComponents}</Box>
+        ) : null}
+        <Box margin={{vertical: 32}}>
           {nonIdealState || (
             <NonIdealState
               icon="run"

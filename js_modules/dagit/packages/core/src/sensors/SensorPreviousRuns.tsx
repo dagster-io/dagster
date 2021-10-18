@@ -48,7 +48,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
   return (
     <Group direction="column" spacing={4}>
       <Box
-        padding={{bottom: 12}}
+        padding={{vertical: 16, horizontal: 24}}
         border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
         flex={{direction: 'row'}}
       >
@@ -56,7 +56,11 @@ export const NoTargetSensorPreviousRuns: React.FC<{
       </Box>
       <div style={{color: ColorsWIP.Gray400}}>
         <Box margin={{vertical: 64}}>
-          <NonIdealState icon="sensors" description="Sensor does not target a pipeline." />
+          <NonIdealState
+            icon="sensors"
+            title="No runs to display"
+            description="Sensor does not target a pipeline."
+          />
         </Box>
       </div>
     </Group>

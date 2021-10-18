@@ -10,7 +10,6 @@ import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -141,13 +140,17 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         }
       />
       {selectedTab === 'queued' ? (
-        <Group direction="column" spacing={8} padding={{horizontal: 24, vertical: 16}}>
+        <Box
+          flex={{direction: 'column', gap: 8}}
+          padding={{horizontal: 24, vertical: 16}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Alert
             intent="info"
             title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
           />
           <QueueDaemonAlert />
-        </Group>
+        </Box>
       ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
         <Loading queryResult={queryResult} allowStaleData={true}>
@@ -165,14 +168,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             }
 
             if (showScheduled) {
-              return (
-                <Box
-                  padding={{vertical: 16}}
-                  border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-                >
-                  <AllScheduledTicks />
-                </Box>
-              );
+              return <AllScheduledTicks />;
             }
 
             return (

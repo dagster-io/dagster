@@ -147,13 +147,15 @@ export const TickHistory = ({
     return (
       <>
         <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          padding={{top: 16, horizontal: 24}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
           <Subheading>Tick History</Subheading>
           {tabs}
         </Box>
-        <Spinner purpose="section" />
+        <Box padding={{vertical: 64}}>
+          <Spinner purpose="section" />
+        </Box>
       </>
     );
   }
@@ -203,10 +205,7 @@ export const TickHistory = ({
   const now = Date.now();
   return (
     <>
-      <Box
-        padding={{top: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-      >
+      <Box padding={{top: 16, horizontal: 24}}>
         <Subheading>Tick History</Subheading>
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
           {tabs}

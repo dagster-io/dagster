@@ -5,7 +5,7 @@ import {RouteComponentProps, useHistory} from 'react-router-dom';
 import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
-import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -85,7 +85,7 @@ export const PipelineExplorerContainer: React.FC<{
 
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
   const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
-  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
 
   const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(

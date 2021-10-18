@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
-import {isThisThingAJob, usePipelineSelector, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, buildPipelineSelector, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -22,7 +22,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
 }> = (props) => {
   const {explorerPath, repoAddress} = props;
   const {pipelineName} = explorerPath;
-  const pipelineSelector = usePipelineSelector(repoAddress, pipelineName);
+  const pipelineSelector = buildPipelineSelector(repoAddress, pipelineName);
 
   const queryResult = useQuery<JobOverviewSidebarQuery, JobOverviewSidebarQueryVariables>(
     JOB_OVERVIEW_SIDEBAR_QUERY,

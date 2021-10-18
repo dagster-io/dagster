@@ -125,7 +125,7 @@ interface HighlightableTextProps {
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray100 : 'transparent')};
-  box-shadow: ${({isHighlight}) => (isHighlight ? ColorsWIP.HighlightGreen : 'transparent')} 6px 0 0
+  box-shadow: ${({isHighlight}) => (isHighlight ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0
     inset;
   color: ${ColorsWIP.Gray700};
   display: flex;

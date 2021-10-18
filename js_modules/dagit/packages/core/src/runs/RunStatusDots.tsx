@@ -41,7 +41,7 @@ interface RunStatusProps {
 
 export const RunStatus: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
-    return <Spinner purpose="body-text" />;
+    return <Spinner purpose="caption-text" />;
   }
   return (
     <RunStatusDot

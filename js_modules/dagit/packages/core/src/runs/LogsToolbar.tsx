@@ -61,10 +61,16 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     onSetComputeLogKey,
     computeLogUrl,
   } = props;
+
+  const activeItems = React.useMemo(
+    () => new Set([logType === LogType.structured ? logType : LogType.stdout]),
+    [logType],
+  );
+
   return (
     <OptionsContainer>
       <ButtonGroup
-        activeItems={new Set([logType])}
+        activeItems={activeItems}
         buttons={[
           {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
           {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
