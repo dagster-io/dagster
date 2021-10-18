@@ -4,7 +4,7 @@ from docs_snippets_crag.concepts.io_management.subselection import (
 )
 
 
-def test_execute_pipeline():
+def test_execute_job():
     execute_full()
 
 

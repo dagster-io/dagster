@@ -67,11 +67,9 @@ def execute_full():
 
 def execute_subselection():
     # start_execute_subselection
-    my_job.execute_in_process()
-    execute_pipeline(
-        my_pipeline,
-        solid_selection=["solid2"],
-        run_config={"solids": {"solid2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
+    my_job.execute_in_process(
+        run_config={"ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
+        op_selection=["op2"],
     )
 
     # end_execute_subselection
