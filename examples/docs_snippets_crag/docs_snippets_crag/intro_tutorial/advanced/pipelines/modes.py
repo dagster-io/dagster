@@ -8,15 +8,7 @@ from typing import Any
 import requests
 import sqlalchemy
 import sqlalchemy.ext.declarative
-from dagster import (
-    Field,
-    ModeDefinition,
-    String,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import Field, String, graph, op, repository, resource
 
 
 class LocalSQLiteWarehouse:
@@ -86,15 +78,15 @@ class SqlAlchemyPostgresWarehouse:
         NormalizedCereal.__table__.insert().execute(records)
 
 
-# end_modes_marker_0
-
-
 @resource(config_schema={"conn_str": Field(String)})
 def sqlalchemy_postgres_warehouse_resource(context):
     return SqlAlchemyPostgresWarehouse(context.resource_config["conn_str"])
 
 
-@solid
+# end_modes_marker_0
+
+
+@op
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -102,7 +94,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 
 
-@solid(required_resource_keys={"warehouse"})
+@op(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
         "calories",
@@ -129,22 +121,17 @@ def normalize_calories(context, cereals):
 
 
 # start_modes_marker_1
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="unittest",
-            resource_defs={"warehouse": local_sqlite_warehouse_resource},
-        ),
-        ModeDefinition(
-            name="dev",
-            resource_defs={
-                "warehouse": sqlalchemy_postgres_warehouse_resource
-            },
-        ),
-    ]
-)
-def modes_pipeline():
+@graph
+def calories():
     normalize_calories(download_csv())
+
+
+calories_test_job = calories.to_job(
+    resource_defs={"warehouse": local_sqlite_warehouse_resource}
+)
+calories_dev_job = calories.to_job(
+    resource_defs={"warehouse": sqlalchemy_postgres_warehouse_resource}
+)
 
 
 # end_modes_marker_1
@@ -155,10 +142,14 @@ if __name__ == "__main__":
     run_config = {
         "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}
     }
-    result = execute_pipeline(
-        pipeline=modes_pipeline,
-        mode="unittest",
-        run_config=run_config,
-    )
+    result = calories_test_job.execute_in_process(run_config=run_config)
     # end_modes_main
     assert result.success
+
+# start_repo_marker
+@repository
+def dev_repo():
+    return [calories_dev_job]
+
+
+# end_repo_marker
