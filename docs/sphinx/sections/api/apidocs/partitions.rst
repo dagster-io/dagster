@@ -18,7 +18,7 @@ Partitions
 
 .. autofunction:: monthly_partitioned_config
 
-.. autofunction:: schedule_from_partitions
+.. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
 Legacy Functions

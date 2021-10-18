@@ -85,7 +85,7 @@ from .partition import (
     dynamic_partitioned_config,
     static_partitioned_config,
 )
-from .partitioned_schedule import schedule_from_partitions
+from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import (

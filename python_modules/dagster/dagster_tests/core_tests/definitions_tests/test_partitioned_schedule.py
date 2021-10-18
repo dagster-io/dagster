@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pendulum
 from dagster import build_schedule_context, graph, repository, solid
-from dagster.core.definitions.partitioned_schedule import schedule_from_partitions
+from dagster.core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
     daily_partitioned_config,
@@ -18,7 +18,7 @@ def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(pendulum.parse(start), pendulum.parse(end))
 
 
-def job_for_partitions(
+def schedule_for_partitioned_config(
     partitioned_config, minute_of_hour=None, hour_of_day=None, day_of_week=None, day_of_month=None
 ):
     @solid
@@ -29,7 +29,7 @@ def job_for_partitions(
     def my_graph():
         my_solid()
 
-    return schedule_from_partitions(
+    return build_schedule_from_partitioned_job(
         my_graph.to_job(config=partitioned_config),
         minute_of_hour=minute_of_hour,
         hour_of_day=hour_of_day,
@@ -38,12 +38,14 @@ def job_for_partitions(
     )
 
 
-def test_daily_schedule_from_partitions():
+def test_daily_schedule():
     @daily_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
         return {"start": str(start), "end": str(end)}
 
-    my_schedule = job_for_partitions(my_partitioned_config, hour_of_day=9, minute_of_hour=30)
+    my_schedule = schedule_for_partitioned_config(
+        my_partitioned_config, hour_of_day=9, minute_of_hour=30
+    )
     assert my_schedule.cron_schedule == "30 9 * * *"
 
     assert my_schedule.evaluate_tick(
@@ -60,12 +62,12 @@ def test_daily_schedule_from_partitions():
         return [my_schedule]
 
 
-def test_hourly_schedule_from_partitions():
+def test_hourly_schedule():
     @hourly_partitioned_config(start_date=datetime(2021, 5, 5))
     def my_partitioned_config(start, end):
         return {"start": str(start), "end": str(end)}
 
-    my_schedule = job_for_partitions(my_partitioned_config, minute_of_hour=30)
+    my_schedule = schedule_for_partitioned_config(my_partitioned_config, minute_of_hour=30)
     assert my_schedule.cron_schedule == "30 * * * *"
 
     assert my_schedule.evaluate_tick(
@@ -82,12 +84,12 @@ def test_hourly_schedule_from_partitions():
         return [my_schedule]
 
 
-def test_weekly_schedule_from_partitions():
+def test_weekly_schedule():
     @weekly_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
         return {"start": str(start), "end": str(end)}
 
-    my_schedule = job_for_partitions(
+    my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_week=2
     )
     assert my_schedule.cron_schedule == "30 9 * * 2"
@@ -106,12 +108,12 @@ def test_weekly_schedule_from_partitions():
         return [my_schedule]
 
 
-def test_monthly_schedule_from_partitions():
+def test_monthly_schedule():
     @monthly_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
         return {"start": str(start), "end": str(end)}
 
-    my_schedule = job_for_partitions(
+    my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_month=2
     )
     assert my_schedule.cron_schedule == "30 9 2 * *"

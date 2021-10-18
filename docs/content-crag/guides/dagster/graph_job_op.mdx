@@ -526,7 +526,13 @@ def do_it_all_repo():
 With the job APIs, you can first define a graph, and then a job with partitioning. These partitions exist independently of any schedule, and can be used for backfills. A schedule can then be derived from that partitioning, while providing execution time information. The resulting schedule can be independently passed to a repository, and the underlying job will be inferred.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_partition_schedule.py
-from dagster import daily_partitioned_config, job, op, repository, schedule_from_partitions
+from dagster import (
+    build_schedule_from_partitioned_job,
+    daily_partitioned_config,
+    job,
+    op,
+    repository,
+)
 
 
 @op(config_schema={"date": str})
@@ -544,7 +550,7 @@ def do_it_all():
     do_something_with_config()
 
 
-do_it_all_schedule = schedule_from_partitions(do_it_all)
+do_it_all_schedule = build_schedule_from_partitioned_job(do_it_all)
 
 
 @repository

@@ -25,7 +25,7 @@ Partitioned Schedules
 
 .. currentmodule:: dagster
 
-.. autofunction:: schedule_from_partitions
+.. autofunction:: build_schedule_from_partitioned_job
 
 .. autoclass:: PartitionScheduleDefinition
 
