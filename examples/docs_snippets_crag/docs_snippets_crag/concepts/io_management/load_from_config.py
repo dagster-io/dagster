@@ -1,4 +1,4 @@
-from dagster import In, InputDefinition, String, job, op
+from dagster import In, String, job, op
 
 
 # def_start_marker

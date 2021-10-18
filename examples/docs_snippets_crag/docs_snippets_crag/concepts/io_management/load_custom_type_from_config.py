@@ -1,10 +1,4 @@
-from dagster import (
-    In,
-    dagster_type_loader,
-    job,
-    op,
-    usable_as_dagster_type,
-)
+from dagster import In, dagster_type_loader, job, op, usable_as_dagster_type
 
 
 # def_start_marker
