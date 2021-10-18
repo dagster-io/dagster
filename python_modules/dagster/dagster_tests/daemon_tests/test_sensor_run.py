@@ -62,7 +62,7 @@ def the_pipeline():
     the_solid()
 
 
-@graph
+@graph()
 def the_graph():
     the_solid()
 
@@ -80,7 +80,7 @@ def config_pipeline():
     config_solid()
 
 
-@graph
+@graph()
 def config_graph():
     config_solid()
 
@@ -120,7 +120,7 @@ def failure_pipeline():
     failure_solid()
 
 
-@graph
+@graph()
 def failure_graph():
     failure_solid()
 

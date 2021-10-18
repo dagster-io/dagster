@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
-from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
 from ..graph import GraphDefinition
@@ -90,9 +89,8 @@ class _Graph:
         return graph_def
 
 
-@experimental_decorator
 def graph(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 from dagster import check
 from dagster.core.definitions.executor import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
-from dagster.utils.backcompat import experimental_arg_warning
 from dagster.utils.merger import merge_dicts
 
 from .config import ConfigMapping
@@ -53,8 +52,8 @@ class ModeDefinition(
         intermediate_storage_defs (Optional[List[IntermediateStorageDefinition]]): The set of intermediate storage
             options available when executing in this mode. By default, this will be the 'in_memory'
             and 'filesystem' system storages.
-        _config_mapping (Optional[ConfigMapping]): Experimental
-        _partitions (Optional[PartitionedConfig]): Experimental
+        _config_mapping (Optional[ConfigMapping]): Only for internal use.
+        _partitions (Optional[PartitionedConfig]): Only for internal use.
     """
 
     def __new__(
@@ -89,12 +88,6 @@ class ModeDefinition(
             resource_defs_with_defaults = merge_dicts(
                 {"io_manager": mem_io_manager}, resource_defs or {}
             )
-
-        if _config_mapping:
-            experimental_arg_warning("_config_mapping", "ModeDefinition.__new__")
-
-        if _partitioned_config:
-            experimental_arg_warning("_partitioned_config", "ModeDefinition.__new__")
 
         return super(ModeDefinition, cls).__new__(
             cls,
