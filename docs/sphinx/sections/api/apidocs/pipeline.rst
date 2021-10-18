@@ -31,7 +31,7 @@ Executing pipelines
 
 
 Re-executing pipelines
--------------------
+----------------------
 
 .. autofunction:: reexecute_pipeline
 
