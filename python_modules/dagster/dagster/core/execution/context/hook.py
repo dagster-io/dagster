@@ -2,7 +2,6 @@ import warnings
 from typing import Any, Dict, Optional, Set, Union, cast
 
 from dagster import check
-from dagster.utils.backcompat import experimental_arg_warning
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph import graph
