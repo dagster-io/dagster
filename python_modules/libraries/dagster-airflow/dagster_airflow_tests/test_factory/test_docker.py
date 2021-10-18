@@ -36,7 +36,6 @@ def test_fs_storage_no_explicit_base_dir(
         ),
         environment_yaml=[
             os.path.join(environments_path, "env.yaml"),
-            os.path.join(environments_path, "env_filesystem_no_explicit_base_dir.yaml"),
         ],
         image=dagster_docker_image,
     )

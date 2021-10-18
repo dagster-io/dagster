@@ -1,4 +1,4 @@
-intermediate_storage:
-  filesystem:
+resources:
+  io_manager:
     config:
       base_dir: /tmp

@@ -211,7 +211,7 @@ def bar(_, input_arg):
     return input_arg
 
 
-@pipeline(mode_def=ModeDefinition(resource_defs={"io_manager": fs_io_manager}))
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
 def optional_outputs():
     foo_res = foo()
     bar.alias("first_consumer")(input_arg=foo_res.out_1)
