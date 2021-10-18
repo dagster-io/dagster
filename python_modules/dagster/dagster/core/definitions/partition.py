@@ -33,7 +33,9 @@ T = TypeVar("T")
 
 class Partition(Generic[T]):
     """
-    A Partition represents a single slice of the entire set of a job's possible work.
+    A Partition represents a single slice of the entire set of a job's possible work. It consists
+    of a value, which is an object that represents that partition, and an optional name, which is
+    used to label the partition in a human-readable way.
 
     Args:
         value (Any): The object for this partition

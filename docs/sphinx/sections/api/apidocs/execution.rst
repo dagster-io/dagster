@@ -53,9 +53,11 @@ Executors
 Contexts
 --------
 
-.. autoclass:: SystemComputeExecutionContext
+.. autoclass:: OpExecutionContext
   :members:
   :inherited-members:
+
+.. autofunction:: build_op_context
 
 .. autoclass:: TypeCheckContext
   :members:

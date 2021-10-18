@@ -256,7 +256,7 @@ def reconstructable(target):
 
     .. code-block:: python
 
-        from dagster import JobDefinition, job, reconstructable
+        from dagster import job, reconstructable
 
         @job
         def foo_job():
@@ -266,7 +266,10 @@ def reconstructable(target):
 
 
         def make_bar_job():
-            return JobDefinition(...)
+            @job
+            def xyz():
+                # make this job
+                ...
 
         reconstructable_bar_job = reconstructable(bar_job)
     """

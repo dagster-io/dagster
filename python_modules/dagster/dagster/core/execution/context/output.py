@@ -174,7 +174,7 @@ class OutputContext:
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
-                "but it was not provided when constructing the OutputDefinition"
+                "but it was not provided when constructing the OutputContext"
             )
 
         return cast(OpDefinition, self._solid_def)
