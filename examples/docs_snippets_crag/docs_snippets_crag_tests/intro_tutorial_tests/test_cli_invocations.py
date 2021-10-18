@@ -125,7 +125,7 @@ cli_args = [
     (
         "advanced/materializations/",
         "materializations.py",
-        "materialization_pipeline",
+        "materialization_job",
         None,
         None,
         None,
