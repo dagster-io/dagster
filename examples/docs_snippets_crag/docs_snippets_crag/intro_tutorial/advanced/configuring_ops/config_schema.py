@@ -1,11 +1,11 @@
 import csv
 
 import requests
-from dagster import solid
+from dagster import op
 
 
-@solid(config_schema={"url": str})
+@op(config_schema={"url": str})
 def download_csv(context):
-    response = requests.get(context.solid_config["url"])
+    response = requests.get(context.op_config["url"])
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]

@@ -1,11 +1,11 @@
 import csv
 
 import requests
-from dagster import solid
+from dagster import op
 
 
 # start_download_cereals_marker
-@solid
+@op
 def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -16,9 +16,9 @@ def download_cereals():
 
 
 # start_download_csv_marker
-@solid
+@op
 def download_csv(context):
-    response = requests.get(context.solid_config["url"])
+    response = requests.get(context.op_config["url"])
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
