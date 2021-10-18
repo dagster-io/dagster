@@ -419,7 +419,9 @@ class PipelineDefinition:
     def dagster_type_named(self, name):
         return self._graph_def.dagster_type_named(name)
 
-    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> "PipelineDefinition":
+    def get_pipeline_subset_def(
+        self, solids_to_execute: Optional[AbstractSet[str]]
+    ) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
@@ -583,7 +585,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return True
 
     def get_pipeline_subset_def(
-        self, solids_to_execute: AbstractSet[str]
+        self, solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
@@ -1033,11 +1035,15 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
+    from dagster.core.definitions.job import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    if pipeline_def.is_subset_pipeline:
+    if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
+        # JobDefinition isn't aware of full graph but it threads ignored_solids in via OpSelectionData
+        ignored_solids = pipeline_def.op_selection_data.ignored_solids
+    elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")
 
