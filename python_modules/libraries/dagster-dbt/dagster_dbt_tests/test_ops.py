@@ -1,6 +1,5 @@
-import pytest
 from dagster import build_op_context, job
-from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op, dbt_seed_op, dbt_compile_op
+from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_seed_op, dbt_test_op
 
 
 def test_seed_op(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=unused-argument

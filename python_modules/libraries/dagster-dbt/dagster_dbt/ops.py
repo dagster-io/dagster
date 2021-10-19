@@ -1,4 +1,5 @@
-from dagster import op, OpDefinition, In, Out, Output, Nothing, Field, Permissive, Array, Bool
+from dagster import Array, Bool, Field, In, Nothing, OpDefinition, Out, Output, op
+
 from .types import DbtOutput
 from .utils import generate_materializations
 

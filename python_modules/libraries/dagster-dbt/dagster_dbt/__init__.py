@@ -13,14 +13,6 @@ from .cli import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
-from .ops import (
-    dbt_run_op,
-    dbt_compile_op,
-    dbt_test_op,
-    dbt_snapshot_op,
-    dbt_seed_op,
-    dbt_docs_generate_op,
-)
 from .dbt_resource import DbtResource
 from .errors import (
     DagsterDbtCliFatalRuntimeError,
@@ -30,6 +22,14 @@ from .errors import (
     DagsterDbtCliUnexpectedOutputError,
     DagsterDbtError,
     DagsterDbtRpcUnexpectedPollOutputError,
+)
+from .ops import (
+    dbt_compile_op,
+    dbt_docs_generate_op,
+    dbt_run_op,
+    dbt_seed_op,
+    dbt_snapshot_op,
+    dbt_test_op,
 )
 from .rpc import (
     DbtRpcClient,
