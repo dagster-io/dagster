@@ -203,9 +203,19 @@ class ResolvedRunConfig(
         ):
             config_mapped_execution_configs: Optional[Dict[str, Any]] = {}
         else:
-            config_mapped_execution_configs = config_map_objects(
-                config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
-            )
+            if pipeline_def.is_job:
+                executor_config = config_value.get("execution", {})
+                config_mapped_execution_configs = config_map_executor(
+                    executor_config, mode_def.executor_defs[0]
+                )
+            else:
+                config_mapped_execution_configs = config_map_objects(
+                    config_value,
+                    mode_def.executor_defs,
+                    "execution",
+                    ExecutorDefinition,
+                    "executor",
+                )
 
         resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
         resource_configs = config_value.get("resources", {})
@@ -298,6 +308,21 @@ def run_config_storage_field_backcompat(run_config: Dict[str, Any]) -> Dict[str,
             or run_config.get("storage")
         }
     return deep_merge_dicts(run_config, intermediate_storage_dict)
+
+
+def config_map_executor(
+    executor_config: Dict[str, Any],
+    executor_def: ExecutorDefinition,
+) -> Dict[str, Any]:
+    executor_config_evr = executor_def.apply_config_mapping(executor_config)
+    if not executor_config_evr.success:
+        raise DagsterInvalidConfigError(
+            f"Invalid configuration provided for executor '{executor_def.name}'",
+            executor_config_evr.errors,
+            executor_config,
+        )
+
+    return {executor_def.name: executor_config_evr.value}
 
 
 def config_map_resources(

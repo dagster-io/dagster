@@ -105,6 +105,10 @@ def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
     return Field(selector)
 
 
+def define_single_execution_field(executor_def: ExecutorDefinition) -> Field:
+    return def_config_field(executor_def)
+
+
 def define_storage_field(
     storage_selector: Selector, storage_names: List[str], defaults: Set[str]
 ) -> Field:
@@ -137,10 +141,16 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         is_required=False,
     )
 
+    execution_field = (
+        define_execution_field(creation_data.mode_definition.executor_defs)
+        if not creation_data.is_using_graph_job_op_apis
+        else define_single_execution_field(creation_data.mode_definition.executor_defs[0])
+    )
+
     fields = {
         "storage": storage_field,
         "intermediate_storage": intermediate_storage_field,
-        "execution": define_execution_field(creation_data.mode_definition.executor_defs),
+        "execution": execution_field,
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
         "resources": Field(
             define_resource_dictionary_cls(
