@@ -60,7 +60,7 @@ def always_succeed(_):
     return 1
 
 
-@graph
+@graph()
 def comp_always_succeed():
     always_succeed()
 

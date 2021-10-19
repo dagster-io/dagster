@@ -2,7 +2,6 @@ import warnings
 from typing import Any, Dict, Optional, Set, Union, cast
 
 from dagster import check
-from dagster.utils.backcompat import experimental_arg_warning
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph import graph
@@ -400,7 +399,6 @@ def build_hook_context(
     """
     check.invariant(not (solid and op), "cannot set both `solid` and `op`")
     if op:
-        experimental_arg_warning("op", "build_hook_context")
         return UnboundHookContext(
             resources=check.opt_dict_param(resources, "resources", key_type=str),
             mode_def=None,

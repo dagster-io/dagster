@@ -75,7 +75,7 @@ def do_input_op(x):
     return x
 
 
-@graph
+@graph()
 def qux():
     do_input_op(do_something_op())
 
@@ -231,30 +231,28 @@ def fail_op(context):
     raise Exception("FAILURE OP")
 
 
-@graph
+@graph()
 def my_stdout():
     spew_op()
 
 
-@graph
+@graph()
 def my_stderr():
     fail_op()
 
 
-@op(
-    out={"out_1": Out(String), "out_2": Out(String)},
-)
-def root(context):
+@op(out={"out_1": Out(String), "out_2": Out(String)})
+def root():
     yield Output("foo", "out_1")
     yield Output("bar", "out_2")
 
 
 @op
-def branch_op(context, value):
+def branch_op(_value):
     pass
 
 
-@graph
+@graph()
 def multiproc():
     out_1, out_2 = root()
     branch_op(out_1)

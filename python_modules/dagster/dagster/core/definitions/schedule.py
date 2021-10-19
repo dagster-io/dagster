@@ -9,7 +9,6 @@ from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
-from ...utils.backcompat import experimental_arg_warning
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -196,7 +195,6 @@ class ScheduleDefinition:
             )
 
         if job is not None:
-            experimental_arg_warning("job", "ScheduleDefinition.__init__")
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(

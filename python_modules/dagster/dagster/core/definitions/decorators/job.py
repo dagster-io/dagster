@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Un
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
-from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
 from ..graph import GraphDefinition
@@ -90,9 +89,8 @@ class _Job:
         )
 
 
-@experimental_decorator
 def job(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
