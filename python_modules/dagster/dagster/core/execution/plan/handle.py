@@ -7,17 +7,18 @@ from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle)])):
+class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key", str)])):
     """A reference to an ExecutionStep that was determined statically"""
 
-    def __new__(cls, solid_handle: NodeHandle):
+    def __new__(cls, solid_handle: NodeHandle, key: str = None):
         return super(StepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
+            key=solid_handle.to_string()
         )
 
     def to_key(self) -> str:
-        return f"{self.solid_handle.to_string()}"
+        return self.key
 
     @staticmethod
     def parse_from_key(
@@ -56,7 +57,7 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle",
 @whitelist_for_serdes
 class ResolvedFromDynamicStepHandle(
     NamedTuple(
-        "_ResolvedFromDynamicStepHandle", [("solid_handle", NodeHandle), ("mapping_key", str)]
+        "_ResolvedFromDynamicStepHandle", [("solid_handle", NodeHandle), ("mapping_key", str), ("key", str)]
     )
 ):
     """
@@ -65,15 +66,16 @@ class ResolvedFromDynamicStepHandle(
     completed successfully.
     """
 
-    def __new__(cls, solid_handle: NodeHandle, mapping_key: str):
+    def __new__(cls, solid_handle: NodeHandle, mapping_key: str, key: str = None):
         return super(ResolvedFromDynamicStepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),
+            key=f"{solid_handle.to_string()}[{mapping_key}]"
         )
 
     def to_key(self) -> str:
-        return f"{self.solid_handle.to_string()}[{self.mapping_key}]"
+        return self.key
 
     @property
     def unresolved_form(self) -> UnresolvedStepHandle:

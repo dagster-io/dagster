@@ -1,3 +1,4 @@
+import functools
 from abc import abstractmethod, abstractproperty
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union
@@ -72,6 +73,7 @@ class ExecutionStep(
             ("step_output_dict", Dict[str, StepOutput]),
             ("tags", Dict[str, str]),
             ("logging_tags", Dict[str, str]),
+            ("key", str),
         ],
     ),
     IExecutionStep,
@@ -88,6 +90,7 @@ class ExecutionStep(
         step_outputs: List[StepOutput],
         tags: Optional[Dict[str, str]],
         logging_tags: Optional[Dict[str, str]] = None,
+        key: str = None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -110,15 +113,12 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
+            key=handle.to_key()
         )
 
     @property
     def solid_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
-
-    @property
-    def key(self) -> str:
-        return self.handle.to_key()
 
     @property
     def solid_name(self) -> str:

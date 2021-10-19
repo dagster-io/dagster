@@ -536,6 +536,7 @@ class ExecutionPlan(
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),
             ("step_output_versions", Dict[StepOutputHandle, str]),
+            ("step_dict_by_key", Dict[str, IExecutionStep]),
         ],
     )
 ):
@@ -548,6 +549,7 @@ class ExecutionPlan(
         known_state=None,
         artifacts_persisted=False,
         step_output_versions=None,
+        step_dict_by_key=None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -575,6 +577,18 @@ class ExecutionPlan(
                 "step_output_versions",
                 key_type=StepOutputHandle,
                 value_type=str,
+            ),
+            step_dict_by_key={step.key: step for step in step_dict.values()}
+            if step_dict_by_key is None
+            else check.dict_param(
+                step_dict_by_key,
+                "step_dict_by_key",
+                key_type=str,
+                value_type=(
+                    ExecutionStep,
+                    UnresolvedMappedExecutionStep,
+                    UnresolvedCollectExecutionStep,
+                ),
             ),
         )
 
@@ -606,7 +620,10 @@ class ExecutionPlan(
         return self.step_dict[handle]
 
     def get_step_by_key(self, key: str) -> IExecutionStep:
-        return _get_step_by_key(self.step_dict, key)
+        check.str_param(key, "key")
+        if not key in self.step_dict_by_key:
+            check.failed(f"plan has no step with key {key}")
+        return self.step_dict_by_key[key]
 
     def get_executable_step_by_key(self, key: str) -> ExecutionStep:
         step = self.get_step_by_key(key)
@@ -638,7 +655,7 @@ class ExecutionPlan(
 
     def get_steps_to_execute_by_level(self) -> List[List[ExecutionStep]]:
         return _get_steps_to_execute_by_level(
-            self.step_dict, self.step_handles_to_execute, self.executable_map
+            self.step_dict, self.step_dict_by_key, self.step_handles_to_execute, self.executable_map
         )
 
     def get_executable_step_deps(self) -> Dict[str, Set[str]]:
