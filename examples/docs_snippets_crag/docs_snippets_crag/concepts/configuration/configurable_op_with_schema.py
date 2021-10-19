@@ -1,4 +1,4 @@
-from dagster import graph, op
+from dagster import job, op
 
 
 @op(config_schema={"iterations": int})
@@ -7,6 +7,6 @@ def configurable_with_schema(context):
         context.log.info(context.op_config["word"])
 
 
-@graph
+@job
 def nests_configurable():
     configurable_with_schema()

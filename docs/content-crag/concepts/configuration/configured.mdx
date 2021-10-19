@@ -9,10 +9,10 @@ The `configured` API offers a way to configure a Dagster entity at definition ti
 
 ## Relevant APIs
 
-| Name                                                        | Description                                  |
-| ----------------------------------------------------------- | -------------------------------------------- |
-| <PyObject module="dagster" object="configured" decorator /> | The decorator to configure a Dagster entity. |
-| <PyObject module="dagster" object="configured" />           | The method to configure a Dagster entity.    |
+| Name                                       | Description                                  |
+| ------------------------------------------ | -------------------------------------------- |
+| <PyObject object="configured" decorator /> | The decorator to configure a Dagster entity. |
+| <PyObject object="configured" />           | The method to configure a Dagster entity.    |
 
 ## Overview
 
@@ -139,7 +139,7 @@ sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": Tr
 full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
 
 
-@graph
+@job
 def datasets():
     sample_dataset()
     full_dataset()
