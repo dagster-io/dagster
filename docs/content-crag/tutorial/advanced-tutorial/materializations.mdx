@@ -7,7 +7,7 @@ description: Dagster ops can describe their persistent artifacts to the system b
 
 <CodeReferenceLink filePath="examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/advanced/materializations/" />
 
-Steps in a data pipeline often produce persistent artifacts, for instance, graphs or tables describing the result of some computation. Typically these artifacts are saved to disk (or to cloud storage) with a [name](https://xkcd.com/1459/) that has something to do with their origin. But it can be hard to organize and cross-reference artifacts produced by many different runs of a job, or to identify all of the files that might have been created by some job's logic.
+Steps in a job often produce persistent artifacts, for instance, graphs or tables describing the result of some computation. Typically these artifacts are saved to disk (or to cloud storage) with a [name](https://xkcd.com/1459/) that has something to do with their origin. But it can be hard to organize and cross-reference artifacts produced by many different runs of a job, or to identify all of the files that might have been created by some job's logic.
 
 Dagster ops can describe their persistent artifacts to the system by yielding <PyObject module="dagster" object="AssetMaterialization" /> events. Like <PyObject module="dagster" object="TypeCheck" /> and <PyObject module="dagster" object="ExpectationResult" />, asset materializations are side-channels for metadata -- they don't get passed to downstream ops and they aren't used to define the data dependencies that structure a job's DAG.
 
