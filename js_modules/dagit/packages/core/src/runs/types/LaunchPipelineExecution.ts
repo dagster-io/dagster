@@ -14,16 +14,16 @@ export interface LaunchPipelineExecution_launchPipelineExecution_InvalidStepErro
   __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run {
+export interface LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess_run {
   __typename: "Run";
   id: string;
   runId: string;
   pipelineName: string;
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess {
-  __typename: "LaunchPipelineRunSuccess";
-  run: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run;
+export interface LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess {
+  __typename: "LaunchRunSuccess";
+  run: LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess_run;
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError {
@@ -47,7 +47,7 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
+export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
 
 export interface LaunchPipelineExecution {
   launchPipelineExecution: LaunchPipelineExecution_launchPipelineExecution;

@@ -75,7 +75,7 @@ LAUNCH_PIPELINE_MUTATION = """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
         status
@@ -181,10 +181,7 @@ def test_deploy_docker():
             )
         ).json()
 
-        assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
-        )
+        assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         run_id = run["runId"]
@@ -212,10 +209,7 @@ def test_deploy_docker():
             )
         ).json()
 
-        assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
-        )
+        assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         hanging_run_id = run["runId"]

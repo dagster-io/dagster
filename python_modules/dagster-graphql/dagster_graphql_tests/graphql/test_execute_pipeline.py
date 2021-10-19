@@ -39,7 +39,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -62,7 +62,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -87,7 +87,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
@@ -329,9 +329,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # block until run finishes
         graphql_context.instance.run_launcher.join()
@@ -375,9 +373,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         def _fetch_events(after):
             events_result = execute_dagster_graphql(
@@ -521,7 +517,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = result.data["launchPipelineExecution"]["run"]
         run_id = run["runId"]

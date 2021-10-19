@@ -292,9 +292,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert (
-            result_one.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         instance = graphql_context.instance
 
@@ -328,7 +326,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "LaunchPipelineRunSuccess"
+        assert query_result["__typename"] == "LaunchRunSuccess"
 
         result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result["pipelineRunLogs"]["messages"]

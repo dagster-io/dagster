@@ -40,7 +40,7 @@ from ..errors import (
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
 from ..pipelines.pipeline import GrapheneRun
-from ..runs import GrapheneLaunchPipelineExecutionResult, GrapheneLaunchPipelineReexecutionResult
+from ..runs import GrapheneLaunchRunReexecutionResult, GrapheneLaunchRunResult
 from ..schedules import (
     GrapheneReconcileSchedulerStateMutation,
     GrapheneStartScheduleMutation,
@@ -189,16 +189,16 @@ def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_pa
     )
 
 
-class GrapheneLaunchPipelineExecutionMutation(graphene.Mutation):
+class GrapheneLaunchRunMutation(graphene.Mutation):
 
-    Output = graphene.NonNull(GrapheneLaunchPipelineExecutionResult)
+    Output = graphene.NonNull(GrapheneLaunchRunResult)
 
     class Arguments:
         executionParams = graphene.NonNull(GrapheneExecutionParams)
 
     class Meta:
-        description = "Launch a pipeline run via the run launcher configured on the instance."
-        name = "LaunchPipelineExecutionMutation"
+        description = "Launch a run via the run launcher configured on the instance."
+        name = "LaunchRunMutation"
 
     @capture_error
     @check_permission(Permissions.LAUNCH_PIPELINE_EXECUTION)
@@ -266,15 +266,15 @@ def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_
     )
 
 
-class GrapheneLaunchPipelineReexecutionMutation(graphene.Mutation):
-    Output = graphene.NonNull(GrapheneLaunchPipelineReexecutionResult)
+class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneLaunchRunReexecutionResult)
 
     class Arguments:
         executionParams = graphene.NonNull(GrapheneExecutionParams)
 
     class Meta:
-        description = "Re-launch a pipeline run via the run launcher configured on the instance"
-        name = "LaunchPipelineReexecutionMutation"
+        description = "Re-launch a run via the run launcher configured on the instance"
+        name = "LaunchRunReexecutionMutation"
 
     @capture_error
     @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
@@ -461,8 +461,8 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
 
 
 class GrapheneMutation(graphene.ObjectType):
-    launch_pipeline_execution = GrapheneLaunchPipelineExecutionMutation.Field()
-    launch_pipeline_reexecution = GrapheneLaunchPipelineReexecutionMutation.Field()
+    launch_pipeline_execution = GrapheneLaunchRunMutation.Field()
+    launch_pipeline_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
     reconcile_scheduler_state = GrapheneReconcileSchedulerStateMutation.Field()
     start_schedule = GrapheneStartScheduleMutation.Field()
     stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()

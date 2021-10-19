@@ -8,7 +8,7 @@ EXPECTED_RUN_ID = "foo"
 
 launch_pipeline_success_response = {
     "launchPipelineExecution": {
-        "__typename": "LaunchPipelineRunSuccess",
+        "__typename": "LaunchRunSuccess",
         "run": {"runId": EXPECTED_RUN_ID},
     }
 }
@@ -77,7 +77,7 @@ def test_job_tags_success(mock_client: MockClient):
 def test_complex_tags_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -150,7 +150,7 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -195,7 +195,7 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -245,7 +245,7 @@ def no_location_or_repo_provided_mock_config(mock_client):
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }

@@ -46,7 +46,7 @@ export function handleLaunchResult(
     return;
   }
 
-  if (obj.__typename === 'LaunchPipelineRunSuccess') {
+  if (obj.__typename === 'LaunchRunSuccess') {
     const url = `${basePath}/instance/runs/${obj.run.runId}`;
     if (openInTab) {
       window.open(url, '_blank');
@@ -150,7 +150,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineRunSuccess {
+      ... on LaunchRunSuccess {
         run {
           id
           runId
@@ -221,7 +221,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
     launchPipelineReexecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineRunSuccess {
+      ... on LaunchRunSuccess {
         run {
           id
           runId

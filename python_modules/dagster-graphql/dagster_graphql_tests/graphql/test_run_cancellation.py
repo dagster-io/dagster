@@ -64,9 +64,7 @@ class TestQueuedRunTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.QUEUED
@@ -98,9 +96,7 @@ class TestQueuedRunTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.QUEUED
@@ -140,9 +136,7 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert run_id
@@ -186,9 +180,7 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
             # ensure the execution has happened
             while not os.path.exists(path):

@@ -14,7 +14,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStep
   __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run {
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess_run {
   __typename: "Run";
   id: string;
   runId: string;
@@ -23,9 +23,9 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipel
   parentRunId: string | null;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess {
-  __typename: "LaunchPipelineRunSuccess";
-  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run;
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess {
+  __typename: "LaunchRunSuccess";
+  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess_run;
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError {
@@ -49,7 +49,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   stack: string[];
 }
 
-export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
+export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
 
 export interface LaunchPipelineReexecution {
   launchPipelineReexecution: LaunchPipelineReexecution_launchPipelineReexecution;

@@ -1481,8 +1481,8 @@ type GraphenePermission {
 }
 
 type Mutation {
-  launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
-  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
+  launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
+  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
@@ -1499,9 +1499,13 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-type LaunchPipelineRunSuccess {
+type LaunchRunSuccess implements LaunchPipelineRunSuccess {
+  run: Run!
+}
+
+interface LaunchPipelineRunSuccess {
   run: Run!
 }
 
@@ -1543,7 +1547,7 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
 
@@ -1817,12 +1821,12 @@ type LaunchBackfillMutation {
   Output: LaunchBackfillResult!
 }
 
-type LaunchPipelineExecutionMutation {
-  Output: LaunchPipelineExecutionResult!
+type LaunchRunMutation {
+  Output: LaunchRunResult!
 }
 
-type LaunchPipelineReexecutionMutation {
-  Output: LaunchPipelineReexecutionResult!
+type LaunchRunReexecutionMutation {
+  Output: LaunchRunReexecutionResult!
 }
 
 type ReloadRepositoryLocationMutation {

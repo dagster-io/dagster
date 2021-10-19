@@ -249,7 +249,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
         pipeline {
@@ -303,7 +303,7 @@ mutation($executionParams: ExecutionParams!) {
     ... on PythonError {
       ...errorFragment
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
         status

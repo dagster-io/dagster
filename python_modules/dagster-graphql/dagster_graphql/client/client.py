@@ -186,7 +186,7 @@ class DagsterGraphQLClient:
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
         query_result = res_data["launchPipelineExecution"]
         query_result_type = query_result["__typename"]
-        if query_result_type == "LaunchPipelineRunSuccess":
+        if query_result_type == "LaunchRunSuccess":
             return query_result["run"]["runId"]
         elif query_result_type == "InvalidStepError":
             raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
