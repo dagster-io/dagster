@@ -19,11 +19,7 @@ from .graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,
 )
-from .setup import (
-    csv_hello_world_solids_config,
-    get_retry_multi_execution_params,
-    retry_config,
-)
+from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
