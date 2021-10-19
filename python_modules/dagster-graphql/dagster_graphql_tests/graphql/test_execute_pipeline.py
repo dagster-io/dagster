@@ -2,7 +2,7 @@ import time
 import uuid
 
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.utils import file_relative_path, merge_dicts
+from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -474,32 +474,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "PipelineSuccessEvent")
         assert not has_event_of_type(logs, "PipelineFailureEvent")
 
-    def test_basic_inmemory_sync_execution(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        result = sync_execute_get_run_log_data(
-            context=graphql_context,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                    "runConfigData": csv_hello_world_solids_config(),
-                }
-            },
-        )
-
-        logs = result["messages"]
-        assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
-
-        start_event = first_event_of_type(logs, "PipelineStartEvent")
-        assert start_event["level"] == "DEBUG"
-        assert start_event["eventType"] == "PIPELINE_START"
-
-        sum_solid_output = get_step_output_event(logs, "sum_solid")
-        assert sum_solid_output["stepKey"] == "sum_solid"
-
     def test_basic_filesystem_sync_execution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = sync_execute_get_run_log_data(
@@ -507,10 +481,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": merge_dicts(
-                        csv_hello_world_solids_config(),
-                        {"intermediate_storage": {"filesystem": {}}},
-                    ),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "mode": "default",
                 }
             },
