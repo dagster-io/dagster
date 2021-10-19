@@ -17,7 +17,7 @@ def test_my_custom_operator(
     caplog,
 ):  # pylint: disable=redefined-outer-name
     caplog.set_level(logging.INFO, logger="CustomOperatorLogger")
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_pipeline_s3"
     operator = CustomOperator
 
     environments_path = get_test_project_environments_path()

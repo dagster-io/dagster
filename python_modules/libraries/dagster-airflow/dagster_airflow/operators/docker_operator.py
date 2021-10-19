@@ -1,6 +1,5 @@
 import ast
 import json
-import warnings
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException, AirflowSkipException
@@ -41,52 +40,8 @@ class DagsterDockerOperator(DockerOperator):
         tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop("host_tmp_dir", seven.get_system_temp_directory())
         self.host_tmp_dir = host_tmp_dir
-
-        run_config = dagster_operator_parameters.run_config
-        # if "filesystem" in run_config["intermediate_storage"]:
-        #     if (
-        #         "config" in (run_config["intermediate_storage"].get("filesystem", {}) or {})
-        #         and "base_dir"
-        #         in (
-        #             (run_config["intermediate_storage"].get("filesystem", {}) or {}).get(
-        #                 "config", {}
-        #             )
-        #             or {}
-        #         )
-        #         and run_config["intermediate_storage"]["filesystem"]["config"]["base_dir"]
-        #         != tmp_dir
-        #     ):
-        #         warnings.warn(
-        #             "Found base_dir '{base_dir}' set in filesystem storage config, which was not "
-        #             "the tmp_dir we expected ('{tmp_dir}', mounting host_tmp_dir "
-        #             "'{host_tmp_dir}' from the host). We assume you know what you are doing, but "
-        #             "if you are having trouble executing containerized workloads, this may be the "
-        #             "issue".format(
-        #                 base_dir=run_config["intermediate_storage"]["filesystem"]["config"][
-        #                     "base_dir"
-        #                 ],
-        #                 tmp_dir=tmp_dir,
-        #                 host_tmp_dir=host_tmp_dir,
-        #             )
-        #         )
-        #     else:
-        #         run_config["intermediate_storage"]["filesystem"] = dict(
-        #             run_config["intermediate_storage"]["filesystem"] or {},
-        #             **{
-        #                 "config": dict(
-        #                     (
-        #                         (
-        #                             run_config["intermediate_storage"].get("filesystem", {}) or {}
-        #                         ).get("config", {})
-        #                         or {}
-        #                     ),
-        #                     **{"base_dir": tmp_dir},
-        #                 )
-        #             },
-        #         )
-
         self.docker_conn_id_set = kwargs.get("docker_conn_id") is not None
-        self.run_config = run_config
+        self.run_config = dagster_operator_parameters.run_config
         self.pipeline_name = dagster_operator_parameters.pipeline_name
         self.pipeline_snapshot = dagster_operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = dagster_operator_parameters.execution_plan_snapshot
