@@ -6,7 +6,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .setup import csv_hello_world_solids_config, csv_hello_world_solids_config_fs_storage
+from .setup import csv_hello_world_solids_config
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {
@@ -30,7 +30,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -57,7 +57,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
@@ -134,7 +134,6 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -160,7 +159,6 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
