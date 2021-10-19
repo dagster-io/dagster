@@ -118,6 +118,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 }
             },
             launchType="FARGATE",
+            propagateTags="TASK_DEFINITION",
         )
 
         arn = response["tasks"][0]["taskArn"]
