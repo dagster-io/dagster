@@ -97,12 +97,12 @@ TERMINATE_MUTATION = """
 mutation($runId: String!) {
   terminatePipelineExecution(runId: $runId){
     __typename
-    ... on TerminatePipelineExecutionSuccess{
+    ... on TerminateRunSuccess{
       run {
         runId
       }
     }
-    ... on TerminatePipelineExecutionFailure {
+    ... on TerminateRunFailure {
       run {
         runId
       }
@@ -226,7 +226,7 @@ def test_deploy_docker():
 
         assert (
             terminate_res["data"]["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionSuccess"
+            == "TerminateRunSuccess"
         )
 
         _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)

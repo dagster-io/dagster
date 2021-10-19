@@ -2,7 +2,7 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {TerminatePipelinePolicy} from '../types/globalTypes';
+import {TerminateRunPolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {Checkbox} from '../ui/Checkbox';
@@ -19,7 +19,7 @@ import {
   Terminate_terminatePipelineExecution_RunNotFoundError,
   Terminate_terminatePipelineExecution_PythonError,
   Terminate_terminatePipelineExecution_UnauthorizedError,
-  Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
+  Terminate_terminatePipelineExecution_TerminateRunFailure,
 } from './types/Terminate';
 
 export interface Props {
@@ -31,7 +31,7 @@ export interface Props {
 }
 
 type Error =
-  | Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure
+  | Terminate_terminatePipelineExecution_TerminateRunFailure
   | Terminate_terminatePipelineExecution_RunNotFoundError
   | Terminate_terminatePipelineExecution_UnauthorizedError
   | Terminate_terminatePipelineExecution_PythonError
@@ -134,8 +134,8 @@ export const TerminationDialog = (props: Props) => {
 
   const [terminate] = useMutation<Terminate>(TERMINATE_MUTATION);
   const policy = state.mustForce
-    ? TerminatePipelinePolicy.MARK_AS_CANCELED_IMMEDIATELY
-    : TerminatePipelinePolicy.SAFE_TERMINATE;
+    ? TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
+    : TerminateRunPolicy.SAFE_TERMINATE;
 
   const mutate = async () => {
     dispatch({type: 'start'});
@@ -145,7 +145,7 @@ export const TerminationDialog = (props: Props) => {
       const runId = runList[ii];
       const {data} = await terminate({variables: {runId, terminatePolicy: policy}});
 
-      if (data?.terminatePipelineExecution.__typename === 'TerminatePipelineExecutionSuccess') {
+      if (data?.terminatePipelineExecution.__typename === 'TerminateRunSuccess') {
         dispatch({type: 'termination-success'});
       } else {
         dispatch({type: 'termination-error', id: runId, error: data?.terminatePipelineExecution});

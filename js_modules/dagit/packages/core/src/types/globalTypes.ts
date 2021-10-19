@@ -144,7 +144,7 @@ export enum StepKind {
   UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED",
 }
 
-export enum TerminatePipelinePolicy {
+export enum TerminateRunPolicy {
   MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY",
   SAFE_TERMINATE = "SAFE_TERMINATE",
 }

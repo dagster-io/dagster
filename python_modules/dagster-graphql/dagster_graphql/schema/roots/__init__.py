@@ -15,10 +15,12 @@ def types():
         GrapheneShutdownRepositoryLocationMutation,
         GrapheneShutdownRepositoryLocationMutationResult,
         GrapheneTerminatePipelineExecutionFailure,
-        GrapheneTerminatePipelineExecutionMutation,
-        GrapheneTerminatePipelineExecutionResult,
         GrapheneTerminatePipelineExecutionSuccess,
-        GrapheneTerminatePipelinePolicy,
+        GrapheneTerminateRunFailure,
+        GrapheneTerminateRunMutation,
+        GrapheneTerminateRunResult,
+        GrapheneTerminateRunSuccess,
+        GrapheneTerminateRunPolicy,
     )
     from .pipeline import GraphenePipelineOrError
 
@@ -41,8 +43,10 @@ def types():
         GrapheneShutdownRepositoryLocationMutation,
         GrapheneShutdownRepositoryLocationMutationResult,
         GrapheneTerminatePipelineExecutionFailure,
-        GrapheneTerminatePipelineExecutionMutation,
-        GrapheneTerminatePipelineExecutionResult,
         GrapheneTerminatePipelineExecutionSuccess,
-        GrapheneTerminatePipelinePolicy,
+        GrapheneTerminateRunFailure,
+        GrapheneTerminateRunMutation,
+        GrapheneTerminateRunResult,
+        GrapheneTerminateRunSuccess,
+        GrapheneTerminateRunPolicy,
     ]

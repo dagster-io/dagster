@@ -191,16 +191,16 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const TERMINATE_MUTATION = gql`
-  mutation Terminate($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+  mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
-      ... on TerminatePipelineExecutionFailure {
+      ... on TerminateRunFailure {
         message
       }
       ... on RunNotFoundError {
         message
       }
-      ... on TerminatePipelineExecutionSuccess {
+      ... on TerminateRunSuccess {
         run {
           id
           runId

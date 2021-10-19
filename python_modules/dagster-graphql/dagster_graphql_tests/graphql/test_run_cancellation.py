@@ -12,15 +12,15 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_CANCELLATION_QUERY = """
-mutation($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
   terminatePipelineExecution(runId: $runId, terminatePolicy:$terminatePolicy){
     __typename
-    ... on TerminatePipelineExecutionSuccess{
+    ... on TerminateRunSuccess{
       run {
         runId
       }
     }
-    ... on TerminatePipelineExecutionFailure {
+    ... on TerminateRunFailure {
       run {
         runId
       }
@@ -72,10 +72,7 @@ class TestQueuedRunTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_force_cancel_queued_run(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
@@ -106,10 +103,7 @@ class TestQueuedRunTermination(
                 RUN_CANCELLATION_QUERY,
                 variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
 
 class TestRunVariantTermination(
@@ -148,10 +142,7 @@ class TestRunVariantTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_run_not_found(self, graphql_context):
         result = execute_dagster_graphql(
@@ -189,10 +180,7 @@ class TestRunVariantTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionFailure"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
             assert result.data["terminatePipelineExecution"]["message"].startswith(
                 "Unable to terminate run"
             )
@@ -203,10 +191,7 @@ class TestRunVariantTermination(
                 variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
             )
 
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
             assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
 
@@ -234,10 +219,7 @@ class TestRunVariantTermination(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": pipeline_result.run_id}
         )
 
-        assert (
-            result.data["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionFailure"
-        )
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
         assert (
             "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]
@@ -253,10 +235,7 @@ class TestRunVariantTermination(
             },
         )
 
-        assert (
-            result.data["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionFailure"
-        )
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
         assert (
             "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]

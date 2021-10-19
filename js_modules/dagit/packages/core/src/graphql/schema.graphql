@@ -1493,7 +1493,7 @@ type Mutation {
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
-  terminatePipelineExecution(runId: String!, terminatePolicy: TerminatePipelinePolicy): TerminatePipelineExecutionResult!
+  terminatePipelineExecution(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
@@ -1572,18 +1572,27 @@ type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | RunNotFoundError | UnauthorizedError | PythonError
+union TerminateRunResult = TerminateRunSuccess | TerminateRunFailure | RunNotFoundError | UnauthorizedError | PythonError
 
-type TerminatePipelineExecutionSuccess {
+type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
   run: Run!
 }
 
-type TerminatePipelineExecutionFailure {
+interface TerminatePipelineExecutionSuccess {
+  run: Run!
+}
+
+type TerminateRunFailure implements TerminatePipelineExecutionFailure {
   run: Run!
   message: String!
 }
 
-enum TerminatePipelinePolicy {
+interface TerminatePipelineExecutionFailure {
+  run: Run!
+  message: String!
+}
+
+enum TerminateRunPolicy {
   SAFE_TERMINATE
   MARK_AS_CANCELED_IMMEDIATELY
 }
@@ -1846,8 +1855,8 @@ type ShutdownRepositoryLocationMutation {
   Output: ShutdownRepositoryLocationMutationResult!
 }
 
-type TerminatePipelineExecutionMutation {
-  Output: TerminatePipelineExecutionResult!
+type TerminateRunMutation {
+  Output: TerminateRunResult!
 }
 
 type ReconcileSchedulerStateMutation {

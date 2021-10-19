@@ -152,14 +152,22 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
         return delete_pipeline_run(graphene_info, run_id)
 
 
-class GrapheneTerminatePipelineExecutionSuccess(graphene.ObjectType):
+class GrapheneTerminatePipelineExecutionSuccess(graphene.Interface):
     run = graphene.Field(graphene.NonNull(GrapheneRun))
 
     class Meta:
         name = "TerminatePipelineExecutionSuccess"
 
 
-class GrapheneTerminatePipelineExecutionFailure(graphene.ObjectType):
+class GrapheneTerminateRunSuccess(graphene.ObjectType):
+    run = graphene.Field(graphene.NonNull(GrapheneRun))
+
+    class Meta:
+        interfaces = (GrapheneTerminatePipelineExecutionSuccess,)
+        name = "TerminateRunSuccess"
+
+
+class GrapheneTerminatePipelineExecutionFailure(graphene.Interface):
     run = graphene.NonNull(GrapheneRun)
     message = graphene.NonNull(graphene.String)
 
@@ -167,16 +175,25 @@ class GrapheneTerminatePipelineExecutionFailure(graphene.ObjectType):
         name = "TerminatePipelineExecutionFailure"
 
 
-class GrapheneTerminatePipelineExecutionResult(graphene.Union):
+class GrapheneTerminateRunFailure(graphene.ObjectType):
+    run = graphene.NonNull(GrapheneRun)
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneTerminatePipelineExecutionFailure,)
+        name = "TerminateRunFailure"
+
+
+class GrapheneTerminateRunResult(graphene.Union):
     class Meta:
         types = (
-            GrapheneTerminatePipelineExecutionSuccess,
-            GrapheneTerminatePipelineExecutionFailure,
+            GrapheneTerminateRunSuccess,
+            GrapheneTerminateRunFailure,
             GrapheneRunNotFoundError,
             GrapheneUnauthorizedError,
             GraphenePythonError,
         )
-        name = "TerminatePipelineExecutionResult"
+        name = "TerminateRunResult"
 
 
 @capture_error
@@ -285,7 +302,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
         )
 
 
-class GrapheneTerminatePipelinePolicy(graphene.Enum):
+class GrapheneTerminateRunPolicy(graphene.Enum):
     # Default behavior: Only mark as canceled if the termination is successful, and after all
     # resources peforming the execution have been shut down.
     SAFE_TERMINATE = "SAFE_TERMINATE"
@@ -295,18 +312,18 @@ class GrapheneTerminatePipelinePolicy(graphene.Enum):
     MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY"
 
     class Meta:
-        name = "TerminatePipelinePolicy"
+        name = "TerminateRunPolicy"
 
 
-class GrapheneTerminatePipelineExecutionMutation(graphene.Mutation):
-    Output = graphene.NonNull(GrapheneTerminatePipelineExecutionResult)
+class GrapheneTerminateRunMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneTerminateRunResult)
 
     class Arguments:
         runId = graphene.NonNull(graphene.String)
-        terminatePolicy = graphene.Argument(GrapheneTerminatePipelinePolicy)
+        terminatePolicy = graphene.Argument(GrapheneTerminateRunPolicy)
 
     class Meta:
-        name = "TerminatePipelineExecutionMutation"
+        name = "TerminateRunMutation"
 
     @capture_error
     @check_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
@@ -314,7 +331,7 @@ class GrapheneTerminatePipelineExecutionMutation(graphene.Mutation):
         return terminate_pipeline_execution(
             graphene_info,
             kwargs["runId"],
-            kwargs.get("terminatePolicy", GrapheneTerminatePipelinePolicy.SAFE_TERMINATE),
+            kwargs.get("terminatePolicy", GrapheneTerminateRunPolicy.SAFE_TERMINATE),
         )
 
 
@@ -468,7 +485,7 @@ class GrapheneMutation(graphene.ObjectType):
     stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()
     start_sensor = GrapheneStartSensorMutation.Field()
     stop_sensor = GrapheneStopSensorMutation.Field()
-    terminate_pipeline_execution = GrapheneTerminatePipelineExecutionMutation.Field()
+    terminate_pipeline_execution = GrapheneTerminateRunMutation.Field()
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
