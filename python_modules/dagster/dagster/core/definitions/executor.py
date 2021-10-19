@@ -337,7 +337,9 @@ def _check_non_ephemeral_instance(instance):
             "You have attempted to use an executor that uses multiple processes with an "
             "ephemeral DagsterInstance. A non-ephemeral instance is needed to coordinate "
             "execution between multiple processes. You can configure your default instance "
-            "via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs."
+            "via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs. "
+            "You can learn more about setting up a persistent DagsterInstance from the "
+            "DagsterInstance docs here: https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
         )
 
 
