@@ -6,8 +6,8 @@ IO Managers
 IO Managers
 ---------------
 
-IO managers are user-provided objects that store solid outputs and load them as inputs to downstream
-solids.
+IO managers are user-provided objects that store op outputs and load them as inputs to downstream
+ops.
 
 .. autodecorator:: io_manager
 

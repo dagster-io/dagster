@@ -387,6 +387,8 @@ def build_hook_context(
         mode_def (Optional[ModeDefinition]): The mode definition used with the context.
         solid (Optional[SolidDefinition, PendingNodeInvocation]): The solid definition which the
             hook may be associated with.
+        op (Optional[OpDefinition, PendingNodeInvocation]): The op definition which the
+            hook may be associated with.
 
     Examples:
         .. code-block:: python

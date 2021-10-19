@@ -241,40 +241,42 @@ class ReconstructableSchedule(
 def reconstructable(target):
     """
     Create a :py:class:`~dagster.core.definitions.reconstructable.ReconstructablePipeline` from a
-    function that returns a :py:class:`~dagster.PipelineDefinition`, or a function decorated with
-    :py:func:`@pipeline <dagster.pipeline>`
+    function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
+    or a function decorated with :py:func:`@pipeline <dagster.pipeline>`/:py:func:`@job <dagster.job>`.
 
-    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    When your pipeline/job must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline/job
     on the other side of the process boundary.
 
-    This function implements a very conservative strategy for reconstructing pipelines, so that
-    its behavior is easy to predict, but as a consequence it is not able to reconstruct certain
-    kinds of pipelines, such as those defined by lambdas, in nested scopes (e.g., dynamically
-    within a method call), or in interactive environments such as the Python REPL or Jupyter
-    notebooks.
+    This function implements a very conservative strategy for reconstruction, so that its behavior
+    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of pipelines
+    or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
+    call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, you should use
+    If you need to reconstruct objects constructed in these ways, you should use
     :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
-    which allows you to specify your own strategy for reconstructing a pipeline.
+    which allows you to specify your own reconstruction strategy.
 
     Examples:
 
     .. code-block:: python
 
-        from dagster import PipelineDefinition, pipeline, reconstructable
+        from dagster import job, reconstructable
 
-        @pipeline
-        def foo_pipeline():
+        @job
+        def foo_job():
             ...
 
-        reconstructable_foo_pipeline = reconstructable(foo_pipeline)
+        reconstructable_foo_job = reconstructable(foo_job)
 
 
-        def make_bar_pipeline():
-            return PipelineDefinition(...)
+        def make_bar_job():
+            @job
+            def xyz():
+                # make this job
+                ...
 
-        reconstructable_bar_pipeline = reconstructable(bar_pipeline)
+        reconstructable_bar_job = reconstructable(bar_job)
     """
     from dagster.core.definitions import PipelineDefinition
 

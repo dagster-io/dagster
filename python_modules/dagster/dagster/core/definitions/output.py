@@ -311,7 +311,7 @@ class Out(
     """
     Defines an output from an op's compute function.
 
-    Solids can have multiple outputs, in which case outputs cannot be anonymous.
+    Ops can have multiple outputs, in which case outputs cannot be anonymous.
 
     Many ops have only one output, in which case the user can provide a single output definition
     that will be given the default name, "result".
@@ -385,7 +385,7 @@ class DynamicOut(Out):
     When using in a composition function such as :py:func:`@graph <dagster.graph>`,
     dynamic outputs must be used with either
 
-    * ``map`` - clone downstream solids for each separate :py:class:`DynamicOut`
+    * ``map`` - clone downstream ops for each separate :py:class:`DynamicOut`
     * ``collect`` - gather across all :py:class:`DynamicOut` in to a list
 
     Uses the same constructor as :py:class:`Out <dagster.Out>`
@@ -408,7 +408,7 @@ class DynamicOut(Out):
             def process_directory():
                 files = files_in_directory()
 
-                # use map to invoke a solid on each dynamic output
+                # use map to invoke an op on each dynamic output
                 file_results = files.map(process_file)
 
                 # use collect to gather the results in to a list

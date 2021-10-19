@@ -203,10 +203,9 @@ class _ExecutorDecoratorCallable:
     },
 )
 def in_process_executor(init_context):
-    """The default in-process executor.
+    """The in-process executor executes all steps in a single process.
 
-    In most Dagster environments, this will be the default executor. It is available by default on
-    any :py:class:`ModeDefinition` that does not provide custom executors. To select it explicitly,
+    For legacy pipelines, this will be the default executor. To select it explicitly,
     include the following top-level fragment in config:
 
     .. code-block:: yaml
@@ -214,7 +213,7 @@ def in_process_executor(init_context):
         execution:
           in_process:
 
-    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    Execution priority can be configured using the ``dagster/priority`` tag via solid/op metadata,
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
@@ -255,11 +254,11 @@ def execute_in_process_executor(_):
     requirements=multiple_process_executor_requirements(),
 )
 def multiprocess_executor(init_context):
-    """The default multiprocess executor.
+    """The multiprocess executor executes each step in an individual process.
 
-    This simple multiprocess executor is available by default on any :py:class:`ModeDefinition`
-    that does not provide custom executors. To select the multiprocess executor, include a fragment
-    such as the following in your config:
+    Any job that does not specify custom executors will use the multiprocess_executor by default.
+    For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
+    as the following in your config:
 
     .. code-block:: yaml
 
@@ -272,7 +271,7 @@ def multiprocess_executor(init_context):
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
-    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    Execution priority can be configured using the ``dagster/priority`` tag via solid/op metadata,
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """

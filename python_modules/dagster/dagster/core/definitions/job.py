@@ -95,7 +95,7 @@ class JobDefinition(PipelineDefinition):
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
         Returns:
-            ExecuteInProcessResult
+            :py:class:`~dagster.ExecuteInProcessResult`
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor

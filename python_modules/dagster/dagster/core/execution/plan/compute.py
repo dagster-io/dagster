@@ -116,8 +116,8 @@ def _yield_compute_results(
             msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
-            solid_def_name=step_context.solid_def.name,
-            solid_name=step_context.solid.name,
+            op_def_name=step_context.solid_def.name,
+            op_name=step_context.solid.name,
         ),
         user_event_generator,
     ):

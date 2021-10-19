@@ -556,8 +556,8 @@ class TypeCheckContext:
 
     Attributes:
         log (DagsterLogManager): Centralized log dispatch from user code.
-        resources (Any): An object whose attributes contain the resources available to this solid.
-        run_id (str): The id of this pipeline run.
+        resources (Any): An object whose attributes contain the resources available to this op.
+        run_id (str): The id of this job run.
     """
 
     def __init__(

@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class HookDefinition(
     namedtuple("_HookDefinition", "name hook_fn required_resource_keys decorated_fn")
 ):
-    """Define a hook which can be triggered during a solid execution (e.g. a callback on the step
-    execution failure event during a solid execution).
+    """Define a hook which can be triggered during a op execution (e.g. a callback on the step
+    execution failure event during a op execution).
 
     Args:
         name (str): The name of this hook.
@@ -46,8 +46,8 @@ class HookDefinition(
 
         We currently support hooks to decorate the following:
 
-        - PipelineDefinition: when the hook decorates a pipeline definition, it will be added to
-            all the solid invocations within the pipeline.
+        - PipelineDefinition: when the hook decorates a job definition, it will be added to
+            all the op invocations within the job.
 
         Example:
             .. code-block:: python
@@ -57,8 +57,8 @@ class HookDefinition(
                     ...
 
                 @slack_message_on_success
-                @pipeline
-                def a_pipeline():
+                @job
+                def a_job():
                     foo(bar())
 
         """

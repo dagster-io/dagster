@@ -27,8 +27,8 @@ Inputs & outputs
 
 -------
 
-Execution
----------
+Retries
+-------
 
 
 .. autoclass:: RetryPolicy
@@ -39,6 +39,34 @@ Execution
 
 .. autoclass:: Jitter
     :noindex:
+
+Execution
+---------
+
+.. autofunction:: execute_solid
+
+.. autofunction:: execute_solid_within_pipeline
+
+.. autofunction:: execute_solids_within_pipeline
+
+.. autoclass:: SolidExecutionResult
+   :members:
+   :inherited-members:
+
+.. autoclass:: CompositeSolidExecutionResult
+   :members:
+   :inherited-members:
+
+
+Execution context
+-----------------
+.. currentmodule:: dagster
+
+.. autoclass:: SolidExecutionContext
+   :members:
+   :inherited-members:
+
+.. autofunction:: build_solid_context
 
 -------
 
