@@ -235,7 +235,7 @@ def test_k8s_run_launcher_terminate(
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
-            run_config=None,
+            run_config=os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
             tags=tags,
             mode="default",
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
