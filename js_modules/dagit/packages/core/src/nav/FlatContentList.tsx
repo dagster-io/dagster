@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {InstigationStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {Tooltip} from '../ui/Tooltip';
@@ -80,11 +81,14 @@ export const FlatContentList: React.FC<Props> = (props) => {
             name,
             isJob,
             label: (
-              <Label $hasIcon={!!(schedule || sensor)}>
-                {name}
+              <Label $hasIcon={!!(schedule || sensor) || !isJob}>
+                <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
+                  {name}
+                </TruncatingName>
+                <div style={{flex: 1}} />
                 {isJob ? null : (
-                  <Tooltip content="Legacy pipeline" placement="top">
-                    <IconWIP name="job" color={ColorsWIP.Gray300} />
+                  <Tooltip content="Legacy pipeline" placement="top" className="legacy-container">
+                    <LegacyTag>Legacy</LegacyTag>
                   </Tooltip>
                 )}
               </Label>
@@ -102,21 +106,28 @@ export const FlatContentList: React.FC<Props> = (props) => {
     );
   }, [loading, data, activeRepoAddresses]);
 
-  if (jobs.length === 0) {
-    return <div />;
-  }
+  const title = jobs.some((j) => !j.isJob) ? 'Jobs and pipelines' : 'Jobs';
 
   return (
-    <Items style={{height: 'calc(100% - 226px)'}}>
-      {jobs.map((job) => (
-        <JobItem
-          key={`${job.name}-${repoAddressAsString(job.repoAddress)}`}
-          job={job}
-          repoPath={repoPath}
-          selector={selector}
-        />
-      ))}
-    </Items>
+    <>
+      <Box
+        flex={{direction: 'row', alignItems: 'center', gap: 8}}
+        padding={{horizontal: 24, bottom: 12}}
+      >
+        <IconWIP name="job" />
+        <span style={{fontSize: '16px', fontWeight: 600}}>{title}</span>
+      </Box>
+      <Items style={{height: 'calc(100% - 226px)'}}>
+        {jobs.map((job) => (
+          <JobItem
+            key={`${job.name}-${repoAddressAsString(job.repoAddress)}`}
+            job={job}
+            repoPath={repoPath}
+            selector={selector}
+          />
+        ))}
+      </Items>
+    </>
   );
 };
 
@@ -257,9 +268,30 @@ const Label = styled.div<{$hasIcon: boolean}>`
   justify-content: flex-start;
   align-items: center;
   gap: 8px;
+  width: ${({$hasIcon}) => ($hasIcon ? '260px' : '280px')};
+
+  .legacy-container {
+    flex-shrink: 1;
+  }
+`;
+
+const LabelTooltipStyles = JSON.stringify({
+  background: ColorsWIP.Gray100,
+  filter: `brightness(97%)`,
+  color: ColorsWIP.Gray900,
+  border: 'none',
+  borderRadius: 7,
+  overflow: 'hidden',
+  fontSize: 14,
+  padding: '5px 10px',
+  transform: 'translate(-10px,-5px)',
+} as React.CSSProperties);
+
+const TruncatingName = styled.div`
+  flex-shrink: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: ${({$hasIcon}) => ($hasIcon ? '218px' : '236px')};
 `;
 
 const IconWithTooltip = styled(Tooltip)`
@@ -275,4 +307,15 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
+`;
+
+const LegacyTag = styled.div`
+  background: ${ColorsWIP.Gray10};
+  color: ${ColorsWIP.Gray600};
+  border-radius: 7px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 5px;
+  margin: -3px 0;
+  font-size: 11px;
 `;
