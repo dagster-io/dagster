@@ -20,10 +20,14 @@ def download_csv(context):
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(
-        "Least caloric cereal: {least_caloric}".format(least_caloric=sorted_cereals[0]["name"])
+        "Least caloric cereal: {least_caloric}".format(
+            least_caloric=sorted_cereals[0]["name"]
+        )
     )
     context.log.info(
-        "Most caloric cereal: {most_caloric}".format(most_caloric=sorted_cereals[-1]["name"])
+        "Most caloric cereal: {most_caloric}".format(
+            most_caloric=sorted_cereals[-1]["name"]
+        )
     )
 
 

@@ -58,7 +58,9 @@ To do this, we'll construct a <PyObject module="dagster" object="DagsterType" di
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_0 endbefore=end_custom_types_marker_0
 def is_list_of_dicts(_, value):
-    return isinstance(value, list) and all(isinstance(element, dict) for element in value)
+    return isinstance(value, list) and all(
+        isinstance(element, dict) for element in value
+    )
 
 
 SimpleDataFrame = DagsterType(
@@ -92,8 +94,8 @@ dagit -f custom_types.py
 ```
 
 <Image
-alt="job_custom_types_figure_one.png"
-src="/images/tutorial/job_custom_types_figure_one.png"
+alt="custom_types_figure_one.png"
+src="/images/tutorial/custom_types_figure_one.png"
 width={2756}
 height={2098}
 />
@@ -126,8 +128,8 @@ dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step outpu
 We will also see the error message in Dagit:
 
 <Image
-alt="job_custom_types_2_dagit_error_message.png"
-src="/images/tutorial/job_custom_types_2_dagit_error_message.png"
+alt="custom_types_2_dagit_error_message.png"
+src="/images/tutorial/custom_types_2_dagit_error_message.png"
 width={2756}
 height={2098}
 />
@@ -186,8 +188,8 @@ A <PyObject module="dagster" object="TypeCheck" displayText="TypeCheck" /> must 
 Dagit knows how to display and archive structured metadata of this kind for future review:
 
 <Image
-alt="job_custom_types_figure_two.png"
-src="/images/tutorial/job_custom_types_figure_two.png"
+alt="custom_types_figure_two.png"
+src="/images/tutorial/custom_types_figure_two.png"
 width={2756}
 height={2098}
 />

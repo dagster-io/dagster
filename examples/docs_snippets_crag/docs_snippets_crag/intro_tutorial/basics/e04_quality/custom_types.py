@@ -6,7 +6,9 @@ from dagster import DagsterType, In, Out, job, op
 
 # start_custom_types_marker_0
 def is_list_of_dicts(_, value):
-    return isinstance(value, list) and all(isinstance(element, dict) for element in value)
+    return isinstance(value, list) and all(
+        isinstance(element, dict) for element in value
+    )
 
 
 SimpleDataFrame = DagsterType(
