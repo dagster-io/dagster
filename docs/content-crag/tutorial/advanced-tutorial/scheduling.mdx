@@ -15,10 +15,10 @@ As before, we've defined a op and a job.
 
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_0 endbefore=end_scheduler_marker_0
 import csv
-from datetime import datetime, time
+from datetime import datetime
 
 import requests
-from dagster import schedule, job, op, repository, daily_schedule
+from dagster import job, op, repository, schedule
 
 
 @op
@@ -42,7 +42,11 @@ In this example, we'll use the <PyObject module="dagster" object="schedule" disp
 The decorated function should return the `run_config` needed to run the schedule at the specified execution time. The function is passed the datetime for which the schedule is running.
 
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_1 endbefore=end_scheduler_marker_1
-@schedule(cron_schedule="45 6 * * *", job=hello_cereal_job, execution_timezone="US/Central")
+@schedule(
+    cron_schedule="45 6 * * *",
+    job=hello_cereal_job,
+    execution_timezone="US/Central",
+)
 def good_morning_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return {"ops": {"hello_cereal": {"config": {"date": date}}}}
@@ -110,10 +114,11 @@ If we combine this `should_execute` filter with a schedule that runs at 6:45am e
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_4 endbefore=end_scheduler_marker_4
 @schedule(
     cron_schedule="45 6 * * *",
-    job="hello_cereal_job",
+    job=hello_cereal_job,
     execution_timezone="US/Central",
     should_execute=weekday_filter,
 )
-def good_weekday_morning_schedule(date):
-    return {"ops": {"hello_cereal": {"inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}}}}
+def good_weekday_morning_schedule(context):
+    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"ops": {"hello_cereal": {"inputs": {"date": {"value": date}}}}}
 ```

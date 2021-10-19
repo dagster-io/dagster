@@ -1,9 +1,9 @@
 # start_scheduler_marker_0
 import csv
-from datetime import datetime, time
+from datetime import datetime
 
 import requests
-from dagster import schedule, job, op, repository, daily_schedule
+from dagster import job, op, repository, schedule
 
 
 @op
@@ -23,7 +23,11 @@ def hello_cereal_job():
 # end_scheduler_marker_0
 
 # start_scheduler_marker_1
-@schedule(cron_schedule="45 6 * * *", job=hello_cereal_job, execution_timezone="US/Central")
+@schedule(
+    cron_schedule="45 6 * * *",
+    job=hello_cereal_job,
+    execution_timezone="US/Central",
+)
 def good_morning_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return {"ops": {"hello_cereal": {"config": {"date": date}}}}
