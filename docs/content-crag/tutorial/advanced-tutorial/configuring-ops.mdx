@@ -49,7 +49,9 @@ def download_csv(context):
 
 @op
 def sort_by_calories(context, cereals):
-    sorted_cereals = sorted(cereals, key=lambda cereal: int(cereal["calories"]))
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal["calories"])
+    )
 
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
@@ -86,7 +88,7 @@ Let's enter it into the config editor:
 
 <Image
 alt="config_filled_out.png"
-src="/images/tutorial/job_config_filled_out.png"
+src="/images/tutorial/config_filled_out.png"
 width={2756}
 height={2098}
 />
@@ -100,7 +102,11 @@ This dict contains all of the user-provided configuration with which to execute 
 
 ```python file=/intro_tutorial/advanced/configuring_ops/configurable_job.py startafter=start_run_config_marker endbefore=end_run_config_marker
 run_config = {
-        "ops": {"download_csv": {"config": {"url": "https://docs.dagster.io/assets/cereal.csv"}}}
+        "ops": {
+            "download_csv": {
+                "config": {"url": "https://docs.dagster.io/assets/cereal.csv"}
+            }
+        }
     }
 ```
 
@@ -161,8 +167,8 @@ Because of the config schema we've provided, Dagit knows that this job requires 
 Go back to the Playground and press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
 
 <Image
-alt="job_inputs_figure_two.png"
-src="/images/tutorial/job_inputs_figure_two.png"
+alt="inputs_figure_two.png"
+src="/images/tutorial/inputs_figure_two.png"
 width={2756}
 height={2098}
 />
