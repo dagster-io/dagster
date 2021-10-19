@@ -222,6 +222,7 @@ def test_k8s_run_launcher_terminate(
     pipeline_name = "slow_pipeline"
 
     tags = {"key": "value"}
+    run_config = os.path.join(get_test_project_environments_path(), "env_s3.yaml")
 
     with get_test_project_external_pipeline_hierarchy(
         dagster_instance_for_k8s_run_launcher, pipeline_name
@@ -235,12 +236,12 @@ def test_k8s_run_launcher_terminate(
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
-            run_config=os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            run_config=run_config,
             tags=tags,
             mode="default",
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
             execution_plan_snapshot=location.get_external_execution_plan(
-                external_pipeline, {}, "default", None, None
+                external_pipeline, run_config, "default", None, None
             ).execution_plan_snapshot,
             external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
             pipeline_code_origin=reoriginated_pipeline.get_python_origin(),

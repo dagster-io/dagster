@@ -463,6 +463,7 @@ def define_resource_pipeline():
             resources={
                 "s3": s3_resource,
                 "s3_resource_with_context_manager": s3_resource_with_context_manager,
+                "io_manager": s3_pickle_io_manager,
             }
         )
     )
