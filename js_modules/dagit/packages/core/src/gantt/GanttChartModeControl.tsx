@@ -10,12 +10,16 @@ export const GanttChartModeControl: React.FunctionComponent<{
   onChange: (mode: GanttChartMode) => void;
 }> = React.memo(({value, onChange, hideTimedMode}) => {
   const buttons: ButtonGroupItem<GanttChartMode>[] = [
-    {id: GanttChartMode.FLAT, icon: 'drag_handle', tooltip: 'Flat view'},
-    {id: GanttChartMode.WATERFALL, icon: 'waterfall_chart', tooltip: 'Waterfall view'},
+    {id: GanttChartMode.FLAT, icon: 'gantt_flat', tooltip: 'Flat view'},
+    {id: GanttChartMode.WATERFALL, icon: 'gantt_waterfall', tooltip: 'Waterfall view'},
   ];
 
   if (!hideTimedMode) {
-    buttons.push({id: GanttChartMode.WATERFALL_TIMED, icon: 'timer', tooltip: 'Timed view'});
+    buttons.push({
+      id: GanttChartMode.WATERFALL_TIMED,
+      icon: 'timer',
+      tooltip: 'Timed view',
+    });
   }
 
   const activeItems = React.useMemo(() => new Set([value]), [value]);

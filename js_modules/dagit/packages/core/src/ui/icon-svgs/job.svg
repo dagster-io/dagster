@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon_job</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" stroke="#000000">
+            <line x1="4.5" y1="7.5" x2="4.5" y2="6.5" id="Line" stroke-linecap="square"></line>
+            <line x1="12.5" y1="7.5" x2="12.5" y2="6.5" id="Line" stroke-linecap="square"></line>
+            <line x1="8.5" y1="7.5" x2="8.5" y2="9.5" id="Line" stroke-linecap="square"></line>
+            <line x1="4.5" y1="7.5" x2="12.5" y2="7.5" id="Line" stroke-linecap="square"></line>
+            <rect id="Rectangle" stroke-width="1.3" x="6.65" y="10.65" width="3.7" height="2.7"></rect>
+            <rect id="Rectangle" stroke-width="1.3" x="2.65" y="2.65" width="3.7" height="2.7"></rect>
+            <rect id="Rectangle" stroke-width="1.3" x="10.65" y="2.65" width="3.7" height="2.7"></rect>
+        </g>
+    </g>
+</svg>

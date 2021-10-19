@@ -589,7 +589,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               )}
               <ButtonWIP
                 title="Toggle whitespace"
-                icon={<IconWIP name="line_style" />}
+                icon={<IconWIP name="toggle_whitespace" />}
                 active={showWhitespace}
                 onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
               />

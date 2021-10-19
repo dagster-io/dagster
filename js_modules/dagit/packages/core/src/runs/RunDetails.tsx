@@ -119,7 +119,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <ButtonWIP icon={<IconWIP name="local_offer" />} onClick={() => setShowDialog(true)}>
+        <ButtonWIP icon={<IconWIP name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </ButtonWIP>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
