@@ -3,7 +3,7 @@ import sqlite3
 from copy import deepcopy
 
 import requests
-from dagster import Field, ModeDefinition, String, pipeline, resource, solid
+from dagster import Field, String, job, op, resource
 
 
 # start_resources_marker_0
@@ -42,7 +42,7 @@ def local_sqlite_warehouse_resource(context):
 # end_resources_marker_0
 
 
-@solid
+@op
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -51,7 +51,7 @@ def download_csv(context):
 
 
 # start_resources_marker_1
-@solid(required_resource_keys={"warehouse"})
+@op(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
         "calories",
@@ -80,14 +80,8 @@ def normalize_calories(context, cereals):
 # end_resources_marker_1
 
 # start_resources_marker_2
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"warehouse": local_sqlite_warehouse_resource}
-        )
-    ]
-)
-def resources_pipeline():
+@job(resource_defs={"warehouse": local_sqlite_warehouse_resource})
+def resources_job():
     normalize_calories(download_csv())
 
 
