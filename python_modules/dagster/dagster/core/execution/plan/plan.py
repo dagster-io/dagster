@@ -1199,7 +1199,12 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
 
 
 def _compute_artifacts_persisted(
-    step_dict, step_dict_by_key, step_handles_to_execute, pipeline_def, resolved_run_config, executable_map
+    step_dict,
+    step_dict_by_key,
+    step_handles_to_execute,
+    pipeline_def,
+    resolved_run_config,
+    executable_map,
 ):
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
@@ -1232,7 +1237,9 @@ def _compute_artifacts_persisted(
         # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
         for step_input in step.step_inputs:
             for step_output_handle in step_input.get_step_output_handle_dependencies():
-                io_manager_key = _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def)
+                io_manager_key = _get_manager_key(
+                    step_dict_by_key, step_output_handle, pipeline_def
+                )
                 manager_def = mode_def.resource_defs.get(io_manager_key)
                 if (
                     # no IO manager is configured
@@ -1252,12 +1259,11 @@ def _get_step_by_key(step_dict, key) -> IExecutionStep:
     check.failed(f"plan has no step with key {key}")
 
 
-def _get_steps_to_execute_by_level(step_dict, step_dict_by_key, step_handles_to_execute, executable_map):
+def _get_steps_to_execute_by_level(
+    step_dict, step_dict_by_key, step_handles_to_execute, executable_map
+):
     return [
-        [
-            cast(ExecutionStep, step_dict_by_key[step_key])
-            for step_key in sorted(step_key_level)
-        ]
+        [cast(ExecutionStep, step_dict_by_key[step_key]) for step_key in sorted(step_key_level)]
         for step_key_level in toposort(
             _get_executable_step_deps(step_dict, step_handles_to_execute, executable_map)
         )

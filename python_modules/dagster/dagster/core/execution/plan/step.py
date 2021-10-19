@@ -1,6 +1,6 @@
 from abc import abstractmethod, abstractproperty
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union
+from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union, cast
 
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
@@ -112,7 +112,8 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
-            key=check.opt_str_param(key, "key", default=handle.to_key())
+            # mypy can't tell that if default is set, this is guaranteed to be a str
+            key=cast(str, check.opt_str_param(key, "key", default=handle.to_key())),
         )
 
     @property
