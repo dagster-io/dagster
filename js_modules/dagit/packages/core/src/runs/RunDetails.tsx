@@ -62,7 +62,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.startTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
                   return (
                     <TimestampDisplay timestamp={run.stats.startTime} timeFormat={TIME_FORMAT} />
                   );
@@ -79,7 +79,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.endTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.endTime) {
                   return (
                     <TimestampDisplay timestamp={run.stats.endTime} timeFormat={TIME_FORMAT} />
                   );
@@ -96,7 +96,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.startTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
                   return (
                     <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
                   );
@@ -165,7 +165,7 @@ export const RUN_DETAILS_FRAGMENT = gql`
   fragment RunDetailsFragment on Run {
     id
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         endTime
         startTime

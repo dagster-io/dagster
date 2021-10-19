@@ -16,8 +16,8 @@ export interface PartitionGraphSetRunFragment_tags {
   value: string;
 }
 
-export interface PartitionGraphSetRunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PartitionGraphSetRunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   startTime: number | null;
   endTime: number | null;
@@ -37,7 +37,7 @@ export interface PartitionGraphSetRunFragment_stats_PythonError {
   cause: PartitionGraphSetRunFragment_stats_PythonError_cause | null;
 }
 
-export type PartitionGraphSetRunFragment_stats = PartitionGraphSetRunFragment_stats_PipelineRunStatsSnapshot | PartitionGraphSetRunFragment_stats_PythonError;
+export type PartitionGraphSetRunFragment_stats = PartitionGraphSetRunFragment_stats_RunStatsSnapshot | PartitionGraphSetRunFragment_stats_PythonError;
 
 export interface PartitionGraphSetRunFragment_stepStats_materializations {
   __typename: "Materialization";

@@ -27,7 +27,7 @@ const APOLLO_MOCKS = {
         pipelineName: 'Test',
         tags: [],
         stats: {
-          __typename: 'PipelineRunStatsSnapshot',
+          __typename: 'RunStatsSnapshot',
           id: 'r1',
           enqueuedTime: R1_START,
           launchTime: R1_START + 12,
@@ -45,7 +45,7 @@ const APOLLO_MOCKS = {
         pipelineName: 'Test',
         tags: [],
         stats: {
-          __typename: 'PipelineRunStatsSnapshot',
+          __typename: 'RunStatsSnapshot',
           id: 'r2',
           enqueuedTime: R2_START,
           launchTime: R2_START + 12,

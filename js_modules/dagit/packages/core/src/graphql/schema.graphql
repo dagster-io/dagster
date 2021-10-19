@@ -277,7 +277,7 @@ type Run implements PipelineRun {
   pipeline: PipelineReference!
   pipelineName: String!
   solidSelection: [String!]
-  stats: PipelineRunStatsOrError!
+  stats: RunStatsSnapshotOrError!
   stepStats: [PipelineRunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -301,7 +301,7 @@ interface PipelineRun {
   pipeline: PipelineReference!
   pipelineName: String!
   solidSelection: [String!]
-  stats: PipelineRunStatsOrError!
+  stats: RunStatsSnapshotOrError!
   stepStats: [PipelineRunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -345,9 +345,22 @@ interface PipelineReference {
   solidSelection: [String!]
 }
 
-union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
+union RunStatsSnapshotOrError = RunStatsSnapshot | PythonError
 
-type PipelineRunStatsSnapshot {
+type RunStatsSnapshot implements PipelineRunStatsSnapshot {
+  id: String!
+  runId: String!
+  stepsSucceeded: Int!
+  stepsFailed: Int!
+  materializations: Int!
+  expectations: Int!
+  enqueuedTime: Float
+  launchTime: Float
+  startTime: Float
+  endTime: Float
+}
+
+interface PipelineRunStatsSnapshot {
   id: String!
   runId: String!
   stepsSucceeded: Int!

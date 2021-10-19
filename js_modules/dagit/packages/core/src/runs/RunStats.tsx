@@ -29,7 +29,7 @@ export const RunStats = ({runId}: {runId: string}) => {
   if (result.__typename !== 'Run') {
     return <PythonErrorInfo error={result} />;
   }
-  if (result.stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (result.stats.__typename !== 'RunStatsSnapshot') {
     return <PythonErrorInfo error={result.stats} />;
   }
 
@@ -67,7 +67,7 @@ const RUN_STATS_QUERY = gql`
         runId
         pipelineName
         stats {
-          ... on PipelineRunStatsSnapshot {
+          ... on RunStatsSnapshot {
             id
             stepsSucceeded
             stepsFailed

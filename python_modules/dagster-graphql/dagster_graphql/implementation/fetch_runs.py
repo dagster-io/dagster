@@ -168,11 +168,11 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
 
 @capture_error
 def get_stats(graphene_info, run_id):
-    from ..schema.pipelines.pipeline_run_stats import GraphenePipelineRunStatsSnapshot
+    from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
     stats.id = "stats-{run_id}"
-    return GraphenePipelineRunStatsSnapshot(stats)
+    return GrapheneRunStatsSnapshot(stats)
 
 
 def get_step_stats(graphene_info, run_id, step_keys=None):

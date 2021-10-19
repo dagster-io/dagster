@@ -21,8 +21,8 @@ export interface RunMetadataFragment_assets {
   key: RunMetadataFragment_assets_key;
 }
 
-export interface RunMetadataFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunMetadataFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -43,7 +43,7 @@ export interface RunMetadataFragment_stats_PythonError {
   cause: RunMetadataFragment_stats_PythonError_cause | null;
 }
 
-export type RunMetadataFragment_stats = RunMetadataFragment_stats_PipelineRunStatsSnapshot | RunMetadataFragment_stats_PythonError;
+export type RunMetadataFragment_stats = RunMetadataFragment_stats_RunStatsSnapshot | RunMetadataFragment_stats_PythonError;
 
 export interface RunMetadataFragment {
   __typename: "Run";

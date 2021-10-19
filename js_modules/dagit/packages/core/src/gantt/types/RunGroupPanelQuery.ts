@@ -25,8 +25,8 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {
   value: string;
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -47,7 +47,7 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonEr
   cause: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError_cause | null;
 }
 
-export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
+export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   __typename: "Run";

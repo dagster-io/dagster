@@ -21,8 +21,9 @@ def types():
     from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
     from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
     from .pipeline_run_stats import (
-        GraphenePipelineRunStatsOrError,
         GraphenePipelineRunStatsSnapshot,
+        GrapheneRunStatsSnapshotOrError,
+        GrapheneRunStatsSnapshot,
     )
     from .pipeline import (
         GrapheneAsset,
@@ -72,8 +73,9 @@ def types():
         GraphenePipelineRunLogsSubscriptionPayload,
         GraphenePipelineRunLogsSubscriptionSuccess,
         GrapheneRunOrError,
-        GraphenePipelineRunStatsOrError,
         GraphenePipelineRunStatsSnapshot,
+        GrapheneRunStatsSnapshotOrError,
+        GrapheneRunStatsSnapshot,
         GraphenePipelineRunStatus,
         GraphenePipelineSnapshot,
         GraphenePipelineSnapshotOrError,

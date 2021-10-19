@@ -32,8 +32,8 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_t
   value: string;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -54,7 +54,7 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_s
   cause: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
+export type PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";

@@ -18,14 +18,14 @@ export interface RunDetailsTestQuery_pipelineRunOrError_Run_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface RunDetailsTestQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunDetailsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   endTime: number | null;
   startTime: number | null;
 }
 
-export type RunDetailsTestQuery_pipelineRunOrError_Run_stats = RunDetailsTestQuery_pipelineRunOrError_Run_stats_PythonError | RunDetailsTestQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot;
+export type RunDetailsTestQuery_pipelineRunOrError_Run_stats = RunDetailsTestQuery_pipelineRunOrError_Run_stats_PythonError | RunDetailsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
 
 export interface RunDetailsTestQuery_pipelineRunOrError_Run {
   __typename: "Run";

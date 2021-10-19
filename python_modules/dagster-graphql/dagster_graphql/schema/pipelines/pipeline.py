@@ -43,7 +43,7 @@ from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
-from .pipeline_run_stats import GraphenePipelineRunStatsOrError
+from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GraphenePipelineRunStatus
 
 
@@ -140,7 +140,7 @@ class GraphenePipelineRun(graphene.Interface):
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    stats = graphene.NonNull(GraphenePipelineRunStatsOrError)
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GraphenePipelineRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
@@ -177,7 +177,7 @@ class GrapheneRun(graphene.ObjectType):
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    stats = graphene.NonNull(GraphenePipelineRunStatsOrError)
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GraphenePipelineRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),

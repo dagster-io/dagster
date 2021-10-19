@@ -13,7 +13,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
     id
     runId
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         startTime
         endTime
@@ -43,7 +43,7 @@ export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
   if (
     stats &&
-    stats.__typename === 'PipelineRunStatsSnapshot' &&
+    stats.__typename === 'RunStatsSnapshot' &&
     stats.endTime &&
     stats.startTime
   ) {
@@ -68,7 +68,7 @@ export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
 
 export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
-  if (stats && stats.__typename === 'PipelineRunStatsSnapshot') {
+  if (stats && stats.__typename === 'RunStatsSnapshot') {
     return stats.materializations;
   }
   return undefined;

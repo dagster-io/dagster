@@ -88,7 +88,7 @@ function buildRun(
     stats: {
       id: id,
       startTime,
-      __typename: 'PipelineRunStatsSnapshot',
+      __typename: 'RunStatsSnapshot',
     },
     stepStats: Object.entries(statuses).map(([key, status]) => ({
       __typename: 'PipelineRunStepStats',

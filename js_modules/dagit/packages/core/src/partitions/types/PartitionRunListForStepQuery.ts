@@ -28,8 +28,8 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_t
   value: string;
 }
 
-export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -50,7 +50,7 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_s
   cause: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats = PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
+export type PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats = PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";

@@ -32,8 +32,8 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tag
   value: string;
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -54,7 +54,7 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_sta
   cause: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
+export type PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";

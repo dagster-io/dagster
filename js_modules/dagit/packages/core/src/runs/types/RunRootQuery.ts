@@ -73,14 +73,14 @@ export interface RunRootQuery_pipelineRunOrError_Run_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface RunRootQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   endTime: number | null;
   startTime: number | null;
 }
 
-export type RunRootQuery_pipelineRunOrError_Run_stats = RunRootQuery_pipelineRunOrError_Run_stats_PythonError | RunRootQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot;
+export type RunRootQuery_pipelineRunOrError_Run_stats = RunRootQuery_pipelineRunOrError_Run_stats_PythonError | RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
 
 export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";

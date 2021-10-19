@@ -290,7 +290,7 @@ const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
-    if (run.stats.__typename === 'PipelineRunStatsSnapshot') {
+    if (run.stats.__typename === 'RunStatsSnapshot') {
       return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
     }
     return null;

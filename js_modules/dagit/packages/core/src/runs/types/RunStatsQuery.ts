@@ -26,8 +26,8 @@ export interface RunStatsQuery_pipelineRunOrError_RunNotFoundError {
   message: string;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunStatsQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   stepsSucceeded: number;
   stepsFailed: number;
@@ -48,7 +48,7 @@ export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError {
   cause: RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_cause | null;
 }
 
-export type RunStatsQuery_pipelineRunOrError_Run_stats = RunStatsQuery_pipelineRunOrError_Run_stats_PipelineRunStatsSnapshot | RunStatsQuery_pipelineRunOrError_Run_stats_PythonError;
+export type RunStatsQuery_pipelineRunOrError_Run_stats = RunStatsQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot | RunStatsQuery_pipelineRunOrError_Run_stats_PythonError;
 
 export interface RunStatsQuery_pipelineRunOrError_Run {
   __typename: "Run";

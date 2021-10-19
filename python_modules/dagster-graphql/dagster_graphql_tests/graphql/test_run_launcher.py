@@ -10,7 +10,7 @@ query RunQuery($runId: ID!) {
     ... on Run {
       status
       stats {
-        ... on PipelineRunStatsSnapshot {
+        ... on RunStatsSnapshot {
           stepsSucceeded
         }
       }

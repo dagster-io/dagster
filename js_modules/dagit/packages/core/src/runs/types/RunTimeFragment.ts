@@ -10,8 +10,8 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunTimeFragment
 // ====================================================
 
-export interface RunTimeFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunTimeFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -32,7 +32,7 @@ export interface RunTimeFragment_stats_PythonError {
   cause: RunTimeFragment_stats_PythonError_cause | null;
 }
 
-export type RunTimeFragment_stats = RunTimeFragment_stats_PipelineRunStatsSnapshot | RunTimeFragment_stats_PythonError;
+export type RunTimeFragment_stats = RunTimeFragment_stats_RunStatsSnapshot | RunTimeFragment_stats_PythonError;
 
 export interface RunTimeFragment {
   __typename: "Run";

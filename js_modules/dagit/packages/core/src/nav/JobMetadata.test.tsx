@@ -24,7 +24,7 @@ describe('JobMetadata', () => {
       schedules: () => new MockList(0),
       sensors: () => new MockList(0),
     }),
-    PipelineRunStatsSnapshot: () => ({
+    RunStatsSnapshot: () => ({
       startTime: () => START_TIME,
       launchTime: () => START_TIME,
       endTime: () => START_TIME + 1,

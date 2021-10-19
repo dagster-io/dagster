@@ -32,8 +32,8 @@ export interface PreviousRunsFragment_Runs_results_tags {
   value: string;
 }
 
-export interface PreviousRunsFragment_Runs_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PreviousRunsFragment_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -54,7 +54,7 @@ export interface PreviousRunsFragment_Runs_results_stats_PythonError {
   cause: PreviousRunsFragment_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsFragment_Runs_results_stats = PreviousRunsFragment_Runs_results_stats_PipelineRunStatsSnapshot | PreviousRunsFragment_Runs_results_stats_PythonError;
+export type PreviousRunsFragment_Runs_results_stats = PreviousRunsFragment_Runs_results_stats_RunStatsSnapshot | PreviousRunsFragment_Runs_results_stats_PythonError;
 
 export interface PreviousRunsFragment_Runs_results {
   __typename: "Run";

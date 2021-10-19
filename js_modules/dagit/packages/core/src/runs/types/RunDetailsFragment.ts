@@ -14,14 +14,14 @@ export interface RunDetailsFragment_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface RunDetailsFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunDetailsFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   endTime: number | null;
   startTime: number | null;
 }
 
-export type RunDetailsFragment_stats = RunDetailsFragment_stats_PythonError | RunDetailsFragment_stats_PipelineRunStatsSnapshot;
+export type RunDetailsFragment_stats = RunDetailsFragment_stats_PythonError | RunDetailsFragment_stats_RunStatsSnapshot;
 
 export interface RunDetailsFragment {
   __typename: "Run";

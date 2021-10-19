@@ -253,7 +253,7 @@ interface RunTimeProps {
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {stats} = run;
 
-  if (stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (stats.__typename !== 'RunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={stats} />}>
         <Group direction="row" spacing={4} alignItems="center">
@@ -291,7 +291,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
 });
 
 export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
-  if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (run.stats.__typename !== 'RunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
         <Group direction="row" spacing={4} alignItems="center">
@@ -310,7 +310,7 @@ export const RUN_TIME_FRAGMENT = gql`
     id
     status
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         enqueuedTime
         launchTime

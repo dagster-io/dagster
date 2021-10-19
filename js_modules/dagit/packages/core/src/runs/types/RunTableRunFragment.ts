@@ -28,8 +28,8 @@ export interface RunTableRunFragment_tags {
   value: string;
 }
 
-export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunTableRunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -50,7 +50,7 @@ export interface RunTableRunFragment_stats_PythonError {
   cause: RunTableRunFragment_stats_PythonError_cause | null;
 }
 
-export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
+export type RunTableRunFragment_stats = RunTableRunFragment_stats_RunStatsSnapshot | RunTableRunFragment_stats_PythonError;
 
 export interface RunTableRunFragment {
   __typename: "Run";

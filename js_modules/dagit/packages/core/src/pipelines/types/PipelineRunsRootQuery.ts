@@ -28,8 +28,8 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags {
   value: string;
 }
 
-export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -50,7 +50,7 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_Py
   cause: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats = PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PipelineRunStatsSnapshot | PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
+export type PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats = PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
 export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";

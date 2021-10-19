@@ -69,14 +69,14 @@ export interface RunFragment_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface RunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   endTime: number | null;
   startTime: number | null;
 }
 
-export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_PipelineRunStatsSnapshot;
+export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_RunStatsSnapshot;
 
 export interface RunFragment {
   __typename: "Run";
