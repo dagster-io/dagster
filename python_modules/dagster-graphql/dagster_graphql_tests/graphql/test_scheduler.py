@@ -1,7 +1,6 @@
 import os
 
 import pendulum
-import yaml
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,

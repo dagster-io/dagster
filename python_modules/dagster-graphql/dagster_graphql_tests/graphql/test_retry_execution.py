@@ -20,7 +20,6 @@ from .graphql_context_test_suite import (
     make_graphql_context_test_suite,
 )
 from .setup import (
-    PoorMansDataFrame,
     csv_hello_world_solids_config,
     get_retry_multi_execution_params,
     retry_config,
@@ -309,20 +308,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert os.path.exists(
             os.path.join(instance.storage_directory(), run_id, "sum_sq_solid", "result")
         )
-        # TODO: test type loader
-        # expected_value_repr = (
-        #     """[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), """
-        #     """('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), """
-        #     """('sum_sq', 49)])]"""
-        # )
-        # assert (
-        #     str(
-        #         intermediate_storage.get_intermediate(
-        #             None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
-        #         ).obj
-        #     )
-        #     == expected_value_repr
-        # )
 
         # retry
         new_run_id = make_new_run_id()
@@ -374,15 +359,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert os.path.exists(
             os.path.join(instance.storage_directory(), new_run_id, "sum_sq_solid", "result")
         )
-        # TODO: test type loader
-        # assert (
-        #     str(
-        #         intermediate_storage.get_intermediate(
-        #             None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
-        #         ).obj
-        #     )
-        #     == expected_value_repr
-        # )
 
     def test_pipeline_reexecution_info_query(self, graphql_context, snapshot):
         context = graphql_context
