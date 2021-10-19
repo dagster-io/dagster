@@ -580,6 +580,10 @@ class ExternalSensor:
             SensorJobData(min_interval=self.min_interval_seconds),
         )
 
+    @property
+    def metadata(self):
+        return self._external_sensor_data.metadata
+
 
 class ExternalPartitionSet:
     def __init__(self, external_partition_set_data, handle):

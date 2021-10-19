@@ -15,6 +15,7 @@ from .errors import (
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
 
 
 class GrapheneTarget(graphene.ObjectType):
@@ -36,6 +37,13 @@ class GrapheneTarget(graphene.ObjectType):
         )
 
 
+class GrapheneSensorMetadata(graphene.ObjectType):
+    assetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
+    class Meta:
+        name = "SensorMetadata"
+
+
 class GrapheneSensor(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     jobOriginId = graphene.NonNull(graphene.String)
@@ -45,6 +53,7 @@ class GrapheneSensor(graphene.ObjectType):
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
+    metadata = graphene.NonNull(GrapheneSensorMetadata)
 
     class Meta:
         name = "Sensor"
@@ -68,6 +77,9 @@ class GrapheneSensor(graphene.ObjectType):
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
             targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
+            metadata=GrapheneSensorMetadata(
+                assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
+            ),
         )
 
     def resolve_id(self, _):
