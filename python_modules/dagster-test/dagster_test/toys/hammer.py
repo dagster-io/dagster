@@ -7,6 +7,7 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    fs_io_manager,
     pipeline,
     solid,
 )
@@ -84,7 +85,11 @@ def reducer(_, in_1, in_2, in_3, in_4):
 
 @pipeline(
     # Needed for Dask tests which use this pipeline
-    mode_defs=[ModeDefinition(executor_defs=get_executor_defs())]
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager}, executor_defs=get_executor_defs()
+        )
+    ]
 )
 def hammer_pipeline():
     out_1, out_2, out_3, out_4 = chase_giver()

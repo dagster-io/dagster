@@ -12,6 +12,7 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
     file_relative_path,
+    fs_io_manager,
     pipeline,
     reconstructable,
     solid,
@@ -30,7 +31,19 @@ def simple(_):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            name="default",
+            executor_defs=default_executors + [dask_executor],
+        ),
+        ModeDefinition(
+            name="filesystem",
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=default_executors + [dask_executor],
+        ),
+    ]
+)
 def dask_engine_pipeline():
     simple()
 
@@ -41,17 +54,25 @@ def test_execute_on_dask_local():
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
                 run_config={
-                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
                     "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 },
                 instance=instance,
+                mode="filesystem",
             )
             assert result.result_for_solid("simple").output_value() == 1
 
 
 def dask_composite_pipeline():
     return nesting_composite_pipeline(
-        6, 2, mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])]
+        6,
+        2,
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"io_manager": fs_io_manager},
+                executor_defs=default_executors + [dask_executor],
+            )
+        ],
     )
 
 
@@ -60,7 +81,6 @@ def test_composite_execute():
         result = execute_pipeline(
             reconstructable(dask_composite_pipeline),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
             },
             instance=instance,
@@ -73,7 +93,14 @@ def pandas_solid(_, df):  # pylint: disable=unused-argument
     pass
 
 
-@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=default_executors + [dask_executor],
+        )
+    ]
+)
 def pandas_pipeline():
     pandas_solid()
 
@@ -91,7 +118,6 @@ def test_pandas_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 **run_config,
             },
@@ -106,7 +132,14 @@ def dask_solid(_, df):  # pylint: disable=unused-argument
     pass
 
 
-@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=default_executors + [dask_executor],
+        )
+    ]
+)
 def dask_pipeline():
     dask_solid()
 
@@ -126,7 +159,6 @@ def test_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 **run_config,
             },
@@ -136,21 +168,7 @@ def test_dask():
     assert result.success
 
 
-def test_execute_on_dask_local_with_intermediate_storage():
-    with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test(temp_dir=tempdir) as instance:
-            result = execute_pipeline(
-                reconstructable(dask_engine_pipeline),
-                run_config={
-                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
-                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-                },
-                instance=instance,
-            )
-            assert result.result_for_solid("simple").output_value() == 1
-
-
-def test_execute_on_dask_local_with_default_storage():
+def test_execute_on_dask_local_without_io_manager():
     with pytest.raises(DagsterUnmetExecutorRequirementsError):
         with instance_for_test() as instance:
             result = execute_pipeline(
@@ -159,6 +177,7 @@ def test_execute_on_dask_local_with_default_storage():
                     "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 },
                 instance=instance,
+                mode="default",
             )
             assert result.result_for_solid("simple").output_value() == 1
 
@@ -172,7 +191,14 @@ def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
             raise Exception("Timed out")
 
 
-@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=default_executors + [dask_executor],
+        )
+    ]
+)
 def sleepy_dask_pipeline():
     sleepy_dask_solid()
 
@@ -220,12 +246,12 @@ def test_existing_scheduler():
         return execute_pipeline(
             reconstructable(dask_engine_pipeline),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {
                     "dask": {"config": {"cluster": {"existing": {"address": scheduler_address}}}}
                 },
             },
             instance=instance,
+            mode="filesystem",
         )
 
     async def _run_test():
