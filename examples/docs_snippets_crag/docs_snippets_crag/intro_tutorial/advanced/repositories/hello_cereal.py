@@ -1,10 +1,10 @@
 import csv
 
 import requests
-from dagster import execute_pipeline, pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def hello_cereal(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -14,10 +14,10 @@ def hello_cereal(context):
     return cereals
 
 
-@pipeline
-def hello_cereal_pipeline():
+@job
+def hello_cereal_job():
     hello_cereal()
 
 
 if __name__ == "__main__":
-    result = execute_pipeline(hello_cereal_pipeline)
+    result = hello_cereal_job.execute_in_process()
