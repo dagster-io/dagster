@@ -332,7 +332,6 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
 ###################################################################################################
 
 
-@functools.lru_cache(maxsize=256)
 def deserialize_json_to_dagster_namedtuple(
     json_str: str,
 ) -> tuple:
