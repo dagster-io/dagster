@@ -74,12 +74,21 @@ def celery_k8s_job_executor(init_context):
     different requirements around idempotence or retry, it may make sense to execute dagster jobs
     with variations on these settings.
 
-    If you'd like to configure a Celery Kubernetes Job executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    If you'd like to configure a Celery Kubernetes Job executor on a job, you should set the
+    ``executor_def`` argument when defining your job (either with ``some_graph.to_job()`` or using
+    the ``@job`` decorator):
 
-    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-celery-k8s/dagster_celery_k8s_tests/example_celery_mode_def.py
-       :language: python
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_celery_k8s import celery_k8s_job_executor
+
+        @job(executor_def=celery_k8s_job_executor)
+        def celery_enabled_job():
+            pass
+
+        # or ...
+        some_graph.to_job(executor_def=celery_k8s_job_executor)
 
     Then you can configure the executor as follows:
 

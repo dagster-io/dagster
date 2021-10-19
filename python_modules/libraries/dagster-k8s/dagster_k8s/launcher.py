@@ -21,9 +21,9 @@ from .utils import delete_job
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
-    """RunLauncher that starts a Kubernetes Job for each pipeline run.
+    """RunLauncher that starts a Kubernetes Job for each dagster run.
 
-    Encapsulates each pipeline run in a separate, isolated invocation of ``dagster-graphql``.
+    Encapsulates each run in a separate, isolated invocation of ``dagster-graphql``.
 
     You may configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:
@@ -34,7 +34,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             module: dagster_k8s.launcher
             class: K8sRunLauncher
             config:
-                service_account_name: pipeline_run_service_account
+                service_account_name: dagster_run_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret

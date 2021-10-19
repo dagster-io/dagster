@@ -39,9 +39,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     """
     Executor which launches steps as Kubernetes Jobs. This executor is experimental.
 
-    To add the Kubernetes Job executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    If you'd like to configure a Kubernetes Job executor on a job, you should set the ``executor_def``
+    argument when defining your job (either with ``some_graph.to_job()`` or using the ``@job``
+    decorator):
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_executor_mode_def.py
        :start-after: start_marker
