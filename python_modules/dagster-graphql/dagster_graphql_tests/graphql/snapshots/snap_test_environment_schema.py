@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_in_memory_instance_lazy_repository] 1'] = {

@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_not_found 1'] = '''{
