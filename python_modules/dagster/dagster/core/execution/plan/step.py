@@ -1,6 +1,17 @@
 from abc import abstractmethod, abstractproperty
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
