@@ -129,7 +129,7 @@ def test_skip_operator(
 
 @requires_airflow_db
 def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
-    pipeline_name = "demo_error_pipeline"
+    pipeline_name = "demo_error_pipeline_s3"
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"
     )
