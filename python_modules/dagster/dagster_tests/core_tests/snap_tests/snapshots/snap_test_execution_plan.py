@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
@@ -48,6 +49,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "solid_handle_id": "solid_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "solid_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "solid_one",
@@ -116,6 +118,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "solid_handle_id": "solid_two",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "solid_two",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "solid_two",
@@ -168,6 +171,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
       "solid_handle_id": "noop_solid",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "noop_solid",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "noop_solid",
@@ -231,6 +235,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
       "solid_handle_id": "noop_solid",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "noop_solid",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "noop_solid",
@@ -349,6 +354,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "add",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "add",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add",
@@ -425,6 +431,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_1.add_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_1.add_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add_one",
@@ -471,6 +478,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_1.return_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_1.return_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "return_one",
@@ -551,6 +559,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_2.add_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_2.add_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add_one",
@@ -597,6 +606,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_2.return_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_2.return_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "return_one",
