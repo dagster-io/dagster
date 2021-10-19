@@ -1,4 +1,3 @@
-import functools
 from abc import abstractmethod, abstractproperty
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union
@@ -113,7 +112,7 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
-            key=handle.to_key()
+            key=check.opt_str_param(key, "key", default=handle.to_key())
         )
 
     @property

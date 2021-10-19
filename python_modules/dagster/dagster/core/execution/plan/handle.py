@@ -14,7 +14,7 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key"
         return super(StepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
-            key=solid_handle.to_string()
+            key=check.opt_str_param(key, "key", default=solid_handle.to_string())
         )
 
     def to_key(self) -> str:
@@ -71,7 +71,7 @@ class ResolvedFromDynamicStepHandle(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),
-            key=f"{solid_handle.to_string()}[{mapping_key}]"
+            key=check.opt_str_param(key, "key", default=f"{solid_handle.to_string()}[{mapping_key}]")
         )
 
     def to_key(self) -> str:

@@ -173,10 +173,12 @@ class _PlanBuilder:
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
+        step_dict_by_key = {step.key: step for step in self._steps.values()}
         step_handles_to_execute = [step.handle for step in self._steps.values()]
 
         executable_map, resolvable_map = _compute_step_maps(
             step_dict,
+            step_dict_by_key,
             step_handles_to_execute,
             self.known_state,
         )
@@ -655,7 +657,7 @@ class ExecutionPlan(
 
     def get_steps_to_execute_by_level(self) -> List[List[ExecutionStep]]:
         return _get_steps_to_execute_by_level(
-            self.step_dict, self.step_dict_by_key, self.step_handles_to_execute, self.executable_map
+            self.step_dict, self.step_handles_to_execute, self.executable_map
         )
 
     def get_executable_step_deps(self) -> Dict[str, Set[str]]:
@@ -673,6 +675,7 @@ class ExecutionPlan(
 
         _update_from_resolved_dynamic_outputs(
             self.step_dict,
+            self.step_dict_by_key,
             self.executable_map,
             self.resolvable_map,
             self.step_handles_to_execute,
@@ -706,6 +709,7 @@ class ExecutionPlan(
 
         executable_map, resolvable_map = _compute_step_maps(
             self.step_dict,
+            self.step_dict_by_key,
             step_handles_to_execute,
             self.known_state,
         )
@@ -934,6 +938,7 @@ class ExecutionPlan(
             )
 
         step_dict = {}
+        step_dict_by_key = {}
 
         for step_snap in execution_plan_snapshot.steps:
             input_snaps = step_snap.inputs
@@ -981,6 +986,7 @@ class ExecutionPlan(
                 raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
 
             step_dict[step.handle] = step
+            step_dict_by_key[step.key] = step
 
         step_handles_to_execute = [
             StepHandle.parse_from_key(key) for key in execution_plan_snapshot.step_keys_to_execute
@@ -988,6 +994,7 @@ class ExecutionPlan(
 
         executable_map, resolvable_map = _compute_step_maps(
             step_dict,
+            step_dict_by_key,
             step_handles_to_execute,
             execution_plan_snapshot.initial_known_state,
         )
@@ -1010,6 +1017,7 @@ class ExecutionPlan(
 
 def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
+    step_dict_by_key: Dict[str, IExecutionStep],
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
     resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
     step_handles_to_execute: List[StepHandleUnion],
@@ -1041,6 +1049,7 @@ def _update_from_resolved_dynamic_outputs(
     for step in resolved_steps:
         step_dict[step.handle] = step
         executable_map[step.key] = step.handle
+        step_dict_by_key[step.key] = step
 
     for key_set in key_sets_to_clear:
         del resolvable_map[key_set]
@@ -1301,7 +1310,7 @@ def _get_manager_key(step_dict, step_output_handle, pipeline_def):
 
 # computes executable_map and resolvable_map and returns them as a tuple. Also
 # may modify the passed in step_dict to include resolved step using known_state.
-def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
+def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, known_state):
     check.list_param(
         step_handles_to_execute,
         "step_handles_to_execute",
@@ -1346,6 +1355,7 @@ def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
     if known_state:
         _update_from_resolved_dynamic_outputs(
             step_dict,
+            step_dict_by_key,
             executable_map,
             resolvable_map,
             step_handles_to_execute,
