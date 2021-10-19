@@ -883,7 +883,7 @@ def test_wrong_config(external_repo_context, capfd):
             captured = capfd.readouterr()
 
             assert "Failed to fetch execution plan for wrong_config_schedule" in captured.out
-            assert "Error in config for pipeline the_pipeline" in captured.out
+            assert "Error in config for pipeline" in captured.out
             assert 'Missing required config entry "solids" at the root.' in captured.out
 
 

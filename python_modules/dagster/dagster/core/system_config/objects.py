@@ -177,7 +177,7 @@ class ResolvedRunConfig(
         )
         if not config_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config for pipeline {}".format(pipeline_def.name),
+                f"Error in config for {pipeline_def.target_type}".format(pipeline_def.name),
                 config_evr.errors,
                 run_config,
             )

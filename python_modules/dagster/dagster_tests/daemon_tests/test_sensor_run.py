@@ -643,11 +643,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
             # Error repeats on subsequent ticks
 
@@ -662,11 +662,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
