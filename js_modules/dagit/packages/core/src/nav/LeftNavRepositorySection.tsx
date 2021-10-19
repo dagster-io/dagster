@@ -3,9 +3,7 @@ import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
