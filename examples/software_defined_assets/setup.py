@@ -1,14 +1,15 @@
 from setuptools import setup  # type: ignore
 
 setup(
-    name="multi_type_lakehouse",
+    name="software_defined_assets",
     version="dev",
-    description="Dagster example for using Lakehouse API with Pandas and Pyspark",
-    author="Elementl",
     author_email="hello@elementl.com",
-    packages=["multi_type_lakehouse"],  # same as name
+    packages=["software_defined_assets"],  # same as name
+    install_requires=["dagster"],  # external packages as dependencies
+    author="Elementl",
     license="Apache-2.0",
-    url="https://github.com/dagster-io/dagster/tree/master/examples/multi_type_lakehouse",
+    description="Dagster example of software-defined assets.",
+    url="https://github.com/dagster-io/dagster/tree/master/examples/software_defined_assets",
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

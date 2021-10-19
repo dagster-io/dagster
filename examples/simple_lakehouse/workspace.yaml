@@ -1,2 +1,0 @@
-load_from:
-  - python_file: simple_lakehouse/repo.py

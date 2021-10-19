@@ -377,12 +377,8 @@
             "path": "/guides/dagster/memoization"
           },
           {
-            "title": "Lakehouse (Experimental)",
-            "path": "/guides/dagster/lakehouse"
-          },
-          {
-            "title": "Lakehouse with Pandas and PySpark (Experimental)",
-            "path": "/guides/dagster/multi-type-lakehouse"
+            "title": "Software-Defined Assets (Experimental)",
+            "path": "/guides/dagster/software-defined-assets"
           },
           {
             "title": "Run Attribution (Experimental)",
