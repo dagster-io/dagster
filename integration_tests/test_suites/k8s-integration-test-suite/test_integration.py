@@ -222,7 +222,9 @@ def test_k8s_run_launcher_terminate(
     pipeline_name = "slow_pipeline"
 
     tags = {"key": "value"}
-    run_config = os.path.join(get_test_project_environments_path(), "env_s3.yaml")
+    run_config = load_yaml_from_path(
+        os.path.join(get_test_project_environments_path(), "env_s3.yaml")
+    )
 
     with get_test_project_external_pipeline_hierarchy(
         dagster_instance_for_k8s_run_launcher, pipeline_name
