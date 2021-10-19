@@ -137,6 +137,16 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   mode: string;
 }
 
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata {
+  __typename: "SensorMetadata";
+  assetKeys: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata_assetKeys[] | null;
+}
+
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors {
   __typename: "Sensor";
   id: string;
@@ -147,6 +157,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   nextTick: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
   targets: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_targets[] | null;
+  metadata: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes {
