@@ -64,7 +64,7 @@ cli_args = [
     (
         "basics/e04_quality/",
         "inputs_typed.py",
-        "inputs_pipeline",
+        "inputs_job",
         None,
         None,
         None,
@@ -74,7 +74,7 @@ cli_args = [
     (
         "basics/e04_quality/",
         "custom_types.py",
-        "custom_type_pipeline",
+        "custom_type_job",
         None,
         None,
         None,
@@ -84,7 +84,7 @@ cli_args = [
     (
         "basics/e04_quality/",
         "custom_types_2.py",
-        "custom_type_pipeline",
+        "custom_type_job",
         None,
         None,
         None,
