@@ -3,7 +3,7 @@ from docs_snippets_crag.concepts.configuration.configured_named_op_example impor
 
 def test_job():
 
-    result = datasets.to_job().execute_in_process(
+    result = datasets.execute_in_process(
         run_config={
             "ops": {
                 "sample_dataset": {"inputs": {"xs": [4, 8, 15, 16, 23, 42]}},

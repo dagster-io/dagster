@@ -17,7 +17,7 @@ Run configuration allows providing parameters to jobs at the time they're execut
 
 It's often useful to configure jobs at run time. For example, you might want someone to manually operate a deployed job and choose what dataset it operates on when they run it. In general, you should use Dagster's config system when you want the person or software that is executing a job to be able to make choices about what the job does, without needing to modify the job definition.
 
-The objects that compose a job - ops, graphs, and resources - are each individually configurable. When executing a job, you can supply "run configuration" that specifies the configuration for each of the objects in the job. When you execute a job with Dagster's Python API, you supply run configuration as a Python dictionary. When you execute a job from Dagit or the CLI, you can provide config in a YAML document.
+The objects that compose a job - ops and resources - are each individually configurable. When executing a job, you can supply "run configuration" that specifies the configuration for each of the objects in the job. When you execute a job with Dagster's Python API, you supply run configuration as a Python dictionary. When you execute a job from Dagit or the CLI, you can provide config in a YAML document.
 
 A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
@@ -28,7 +28,7 @@ Dagster includes a system for gradually-typed configuration schemas. These make 
 This example shows how to write an op whose behavior is based on values that are passed in via configuration:
 
 ```python file=/concepts/configuration/configurable_op.py
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -37,7 +37,7 @@ def uses_config(context):
         context.log.info("hello")
 
 
-@graph
+@job
 def config_example():
     uses_config()
 ```
@@ -48,21 +48,15 @@ How you specify config values depends on how you're running your job:
 
 ### Python API
 
-Default run config can be provided when defining a job using the `config` parameter on <PyObject module="dagster" object="GraphDefinition" method="to_job"/>.
-
-```python file=/concepts/configuration/execute_with_config.py startafter=start_define_job_with_config endbefore=end_define_job_with_config
-config_example_job = config_example.to_job(
-        config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
-    )
-```
-
-When executing a job with <PyObject module="dagster" object="JobDefinition" method="execute_in_process"/>, you can specify the config values through `run_config` argument:
+When executing a job with <PyObject object="JobDefinition" method="execute_in_process"/>, you can specify the config values through `run_config` argument:
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config endbefore=end_execute_with_config
-result = config_example.to_job().execute_in_process(
+result = config_example.execute_in_process(
         run_config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
     )
 ```
+
+You can also build config into jobs, as described in [this section of the Jobs concept page](/concepts/solids-pipelines/pipelines#advanced-job-configuration).
 
 ### Dagster CLI
 
@@ -108,7 +102,7 @@ The most common objects to specify <PyObject module="dagster" object="ConfigSche
 Here's an example of an op that defines a config schema:
 
 ```python file=/concepts/configuration/configurable_op_with_schema.py
-from dagster import graph, op
+from dagster import job, op
 
 
 @op(config_schema={"iterations": int})
@@ -117,7 +111,7 @@ def configurable_with_schema(context):
         context.log.info(context.op_config["word"])
 
 
-@graph
+@job
 def nests_configurable():
     configurable_with_schema()
 ```
@@ -125,7 +119,7 @@ def nests_configurable():
 Dagster validates the `run_config` against the `config_schema`. If the values violate the schema, it will fail at execution time. For example, the following will raise a <PyObject module="dagster" object="DagsterInvalidConfigError" />:
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_bad_config endbefore=end_execute_with_bad_config
-result = nests_configurable.to_job().execute_in_process(
+result = nests_configurable.execute_in_process(
         run_config={
             "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
         }
@@ -163,7 +157,7 @@ If you want multiple ops to share values, You can use <PyObject module="dagster"
 It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
 
 ```python file=/concepts/configuration/make_values_resource_any.py
-from dagster import graph, make_values_resource, op
+from dagster import job, make_values_resource, op
 
 
 @op(required_resource_keys={"value"})
@@ -176,13 +170,11 @@ def also_needs_value(context):
     context.log.info(f"value: {context.resources.value}")
 
 
-@graph
-def basic():
+@job(resource_defs={"value": make_values_resource()})
+def basic_job():
     needs_value()
     also_needs_value()
 
-
-basic_job = basic.to_job(resource_defs={"value": make_values_resource()})
 
 basic_result = basic_job.execute_in_process(
     run_config={"resources": {"value": {"config": "some_value"}}}
@@ -192,7 +184,7 @@ basic_result = basic_job.execute_in_process(
 You can also specify the schema of the values like:
 
 ```python file=/concepts/configuration/make_values_resource_config_schema.py
-from dagster import graph, make_values_resource, op
+from dagster import job, make_values_resource, op
 
 
 @op(required_resource_keys={"values"})
@@ -205,15 +197,11 @@ def needs_different_value(context):
     context.log.info(f"my int: {context.resources.values['my_int']}")
 
 
-@graph
-def different_values_required():
+@job(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
+def different_values_job():
     needs_value()
     needs_different_value()
 
-
-different_values_job = different_values_required.to_job(
-    resource_defs={"values": make_values_resource(my_str=str, my_int=int)}
-)
 
 result = different_values_job.execute_in_process(
     run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}

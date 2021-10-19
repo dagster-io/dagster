@@ -1,4 +1,4 @@
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -7,6 +7,6 @@ def uses_config(context):
         context.log.info("hello")
 
 
-@graph
+@job
 def config_example():
     uses_config()

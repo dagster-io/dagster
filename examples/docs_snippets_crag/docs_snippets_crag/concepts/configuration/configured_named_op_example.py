@@ -1,4 +1,4 @@
-from dagster import Field, In, Int, List, configured, graph, op
+from dagster import Field, In, Int, List, configured, job, op
 
 
 # start_configured_named
@@ -21,7 +21,7 @@ sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": Tr
 full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
 
 
-@graph
+@job
 def datasets():
     sample_dataset()
     full_dataset()
