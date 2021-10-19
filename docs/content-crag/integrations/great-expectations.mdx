@@ -29,7 +29,7 @@ def postprocess_payroll(numrows, expectation):
         raise ValueError
 ```
 
-We've got two presets: one inputs a data file which will pass the expectation, while another won't. You can configure the GE Data Context via the `ge_data_context` resource from `dagster-ge` integration package. All we need to do to expose GE to Dagster is to provide the root of the GE directory (the path to the great_expectations file on your machine).
+You can configure the GE Data Context via the `ge_data_context` resource from `dagster-ge` integration package. All we need to do to expose GE to Dagster is to provide the root of the GE directory (the path to the great_expectations file on your machine).
 
 Finally, here's the full job definition using the GE op, with a default run configuration to use the correct set of data:
 
