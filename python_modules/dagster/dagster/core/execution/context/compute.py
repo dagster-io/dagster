@@ -248,3 +248,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
+
+
+class OpExecutionContext(SolidExecutionContext):
+    pass
