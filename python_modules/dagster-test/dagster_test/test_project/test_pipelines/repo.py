@@ -22,19 +22,19 @@ from dagster import (
     String,
     default_executors,
     file_relative_path,
+    fs_io_manager,
     lambda_solid,
     pipeline,
     repository,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.utils import merge_dicts, segfault
 from dagster.utils.yaml_utils import merge_yamls
-from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
-from dagster_gcp.gcs import gcs_resource, gcs_pickle_io_manager
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -124,11 +124,22 @@ def hanging_pipeline():
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+            resource_defs={"io_manager": fs_io_manager},
         )
     ]
 )
 def demo_pipeline():
+    count_letters(multiply_the_word())
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        )
+    ]
+)
+def demo_pipeline_s3():
     count_letters(multiply_the_word())
 
 
@@ -187,11 +198,22 @@ def demo_pipeline_gcs():
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+            resource_defs={"io_manager": fs_io_manager},
         )
     ]
 )
 def demo_error_pipeline():
+    error_solid()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        )
+    ]
+)
+def demo_error_pipeline_s3():
     error_solid()
 
 
@@ -495,11 +517,22 @@ def emit_airflow_execution_date(context):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+            resource_defs={"io_manager": fs_io_manager},
         )
     ]
 )
 def demo_airflow_execution_date_pipeline():
+    emit_airflow_execution_date()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        )
+    ]
+)
+def demo_airflow_execution_date_pipeline_s3():
     emit_airflow_execution_date()
 
 
@@ -566,8 +599,10 @@ def define_demo_execution_repo():
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,
                 "demo_pipeline": demo_pipeline,
+                "demo_pipeline_s3": demo_pipeline_s3,
                 "demo_pipeline_gcs": demo_pipeline_gcs,
                 "demo_error_pipeline": demo_error_pipeline,
+                "demo_error_pipeline_s3": demo_error_pipeline_s3,
                 "resources_limit_pipeline": define_resources_limit_pipeline,
                 "retry_pipeline": define_step_retry_pipeline,
                 "slow_pipeline": define_slow_pipeline,
@@ -575,6 +610,7 @@ def define_demo_execution_repo():
                 "resource_pipeline": define_resource_pipeline,
                 "docker_celery_pipeline": define_docker_celery_pipeline,
                 "demo_airflow_execution_date_pipeline": demo_airflow_execution_date_pipeline,
+                "demo_airflow_execution_date_pipeline_s3": demo_airflow_execution_date_pipeline_s3,
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,

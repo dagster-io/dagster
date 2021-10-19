@@ -63,7 +63,7 @@ def test_fs_storage(
 def test_s3_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_pipeline_s3"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,

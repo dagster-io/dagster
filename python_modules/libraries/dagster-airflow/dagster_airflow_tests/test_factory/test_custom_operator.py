@@ -30,6 +30,7 @@ def test_my_custom_operator(
         operator=operator,
         environment_yaml=[
             os.path.join(environments_path, "env.yaml"),
+            os.path.join(environments_path, "env_s3.yaml"),
         ],
     )
     validate_pipeline_execution(results)

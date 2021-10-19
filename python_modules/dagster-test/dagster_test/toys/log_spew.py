@@ -2,12 +2,12 @@ import time
 
 from dagster import (
     InputDefinition,
+    ModeDefinition,
     Output,
     OutputDefinition,
+    fs_io_manager,
     pipeline,
     solid,
-    ModeDefinition,
-    fs_io_manager,
 )
 
 

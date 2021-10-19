@@ -68,7 +68,7 @@ def test_fs_storage(
 def test_s3_storage(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_pipeline_s3"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
@@ -163,7 +163,7 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
 def test_airflow_execution_date_tags_containerized(
     dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name, unused-argument
-    pipeline_name = "demo_airflow_execution_date_pipeline"
+    pipeline_name = "demo_airflow_execution_date_pipeline_s3"
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"
     )
