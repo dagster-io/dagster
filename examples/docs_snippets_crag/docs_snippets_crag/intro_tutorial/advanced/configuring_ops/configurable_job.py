@@ -1,18 +1,18 @@
-# start_pipeline_marker
+# start_job_marker
 import csv
 
 import requests
-from dagster import execute_pipeline, pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def download_csv(context):
-    response = requests.get(context.solid_config["url"])
+    response = requests.get(context.op_config["url"])
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
 
-@solid
+@op
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
@@ -21,17 +21,17 @@ def sort_by_calories(context, cereals):
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
 
-@pipeline
-def configurable_pipeline():
+@job
+def configurable_job():
     sort_by_calories(download_csv())
 
 
-# end_pipeline_marker
+# end_job_marker
 
 if __name__ == "__main__":
     # start_run_config_marker
     run_config = {
-        "solids": {
+        "ops": {
             "download_csv": {
                 "config": {"url": "https://docs.dagster.io/assets/cereal.csv"}
             }
@@ -39,6 +39,6 @@ if __name__ == "__main__":
     }
     # end_run_config_marker
     # start_execute_marker
-    result = execute_pipeline(configurable_pipeline, run_config=run_config)
+    result = configurable_job.execute_in_process(run_config=run_config)
     # end_execute_marker
     assert result.success
