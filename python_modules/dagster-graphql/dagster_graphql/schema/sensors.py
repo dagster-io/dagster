@@ -16,6 +16,7 @@ from .errors import (
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
 
 
 class GrapheneTarget(graphene.ObjectType):
