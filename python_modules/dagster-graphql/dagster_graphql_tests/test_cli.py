@@ -106,7 +106,7 @@ mutation ($executionParams: ExecutionParams!) {
                 pipeline { ...on PipelineReference { name } }
             }
         }
-        ... on PipelineConfigValidationInvalid {
+        ... on RunConfigValidationInvalid {
             pipelineName
             errors { message }
         }

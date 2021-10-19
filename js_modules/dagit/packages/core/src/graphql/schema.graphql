@@ -1343,13 +1343,18 @@ type RunGroupsOrError {
   results: [RunGroup!]!
 }
 
-union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | RunConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 type PipelineConfigValidationValid {
   pipelineName: String!
 }
 
-type PipelineConfigValidationInvalid {
+type RunConfigValidationInvalid implements PipelineConfigValidationInvalid {
+  pipelineName: String!
+  errors: [PipelineConfigValidationError!]!
+}
+
+interface PipelineConfigValidationInvalid {
   pipelineName: String!
   errors: [PipelineConfigValidationError!]!
 }
@@ -1386,7 +1391,7 @@ enum EvaluationErrorReason {
 
 scalar RunConfigData
 
-union ExecutionPlanOrError = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
+union ExecutionPlanOrError = ExecutionPlan | RunConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
 
@@ -1499,7 +1504,7 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchRunSuccess implements LaunchPipelineRunSuccess {
   run: Run!
@@ -1547,7 +1552,7 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
 
@@ -1613,7 +1618,7 @@ type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchBackfillSuccess {
   backfillId: String!

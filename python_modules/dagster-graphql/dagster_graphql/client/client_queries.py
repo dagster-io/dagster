@@ -24,7 +24,7 @@ mutation($executionParams: ExecutionParams!) {
     ... on PipelineRunConflict {
       message
     }
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         message

@@ -1,7 +1,7 @@
 import graphene
 
 from ..errors import GraphenePipelineNotFoundError, GraphenePythonError
-from .config import GraphenePipelineConfigValidationInvalid, GraphenePipelineConfigValidationValid
+from .config import GraphenePipelineConfigValidationValid, GrapheneRunConfigValidationInvalid
 from .pipeline_errors import GrapheneInvalidSubsetError
 
 
@@ -10,7 +10,7 @@ class GraphenePipelineConfigValidationResult(graphene.Union):
         types = (
             GrapheneInvalidSubsetError,
             GraphenePipelineConfigValidationValid,
-            GraphenePipelineConfigValidationInvalid,
+            GrapheneRunConfigValidationInvalid,
             GraphenePipelineNotFoundError,
             GraphenePythonError,
         )

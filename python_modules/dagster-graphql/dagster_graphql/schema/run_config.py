@@ -31,7 +31,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         description="""Parse a particular run config result. The return value
         either indicates that the validation succeeded by returning
         `PipelineConfigValidationValid` or that there are configuration errors
-        by returning `PipelineConfigValidationInvalid' which containers a list errors
+        by returning `RunConfigValidationInvalid' which containers a list errors
         so that can be rendered for the user""",
     )
 

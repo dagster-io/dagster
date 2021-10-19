@@ -247,18 +247,27 @@ class GraphenePipelineConfigValidationValid(graphene.ObjectType):
         name = "PipelineConfigValidationValid"
 
 
-class GraphenePipelineConfigValidationInvalid(graphene.ObjectType):
+class GraphenePipelineConfigValidationInvalid(graphene.Interface):
     pipeline_name = graphene.NonNull(graphene.String)
     errors = non_null_list(GraphenePipelineConfigValidationError)
 
     class Meta:
         name = "PipelineConfigValidationInvalid"
 
+
+class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
+    pipeline_name = graphene.NonNull(graphene.String)
+    errors = non_null_list(GraphenePipelineConfigValidationError)
+
+    class Meta:
+        interfaces = (GraphenePipelineConfigValidationInvalid,)
+        name = "RunConfigValidationInvalid"
+
     @staticmethod
     def for_validation_errors(represented_pipeline, errors):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         check.list_param(errors, "errors", of_type=DagsterEvaluationError)
-        return GraphenePipelineConfigValidationInvalid(
+        return GrapheneRunConfigValidationInvalid(
             pipeline_name=represented_pipeline.name,
             errors=[
                 GraphenePipelineConfigValidationError.from_dagster_error(

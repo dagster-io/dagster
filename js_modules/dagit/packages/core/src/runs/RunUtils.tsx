@@ -160,7 +160,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         errors {
           message
         }
@@ -233,7 +233,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         errors {
           message
         }

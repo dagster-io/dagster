@@ -13,13 +13,13 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
-from .pipelines.config import GraphenePipelineConfigValidationInvalid
+from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import non_null_list
 
 pipeline_execution_error_types = (
     GrapheneInvalidStepError,
     GrapheneInvalidOutputError,
-    GraphenePipelineConfigValidationInvalid,
+    GrapheneRunConfigValidationInvalid,
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
     GrapheneUnauthorizedError,

@@ -21,7 +21,7 @@ def is_config_valid(pipeline_def, run_config, mode):
 
 
 def get_validated_config(pipeline_def, run_config, mode):
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationInvalid
+    from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.str_param(mode, "mode")
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -32,7 +32,7 @@ def get_validated_config(pipeline_def, run_config, mode):
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
-            GraphenePipelineConfigValidationInvalid.for_validation_errors(
+            GrapheneRunConfigValidationInvalid.for_validation_errors(
                 pipeline_def.get_external_pipeline(), validated_config.errors
             )
         )

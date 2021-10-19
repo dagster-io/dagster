@@ -903,7 +903,7 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PresetNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         pipelineName
         errors {
           __typename

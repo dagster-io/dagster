@@ -31,14 +31,14 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoun
   message: string;
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid_errors {
+export interface LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid_errors {
   __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
-  errors: LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid_errors[];
+export interface LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid {
+  __typename: "RunConfigValidationInvalid";
+  errors: LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid_errors[];
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
@@ -47,7 +47,7 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
+export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
 
 export interface LaunchPipelineExecution {
   launchPipelineExecution: LaunchPipelineExecution_launchPipelineExecution;

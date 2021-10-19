@@ -229,10 +229,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "RunConfigValidationInvalid"
 
     def test_basis_start_pipeline_not_found_error(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "sjkdfkdjkf")

@@ -24,10 +24,10 @@ import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,
-  RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
+  RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
 } from './types/RunPreviewValidationFragment';
 
-type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
+type ValidationError = RunPreviewValidationFragment_RunConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
 
 function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
@@ -223,7 +223,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     error: ValidationErrorOrNode;
   }[] = [];
 
-  if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
+  if (validation && validation.__typename === 'RunConfigValidationInvalid') {
     validation.errors.forEach((e) => {
       const path = errorStackToYamlPath(e.stack.entries);
 
@@ -416,7 +416,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
     __typename
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         reason

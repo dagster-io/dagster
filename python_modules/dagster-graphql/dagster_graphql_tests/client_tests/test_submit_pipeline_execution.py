@@ -329,7 +329,7 @@ def test_failure_with_invalid_output_error(mock_client: MockClient):
 
 @python_client_test_suite
 def test_failure_with_pipeline_config_invalid(mock_client: MockClient):
-    error_type = "PipelineConfigValidationInvalid"
+    error_type = "RunConfigValidationInvalid"
     errors = [
         {
             "__typename": "some_error",

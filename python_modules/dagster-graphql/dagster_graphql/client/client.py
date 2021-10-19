@@ -196,7 +196,7 @@ class DagsterGraphQLClient:
                 invalid_output_name=query_result["invalidOutputName"],
             )
             raise DagsterGraphQLClientError(query_result_type, body=error_info)
-        elif query_result_type == "PipelineConfigValidationInvalid":
+        elif query_result_type == "RunConfigValidationInvalid":
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
@@ -227,7 +227,7 @@ class DagsterGraphQLClient:
                 Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
                 an arbitrary object for run config. However, it must conform to the constraints of the config
                 schema for this pipeline. If it does not, the client will throw a DagsterGraphQLClientError with a message of
-                PipelineConfigValidationInvalid. Defaults to None.
+                RunConfigValidationInvalid. Defaults to None.
             mode (Optional[str], optional): The mode to run the pipeline with. If you have not
                 defined any custom modes for your pipeline, the default mode is "default". Defaults to None.
             preset (Optional[str], optional): The name of a pre-defined preset to use instead of a

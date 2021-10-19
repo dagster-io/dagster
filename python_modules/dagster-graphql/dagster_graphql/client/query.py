@@ -271,7 +271,7 @@ mutation($executionParams: ExecutionParams!) {
       preset
       message
     }
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       pipelineName
       errors {
         __typename
@@ -324,7 +324,7 @@ mutation($executionParams: ExecutionParams!) {
       message
       pipelineName
     }
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       pipelineName
       errors {
         __typename
