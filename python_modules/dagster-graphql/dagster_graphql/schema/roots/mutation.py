@@ -479,14 +479,18 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
 
 class GrapheneMutation(graphene.ObjectType):
     launch_pipeline_execution = GrapheneLaunchRunMutation.Field()
+    launch_run = GrapheneLaunchRunMutation.Field()
     launch_pipeline_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
+    launch_run_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
     reconcile_scheduler_state = GrapheneReconcileSchedulerStateMutation.Field()
     start_schedule = GrapheneStartScheduleMutation.Field()
     stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()
     start_sensor = GrapheneStartSensorMutation.Field()
     stop_sensor = GrapheneStopSensorMutation.Field()
     terminate_pipeline_execution = GrapheneTerminateRunMutation.Field()
+    terminate_run = GrapheneTerminateRunMutation.Field()
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
+    delete_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
     shutdown_repository_location = GrapheneShutdownRepositoryLocationMutation.Field()

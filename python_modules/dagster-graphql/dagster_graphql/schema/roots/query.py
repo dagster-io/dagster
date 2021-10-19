@@ -151,6 +151,15 @@ class GrapheneQuery(graphene.ObjectType):
     pipelineRunOrError = graphene.Field(
         graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
     )
+    runsOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunsOrError),
+        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    runOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
+    )
     pipelineRunTags = non_null_list(GraphenePipelineTagAndValues)
 
     runGroupOrError = graphene.Field(
@@ -314,6 +323,20 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
+        return get_run_by_id(graphene_info, runId)
+
+    def resolve_runsOrError(self, _graphene_info, **kwargs):
+        filters = kwargs.get("filter")
+        if filters is not None:
+            filters = filters.to_selector()
+
+        return GrapheneRuns(
+            filters=filters,
+            cursor=kwargs.get("cursor"),
+            limit=kwargs.get("limit"),
+        )
+
+    def resolve_runOrError(self, graphene_info, runId):
         return get_run_by_id(graphene_info, runId)
 
     def resolve_runGroupsOrError(self, graphene_info, **kwargs):
