@@ -53,7 +53,7 @@ def serial():
 
 You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset. We no longer log from this op, so we no longer need the context argument here.
 
-We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
+We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject object="OpExecutionContext"
 displayText="context" /> object.
 
 We can use inputs and outputs to connect ops to each other. Here we tell Dagster that:
