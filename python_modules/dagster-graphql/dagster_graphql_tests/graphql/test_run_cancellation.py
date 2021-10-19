@@ -37,6 +37,30 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
 }
 """
 
+# Legacy query (once published on docs site), that we should try to continue supporting
+BACKCOMPAT_LEGACY_TERMINATE_PIPELINE = """
+mutation TerminatePipeline($runId: String!) {
+  terminatePipelineExecution(runId: $runId){
+    __typename
+    ... on TerminatePipelineExecutionSuccess{
+      run {
+        runId
+      }
+    }
+    ... on TerminatePipelineExecutionFailure {
+      message
+    }
+    ... on PipelineRunNotFoundError {
+      runId
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
 
 class TestQueuedRunTermination(
     make_graphql_context_test_suite(
@@ -240,3 +264,36 @@ class TestRunVariantTermination(
             "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]
         )
+
+    def test_backcompat_termination(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # just test existence
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            assert run_id
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context, BACKCOMPAT_LEGACY_TERMINATE_PIPELINE, variables={"runId": run_id}
+            )
+            assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
