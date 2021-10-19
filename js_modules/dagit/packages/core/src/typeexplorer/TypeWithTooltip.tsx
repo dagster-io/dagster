@@ -50,4 +50,8 @@ const TypeName = styled.code`
   border-radius: 0.25em;
   font-size: 14px;
   font-weight: 500;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
