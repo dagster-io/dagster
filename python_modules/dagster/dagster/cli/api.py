@@ -1,6 +1,5 @@
 import os
 import sys
-from collections import namedtuple
 
 import click
 from dagster import check, seven
@@ -17,15 +16,10 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
-from dagster.serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-
-
-@whitelist_for_serdes
-class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
-    pass
 
 
 @click.group(name="api")
@@ -68,10 +62,6 @@ def execute_run_command(input_json):
 
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
-
-    # we need to send but the fact that we have loaded the args so the calling
-    # process knows it is safe to clean up the temp input file
-    write_stream_fn(ExecuteRunArgsLoadComplete())
 
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
