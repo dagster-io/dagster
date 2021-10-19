@@ -191,6 +191,7 @@ class _PlanBuilder:
             self.known_state,
             _compute_artifacts_persisted(
                 step_dict,
+                step_dict_by_key,
                 step_handles_to_execute,
                 pipeline_def,
                 self.resolved_run_config,
@@ -604,14 +605,14 @@ class ExecutionPlan(
 
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        return _get_step_output(self.step_dict, step_output_handle)
+        return _get_step_output(self.step_dict_by_key, step_output_handle)
 
     def get_manager_key(
         self,
         step_output_handle: StepOutputHandle,
         pipeline_def: PipelineDefinition,
     ) -> str:
-        return _get_manager_key(self.step_dict, step_output_handle, pipeline_def)
+        return _get_manager_key(self.step_dict_by_key, step_output_handle, pipeline_def)
 
     def has_step(self, handle: StepHandleUnion) -> bool:
         check.inst_param(handle, "handle", StepHandleTypes)
@@ -657,7 +658,7 @@ class ExecutionPlan(
 
     def get_steps_to_execute_by_level(self) -> List[List[ExecutionStep]]:
         return _get_steps_to_execute_by_level(
-            self.step_dict, self.step_handles_to_execute, self.executable_map
+            self.step_dict, self.step_dict_by_key, self.step_handles_to_execute, self.executable_map
         )
 
     def get_executable_step_deps(self) -> Dict[str, Set[str]]:
@@ -722,6 +723,7 @@ class ExecutionPlan(
             self.known_state,
             _compute_artifacts_persisted(
                 self.step_dict,
+                self.step_dict_by_key,
                 step_handles_to_execute,
                 pipeline_def,
                 resolved_run_config,
@@ -1197,7 +1199,7 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
 
 
 def _compute_artifacts_persisted(
-    step_dict, step_handles_to_execute, pipeline_def, resolved_run_config, executable_map
+    step_dict, step_dict_by_key, step_handles_to_execute, pipeline_def, resolved_run_config, executable_map
 ):
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
@@ -1220,7 +1222,7 @@ def _compute_artifacts_persisted(
         return False
 
     steps_by_level = _get_steps_to_execute_by_level(
-        step_dict, step_handles_to_execute, executable_map
+        step_dict, step_dict_by_key, step_handles_to_execute, executable_map
     )
 
     if len(steps_by_level) == 0:
@@ -1230,7 +1232,7 @@ def _compute_artifacts_persisted(
         # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
         for step_input in step.step_inputs:
             for step_output_handle in step_input.get_step_output_handle_dependencies():
-                io_manager_key = _get_manager_key(step_dict, step_output_handle, pipeline_def)
+                io_manager_key = _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def)
                 manager_def = mode_def.resource_defs.get(io_manager_key)
                 if (
                     # no IO manager is configured
@@ -1250,10 +1252,10 @@ def _get_step_by_key(step_dict, key) -> IExecutionStep:
     check.failed(f"plan has no step with key {key}")
 
 
-def _get_steps_to_execute_by_level(step_dict, step_handles_to_execute, executable_map):
+def _get_steps_to_execute_by_level(step_dict, step_dict_by_key, step_handles_to_execute, executable_map):
     return [
         [
-            cast(ExecutionStep, _get_step_by_key(step_dict, step_key))
+            cast(ExecutionStep, step_dict_by_key[step_key])
             for step_key in sorted(step_key_level)
         ]
         for step_key_level in toposort(
@@ -1295,14 +1297,14 @@ def _get_executable_step_deps(
     return deps
 
 
-def _get_step_output(step_dict, step_output_handle: StepOutputHandle) -> StepOutput:
+def _get_step_output(step_dict_by_key, step_output_handle: StepOutputHandle) -> StepOutput:
     check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-    step = _get_step_by_key(step_dict, step_output_handle.step_key)
+    step = step_dict_by_key[step_output_handle.step_key]
     return step.step_output_named(step_output_handle.output_name)
 
 
-def _get_manager_key(step_dict, step_output_handle, pipeline_def):
-    step_output = _get_step_output(step_dict, step_output_handle)
+def _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def):
+    step_output = _get_step_output(step_dict_by_key, step_output_handle)
     solid_handle = step_output.solid_handle
     output_def = pipeline_def.get_solid(solid_handle).output_def_named(step_output.name)
     return output_def.io_manager_key
