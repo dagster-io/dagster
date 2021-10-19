@@ -2,33 +2,20 @@
 # pylint: disable=unused-argument
 # pylint: disable=print-call
 
+from dagster import graph, job, op
+from .unnested_ops import return_fifty, add_thirty_two, multiply_by_one_point_eight, log_number
+
 # start_composite_solid_example_marker
-from dagster import InputDefinition, composite_solid, pipeline, solid
 
 
-@solid
-def return_one():
-    return 1
+@graph
+def celsius_to_fahrenheit(number):
+    return add_thirty_two(multiply_by_one_point_eight(number))
 
 
-@solid
-def add_one(number: int):
-    return number + 1
-
-
-@solid
-def multiply_by_three(number: int):
-    return number * 3
-
-
-@composite_solid(input_defs=[InputDefinition("number", int)])
-def add_one_times_three_solid(number):
-    return multiply_by_three(add_one(number))
-
-
-@pipeline
-def my_pipeline():
-    add_one_times_three_solid(return_one())
+@job
+def all_together_nested():
+    log_number(celsius_to_fahrenheit(return_fifty()))
 
 
 # end_composite_solid_example_marker
@@ -36,83 +23,58 @@ def my_pipeline():
 # start_composite_solid_config_marker
 
 
-@solid(config_schema={"n": int})
-def add_n(context, number: int):
-    return number + context.solid_config["n"]
+@op(config_schema={"n": float})
+def add_n(context, number):
+    return number + context.op_config["n"]
 
 
-@solid(config_schema={"m": int})
-def multiply_by_m(context, number: int):
-    return number * context.solid_config["m"]
+@op(config_schema={"m": float})
+def multiply_by_m(context, number):
+    return number * context.op_config["m"]
 
 
-@composite_solid(input_defs=[InputDefinition("number", int)])
-def add_n_times_m_solid(number):
+@graph
+def add_n_times_m_graph(number):
     return multiply_by_m(add_n(number))
+
+
+@job
+def subgraph_config_job():
+    add_n_times_m_graph(return_fifty())
 
 
 # end_composite_solid_config_marker
 
-
-@pipeline
-def my_pipeline_composite_config():
-    add_n_times_m_solid()
-
-
-# start_composite_mapping_marker
-
-
-def config_mapping_fn(config):
-    x = config["x"]
-    return {"add_n": {"config": {"n": x}}, "multiply_by_m": {"config": {"m": x}}}
-
-
-@composite_solid(
-    config_fn=config_mapping_fn,
-    config_schema={"x": int},
-    input_defs=[InputDefinition("number", int)],
-)
-def add_x_multiply_by_x(number):
-    return multiply_by_m(add_n(number))
-
-
-@pipeline
-def my_pipeline_config_mapping():
-    add_x_multiply_by_x(return_one())
-
-
-# end_composite_mapping_marker
-
 # start_composite_multi_output_marker
 
-from dagster import OutputDefinition
+from dagster import GraphOut
 
 
-@solid
+@op
 def echo(i):
     print(i)
 
 
-@solid
+@op
 def one() -> int:
     return 1
 
 
-@solid
+@op
 def hello() -> str:
     return "hello"
 
 
-@composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(str, "y")])
-def composite_multi_outputs():
+@graph(out={"x": GraphOut(), "y": GraphOut()})
+def graph_with_multiple_outputs():
     x = one()
     y = hello()
     return {"x": x, "y": y}
 
 
-@pipeline
-def my_pipeline_multi_outputs():
-    x, y = composite_multi_outputs()
+@job
+def subgraph_multiple_outputs_job():
+    x, y = graph_with_multiple_outputs()
     echo(x)
     echo(y)
 
