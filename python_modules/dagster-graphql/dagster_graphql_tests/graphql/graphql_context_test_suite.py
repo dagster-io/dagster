@@ -701,9 +701,9 @@ class GraphQLContextVariant:
     def all_executing_variants():
         return [
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
-            # GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
-            # GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
-            # GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
         ]
 
     @staticmethod
