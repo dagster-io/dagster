@@ -1,6 +1,6 @@
 # Main Concepts
 
-Dagster is a data orchestrator. It lets you define pipelines (DAGs) in terms of the data flow between logical components called solids. These pipelines can be developed locally and run anywhere.
+Dagster is a data orchestrator. It lets you define jobs in terms of the data flow between logical components called ops. These jobs can be developed locally and run anywhere.
 
 ## How to use the Main Concepts section
 
@@ -14,21 +14,23 @@ Each page in this section contains:
 ## Sections
 
 <LinkGrid>
-  <LinkGridItem title="Ops and Graphs" href="/concepts/solids-pipelines/solids">
-    Solids and Pipelines are the building blocks of Dagster code. You use these
-    to define orchestration graphs. This section covers how to define and use
-    both solids and pipelines.
+  <LinkGridItem
+    title="Ops, Jobs, and Graphs"
+    href="/concepts/solids-pipelines/solids"
+  >
+    Ops, Jobs, and Graphs are the building blocks of Dagster code. This section
+    covers how to define and use both ops and jobs.
   </LinkGridItem>
   <LinkGridItem title="Resources" href="/concepts/resources">
-    Modes, alongside resources, enable you to separate the pipeline logic from
-    its heavyweight external dependencies. This makes testing and develop data
-    pipelines possible in various environments.
+    Resources enable you to separate logic from its heavyweight external
+    dependencies. This makes testing and developing data jobs possible in
+    various environments.
   </LinkGridItem>
   <LinkGridItem title="Testing" href="/concepts/testing">
     Dagster enables you to build testable and maintainable data applications.
-    This section shows that Dagster enables you to unit-test your data
-    pipelines, separate business logic from external dependencies, and run data
-    quality tests.
+    This section shows that Dagster enables you to unit-test your data jobs,
+    separate business logic from external dependencies, and run data quality
+    tests.
   </LinkGridItem>
   <LinkGridItem
     title="Configuration System"
@@ -39,17 +41,17 @@ Each page in this section contains:
     how configurations work with different Dagster entities.
   </LinkGridItem>
   <LinkGridItem title="Dagster Types" href="/concepts/types">
-    Dagster includes gradual, opt-in typing for the inputs and outputs of
-    solids. This section explains how to define, use, and test types in Dagster.
+    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
+    This section explains how to define, use, and test types in Dagster.
   </LinkGridItem>
   <LinkGridItem
     title="IO Management"
     href="/concepts/io-management/io-managers"
   >
-    IO Managers are user-provided objects that store solid outputs and load them
-    as inputs to downstream solids. This section explains how Dagster thinks
-    about IO management and shows how to define and use IO managers and other
-    IO-related features.
+    IO Managers are user-provided objects that store op outputs and load them as
+    inputs to downstream ops. This section explains how Dagster thinks about IO
+    management and shows how to define and use IO managers and other IO-related
+    features.
   </LinkGridItem>
   <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
     Dagit is a web-based interface for viewing and interacting with Dagster
@@ -75,9 +77,9 @@ Each page in this section contains:
     backfilling.
   </LinkGridItem>
   <LinkGridItem title="Assets" href="/concepts/assets/asset-materializations">
-    Assets are data objects that you produce during a pipeline run. This section
-    walks you through how to inform Dagster about these assets so that they can
-    be tracked over time.
+    Assets are data objects that you produce during a run. This section walks
+    you through how to inform Dagster about these assets so that they can be
+    tracked over time.
   </LinkGridItem>
   <LinkGridItem title="Logging" href="/concepts/logging/loggers">
     Dagster includes a rich and extensible logging system. This section
