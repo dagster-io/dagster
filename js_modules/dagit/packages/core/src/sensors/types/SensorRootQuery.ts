@@ -95,6 +95,16 @@ export interface SensorRootQuery_sensorOrError_Sensor_targets {
   mode: string;
 }
 
+export interface SensorRootQuery_sensorOrError_Sensor_metadata_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SensorRootQuery_sensorOrError_Sensor_metadata {
+  __typename: "SensorMetadata";
+  assetKeys: SensorRootQuery_sensorOrError_Sensor_metadata_assetKeys[] | null;
+}
+
 export interface SensorRootQuery_sensorOrError_Sensor {
   __typename: "Sensor";
   id: string;
@@ -105,6 +115,7 @@ export interface SensorRootQuery_sensorOrError_Sensor {
   nextTick: SensorRootQuery_sensorOrError_Sensor_nextTick | null;
   sensorState: SensorRootQuery_sensorOrError_Sensor_sensorState;
   targets: SensorRootQuery_sensorOrError_Sensor_targets[] | null;
+  metadata: SensorRootQuery_sensorOrError_Sensor_metadata;
 }
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;

@@ -15,6 +15,7 @@ import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 
+import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 
@@ -165,23 +166,7 @@ const AssetEntryRow: React.FC<{
           </td>
         ) : null}
         <td>
-          <Link to={linkUrl}>
-            <Box flex={{alignItems: 'center', wrap: 'wrap'}} style={{wordBreak: 'break-word'}}>
-              {path
-                .map((p, i) => <span key={i}>{p}</span>)
-                .reduce(
-                  (accum, curr, ii) => [
-                    ...accum,
-                    ii > 0 ? (
-                      <React.Fragment key={`${ii}-space`}>&nbsp;{`>`}&nbsp;</React.Fragment>
-                    ) : null,
-                    curr,
-                  ],
-                  [] as React.ReactNode[],
-                )}
-              {isAssetEntry ? null : '/'}
-            </Box>
-          </Link>
+          <AssetLink path={path} url={linkUrl} trailingSlash={!isAssetEntry} />
         </td>
         {shouldShowAssetGraphColumns ? (
           <td>

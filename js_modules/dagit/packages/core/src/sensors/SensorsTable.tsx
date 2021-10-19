@@ -13,6 +13,7 @@ import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {AssetLink} from '../assets/AssetLink';
 
 import {humanizeSensorInterval} from './SensorDetails';
 import {SensorSwitch} from './SensorSwitch';
@@ -64,7 +65,7 @@ const SensorRow: React.FC<{
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
   const repo = useRepository(repoAddress);
-  const {name, sensorState} = sensor;
+  const {name, sensorState, metadata} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
 
@@ -89,6 +90,13 @@ const SensorRow: React.FC<{
                   pipelineHrefContext={repoAddress}
                   isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                 />
+              ))}
+            </Box>
+          ) : null}
+          {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
+            <Box flex={{direction: 'column', gap: 2}}>
+              {sensor.metadata.assetKeys.map((key) => (
+                <AssetLink path={key.path} displayIcon={true} />
               ))}
             </Box>
           ) : null}

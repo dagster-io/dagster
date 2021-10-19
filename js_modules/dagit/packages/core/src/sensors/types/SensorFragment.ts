@@ -91,6 +91,16 @@ export interface SensorFragment_targets {
   mode: string;
 }
 
+export interface SensorFragment_metadata_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SensorFragment_metadata {
+  __typename: "SensorMetadata";
+  assetKeys: SensorFragment_metadata_assetKeys[] | null;
+}
+
 export interface SensorFragment {
   __typename: "Sensor";
   id: string;
@@ -101,4 +111,5 @@ export interface SensorFragment {
   nextTick: SensorFragment_nextTick | null;
   sensorState: SensorFragment_sensorState;
   targets: SensorFragment_targets[] | null;
+  metadata: SensorFragment_metadata;
 }
