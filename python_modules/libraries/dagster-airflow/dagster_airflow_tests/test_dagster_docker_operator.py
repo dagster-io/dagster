@@ -6,7 +6,7 @@ from dagster import pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import snapshot_from_execution_plan
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.utils import file_relative_path
 from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
@@ -18,7 +18,7 @@ def nonce_solid(_):
     return
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def nonce_pipeline():
     return nonce_solid()
 
@@ -44,7 +44,6 @@ def test_init_modified_docker_operator(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
@@ -64,7 +63,6 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
@@ -88,7 +86,6 @@ def test_modified_docker_operator_env(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
@@ -110,7 +107,6 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
@@ -141,7 +137,6 @@ def test_modified_docker_operator_url(dagster_docker_image):
         with instance_for_test() as instance:
             dagster_operator_parameters = DagsterOperatorParameters(
                 task_id="nonce",
-                run_config={"intermediate_storage": {"filesystem": {}}},
                 pipeline_name="nonce_pipeline",
                 mode="default",
                 op_kwargs={

@@ -3,9 +3,8 @@ from datetime import datetime, timedelta
 
 import click
 import yaml
-from dagster import check, seven
+from dagster import check
 from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.core.execution.plan.plan import can_isolate_steps
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
@@ -28,16 +27,6 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     else:
         config = list(config)
         run_config = load_yaml_from_glob_list(config) if config else {}
-
-    if (
-        not can_isolate_steps(pipeline_def, pipeline_def.get_default_mode())
-        and "intermediate_storage" not in run_config
-    ):
-        system_tmp_path = seven.get_system_temp_directory()
-        dagster_tmp_path = os.path.join(system_tmp_path, "dagster-airflow", pipeline_name)
-        run_config["intermediate_storage"] = {
-            "filesystem": {"config": {"base_dir": dagster_tmp_path}}
-        }
 
     return run_config
 

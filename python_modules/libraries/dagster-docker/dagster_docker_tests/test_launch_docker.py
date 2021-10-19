@@ -57,9 +57,9 @@ def test_launch_docker_no_network():
             "params": {"connect_timeout": 2},
         },
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
+        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline", container_image=docker_image
+            instance, "demo_pipeline_s3", container_image=docker_image
         ) as (workspace, orig_pipeline):
 
             external_pipeline = ReOriginatedExternalPipelineForTest(
@@ -145,9 +145,9 @@ def test_launch_docker_image_on_pipeline_config():
                 }
             }
         ) as instance:
-            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
+            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3", docker_image)
             with get_test_project_workspace_and_external_pipeline(
-                instance, "demo_pipeline", container_image=docker_image
+                instance, "demo_pipeline_s3", container_image=docker_image
             ) as (workspace, orig_pipeline):
 
                 external_pipeline = ReOriginatedExternalPipelineForTest(
@@ -285,8 +285,8 @@ def test_launch_docker_invalid_image():
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline")
-        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline") as (
+        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3")
+        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline_s3") as (
             workspace,
             orig_pipeline,
         ):
@@ -400,8 +400,8 @@ def _test_launch(docker_image, launcher_config, terminate=False):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline")
-        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline") as (
+        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3")
+        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline_s3") as (
             workspace,
             orig_pipeline,
         ):

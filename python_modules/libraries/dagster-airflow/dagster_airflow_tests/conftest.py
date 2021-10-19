@@ -11,7 +11,7 @@ import tempfile
 
 import docker
 import pytest
-from dagster.utils import load_yaml_from_path, mkdir_p
+from dagster.utils import mkdir_p
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -92,13 +92,6 @@ def plugins_path(airflow_home):
     path = os.path.join(airflow_home, "plugins", "")
     mkdir_p(os.path.abspath(path))
     return path
-
-
-@pytest.fixture(scope="module")
-def run_config(s3_bucket, test_repo_path):
-    env_dict = load_yaml_from_path(os.path.join(test_repo_path, "env.yaml"))
-    env_dict["intermediate_storage"] = {"s3": {"s3_bucket": s3_bucket}}
-    yield env_dict
 
 
 @pytest.fixture(scope="session")
