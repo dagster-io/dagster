@@ -3,7 +3,6 @@ from unittest import mock
 
 from dagster import (
     InputDefinition,
-    Int,
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
@@ -19,7 +18,6 @@ from dagster_azure.adls2 import (
     ADLS2FileManager,
     FakeADLS2Resource,
     adls2_file_manager,
-    adls2_plus_default_intermediate_storage_defs,
 )
 
 # For deps
@@ -93,49 +91,6 @@ def test_adls2_file_manager_read(storage_account, file_system):
     file_manager.delete_local_temp()
 
 
-def test_depends_on_adls2_resource_intermediates(storage_account, file_system):
-    @solid(
-        input_defs=[InputDefinition("num_one", Int), InputDefinition("num_two", Int)],
-        output_defs=[OutputDefinition(Int)],
-    )
-    def add_numbers(_, num_one, num_two):
-        return num_one + num_two
-
-    adls2_fake_resource = FakeADLS2Resource(storage_account)
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
-                resource_defs={"adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource)},
-            )
-        ]
-    )
-    def adls2_internal_pipeline():
-        return add_numbers()
-
-    result = execute_pipeline(
-        adls2_internal_pipeline,
-        run_config={
-            "solids": {
-                "add_numbers": {"inputs": {"num_one": {"value": 2}, "num_two": {"value": 4}}}
-            },
-            "intermediate_storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
-        },
-    )
-
-    assert result.success
-    assert result.result_for_solid("add_numbers").output_value() == 6
-
-    assert file_system in adls2_fake_resource.adls2_client.file_systems
-
-    keys = set()
-    for step_key, output_name in [("add_numbers", "result")]:
-        keys.add(create_adls2_key(result.run_id, step_key, output_name))
-
-    assert set(adls2_fake_resource.adls2_client.file_systems[file_system].keys()) == keys
-
-
 def create_adls2_key(run_id, step_key, output_name):
     return "dagster/storage/{run_id}/intermediates/{step_key}/{output_name}".format(
         run_id=run_id, step_key=step_key, output_name=output_name
@@ -168,7 +123,6 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
                 resource_defs={
                     "adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource),
                     "file_manager": ResourceDefinition.hardcoded_resource(adls2_fake_file_manager),
@@ -181,20 +135,12 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 
     result = execute_pipeline(
         adls2_file_manager_test,
-        run_config={
-            "intermediate_storage": {"adls2": {"config": {"adls2_file_system": file_system}}}
-        },
+        run_config={"resources": {"file_manager": {"config": {"adls2_file_system": file_system}}}},
     )
 
     assert result.success
 
     keys_in_bucket = set(adls2_fake_resource.adls2_client.file_systems[file_system].keys())
-
-    for step_key, output_name in [
-        ("emit_file", "result"),
-        ("accept_file", "result"),
-    ]:
-        keys_in_bucket.remove(create_adls2_key(result.run_id, step_key, output_name))
 
     assert len(keys_in_bucket) == 1
 

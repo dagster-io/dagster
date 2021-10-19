@@ -9,18 +9,13 @@ from dagster import (
     List,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     SerializationStrategy,
-    execute_pipeline,
     lambda_solid,
     pipeline,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.instance import DagsterInstance
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
@@ -139,50 +134,6 @@ def test_s3_intermediate_storage_with_custom_serializer(mock_s3_bucket):
             )
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle("foo"))
-
-
-def test_s3_pipeline_with_custom_prefix(mock_s3_bucket):
-    s3_prefix = "custom_prefix"
-
-    pipe = define_inty_pipeline(should_throw=False)
-    run_config = {
-        "intermediate_storage": {
-            "s3": {"config": {"s3_bucket": mock_s3_bucket.name, "s3_prefix": s3_prefix}}
-        }
-    }
-
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
-    instance = DagsterInstance.ephemeral()
-
-    result = execute_pipeline(
-        pipe,
-        run_config=run_config,
-    )
-    assert result.success
-
-    execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(
-        execution_plan,
-        InMemoryPipeline(pipe),
-        run_config,
-        pipeline_run,
-        instance,
-    ) as context:
-        intermediates_manager = S3IntermediateStorage(
-            run_id=result.run_id,
-            s3_bucket=mock_s3_bucket.name,
-            s3_prefix=s3_prefix,
-            s3_session=context.scoped_resources_builder.build(required_resource_keys={"s3"}).s3,
-        )
-        assert intermediates_manager.root == "/".join(["custom_prefix", "storage", result.run_id])
-        assert (
-            intermediates_manager.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
-            == 1
-        )
-        assert (
-            intermediates_manager.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
-            == 2
-        )
 
 
 def test_s3_intermediate_storage_with_custom_prefix(mock_s3_bucket):

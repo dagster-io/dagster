@@ -125,25 +125,3 @@ def test_intermediate_storage_dict_config_configured():
         test_intermediate_storage_configured, {"test_intermediate_storage": None}
     )
     assert it["ran"]
-
-
-def test_intermediate_storage_deprecation_warning():
-    @pipeline
-    def empty_pipeline():
-        pass
-
-    # Deprecation warning on intermediate storage config
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            'The "storage" and "intermediate_storage" entries in the run config are deprecated'
-        ),
-    ):
-        execute_pipeline(empty_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
-
-    # No warnings if no intermediate storage configured or created
-    with pytest.warns(None) as record:
-
-        execute_pipeline(empty_pipeline)
-
-    assert len(record) == 0

@@ -10,18 +10,13 @@ from dagster import (
     List,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     SerializationStrategy,
-    execute_pipeline,
     lambda_solid,
     pipeline,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.instance import DagsterInstance
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
@@ -177,58 +172,6 @@ def test_adls2_intermediate_storage_with_custom_serializer(storage_account, file
             )
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle("foo"))
-
-
-@nettest
-def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
-    adls2_prefix = "custom_prefix"
-
-    pipe = define_inty_pipeline(should_throw=False)
-    run_config = {
-        "resources": {
-            "adls2": {
-                "config": {"storage_account": storage_account, "credential": get_azure_credential()}
-            }
-        },
-        "intermediate_storage": {
-            "adls2": {"config": {"adls2_file_system": file_system, "adls2_prefix": adls2_prefix}}
-        },
-    }
-
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
-    instance = DagsterInstance.ephemeral()
-
-    result = execute_pipeline(
-        pipe,
-        run_config=run_config,
-    )
-    assert result.success
-
-    execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(
-        execution_plan,
-        InMemoryPipeline(pipe),
-        run_config,
-        pipeline_run,
-        instance,
-    ) as context:
-        resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
-        intermediate_storage = ADLS2IntermediateStorage(
-            run_id=result.run_id,
-            file_system=file_system,
-            prefix=adls2_prefix,
-            adls2_client=resource.adls2_client,
-            blob_client=resource.blob_client,
-        )
-        assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
-        assert (
-            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
-            == 1
-        )
-        assert (
-            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
-            == 2
-        )
 
 
 @nettest
