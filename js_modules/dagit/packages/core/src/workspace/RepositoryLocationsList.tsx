@@ -16,6 +16,7 @@ import {Caption} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
 
@@ -133,14 +134,24 @@ export const RepositoryLocationsList = () => {
               <Group direction="column" spacing={4}>
                 <strong>{location.name}</strong>
                 <div>
-                  {location.displayMetadata.map((metadata, idx) => (
-                    <div key={idx}>
-                      <Caption style={{wordBreak: 'break-word'}}>
-                        {`${metadata.key}: `}
-                        <span style={{color: ColorsWIP.Gray400}}>{metadata.value}</span>
-                      </Caption>
-                    </div>
-                  ))}
+                  {location.displayMetadata.map((metadata, idx) => {
+                    const name = metadata.key === 'url' ? 'source' : metadata.key;
+                    const display =
+                      metadata.key === 'url' ? (
+                        <RepositoryRemoteLocationLink repositoryUrl={metadata.value} />
+                      ) : (
+                        metadata.value
+                      );
+
+                    return (
+                      <div key={idx}>
+                        <Caption style={{wordBreak: 'break-word'}}>
+                          {`${name}: `}
+                          <span style={{color: ColorsWIP.Gray400}}>{display}</span>
+                        </Caption>
+                      </div>
+                    );
+                  })}
                 </div>
               </Group>
             </td>
