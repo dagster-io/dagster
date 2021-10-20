@@ -162,7 +162,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> Any:
             "call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix "
             "this error, make sure to call `configured` on the definition object *before* using "
             "the `tag` or `alias` methods. For usage examples, see "
-            "https://docs.dagster.io/overview/configuration#configured"
+            "https://docs.dagster.io/concepts/configuration/configured"
         ),
     )
     check.inst_param(
@@ -171,9 +171,9 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> Any:
         ConfigurableDefinition,
         (
             "Only the following types can be used with the `configured` method: ResourceDefinition, "
-            "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, "
-            "and IntermediateStorageDefinition. For usage examples of "
-            "`configured`, see https://docs.dagster.io/overview/configuration#configured"
+            "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition. "
+            "For usage examples of `configured`, see "
+            "https://docs.dagster.io/concepts/configuration/configured"
         ),
     )
 
@@ -193,7 +193,6 @@ def configured(
 
     * :py:class:`CompositeSolidDefinition`
     * :py:class:`ExecutorDefinition`
-    * :py:class:`IntermediateStorageDefinition`
     * :py:class:`LoggerDefinition`
     * :py:class:`ResourceDefinition`
     * :py:class:`SolidDefinition`
