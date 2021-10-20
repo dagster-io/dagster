@@ -70,7 +70,7 @@ export const defaultMocks = {
   PipelineRunStatsOrError: () => ({
     __typename: 'PipelineRunStatsSnapshot',
   }),
-  RunStatsOrError: () => ({
+  RunStatsSnapshotOrError: () => ({
     __typename: 'RunStatsSnapshot',
   }),
   PipelineRunOrError: () => ({
