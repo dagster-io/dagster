@@ -114,7 +114,7 @@ def test_execute_preset_command():
             ],
         )
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         # Can't use --preset with --config
         bad_res = runner.invoke(
@@ -444,7 +444,7 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         add_result = runner_pipeline_or_job_execute(
             runner,
@@ -458,7 +458,7 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
 
 def test_multiproc_invalid():

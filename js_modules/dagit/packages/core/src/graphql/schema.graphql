@@ -289,7 +289,7 @@ type PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [PipelineRunEvent!]!
+  events(after: Cursor): [DagsterRunEvent!]!
 }
 
 type RepositoryOrigin {
@@ -483,6 +483,14 @@ enum DagsterEventType {
   STEP_RESTARTED
   ASSET_MATERIALIZATION
   STEP_EXPECTATION_RESULT
+  RUN_ENQUEUED
+  RUN_DEQUEUED
+  RUN_STARTING
+  RUN_START
+  RUN_SUCCESS
+  RUN_FAILURE
+  RUN_CANCELING
+  RUN_CANCELED
   PIPELINE_ENQUEUED
   PIPELINE_DEQUEUED
   PIPELINE_STARTING
@@ -541,7 +549,7 @@ type AssetDependency {
   upstreamAsset: AssetNode!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
+union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -665,7 +673,7 @@ type LogMessageEvent implements MessageEvent {
   eventType: DagsterEventType
 }
 
-type PipelineFailureEvent implements MessageEvent & PipelineEvent {
+type RunFailureEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -677,11 +685,11 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   error: PythonError
 }
 
-interface PipelineEvent {
+interface RunEvent {
   pipelineName: String!
 }
 
-type PipelineStartEvent implements MessageEvent & PipelineEvent {
+type RunStartEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -692,7 +700,7 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
+type RunEnqueuedEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -703,7 +711,7 @@ type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
+type RunDequeuedEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -714,7 +722,7 @@ type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineStartingEvent implements MessageEvent & PipelineEvent {
+type RunStartingEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -725,7 +733,7 @@ type PipelineStartingEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineCancelingEvent implements MessageEvent & PipelineEvent {
+type RunCancelingEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -736,7 +744,7 @@ type PipelineCancelingEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineCanceledEvent implements MessageEvent & PipelineEvent {
+type RunCanceledEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -747,7 +755,7 @@ type PipelineCanceledEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
+type RunSuccessEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -883,7 +891,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   error: PythonError
 }
 
-type AlertStartEvent implements MessageEvent & PipelineEvent {
+type AlertStartEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -894,7 +902,7 @@ type AlertStartEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type AlertSuccessEvent implements MessageEvent & PipelineEvent {
+type AlertSuccessEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1597,7 +1605,7 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
-  messages: [PipelineRunEvent!]!
+  messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
 }
 

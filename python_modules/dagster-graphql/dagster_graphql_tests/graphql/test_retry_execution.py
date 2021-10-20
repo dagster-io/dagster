@@ -334,9 +334,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = result["pipelineRunLogs"]["messages"]
 
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
         assert not get_step_output_event(logs, "sum_solid")
         assert get_step_output_event(logs, "sum_sq_solid")

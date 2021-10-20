@@ -28,7 +28,7 @@ from ..errors import (
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
-    GraphenePipelineRunEvent,
+    GrapheneDagsterRunEvent,
     GraphenePipelineRunStepStats,
     GrapheneStepMaterializationEvent,
 )
@@ -163,7 +163,7 @@ class GraphenePipelineRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GraphenePipelineRunEvent),
+        non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
 

@@ -258,8 +258,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
     def _csv_hello_world_event_sequence(self):
         # expected non engine event sequence from executing csv_hello_world pipeline
         return [
-            "PipelineStartingEvent",
-            "PipelineStartEvent",
+            "RunStartingEvent",
+            "RunStartEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
@@ -276,7 +276,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
-            "PipelineSuccessEvent",
+            "RunSuccessEvent",
         ]
 
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
@@ -473,9 +473,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         logs = result["messages"]
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
     def test_basic_filesystem_sync_execution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -492,11 +492,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         logs = result["messages"]
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
-        assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
+        assert first_event_of_type(logs, "RunStartEvent")["level"] == "DEBUG"
 
         sum_solid_output = get_step_output_event(logs, "sum_solid")
         assert sum_solid_output["stepKey"] == "sum_solid"

@@ -86,7 +86,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: '',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineStartingEvent',
+    __typename: 'RunStartingEvent',
   },
   {
     message: 'Started process for pipeline (pid: 76720).',
@@ -100,7 +100,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: 'Started execution of pipeline "composition".',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineStartEvent',
+    __typename: 'RunStartEvent',
   },
   {
     message: 'Executing steps in process (pid: 76720)',
@@ -329,7 +329,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: 'Finished execution of pipeline "composition".',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineSuccessEvent',
+    __typename: 'RunSuccessEvent',
   },
   {
     message: 'Process for pipeline exited (pid: 76720).',

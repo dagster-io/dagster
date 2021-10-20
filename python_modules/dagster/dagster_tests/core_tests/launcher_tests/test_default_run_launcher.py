@@ -315,7 +315,7 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
                     "step crashy_solid unexpectedly exited"
                 )
             else:
-                message = "Pipeline execution process for {run_id} unexpectedly exited".format(
+                message = "Run execution process for {run_id} unexpectedly exited".format(
                     run_id=run_id
                 )
 
@@ -368,7 +368,7 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                 instance,
                 run_id,
                 event_type="ENGINE_EVENT",
-                message="Process for pipeline exited",
+                message="Process for run exited",
             )
 
             run_logs = instance.all_logs(run_id)
@@ -377,7 +377,7 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                 _check_event_log_contains(
                     run_logs,
                     [
-                        ("PIPELINE_CANCELING", "Sending pipeline termination request."),
+                        ("PIPELINE_CANCELING", "Sending run termination request."),
                         (
                             "ENGINE_EVENT",
                             "Multiprocess executor: received termination signal - forwarding to active child process",
@@ -389,22 +389,22 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
                         (
                             "PIPELINE_CANCELED",
-                            'Execution of pipeline "sleepy_pipeline" canceled.',
+                            'Execution of run for "sleepy_pipeline" canceled.',
                         ),
-                        ("ENGINE_EVENT", "Process for pipeline exited"),
+                        ("ENGINE_EVENT", "Process for run exited"),
                     ],
                 )
             else:
                 _check_event_log_contains(
                     run_logs,
                     [
-                        ("PIPELINE_CANCELING", "Sending pipeline termination request."),
+                        ("PIPELINE_CANCELING", "Sending run termination request."),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
                         (
                             "PIPELINE_CANCELED",
-                            'Execution of pipeline "sleepy_pipeline" canceled.',
+                            'Execution of run for "sleepy_pipeline" canceled.',
                         ),
-                        ("ENGINE_EVENT", "Process for pipeline exited"),
+                        ("ENGINE_EVENT", "Process for run exited"),
                     ],
                 )
 
@@ -563,7 +563,7 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             poll_for_event(
-                instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"
+                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
             )
             event_records = instance.all_logs(run_id)
 
@@ -571,7 +571,7 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
 
             if _is_multiprocess(run_config):
                 messages = [
-                    "Started process for pipeline",
+                    "Started process for run",
                     "Executing steps using multiprocess executor",
                     "Launching subprocess for return_one",
                     "Executing step return_one in subprocess",
@@ -591,16 +591,16 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     "Multiprocess executor: parent process exiting",
-                    "Process for pipeline exited",
+                    "Process for run exited",
                 ]
             else:
                 messages = [
-                    "Started process for pipeline",
+                    "Started process for run",
                     "Executing steps in process",
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     "Finished steps in process",
-                    "Process for pipeline exited",
+                    "Process for run exited",
                 ]
 
             events_iter = iter(engine_events)

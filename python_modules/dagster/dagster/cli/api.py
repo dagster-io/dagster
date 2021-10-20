@@ -67,7 +67,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for pipeline (pid: {pid}).".format(pid=pid),
+        "Started process for run (pid: {pid}).".format(pid=pid),
         pipeline_run,
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
@@ -77,7 +77,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
             write_stream_fn(event)
     finally:
         instance.report_engine_event(
-            "Process for pipeline exited (pid: {pid}).".format(pid=pid),
+            "Process for run exited (pid: {pid}).".format(pid=pid),
             pipeline_run,
         )
 

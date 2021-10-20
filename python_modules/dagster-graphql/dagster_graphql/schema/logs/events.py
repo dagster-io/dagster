@@ -55,72 +55,72 @@ class GrapheneLogMessageEvent(graphene.ObjectType):
         name = "LogMessageEvent"
 
 
-class GraphenePipelineEvent(graphene.Interface):
+class GrapheneRunEvent(graphene.Interface):
     pipelineName = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "PipelineEvent"
+        name = "RunEvent"
 
 
-class GraphenePipelineEnqueuedEvent(graphene.ObjectType):
+class GrapheneRunEnqueuedEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineEnqueuedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunEnqueuedEvent"
 
 
-class GraphenePipelineDequeuedEvent(graphene.ObjectType):
+class GrapheneRunDequeuedEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineDequeuedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunDequeuedEvent"
 
 
-class GraphenePipelineStartingEvent(graphene.ObjectType):
+class GrapheneRunStartingEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineStartingEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunStartingEvent"
 
 
-class GraphenePipelineCancelingEvent(graphene.ObjectType):
+class GrapheneRunCancelingEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineCancelingEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunCancelingEvent"
 
 
-class GraphenePipelineCanceledEvent(graphene.ObjectType):
+class GrapheneRunCanceledEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineCanceledEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunCanceledEvent"
 
 
-class GraphenePipelineStartEvent(graphene.ObjectType):
+class GrapheneRunStartEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineStartEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunStartEvent"
 
 
-class GraphenePipelineSuccessEvent(graphene.ObjectType):
+class GrapheneRunSuccessEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineSuccessEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunSuccessEvent"
 
 
-class GraphenePipelineFailureEvent(graphene.ObjectType):
+class GrapheneRunFailureEvent(graphene.ObjectType):
     error = graphene.Field(GraphenePythonError)
 
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineFailureEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunFailureEvent"
 
 
 class GrapheneAlertStartEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
         name = "AlertStartEvent"
 
 
 class GrapheneAlertSuccessEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
         name = "AlertSuccessEvent"
 
 
@@ -467,7 +467,7 @@ class GrapheneStepExpectationResultEvent(graphene.ObjectType):
 
 
 # Should be a union of all possible events
-class GraphenePipelineRunEvent(graphene.Union):
+class GrapheneDagsterRunEvent(graphene.Union):
     class Meta:
         types = (
             GrapheneExecutionStepFailureEvent,
@@ -479,14 +479,14 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneExecutionStepUpForRetryEvent,
             GrapheneExecutionStepRestartEvent,
             GrapheneLogMessageEvent,
-            GraphenePipelineFailureEvent,
-            GraphenePipelineStartEvent,
-            GraphenePipelineEnqueuedEvent,
-            GraphenePipelineDequeuedEvent,
-            GraphenePipelineStartingEvent,
-            GraphenePipelineCancelingEvent,
-            GraphenePipelineCanceledEvent,
-            GraphenePipelineSuccessEvent,
+            GrapheneRunFailureEvent,
+            GrapheneRunStartEvent,
+            GrapheneRunEnqueuedEvent,
+            GrapheneRunDequeuedEvent,
+            GrapheneRunStartingEvent,
+            GrapheneRunCancelingEvent,
+            GrapheneRunCanceledEvent,
+            GrapheneRunSuccessEvent,
             GrapheneHandledOutputEvent,
             GrapheneLoadedInputEvent,
             GrapheneLogsCapturedEvent,
@@ -500,7 +500,7 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneAlertStartEvent,
             GrapheneAlertSuccessEvent,
         )
-        name = "PipelineRunEvent"
+        name = "DagsterRunEvent"
 
 
 class GraphenePipelineRunStepStats(graphene.ObjectType):

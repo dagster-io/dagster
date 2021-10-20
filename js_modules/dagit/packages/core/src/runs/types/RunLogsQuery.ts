@@ -15,7 +15,7 @@ export interface RunLogsQuery_pipelineRunOrError_PipelineRunNotFoundError {
 }
 
 export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineStartEvent" | "PipelineEnqueuedEvent" | "PipelineDequeuedEvent" | "PipelineStartingEvent" | "PipelineCancelingEvent" | "PipelineCanceledEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   runId: string;
   message: string;
   timestamp: string;
@@ -127,28 +127,28 @@ export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepMaterial
   materialization: RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepMaterializationEvent_materialization;
 }
 
-export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent_pipelineFailureError_cause {
+export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent_pipelineFailureError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent_pipelineFailureError {
+export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent_pipelineFailureError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent_pipelineFailureError_cause | null;
+  cause: RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent_pipelineFailureError_cause | null;
 }
 
-export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent {
-  __typename: "PipelineFailureEvent";
+export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent {
+  __typename: "RunFailureEvent";
   runId: string;
   message: string;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  pipelineFailureError: RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent_pipelineFailureError | null;
+  pipelineFailureError: RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent_pipelineFailureError | null;
 }
 
 export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent_error_cause {
@@ -982,7 +982,7 @@ export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_LogsCaptured
   pid: number | null;
 }
 
-export type RunLogsQuery_pipelineRunOrError_PipelineRun_events = RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepSkippedEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepMaterializationEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_PipelineFailureEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepInputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepOutputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepExpectationResultEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ObjectStoreOperationEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_HandledOutputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_LoadedInputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_EngineEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_HookErroredEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_LogsCapturedEvent;
+export type RunLogsQuery_pipelineRunOrError_PipelineRun_events = RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepSkippedEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepMaterializationEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_RunFailureEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepInputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepOutputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_StepExpectationResultEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_ObjectStoreOperationEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_HandledOutputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_LoadedInputEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_EngineEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_HookErroredEvent | RunLogsQuery_pipelineRunOrError_PipelineRun_events_LogsCapturedEvent;
 
 export interface RunLogsQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";

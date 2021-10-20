@@ -14,6 +14,7 @@ import {TagWIP} from '../ui/TagWIP';
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
+import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_StepMaterializationEvent_materialization,
@@ -156,7 +157,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'AlertSuccessEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
-    case 'PipelineFailureEvent':
+    case 'RunFailureEvent':
       if (node.pipelineFailureError) {
         return (
           <FailureContent
@@ -168,20 +169,20 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       }
 
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
-    case 'PipelineSuccessEvent':
+    case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
 
-    case 'PipelineStartEvent':
+    case 'RunStartEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'PipelineEnqueuedEvent':
+    case 'RunEnqueuedEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'PipelineDequeuedEvent':
+    case 'RunDequeuedEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'PipelineStartingEvent':
+    case 'RunStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'PipelineCancelingEvent':
+    case 'RunCancelingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'PipelineCanceledEvent':
+    case 'RunCanceledEvent':
       return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
       if (node.engineError) {
@@ -266,7 +267,7 @@ const DefaultContent: React.FunctionComponent<{
                   }
             }
           >
-            {eventType}
+            {eventTypeToDisplayType(eventType)}
           </TagWIP>
         )}
       </EventTypeColumn>
@@ -325,7 +326,7 @@ const FailureContent: React.FunctionComponent<{
     <>
       <EventTypeColumn>
         <TagWIP minimal intent="danger">
-          {eventType}
+          {eventTypeToDisplayType(eventType)}
         </TagWIP>
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>

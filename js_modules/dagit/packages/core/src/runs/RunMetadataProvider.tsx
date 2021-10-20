@@ -122,13 +122,13 @@ export function extractMetadataFromLogs(
       : timestamp;
     metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
 
-    if (log.__typename === 'PipelineStartEvent') {
+    if (log.__typename === 'RunStartEvent') {
       metadata.startedPipelineAt = timestamp;
     }
     if (
-      log.__typename === 'PipelineFailureEvent' ||
-      log.__typename === 'PipelineSuccessEvent' ||
-      log.__typename === 'PipelineCanceledEvent'
+      log.__typename === 'RunFailureEvent' ||
+      log.__typename === 'RunSuccessEvent' ||
+      log.__typename === 'RunCanceledEvent'
     ) {
       metadata.exitedAt = timestamp;
       for (const step of Object.values(metadata.steps)) {
@@ -251,7 +251,7 @@ export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, 
 };
 
 export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
-  fragment RunMetadataProviderMessageFragment on PipelineRunEvent {
+  fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
       message
