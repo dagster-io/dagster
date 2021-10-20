@@ -321,13 +321,8 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(
-    execution_plan, pipeline_def, resolved_run_config, intermediate_storage_def
-):
+def get_required_resource_keys_to_init(execution_plan, pipeline_def, resolved_run_config):
     resource_keys = set()
-
-    if intermediate_storage_def is not None:
-        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
@@ -338,9 +333,7 @@ def get_required_resource_keys_to_init(
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
         resource_keys = resource_keys.union(
-            get_required_resource_keys_for_step(
-                pipeline_def, step, execution_plan, intermediate_storage_def
-            )
+            get_required_resource_keys_for_step(pipeline_def, step, execution_plan)
         )
 
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
@@ -361,14 +354,8 @@ def get_transitive_required_resource_keys(required_resource_keys, resource_defs)
     return transitive_required_resource_keys
 
 
-def get_required_resource_keys_for_step(
-    pipeline_def, execution_step, execution_plan, intermediate_storage_def
-):
+def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_plan):
     resource_keys = set()
-
-    # add all the intermediate storage resource keys
-    if intermediate_storage_def is not None:
-        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     # add all the solid compute resource keys
     solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition

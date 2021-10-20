@@ -158,7 +158,6 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
 
-        _check_io_manager_intermediate_storage(self.mode_definition, self.resolved_run_config)
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
@@ -1062,12 +1061,7 @@ def _check_persistent_storage_requirement(
     if ExecutorRequirement.PERSISTENT_OUTPUTS not in executor_def.requirements:
         return
 
-    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
-
-    if not (
-        can_isolate_steps(pipeline_def, mode_def)
-        or (intermediate_storage_def and intermediate_storage_def.is_persistent)
-    ):
+    if not can_isolate_steps(pipeline_def, mode_def):
         if isinstance(pipeline_def, JobDefinition):
             target = "job"
             node = "op"
@@ -1083,34 +1077,6 @@ def _check_persistent_storage_requirement(
             f"includes {node} outputs that will not be stored somewhere where other processes can "
             "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
             f"    {suggestion}"
-        )
-
-
-def _check_io_manager_intermediate_storage(
-    mode_def: ModeDefinition, resolved_run_config: ResolvedRunConfig
-) -> None:
-    """Only one of io_manager and intermediate_storage should be set."""
-    # pylint: disable=comparison-with-callable
-    from dagster.core.storage.system_storage import mem_intermediate_storage
-
-    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
-    intermediate_storage_is_default = (
-        intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
-    )
-
-    io_manager = mode_def.resource_defs["io_manager"]
-    io_manager_is_default = io_manager == mem_io_manager
-
-    if not intermediate_storage_is_default and not io_manager_is_default:
-        raise DagsterInvariantViolationError(
-            'You have specified an intermediate storage, "{intermediate_storage_name}", and have '
-            "also specified a default IO manager. You must specify only one. To avoid specifying "
-            "an intermediate storage, omit the intermediate_storage_defs argument to your "
-            'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
-            'specifying a default IO manager, omit the "io_manager" key from the '
-            "resource_defs argument to your ModeDefinition.".format(
-                intermediate_storage_name=intermediate_storage_def.name
-            )
         )
 
 
@@ -1180,15 +1146,7 @@ def _compute_artifacts_persisted(
     """
     # pylint: disable=comparison-with-callable
 
-    # intermediate storage backcomopat
-    # https://github.com/dagster-io/dagster/issues/3043
-
     mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
-
-    if mode_def.get_intermediate_storage_def(
-        resolved_run_config.intermediate_storage.intermediate_storage_name
-    ).is_persistent:
-        return True
 
     if len(step_dict) == 0:
         return False

@@ -56,8 +56,6 @@ from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
-    from dagster.core.storage.intermediate_storage import build_in_mem_intermediates_storage
-
     loggers = check.opt_dict_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
@@ -81,7 +79,6 @@ def create_test_pipeline_execution_context(logger_defs=None):
         execution_data=create_execution_data(
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,
-            intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
         ),
         log_manager=log_manager,
         output_capture=None,
