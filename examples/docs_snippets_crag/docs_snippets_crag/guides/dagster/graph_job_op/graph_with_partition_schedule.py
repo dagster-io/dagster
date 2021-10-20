@@ -1,4 +1,10 @@
-from dagster import daily_partitioned_config, job, op, repository, schedule_from_partitions
+from dagster import (
+    build_schedule_from_partitioned_job,
+    daily_partitioned_config,
+    job,
+    op,
+    repository,
+)
 
 
 @op(config_schema={"date": str})
@@ -16,7 +22,7 @@ def do_it_all():
     do_something_with_config()
 
 
-do_it_all_schedule = schedule_from_partitions(do_it_all)
+do_it_all_schedule = build_schedule_from_partitioned_job(do_it_all)
 
 
 @repository

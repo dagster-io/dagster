@@ -16,7 +16,7 @@ description: Dagster "Partitioned Jobs" enable launching backfills, where each p
 | <PyObject object="monthly_partitioned_config" decorator /> | Decorator for constructing partitioned config where each partition is a month.                      |
 | <PyObject object="static_partitioned_config" decorator />  | Decorator for constructing partitioned config for a static set of partition keys.                   |
 | <PyObject object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
-| <PyObject object="schedule_from_partitions" />             | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 
 ## Overview
 
@@ -121,7 +121,7 @@ def continent_job():
 
 It's common that, when you have a partitioned job, you want to run it on a schedule. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-The <PyObject object="schedule_from_partitions"/> function allows you to construct a schedule from a partitioned job. The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how to use it.
+The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a partitioned job. The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how to use it.
 
 ## Testing
 

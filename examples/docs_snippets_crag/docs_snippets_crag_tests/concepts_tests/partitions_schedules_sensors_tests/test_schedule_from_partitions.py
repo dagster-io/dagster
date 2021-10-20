@@ -6,5 +6,5 @@ from docs_snippets_crag.concepts.partitions_schedules_sensors.schedule_from_part
 )
 
 
-def test_schedule_from_partitions():
+def test_build_schedule_from_partitioned_job():
     assert do_stuff_partitioned_schedule.pipeline_name == do_stuff_partitioned.name

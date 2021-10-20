@@ -70,6 +70,7 @@ from dagster.core.definitions import (
     UrlMetadataEntryData,
     asset_sensor,
     build_init_logger_context,
+    build_schedule_from_partitioned_job,
     composite_solid,
     config_mapping,
     daily_partitioned_config,
@@ -428,6 +429,7 @@ __all__ = [
     "EventRecordsFilter",
     "RunShardedEventsCursor",
     # partitions and schedules
+    "build_schedule_from_partitioned_job",
     "schedule_from_partitions",
     "dynamic_partitioned_config",
     "static_partitioned_config",
