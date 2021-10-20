@@ -822,7 +822,7 @@ def return_multi():
 def do_two_things():
     do_something()
     one, two = return_multi()
-    return {"one": one, "two": two}
+    return (one, two)
 
 
 @op
