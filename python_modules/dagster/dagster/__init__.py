@@ -27,7 +27,6 @@ from dagster.core.definitions import (
     InputDefinition,
     InputMapping,
     IntMetadataEntryData,
-    IntermediateStorageDefinition,
     JobDefinition,
     JsonMetadataEntryData,
     LoggerDefinition,
@@ -83,7 +82,6 @@ from dagster.core.definitions import (
     hourly_partitioned_config,
     hourly_schedule,
     in_process_executor,
-    intermediate_storage,
     job,
     lambda_solid,
     logger,
@@ -175,7 +173,6 @@ from dagster.core.storage.event_log import (
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
@@ -184,13 +181,6 @@ from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
     root_input_manager,
-)
-from dagster.core.storage.system_storage import (
-    build_intermediate_storage_from_object_store,
-    default_intermediate_storage_defs,
-    fs_intermediate_storage,
-    io_manager_from_intermediate_storage,
-    mem_intermediate_storage,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.config_schema import (
@@ -250,7 +240,6 @@ __all__ = [
     "In",
     "InputDefinition",
     "InputMapping",
-    "IntermediateStorageDefinition",
     "JsonMetadataEntryData",
     "LoggerDefinition",
     "build_init_logger_context",
@@ -290,7 +279,6 @@ __all__ = [
     "config_mapping",
     "executor",
     "graph",
-    "intermediate_storage",
     "job",
     "lambda_solid",
     "logger",
@@ -319,7 +307,6 @@ __all__ = [
     "InitResourceContext",
     "ExecuteInProcessResult",
     "build_init_resource_context",
-    "InitIntermediateStorageContext",
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
@@ -337,15 +324,11 @@ __all__ = [
     "PipelineRun",
     "PipelineRunStatus",
     "default_executors",
-    "default_intermediate_storage_defs",
     "execute_pipeline_iterator",
     "execute_pipeline",
     "validate_run_config",
     "execute_solid_within_pipeline",
-    "fs_intermediate_storage",
     "in_process_executor",
-    "mem_intermediate_storage",
-    "io_manager_from_intermediate_storage",
     "multiprocess_executor",
     "multiple_process_executor_requirements",
     "reconstructable",
@@ -374,7 +357,6 @@ __all__ = [
     # Logging
     "DagsterLogManager",
     # Utilities
-    "build_intermediate_storage_from_object_store",
     "check_dagster_type",
     "execute_solid",
     "execute_solids_within_pipeline",
