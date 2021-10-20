@@ -46,6 +46,10 @@ describe('RunDetails', () => {
   const buildMocks = (config: MockConfig) => {
     const {status, startTime, endTime} = config;
     return {
+      PipelineRun: () => ({
+        id: () => 'abc',
+        status: () => status,
+      }),
       Run: () => ({
         id: () => 'abc',
         status: () => status,
