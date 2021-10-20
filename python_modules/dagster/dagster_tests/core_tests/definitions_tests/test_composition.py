@@ -336,6 +336,22 @@ def test_output_map_mult_swizzle():
     assert result.result_for_solid("echo_y").output_value() == 2
 
 
+def test_multi_output_without_tuple():
+    @composite_solid(output_defs=[OutputDefinition(Int, "three"), OutputDefinition(Int, "four")])
+    def wrap_mult():
+        return return_mult()
+
+    @pipeline
+    def mult_pipe():
+        x, y = wrap_mult()
+        echo.alias("echo_x")(x)
+        echo.alias("echo_y")(y)
+
+    result = execute_pipeline(mult_pipe)
+    assert result.result_for_solid("echo_x").output_value() == 1
+    assert result.result_for_solid("echo_y").output_value() == 2
+
+
 def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
@@ -348,14 +364,6 @@ def test_output_map_fail():
         @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
         def _bad(_context):
             return {"one": 1}
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @composite_solid(
-            output_defs=[OutputDefinition(Int, "three"), OutputDefinition(Int, "four")]
-        )
-        def _bad():
-            return return_mult()
 
 
 def test_deep_graph():
