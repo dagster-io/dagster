@@ -16,6 +16,7 @@ from dagster import (
     OutputDefinition,
     RetryRequested,
     Selector,
+    build_op_context,
     build_solid_context,
     composite_solid,
     execute_solid,
@@ -100,7 +101,7 @@ def test_solid_invocation_empty_run_config():
     @solid
     def basic_solid(context):
         assert context.run_config is not None
-        assert context.run_config == {}
+        assert context.run_config == {"resources": {}}
 
     basic_solid(context=build_solid_context())
 
@@ -111,7 +112,7 @@ def test_solid_invocation_run_config_with_config():
         assert context.run_config
         assert context.run_config["solids"] == {"basic_solid": {"config": {"foo": "bar"}}}
 
-    basic_solid(build_solid_context(config={"foo": "bar"}))
+    basic_solid(build_solid_context(solid_config={"foo": "bar"}))
 
 
 def test_solid_invocation_out_of_order_input_defs():
@@ -249,7 +250,7 @@ def test_solid_invocation_with_config():
     result = solid_requires_config.configured({"foo": "bar"}, name="configured_solid")(None)
     assert result == 5
 
-    result = solid_requires_config(build_solid_context(config={"foo": "bar"}))
+    result = solid_requires_config(build_solid_context(solid_config={"foo": "bar"}))
     assert result == 5
 
 
@@ -279,7 +280,9 @@ def test_solid_invocation_default_config():
         assert context.solid_config["baz"] == "bar"
         return context.solid_config["foo"] + context.solid_config["baz"]
 
-    assert solid_requires_config_partial(build_solid_context(config={"baz": "bar"})) == "barbar"
+    assert (
+        solid_requires_config_partial(build_solid_context(solid_config={"baz": "bar"})) == "barbar"
+    )
 
 
 def test_solid_invocation_dict_config():
@@ -288,7 +291,7 @@ def test_solid_invocation_dict_config():
         assert context.solid_config == {"foo": "bar"}
         return context.solid_config
 
-    assert solid_requires_dict(build_solid_context(config={"foo": "bar"})) == {"foo": "bar"}
+    assert solid_requires_dict(build_solid_context(solid_config={"foo": "bar"})) == {"foo": "bar"}
 
     @solid(config_schema=Noneable(dict))
     def solid_noneable_dict(context):
@@ -327,7 +330,7 @@ def test_solid_invocation_kitchen_sink_config():
         "optional_list_of_optional_string": ["foo", None],
     }
 
-    assert kitchen_sink(build_solid_context(config=solid_config_one)) == solid_config_one
+    assert kitchen_sink(build_solid_context(solid_config=solid_config_one)) == solid_config_one
 
 
 def test_solid_with_inputs():
@@ -895,3 +898,32 @@ def test_solid_invocation_with_bad_resources(capsys):
     captured = capsys.readouterr()
     # make sure there are no exceptions in the context destructor (__del__)
     assert "Exception ignored in" not in captured.err
+
+
+@pytest.mark.parametrize("context_builder", [build_solid_context, build_op_context])
+def test_build_context_with_resources_config(context_builder):
+    @resource(config_schema=str)
+    def my_resource(context):
+        assert context.resource_config == "foo"
+
+    @solid(required_resource_keys={"my_resource"})
+    def my_solid(context):
+        assert context.run_config["resources"]["my_resource"] == {"config": "foo"}
+
+    context = context_builder(
+        resources={"my_resource": my_resource},
+        resources_config={"my_resource": {"config": "foo"}},
+    )
+
+    my_solid(context)
+
+    # bad resource config case
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Received unexpected config entry "bad_resource" at the root.',
+    ):
+        context_builder(
+            resources={"my_resource": my_resource},
+            resources_config={"bad_resource": {"config": "foo"}},
+        )
