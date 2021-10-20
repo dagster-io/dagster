@@ -836,3 +836,34 @@ def do_it_all():
     one, two = do_two_things()
     do_yet_more(one, two)
 ```
+
+### Executors
+
+Each mode on a pipeline could have multiple executors, but each job can only have one executor configured. This can be added via the `executor_def` argument to `to_job` and `@job`. Since there is only one executor per job, there is no need to specify the name of the executor in config anymore.
+
+```python file=/guides/dagster/graph_job_op/executor_config_job.py
+from dagster import job, multiprocess_executor
+
+
+@job(executor_def=multiprocess_executor, config={"execution": {"config": {"max_concurrent": 5}}})
+def do_it_all():
+    ...
+```
+
+The default executor for a pipeline was the in-process executor. For a job, the default executor can switch between multi-process and in-process configurations. By default, multi-process is enabled. Multi-process and in-process can be switched via config.
+
+```python file=/guides/dagster/graph_job_op/executor_config_switch.py
+from dagster import job
+
+
+# This job will run with multiprocessing execution
+@job
+def do_it_all():
+    ...
+
+
+# This job will run with in-process execution
+@job(config={"execution": {"config": {"in_process": {}}}})
+def do_it_all_in_proc():
+    ...
+```
