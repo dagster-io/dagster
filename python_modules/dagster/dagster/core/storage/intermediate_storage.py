@@ -10,7 +10,6 @@ from dagster.core.storage.io_manager import IOManager
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
-from .type_storage import TypeStoragePluginRegistry
 
 
 class IntermediateStorage(ABC):  # pylint: disable=no-init
@@ -143,13 +142,10 @@ class IntermediateStorageAdapter(IOManager):
 
 
 class ObjectStoreIntermediateStorage(IntermediateStorage):
-    def __init__(self, object_store, root_for_run_id, run_id, type_storage_plugin_registry):
+    def __init__(self, object_store, root_for_run_id, run_id):
         self.root_for_run_id = check.callable_param(root_for_run_id, "root_for_run_id")
         self.run_id = check.str_param(run_id, "run_id")
         self.object_store = check.inst_param(object_store, "object_store", ObjectStore)
-        self.type_storage_plugin_registry = check.inst_param(
-            type_storage_plugin_registry, "type_storage_plugin_registry", TypeStoragePluginRegistry
-        )
 
     def _get_paths(self, step_output_handle):
         if step_output_handle.mapping_key:
@@ -204,15 +200,6 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
 
-        if self.type_storage_plugin_registry.is_registered(dagster_type):
-            return self.type_storage_plugin_registry.get(
-                dagster_type.unique_name
-            ).get_intermediate_object(self, context, dagster_type, step_output_handle)
-        elif not dagster_type.has_unique_name:
-            self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
-                dagster_type
-            )
-
         return self.get_intermediate_object(dagster_type, step_output_handle)
 
     def set_intermediate_object(self, dagster_type, step_output_handle, value, version=None):
@@ -265,15 +252,6 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
             context.log.warning(
                 "Replacing existing intermediate for %s.%s"
                 % (step_output_handle.step_key, step_output_handle.output_name)
-            )
-
-        if self.type_storage_plugin_registry.is_registered(dagster_type):
-            return self.type_storage_plugin_registry.get(
-                dagster_type.unique_name
-            ).set_intermediate_object(self, context, dagster_type, step_output_handle, value)
-        elif not dagster_type.has_unique_name:
-            self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
-                dagster_type
             )
 
         return self.set_intermediate_object(dagster_type, step_output_handle, value, version)
@@ -374,23 +352,17 @@ def _object_store_operation_error_message(
     )
 
 
-def build_in_mem_intermediates_storage(run_id, type_storage_plugin_registry=None):
+def build_in_mem_intermediates_storage(run_id):
     return ObjectStoreIntermediateStorage(
         InMemoryObjectStore(),
         lambda _: "",
         run_id,
-        type_storage_plugin_registry
-        if type_storage_plugin_registry
-        else TypeStoragePluginRegistry(types_to_register=[]),
     )
 
 
-def build_fs_intermediate_storage(root_for_run_id, run_id, type_storage_plugin_registry=None):
+def build_fs_intermediate_storage(root_for_run_id, run_id):
     return ObjectStoreIntermediateStorage(
         FilesystemObjectStore(),
         root_for_run_id,
         run_id,
-        type_storage_plugin_registry
-        if type_storage_plugin_registry
-        else TypeStoragePluginRegistry(types_to_register=[]),
     )

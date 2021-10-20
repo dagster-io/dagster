@@ -6,10 +6,6 @@ from dagster.core.definitions.intermediate_storage import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import io_manager
-from dagster.core.storage.type_storage import (
-    TypeStoragePluginRegistry,
-    construct_type_storage_plugin_registry,
-)
 from dagster.core.system_config.objects import ResolvedRunConfig
 
 from .init import InitIntermediateStorageContext
@@ -38,9 +34,6 @@ def build_intermediate_storage_from_object_store(
         object_store=object_store,
         run_id=init_context.pipeline_run.run_id,
         root_for_run_id=root_for_run_id,
-        type_storage_plugin_registry=init_context.type_storage_plugin_registry
-        if init_context.type_storage_plugin_registry
-        else TypeStoragePluginRegistry(types_to_register=[]),
     )
 
 
@@ -159,9 +152,6 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
             pipeline_run=pipeline_run,
             instance=instance,
             resolved_run_config=resolved_run_config,
-            type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                pipeline_def, intermediate_storage_def
-            ),
             resources=init_context.resources,
             intermediate_storage_config=resolved_run_config.intermediate_storage.intermediate_storage_config,
         )

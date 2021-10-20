@@ -410,11 +410,4 @@ def get_required_resource_keys_for_step(
         if output_def.io_manager_key:
             resource_keys = resource_keys.union([output_def.io_manager_key])
 
-    # add all the storage-compatible plugin resource keys
-    for dagster_type in solid_def.all_dagster_types():
-        for auto_plugin in dagster_type.auto_plugins:
-            if intermediate_storage_def is not None:
-                if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
-                    resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
-
     return frozenset(resource_keys)

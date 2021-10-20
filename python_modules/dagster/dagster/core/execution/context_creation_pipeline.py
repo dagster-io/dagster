@@ -45,7 +45,6 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import EventGenerationManager
@@ -462,9 +461,6 @@ def create_intermediate_storage(
                 pipeline_run=pipeline_run,
                 instance=context_creation_data.instance,
                 resolved_run_config=resolved_run_config,
-                type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                    pipeline_def, intermediate_storage_def
-                ),
                 resources=scoped_resources_builder.build(
                     context_creation_data.intermediate_storage_def.required_resource_keys,
                 ),

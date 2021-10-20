@@ -1,4 +1,3 @@
-import pytest
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -12,7 +11,6 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
 
 
@@ -96,39 +94,4 @@ def test_user_error_boundary_resource_init():
         resource_solid()
 
     pipeline_result = execute_pipeline(resource_pipeline, raise_on_error=False)
-    assert not pipeline_result.success
-
-
-@pytest.mark.skip("not implemented")
-def test_user_error_boundary_storage_plugin():
-    class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-        @classmethod
-        def compatible_with_storage_def(cls, intermediate_storage_def):
-            return True
-
-        @classmethod
-        def set_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle, value
-        ):
-            raise UserError()
-
-        @classmethod
-        def get_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle
-        ):
-            raise UserError()
-
-    CustomDagsterType = create_any_type(name="CustomType", auto_plugins=[CustomStoragePlugin])
-
-    @solid(output_defs=[OutputDefinition(CustomDagsterType)])
-    def output_solid(_context):
-        return "hello"
-
-    @pipeline
-    def plugin_pipeline():
-        output_solid()
-
-    pipeline_result = execute_pipeline(
-        plugin_pipeline, {"storage": {"filesystem": {}}}, raise_on_error=False
-    )
     assert not pipeline_result.success
