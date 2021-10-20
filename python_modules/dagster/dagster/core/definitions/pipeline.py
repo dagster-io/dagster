@@ -623,8 +623,11 @@ def _get_pipeline_subset_def(
     for solid_name in solids_to_execute:
         if not graph.has_solid_named(solid_name):
             raise DagsterInvalidSubsetError(
-                "Pipeline {pipeline_name} has no solid named {name}.".format(
-                    pipeline_name=pipeline_def.name, name=solid_name
+                "{target_type} {pipeline_name} has no {node_type} named {name}.".format(
+                    target_type=pipeline_def.target_type,
+                    pipeline_name=pipeline_def.name,
+                    name=solid_name,
+                    node_type="ops" if pipeline_def.is_job else "solids",
                 ),
             )
 
@@ -685,8 +688,8 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for pipeline "
-            f"{pipeline_def.name} results in an invalid pipeline"
+            f"The attempted subset {str_format_set(solids_to_execute)} for {pipeline_def.target_type} "
+            f"{pipeline_def.name} results in an invalid {pipeline_def.target_type}"
         ) from exc
 
 
