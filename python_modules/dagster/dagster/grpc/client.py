@@ -40,8 +40,8 @@ def _max_rx_bytes():
     if env_set:
         return int(env_set)
 
-    # default 10 MB
-    return 10_485_760
+    # default 50 MB
+    return 50 * (10 ** 6)
 
 
 def client_heartbeat_thread(client, shutdown_event):
