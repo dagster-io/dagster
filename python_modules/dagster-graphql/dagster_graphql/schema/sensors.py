@@ -6,6 +6,7 @@ from dagster.core.workspace.permissions import Permissions
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
 from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -15,7 +16,6 @@ from .errors import (
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
 from .util import non_null_list
-from .asset_key import GrapheneAssetKey
 
 
 class GrapheneTarget(graphene.ObjectType):
