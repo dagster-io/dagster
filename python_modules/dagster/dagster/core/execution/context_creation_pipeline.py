@@ -37,8 +37,6 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.init import InitIntermediateStorageContext
-from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.loggers import default_loggers, default_system_loggers
@@ -71,14 +69,6 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
             )
         )
     return DagsterLogManager.create(loggers=loggers, pipeline_run=pipeline_run)
-
-
-def construct_intermediate_storage_data(
-    storage_init_context: InitIntermediateStorageContext,
-) -> IntermediateStorage:
-    return storage_init_context.intermediate_storage_def.intermediate_storage_creation_fn(
-        storage_init_context
-    )
 
 
 def executor_def_from_config(
