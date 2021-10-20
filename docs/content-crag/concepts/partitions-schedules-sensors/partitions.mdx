@@ -121,13 +121,7 @@ def continent_job():
 
 It's common that, when you have a partitioned job, you want to run it on a schedule. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-The <PyObject object="schedule_from_partitions"/> function allows you to construct a schedule whose interval matches the spacing of partitions in your job.
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import schedule_from_partitions
-
-do_stuff_partitioned_schedule = schedule_from_partitions(do_stuff_partitioned)
-```
+The <PyObject object="schedule_from_partitions"/> function allows you to construct a schedule from a partitioned job. The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how to use it.
 
 ## Testing
 
