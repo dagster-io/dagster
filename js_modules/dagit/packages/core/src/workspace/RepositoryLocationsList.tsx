@@ -14,7 +14,7 @@ import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Caption} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
-import {IconWIP} from '../ui/Icon';
+import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceContext} from './WorkspaceContext';
@@ -99,17 +99,7 @@ const ReloadButton: React.FC<{
   );
 };
 
-const formatRepositoryUrl = (url: string): string => {
-  if (url.startsWith("https://github.com") || url.startsWith("http://github.com")) {
-    const [, , , org, repo, , sha] = url.split("/", 7);
-    return `${org}/${repo}@${sha.substr(0, 6)}`;
-  }
-  else if (url.startsWith("https://gitlab.com") || url.startsWith("http://gitlab.com")) {
-    const [, , , org, repo, , , sha] = url.split("/", 8);
-    return `${org}/${repo}@${sha.substr(0, 6)}`;
-  }
-  return url;
-};
+
 
 export const RepositoryLocationsList = () => {
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
@@ -149,11 +139,7 @@ export const RepositoryLocationsList = () => {
                   {location.displayMetadata.map((metadata, idx) => {
                     const name = metadata.key === "url" ? "source" : metadata.key;
                     const display = metadata.key === "url" ?
-                      <a href={metadata.value} target="_blank" rel="noopener noreferrer">
-                        <IconWIP color={ColorsWIP.Link} name="link" style={{display: 'inline-block', verticalAlign: 'middle'}} />
-                        {' '}
-                        {formatRepositoryUrl(metadata.value)}
-                      </a>
+                      <RepositoryRemoteLocationLink repositoryUrl={metadata.value} />
                       : metadata.value;
 
                     return (
