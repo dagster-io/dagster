@@ -40,11 +40,12 @@ export const SidebarAssetInfo: React.FC<{
       <SidebarSection title={'Materialization in Last Run'}>
         {node.assetMaterializations.length ? (
           <Box margin={12}>
+            <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
+
             <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
               {'View All in Asset Catalog '}
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </AssetCatalogLink>
-            <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
           </Box>
         ) : (
           <Box margin={12}>&mdash;</Box>
@@ -63,10 +64,9 @@ export const SidebarAssetInfo: React.FC<{
 };
 
 const AssetCatalogLink = styled(Link)`
-  position: absolute;
-  top: 5px;
-  right: 10px;
   display: flex;
   gap: 5px;
   align-items: center;
+  justify-content: flex-end;
+  margin-top: -10px;
 `;
