@@ -10,7 +10,7 @@ const Icons = {
   // Core icons
   asset: require('./icon-svgs/table_view.svg'),
   expectation: require('./icon-svgs/bp-automatic-updates.svg'),
-  job: require('./icon-svgs/account_tree.svg'),
+  job: require('./icon-svgs/job.svg'),
   op: require('./icon-svgs/bp-git-commit.svg'),
   op_selector: require('./icon-svgs/bp-send-to-graph.svg'),
   op_dynamic: require('./icon-svgs/bolt.svg'),
@@ -21,10 +21,21 @@ const Icons = {
   sensors: require('./icon-svgs/sensors.svg'),
   schedule: require('./icon-svgs/schedule.svg'),
   workspace: require('./icon-svgs/source.svg'),
+  gantt_flat: require('./icon-svgs/gantt_flat.svg'),
+  gantt_waterfall: require('./icon-svgs/gantt_waterfall.svg'),
 
-  // Other renamed icons
+  // Other custom icons
+  toggle_whitespace: require('./icon-svgs/toggle_whitespace.svg'),
+  panel_show_top: require('./icon-svgs/panel_show_top.svg'),
+  panel_show_left: require('./icon-svgs/panel_show_left.svg'),
+  panel_show_right: require('./icon-svgs/panel_show_right.svg'),
+  panel_hide_right: require('./icon-svgs/panel_hide_right.svg'),
+  panel_show_bottom: require('./icon-svgs/panel_show_bottom.svg'),
   copy_to_clipboard: require('./icon-svgs/assignment.svg'),
   copy_to_clipboard_done: require('./icon-svgs/assignment_turned_in.svg'),
+  open_in_new: require('./icon-svgs/open_in_new.svg'),
+  folder: require('./icon-svgs/folder.svg'),
+  tag: require('./icon-svgs/tag.svg'),
 
   // Material icons
   add_circle: require('./icon-svgs/add_circle.svg'),
@@ -57,7 +68,6 @@ const Icons = {
   expand_less: require('./icon-svgs/expand_less.svg'),
   expand_more: require('./icon-svgs/expand_more.svg'),
   filter_alt: require('./icon-svgs/filter_alt.svg'),
-  folder: require('./icon-svgs/folder.svg'),
   folder_open: require('./icon-svgs/folder_open.svg'),
   info: require('./icon-svgs/info.svg'),
   history: require('./icon-svgs/history.svg'),
@@ -66,7 +76,6 @@ const Icons = {
   linear_scale: require('./icon-svgs/linear_scale.svg'),
   link: require('./icon-svgs/link.svg'),
   list: require('./icon-svgs/list.svg'),
-  local_offer: require('./icon-svgs/local_offer.svg'),
   location_on: require('./icon-svgs/location_on.svg'),
   lock: require('./icon-svgs/lock.svg'),
   logout: require('./icon-svgs/logout.svg'),
@@ -74,7 +83,6 @@ const Icons = {
   menu_book: require('./icon-svgs/menu_book.svg'),
   more_horiz: require('./icon-svgs/more_horiz.svg'),
   nightlight: require('./icon-svgs/nightlight.svg'),
-  open_in_new: require('./icon-svgs/open_in_new.svg'),
   people: require('./icon-svgs/people.svg'),
   refresh: require('./icon-svgs/refresh.svg'),
   schema: require('./icon-svgs/schema.svg'),
