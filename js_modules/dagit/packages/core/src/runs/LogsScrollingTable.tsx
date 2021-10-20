@@ -91,7 +91,6 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
   const {filterKey, filterStepKeys, metadata, filter, logs} = props;
   const table = React.useRef<LogsScrollingTableSized>(null);
 
-  console.log(filter);
   return (
     <ColumnWidthsProvider onWidthsChanged={() => table.current && table.current.didResize()}>
       <Headers />

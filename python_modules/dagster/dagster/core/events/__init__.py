@@ -78,18 +78,21 @@ class DagsterEventType(Enum):
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
+    # We want to display RUN_* events in dagit and in our LogManager output, but in order to
+    # support backcompat for our storage layer, we need to keep the persisted value to be strings
+    # of the form "PIPELINE_*".  We may have user code that pass in the DagsterEventType
+    # enum values into storage APIs (like get_event_records, which takes in an EventRecordsFilter).
     RUN_ENQUEUED = "PIPELINE_ENQUEUED"
     RUN_DEQUEUED = "PIPELINE_DEQUEUED"
     RUN_STARTING = "PIPELINE_STARTING"  # Launch is happening, execution hasn't started yet
-
     RUN_START = "PIPELINE_START"  # Execution has started
     RUN_SUCCESS = "PIPELINE_SUCCESS"
     RUN_FAILURE = "PIPELINE_FAILURE"
-
     RUN_CANCELING = "PIPELINE_CANCELING"
     RUN_CANCELED = "PIPELINE_CANCELED"
 
-    # For legacy purposes, since DagsterEventType is exported
+    # Keep these legacy enum values around, to keep back-compatability for user code that might be
+    # using these constants to filter event records
     PIPELINE_ENQUEUED = RUN_ENQUEUED
     PIPELINE_DEQUEUED = RUN_DEQUEUED
     PIPELINE_STARTING = RUN_STARTING

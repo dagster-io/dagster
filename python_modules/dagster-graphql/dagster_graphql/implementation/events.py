@@ -216,21 +216,43 @@ def from_dagster_event_record(event_record, pipeline_name):
             errorSource=dagster_event.step_failure_data.error_source,
             **basic_params,
         )
-    elif dagster_event.event_type == DagsterEventType.RUN_ENQUEUED:
+
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_ENQUEUED,
+        DagsterEventType.PIPELINE_ENQUEUED,
+    ):
         return GrapheneRunEnqueuedEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_DEQUEUED:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_DEQUEUED,
+        DagsterEventType.PIPELINE_DEQUEUED,
+    ):
         return GrapheneRunDequeuedEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_STARTING:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_STARTING,
+        DagsterEventType.PIPELINE_STARTING,
+    ):
         return GrapheneRunStartingEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_CANCELING:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_CANCELING,
+        DagsterEventType.PIPELINE_CANCELING,
+    ):
         return GrapheneRunCancelingEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_CANCELED:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_CANCELED,
+        DagsterEventType.PIPELINE_CANCELED,
+    ):
         return GrapheneRunCanceledEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_START:
+    elif dagster_event.event_type in (DagsterEventType.RUN_START, DagsterEventType.PIPELINE_START):
         return GrapheneRunStartEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_SUCCESS:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_SUCCESS,
+        DagsterEventType.PIPELINE_SUCCESS,
+    ):
         return GrapheneRunSuccessEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.RUN_FAILURE:
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_FAILURE,
+        DagsterEventType.PIPELINE_FAILURE,
+    ):
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,
             error=GraphenePythonError(dagster_event.pipeline_failure_data.error)
@@ -238,6 +260,7 @@ def from_dagster_event_record(event_record, pipeline_name):
             else None,
             **basic_params,
         )
+
     elif dagster_event.event_type == DagsterEventType.ALERT_START:
         return GrapheneAlertStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.ALERT_SUCCESS:
