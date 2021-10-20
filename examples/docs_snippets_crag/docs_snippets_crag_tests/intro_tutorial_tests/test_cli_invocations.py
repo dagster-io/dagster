@@ -104,7 +104,7 @@ cli_args = [
     (
         "advanced/scheduling/",
         "scheduler.py",
-        "hello_cereal_pipeline",
+        "hello_cereal_job",
         "inputs_env.yaml",
         None,
         None,
