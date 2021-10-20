@@ -103,7 +103,7 @@ def dask_executor(init_context):
     .. code-block:: python
 
         from dagster import job
-        from dagster_celery import dask_executor
+        from dagster_dask import dask_executor
 
         @job(executor_def=dask_executor)
         def dask_enabled_job():
