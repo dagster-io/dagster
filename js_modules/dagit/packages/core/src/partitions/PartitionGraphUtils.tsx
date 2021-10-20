@@ -41,12 +41,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
 
 export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
-  if (
-    stats &&
-    stats.__typename === 'RunStatsSnapshot' &&
-    stats.endTime &&
-    stats.startTime
-  ) {
+  if (stats && stats.__typename === 'RunStatsSnapshot' && stats.endTime && stats.startTime) {
     return stats.endTime - stats.startTime;
   }
 
