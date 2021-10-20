@@ -11,7 +11,7 @@ HN_ACTION_SCHEMA = StructType(
         StructField("parent", DoubleType()),
         StructField("time", LongType()),
         StructField("type", StringType()),
-        StructField("by", StringType()),
+        StructField("user_id", StringType()),
         StructField("text", StringType()),
         StructField("kids", ArrayType(LongType())),
         StructField("score", DoubleType()),
@@ -45,9 +45,11 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
             context.log.info(f"Downloaded {len(rows)} items!")
 
     non_none_rows = [row for row in rows if row is not None]
+    result = DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"])
+    result.rename(columns={"by": "user_id"}, inplace=True)
 
     return Output(
-        DataFrame(non_none_rows).drop_duplicates(subset=["id"]),
+        DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"]),
         "items",
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )

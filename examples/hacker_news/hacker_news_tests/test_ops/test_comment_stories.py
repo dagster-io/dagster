@@ -11,7 +11,7 @@ from pandas import DataFrame
     ],
 )
 def test_build_comment_stories(comments, stories, expected):
-    comments = DataFrame(comments, columns=["id", "parent", "by"])
+    comments = DataFrame(comments, columns=["id", "parent", "user_id"])
     stories = DataFrame(stories, columns=["id"])
     comment_stories = build_comment_stories(stories=stories, comments=comments)
     expected = DataFrame(expected, columns=["comment_id", "story_id", "commenter_id"]).set_index(
