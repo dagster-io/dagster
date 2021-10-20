@@ -26,7 +26,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     Args:
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
-            on ``context.log`` are called from within solid compute logic.
+            on ``context.log`` are called from within job/pipeline compute logic.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`. If not set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of this logger.

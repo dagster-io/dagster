@@ -30,27 +30,18 @@ To start multiple workers in the background, run:
     celery multi start w2 -A dagster_celery.app -l info
 
 
-To execute a pipeline using the celery-backed executor, you'll need to add the celery executor to
-a mode definition on the pipeline:
+To execute a job using the celery-backed executor, you'll need to set the job's ``executor_def`` to
+the celery_executor.
 
 
 .. code-block:: python
 
-    from dagster import default_executors
+    from dagster import job
     from dagster_celery import celery_executor
 
-    @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [celery_executor])])
-    def my_pipeline():
+    @job(executor_def=celery_executor)
+    def my_job():
         pass
-
-
-Then you can use config like the following to execute the pipeline:
-
-
-.. code-block:: yaml
-
-    execution:
-      celery:
 
 
 Monitoring your Celery tasks

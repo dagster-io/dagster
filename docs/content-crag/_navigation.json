@@ -633,10 +633,6 @@
           {
             "title": "Twilio (dagster-twilio)",
             "path": "/_apidocs/libraries/dagster-twilio"
-          },
-          {
-            "title": "Lakehouse (experimental)",
-            "path": "/_apidocs/libraries/lakehouse"
           }
         ]
       }

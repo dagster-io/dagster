@@ -24,7 +24,7 @@ S3
   :annotation: DagsterType
 
   A :py:class:`dagster.DagsterType` intended to make it easier to pass information about files on S3
-  from solid to solid. Objects of this type should be dicts with ``'bucket'`` and ``'key'`` keys,
+  from op to op. Objects of this type should be dicts with ``'bucket'`` and ``'key'`` keys,
   and may be hydrated from config in the intuitive way, e.g., for an input with the name
   ``s3_file``:
 
