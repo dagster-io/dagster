@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -13,7 +14,6 @@ import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-import {AssetLink} from '../assets/AssetLink';
 
 import {humanizeSensorInterval} from './SensorDetails';
 import {SensorSwitch} from './SensorSwitch';
@@ -65,7 +65,7 @@ const SensorRow: React.FC<{
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
   const repo = useRepository(repoAddress);
-  const {name, sensorState, metadata} = sensor;
+  const {name, sensorState} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
 
@@ -96,7 +96,7 @@ const SensorRow: React.FC<{
           {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
             <Box flex={{direction: 'column', gap: 2}}>
               {sensor.metadata.assetKeys.map((key) => (
-                <AssetLink path={key.path} displayIcon={true} />
+                <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
               ))}
             </Box>
           ) : null}

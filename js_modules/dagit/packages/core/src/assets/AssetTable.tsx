@@ -1,6 +1,5 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
@@ -172,20 +171,18 @@ export const SensorDetails: React.FC<{
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
-          {
-            metadata.assetKeys && metadata.assetKeys.length ?
-              <tr>
-                <td>Monitored Assets</td>
-                <td>
-                  <Box flex={{direction: 'column', gap: 2}}>
-                    {metadata.assetKeys.map((key) => (
-                      <AssetLink path={key.path} displayIcon={true} />
-                    ))}
-                  </Box>
-                </td>
-              </tr>
-              : null
-          }
+          {metadata.assetKeys && metadata.assetKeys.length ? (
+            <tr>
+              <td>Monitored Assets</td>
+              <td>
+                <Box flex={{direction: 'column', gap: 2}}>
+                  {metadata.assetKeys.map((key) => (
+                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                  ))}
+                </Box>
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </MetadataTableWIP>
     </>
