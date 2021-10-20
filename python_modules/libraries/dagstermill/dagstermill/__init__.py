@@ -18,6 +18,4 @@ _reconstitute_pipeline_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.reconstitute_pip
 
 _teardown = _MANAGER_FOR_NOTEBOOK_INSTANCE.teardown_resources
 
-_load_parameter = _MANAGER_FOR_NOTEBOOK_INSTANCE.load_parameter
-
 _load_input_parameter = _MANAGER_FOR_NOTEBOOK_INSTANCE.load_input_parameter

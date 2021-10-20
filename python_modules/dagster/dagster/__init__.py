@@ -194,7 +194,6 @@ from dagster.core.types.decorator import (
     make_python_type_usable_as_dagster_type,
     usable_as_dagster_type,
 )
-from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
@@ -376,7 +375,6 @@ __all__ = [
     "List",
     "Nothing",
     "Optional",
-    "SerializationStrategy",
     "Set",
     "String",
     "Tuple",
