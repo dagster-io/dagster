@@ -9,7 +9,6 @@ from dagster.config.config_type import Array
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
 
 from .builtin_config_schemas import BuiltinSchemas
@@ -68,11 +67,6 @@ class DagsterType:
             this value when automatically persisting it between execution steps. You should set
             this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
             for this type.
-        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
         required_resource_keys (Optional[Set[str]]): Resource keys required by the ``type_check_fn``.
         is_builtin (bool): Defaults to False. This is used by tools to display or
             filter built-in types (such as :py:class:`~dagster.String`, :py:class:`~dagster.Int`) to visually distinguish
@@ -93,7 +87,6 @@ class DagsterType:
         loader=None,
         materializer=None,
         serialization_strategy=None,
-        auto_plugins=None,
         required_resource_keys=None,
         kind=DagsterTypeKind.REGULAR,
         typing_type=None,
@@ -140,17 +133,6 @@ class DagsterType:
 
         self._type_check_fn = check.callable_param(type_check_fn, "type_check_fn")
         _validate_type_check_fn(self._type_check_fn, self._name)
-
-        auto_plugins = check.opt_list_param(auto_plugins, "auto_plugins", of_type=type)
-
-        check.param_invariant(
-            all(
-                issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins
-            ),
-            "auto_plugins",
-        )
-
-        self.auto_plugins = auto_plugins
 
         self.is_builtin = check.bool_param(is_builtin, "is_builtin")
         check.invariant(
@@ -373,7 +355,6 @@ class Anyish(DagsterType):
         serialization_strategy=None,
         is_builtin=False,
         description=None,
-        auto_plugins=None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -385,7 +366,6 @@ class Anyish(DagsterType):
             is_builtin=is_builtin,
             type_check_fn=self.type_check_method,
             description=description,
-            auto_plugins=auto_plugins,
             typing_type=typing.Any,
         )
 
@@ -418,7 +398,6 @@ def create_any_type(
     materializer=None,
     serialization_strategy=None,
     description=None,
-    auto_plugins=None,
 ):
     return Anyish(
         key=name,
@@ -427,7 +406,6 @@ def create_any_type(
         loader=loader,
         materializer=materializer,
         serialization_strategy=serialization_strategy,
-        auto_plugins=auto_plugins,
     )
 
 
@@ -523,11 +501,6 @@ class PythonObjectDagsterType(DagsterType):
             this value when automatically persisting it between execution steps. You should set
             this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
             for this type.
-        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
 
     """
 

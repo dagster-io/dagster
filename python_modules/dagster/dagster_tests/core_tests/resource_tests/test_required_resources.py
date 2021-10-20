@@ -23,7 +23,6 @@ from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.api import create_execution_plan, execute_run
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
 
 
@@ -447,37 +446,12 @@ def define_plugin_pipeline(
     if resources_initted is None:
         resources_initted = {}
 
-    class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-        @classmethod
-        def compatible_with_storage_def(cls, _):
-            return compatible_storage
-
-        @classmethod
-        def set_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle, value
-        ):
-            assert context.resources.a == "A"
-            return intermediate_storage.set_intermediate_object(
-                dagster_type, step_output_handle, value
-            )
-
-        @classmethod
-        def get_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle
-        ):
-            assert context.resources.a == "A"
-            return intermediate_storage.get_intermediate_object(dagster_type, step_output_handle)
-
-        @classmethod
-        def required_resource_keys(cls):
-            return {"a"} if should_require_resources else set()
-
     @resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    CustomDagsterType = create_any_type(name="CustomType", auto_plugins=[CustomStoragePlugin])
+    CustomDagsterType = create_any_type(name="CustomType")
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):

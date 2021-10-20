@@ -847,28 +847,6 @@ def _checked_type_resource_reqs_for_mode(
                     )
                     raise DagsterInvalidDefinitionError(error_msg)
 
-        for plugin in dagster_type.auto_plugins:
-            used_by_storage = set(
-                [
-                    intermediate_storage_def.name
-                    for intermediate_storage_def in mode_def.intermediate_storage_defs
-                    if plugin.compatible_with_storage_def(intermediate_storage_def)
-                ]
-            )
-
-            if used_by_storage:
-                for required_resource in plugin.required_resource_keys():
-                    resource_reqs.add(required_resource)
-                    if required_resource not in mode_resources:
-                        error_msg = _get_missing_resource_error_msg(
-                            resource_type="resource",
-                            resource_key=required_resource,
-                            descriptor=f"the plugin '{plugin.__name__}' on type "
-                            f"'{dagster_type.display_name}' (used with storages {used_by_storage})",
-                            mode_def=mode_def,
-                            resource_defs_of_type=mode_resources,
-                        )
-                        raise DagsterInvalidDefinitionError(error_msg)
     return resource_reqs
 
 

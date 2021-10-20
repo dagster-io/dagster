@@ -1,6 +1,5 @@
 from dagster import check
 from dagster.core.storage.intermediate_storage import ObjectStoreIntermediateStorage
-from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 
 from .object_store import S3ObjectStore
 
@@ -11,7 +10,6 @@ class S3IntermediateStorage(ObjectStoreIntermediateStorage):
         s3_bucket,
         run_id,
         s3_session=None,
-        type_storage_plugin_registry=None,
         s3_prefix="dagster",
     ):
         check.str_param(s3_bucket, "s3_bucket")
@@ -27,11 +25,4 @@ class S3IntermediateStorage(ObjectStoreIntermediateStorage):
             object_store,
             root_for_run_id=root_for_run_id,
             run_id=run_id,
-            type_storage_plugin_registry=check.inst_param(
-                type_storage_plugin_registry
-                if type_storage_plugin_registry
-                else TypeStoragePluginRegistry(types_to_register=[]),
-                "type_storage_plugin_registry",
-                TypeStoragePluginRegistry,
-            ),
         )

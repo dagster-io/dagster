@@ -8,7 +8,6 @@ from dagster.core.definitions import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 from dagster.core.system_config.objects import ResolvedRunConfig
 
 
@@ -17,7 +16,7 @@ class InitIntermediateStorageContext(
         "InitIntermediateStorageContext",
         (
             "pipeline_def mode_def intermediate_storage_def pipeline_run instance resolved_run_config "
-            "type_storage_plugin_registry resources intermediate_storage_config"
+            "resources intermediate_storage_config"
         ),
     )
 ):
@@ -31,8 +30,6 @@ class InitIntermediateStorageContext(
         pipeline_run (PipelineRun): The pipeline run in context.
         instance (DagsterInstance): The instance.
         resolved_run_config (ResolvedRunConfig): The run config.
-        type_storage_plugin_registry (TypeStoragePluginRegistry): Registry containing custom type
-            storage plugins.
         resources (Any): Resources available in context.
         intermediate_storage_config (Dict[str, Any]): The intermediate storage-specific configuration data
             provided by the run config. The schema for this data is defined by the
@@ -47,7 +44,6 @@ class InitIntermediateStorageContext(
         pipeline_run,
         instance,
         resolved_run_config,
-        type_storage_plugin_registry,
         resources,
         intermediate_storage_config,
     ):
@@ -62,11 +58,6 @@ class InitIntermediateStorageContext(
             instance=check.inst_param(instance, "instance", DagsterInstance),
             resolved_run_config=check.inst_param(
                 resolved_run_config, "resolved_run_config", ResolvedRunConfig
-            ),
-            type_storage_plugin_registry=check.inst_param(
-                type_storage_plugin_registry,
-                "type_storage_plugin_registry",
-                TypeStoragePluginRegistry,
             ),
             resources=check.not_none_param(resources, "resources"),
             intermediate_storage_config=check.dict_param(

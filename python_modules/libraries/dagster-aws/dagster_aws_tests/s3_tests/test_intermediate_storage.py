@@ -2,7 +2,6 @@ import csv
 import os
 from collections import OrderedDict
 
-import pytest
 from dagster import (
     Bool,
     InputDefinition,
@@ -12,8 +11,6 @@ from dagster import (
     OutputDefinition,
     PipelineRun,
     SerializationStrategy,
-    String,
-    check,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -21,14 +18,10 @@ from dagster import (
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
+from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import Bool as RuntimeBool
-from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
@@ -91,161 +84,6 @@ def get_step_output(step_events, step_key, output_name="result"):
         ):
             return step_event
     return None
-
-
-def test_using_s3_for_subplan(mock_s3_bucket):
-    pipeline_def = define_inty_pipeline()
-
-    run_config = {"intermediate_storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
-
-    run_id = make_new_run_id()
-
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
-
-    assert execution_plan.get_step_by_key("return_one")
-
-    step_keys = ["return_one"]
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
-
-    return_one_step_events = list(
-        execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-    )
-
-    assert get_step_output(return_one_step_events, "return_one")
-    with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
-        InMemoryPipeline(pipeline_def),
-        run_config,
-        pipeline_run,
-        instance,
-    ) as context:
-
-        intermediates_manager = S3IntermediateStorage(
-            mock_s3_bucket.name,
-            run_id,
-            s3_session=context.scoped_resources_builder.build(
-                required_resource_keys={"s3"},
-            ).s3,
-        )
-        step_output_handle = StepOutputHandle("return_one")
-        assert intermediates_manager.has_intermediate(context, step_output_handle)
-        assert intermediates_manager.get_intermediate(context, Int, step_output_handle).obj == 1
-
-    add_one_step_events = list(
-        execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-    )
-
-    assert get_step_output(add_one_step_events, "add_one")
-    with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
-        InMemoryPipeline(pipeline_def),
-        run_config,
-        pipeline_run,
-        instance,
-    ) as context:
-        step_output_handle = StepOutputHandle("add_one")
-        assert intermediates_manager.has_intermediate(context, step_output_handle)
-        assert intermediates_manager.get_intermediate(context, Int, step_output_handle).obj == 2
-
-
-class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
-    @classmethod
-    def compatible_with_storage_def(cls, _):
-        # Not needed for these tests
-        raise NotImplementedError()
-
-    @classmethod
-    def set_intermediate_object(
-        cls, intermediate_storage, context, dagster_type, step_output_handle, value
-    ):
-        check.inst_param(intermediate_storage, "intermediate_storage", S3IntermediateStorage)
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        paths.append(value)
-        key = intermediate_storage.object_store.key_for_paths([intermediate_storage.root] + paths)
-        return intermediate_storage.object_store.set_object(
-            key, "", dagster_type.serialization_strategy
-        )
-
-    @classmethod
-    def get_intermediate_object(
-        cls, intermediate_storage, context, dagster_type, step_output_handle
-    ):
-        check.inst_param(intermediate_storage, "intermediate_storage", S3IntermediateStorage)
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        res = intermediate_storage.object_store.s3.list_objects(
-            Bucket=intermediate_storage.object_store.bucket,
-            Prefix=intermediate_storage.key_for_paths(paths),
-        )
-        return res["Contents"][0]["Key"].split("/")[-1]
-
-
-def test_s3_intermediate_storage_with_type_storage_plugin(mock_s3_bucket):
-    run_id = make_new_run_id()
-
-    intermediate_storage = S3IntermediateStorage(
-        run_id=run_id,
-        s3_bucket=mock_s3_bucket.name,
-        type_storage_plugin_registry=TypeStoragePluginRegistry(
-            [(RuntimeString, FancyStringS3TypeStoragePlugin)]
-        ),
-    )
-
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        try:
-
-            intermediate_storage.set_intermediate(
-                context, RuntimeString, StepOutputHandle("obj_name"), "hello"
-            )
-
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle("obj_name"))
-            assert (
-                intermediate_storage.get_intermediate(
-                    context, RuntimeString, StepOutputHandle("obj_name")
-                )
-                == "hello"
-            )
-
-        finally:
-            intermediate_storage.rm_intermediate(context, StepOutputHandle("obj_name"))
-
-
-def test_s3_intermediate_storage_with_composite_type_storage_plugin(mock_s3_bucket):
-    run_id = make_new_run_id()
-
-    intermediate_storage = S3IntermediateStorage(
-        run_id=run_id,
-        s3_bucket=mock_s3_bucket.name,
-        type_storage_plugin_registry=TypeStoragePluginRegistry(
-            [(RuntimeString, FancyStringS3TypeStoragePlugin)]
-        ),
-    )
-
-    with yield_empty_pipeline_context(run_id=run_id) as context:
-        with pytest.raises(check.NotImplementedCheckError):
-            intermediate_storage.set_intermediate(
-                context,
-                resolve_dagster_type(List[String]),
-                StepOutputHandle("obj_name"),
-                [
-                    "hello",
-                ],
-            )
 
 
 def test_s3_intermediate_storage_composite_types_with_custom_serializer_for_inner_type(
