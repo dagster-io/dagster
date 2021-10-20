@@ -1,6 +1,6 @@
 import os
 
-from dagster import Bool, Int, List, Nothing, Output, execute_pipeline, pipeline, solid
+from dagster import Bool, Int, List
 from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
@@ -104,18 +104,3 @@ def test_file_system_intermediate_storage_composite_types_with_custom_serializer
         assert intermediate_storage.get_intermediate(
             context, resolve_dagster_type(List[Bool]), StepOutputHandle("baz")
         ).obj == ["list"]
-
-
-def test_yield_nothing():
-    @solid
-    def nothing_solid(_):
-        yield Output(Nothing)
-
-    @pipeline
-    def repro():
-        nothing_solid()
-
-    execute_pipeline(
-        repro,
-        run_config={"storage": {"filesystem": {}}},
-    )

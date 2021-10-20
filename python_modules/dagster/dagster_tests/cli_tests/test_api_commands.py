@@ -161,7 +161,6 @@ def test_execute_step_verify_step():
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                run_config={"storage": {"filesystem": {}}},
             )
 
             input_json = serialize_dagster_namedtuple(

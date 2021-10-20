@@ -4,18 +4,7 @@ from collections import OrderedDict
 from io import BytesIO
 
 import pytest
-from dagster import (
-    Bool,
-    InputDefinition,
-    Int,
-    List,
-    ModeDefinition,
-    OutputDefinition,
-    SerializationStrategy,
-    lambda_solid,
-    pipeline,
-    usable_as_dagster_type,
-)
+from dagster import Bool, List, SerializationStrategy, usable_as_dagster_type
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.types.dagster_type import Bool as RuntimeBool
@@ -23,8 +12,6 @@ from dagster.core.types.dagster_type import create_any_type, resolve_dagster_typ
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
 from dagster_gcp.gcs.intermediate_storage import GCSIntermediateStorage
-from dagster_gcp.gcs.resources import gcs_resource
-from dagster_gcp.gcs.system_storage import gcs_plus_default_intermediate_storage_defs
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
@@ -42,35 +29,6 @@ LowercaseString = create_any_type(
 
 
 nettest = pytest.mark.nettest
-
-
-def define_inty_pipeline(should_throw=True):
-    @lambda_solid
-    def return_one():
-        return 1
-
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
-    def add_one(num):
-        return num + 1
-
-    @lambda_solid
-    def user_throw_exception():
-        raise Exception("whoops")
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                intermediate_storage_defs=gcs_plus_default_intermediate_storage_defs,
-                resource_defs={"gcs": gcs_resource},
-            )
-        ]
-    )
-    def basic_external_plan_execution():
-        add_one(return_one())
-        if should_throw:
-            user_throw_exception()
-
-    return basic_external_plan_execution
 
 
 def get_step_output(step_events, step_key, output_name="result"):
