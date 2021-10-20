@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
@@ -295,6 +296,43 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
 ]
 
 snapshots['TestExpectations.test_basic_input_output_expectations[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'eventType': 'STEP_EXPECTATION_RESULT',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'runId': '<runId dummy value>',
+        'solidHandleID': 'df_expectations_solid',
+        'stepKey': 'df_expectations_solid',
+        'timestamp': '<timestamp dummy value>'
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'eventType': 'STEP_EXPECTATION_RESULT',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'runId': '<runId dummy value>',
+        'solidHandleID': 'df_expectations_solid',
+        'stepKey': 'df_expectations_solid',
+        'timestamp': '<timestamp dummy value>'
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[postgres_with_default_run_launcher_managed_grpc_env] 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'eventType': 'STEP_EXPECTATION_RESULT',

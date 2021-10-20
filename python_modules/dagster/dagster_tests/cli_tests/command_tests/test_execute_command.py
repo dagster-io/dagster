@@ -426,65 +426,6 @@ def test_default_memory_run_storage():
         assert result.success
 
 
-def test_override_with_in_memory_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
-def test_override_with_filesystem_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "filesystem_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
 def test_multiproc():
     with instance_for_test():
         runner = CliRunner()

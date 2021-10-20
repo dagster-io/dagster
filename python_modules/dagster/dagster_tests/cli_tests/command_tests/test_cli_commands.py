@@ -661,7 +661,6 @@ def valid_external_job_target_cli_args():
 
 
 def valid_external_pipeline_target_cli_args_with_preset():
-    run_config = {"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}}
     return valid_external_pipeline_target_cli_args_no_preset() + [
         [
             "-f",
@@ -680,8 +679,6 @@ def valid_external_pipeline_target_cli_args_with_preset():
             os.path.dirname(__file__),
             "-a",
             "define_foo_pipeline",
-            "--config-json",
-            json.dumps(run_config),
         ],
     ]
 
