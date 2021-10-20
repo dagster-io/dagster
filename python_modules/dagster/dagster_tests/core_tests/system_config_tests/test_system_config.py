@@ -637,29 +637,5 @@ def test_mix_required_inputs():
     assert not "right" in inputs_fields_dict
 
 
-def test_files_default_config():
-    pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
-
-    env_type = create_run_config_schema_type(pipeline_def)
-    assert "storage" in env_type.fields
-
-    config_value = process_config(env_type, {})
-    assert config_value.success
-
-    assert "storage" not in config_value
-
-
-def test_storage_in_memory_config():
-    pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
-
-    env_type = create_run_config_schema_type(pipeline_def)
-    assert "storage" in env_type.fields
-
-    config_value = process_config(env_type, {"intermediate_storage": {"in_memory": {}}})
-    assert config_value.success
-
-    assert config_value.value["intermediate_storage"] == {"in_memory": {}}
-
-
 def test_directly_init_environment_config():
     ResolvedRunConfig()

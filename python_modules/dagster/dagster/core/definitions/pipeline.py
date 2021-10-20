@@ -750,19 +750,6 @@ def _checked_resource_reqs_for_mode(
         _checked_input_resource_reqs_for_mode(dependency_structure, solid_dict, mode_def)
     )
 
-    for intermediate_storage in mode_def.intermediate_storage_defs or []:
-        for required_resource in intermediate_storage.required_resource_keys:
-            resource_reqs.add(required_resource)
-            if required_resource not in mode_resources:
-                error_msg = _get_missing_resource_error_msg(
-                    resource_type="resource",
-                    resource_key=required_resource,
-                    descriptor=f"intermediate storage {intermediate_storage.name}",
-                    mode_def=mode_def,
-                    resource_defs_of_type=mode_resources,
-                )
-                raise DagsterInvalidDefinitionError(error_msg)
-
     for solid in solid_dict.values():
         for hook_def in solid.hook_defs:
             for required_resource in hook_def.required_resource_keys:

@@ -153,7 +153,7 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
             instance=instance,
             resolved_run_config=resolved_run_config,
             resources=init_context.resources,
-            intermediate_storage_config=resolved_run_config.intermediate_storage.intermediate_storage_config,
+            intermediate_storage_config={},
         )
 
         intermediate_storage = intermediate_storage_def.intermediate_storage_creation_fn(
