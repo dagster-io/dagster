@@ -36,9 +36,6 @@ Dataproc
 GCS
 ---
 
-.. autodata:: dagster_gcp.gcs.gcs_intermediate_storage
-  :annotation: IntermediateStorageDefinition
-
 .. autodata:: gcs_resource
   :annotation: ResourceDefinition
 
