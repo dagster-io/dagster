@@ -46,6 +46,8 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
   const {
     loading,
     error,
@@ -54,7 +56,13 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     paginationProps,
     pageSize,
     setPageSize,
-  } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
+  } = useChunkedPartitionsQuery(
+    partitionSet.name,
+    runTags,
+    repoAddress,
+    // only query by job name if there is only one partition set
+    isJob && partitionSets.length === 1 ? pipelineName : undefined,
+  );
   const {canLaunchPartitionBackfill} = usePermissions();
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
   React.useEffect(() => {
@@ -64,9 +72,6 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
       });
     }
   }, [error]);
-
-  const repo = useRepository(repoAddress);
-  const isJob = isThisThingAJob(repo, pipelineName);
 
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
