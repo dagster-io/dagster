@@ -83,25 +83,24 @@ def celery_docker_executor(init_context):
 
     In the most common case, you may want to modify the ``broker`` and ``backend`` (e.g., to use
     Redis instead of RabbitMQ). We expect that ``config_source`` will be less frequently
-    modified, but that when op executions are especially fast or slow, or when there are
-    different requirements around idempotence or retry, it may make sense to execute jobs
+    modified, but that when solid executions are especially fast or slow, or when there are
+    different requirements around idempotence or retry, it may make sense to execute pipelines
     with variations on these settings.
 
-    If you'd like to configure a Celery Docker executor on a job, you should set the ``executor_def``
-    argument when defining your job (either with ``some_graph.to_job()`` or using the ``@job``
-    decorator):
+    If you'd like to configure a Celery Docker executor in addition to the
+    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
+    :py:class:`~dagster.ModeDefinition` as follows:
 
     .. code-block:: python
 
-        from dagster import job
-        from dagster_celery_docker import celery_docker_executor
+        from dagster import ModeDefinition, default_executors, pipeline
+        from dagster_celery_docker.executor import celery_docker_executor
 
-        @job(executor_def=celery_docker_executor)
-        def celery_enabled_job():
+        @pipeline(mode_defs=[
+            ModeDefinition(executor_defs=default_executors + [celery_docker_executor])
+        ])
+        def celery_enabled_pipeline():
             pass
-
-        # or ...
-        some_graph.to_job(executor_def=celery_docker_executor)
 
     Then you can configure the executor as follows:
 
