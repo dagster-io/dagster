@@ -50,6 +50,11 @@ describe('RunDetails', () => {
         id: () => 'abc',
         status: () => status,
       }),
+      PipelineRunStatsSnapshot: () => ({
+        id: () => 'abc-time',
+        startTime: () => startTime,
+        endTime: () => endTime,
+      }),
       RunStatsSnapshot: () => ({
         id: () => 'abc-time',
         startTime: () => startTime,
