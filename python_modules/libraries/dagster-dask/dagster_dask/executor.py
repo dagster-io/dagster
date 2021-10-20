@@ -96,17 +96,15 @@ def dask_executor(init_context):
                     }
             }
 
-    If you'd like to configure a dask executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    To use the `dask_executor`, set it as the `executor_def` when defining a job:
 
     .. code-block:: python
 
-        from dagster import ModeDefinition, default_executors, pipeline
+        from dagster import job
         from dagster_dask import dask_executor
 
-        @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
-        def dask_enabled_pipeline():
+        @job(executor_def=dask_executor)
+        def dask_enabled_job():
             pass
 
     """

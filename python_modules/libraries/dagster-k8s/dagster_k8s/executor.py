@@ -39,29 +39,26 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     """
     Executor which launches steps as Kubernetes Jobs. This executor is experimental.
 
-    To add the Kubernetes Job executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    To use the `k8s_job_executor`, set it as the `executor_def` when defining a job:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_executor_mode_def.py
        :start-after: start_marker
        :end-before: end_marker
        :language: python
 
-    Then you can configure the executor with run config (either via a :py:class:`~dagster.PresetDefinition` or the Dagit playground) as follows:
+    Then you can configure the executor with run config as follows:
 
     .. code-block:: YAML
 
         execution:
-          k8s:
-            config:
-              job_namespace: 'some-namespace'
-              image_pull_policy: ...
-              image_pull_secrets: ...
-              service_account_name: ...
-              env_config_maps: ...
-              env_secrets: ...
-              job_image: ... # leave out if using userDeployments
+          config:
+            job_namespace: 'some-namespace'
+            image_pull_policy: ...
+            image_pull_secrets: ...
+            service_account_name: ...
+            env_config_maps: ...
+            env_secrets: ...
+            job_image: ... # leave out if using userDeployments
     """
 
     run_launcher = init_context.instance.run_launcher
@@ -168,7 +165,7 @@ class K8sStepHandler(StepHandler):
             )
 
         if not job_config.job_image:
-            raise Exception("No image included in either executor config or the pipeline")
+            raise Exception("No image included in either executor config or the job")
 
         user_defined_k8s_config = get_user_defined_k8s_config(
             frozentags(step_handler_context.step_tags[step_key])
