@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Union
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, ResourceDefinition, Resources
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -108,6 +108,7 @@ class UnboundInitResourceContext(InitResourceContext):
     def __init__(
         self,
         resource_config: Any,
+        dependent_resources_config: Dict[str, Any],
         resources: Optional[Union[Resources, Dict[str, Any]]],
         instance: Optional[DagsterInstance],
     ):
@@ -129,7 +130,9 @@ class UnboundInitResourceContext(InitResourceContext):
             self._resources_cm = None
         else:
             self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str), instance=instance
+                check.opt_dict_param(resources, "resources", key_type=str),
+                instance=instance,
+                resource_config=dependent_resources_config,
             )
             resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(resources, IContainsGenerator)
@@ -208,9 +211,11 @@ class UnboundInitResourceContext(InitResourceContext):
 
 
 def build_init_resource_context(
-    config: Optional[Dict[str, Any]] = None,
+    resource_config: Any = None,
     resources: Optional[Dict[str, Any]] = None,
+    dependent_resources_config: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
+    config: Any = None,
 ) -> InitResourceContext:
     """Builds resource initialization context from provided parameters.
 
@@ -222,7 +227,8 @@ def build_init_resource_context(
     Args:
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
             either values or resource definitions.
-        config (Optional[Any]): The resource config to provide to the context.
+        resource_config (Any): The resource config to provide to the context. This will be available as ``context.resource_config`` on the resulting object.
+        dependent_resources_config (Optional[Dict[str, Any]]): The config for the resources that the resource to be initialized is dependent upon.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
 
@@ -238,8 +244,17 @@ def build_init_resource_context(
                 resource_to_init(context)
 
     """
+    if resource_config and config:
+        raise DagsterInvalidInvocationError(
+            "Attempted to invoke ``build_resource_context`` with both argument ``resource_config``, and its legacy version, ``config``. Please use one or the other."
+        )
+
+    resource_config = resource_config or config
     return UnboundInitResourceContext(
-        resource_config=check.opt_dict_param(config, "config", key_type=str),
+        resource_config=check.opt_dict_param(resource_config, "resource_config", key_type=str),
+        dependent_resources_config=check.opt_dict_param(
+            dependent_resources_config, "dependent_resources_config", key_type=str
+        ),
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         resources=check.opt_dict_param(resources, "resources", key_type=str),
     )
