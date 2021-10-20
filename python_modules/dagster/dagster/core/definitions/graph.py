@@ -192,6 +192,10 @@ class GraphDefinition(NodeDefinition):
         return "graph"
 
     @property
+    def is_graph_job_op_node(self) -> bool:
+        return True
+
+    @property
     def solids(self) -> List[Node]:
         return list(set(self._node_dict.values()))
 

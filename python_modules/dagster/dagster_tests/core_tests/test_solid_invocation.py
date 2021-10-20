@@ -856,7 +856,7 @@ def test_dynamic_output_non_gen():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
         "using yield syntax.",
     ):
         should_not_work()
@@ -871,7 +871,7 @@ def test_dynamic_output_async_non_gen():
     loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
         "using yield syntax.",
     ):
         loop.run_until_complete(should_not_work())

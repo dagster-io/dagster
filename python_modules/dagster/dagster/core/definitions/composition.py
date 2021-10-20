@@ -107,12 +107,21 @@ def is_in_composition() -> bool:
     return bool(_composition_stack)
 
 
-def assert_in_composition(name: str) -> None:
+def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
     if len(_composition_stack) < 1:
+        node_label = node_def.node_type_str
+        if node_def.is_graph_job_op_node:
+            correction = (
+                f"Invoking {node_label}s is only valid in a function decorated with "
+                "@job or @graph."
+            )
+        else:
+            correction = (
+                f"Invoking {node_label}s is only valid in a function decorated with "
+                "@pipeline or @composite_solid."
+            )
         raise DagsterInvariantViolationError(
-            f"Attempted to call composite solid '{name}' outside of a composition function. "
-            "Invoking composite solids is only valid in a function decorated with "
-            "@pipeline or @composite_solid."
+            f"Attempted to call {node_label} '{name}' outside of a composition function. {correction}"
         )
 
 
@@ -330,7 +339,7 @@ class PendingNodeInvocation:
                     )
                 return solid_invocation_result(self, None, *args, **kwargs)
 
-        assert_in_composition(node_name)
+        assert_in_composition(node_name, self.node_def)
         input_bindings = {}
 
         # handle *args
@@ -659,35 +668,41 @@ class InvokedSolidOutputHandle:
     def __getitem__(self, idx):
         raise DagsterInvariantViolationError(
             'Attempted to index in to an {cls}. This object represents the output "{out}" '
-            'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
-            "different parts of this output to different solids.".format(
-                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            "from the {described_node}. Consider yielding multiple Outputs if you seek to pass "
+            "different parts of this output to different {node_type}s.".format(
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
+                node_type=self.node_type,
             )
         )
+
+    def describe_node(self):
+        return f"{self.node_type} '{self.solid_name}'"
 
     def alias(self, _):
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call alias method for {cls}. This object "
-            'represents the output "{out}" from the already invoked solid "{solid}". Consider '
+            'represents the output "{out}" from the already invoked {described_node}. Consider '
             "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
-                solid=self.solid_name,
                 out=self.output_name,
+                described_node=self.describe_node(),
             )
         )
 
     def with_hooks(self, _):
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call hook method for {cls}. This object "
-            'represents the output "{out}" from the already invoked solid "{solid}". Consider '
+            'represents the output "{out}" from the already invoked {described_node}. Consider '
             "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
-                solid=self.solid_name,
                 out=self.output_name,
+                described_node=self.describe_node(),
             )
         )
 
@@ -754,32 +769,36 @@ class InvokedSolidDynamicOutputWrapper:
     def __iter__(self):
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the dynamic output "{out}" '
-            'from the solid "{solid}". Use the "map" method on this object to create '
-            "downstream dependencies that will be cloned for each DynamicOutput "
+            'from the {described_node}. Use the "map" method on this object to create '
+            "downstream dependencies that will be cloned for each DynamicOut "
             "that is resolved at runtime.".format(
-                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
             )
         )
 
     def __getitem__(self, idx):
         raise DagsterInvariantViolationError(
-            'Attempted to index in to an {cls}. This object represents the dynamic output "{out}" '
-            'from the solid "{solid}". Use the "map" method on this object to create '
-            "downstream dependencies that will be cloned for each DynamicOutput "
+            'Attempted to index in to an {cls}. This object represents the dynamic out "{out}" '
+            'from the {described_node}. Use the "map" method on this object to create '
+            "downstream dependencies that will be cloned for each DynamicOut "
             "that is resolved at runtime.".format(
-                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
             )
         )
 
     def alias(self, _):
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call alias method for {cls}. This object "
-            'represents the dynamic output "{out}" from the already invoked solid "{solid}". Consider '
+            'represents the dynamic out "{out}" from the already invoked {described_node}. Consider '
             "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
-                solid=self.solid_name,
+                described_node=self.describe_node(),
                 out=self.output_name,
             )
         )
@@ -787,13 +806,13 @@ class InvokedSolidDynamicOutputWrapper:
     def with_hooks(self, _):
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call hook method for {cls}. This object "
-            'represents the dynamic output "{out}" from the already invoked solid "{solid}". Consider '
+            'represents the dynamic out "{out}" from the already invoked {described_node}. Consider '
             "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
-                solid=self.solid_name,
                 out=self.output_name,
+                described_node=self.describe_node(),
             )
         )
 
