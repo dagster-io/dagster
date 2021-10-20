@@ -54,4 +54,5 @@ const TypeName = styled.code`
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: middle;
 `;

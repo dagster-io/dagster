@@ -103,7 +103,12 @@ export const RepositoryLocationsList = () => {
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
   if (loading && !locationEntries.length) {
-    return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
+    return (
+      <Box flex={{gap: 8, alignItems: 'center'}} padding={{horizontal: 24}}>
+        <Spinner purpose="body-text" />
+        <div>Loading...</div>
+      </Box>
+    );
   }
 
   if (!locationEntries.length) {
