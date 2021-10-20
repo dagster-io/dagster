@@ -1086,7 +1086,10 @@ def _check_persistent_storage_requirement(
 
     pipeline_def = pipeline.get_definition()
     executor_def = executor_def_from_config(mode_def, resolved_run_config)
-    if ExecutorRequirement.PERSISTENT_OUTPUTS not in executor_def.requirements:
+    requirements_lst = executor_def.get_requirements(
+        resolved_run_config.execution.execution_engine_config
+    )
+    if ExecutorRequirement.PERSISTENT_OUTPUTS not in requirements_lst:
         return
 
     if not can_isolate_steps(pipeline_def, mode_def):

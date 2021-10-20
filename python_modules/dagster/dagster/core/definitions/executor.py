@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
+from dagster.config.field_utils import Selector
 from dagster.core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
@@ -64,9 +65,13 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         description=None,
     ):
         self._name = check.str_param(name, "name")
-        self._requirements = check.opt_list_param(
-            requirements, "requirements", of_type=ExecutorRequirement
-        )
+        if callable(requirements):
+            self._requirements_fn = requirements
+        else:
+            requirements_lst = check.opt_list_param(
+                requirements, "requirements", of_type=ExecutorRequirement
+            )
+            self._requirements_fn = lambda _: requirements_lst
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, "executor_creation_fn"
@@ -85,9 +90,8 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def config_schema(self):
         return self._config_schema
 
-    @property
-    def requirements(self):
-        return self._requirements
+    def get_requirements(self, init_context):
+        return self._requirements_fn(init_context)
 
     @property
     def executor_creation_fn(self):
@@ -99,7 +103,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             config_schema=config_schema,
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
-            requirements=self.requirements,
+            requirements=self._requirements_fn,
         )
 
     # Backcompat: Overrides configured method to provide name as a keyword argument.
@@ -195,6 +199,16 @@ class _ExecutorDecoratorCallable:
         return executor_def
 
 
+def _core_in_process_executor_creation(retries_config, marker_to_close):
+    from dagster.core.executor.in_process import InProcessExecutor
+
+    return InProcessExecutor(
+        # shouldn't need to .get() here - issue with defaults in config setup
+        retries=RetryMode.from_config(retries_config),
+        marker_to_close=marker_to_close,
+    )
+
+
 @executor(
     name="in_process",
     config_schema={
@@ -217,15 +231,10 @@ def in_process_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
-    from dagster.core.executor.init import InitExecutorContext
-    from dagster.core.executor.in_process import InProcessExecutor
-
-    check.inst_param(init_context, "init_context", InitExecutorContext)
-
-    return InProcessExecutor(
-        # shouldn't need to .get() here - issue with defaults in config setup
-        retries=RetryMode.from_config(init_context.executor_config.get("retries", {"enabled": {}})),
-        marker_to_close=init_context.executor_config.get("marker_to_close"),
+    retries_config = init_context.executor_config["retries"]
+    marker_to_close = init_context.executor_config.get("marker_to_close")
+    return _core_in_process_executor_creation(
+        retries_config=retries_config, marker_to_close=marker_to_close
     )
 
 
@@ -242,6 +251,15 @@ def execute_in_process_executor(_):
     return InProcessExecutor(
         retries=RetryMode.ENABLED,
         marker_to_close=None,
+    )
+
+
+def _core_multiprocess_executor_creation(max_concurrent, retries_config):
+    from dagster.core.executor.multiprocess import MultiprocessExecutor
+
+    return MultiprocessExecutor(
+        max_concurrent=max_concurrent,
+        retries=RetryMode.from_config(retries_config),
     )
 
 
@@ -275,14 +293,9 @@ def multiprocess_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
-    from dagster.core.executor.init import InitExecutorContext
-    from dagster.core.executor.multiprocess import MultiprocessExecutor
-
-    check.inst_param(init_context, "init_context", InitExecutorContext)
-
-    return MultiprocessExecutor(
+    return _core_multiprocess_executor_creation(
         max_concurrent=init_context.executor_config["max_concurrent"],
-        retries=RetryMode.from_config(init_context.executor_config["retries"]),
+        retries_config=init_context.executor_config["retries"],
     )
 
 
@@ -293,11 +306,12 @@ def check_cross_process_constraints(init_context):
     from dagster.core.executor.init import InitExecutorContext
 
     check.inst_param(init_context, "init_context", InitExecutorContext)
+    requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
-    if ExecutorRequirement.RECONSTRUCTABLE_PIPELINE in init_context.executor_def.requirements:
+    if ExecutorRequirement.RECONSTRUCTABLE_PIPELINE in requirements_lst:
         _check_intra_process_pipeline(init_context.pipeline)
 
-    if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in init_context.executor_def.requirements:
+    if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
         _check_non_ephemeral_instance(init_context.instance)
 
 
@@ -324,4 +338,80 @@ def _check_non_ephemeral_instance(instance):
             "ephemeral DagsterInstance. A non-ephemeral instance is needed to coordinate "
             "execution between multiple processes. You can configure your default instance "
             "via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs."
+        )
+
+
+def _get_default_executor_requirements(executor_config):
+    return multiple_process_executor_requirements() if "multiprocess" in executor_config else []
+
+
+@executor(
+    name="multi_or_in_process_executor",
+    config_schema=Field(
+        Selector(
+            {
+                "multiprocess": {
+                    "max_concurrent": Field(Int, is_required=False, default_value=0),
+                    "retries": get_retries_config(),
+                },
+                "in_process": {
+                    "retries": get_retries_config(),
+                    "marker_to_close": Field(str, is_required=False),
+                },
+            },
+        ),
+        default_value={"multiprocess": {}},
+    ),
+    requirements=_get_default_executor_requirements,
+)
+def multi_or_in_process_executor(init_context):
+    """The default executor for a job.
+
+    This is the executor available by default on a :py:class:`JobDefinition`
+    that does not provide custom executors. This executor has a multiprocessing-enabled mode, and a
+    single-process mode. By default, multiprocessing mode is enabled. Switching between multiprocess
+    mode and in-process mode can be achieved via config.
+
+    .. code-block:: yaml
+
+        execution:
+          config:
+            multiprocess:
+
+
+        execution:
+          config:
+            in_process:
+
+    When using the multiprocess mode, ``max_concurrent`` and ``retries`` can also be configured.
+
+
+          multiprocess:
+            config:
+              max_concurrent: 4
+              retries:
+                enabled:
+
+    The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
+    concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
+    :py:func:`python:multiprocessing.cpu_count`.
+
+    When using the in_process mode, then only retries can be configured.
+
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
+    """
+    if "multiprocess" in init_context.executor_config:
+        max_concurrent = init_context.executor_config["multiprocess"]["max_concurrent"]
+        retries = init_context.executor_config["multiprocess"]["retries"]
+        return _core_multiprocess_executor_creation(
+            max_concurrent=max_concurrent, retries_config=retries
+        )
+
+    else:
+        retries_config = init_context.executor_config["in_process"]["retries"]
+        marker_to_close = init_context.executor_config.get("marker_to_close")
+        return _core_in_process_executor_creation(
+            retries_config=retries_config, marker_to_close=marker_to_close
         )
