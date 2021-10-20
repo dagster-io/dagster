@@ -1,6 +1,5 @@
 import os
 import pickle
-import time
 import uuid
 
 import dagstermill
@@ -22,8 +21,6 @@ from dagster import (
     solid,
 )
 from dagster.core.storage.file_manager import local_file_manager
-from dagster.core.types.dagster_type import DagsterType
-from dagster.core.types.marshal import SerializationStrategy
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
 from dagstermill.io_managers import local_output_notebook_io_manager
 
@@ -531,77 +528,6 @@ def hello_world_with_output_notebook_pipeline_legacy():
     load_notebook_legacy(notebook)
 
 
-class ASerializationStrategy(SerializationStrategy):
-    def __init__(self, name="foo"):
-        super(ASerializationStrategy, self).__init__(name)
-        self.count = 0
-
-    def serialize(self, value, write_file_obj):
-        if self.count % 2 == 0:  # ensure two steps' serdes interleave
-            time.sleep(1)
-        write_file_obj.write(bytes(value.encode("utf-8")))
-
-    def deserialize(self, read_file_obj):
-        if self.count % 2 == 1:  # ensure two steps' serdes interleave
-            time.sleep(1)
-        return read_file_obj.read().decode("utf-8")
-
-
-ADagsterType = DagsterType(
-    name="ADagsterType",
-    type_check_fn=lambda _, value: True,
-    serialization_strategy=ASerializationStrategy(),
-)
-
-yield_something_legacy = dagstermill.define_dagstermill_solid(
-    name="yield_something_legacy",
-    notebook_path=nb_test_path("yield_something"),
-    output_notebook="notebook",
-    input_defs=[InputDefinition("obj", str)],
-    output_defs=[OutputDefinition(ADagsterType)],
-)
-
-
-@solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", ADagsterType)])
-def fan_in_legacy(a, b):
-    return f"{a} {b}"
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
-        )
-    ]
-)
-def fan_in_notebook_pipeline_legacy():
-    a, _ = yield_something_legacy.alias("solid_1")()
-    b, _ = yield_something_legacy.alias("solid_2")()
-    fan_in_legacy(a, b)
-
-
-@composite_solid
-def outer_legacy():
-    yield_something_legacy()
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
-        )
-    ]
-)
-def composite_pipeline_legacy():
-    outer_legacy()
-
-
 @repository
 def notebook_repo():
     pipelines = [
@@ -627,7 +553,6 @@ def notebook_repo():
         fan_in_notebook_pipeline,
         hello_world_no_output_notebook_no_file_manager_pipeline,
         hello_world_with_output_notebook_pipeline_legacy,
-        fan_in_notebook_pipeline_legacy,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]
