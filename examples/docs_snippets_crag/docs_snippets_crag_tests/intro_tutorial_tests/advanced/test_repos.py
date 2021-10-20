@@ -1,4 +1,3 @@
-from dagster import execute_pipeline
 from dagster.utils import pushd, script_relative_path
 from docs_snippets_crag.intro_tutorial.advanced.repositories.repos import hello_cereal_repository
 from docs_snippets_crag.intro_tutorial.advanced.scheduling.scheduler import (
