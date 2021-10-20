@@ -14,9 +14,9 @@ import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Caption} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
-import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
 
@@ -99,8 +99,6 @@ const ReloadButton: React.FC<{
   );
 };
 
-
-
 export const RepositoryLocationsList = () => {
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
@@ -137,18 +135,19 @@ export const RepositoryLocationsList = () => {
                 <strong>{location.name}</strong>
                 <div>
                   {location.displayMetadata.map((metadata, idx) => {
-                    const name = metadata.key === "url" ? "source" : metadata.key;
-                    const display = metadata.key === "url" ?
-                      <RepositoryRemoteLocationLink repositoryUrl={metadata.value} />
-                      : metadata.value;
+                    const name = metadata.key === 'url' ? 'source' : metadata.key;
+                    const display =
+                      metadata.key === 'url' ? (
+                        <RepositoryRemoteLocationLink repositoryUrl={metadata.value} />
+                      ) : (
+                        metadata.value
+                      );
 
                     return (
                       <div key={idx}>
                         <Caption style={{wordBreak: 'break-word'}}>
                           {`${name}: `}
-                          <span style={{color: ColorsWIP.Gray400}}>
-                            {display}
-                          </span>
+                          <span style={{color: ColorsWIP.Gray400}}>{display}</span>
                         </Caption>
                       </div>
                     );

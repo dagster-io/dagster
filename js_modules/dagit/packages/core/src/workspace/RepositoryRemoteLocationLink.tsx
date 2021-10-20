@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 import {ColorsWIP} from '../ui/Colors';
@@ -8,11 +7,10 @@ export const formatRepositoryUrl = (url: string): string => {
   try {
     const urlObj = new URL(url);
     let org, repo, tag;
-    if (urlObj.host === "github.com") {
-      [, org, repo, , tag] = urlObj.pathname.split("/", 7);
-    }
-    else if (urlObj.host === "gitlab.com") {
-      [, org, repo, , , tag] = urlObj.pathname.split("/", 8);
+    if (urlObj.host === 'github.com') {
+      [, org, repo, , tag] = urlObj.pathname.split('/', 7);
+    } else if (urlObj.host === 'gitlab.com') {
+      [, org, repo, , , tag] = urlObj.pathname.split('/', 8);
     }
     if (org && repo && tag) {
       return `${org}/${repo}@${tag}`;
@@ -23,14 +21,19 @@ export const formatRepositoryUrl = (url: string): string => {
   return url;
 };
 
-export const RepositoryRemoteLocationLink: React.FC<{repositoryUrl: string}> = ({repositoryUrl}) => {
+export const RepositoryRemoteLocationLink: React.FC<{repositoryUrl: string}> = ({
+  repositoryUrl,
+}) => {
   const formattedUrl = formatRepositoryUrl(repositoryUrl);
 
   return (
     <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">
-      <IconWIP color={ColorsWIP.Link} name="link" style={{display: 'inline-block', verticalAlign: 'middle'}} />
-      {' '}
+      <IconWIP
+        color={ColorsWIP.Link}
+        name="link"
+        style={{display: 'inline-block', verticalAlign: 'middle'}}
+      />{' '}
       {formattedUrl}
     </a>
-  )
-}
+  );
+};
