@@ -38,7 +38,7 @@ def test_execute_display_command():
             }
 
             # write run config to temp file
-            # file is temp because intermediate storage directory is temporary
+            # file is temp because io manager directory is temporary
             with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w") as f:
                 f.write(yaml.dump(run_config))
 

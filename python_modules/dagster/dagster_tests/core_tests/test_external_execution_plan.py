@@ -14,7 +14,7 @@ from dagster import (
     reconstructable,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -101,19 +101,6 @@ def test_using_file_system_for_subplan():
         "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 2
-
-
-def test_using_intermediates_file_system_is_persistent():
-    # TODO: [intermediate-storage-removal] artifacts_persisted
-    pipeline = define_inty_pipeline()
-
-    run_config = {"intermediate_storage": {"filesystem": {}}}
-    execution_plan = create_execution_plan(
-        pipeline,
-        run_config=run_config,
-    )
-
-    assert execution_plan.artifacts_persisted
 
 
 def test_using_file_system_for_subplan_multiprocessing():
