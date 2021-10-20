@@ -856,21 +856,12 @@ def composite_mapping_from_output(
     if isinstance(output, tuple) and all(
         map(lambda item: isinstance(item, InvokedSolidOutputHandle), output)
     ):
-        for handle in output:
-            if handle.output_name not in output_def_dict:
-                raise DagsterInvalidDefinitionError(
-                    "Output name mismatch returning output tuple in {decorator_name} '{name}'. "
-                    "No matching OutputDefinition named {output_name} for {solid_name}.{output_name}."
-                    "Return a dict to map to the desired OutputDefinition".format(
-                        decorator_name=decorator_name,
-                        name=solid_name,
-                        output_name=handle.output_name,
-                        solid_name=handle.solid_name,
-                    )
-                )
-            output_mapping_dict[handle.output_name] = output_def_dict[
-                handle.output_name
-            ].mapping_from(handle.solid_name, handle.output_name)
+        for i, output_name in enumerate(output_def_dict.keys()):
+            handle = output[i]
+            # map output defined on graph to the actual output defined on the op
+            output_mapping_dict[output_name] = output_def_dict[output_name].mapping_from(
+                handle.solid_name, handle.output_name
+            )
 
         return output_mapping_dict
 
