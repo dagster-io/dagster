@@ -1,10 +1,10 @@
 import csv
 import os
 
-from dagster import execute_pipeline, pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def load_cereals():
     dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
     with open(dataset_path, "r") as fd:
@@ -12,7 +12,7 @@ def load_cereals():
     return cereals
 
 
-@solid
+@op
 def sort_by_calories(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["calories"])
@@ -22,7 +22,7 @@ def sort_by_calories(cereals):
     return (least_caloric, most_caloric)
 
 
-@solid
+@op
 def sort_by_protein(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["protein"])
@@ -32,14 +32,14 @@ def sort_by_protein(cereals):
     return (least_protein, most_protein)
 
 
-@solid
+@op
 def display_results(context, calorie_results, protein_results):
     context.log.info(f"Most caloric cereal: {calorie_results[-1]}")
     context.log.info(f"Most protein-rich cereal: {protein_results[-1]}")
 
 
-@pipeline
-def complex_pipeline():
+@job
+def complex_job():
     cereals = load_cereals()
     display_results(
         calorie_results=sort_by_calories(cereals),
@@ -48,13 +48,13 @@ def complex_pipeline():
 
 
 if __name__ == "__main__":
-    result = execute_pipeline(complex_pipeline)
+    result = complex_job.execute_in_process()
     assert result.success
 
 
 def test_complex_pipeline():
-    res = execute_pipeline(complex_pipeline)
+    res = complex_job.execute_in_process()
     assert res.success
-    assert len(res.solid_result_list) == 4
-    for solid_res in res.solid_result_list:
-        assert solid_res.success
+    assert len(res.op_result_list) == 4
+    for op_res in res.op_result_list:
+        assert op_res.success
