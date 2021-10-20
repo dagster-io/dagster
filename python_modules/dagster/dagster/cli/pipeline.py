@@ -915,9 +915,8 @@ def _execute_backfill_command_at_location(
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
-            "Failure fetching partition names for {partition_set_name}: {error_message}".format(
-                partition_set_name=partition_set_name,
-                error_message=error_info.message,
+            "Failure fetching partition names: {error_message}".format(
+                error_message=error_info.message
             ),
             serialized_error_info=error_info,
         )
