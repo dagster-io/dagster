@@ -407,14 +407,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             .io_manager_key
         )
 
-        # backcompat: if intermediate storage is specified and the user hasn't overridden
-        # io_manager_key on the output, use the intermediate storage.
-        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
-            from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
-
-            output_manager = IntermediateStorageAdapter(self.intermediate_storage)
-        else:
-            output_manager = getattr(self.resources, io_manager_key)
+        output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
     def using_default_intermediate_storage(self) -> bool:

@@ -865,7 +865,7 @@ def retry_multi_input_early_terminate_pipeline():
     sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def dynamic_pipeline():
     @solid
     def multiply_by_two(context, y):

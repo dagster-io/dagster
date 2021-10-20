@@ -27,7 +27,6 @@ def test_dynamic_resume_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -61,7 +60,6 @@ def test_dynamic_resume_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
@@ -105,7 +103,6 @@ def test_dynamic_full_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -139,7 +136,6 @@ def test_dynamic_full_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
@@ -183,7 +179,6 @@ def test_dynamic_subset(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -217,7 +212,6 @@ def test_dynamic_subset(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {

@@ -12,17 +12,12 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     SerializationStrategy,
-    execute_pipeline,
     lambda_solid,
     pipeline,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
@@ -156,53 +151,6 @@ def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
             )
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
-
-
-@nettest
-def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
-    gcs_prefix = "custom_prefix"
-
-    pipe = define_inty_pipeline(should_throw=False)
-    run_config = {
-        "intermediate_storage": {
-            "gcs": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": gcs_prefix}}
-        }
-    }
-
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
-    instance = DagsterInstance.ephemeral()
-
-    result = execute_pipeline(
-        pipe,
-        run_config=run_config,
-    )
-    assert result.success
-
-    execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(
-        execution_plan,
-        InMemoryPipeline(pipe),
-        run_config,
-        pipeline_run,
-        instance,
-    ) as context:
-        intermediate_storage = GCSIntermediateStorage(
-            run_id=result.run_id,
-            gcs_bucket=gcs_bucket,
-            gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build(
-                required_resource_keys={"gcs"},
-            ).gcs,
-        )
-        assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
-        assert (
-            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
-            == 1
-        )
-        assert (
-            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
-            == 2
-        )
 
 
 @nettest

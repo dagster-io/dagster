@@ -935,10 +935,10 @@ def test_single_step_reexecution():
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        mode_defs=[default_mode_def_for_test],
     )
-    run_config = {"storage": {"filesystem": {}}}
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, run_config, instance=instance)
+    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid("add_one").output_value() == 2
 
@@ -946,7 +946,6 @@ def test_single_step_reexecution():
     reexecution_result = reexecute_pipeline(
         pipeline_def,
         parent_run_id=pipeline_result.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["add_one"],
     )
@@ -965,20 +964,19 @@ def test_two_step_reexecution():
     def add_one(num):
         return num + 1
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def two_step_reexec():
         add_one(add_one(return_one()))
 
     instance = DagsterInstance.ephemeral()
-    run_config = {"storage": {"filesystem": {}}}
-    pipeline_result = execute_pipeline(two_step_reexec, run_config=run_config, instance=instance)
+
+    pipeline_result = execute_pipeline(two_step_reexec, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid("add_one_2").output_value() == 3
 
     reexecution_result = reexecute_pipeline(
         two_step_reexec,
         parent_run_id=pipeline_result.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["add_one", "add_one_2"],
     )
