@@ -381,7 +381,7 @@ class RepositoryData(ABC):
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    def __init__(self, pipelines, partition_sets, schedules, sensors):
+    def __init__(self, pipelines, jobs, partition_sets, schedules, sensors):
         """Constructs a new CachingRepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
@@ -405,6 +405,7 @@ class CachingRepositoryData(RepositoryData):
 
         """
         check.dict_param(pipelines, "pipelines", key_type=str)
+        check.dict_param(jobs, "jobs", key_type=str)
         check.dict_param(partition_sets, "partition_sets", key_type=str)
         check.dict_param(schedules, "schedules", key_type=str)
         check.dict_param(sensors, "sensors", key_type=str)
@@ -415,6 +416,14 @@ class CachingRepositoryData(RepositoryData):
             "pipeline",
             pipelines,
             self._validate_pipeline,
+        )
+
+        self._jobs = _CacheingDefinitionIndex(
+            JobDefinition,
+            "JobDefinition",
+            "job",
+            jobs,
+            self._validate_job,
         )
 
         self._schedules = _CacheingDefinitionIndex(
@@ -465,6 +474,7 @@ class CachingRepositoryData(RepositoryData):
         self._sensors.get_all_definitions()
 
         self._all_pipelines = None
+        self._all_jobs = None
 
     @staticmethod
     def from_dict(repository_definitions):
@@ -521,11 +531,7 @@ class CachingRepositoryData(RepositoryData):
                 )
 
             if isinstance(job, GraphDefinition):
-                repository_definitions["pipelines"][key] = job.coerce_to_job()
-            else:
-                repository_definitions["pipelines"][key] = job
-
-        del repository_definitions["jobs"]
+                repository_definitions["jobs"][key] = job.coerce_to_job()
 
         return CachingRepositoryData(**repository_definitions)
 
@@ -544,8 +550,18 @@ class CachingRepositoryData(RepositoryData):
         sensors = {}
         jobs = {}
         for definition in repository_definitions:
-            if isinstance(definition, PipelineDefinition):
-                if definition.name in pipelines and pipelines[definition.name] != definition:
+            if isinstance(definition, JobDefinition):
+                if (
+                    definition.name in jobs and jobs[definition.name] != definition
+                ) or definition.name in pipelines:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate definition found for {definition.name}"
+                    )
+                jobs[definition.name] = definition
+            elif isinstance(definition, PipelineDefinition):
+                if (
+                    definition.name in pipelines and pipelines[definition.name] != definition
+                ) or definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
                         "Duplicate {target_type} definition found for {target}".format(
                             target_type=definition.target_type, target=definition.describe_target()
@@ -560,26 +576,30 @@ class CachingRepositoryData(RepositoryData):
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, SensorDefinition):
-                if definition.name in jobs:
+                if definition.name in sensors or definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
-                jobs[definition.name] = definition
                 sensors[definition.name] = definition
                 if definition.has_loadable_targets():
                     targets = definition.load_targets()
                     for target in targets:
-                        pipelines[target.name] = target
+                        if isinstance(target, JobDefinition):
+                            jobs[target.name] = target
+                        else:
+                            pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
-                if definition.name in jobs:
+                if definition.name in sensors or definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
-                jobs[definition.name] = definition
                 schedules[definition.name] = definition
                 if definition.has_loadable_target():
                     target = definition.load_target()
-                    pipelines[target.name] = target
+                    if isinstance(target, JobDefinition):
+                        jobs[target.name] = target
+                    else:
+                        pipelines[target.name] = target
 
                 if isinstance(definition, PartitionScheduleDefinition):
                     partition_set_def = definition.get_partition_set()
@@ -594,12 +614,19 @@ class CachingRepositoryData(RepositoryData):
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
                 coerced = definition.coerce_to_job()
-                pipelines[coerced.name] = coerced
+                if coerced.name in pipelines or coerced.name in jobs:
+                    raise DagsterInvalidDefinitionError(
+                        "Duplicate {target_type} definition found for {target}".format(
+                            target_type=definition.target_type, target=definition.describe_target()
+                        )
+                    )
+                jobs[coerced.name] = coerced
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
         return CachingRepositoryData(
             pipelines=pipelines,
+            jobs=jobs,
             partition_sets=partition_sets,
             schedules=schedules,
             sensors=sensors,
@@ -611,7 +638,15 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             List[str]
         """
-        return self._pipelines.get_definition_names()
+        return self._pipelines.get_definition_names() + self.get_job_names()
+
+    def get_job_names(self):
+        """Get the names of all jobs in the repository.
+
+        Returns:
+            List[str]
+        """
+        return self._jobs.get_definition_names()
 
     def has_pipeline(self, pipeline_name):
         """Check if a pipeline with a given name is present in the repository.
@@ -623,7 +658,14 @@ class CachingRepositoryData(RepositoryData):
             bool
         """
         check.str_param(pipeline_name, "pipeline_name")
-        return self._pipelines.has_definition(pipeline_name)
+
+        return self._pipelines.has_definition(pipeline_name) or self._jobs.has_definition(
+            pipeline_name
+        )
+
+    def has_job(self, job_name):
+        check.str_param(job_name, "job_name")
+        return self._jobs.has_definition(job_name)
 
     def get_all_pipelines(self):
         """Return all pipelines in the repository as a list.
@@ -636,9 +678,31 @@ class CachingRepositoryData(RepositoryData):
         if self._all_pipelines is not None:
             return self._all_pipelines
 
-        self._all_pipelines = self._pipelines.get_all_definitions()
+        self._all_jobs = self._jobs.get_all_definitions()
+        self._all_pipelines = self._pipelines.get_all_definitions() + self._all_jobs
         self._check_solid_defs()
         return self._all_pipelines
+
+    def get_all_jobs(self):
+        """Return all jobs in the repository as a list.
+
+        Note that this will construct any job that has not yet been constructed.
+
+        Returns:
+            List[JobDefinition]: All jobs in the repository.
+        """
+        if self._all_jobs is not None:
+            return self._all_jobs
+
+        self._all_jobs = self._jobs.get_all_definitions()
+
+        # _check_solid_defs enforces that pipeline and graph definition names are
+        # unique within a repository. Loads pipelines in the line below to enforce
+        # pipeline/job/graph uniqueness.
+        self.get_all_pipelines()
+
+        self._check_solid_defs()
+        return self._all_jobs
 
     def get_pipeline(self, pipeline_name):
         """Get a pipeline by name.
@@ -655,7 +719,27 @@ class CachingRepositoryData(RepositoryData):
 
         check.str_param(pipeline_name, "pipeline_name")
 
-        return self._pipelines.get_definition(pipeline_name)
+        if self._jobs.has_definition(pipeline_name):
+            return self._jobs.get_definition(pipeline_name)
+        else:
+            return self._pipelines.get_definition(pipeline_name)
+
+    def get_job(self, job_name):
+        """Get a job by name.
+
+        If this job has not yet been constructed, only this job is constructed, and will
+        be cached for future calls.
+
+        Args:
+            job_name (str): Name of the job to retrieve.
+
+        Returns:
+            JobDefinition: The job definition corresponding to the given name.
+        """
+
+        check.str_param(job_name, "job_name")
+
+        return self._jobs.get_definition(job_name)
 
     def get_partition_set_names(self):
         """Get the names of all partition sets in the repository.
@@ -780,6 +864,11 @@ class CachingRepositoryData(RepositoryData):
 
     def _validate_pipeline(self, pipeline):
         return pipeline
+
+    def _validate_job(self, job):
+        if not isinstance(job, JobDefinition):
+            raise DagsterInvalidDefinitionError(f'{job.name} is not an instance of a job.')
+        return job
 
     def _validate_schedule(self, schedule):
         pipelines = self.get_pipeline_names()

@@ -441,6 +441,8 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
 
     pipeline_names = set(repo_definition.pipeline_names)
 
+    # here is the easiest place to check that what is being executed is a job
+
     if provided_pipeline_name is None and len(pipeline_names) == 1:
         pipeline_name = next(iter(pipeline_names))
     elif provided_pipeline_name is None:
