@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
