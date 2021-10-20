@@ -21,9 +21,6 @@ dependency on an old version, via ``snowflake-connector-python``.
 .. autodata:: dagster_azure.adls2.adls2_file_cache
   :annotation: ResourceDefinition
 
-.. autodata:: dagster_azure.adls2.adls2_intermediate_storage
-  :annotation: IntermediateStorageDefinition
-
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
 .. autodata:: dagster_azure.adls2.adls2_file_manager

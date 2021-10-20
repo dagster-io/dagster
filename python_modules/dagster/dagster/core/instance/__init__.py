@@ -1338,9 +1338,6 @@ records = instance.get_event_records(
     def file_manager_directory(self, run_id):
         return self._local_artifact_storage.file_manager_dir(run_id)
 
-    def intermediates_directory(self, run_id):
-        return self._local_artifact_storage.intermediates_dir(run_id)
-
     def storage_directory(self):
         return self._local_artifact_storage.storage_dir
 

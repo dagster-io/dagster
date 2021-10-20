@@ -64,7 +64,7 @@ Note that using RDS for run and event log storage does not require that Dagit be
 
 ## Using S3 for IO Management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store intermediates.
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store data passed between ops.
 
 You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
@@ -101,4 +101,4 @@ resources:
 
 The resource uses `boto` under the hood, so if you are accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods.
 
-With this in place, your job runs will store intermediates on S3 in the location `s3://<bucket>/dagster/storage/<job run id>/intermediates/<op name>.compute`.
+With this in place, your job runs will store data passed between ops on S3 in the location `s3://<bucket>/dagster/storage/<job run id>/<op name>.compute`.
