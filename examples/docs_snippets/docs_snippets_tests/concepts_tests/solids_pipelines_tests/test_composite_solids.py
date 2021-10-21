@@ -8,10 +8,7 @@ from docs_snippets.concepts.solids_pipelines.composite_solids import (
 )
 from docs_snippets.concepts.solids_pipelines.graph_provides_config import celsius_to_fahrenheit
 from docs_snippets.concepts.solids_pipelines.graph_provides_config_mapping import to_fahrenheit
-from docs_snippets.concepts.solids_pipelines.unnested_ops import (
-    all_together_unnested,
-    return_fifty,
-)
+from docs_snippets.concepts.solids_pipelines.unnested_ops import all_together_unnested, return_fifty
 
 
 def test_unnested():

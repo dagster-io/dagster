@@ -1,6 +1,4 @@
-from docs_snippets.intro_tutorial.advanced.configuring_ops.configurable_job import (
-    configurable_job,
-)
+from docs_snippets.intro_tutorial.advanced.configuring_ops.configurable_job import configurable_job
 from docs_snippets.intro_tutorial.test_util import patch_cereal_requests
 
 
