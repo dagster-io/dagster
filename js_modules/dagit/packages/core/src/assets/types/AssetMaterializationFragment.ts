@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: AssetMaterializationFragment
@@ -27,7 +27,7 @@ export interface AssetMaterializationFragment_runOrError_Run {
   runId: string;
   mode: string;
   repositoryOrigin: AssetMaterializationFragment_runOrError_Run_repositoryOrigin | null;
-  status: PipelineRunStatus;
+  status: RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
 }

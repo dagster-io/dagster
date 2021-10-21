@@ -12,7 +12,7 @@ import {TagContainer, TagEditor} from '../execute/TagEditor';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
@@ -342,15 +342,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const statuses = partitionStatuses();
 
   const partitionsWithLastRunSuccess = statuses
-    .filter((x) => x.runStatus === PipelineRunStatus.SUCCESS)
+    .filter((x) => x.runStatus === RunStatus.SUCCESS)
     .map((x) => x.partitionName);
 
   const partitionsWithLastRunFailure = statuses
     .filter(
       (x) =>
-        x.runStatus === PipelineRunStatus.FAILURE ||
-        x.runStatus === PipelineRunStatus.CANCELED ||
-        x.runStatus === PipelineRunStatus.CANCELING,
+        x.runStatus === RunStatus.FAILURE ||
+        x.runStatus === RunStatus.CANCELED ||
+        x.runStatus === RunStatus.CANCELING,
     )
     .map((x) => x.partitionName);
 

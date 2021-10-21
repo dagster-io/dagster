@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunMetadataFragment
@@ -48,7 +48,7 @@ export type RunMetadataFragment_stats = RunMetadataFragment_stats_RunStatsSnapsh
 export interface RunMetadataFragment {
   __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   assets: RunMetadataFragment_assets[];
   stats: RunMetadataFragment_stats;
 }

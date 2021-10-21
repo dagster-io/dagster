@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorsRootQuery
@@ -62,7 +62,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_run
   __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause {
@@ -157,7 +157,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
   __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {

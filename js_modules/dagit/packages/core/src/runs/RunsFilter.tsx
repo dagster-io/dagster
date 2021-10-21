@@ -2,7 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PipelineRunStatus, PipelineRunsFilter} from '../types/globalTypes';
+import {RunStatus, PipelineRunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -88,7 +88,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       if (!obj.statuses) {
         obj.statuses = [];
       }
-      obj.statuses.push(item.value as PipelineRunStatus);
+      obj.statuses.push(item.value as RunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
@@ -130,7 +130,7 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'status',
-      values: () => Object.keys(PipelineRunStatus),
+      values: () => Object.keys(RunStatus),
     },
     {
       token: 'pipeline',

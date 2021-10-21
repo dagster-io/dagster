@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
+import { RunStatus, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunFragment
@@ -84,7 +84,7 @@ export interface RunFragment {
   runConfigYaml: string;
   runId: string;
   canTerminate: boolean;
-  status: PipelineRunStatus;
+  status: RunStatus;
   mode: string;
   tags: RunFragment_tags[];
   rootRunId: string | null;

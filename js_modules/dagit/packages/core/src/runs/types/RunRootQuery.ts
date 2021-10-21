@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
+import { RunStatus, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunRootQuery
@@ -89,7 +89,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   runConfigYaml: string;
   runId: string;
   canTerminate: boolean;
-  status: PipelineRunStatus;
+  status: RunStatus;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_Run_tags[];
   rootRunId: string | null;

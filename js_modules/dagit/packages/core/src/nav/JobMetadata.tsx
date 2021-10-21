@@ -9,7 +9,7 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -298,11 +298,11 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
 
   const intent = () => {
     switch (run.status) {
-      case PipelineRunStatus.SUCCESS:
+      case RunStatus.SUCCESS:
         return 'success';
-      case PipelineRunStatus.CANCELED:
-      case PipelineRunStatus.CANCELING:
-      case PipelineRunStatus.FAILURE:
+      case RunStatus.CANCELED:
+      case RunStatus.CANCELING:
+      case RunStatus.FAILURE:
         return 'danger';
       default:
         return 'none';

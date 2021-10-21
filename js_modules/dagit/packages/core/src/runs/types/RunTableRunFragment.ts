@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunTableRunFragment
@@ -56,7 +56,7 @@ export interface RunTableRunFragment {
   __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   canTerminate: boolean;
   mode: string;

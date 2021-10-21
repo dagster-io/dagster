@@ -5,7 +5,7 @@ import {Link, RouteComponentProps} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
@@ -81,7 +81,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const setStatusFilter = (statuses: PipelineRunStatus[]) => {
+  const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);

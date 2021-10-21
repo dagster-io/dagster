@@ -2,7 +2,7 @@ import graphene
 import pendulum
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
-from .pipelines.status import GraphenePipelineRunStatus
+from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
 from .util import non_null_list
 
@@ -26,7 +26,7 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
     runIds = graphene.List(graphene.String)
     pipelineName = graphene.Field(graphene.String)
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
-    statuses = graphene.List(graphene.NonNull(GraphenePipelineRunStatus))
+    statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
     snapshotId = graphene.Field(graphene.String)
     updatedAfter = graphene.Field(graphene.String)
     mode = graphene.Field(graphene.String)

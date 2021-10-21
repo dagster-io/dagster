@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineRunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviousRunsForScheduleQuery
@@ -60,7 +60,7 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   canTerminate: boolean;
   mode: string;

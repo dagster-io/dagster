@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunTimeFragment
@@ -37,6 +37,6 @@ export type RunTimeFragment_stats = RunTimeFragment_stats_RunStatsSnapshot | Run
 export interface RunTimeFragment {
   __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stats: RunTimeFragment_stats;
 }

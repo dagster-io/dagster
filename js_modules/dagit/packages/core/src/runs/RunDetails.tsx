@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
@@ -18,23 +18,23 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
 
-export const timingStringForStatus = (status?: PipelineRunStatus) => {
+export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.QUEUED:
+    case RunStatus.QUEUED:
       return 'Queued';
-    case PipelineRunStatus.CANCELED:
+    case RunStatus.CANCELED:
       return 'Canceled';
-    case PipelineRunStatus.CANCELING:
+    case RunStatus.CANCELING:
       return 'Canceling…';
-    case PipelineRunStatus.FAILURE:
+    case RunStatus.FAILURE:
       return 'Failed';
-    case PipelineRunStatus.NOT_STARTED:
+    case RunStatus.NOT_STARTED:
       return 'Waiting to start…';
-    case PipelineRunStatus.STARTED:
+    case RunStatus.STARTED:
       return 'Started…';
-    case PipelineRunStatus.STARTING:
+    case RunStatus.STARTING:
       return 'Starting…';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return 'Succeeded';
     default:
       return 'None';

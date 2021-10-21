@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, PipelineRunStatus } from "./../../../types/globalTypes";
+import { RepositorySelector, RunStatus } from "./../../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphQuery
@@ -61,7 +61,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   pipelineName: string;
   pipelineSnapshotId: string | null;
   repositoryOrigin: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin | null;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run;

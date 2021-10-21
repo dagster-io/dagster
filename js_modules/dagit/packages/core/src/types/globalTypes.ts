@@ -115,7 +115,12 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
-export enum PipelineRunStatus {
+export enum RepositoryLocationLoadStatus {
+  LOADED = "LOADED",
+  LOADING = "LOADING",
+}
+
+export enum RunStatus {
   CANCELED = "CANCELED",
   CANCELING = "CANCELING",
   FAILURE = "FAILURE",
@@ -125,11 +130,6 @@ export enum PipelineRunStatus {
   STARTED = "STARTED",
   STARTING = "STARTING",
   SUCCESS = "SUCCESS",
-}
-
-export enum RepositoryLocationLoadStatus {
-  LOADED = "LOADED",
-  LOADING = "LOADING",
 }
 
 export enum StepEventStatus {
@@ -198,7 +198,7 @@ export interface PipelineRunsFilter {
   runIds?: (string | null)[] | null;
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
-  statuses?: PipelineRunStatus[] | null;
+  statuses?: RunStatus[] | null;
   snapshotId?: string | null;
   updatedAfter?: string | null;
   mode?: string | null;

@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
 import {StatusTable} from '../instigation/InstigationUtils';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -27,17 +27,17 @@ const calculateDisplayStatus = (partition: Partition) => {
   switch (partition.runStatus) {
     case null:
       return 'Missing';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return 'Succeeded';
-    case PipelineRunStatus.FAILURE:
-    case PipelineRunStatus.CANCELED:
-    case PipelineRunStatus.CANCELING:
+    case RunStatus.FAILURE:
+    case RunStatus.CANCELED:
+    case RunStatus.CANCELING:
       return 'Failed';
-    case PipelineRunStatus.MANAGED:
-    case PipelineRunStatus.QUEUED:
-    case PipelineRunStatus.NOT_STARTED:
-    case PipelineRunStatus.STARTED:
-    case PipelineRunStatus.STARTING:
+    case RunStatus.MANAGED:
+    case RunStatus.QUEUED:
+    case RunStatus.NOT_STARTED:
+    case RunStatus.STARTED:
+    case RunStatus.STARTING:
       return 'Pending';
     default:
       return assertUnreachable(partition.runStatus);

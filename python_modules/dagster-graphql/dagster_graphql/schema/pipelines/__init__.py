@@ -38,7 +38,7 @@ def types():
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
-    from .status import GraphenePipelineRunStatus
+    from .status import GrapheneRunStatus
     from .subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionPayload,
@@ -78,7 +78,7 @@ def types():
         GraphenePipelineRunStatsSnapshot,
         GrapheneRunStatsSnapshotOrError,
         GrapheneRunStatsSnapshot,
-        GraphenePipelineRunStatus,
+        GrapheneRunStatus,
         GraphenePipelineSnapshot,
         GraphenePipelineSnapshotOrError,
         GrapheneResource,

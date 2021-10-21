@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunGroupPanelQuery
@@ -54,7 +54,7 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   id: string;
   runId: string;
   parentRunId: string | null;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   pipelineName: string;
   tags: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags[];

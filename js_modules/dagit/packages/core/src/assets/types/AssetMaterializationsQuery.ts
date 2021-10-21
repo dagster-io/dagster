@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetMaterializationsQuery
@@ -36,7 +36,7 @@ export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializat
   runId: string;
   mode: string;
   repositoryOrigin: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run_repositoryOrigin | null;
-  status: PipelineRunStatus;
+  status: RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
 }

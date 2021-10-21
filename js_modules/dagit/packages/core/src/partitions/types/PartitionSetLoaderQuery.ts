@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, PipelineRunStatus, StepEventStatus } from "./../../types/globalTypes";
+import { PipelineRunsFilter, RunStatus, StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionSetLoaderQuery
@@ -61,7 +61,7 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepSt
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   tags: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_tags[];
   runId: string;
   stats: PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats;

@@ -5,7 +5,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -186,7 +186,7 @@ export function useChunkedPartitionsQuery(
         // Fetch runs in the partition set that are in the STARTED state, indicating active updates
         const pending = await fetchRunsForFilter(client, {
           filter: {
-            statuses: [PipelineRunStatus.STARTED],
+            statuses: [RunStatus.STARTED],
             tags: [...runTags, {key: DagsterTag.PartitionSet, value: partitionSetName}],
           },
         });

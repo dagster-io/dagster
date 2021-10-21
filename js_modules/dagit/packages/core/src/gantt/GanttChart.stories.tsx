@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
 import {GanttChart, GanttChartLoadingState} from './GanttChart';
@@ -22,7 +22,7 @@ const APOLLO_MOCKS = {
         id: 'r1',
         runId: 'r1',
         parentRunId: null,
-        status: PipelineRunStatus.FAILURE,
+        status: RunStatus.FAILURE,
         stepKeysToExecute: [],
         pipelineName: 'Test',
         tags: [],
@@ -40,7 +40,7 @@ const APOLLO_MOCKS = {
         id: 'r2',
         runId: 'r2',
         parentRunId: 'r1',
-        status: PipelineRunStatus.STARTING,
+        status: RunStatus.STARTING,
         stepKeysToExecute: [],
         pipelineName: 'Test',
         tags: [],

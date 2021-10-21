@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { RunStatus, LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunLogsQuery
@@ -988,7 +988,7 @@ export interface RunLogsQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   canTerminate: boolean;
   events: RunLogsQuery_pipelineRunOrError_Run_events[];
 }

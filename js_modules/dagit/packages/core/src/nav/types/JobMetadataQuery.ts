@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunsFilter, InstigationStatus, PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunsFilter, InstigationStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobMetadataQuery
@@ -103,7 +103,7 @@ export type JobMetadataQuery_pipelineRunsOrError_Runs_results_stats = JobMetadat
 export interface JobMetadataQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   assets: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets[];
   stats: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats;
 }

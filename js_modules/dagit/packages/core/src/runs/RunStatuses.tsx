@@ -1,19 +1,19 @@
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
-export const queuedStatuses = new Set([PipelineRunStatus.QUEUED]);
+export const queuedStatuses = new Set([RunStatus.QUEUED]);
 
 export const inProgressStatuses = new Set([
-  PipelineRunStatus.STARTED,
-  PipelineRunStatus.STARTING,
-  PipelineRunStatus.CANCELING,
+  RunStatus.STARTED,
+  RunStatus.STARTING,
+  RunStatus.CANCELING,
 ]);
 
-export const successStatuses = new Set([PipelineRunStatus.SUCCESS]);
-export const failedStatuses = new Set([PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]);
-export const canceledStatuses = new Set([PipelineRunStatus.CANCELING, PipelineRunStatus.CANCELED]);
+export const successStatuses = new Set([RunStatus.SUCCESS]);
+export const failedStatuses = new Set([RunStatus.FAILURE, RunStatus.CANCELED]);
+export const canceledStatuses = new Set([RunStatus.CANCELING, RunStatus.CANCELED]);
 
 export const doneStatuses = new Set([
-  PipelineRunStatus.FAILURE,
-  PipelineRunStatus.SUCCESS,
-  PipelineRunStatus.CANCELED,
+  RunStatus.FAILURE,
+  RunStatus.SUCCESS,
+  RunStatus.CANCELED,
 ]);

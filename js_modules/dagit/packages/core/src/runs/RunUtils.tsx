@@ -5,7 +5,7 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
-import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
+import {ExecutionParams, RunStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -276,11 +276,11 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
     }
 
     switch (run.status) {
-      case PipelineRunStatus.FAILURE:
+      case RunStatus.FAILURE:
         return 'Failed to start';
-      case PipelineRunStatus.CANCELED:
+      case RunStatus.CANCELED:
         return 'Canceled';
-      case PipelineRunStatus.CANCELING:
+      case RunStatus.CANCELING:
         return 'Canceling…';
       default:
         return 'Starting…';

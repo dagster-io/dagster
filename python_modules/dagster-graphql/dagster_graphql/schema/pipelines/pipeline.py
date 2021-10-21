@@ -44,7 +44,7 @@ from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
-from .status import GraphenePipelineRunStatus
+from .status import GrapheneRunStatus
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
@@ -136,7 +136,7 @@ class GraphenePipelineRun(graphene.Interface):
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
-    status = graphene.NonNull(GraphenePipelineRunStatus)
+    status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
@@ -173,7 +173,7 @@ class GrapheneRun(graphene.ObjectType):
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
-    status = graphene.NonNull(GraphenePipelineRunStatus)
+    status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))

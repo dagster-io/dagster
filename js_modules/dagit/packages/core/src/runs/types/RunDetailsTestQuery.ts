@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunDetailsTestQuery
@@ -31,7 +31,7 @@ export interface RunDetailsTestQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
   stats: RunDetailsTestQuery_pipelineRunOrError_Run_stats;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export type RunDetailsTestQuery_pipelineRunOrError = RunDetailsTestQuery_pipelineRunOrError_RunNotFoundError | RunDetailsTestQuery_pipelineRunOrError_Run;

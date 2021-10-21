@@ -275,7 +275,7 @@ type Run implements PipelineRun {
   runId: String!
   pipelineSnapshotId: String
   repositoryOrigin: RepositoryOrigin
-  status: PipelineRunStatus!
+  status: RunStatus!
   pipeline: PipelineReference!
   pipelineName: String!
   solidSelection: [String!]
@@ -299,7 +299,7 @@ interface PipelineRun {
   runId: String!
   pipelineSnapshotId: String
   repositoryOrigin: RepositoryOrigin
-  status: PipelineRunStatus!
+  status: RunStatus!
   pipeline: PipelineReference!
   pipelineName: String!
   solidSelection: [String!]
@@ -330,7 +330,7 @@ type RepositoryMetadata {
   value: String!
 }
 
-enum PipelineRunStatus {
+enum RunStatus {
   QUEUED
   NOT_STARTED
   MANAGED
@@ -1081,7 +1081,7 @@ type Partition {
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
   runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [Run!]!
-  status: PipelineRunStatus
+  status: RunStatus
 }
 
 union PartitionRunConfigOrError = PartitionRunConfig | PythonError
@@ -1100,7 +1100,7 @@ input PipelineRunsFilter {
   runIds: [String]
   pipelineName: String
   tags: [ExecutionTag!]
-  statuses: [PipelineRunStatus!]
+  statuses: [RunStatus!]
   snapshotId: String
   updatedAfter: String
   mode: String
@@ -1120,7 +1120,7 @@ type PartitionStatuses {
 type PartitionStatus {
   id: String!
   partitionName: String!
-  runStatus: PipelineRunStatus
+  runStatus: RunStatus
 }
 
 type FutureInstigationTicks {
