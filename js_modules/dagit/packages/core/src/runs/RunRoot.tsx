@@ -105,7 +105,6 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
 
 const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
-  useDocumentTitle(`Run: ${runId}`);
 
   if (!data || !data.pipelineRunOrError) {
     return <Run run={undefined} runId={runId} />;
