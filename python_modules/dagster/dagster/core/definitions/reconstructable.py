@@ -251,6 +251,22 @@ def reconstructable(target):
     in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline/job
     on the other side of the process boundary.
 
+    Passing a job created with ``~dagster.GraphDefinition.to_job`` to ``reconstructable()``,
+    requires you to wrap that job's definition in a module-scoped function, and pass that function
+    instead:
+
+    .. code-block:: python
+        from dagster import graph, reconstructable
+
+        @graph
+        def my_graph():
+            ...
+
+        def define_my_job():
+            return my_graph.to_job()
+
+        reconstructable(define_my_job)
+
     This function implements a very conservative strategy for reconstruction, so that its behavior
     is easy to predict, but as a consequence it is not able to reconstruct certain kinds of pipelines
     or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
@@ -273,17 +289,27 @@ def reconstructable(target):
         reconstructable_foo_job = reconstructable(foo_job)
 
 
-        def make_bar_job():
-            @job
-            def xyz():
-                # make this job
-                ...
+        @graph
+        def foo():
+            ...
 
-        reconstructable_bar_job = reconstructable(bar_job)
+        def make_bar_job():
+            return foo.to_job()
+
+        reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions import PipelineDefinition, JobDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+        if isinstance(target, JobDefinition):
+            raise DagsterInvariantViolationError(
+                "Reconstructable target was not a function returning a job definition, or a job "
+                "definition produced by a decorated function. If your job was constructed using "
+                "``GraphDefinition.to_job``, you must wrap the ``to_job`` call in a function at "
+                "module scope, ie not within any other functions. "
+                "To learn more, check out the docs on ``reconstructable``: "
+                "https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
             "by a decorated function, got {type}.".format(type=type(target)),

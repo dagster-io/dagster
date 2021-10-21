@@ -1,4 +1,12 @@
-from dagster import execute_pipeline, job, op, reconstructable
+import pytest
+from dagster import (
+    DagsterInvariantViolationError,
+    execute_pipeline,
+    graph,
+    job,
+    op,
+    reconstructable,
+)
 from dagster.core.test_utils import instance_for_test
 
 
@@ -50,3 +58,19 @@ def test_switch_to_in_process_execution():
     )
     assert result.success
     assert len(results_lst) == 10
+
+
+@graph
+def basic_graph():
+    pass
+
+
+basic_job = basic_graph.to_job()  # type: ignore[union-attr]
+
+
+def test_non_reconstructable_job_error():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="you must wrap the ``to_job`` call in a function at module scope",
+    ):
+        reconstructable(basic_job)
