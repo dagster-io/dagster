@@ -2,7 +2,16 @@
 
 import datetime
 
-from dagster import InputDefinition, RunRequest, daily_schedule, pipeline, repository, sensor, solid
+from dagster import (
+    InputDefinition,
+    RunRequest,
+    daily_schedule,
+    job,
+    pipeline,
+    repository,
+    sensor,
+    solid,
+)
 
 
 @solid
@@ -63,6 +72,11 @@ def load_addition_sensor():
     return addition_sensor
 
 
+@job
+def my_job():
+    return_one()
+
+
 @repository
 def my_lazy_repository():
     # Note that we can pass a dict of functions, rather than a list of
@@ -73,6 +87,7 @@ def my_lazy_repository():
             "addition_pipeline": load_addition_pipeline,
             "subtraction_pipeline": load_subtraction_pipeline,
         },
+        "jobs": {"my_job": my_job},
         "schedules": {"daily_addition_schedule": load_daily_addition_schedule},
         "sensors": {"addition_sensor": load_addition_sensor},
     }

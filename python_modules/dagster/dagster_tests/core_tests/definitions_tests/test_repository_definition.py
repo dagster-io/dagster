@@ -11,6 +11,7 @@ from dagster import (
     daily_partitioned_config,
     daily_schedule,
     graph,
+    job,
     lambda_solid,
     op,
     pipeline,
@@ -337,7 +338,9 @@ def test_job_with_partitions():
     assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
     assert test.get_partition_set_def("bare_partition_set")
+    assert test.has_pipeline("bare")
     assert test.get_pipeline("bare")
+    assert test.has_job("bare")
     assert test.get_job("bare")
 
 
@@ -389,6 +392,57 @@ def test_dupe_graph_defs():
         get_collision_repo().get_all_jobs()
 
 
+def test_job_pipeline_collision():
+    @solid
+    def noop():
+        pass
+
+    @pipeline(name="foo")
+    def my_pipeline():
+        noop()
+
+    @job(name="foo")
+    def my_job():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate pipeline definition found for pipeline 'foo'",
+    ):
+
+        @repository
+        def _some_repo():
+            return [my_job, my_pipeline]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate definition found for 'foo'",
+    ):
+
+        @repository
+        def _some_repo():
+            return [my_pipeline, my_job]
+
+
+def test_job_validation():
+    @solid
+    def noop():
+        pass
+
+    @pipeline
+    def my_pipeline():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Object mapped to my_pipeline is not an instance of JobDefinition or GraphDefinition.",
+    ):
+
+        @repository
+        def my_repo():
+            return {"jobs": {"my_pipeline": my_pipeline}}
+
+
 def test_dict_jobs():
     @graph
     def my_graph():
@@ -405,6 +459,7 @@ def test_dict_jobs():
 
     assert jobs.get_pipeline("my_graph")
     assert jobs.get_pipeline("other_graph")
+    assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
 

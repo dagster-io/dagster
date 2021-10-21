@@ -199,6 +199,14 @@ class RepositoryData(ABC):
             List[PipelineDefinition]: All pipelines in the repository.
         """
 
+    def get_all_jobs(self):
+        """Return all jobs in the repository as a list.
+
+        Returns:
+            List[JobDefinition]: All jobs in the repository.
+        """
+        return [job for job in self.get_all_pipelines() if isinstance(job, JobDefinition)]
+
     def get_pipeline_names(self):
         """Get the names of all pipelines in the repository.
 
@@ -206,6 +214,14 @@ class RepositoryData(ABC):
             List[str]
         """
         return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
+
+    def get_job_names(self):
+        """Get the names of all jobs in the repository.
+
+        Returns:
+            List[str]
+        """
+        return [job_def.name for job_def in self.get_all_jobs()]
 
     def has_pipeline(self, pipeline_name):
         """Check if a pipeline with a given name is present in the repository.
@@ -217,6 +233,17 @@ class RepositoryData(ABC):
             bool
         """
         return pipeline_name in self.get_pipeline_names()
+
+    def has_job(self, job_name):
+        """Check if a job with a given name is present in the repository.
+
+        Args:
+            job_name (str): The name of the job.
+
+        Returns:
+            bool
+        """
+        return job_name in self.get_job_names()
 
     def get_pipeline(self, pipeline_name):
         """Get a pipeline by name.
@@ -237,12 +264,12 @@ class RepositoryData(ABC):
         return pipelines_with_name[0]
 
     def get_all_jobs(self):
-        """Return all pipelines/jobs in the repository as a list.
+        """Return all jobs in the repository as a list.
 
         Returns:
-            List[PipelineDefinition]: All pipelines/jobs in the repository.
+            List[JobDefinition]: All jobs in the repository.
         """
-        return self.get_all_pipelines()
+        return self.get_all_jobs()
 
     def get_job_names(self):
         """Get the names of all pipelines/jobs in the repository.
@@ -250,7 +277,7 @@ class RepositoryData(ABC):
         Returns:
             List[str]
         """
-        return self.get_pipeline_names()
+        return self.get_job_names()
 
     def has_job(self, job_name):
         """Check if a pipeline/job with a given name is present in the repository.
@@ -261,18 +288,21 @@ class RepositoryData(ABC):
         Returns:
             bool
         """
-        return self.has_pipeline(job_name)
+        return self.has_job(job_name)
 
     def get_job(self, job_name):
-        """Get a pipeline/job by name.
+        """Get a job by name.
 
         Args:
-            job_name (str): Name of the pipeline/job to retrieve.
+            job_name (str): Name of the job to retrieve.
 
         Returns:
-            PipelineDefinition: The pipeline/job definition corresponding to the given name.
+            JobDefinition: The job definition corresponding to the given name.
         """
-        return self.get_pipeline(job_name)
+        jobs_with_name = [job for job in self.get_all_jobs() if job.name == job_name]
+        if not jobs_with_name:
+            raise DagsterInvariantViolationError(f"Could not find job {job_name} in repository")
+        return jobs_with_name[0]
 
     def get_partition_set_names(self):
         """Get the names of all partition sets in the repository.
@@ -532,6 +562,10 @@ class CachingRepositoryData(RepositoryData):
 
             if isinstance(job, GraphDefinition):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
+            elif not isinstance(job, JobDefinition):
+                raise DagsterInvalidDefinitionError(
+                    f'Object mapped to {key} is not an instance of JobDefinition or GraphDefinition.'
+                )
 
         return CachingRepositoryData(**repository_definitions)
 
@@ -555,7 +589,7 @@ class CachingRepositoryData(RepositoryData):
                     definition.name in jobs and jobs[definition.name] != definition
                 ) or definition.name in pipelines:
                     raise DagsterInvalidDefinitionError(
-                        f"Duplicate definition found for {definition.name}"
+                        f"Duplicate definition found for '{definition.name}'"
                     )
                 jobs[definition.name] = definition
             elif isinstance(definition, PipelineDefinition):
@@ -738,7 +772,6 @@ class CachingRepositoryData(RepositoryData):
         """
 
         check.str_param(job_name, "job_name")
-
         return self._jobs.get_definition(job_name)
 
     def get_partition_set_names(self):
@@ -866,8 +899,6 @@ class CachingRepositoryData(RepositoryData):
         return pipeline
 
     def _validate_job(self, job):
-        if not isinstance(job, JobDefinition):
-            raise DagsterInvalidDefinitionError(f'{job.name} is not an instance of a job.')
         return job
 
     def _validate_schedule(self, schedule):
