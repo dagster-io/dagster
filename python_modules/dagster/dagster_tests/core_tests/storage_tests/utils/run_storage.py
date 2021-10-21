@@ -137,21 +137,6 @@ class TestRunStorage:
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
-    def test_fetch_by_mode(self, storage):
-        assert storage
-        one = make_new_run_id()
-        two = make_new_run_id()
-        storage.add_run(
-            TestRunStorage.build_run(run_id=one, pipeline_name="some_pipeline", mode="foo")
-        )
-        storage.add_run(
-            TestRunStorage.build_run(run_id=two, pipeline_name="some_pipeline", mode="bar")
-        )
-        assert len(storage.get_runs()) == 2
-        some_runs = storage.get_runs(PipelineRunsFilter(mode="foo"))
-        assert len(some_runs) == 1
-        assert some_runs[0].run_id == one
-
     def test_fetch_by_snapshot_id(self, storage):
         assert storage
         pipeline_def_a = PipelineDefinition(name="some_pipeline", solid_defs=[])
