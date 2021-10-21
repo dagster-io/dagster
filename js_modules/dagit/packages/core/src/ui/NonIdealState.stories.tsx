@@ -13,6 +13,7 @@ export default {
 export const Default = () => {
   return (
     <Group spacing={24} direction="column">
+      <NonIdealState icon="star" title="This run is currently queued." />
       <NonIdealState
         icon="star"
         description="This run is currently queued."
