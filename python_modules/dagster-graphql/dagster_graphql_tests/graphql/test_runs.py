@@ -104,7 +104,7 @@ ALL_RUNS_QUERY = """
 
 
 FILTERED_RUN_QUERY = """
-query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
+query PipelineRunsRootQuery($filter: RunsFilter!) {
   pipelineRunsOrError(filter: $filter) {
     ... on PipelineRuns {
       results {
@@ -116,7 +116,7 @@ query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
 """
 
 FILTERED_RUN_COUNT_QUERY = """
-query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
+query PipelineRunsRootQuery($filter: RunsFilter!) {
   pipelineRunsOrError(filter: $filter) {
     ... on PipelineRuns {
       count
