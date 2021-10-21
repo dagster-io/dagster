@@ -6,7 +6,7 @@ from ..step_builder import StepBuilder
 
 def docs_steps() -> List[dict]:
     return [
-        # If this test is failing because you may have either:
+        # If this test is failing, it's because you may have either:
         #   (1) Updated the code that is referenced by a literalinclude in the documentation
         #   (2) Directly modified the inline snapshot of a literalinclude instead of updating
         #       the underlying code that the literalinclude is pointing to.
@@ -32,6 +32,10 @@ def docs_steps() -> List[dict]:
             "cd docs",
             "tox -vv -e py38-sphinx",
         )
+        .on_integration_image(SupportedPython.V3_8)
+        .build(),
+        StepBuilder("docs screenshot spec")
+        .run("python docs/screenshot_capture/match_screenshots.py")
         .on_integration_image(SupportedPython.V3_8)
         .build(),
     ]

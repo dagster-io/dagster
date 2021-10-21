@@ -68,16 +68,9 @@ load_from:
 
 ## Using a Workspace
 
-Dagit will look for the `workspace.yaml` file in the current directory by default, allowing you to launch Dagit from that directory with no arguments and see the repositories defined in the workspace:
+Dagit will look for the `workspace.yaml` file in the current directory by default, allowing you to launch Dagit from that directory with no arguments:
 
     dagit
-
-<Image
-alt="workspace-dagit"
-src="/images/concepts/workspace-dagit.png"
-width={4032}
-height={2454}
-/>
 
 Using a `workspace.yaml` keeps you from having to type the same `-f` or `-m` flag repeatedly. You can also load the workspace yaml file from a different location with `-w`. See detailed references in [`dagit`](/\_apidocs/cli#dagit).
 
