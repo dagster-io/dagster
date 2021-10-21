@@ -104,6 +104,7 @@ def get_asset_materializations(
     partitions=None,
     limit=None,
     before_timestamp=None,
+    after_timestamp=None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -115,6 +116,7 @@ def get_asset_materializations(
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
