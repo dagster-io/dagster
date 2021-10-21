@@ -64,6 +64,7 @@ export function useChunkedPartitionsQuery(
   partitionSetName: string,
   runsFilter: TokenizingFieldValue[],
   repoAddress: RepoAddress,
+  jobName?: string,
 ) {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const client = useApolloClient();
@@ -137,18 +138,19 @@ export function useChunkedPartitionsQuery(
         const sliceStartIdx = Math.max(ii - parallelQueries, 0);
         const sliceNames = partitionNames.slice(sliceStartIdx, ii);
         const fetched = await Promise.all(
-          sliceNames.map((partitionName) =>
-            fetchRunsForFilter(client, {
-              limit: 1000,
-              filter: {
-                tags: [
-                  ...runTags,
-                  {key: DagsterTag.PartitionSet, value: partitionSetName},
-                  {key: DagsterTag.Partition, value: partitionName},
-                ],
-              },
-            }),
-          ),
+          sliceNames.map((partitionName) => {
+            const partitionSetTag = {key: DagsterTag.PartitionSet, value: partitionSetName};
+            const partitionTag = {key: DagsterTag.Partition, value: partitionName};
+            // for jobs, filter by pipelineName/jobName instead of by partition set tag.  This
+            // preserves partition run history across the pipeline => job transition
+            const runsFilter = jobName
+              ? {
+                  pipelineName: jobName,
+                  tags: [...runTags, partitionTag],
+                }
+              : {tags: [...runTags, partitionTag, partitionSetTag]};
+            return fetchRunsForFilter(client, {limit: 1000, filter: runsFilter});
+          }),
         );
         if (version.current !== v) {
           return;
@@ -214,7 +216,7 @@ export function useChunkedPartitionsQuery(
     return () => {
       version.current += 1;
     };
-  }, [pageSize, cursor, client, partitionSetName, runsFilter, repositorySelector]);
+  }, [pageSize, cursor, client, partitionSetName, runsFilter, repositorySelector, jobName]);
 
   // Note: cursor === null is page zero and cursors specify subsequent pages.
 
