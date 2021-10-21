@@ -15,7 +15,7 @@ export const Default = () => {
     <Group spacing={24} direction="column">
       <NonIdealState
         icon="star"
-        description="This run is currently queued."
+        title="This run is currently queued."
         action={<a href={`/instance/runs?q=status%3AQUEUED`}>View queued runs</a>}
       />
       <NonIdealState
