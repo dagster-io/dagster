@@ -189,7 +189,7 @@ const VersionDropdown = () => {
               >
                 <Menu.Items
                   static
-                  className="absolute mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
+                  className="absolute mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 overflow-y-scroll max-h-(screen-60)"
                 >
                   <div className="px-4 py-3">
                     <p className="text-sm leading-5">
