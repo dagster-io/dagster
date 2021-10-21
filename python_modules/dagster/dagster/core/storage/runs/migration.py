@@ -1,10 +1,8 @@
 from contextlib import ExitStack
 
-import pendulum
 from tqdm import tqdm
 
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from .schema import RunsTable
 
 RUN_PARTITIONS = "run_partitions"
 
