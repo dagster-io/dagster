@@ -44,6 +44,28 @@ def test_seed(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable
     assert len(dbt_result.result["results"]) == 1
 
 
+def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=unused-argument
+    @solid(required_resource_keys={"dbt"})
+    def my_dbt_solid(context):
+        return context.resources.dbt.ls()
+
+    context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
+    dbt_result = my_dbt_solid(context)
+    assert len(dbt_result.raw_output.split("\n\n")) == 20
+
+
+def test_ls_resource_type(
+    conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    @solid(required_resource_keys={"dbt"})
+    def my_dbt_solid(context):
+        return context.resources.dbt.ls(resource_type="model")
+
+    context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
+    dbt_result = my_dbt_solid(context)
+    assert len(dbt_result.raw_output.split("\n\n")) == 4
+
+
 def test_test(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
