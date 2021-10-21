@@ -41,10 +41,10 @@ def test_diamond():
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your data applications.
 
 ```bash
-pytest test_complex_pipeline.py
+pytest test_complex_job.py
 ```
 
-Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't admit this kind of API, which is intended to enable local tests like this.
+Obviously, in production we'll often execute jobs in a parallel, streaming way that doesn't admit this kind of API, which is intended to enable local tests like this.
 
 Dagster is written to make testing easy in a domain where it has historically been very difficult. Throughout the rest of this tutorial, we'll explore the writing of unit tests for each piece of the framework as we learn about it. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) page.
 

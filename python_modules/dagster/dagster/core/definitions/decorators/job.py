@@ -115,7 +115,7 @@ def job(
             Describes how the job is parameterized at runtime.
 
             If no value is provided, then the schema for the job's run config is a standard
-            format based on its solids and resources.
+            format based on its ops and resources.
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
@@ -140,7 +140,7 @@ def job(
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         version_strategy (Optional[VersionStrategy]):
-            Defines how each solid (and optionally, resource) in the job can be versioned. If
+            Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
 
     """
