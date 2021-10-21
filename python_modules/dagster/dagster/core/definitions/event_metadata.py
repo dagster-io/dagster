@@ -352,8 +352,8 @@ class EventMetadata:
 
     .. code-block:: python
 
-        @solid
-        def emit_metadata_solid(context, df):
+        @op
+        def emit_metadata(context, df):
             yield AssetMaterialization(
                 asset_key="my_dataset",
                 metadata={
@@ -372,8 +372,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
@@ -394,8 +394,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dashboard",
                     metadata={
@@ -416,8 +416,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
@@ -438,8 +438,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield ExpectationResult(
                     success=not missing_things,
                     label="is_present",
@@ -462,8 +462,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, md_str):
+            @op
+            def emit_metadata(context, md_str):
                 yield AssetMaterialization(
                     asset_key="info",
                     metadata={
@@ -484,8 +484,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
@@ -508,8 +508,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
@@ -531,8 +531,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
@@ -552,6 +552,10 @@ class EventMetadata:
         return DagsterPipelineRunMetadataEntryData(run_id)
 
     @staticmethod
+    def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
+        return EventMetadata.pipeline_run(run_id)
+
+    @staticmethod
     def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataEntryData":
         """Static constructor for a metadata value referencing a Dagster asset, by key.
 
@@ -559,8 +563,8 @@ class EventMetadata:
 
         .. code-block:: python
 
-            @solid
-            def validate_table_solid(context, df):
+            @op
+            def validate_table(context, df):
                 yield AssetMaterialization(
                     asset_key=AssetKey("my_table"),
                     metadata={
