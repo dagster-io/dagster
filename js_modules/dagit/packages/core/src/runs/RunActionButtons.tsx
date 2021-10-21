@@ -117,8 +117,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const isFinalStatus = !!doneStatuses.has(run.status);
   const isFailedWithPlan =
-    run.executionPlan &&
-    (run.status === RunStatus.FAILURE || run.status === RunStatus.CANCELED);
+    run.executionPlan && (run.status === RunStatus.FAILURE || run.status === RunStatus.CANCELED);
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
