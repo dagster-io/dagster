@@ -109,7 +109,7 @@ You may eventually accumulate too many runs to return in one query. The `runsOrE
 The `runsOrError` query also takes in an optional filter argument, of type `RunsFilter`. This query allows you to filter runs by:
 
 - run ID
-- pipeline name
+- job name
 - tags
 - statuses
 
@@ -179,42 +179,35 @@ This query takes a `selector`, which is of type `RepositorySelector`. A reposito
 
 ### Launch a run
 
-To execute a pipeline, we can use the `launchRun` mutation. Here, we define `LaunchRunMutation` to wrap our mutation and allow us to pass in the required arguments as query variables.
+To launch a run, we can use the `launchRun` mutation. Here, we define `LaunchRunMutation` to wrap our mutation and allow us to pass in the required arguments as query variables.
 
 For this query, the required arguments are:
 
 `selector`:
 
-- This is a dictionary that contains the repository location name, repository name, and pipeline name
+- This is a dictionary that contains the repository location name, repository name, and job name
 
 `runConfigData`:
 
 - This is where you define the run config to execute the pipeline with
 - Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system but must conform to the constraints of the config schema for this pipeline. If it does not, the mutation returns a `RunConfigValidationInvalid` response
 
-`mode`:
-
-- The mode to run the pipeline with.
-- If you have not defined any custom modes for your pipeline, the default mode is `default`
-
 <!---->
 
     mutation LaunchRunMutation(
       $repositoryLocationName: String!
       $repositoryName: String!
-      $pipelineName: String!
+      $jobName: String!
       $runConfigData: RunConfigData!
-      $mode: String!
     ) {
       launchRun(
         executionParams: {
           selector: {
             repositoryLocationName: $repositoryLocationName
             repositoryName: $repositoryName
-            pipelineName: $pipelineName
+            pipelineName: $jobName
           }
           runConfigData: $runConfigData
-          mode: $mode
         }
       ) {
         __typename
@@ -231,35 +224,6 @@ For this query, the required arguments are:
         }
         ... on PythonError {
           message
-        }
-      }
-    }
-
-### Launch a run with preset
-
-If you want to use a preset instead of defining the run config, use the `preset` argument instead.:
-
-    mutation LaunchRunMutation(
-      $repositoryLocationName: String!
-      $repositoryName: String!
-      $pipelineName: String!
-      $presetName: String!
-    ) {
-      launchRun(
-        executionParams: {
-          selector: {
-            repositoryLocationName: $repositoryLocationName
-            repositoryName: $repositoryName
-            pipelineName: $pipelineName
-          }
-          preset: $presetName
-        }
-      ) {
-        __typename
-        ... on LaunchPipelineRunSuccess {
-          run {
-            runId
-          }
         }
       }
     }
