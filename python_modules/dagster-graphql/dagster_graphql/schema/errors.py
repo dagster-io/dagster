@@ -203,6 +203,8 @@ class GraphenePipelineRunConflict(graphene.Interface):
 
 
 class GrapheneRunConflict(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
     class Meta:
         interfaces = (GrapheneError, GraphenePipelineRunConflict)
         name = "RunConflict"
