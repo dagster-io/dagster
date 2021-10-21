@@ -23,7 +23,7 @@ Or read about:
 - [How to deploy Dagster](/deployment)
 - [How to integrate Dagster with other tools](/integrations)
 - [Best practices guides](/guides)
-- Dagster’s full [API Reference](/\_apidocs)
+- Dagster’s full [API Reference](/_apidocs)
 - Dagster's open source [Community](/community)
 
 ## Quick Start
@@ -63,12 +63,7 @@ def hello_dagster():
 
 Save the code above in a file named `hello_world.py`.
 
-<!--
-  TODO: update links once we have pipeline execution concept page
-  https://github.com/dagster-io/dagster/issues/3964
--->
-
-You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), Dagster Python API, or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
+You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/concepts/solids-pipelines/pipeline-execution#python-apis), or [Dagster CLI](/_apidocs/cli#dagster-pipeline-execute).
 
 ### Running the Job in Dagit
 
@@ -87,19 +82,19 @@ dagit -f hello_world.py
 Then navigate to <http://localhost:3000> to start using Dagit:
 
 <Image
-alt="dagit-def"
-src="/images/getting-started/dagit-def.png"
-width={4032}
-height={2454}
+  alt="dagit-def"
+  src="/images/getting-started/dagit-def.png"
+  width={4032}
+  height={2454}
 />
 
 Click on the "Playground" tab, then press the "Launch Execution" button to execute the job. You will then see Dagit launches a job run:
 
 <Image
-alt="dagit-run"
-src="/images/getting-started/dagit-run.png"
-width={4032}
-height={2454}
+  alt="dagit-run"
+  src="/images/getting-started/dagit-run.png"
+  width={4032}
+  height={2454}
 />
 
 ### Other Options to Run Dagster Jobs

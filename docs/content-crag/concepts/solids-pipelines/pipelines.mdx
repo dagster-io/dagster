@@ -181,10 +181,10 @@ This section covers a few basic patterns you can use to build more complex graph
 The simplest graph structure is the linear graph. We return one output from the root op, and pass along data through single inputs and outputs.
 
 <Image
-alt="Linear Graph"
-src="/images/concepts/pipelines/linear.png"
-width={1000}
-height={250}
+  alt="Linear Graph"
+  src="/images/concepts/pipelines/linear.png"
+  width={1000}
+  height={250}
 />
 
 ```python file=/concepts/solids_pipelines/linear_pipeline.py startafter=start_marker endbefore=end_marker
@@ -209,10 +209,10 @@ def linear():
 ### Multiple Inputs
 
 <Image
-alt="Multiple Inputs"
-src="/images/concepts/pipelines/multi-inputs.png"
-width={1000}
-height={250}
+  alt="Multiple Inputs"
+  src="/images/concepts/pipelines/multi-inputs.png"
+  width={1000}
+  height={250}
 />
 
 A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op.
@@ -247,11 +247,13 @@ def inputs_and_outputs():
 ### Conditional Branching
 
 <Image
-alt="Conditional Branch"
-src="/images/concepts/pipelines/conditional.png"
-width={1000}
-height={250}
+  alt="Conditional Branch"
+  src="/images/concepts/pipelines/conditional.png"
+  width={1000}
+  height={250}
 />
+
+<!-- visual: https://excalidraw.com/#json=6007093500837888,QdGSxQO6qRgaMZwJIGSyMA -->
 
 An op only starts to execute once all of its inputs have been resolved. We can use this behavior to model conditional execution of ops.
 
@@ -292,10 +294,10 @@ def branching():
 ### Fixed Fan-in
 
 <Image
-alt="Fixed Fan-in"
-src="/images/concepts/pipelines/fixed-fan-in.png"
-width={1000}
-height={250}
+  alt="Fixed Fan-in"
+  src="/images/concepts/pipelines/fixed-fan-in.png"
+  width={1000}
+  height={250}
 />
 
 If you have a fixed set of op that all return the same output type, you can collect all the outputs into a list and pass them into a single downstream op.

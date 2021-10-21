@@ -78,15 +78,15 @@ If you save the code above as `repo.py`, you can then run the Dagster command li
 dagit -f repo.py
 ```
 
-Now you can see that all jobs, schedules, and sensors in this repository are on the left:
+Now you can see that all jobs in this repository are on the left:
 
 <Image
-alt="repo-dagit"
-src="/images/concepts/repo-dagit.png"
-width={4032}
-height={2454}
+  alt="repo-dagit"
+  src="/images/concepts/repo-dagit.png"
+  width={4032}
+  height={2454}
 />
 
-You can also use `-m` to specify a module where the repository lives (See [`dagit`](/\_apidocs/cli#dagit) for the full list of ways to locate a repository).
+You can also use `-m` to specify a module where the repository lives (See [`dagit`](/_apidocs/cli#dagit) for the full list of ways to locate a repository).
 
 Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the Workspace, which determines all of the available repositories available to Dagit. See [Workspace](/concepts/repositories-workspaces/workspaces) for more details.
