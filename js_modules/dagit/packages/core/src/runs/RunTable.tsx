@@ -64,7 +64,7 @@ export const RunTable = (props: RunTableProps) => {
             <NonIdealState
               icon="run"
               title="No runs to display"
-              description="Use the Playground to launch a run."
+              description="Use the Launchpad to launch a run."
             />
           )}
         </Box>

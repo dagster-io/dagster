@@ -69,7 +69,7 @@ width={3808}
 height={2414}
 />
 
-Click on the "Playground" tab, then press the "Launch Execution" button to execute the job. You will then see Dagit launch a job run:
+Click on the "Launchpad" tab, then press the "Launch Execution" button to execute the job. You will then see Dagit launch a job run:
 
 <Image
 alt="job-run"
@@ -80,7 +80,7 @@ height={2414}
 
 By default, Dagit will run the job using the multiprocess executor - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-Dagit Playground also offers a configuration editor to let you interactively build up the configuration. See details in [Dagit](/concepts/dagit/dagit#playground).
+Dagit Launchpad also offers a configuration editor to let you interactively build up the configuration. See details in [Dagit](/concepts/dagit/dagit#launchpad).
 
 ### Dagster CLI
 
@@ -140,7 +140,7 @@ You can use this selection syntax in the `op_selection` argument to the <PyObjec
 my_job.execute_in_process(op_selection=["*add_two"])
 ```
 
-Similarly, you can specify the same op selection in Dagit Playground:
+Similarly, you can specify the same op selection in Dagit Launchpad:
 
 <Image
 alt="op-selection"

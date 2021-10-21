@@ -82,7 +82,7 @@ describe('PipelineRoot', () => {
         const selected = screen.getByRole('tab', {selected: true});
 
         // Route to Playground, verify that the "New run" tab appears.
-        expect(selected.textContent).toMatch(/playground/i);
+        expect(selected.textContent).toMatch(/launchpad/i);
         expect(screen.getByText(/new run/i)).toBeVisible();
       });
     });
@@ -108,8 +108,8 @@ describe('PipelineRoot', () => {
         // Redirect to Definition, which has been highlighted in the tabs.
         expect(selected.textContent).toMatch(/overview/i);
 
-        // Render a disabled "Playground" tab.
-        expect(screen.queryByRole('tab', {name: /playground/i})).toHaveAttribute(
+        // Render a disabled "Launchpad" tab.
+        expect(screen.queryByRole('tab', {name: /launchpad/i})).toHaveAttribute(
           'aria-disabled',
           'true',
         );

@@ -248,7 +248,7 @@ const NextTickMenuItems: React.FC<{
           onClick={() => onItemOpen(true)}
         />
         <MenuItemWIP
-          text="Open in Playground..."
+          text="Open in Launchpad..."
           icon="edit"
           target="_blank"
           href={workspacePathFromAddress(
@@ -376,7 +376,7 @@ const NextTickDialog: React.FC<{
                         content={
                           <MenuWIP>
                             <MenuItemWIP
-                              text="Open in Playground..."
+                              text="Open in Launchpad..."
                               icon="edit"
                               target="_blank"
                               href={workspacePathFromAddress(
