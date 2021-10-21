@@ -626,8 +626,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[
@@ -651,8 +651,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dashboard",
                     metadata_entries=[
@@ -678,8 +678,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[EventMetadataEntry.path("path/to/file", label="filepath")],
@@ -701,8 +701,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[EventMetadataEntry.fspath("path/to/file")],
@@ -731,8 +731,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context):
+            @op
+            def emit_metadata(context):
                 yield ExpectationResult(
                     success=not missing_things,
                     label="is_present",
@@ -759,8 +759,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, md_str):
+            @op
+            def emit_metadata(context, md_str):
                 yield AssetMaterialization(
                     asset_key="info",
                     metadata_entries=[EventMetadataEntry.md(md_str=md_str)],
@@ -793,8 +793,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[EventMetadataEntry.float(calculate_bytes(df), "size (bytes)")],
@@ -817,8 +817,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def emit_metadata_solid(context, df):
+            @op
+            def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[EventMetadataEntry.int(len(df), "number of rows")],
@@ -849,8 +849,8 @@ class EventMetadataEntry(
 
         .. code-block:: python
 
-            @solid
-            def validate_table_solid(context, df):
+            @op
+            def validate_table(context, df):
                 yield AssetMaterialization(
                     asset_key=AssetKey("my_table"),
                     metadata_entries=[
