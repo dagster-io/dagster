@@ -25,7 +25,7 @@ from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
-    GraphenePipelineRunStepStats,
+    GrapheneRunStepStats,
     GrapheneStepMaterializationEvent,
 )
 from ..paging import GrapheneCursor
@@ -141,7 +141,7 @@ class GraphenePipelineRun(graphene.Interface):
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
-    stepStats = non_null_list(GraphenePipelineRunStepStats)
+    stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -178,7 +178,7 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
-    stepStats = non_null_list(GraphenePipelineRunStepStats)
+    stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),

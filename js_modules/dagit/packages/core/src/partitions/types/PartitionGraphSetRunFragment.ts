@@ -49,7 +49,7 @@ export interface PartitionGraphSetRunFragment_stepStats_expectationResults {
 }
 
 export interface PartitionGraphSetRunFragment_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;

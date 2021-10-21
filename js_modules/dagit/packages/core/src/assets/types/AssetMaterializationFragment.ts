@@ -35,7 +35,7 @@ export interface AssetMaterializationFragment_runOrError_Run {
 export type AssetMaterializationFragment_runOrError = AssetMaterializationFragment_runOrError_RunNotFoundError | AssetMaterializationFragment_runOrError_Run;
 
 export interface AssetMaterializationFragment_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

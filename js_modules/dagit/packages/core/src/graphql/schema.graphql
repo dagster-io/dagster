@@ -280,7 +280,7 @@ type Run implements PipelineRun {
   pipelineName: String!
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
-  stepStats: [PipelineRunStepStats!]!
+  stepStats: [RunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -304,7 +304,7 @@ interface PipelineRun {
   pipelineName: String!
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
-  stepStats: [PipelineRunStepStats!]!
+  stepStats: [RunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -375,7 +375,17 @@ interface PipelineRunStatsSnapshot {
   endTime: Float
 }
 
-type PipelineRunStepStats {
+type RunStepStats implements PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+interface PipelineRunStepStats {
   runId: String!
   stepKey: String!
   status: StepEventStatus
@@ -489,7 +499,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   solidHandleID: String
   eventType: DagsterEventType
   materialization: Materialization!
-  stepStats: PipelineRunStepStats!
+  stepStats: RunStepStats!
   assetLineage: [AssetLineageInfo!]!
 }
 

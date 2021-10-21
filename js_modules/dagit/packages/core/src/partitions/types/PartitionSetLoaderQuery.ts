@@ -49,7 +49,7 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepSt
 }
 
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;

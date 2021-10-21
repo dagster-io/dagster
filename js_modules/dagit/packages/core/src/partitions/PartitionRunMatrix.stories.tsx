@@ -91,7 +91,7 @@ function buildRun(
       __typename: 'RunStatsSnapshot',
     },
     stepStats: Object.entries(statuses).map(([key, status]) => ({
-      __typename: 'PipelineRunStepStats',
+      __typename: 'RunStepStats',
       stepKey: key,
       status: status,
       materializations: [],

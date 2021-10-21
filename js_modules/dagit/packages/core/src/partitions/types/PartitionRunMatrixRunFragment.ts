@@ -38,7 +38,7 @@ export interface PartitionRunMatrixRunFragment_stepStats_expectationResults {
 }
 
 export interface PartitionRunMatrixRunFragment_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   status: StepEventStatus | null;
   materializations: PartitionRunMatrixRunFragment_stepStats_materializations[];

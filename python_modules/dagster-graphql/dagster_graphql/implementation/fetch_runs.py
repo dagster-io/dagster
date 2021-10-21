@@ -176,7 +176,7 @@ def get_stats(graphene_info, run_id):
 
 
 def get_step_stats(graphene_info, run_id, step_keys=None):
-    from ..schema.logs.events import GraphenePipelineRunStepStats
+    from ..schema.logs.events import GrapheneRunStepStats
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
-    return [GraphenePipelineRunStepStats(stats) for stats in step_stats]
+    return [GrapheneRunStepStats(stats) for stats in step_stats]

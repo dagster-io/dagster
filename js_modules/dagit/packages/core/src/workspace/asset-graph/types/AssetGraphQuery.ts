@@ -67,7 +67,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
 export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run;
 
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
   stepKey: string;

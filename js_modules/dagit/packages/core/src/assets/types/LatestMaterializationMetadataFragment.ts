@@ -32,7 +32,7 @@ export interface LatestMaterializationMetadataFragment_runOrError_Run {
 export type LatestMaterializationMetadataFragment_runOrError = LatestMaterializationMetadataFragment_runOrError_RunNotFoundError | LatestMaterializationMetadataFragment_runOrError_Run;
 
 export interface LatestMaterializationMetadataFragment_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

@@ -44,7 +44,7 @@ export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializat
 export type AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError | AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run;
 
 export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

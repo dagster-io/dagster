@@ -30,7 +30,7 @@ export interface AssetQuery_assetOrError_Asset_mostRecentMaterialization {
 }
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }
