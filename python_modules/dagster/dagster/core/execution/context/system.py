@@ -329,9 +329,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._step_launcher: Optional[StepLauncher] = None
         if len(step_launcher_resources) > 1:
             raise DagsterInvariantViolationError(
-                "Multiple required resources for solid {solid_name} have inherit StepLauncher"
-                "There should be at most one step launcher resource per solid.".format(
-                    solid_name=step.solid_handle.name
+                "Multiple required resources for {described_op} have inherited StepLauncher"
+                "There should be at most one step launcher resource per {node_type}.".format(
+                    described_op=self.describe_op(), node_type=self.solid_def.node_type_str
                 )
             )
         elif len(step_launcher_resources) == 1:

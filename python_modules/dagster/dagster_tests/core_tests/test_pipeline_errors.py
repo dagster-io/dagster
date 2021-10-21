@@ -158,7 +158,7 @@ def test_do_not_yield_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Compute function for solid do_not_yield_result returned a Output",
+        match='Compute function for solid "do_not_yield_result" returned an Output',
     ):
         execute_solid(solid_inst)
 
@@ -170,7 +170,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape("Compute function for solid yield_wrong_thing yielded a value of type <")
+        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."

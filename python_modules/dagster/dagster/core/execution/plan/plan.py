@@ -518,11 +518,13 @@ def get_step_input_source(
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
         (
-            "In pipeline {pipeline_name} solid {solid_name}, input {input_name} "
+            "In {described_target} {described_node}, input {input_name} "
             "must get a value either (a) from a dependency or (b) from the "
             "inputs section of its configuration."
         ).format(
-            pipeline_name=plan_builder.pipeline_name, solid_name=solid.name, input_name=input_name
+            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            described_node=solid.describe_node(),
+            input_name=input_name,
         )
     )
 
@@ -805,7 +807,7 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"Pipeline {pipeline_def.name} uses memoization, but IO manager "
+                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "

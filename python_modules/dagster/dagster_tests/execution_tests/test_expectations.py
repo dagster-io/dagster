@@ -74,7 +74,7 @@ def test_return_expectation_failure():
         execute_pipeline(pipeline_def)
 
     assert str(exc_info.value) == (
-        "Error in solid return_expectation_failure: If you are returning "
+        'Error in solid "return_expectation_failure": If you are returning '
         "an AssetMaterialization or an ExpectationResult from solid you must yield "
         "them to avoid ambiguity with an implied result from returning a value."
     )
