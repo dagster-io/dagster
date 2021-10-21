@@ -158,7 +158,7 @@ const SCHEDULE_ROOT_QUERY = gql`
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
-  query PreviousRunsForScheduleQuery($filter: PipelineRunsFilter, $limit: Int) {
+  query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
       ...PreviousRunsFragment

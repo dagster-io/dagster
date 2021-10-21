@@ -22,7 +22,7 @@ class GrapheneExecutionTag(graphene.InputObjectType):
         name = "ExecutionTag"
 
 
-class GraphenePipelineRunsFilter(graphene.InputObjectType):
+class GrapheneRunsFilter(graphene.InputObjectType):
     runIds = graphene.List(graphene.String)
     pipelineName = graphene.Field(graphene.String)
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
@@ -32,8 +32,8 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
     mode = graphene.Field(graphene.String)
 
     class Meta:
-        description = """This type represents a filter on pipeline runs."""
-        name = "PipelineRunsFilter"
+        description = """This type represents a filter on Dagster runs."""
+        name = "RunsFilter"
 
     def to_selector(self):
         if self.tags:
@@ -228,7 +228,7 @@ types = [
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
-    GraphenePipelineRunsFilter,
+    GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
     GrapheneScheduleSelector,

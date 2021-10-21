@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, RunStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: LaunchedRunListQuery
@@ -101,5 +101,5 @@ export interface LaunchedRunListQuery {
 }
 
 export interface LaunchedRunListQueryVariables {
-  filter: PipelineRunsFilter;
+  filter: RunsFilter;
 }

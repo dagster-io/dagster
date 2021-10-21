@@ -139,7 +139,7 @@ const StatBox = styled.div`
 `;
 
 const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
-  query PartitionRunListForStepQuery($filter: PipelineRunsFilter!) {
+  query PartitionRunListForStepQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {
       ... on PipelineRuns {
         results {

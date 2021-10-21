@@ -442,7 +442,7 @@ const RUN_METADATA_FRAGMENT = gql`
 `;
 
 const JOB_METADATA_QUERY = gql`
-  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: PipelineRunsFilter) {
+  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id

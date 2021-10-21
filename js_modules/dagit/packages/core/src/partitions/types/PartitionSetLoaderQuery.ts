@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, RunStatus, StepEventStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus, StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionSetLoaderQuery
@@ -98,7 +98,7 @@ export interface PartitionSetLoaderQuery {
 }
 
 export interface PartitionSetLoaderQueryVariables {
-  filter: PipelineRunsFilter;
+  filter: RunsFilter;
   cursor?: string | null;
   limit?: number | null;
 }

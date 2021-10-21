@@ -316,7 +316,7 @@ const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
 `;
 
 const PARTITION_SET_LOADER_QUERY = gql`
-  query PartitionSetLoaderQuery($filter: PipelineRunsFilter!, $cursor: String, $limit: Int) {
+  query PartitionSetLoaderQuery($filter: RunsFilter!, $cursor: String, $limit: Int) {
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
       ... on Runs {
         results {

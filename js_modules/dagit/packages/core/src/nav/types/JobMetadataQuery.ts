@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunsFilter, InstigationStatus, RunStatus } from "./../../types/globalTypes";
+import { PipelineSelector, RunsFilter, InstigationStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobMetadataQuery
@@ -122,5 +122,5 @@ export interface JobMetadataQuery {
 
 export interface JobMetadataQueryVariables {
   params: PipelineSelector;
-  runsFilter?: PipelineRunsFilter | null;
+  runsFilter?: RunsFilter | null;
 }

@@ -14,13 +14,13 @@ type Query {
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
-  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunsOrError!
+  pipelineRunsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   pipelineRunOrError(runId: ID!): RunOrError!
-  runsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunsOrError!
+  runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
-  runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
+  runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
@@ -1080,7 +1080,7 @@ type Partition {
   mode: String!
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
-  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [Run!]!
+  runs(filter: RunsFilter, cursor: String, limit: Int): [Run!]!
   status: RunStatus
 }
 
@@ -1096,7 +1096,7 @@ type PartitionTags {
   results: [PipelineTag!]!
 }
 
-input PipelineRunsFilter {
+input RunsFilter {
   runIds: [String]
   pipelineName: String
   tags: [ExecutionTag!]

@@ -18,7 +18,7 @@ from .errors import (
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .inputs import GraphenePipelineRunsFilter
+from .inputs import GrapheneRunsFilter
 from .pipelines.pipeline import GrapheneRun
 from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
@@ -83,7 +83,7 @@ class GraphenePartition(graphene.ObjectType):
     tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )

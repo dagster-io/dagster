@@ -211,9 +211,9 @@ const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery(
     $limit: Int
     $cursor: String
-    $filter: PipelineRunsFilter!
-    $queuedFilter: PipelineRunsFilter!
-    $inProgressFilter: PipelineRunsFilter!
+    $filter: RunsFilter!
+    $queuedFilter: RunsFilter!
+    $inProgressFilter: RunsFilter!
   ) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {

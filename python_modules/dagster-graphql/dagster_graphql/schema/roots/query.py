@@ -45,9 +45,9 @@ from ..external import (
 from ..inputs import (
     GrapheneAssetKeyInput,
     GrapheneInstigationSelector,
-    GraphenePipelineRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneRunsFilter,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
 )
@@ -144,7 +144,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     pipelineRunsOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsOrError),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -153,7 +153,7 @@ class GrapheneQuery(graphene.ObjectType):
     )
     runsOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsOrError),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -168,7 +168,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     runGroupsOrError = graphene.Field(
         graphene.NonNull(GrapheneRunGroupsOrError),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )

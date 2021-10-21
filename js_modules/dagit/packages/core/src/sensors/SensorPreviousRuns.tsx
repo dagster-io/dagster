@@ -68,7 +68,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
 };
 
 const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
-  query PreviousRunsForSensorQuery($filter: PipelineRunsFilter, $limit: Int) {
+  query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
       ...PreviousRunsFragment

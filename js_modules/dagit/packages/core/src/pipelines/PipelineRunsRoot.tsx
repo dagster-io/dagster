@@ -135,7 +135,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 };
 
 const PIPELINE_RUNS_ROOT_QUERY = gql`
-  query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
+  query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {
         results {

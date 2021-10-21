@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, RunStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviousRunsForScheduleQuery
@@ -87,6 +87,6 @@ export interface PreviousRunsForScheduleQuery {
 }
 
 export interface PreviousRunsForScheduleQueryVariables {
-  filter?: PipelineRunsFilter | null;
+  filter?: RunsFilter | null;
   limit?: number | null;
 }

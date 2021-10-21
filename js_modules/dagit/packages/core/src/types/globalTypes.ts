@@ -194,16 +194,6 @@ export interface PartitionSetSelector {
   repositorySelector: RepositorySelector;
 }
 
-export interface PipelineRunsFilter {
-  runIds?: (string | null)[] | null;
-  pipelineName?: string | null;
-  tags?: ExecutionTag[] | null;
-  statuses?: RunStatus[] | null;
-  snapshotId?: string | null;
-  updatedAfter?: string | null;
-  mode?: string | null;
-}
-
 export interface PipelineSelector {
   pipelineName: string;
   repositoryName: string;
@@ -214,6 +204,16 @@ export interface PipelineSelector {
 export interface RepositorySelector {
   repositoryName: string;
   repositoryLocationName: string;
+}
+
+export interface RunsFilter {
+  runIds?: (string | null)[] | null;
+  pipelineName?: string | null;
+  tags?: ExecutionTag[] | null;
+  statuses?: RunStatus[] | null;
+  snapshotId?: string | null;
+  updatedAfter?: string | null;
+  mode?: string | null;
 }
 
 export interface ScheduleSelector {

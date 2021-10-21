@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, RunStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionRunListForStepQuery
@@ -101,5 +101,5 @@ export interface PartitionRunListForStepQuery {
 }
 
 export interface PartitionRunListForStepQueryVariables {
-  filter: PipelineRunsFilter;
+  filter: RunsFilter;
 }
