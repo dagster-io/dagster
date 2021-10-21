@@ -58,8 +58,8 @@ def test_double_pipeline():
 
     assert str(exc_info.value) == (
         'No repository and more than one pipeline found in "double_pipeline". '
-        "If you load a file or module directly it must either have one repository, "
-        "one pipeline, or one graph in scope. Found pipelines defined in variables or decorated "
+        "If you load a file or module directly it must have only one pipeline "
+        "in scope. Found pipelines defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
     )
 
@@ -86,9 +86,9 @@ def test_double_graph():
         loadable_targets_from_python_file(double_pipeline_path)
 
     assert str(exc_info.value) == (
-        'No repository, no pipeline, and more than one graph found in "double_graph". '
+        'No repository, job, or pipeline, and more than one graph found in "double_graph". '
         "If you load a file or module directly it must either have one repository, "
-        "one pipeline, or one graph in scope. Found graphs defined in variables or decorated "
+        "one job, one pipeline, or one graph in scope. Found graphs defined in variables or decorated "
         "functions: ['graph_one', 'graph_two']."
     )
 
@@ -97,7 +97,7 @@ def test_no_loadable_targets():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(file_relative_path(__file__, "nada.py"))
 
-    assert str(exc_info.value) == 'No pipelines, graphs, or repositories found in "nada".'
+    assert str(exc_info.value) == 'No jobs, pipelines, graphs, or repositories found in "nada".'
 
 
 def test_single_repository_in_module():

@@ -355,8 +355,8 @@ class ExternalExecutionPlan:
             != represented_pipeline.identifying_pipeline_snapshot_id
         ):
             raise DagsterInvariantViolationError(
-                "The pipeline snapshot ID from the execution plan snapshot does not match the "
-                "passed in pipeline snapshot. "
+                "The target snapshot ID from the execution plan snapshot does not match the "
+                "passed in target snapshot. "
             )
 
         self._step_keys_in_plan = (
