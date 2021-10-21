@@ -38,6 +38,7 @@ import {
   PartitionRunMatrixPipelineQueryVariables,
 } from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
+import {PartitionRuns} from './useChunkedPartitionsQuery';
 import {
   DisplayOptions,
   isStepKeyForNode,
@@ -64,7 +65,7 @@ interface PartitionRunSelection {
 
 interface PartitionRunMatrixProps {
   pipelineName: string;
-  partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[];
+  partitions: PartitionRuns[];
   repoAddress: RepoAddress;
   runTags: TokenizingFieldValue[];
   setRunTags: (val: TokenizingFieldValue[]) => void;
@@ -342,13 +343,18 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 }}
               >
                 <TopLabelTilted label={p.name} />
-                <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
+                {p.runsLoaded ? (
+                  <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
+                ) : (
+                  <LeftLabel style={{textAlign: 'center', opacity: 0.2}}>–</LeftLabel>
+                )}
                 <Divider />
                 {sortPartitionSteps(p.steps).map((s) => (
                   <PartitionStepSquare
                     key={s.name}
                     step={s}
                     runs={p.runs}
+                    runsLoaded={p.runsLoaded}
                     options={options}
                     minUnix={minUnix}
                     maxUnix={maxUnix}
@@ -550,6 +556,7 @@ const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sortin
 const PartitionStepSquare: React.FC<{
   step: MatrixStep;
   runs: PartitionRunMatrixRunFragment[];
+  runsLoaded: boolean;
   options: DisplayOptions;
   basePath: string;
   hovered: PartitionRunSelection | null;
@@ -561,6 +568,7 @@ const PartitionStepSquare: React.FC<{
 }> = ({
   step,
   runs,
+  runsLoaded,
   options,
   hovered,
   setHovered,
@@ -574,7 +582,7 @@ const PartitionStepSquare: React.FC<{
   const {name, color, unix} = step;
 
   const className = `square
-  ${runs.length === 0 && 'empty'}
+  ${!runsLoaded ? 'loading' : runs.length === 0 ? 'empty' : ''} 
   ${(options.showPrevious ? color : StatusSquareFinalColor[color] || color).toLowerCase()}`;
 
   const content = (
