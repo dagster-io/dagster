@@ -35,7 +35,7 @@ from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
-from .migration import MODE_MIGRATION, RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
@@ -95,27 +95,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
         partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
-        if self.has_built_index(MODE_MIGRATION):
-            runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                mode=pipeline_run.mode,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
-                partition=partition,
-                partition_set=partition_set,
-            )
-        else:
-            runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
-                partition=partition,
-                partition_set=partition_set,
-            )
+
+        runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=pipeline_run.run_id,
+            pipeline_name=pipeline_run.pipeline_name,
+            status=pipeline_run.status.value,
+            run_body=serialize_dagster_namedtuple(pipeline_run),
+            snapshot_id=pipeline_run.pipeline_snapshot_id,
+            partition=partition,
+            partition_set=partition_set,
+        )
         with self.connect() as conn:
             try:
                 conn.execute(runs_insert)
@@ -195,9 +184,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         if filters.pipeline_name:
             query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
-
-        if filters.mode:
-            query = query.where(RunsTable.c.mode == filters.mode)
 
         if filters.statuses:
             query = query.where(

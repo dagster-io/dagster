@@ -101,9 +101,6 @@ class InMemoryRunStorage(RunStorage):
             if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
                 return False
 
-            if filters.mode and filters.mode != run.mode:
-                return False
-
             if filters.tags and not all(
                 run.tags.get(key) == value for key, value in filters.tags.items()
             ):

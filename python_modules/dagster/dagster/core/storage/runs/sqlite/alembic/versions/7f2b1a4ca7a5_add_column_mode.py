@@ -19,15 +19,16 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
-    has_tables = inspector.get_table_names()
+    # bind = op.get_context().bind
+    # inspector = reflection.Inspector.from_engine(bind)
+    # has_tables = inspector.get_table_names()
 
-    if "runs" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("runs")]
-        with op.batch_alter_table("runs") as batch_op:
-            if "mode" not in columns:
-                batch_op.add_column(sa.Column("mode", sa.Text))
+    # if "runs" in has_tables:
+    #     columns = [x.get("name") for x in inspector.get_columns("runs")]
+    #     with op.batch_alter_table("runs") as batch_op:
+    #         if "mode" not in columns:
+    #             batch_op.add_column(sa.Column("mode", sa.Text))
+    pass
 
 
 def downgrade():
