@@ -154,14 +154,21 @@ class DbtRpcClient(DbtResource):
         data = self._default_request(method="status")
         return self._post(data=json.dumps(data))
 
-    def ls(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
-        """Sends a request with the method ``ls`` to the dbt RPC server, and returns the
+    def ls(
+        self,
+        select: List[str] = None,
+        models: List[str] = None,
+        exclude: List[str] = None,
+        **kwargs,
+    ) -> DbtRpcOutput:
+        """Sends a request with the method ``list`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for `compiling projects via RPC
         <https://docs.getdbt.com/reference/commands/rpc/#list>`_.
 
         Args:
-            models (List[str], optional): the models to include in compilation.
-            exclude (List[str]), optional): the models to exclude from compilation.
+            select (List[str], optional): the resources to include in the output.
+            models (List[str], optional): the models to include in the output.
+            exclude (List[str]), optional): the resources to exclude from compilation.
 
         Returns:
             Response: the HTTP response from the dbt RPC server.

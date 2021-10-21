@@ -126,6 +126,27 @@ class DbtResource:
         """
 
     @abstractmethod
+    def ls(
+        self,
+        select: List[str] = None,
+        models: List[str] = None,
+        exclude: List[str] = None,
+        **kwargs,
+    ) -> DbtOutput:
+        """
+        Run the ``ls`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the resources to include in the output.
+            models (List[str], optional): the models to include in the output.
+            exclude (List[str], optional): the resources to exclude from the output.
+
+
+        Returns:
+            DbtOutput: object containing parsed output from dbt
+        """
+
+    @abstractmethod
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
