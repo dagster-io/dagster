@@ -1,20 +1,20 @@
 ---
 title: "Advanced: Materializations | Dagster"
-description: Dagster solids can describe their persistent artifacts to the system by yielding Materialization events.
+description: Dagster ops can describe their persistent artifacts to the system by yielding Materialization events.
 ---
 
 # Advanced: Materializations
 
-<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/" />
+<CodeReferenceLink filePath="examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/advanced/materializations/" />
 
-Steps in a data pipeline often produce persistent artifacts, for instance, graphs or tables describing the result of some computation. Typically these artifacts are saved to disk (or to cloud storage) with a [name](https://xkcd.com/1459/) that has something to do with their origin. But it can be hard to organize and cross-reference artifacts produced by many different runs of a pipeline, or to identify all of the files that might have been created by some pipeline's logic.
+Steps in a job often produce persistent artifacts, for instance, graphs or tables describing the result of some computation. Typically these artifacts are saved to disk (or to cloud storage) with a [name](https://xkcd.com/1459/) that has something to do with their origin. But it can be hard to organize and cross-reference artifacts produced by many different runs of a job, or to identify all of the files that might have been created by some job's logic.
 
-Dagster solids can describe their persistent artifacts to the system by yielding <PyObject module="dagster" object="AssetMaterialization" /> events. Like <PyObject module="dagster" object="TypeCheck" /> and <PyObject module="dagster" object="ExpectationResult" />, asset materializations are side-channels for metadata -- they don't get passed to downstream solids and they aren't used to define the data dependencies that structure a pipeline's DAG.
+Dagster ops can describe their persistent artifacts to the system by yielding <PyObject module="dagster" object="AssetMaterialization" /> events. Like <PyObject module="dagster" object="TypeCheck" /> and <PyObject module="dagster" object="ExpectationResult" />, asset materializations are side-channels for metadata -- they don't get passed to downstream ops and they aren't used to define the data dependencies that structure a job's DAG.
 
-Suppose that we rewrite our `sort_calories` solid so that it saves the newly sorted data frame to disk.
+Suppose that we rewrite our `sort_calories` op so that it saves the newly sorted data frame to disk.
 
-```python file=/intro_tutorial/advanced/materializations/materializations.py lines=23-40
-@solid
+```python file=/intro_tutorial/advanced/materializations/materializations.py lines=17-34
+@op
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
@@ -34,10 +34,10 @@ def sort_by_calories(context, cereals):
         writer.writerows(sorted_cereals)
 ```
 
-We've taken the basic precaution of ensuring that the saved csv file has a different filename for each run of the pipeline. But there's no way for Dagit to know about this persistent artifact. So we'll add the following lines:
+We've taken the basic precaution of ensuring that the saved csv file has a different filename for each run of the job. But there's no way for Dagit to know about this persistent artifact. So we'll add the following lines:
 
 ```python file=/intro_tutorial/advanced/materializations/materializations.py startafter=start_materializations_marker_0 endbefore=end_materializations_marker_0
-@solid
+@op
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
@@ -67,15 +67,15 @@ def sort_by_calories(context, cereals):
     yield Output(None)
 ```
 
-Note that we've had to add the last line, yielding an <PyObject module="dagster" object="Output" />. Until now, all of our solids have relied on Dagster's implicit conversion of the return value of a solid's compute function into its output. When we explicitly yield other types of events from solid logic, we need to also explicitly yield the output so that the framework can recognize them.
+Note that we've had to add the last line, yielding an <PyObject module="dagster" object="Output" />. Until now, all of our ops have relied on Dagster's implicit conversion of the return value of a op's compute function into its output. When we explicitly yield other types of events from op logic, we need to also explicitly yield the output so that the framework can recognize them.
 
-Now, if we run this pipeline in Dagit:
+Now, if we run this job in Dagit:
 
 <Image
 alt="materializations.png"
 src="/images/tutorial/materializations.png"
-width={1680}
-height={946}
+width={2756}
+height={2098}
 />
 
 <br />

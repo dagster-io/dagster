@@ -2,16 +2,10 @@ import csv
 import os
 
 import requests
-from dagster import (
-    AssetMaterialization,
-    EventMetadata,
-    Output,
-    pipeline,
-    solid,
-)
+from dagster import AssetMaterialization, EventMetadata, Output, job, op
 
 
-@solid
+@op
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -20,7 +14,7 @@ def download_csv(context):
 
 
 # start_materializations_marker_0
-@solid
+@op
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
@@ -53,6 +47,6 @@ def sort_by_calories(context, cereals):
 # end_materializations_marker_0
 
 
-@pipeline
-def materialization_pipeline():
+@job
+def materialization_job():
     sort_by_calories(download_csv())
