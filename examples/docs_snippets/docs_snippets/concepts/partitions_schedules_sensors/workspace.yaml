@@ -1,0 +1,2 @@
+load_from:
+  - python_module: docs_snippets.concepts.partitions_schedules_sensors.repo

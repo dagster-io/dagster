@@ -4,7 +4,7 @@ import fg from "fast-glob";
 import { Node } from "hast";
 import visit from "unist-util-visit";
 import { flatten } from "../util/useNavigation";
-import masterNavigation from "../../content-crag/_navigation.json";
+import masterNavigation from "../../content/_navigation.json";
 import generateToc from "mdast-util-toc";
 import { getItems, getIds } from "../components/mdx/SidebarNavigation";
 import matter from "gray-matter";
@@ -14,7 +14,7 @@ import mdx from "remark-mdx";
 import remark from "remark";
 
 const ROOT_DIR = path.resolve(__dirname, "../../");
-const DOCS_DIR = path.resolve(ROOT_DIR, "content-crag");
+const DOCS_DIR = path.resolve(ROOT_DIR, "content");
 interface LinkElement extends Node {
   type: "link" | "image";
   url: string;

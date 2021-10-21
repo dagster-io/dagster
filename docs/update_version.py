@@ -8,7 +8,7 @@ import boto3
 import click
 from dagster import file_relative_path
 
-CONTENT_DIR = file_relative_path(__file__, "./content-crag")
+CONTENT_DIR = file_relative_path(__file__, "./content")
 IMAGE_DIR = file_relative_path(__file__, "next/public/images")
 VERSIONED_DIR = file_relative_path(__file__, "next/.versioned_content")
 

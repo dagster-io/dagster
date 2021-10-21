@@ -1,0 +1,113 @@
+---
+title: Re-execution | Dagster
+description: This guide is intended to walk through how to re-execute Dagster jobs and where the subsequent executions are found within Dagit.
+---
+
+# Re-execution in Dagster
+
+This guide is intended to walk through how to re-execute Dagster jobs and where the subsequent executions are found within Dagit.
+
+## Motivation
+
+If ops fail or upstream data has changed within a job execution, the job may need to be re-run starting from a particular point. Dagster calls this process `re-execution`.
+
+Imagine a machine learning job with three ops. The first op, training the model, is the most time and resource intensive. Then, we test the model, and build analyses on the results. Suppose that the job fails with the op that is testing the model. After fixing the root cause, we want to re-run our job. However, it would take much more time to create a new run of the job as we would have to repeat the first op. It would be more economical to start again from the second op, reusing the previous run's execution result for the first op.
+
+With Dagster, the re-execution of parts of the job is grouped with the original run to make it easy to trace. The original job execution metadata is not overwritten, making re-execution a non-destructive operation.
+
+## Example
+
+Consider the following job which has three ops, one of which fails half of the time.
+
+```python file=/guides/dagster/reexecution/unreliable_job.py
+from random import random
+
+from dagster import graph, op
+
+
+@op
+def start():
+    return 1
+
+
+@op
+def unreliable(num: int) -> int:
+    failure_rate = 0.5
+    if random() < failure_rate:
+        raise Exception("blah")
+
+    return num
+
+
+@op
+def end(_num: int):
+    pass
+
+
+@graph
+def unreliable_job():
+    end(unreliable(start()))
+```
+
+Although very simple, there are inputs and outputs passed between ops. With an IO manager, re-execution is able to handle inputs and outputs stored from the initial run.
+
+To initiate a re-execution from an existing run, navigate to the run in Dagit and you can find the re-execution option on the top right of the interface.
+
+### Re-execution in Dagit
+
+Under the re-execution drop down, you will see multiple options. No matter which one you choose, the re-executed job is linked to the original run.
+
+- **All Ops**: Re-execute the job from scratch. This option is most relevant if you would like to associate runs together when testing jobs end-to-end.
+- **Selected Op(s)**: Re-execute the selected op(s). Ops can be selected regardless of their op status. This option is most relevant if your job is large, and you know exactly which ops to execute. This can be done by clicking on the boxes in the gantt chart view.
+- **From Selected**: Re-execute the job downstream from the selected ops. This option is most relevant if a particular op fails, and your intent is to run all downstream ops regardless of op status. You are likely developing a single op, and want to make sure downstream ops work as expected.
+- **From Failure**: Re-execute the job, skipping ops completed successfully. This option is only enabled when the run has failed. You have likely fixed the failed op, and want to re-run the op and all downstream dependencies. Dagster will figure out the dependencies for you!
+
+In the above example, re-executing from failure would make sense as the failed task has a 50% chance of succeeding on the next run.
+
+If the run succeeded but the underlying code changed, running specific ops to test the differences would be more relevant.
+
+### Selecting Ops
+
+Within Dagit, a single or multiple ops may be selected simply by clicking them with the mouse. Alternatively, you can use the subset selector and specify your desired op names to re-run.
+
+## Re-execution using Python APIs
+
+Re-execution can be triggered via the API as well.
+
+| Name                                                                                       | Description                         |
+| ------------------------------------------------------------------------------------------ | ----------------------------------- |
+| <PyObject module="dagster" object="reexecute_pipeline" displayText="reexecute_pipeline" /> | Reexecute an existing pipeline run. |
+
+Again, let's revist the job `unreliable_job`, which has a op named `unreliable`.
+
+```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
+from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
+from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
+
+instance = DagsterInstance.ephemeral()
+
+# Initial execution
+job_execution_result = execute_pipeline(unreliable_job, instance=instance)
+
+if not job_execution_result.success:
+    # re-execute the entire job
+    reexecute_pipeline(
+        unreliable_job,
+        parent_run_id=job_execution_result.run_id,
+        instance=instance,
+    )
+```
+
+Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial pipeline run failing, you may want to trigger a full re-execution. Similarly, you can trigger a re-execution of selected ops or from a particular point.
+
+```python file=/guides/dagster/reexecution/reexecution_api.py startafter=start_partial_execution_marker endbefore=end_partial_execution_marker
+# re-execute the job, but only the "unreliable" op and all its descendents
+reexecute_pipeline(
+    unreliable_job,
+    parent_run_id=job_execution_result.run_id,
+    instance=instance,
+    step_selection=["unreliable*"],
+)
+```
+
+The `solid_selection` input is configurable, with syntax further documented in the <PyObject module="dagster" object="reexecute_pipeline" displayText="API docs" />.
