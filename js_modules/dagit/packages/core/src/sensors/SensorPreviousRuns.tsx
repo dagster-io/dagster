@@ -59,7 +59,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
           <NonIdealState
             icon="sensors"
             title="No runs to display"
-            description="Sensor does not target a pipeline."
+            description="This sensor does not target a pipeline or job."
           />
         </Box>
       </div>

@@ -11,7 +11,7 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   HTMLInputElement
 > & {
   icon: 'error' | 'no-results' | 'spinner' | IconName;
-  title?: string;
+  title: string;
   description?: React.ReactNode;
   action?: React.ReactNode;
 };

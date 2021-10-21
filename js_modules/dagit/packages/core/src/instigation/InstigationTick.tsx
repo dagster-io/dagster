@@ -154,7 +154,11 @@ export const FailedRunList: React.FunctionComponent<{
             <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
-        <NonIdealState icon="sensors" description="Sensor does not target a pipeline." />
+        <NonIdealState
+          icon="sensors"
+          title="No runs to display"
+          description="This sensor does not target a pipeline or job."
+        />
       </Box>
     </Group>
   );
