@@ -43,7 +43,7 @@ snapshots['TestMaterializations.test_materializations[postgres_with_default_run_
     'ExecutionStepOutputEvent',
     'HandledOutputEvent',
     'ExecutionStepSuccessEvent',
-    'PipelineSuccessEvent'
+    'RunSuccessEvent'
 ]
 
 snapshots['TestMaterializations.test_materializations[postgres_with_default_run_launcher_managed_grpc_env] 1'] = [
