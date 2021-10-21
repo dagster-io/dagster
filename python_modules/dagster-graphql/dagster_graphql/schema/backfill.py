@@ -8,7 +8,7 @@ from .errors import (
     GrapheneInvalidStepError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
-    GraphenePipelineRunConflict,
+    GrapheneRunConflict,
     GraphenePythonError,
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
@@ -21,7 +21,7 @@ pipeline_execution_error_types = (
     GrapheneInvalidOutputError,
     GrapheneRunConfigValidationInvalid,
     GraphenePipelineNotFoundError,
-    GraphenePipelineRunConflict,
+    GrapheneRunConflict,
     GrapheneUnauthorizedError,
     GraphenePythonError,
 ) + create_execution_params_error_types

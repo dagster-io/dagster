@@ -393,7 +393,7 @@ def test_failure_with_python_error(mock_client: MockClient):
 
 
 def failure_with_pipeline_run_conflict_mock_config(mock_client: MockClient):
-    error_type, message = "PipelineRunConflict", "some conflict"
+    error_type, message = "RunConflict", "some conflict"
     response = {
         "launchPipelineExecution": {
             "__typename": error_type,
@@ -417,7 +417,7 @@ def test_failure_with_pipeline_run_conflict(mock_client: MockClient):
         )
     exc_args = exc_info.value.args
 
-    assert exc_args[0] == "PipelineRunConflict"
+    assert exc_args[0] == "RunConflict"
     assert exc_args[1] == "some conflict"
 
 
@@ -434,7 +434,7 @@ def test_failure_with_job_run_conflict(mock_client: MockClient):
         )
     exc_args = exc_info.value.args
 
-    assert exc_args[0] == "PipelineRunConflict"
+    assert exc_args[0] == "RunConflict"
     assert exc_args[1] == "some conflict"
 
 

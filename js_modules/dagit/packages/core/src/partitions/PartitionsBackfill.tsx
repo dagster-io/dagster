@@ -894,7 +894,7 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineRunConflict {
+      ... on RunConflict {
         message
       }
       ... on ConflictingExecutionParamsError {

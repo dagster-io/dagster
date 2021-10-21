@@ -200,7 +200,7 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
+            # a PipelineNotFoundError, a RunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     def submit_pipeline_execution(
@@ -241,7 +241,7 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
                 that conflict with one another
             DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
-            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
+            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
                 This indicates that a conflicting pipeline run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the pipeline
@@ -291,7 +291,7 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
             DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the job.
                 The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
-            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
+            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
                 This indicates that a conflicting job run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the job

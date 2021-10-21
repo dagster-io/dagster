@@ -21,7 +21,7 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
-    ... on PipelineRunConflict {
+    ... on RunConflict {
       message
     }
     ... on RunConfigValidationInvalid {
