@@ -55,7 +55,8 @@
 - path: tutorial/schedules.png
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
   url: http://127.0.0.1:3000/
-  vetted: false
+  steps:
+    - bring up left nav
 
 - path: tutorial/good_morning_schedule.png
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
