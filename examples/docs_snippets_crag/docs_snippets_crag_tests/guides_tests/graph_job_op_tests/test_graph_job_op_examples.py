@@ -6,6 +6,8 @@ from docs_snippets_crag.guides.dagster.graph_job_op import (
     composite_solid_ins_out,
     composite_solid_multi_out,
     execute_simple_graph,
+    executor_config_job,
+    executor_config_switch,
     graph_job_test,
     graph_with_config,
     graph_with_config_and_schedule,
@@ -40,6 +42,9 @@ jobs = [
     (nested_graphs, "do_it_all"),
     (nested_graphs_ins_out, "do_it_all"),
     (nested_graphs_multi_out, "do_it_all"),
+    (executor_config_job, "do_it_all"),
+    (executor_config_switch, "do_it_all"),
+    (executor_config_switch, "do_it_all_in_proc"),
 ]
 job_repos = [
     (prod_dev_jobs, "prod_repo"),
