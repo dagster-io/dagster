@@ -83,15 +83,15 @@ export const WorkspaceOverviewRoot = () => {
                 <td>
                   <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
                 </td>
-                {anyPipelines ? (
+                {anyPipelinesInWorkspace ? (
                   <td>
-                    <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
+                    {anyPipelines ? (
+                      <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
+                    ) : (
+                      <span style={{color: ColorsWIP.Gray400}}>None</span>
+                    )}
                   </td>
-                ) : (
-                  <td>
-                    <span style={{color: ColorsWIP.Gray400}}>None</span>
-                  </td>
-                )}
+                ) : null}
                 <td>
                   <Link to={workspacePath(name, location, '/graphs')}>Graphs</Link>
                 </td>
