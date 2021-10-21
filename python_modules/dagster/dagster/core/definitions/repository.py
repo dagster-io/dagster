@@ -263,14 +263,6 @@ class RepositoryData(ABC):
             )
         return pipelines_with_name[0]
 
-    def get_all_jobs(self):
-        """Return all jobs in the repository as a list.
-
-        Returns:
-            List[JobDefinition]: All jobs in the repository.
-        """
-        return self.get_all_jobs()
-
     def get_job_names(self):
         """Get the names of all pipelines/jobs in the repository.
 

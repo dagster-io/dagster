@@ -98,3 +98,7 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
 
     external_pipeline = repo.get_full_external_pipeline("foo_2")
     assert external_pipeline.has_solid_invocation("do_something_2")
+
+
+def test_custom_repo_select_only_job():
+    assert not bar_repo.get_all_jobs()

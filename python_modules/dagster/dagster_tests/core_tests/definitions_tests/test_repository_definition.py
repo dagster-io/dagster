@@ -4,6 +4,7 @@ from collections import defaultdict
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     PipelineDefinition,
     SensorDefinition,
     SolidDefinition,
@@ -462,6 +463,21 @@ def test_dict_jobs():
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
+
+
+def test_job_cannot_select_pipeline():
+    @pipeline
+    def my_pipeline():
+        pass
+
+    @repository
+    def my_repo():
+        return [my_pipeline]
+
+    assert my_repo.get_pipeline("my_pipeline")
+
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."):
+        my_repo.get_job("my_pipeline")
 
 
 def test_job_scheduled_partitions():
