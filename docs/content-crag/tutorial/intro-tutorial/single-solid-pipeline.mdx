@@ -44,7 +44,7 @@ def hello_cereal(context):
 ```
 
 In this simple case, our op takes no arguments except for the <PyObject module="dagster"
-object="OpExecutionContext" displayText="context" /> in which it executes (provided by the Dagster framework as the first argument to solids who specify it), and also returns no outputs. Don't worry, we'll soon encounter solids that are much more dynamic.
+object="OpExecutionContext" displayText="context" /> in which it executes (provided by the Dagster framework as the first argument to ops who specify it), and also returns no outputs. Don't worry, we'll soon encounter ops that are much more dynamic.
 
 ## Hello, Job!
 
@@ -58,7 +58,7 @@ def hello_cereal_job():
 ```
 
 Here you'll see that we call `hello_cereal()`. This call doesn't actually execute the op. Within the bodies of functions decorated with <PyObject module="dagster" object="job"
-displayText="@job" />, we use function calls to indicate the dependency structure of the solids making up the job. Here, we indicate that the execution of `hello_cereal` doesn't depend on any other solids by calling it with no arguments.
+displayText="@job" />, we use function calls to indicate the dependency structure of the op making up the job. Here, we indicate that the execution of `hello_cereal` doesn't depend on any other ops by calling it with no arguments.
 
 ## Executing Our First Job
 

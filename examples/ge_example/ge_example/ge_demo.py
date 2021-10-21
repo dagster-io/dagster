@@ -43,7 +43,7 @@ payroll_expectations = ge_validation_op_factory(
                 "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
             }
         },
-        "solids": {
+        "ops": {
             "read_in_datafile": {
                 "inputs": {
                     "csv_path": {"value": file_relative_path(__file__, "./data/succeed.csv")}

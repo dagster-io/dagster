@@ -3,7 +3,7 @@
 Partitions
 ==========
 
-.. autoclass:: dagster.core.definitions.PartitionedConfig
+.. autoclass:: PartitionedConfig
     :members:
 
 .. autofunction:: static_partitioned_config
