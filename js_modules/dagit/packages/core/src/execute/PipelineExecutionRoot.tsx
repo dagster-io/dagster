@@ -66,6 +66,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
       <ExecutionSessionContainerError
         icon="no-results"
         title={isJob ? 'Select a job' : 'Select a pipeline'}
+        description={message}
       />
     );
   }

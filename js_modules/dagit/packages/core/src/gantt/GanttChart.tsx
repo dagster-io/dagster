@@ -788,7 +788,8 @@ export const QueuedState = ({runId}: {runId: string}) => (
       first={
         <NonIdealState
           icon="arrow_forward"
-          description="This run is currently queued."
+          title="Run Queued"
+          description="This run is queued for execution and will start soon."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />
       }
