@@ -83,23 +83,19 @@ def celery_docker_executor(init_context):
 
     In the most common case, you may want to modify the ``broker`` and ``backend`` (e.g., to use
     Redis instead of RabbitMQ). We expect that ``config_source`` will be less frequently
-    modified, but that when solid executions are especially fast or slow, or when there are
-    different requirements around idempotence or retry, it may make sense to execute pipelines
+    modified, but that when op executions are especially fast or slow, or when there are
+    different requirements around idempotence or retry, it may make sense to execute jobs
     with variations on these settings.
 
-    If you'd like to configure a Celery Docker executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    To use the `celery_docker_executor`, set it as the `executor_def` when defining a job:
 
     .. code-block:: python
 
-        from dagster import ModeDefinition, default_executors, pipeline
-        from dagster_celery_docker.executor import celery_docker_executor
+        from dagster import job
+        from dagster_celery_docker.executor import celery_executor
 
-        @pipeline(mode_defs=[
-            ModeDefinition(executor_defs=default_executors + [celery_docker_executor])
-        ])
-        def celery_enabled_pipeline():
+        @job(executor_def=celery_docker_executor)
+        def celery_enabled_job():
             pass
 
     Then you can configure the executor as follows:
@@ -107,23 +103,20 @@ def celery_docker_executor(init_context):
     .. code-block:: YAML
 
         execution:
-          celery-docker:
-            config:
-
-              docker:
-                image: 'my_repo.com/image_name:latest'
-                registry:
-                  url: 'my_repo.com'
-                  username: 'my_user'
-                  password: {env: 'DOCKER_PASSWORD'}
-                env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
-
-              broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
-              backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
-              include: ['my_module'] # Optional[List[str]]: Modules every worker should import
-              config_source: # Dict[str, Any]: Any additional parameters to pass to the
-                  #...       # Celery workers. This dict will be passed as the `config_source`
-                  #...       # argument of celery.Celery().
+          config:
+            docker:
+              image: 'my_repo.com/image_name:latest'
+              registry:
+                url: 'my_repo.com'
+                username: 'my_user'
+                password: {env: 'DOCKER_PASSWORD'}
+              env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
+            broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
+            backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
+            include: ['my_module'] # Optional[List[str]]: Modules every worker should import
+            config_source: # Dict[str, Any]: Any additional parameters to pass to the
+                #...       # Celery workers. This dict will be passed as the `config_source`
+                #...       # argument of celery.Celery().
 
     Note that the YAML you provide here must align with the configuration with which the Celery
     workers on which you hope to run were started. If, for example, you point the executor at a
@@ -245,7 +238,7 @@ def create_docker_task(celery_app, **task_kwargs):
         )
 
         if not docker_image:
-            raise Exception("No docker image specified by either the pipeline or the repository")
+            raise Exception("No docker image specified by either the job or the repository")
 
         client = docker.client.from_env()
 
