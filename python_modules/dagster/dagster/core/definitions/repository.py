@@ -264,7 +264,7 @@ class RepositoryData(ABC):
         return pipelines_with_name[0]
 
     def get_job_names(self):
-        """Get the names of all pipelines/jobs in the repository.
+        """Get the names of all jobs in the repository.
 
         Returns:
             List[str]
@@ -272,10 +272,10 @@ class RepositoryData(ABC):
         return self.get_job_names()
 
     def has_job(self, job_name):
-        """Check if a pipeline/job with a given name is present in the repository.
+        """Check if a job with a given name is present in the repository.
 
         Args:
-            job_name (str): The name of the pipeline/job.
+            job_name (str): The name of the job.
 
         Returns:
             bool
@@ -406,7 +406,7 @@ class CachingRepositoryData(RepositoryData):
     def __init__(self, pipelines, jobs, partition_sets, schedules, sensors):
         """Constructs a new CachingRepositoryData object.
 
-        You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
+        You may pass pipeline, job, partition_set, and schedule definitions directly, or you may pass
         callables with no arguments that will be invoked to lazily construct definitions when
         accessed by name. This can be helpful for performance when there are many definitions in a
         repository, or when constructing the definitions is costly.
@@ -418,6 +418,8 @@ class CachingRepositoryData(RepositoryData):
         Args:
             pipelines (Dict[str, Union[PipelineDefinition, Callable[[], PipelineDefinition]]]):
                 The pipeline definitions belonging to the repository.
+            jobs (Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
+                The job definitions belonging to the repository.
             partition_sets (Dict[str, Union[PartitionSetDefinition, Callable[[], PartitionSetDefinition]]]):
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
@@ -566,7 +568,7 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definition (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition]]):
+            repository_definition (List[Union[PipelineDefinition, JobDefinition, PartitionSetDefinition, ScheduleDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines or other
                 definitions.
         """
@@ -690,6 +692,14 @@ class CachingRepositoryData(RepositoryData):
         )
 
     def has_job(self, job_name):
+        """Check if a job with a given name is present in the repository.
+
+        Args:
+            job_name (str): The name of the job.
+
+        Returns:
+            bool
+        """
         check.str_param(job_name, "job_name")
         return self._jobs.has_definition(job_name)
 
@@ -960,7 +970,7 @@ class RepositoryDefinition:
 
     @property
     def job_names(self):
-        """List[str]: Names of all pipelines/jobs in the repository"""
+        """List[str]: Names of all jobs in the repository"""
         return self._repository_data.get_job_names()
 
     def has_pipeline(self, name):
@@ -1001,10 +1011,10 @@ class RepositoryDefinition:
         return self._repository_data.get_all_pipelines()
 
     def has_job(self, name):
-        """Check if a pipeline/job with a given name is present in the repository.
+        """Check if a job with a given name is present in the repository.
 
         Args:
-            name (str): The name of the pipeline/job.
+            name (str): The name of the job.
 
         Returns:
             bool
@@ -1012,29 +1022,29 @@ class RepositoryDefinition:
         return self._repository_data.has_job(name)
 
     def get_job(self, name):
-        """Get a pipeline/job by name.
+        """Get a job by name.
 
-        If this pipeline/job is present in the lazily evaluated dictionary passed to the
-        constructor, but has not yet been constructed, only this pipeline/job is constructed, and
+        If this job is present in the lazily evaluated dictionary passed to the
+        constructor, but has not yet been constructed, only this job is constructed, and
         will be cached for future calls.
 
         Args:
-            name (str): Name of the pipeline/job to retrieve.
+            name (str): Name of the job to retrieve.
 
         Returns:
-            Union[PipelineDefinition, JobDefinition]: The pipeline/job definition corresponding to
+            JobDefinition: The job definition corresponding to
             the given name.
         """
         return self._repository_data.get_job(name)
 
     def get_all_jobs(self):
-        """Return all pipelines/jobs in the repository as a list.
+        """Return all jobs in the repository as a list.
 
         Note that this will construct any pipeline/job in the lazily evaluated dictionary that has
         not yet been constructed.
 
         Returns:
-            List[Union[PipelineDefinition, JobDefinition]]: All pipelines/jobs in the repository.
+            List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
 
