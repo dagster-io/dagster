@@ -128,11 +128,14 @@ class ReconstructablePipeline(
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
         check.list_param(solid_selection, "solid_selection", of_type=str)
-        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
+        pipeline_def = self.get_definition()
+        solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
         if len(solids_to_execute) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=solid_selection,
+                    node_type="ops" if pipeline_def.is_job else "solids",
+                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         return solids_to_execute

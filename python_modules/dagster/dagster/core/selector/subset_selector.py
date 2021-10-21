@@ -230,8 +230,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
         subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=solid_selection,
+                    node_type="ops" if pipeline_def.is_job else "solids",
+                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         solids_set.update(subset)
