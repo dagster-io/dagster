@@ -623,7 +623,11 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
 class PartitionedConfig(Generic[T]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
-    partitions, and each partition corresponds to run configuration for the job."""
+    partitions, and each partition corresponds to run configuration for the job.
+
+    Setting PartitionedConfig as the config for a job allows you to launch backfills for that job
+    and view the run history across partitions.
+    """
 
     def __init__(
         self,
@@ -678,6 +682,9 @@ def static_partitioned_config(
     Args:
         partition_keys (List[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
+
+    Returns:
+        PartitionedConfig
     """
     check.list_param(partition_keys, "partition_keys", str)
 
@@ -713,6 +720,9 @@ def dynamic_partitioned_config(
         partition_fn (Callable[[datetime.datetime], Sequence[str]]): A function that generates a
             list of valid partition keys, which serve as the range of values that can be provided
             to the decorated run config function.
+
+    Returns:
+        PartitionedConfig
     """
     check.callable_param(partition_fn, "partition_fn")
 

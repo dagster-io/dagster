@@ -102,7 +102,7 @@ def graph(
     """Create a graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a
-    function that invokes solids (or other graphs) and passes the output to subsequent invocations.
+    function that invokes ops (or other graphs) and passes the output to subsequent invocations.
 
     Args:
         name (Optional[str]):

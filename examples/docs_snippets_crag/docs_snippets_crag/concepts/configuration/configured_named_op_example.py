@@ -15,7 +15,7 @@ def get_dataset(context, xs):
         return xs
 
 
-# If we want to use the same op configured in multiple ways in the same pipeline,
+# If we want to use the same op configured in multiple ways in the same job,
 # we have to specify unique names when configuring them:
 sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": True})
 full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
