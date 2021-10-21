@@ -263,7 +263,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             <GridColumn disabled>
               <TopLabel />
               <LeftLabel
-                style={{width: 32, textAlign: 'right'}}
+                style={{width: 42}}
                 onClick={() =>
                   setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
                 }
@@ -282,19 +282,18 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 >
                   <RedBox
                     $filled={totalFailurePercent > 0}
-                    style={{background: `rgba(255, 0, 0, ${(totalFailurePercent / 100) * 0.6})`}}
+                    style={{background: `rgba(255, 0, 0, ${(totalFailurePercent / 100) * 0.5})`}}
                   >
                     {`${totalFailurePercent}%`}
                   </RedBox>
                 </LeftLabel>
               ))}
-              <Divider />
             </GridColumn>
           )}
           <GridColumn disabled>
             <TopLabel />
             <LeftLabel
-              style={{width: 42}}
+              style={{width: 42, paddingRight: 8}}
               onClick={() =>
                 setStepSort(stepSort === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
               }
@@ -310,12 +309,12 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 key={idx}
                 title={TITLE_FINAL_FAILURES}
                 hovered={name === hovered?.stepName}
+                style={{marginRight: 6}}
               >
                 <RedBox
                   $filled={finalFailurePercent > 0}
                   style={{
                     background: `rgba(255, 0, 0, ${(finalFailurePercent / 100) * 0.6})`,
-                    right: 12,
                   }}
                 >
                   {`${finalFailurePercent}%`}
@@ -528,10 +527,10 @@ const RunMatrixSettings: React.FC<{
 const RedBox = styled.div<{$filled: boolean}>`
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: ${(p) => (p.$filled ? `2px` : `6px`)};
   font-size: 14px;
   cursor: pointer;
-  color: ${(p) => (p.$filled ? ColorsWIP.Red500 : ColorsWIP.Gray300)};
+  color: ${(p) => (p.$filled ? ColorsWIP.Red700 : ColorsWIP.Gray300)};
   line-height: 20px;
   padding: ${(p) => (p.$filled ? `0 4px;` : `0`)};
   border-radius: 3px;
@@ -548,7 +547,6 @@ const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sortin
       opacity: $sorting ? 1 : 0.25,
       marginTop: 4,
       marginLeft: 'auto',
-      marginRight: 8,
     }}
   />
 );
