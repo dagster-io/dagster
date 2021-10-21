@@ -55,6 +55,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
@@ -148,6 +149,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        try:
+            after_timestamp = (
+                int(kwargs.get("afterTimestampMillis")) / 1000.0
+                if kwargs.get("afterTimestampMillis")
+                else None
+            )
+        except ValueError:
+            before_timestamp = None
+
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
         if self._fetched_materialization and limit == 1 and not partitions and not before_timestamp:
@@ -165,6 +175,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
+                after_timestamp=after_timestamp,
             )
         ]
 

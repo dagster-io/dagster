@@ -109,6 +109,7 @@ class GrapheneAsset(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
@@ -135,6 +136,15 @@ class GrapheneAsset(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        try:
+            after_timestamp = (
+                int(kwargs.get("afterTimestampMillis")) / 1000.0
+                if kwargs.get("afterTimestampMillis")
+                else None
+            )
+        except ValueError:
+            after_timestamp = None
+
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
@@ -149,6 +159,7 @@ class GrapheneAsset(graphene.ObjectType):
                 partitions=partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
+                after_timestamp=after_timestamp,
             )
         ]
 

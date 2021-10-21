@@ -98,7 +98,14 @@ def get_asset(graphene_info, asset_key):
     return GrapheneAsset(key=asset_key, definition=asset_node)
 
 
-def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
+def get_asset_events(
+    graphene_info,
+    asset_key,
+    partitions=None,
+    limit=None,
+    before_timestamp=None,
+    after_timestamp=None,
+):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -109,6 +116,7 @@ def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, befo
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
