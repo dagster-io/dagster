@@ -207,6 +207,10 @@
           {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python Logging",
+            "path": "/concepts/logging/python-logging"
           }
         ]
       },
