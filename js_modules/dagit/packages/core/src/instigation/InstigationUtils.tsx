@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -23,7 +23,7 @@ export const InstigatedRunStatus: React.FC<{
   const run = instigationState.runs[0];
   return (
     <Group direction="row" spacing={4} alignItems="center">
-      <RunStatus status={run.status} />
+      <RunStatusIndicator status={run.status} />
       <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
         <Mono>{titleForRun({runId: run.runId})}</Mono>
       </Link>

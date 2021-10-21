@@ -7,7 +7,7 @@ import {Popover} from '../ui/Popover';
 import {TagWIP} from '../ui/TagWIP';
 
 import {RunStats} from './RunStats';
-import {RunStatus} from './RunStatusDots';
+import {RunStatusIndicator} from './RunStatusDots';
 
 const statusToIntent = (status: PipelineRunStatus) => {
   switch (status) {
@@ -60,7 +60,7 @@ export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
   return (
     <TagWIP intent={statusToIntent(status)}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatus status={status} size={10} />
+        <RunStatusIndicator status={status} size={10} />
         <div>{statusToString(status)}</div>
       </Box>
     </TagWIP>

@@ -29,7 +29,7 @@ export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = Re
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
     >
-      <RunStatus {...rest} />
+      <RunStatusIndicator {...rest} />
     </Popover>
   ),
 );
@@ -39,7 +39,7 @@ interface RunStatusProps {
   size?: number;
 }
 
-export const RunStatus: React.FC<RunStatusProps> = React.memo(({status, size}) => {
+export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
     return <Spinner purpose="caption-text" />;
   }

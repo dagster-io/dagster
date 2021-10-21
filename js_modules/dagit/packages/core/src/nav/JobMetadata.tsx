@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {timingStringForStatus} from '../runs/RunDetails';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -312,7 +312,7 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   return (
     <TagWIP intent={intent()}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatus status={run.status} size={10} />
+        <RunStatusIndicator status={run.status} size={10} />
         Latest run:
         {stats ? (
           <Tooltip

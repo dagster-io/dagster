@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {Box} from '../ui/Box';
@@ -75,7 +75,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
             >
               {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
               <Box padding={{top: 4}}>
-                <RunStatus status={g.status} />
+                <RunStatusIndicator status={g.status} />
               </Box>
 
               <div
