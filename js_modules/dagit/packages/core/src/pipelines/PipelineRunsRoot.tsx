@@ -6,10 +6,10 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilter,
+  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-} from '../runs/RunsFilter';
+} from '../runs/RunsFilterInput';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
 import {CursorPaginationControls} from '../ui/CursorControls';
@@ -112,7 +112,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                   runs={displayed}
                   onSetFilter={setFilterTokens}
                   actionBarComponents={
-                    <RunsFilter
+                    <RunsFilterInput
                       enabledFilters={ENABLED_FILTERS}
                       tokens={filterTokens}
                       onChange={setFilterTokens}

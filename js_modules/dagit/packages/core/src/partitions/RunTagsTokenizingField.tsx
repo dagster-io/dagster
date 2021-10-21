@@ -1,7 +1,7 @@
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {RunFilterTokenType} from '../runs/RunsFilter';
+import {RunFilterTokenType} from '../runs/RunsFilterInput';
 import {
   TokenizingField,
   TokenizingFieldValue,
@@ -15,7 +15,7 @@ interface RunTagsTokenizingFieldProps {
   onChange: (tokens: TokenizingFieldValue[]) => void;
 }
 
-// BG TODO: This should most likely be folded into RunsFilter, but that component loads autocompletions
+// BG TODO: This should most likely be folded into RunsFilterInput, but that component loads autocompletions
 // from all runs in the repo and doesn't support being scoped to a particular pipeline.
 
 export const RunTagsSupportedTokens: RunFilterTokenType[] = ['tag'];

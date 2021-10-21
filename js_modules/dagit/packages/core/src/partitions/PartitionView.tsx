@@ -5,7 +5,7 @@ import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
+import {useQueryPersistedRunFilters} from '../runs/RunsFilterInput';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {CursorHistoryControls} from '../ui/CursorControls';

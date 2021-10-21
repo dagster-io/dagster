@@ -24,10 +24,10 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilter,
+  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-} from './RunsFilter';
+} from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
@@ -178,7 +178,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   onSetFilter={setFilterTokens}
                   actionBarComponents={
                     showScheduled ? null : (
-                      <RunsFilter
+                      <RunsFilterInput
                         tokens={filterTokens}
                         onChange={setFilterTokens}
                         loading={queryResult.loading}

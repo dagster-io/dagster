@@ -2,7 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RunStatus, PipelineRunsFilter} from '../types/globalTypes';
+import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -77,7 +77,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     return {};
   }
 
-  const obj: PipelineRunsFilter = {};
+  const obj: RunsFilter = {};
 
   for (const item of search) {
     if (item.token === 'pipeline' || item.token === 'job') {
@@ -163,14 +163,14 @@ function searchSuggestionsForRuns(
   return suggestions;
 }
 
-interface RunsFilterProps {
+interface RunsFilterInputProps {
   loading?: boolean;
   tokens: TokenizingFieldValue[];
   onChange: (tokens: TokenizingFieldValue[]) => void;
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilter: React.FC<RunsFilterProps> = ({
+export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   loading,
   tokens,
   onChange,
