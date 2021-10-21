@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
+import { RunStatus, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunFragment
@@ -69,22 +69,22 @@ export interface RunFragment_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface RunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   endTime: number | null;
   startTime: number | null;
 }
 
-export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_PipelineRunStatsSnapshot;
+export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_RunStatsSnapshot;
 
 export interface RunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runConfigYaml: string;
   runId: string;
   canTerminate: boolean;
-  status: PipelineRunStatus;
+  status: RunStatus;
   mode: string;
   tags: RunFragment_tags[];
   rootRunId: string | null;

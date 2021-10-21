@@ -21,7 +21,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {BulkActionStatus, PipelineRunStatus} from '../types/globalTypes';
+import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
@@ -431,7 +431,7 @@ const getProgressCounts = (backfill: Backfill) => {
 
   const latestPartitionRuns = Object.values(byPartitionRuns);
   const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
-    (accum: any, {status}: {status: PipelineRunStatus}) => {
+    (accum: any, {status}: {status: RunStatus}) => {
       return {
         numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
         numInProgress: accum.numInProgress + (inProgressStatuses.has(status) ? 1 : 0),

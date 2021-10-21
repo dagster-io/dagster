@@ -189,10 +189,10 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 };
 
 const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFragment) => {
-  if (!a.stats || a.stats.__typename !== 'PipelineRunStatsSnapshot' || !a.stats.startTime) {
+  if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
     return 1;
   }
-  if (!b.stats || b.stats.__typename !== 'PipelineRunStatsSnapshot' || !b.stats.startTime) {
+  if (!b.stats || b.stats.__typename !== 'RunStatsSnapshot' || !b.stats.startTime) {
     return -1;
   }
   return b.stats.startTime - a.stats.startTime;

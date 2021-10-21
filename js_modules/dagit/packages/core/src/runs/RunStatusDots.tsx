@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
@@ -29,17 +29,17 @@ export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = Re
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
     >
-      <RunStatus {...rest} />
+      <RunStatusIndicator {...rest} />
     </Popover>
   ),
 );
 
 interface RunStatusProps {
-  status: PipelineRunStatus;
+  status: RunStatus;
   size?: number;
 }
 
-export const RunStatus: React.FC<RunStatusProps> = React.memo(({status, size}) => {
+export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
     return <Spinner purpose="caption-text" />;
   }
@@ -67,7 +67,7 @@ const pulseAnimation = keyframes`
 `;
 
 export const RunStatusDot = styled.div<{
-  status: PipelineRunStatus;
+  status: RunStatus;
   size: number;
   pulse?: boolean;
 }>`

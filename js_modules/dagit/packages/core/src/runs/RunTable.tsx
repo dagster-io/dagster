@@ -146,7 +146,7 @@ export const RunTable = (props: RunTableProps) => {
 };
 
 export const RUN_TABLE_RUN_FRAGMENT = gql`
-  fragment RunTableRunFragment on PipelineRun {
+  fragment RunTableRunFragment on Run {
     id
     runId
     status

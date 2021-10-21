@@ -12,8 +12,35 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_CANCELLATION_QUERY = """
-mutation($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
   terminatePipelineExecution(runId: $runId, terminatePolicy:$terminatePolicy){
+    __typename
+    ... on TerminateRunSuccess{
+      run {
+        runId
+      }
+    }
+    ... on TerminateRunFailure {
+      run {
+        runId
+      }
+      message
+    }
+    ... on RunNotFoundError {
+      runId
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
+# Legacy query (once published on docs site), that we should try to continue supporting
+BACKCOMPAT_LEGACY_TERMINATE_PIPELINE = """
+mutation TerminatePipeline($runId: String!) {
+  terminatePipelineExecution(runId: $runId){
     __typename
     ... on TerminatePipelineExecutionSuccess{
       run {
@@ -21,9 +48,6 @@ mutation($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
       }
     }
     ... on TerminatePipelineExecutionFailure {
-      run {
-        runId
-      }
       message
     }
     ... on PipelineRunNotFoundError {
@@ -64,9 +88,7 @@ class TestQueuedRunTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.QUEUED
@@ -74,10 +96,7 @@ class TestQueuedRunTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_force_cancel_queued_run(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
@@ -98,9 +117,7 @@ class TestQueuedRunTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.QUEUED
@@ -110,10 +127,7 @@ class TestQueuedRunTermination(
                 RUN_CANCELLATION_QUERY,
                 variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
 
 class TestRunVariantTermination(
@@ -140,9 +154,7 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             assert run_id
@@ -154,16 +166,13 @@ class TestRunVariantTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_run_not_found(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": "nope"}
         )
-        assert result.data["terminatePipelineExecution"]["__typename"] == "PipelineRunNotFoundError"
+        assert result.data["terminatePipelineExecution"]["__typename"] == "RunNotFoundError"
 
     def test_terminate_failed(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
@@ -186,9 +195,7 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert (
-                result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
             # ensure the execution has happened
             while not os.path.exists(path):
@@ -197,10 +204,7 @@ class TestRunVariantTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionFailure"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
             assert result.data["terminatePipelineExecution"]["message"].startswith(
                 "Unable to terminate run"
             )
@@ -211,10 +215,7 @@ class TestRunVariantTermination(
                 variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
             )
 
-            assert (
-                result.data["terminatePipelineExecution"]["__typename"]
-                == "TerminatePipelineExecutionSuccess"
-            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
             assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
 
@@ -242,10 +243,7 @@ class TestRunVariantTermination(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": pipeline_result.run_id}
         )
 
-        assert (
-            result.data["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionFailure"
-        )
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
         assert (
             "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]
@@ -261,11 +259,41 @@ class TestRunVariantTermination(
             },
         )
 
-        assert (
-            result.data["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionFailure"
-        )
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
         assert (
             "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]
         )
+
+    def test_backcompat_termination(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # just test existence
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            assert run_id
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context, BACKCOMPAT_LEGACY_TERMINATE_PIPELINE, variables={"runId": run_id}
+            )
+            assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id

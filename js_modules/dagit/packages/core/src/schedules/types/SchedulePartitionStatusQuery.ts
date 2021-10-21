@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulePartitionStatusQuery
@@ -22,7 +22,7 @@ export interface SchedulePartitionStatusQuery_scheduleOrError_Schedule_partition
   __typename: "PartitionStatus";
   id: string;
   partitionName: string;
-  runStatus: PipelineRunStatus | null;
+  runStatus: RunStatus | null;
 }
 
 export interface SchedulePartitionStatusQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses {

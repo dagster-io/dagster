@@ -11,11 +11,11 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
+  __typename: "InvalidStepError" | "InvalidOutputError" | "RunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run {
-  __typename: "PipelineRun";
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess_run {
+  __typename: "Run";
   id: string;
   runId: string;
   pipelineName: string;
@@ -23,9 +23,9 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipel
   parentRunId: string | null;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess {
-  __typename: "LaunchPipelineRunSuccess";
-  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run;
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess {
+  __typename: "LaunchRunSuccess";
+  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess_run;
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError {
@@ -33,14 +33,14 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNot
   message: string;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid_errors {
+export interface LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid_errors {
   __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
-  errors: LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid_errors[];
+export interface LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid {
+  __typename: "RunConfigValidationInvalid";
+  errors: LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid_errors[];
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError {
@@ -49,7 +49,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   stack: string[];
 }
 
-export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
+export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
 
 export interface LaunchPipelineReexecution {
   launchPipelineReexecution: LaunchPipelineReexecution_launchPipelineReexecution;

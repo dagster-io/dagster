@@ -17,7 +17,7 @@ export const PreviousRunsSection: React.FC<{
     if (loading) {
       return <Box margin={{top: 8}}>Loading...</Box>;
     }
-    if (!data || data.__typename !== 'PipelineRuns') {
+    if (!data || data.__typename !== 'Runs') {
       return <Box margin={{top: 8}}>Error!</Box>;
     }
     const runs = data?.results;
@@ -39,9 +39,9 @@ export const PreviousRunsSection: React.FC<{
 };
 
 export const PREVIOUS_RUNS_FRAGMENT = gql`
-  fragment PreviousRunsFragment on PipelineRunsOrError {
+  fragment PreviousRunsFragment on RunsOrError {
     __typename
-    ... on PipelineRuns {
+    ... on Runs {
       results {
         id
         ... on PipelineRun {

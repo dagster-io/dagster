@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunMetadataFragment
@@ -21,8 +21,8 @@ export interface RunMetadataFragment_assets {
   key: RunMetadataFragment_assets_key;
 }
 
-export interface RunMetadataFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunMetadataFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -43,12 +43,12 @@ export interface RunMetadataFragment_stats_PythonError {
   cause: RunMetadataFragment_stats_PythonError_cause | null;
 }
 
-export type RunMetadataFragment_stats = RunMetadataFragment_stats_PipelineRunStatsSnapshot | RunMetadataFragment_stats_PythonError;
+export type RunMetadataFragment_stats = RunMetadataFragment_stats_RunStatsSnapshot | RunMetadataFragment_stats_PythonError;
 
 export interface RunMetadataFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   assets: RunMetadataFragment_assets[];
   stats: RunMetadataFragment_stats;
 }

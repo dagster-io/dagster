@@ -10,7 +10,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
       }
@@ -21,10 +21,10 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
-    ... on PipelineRunConflict {
+    ... on RunConflict {
       message
     }
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         message
@@ -100,7 +100,7 @@ query($runId: ID!) {
     ... on PipelineRun {
         status
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       message
     }
     ... on PythonError {

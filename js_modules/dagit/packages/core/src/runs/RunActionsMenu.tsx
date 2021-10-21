@@ -58,7 +58,7 @@ export const RunActionsMenu: React.FC<{
   };
 
   const pipelineRun =
-    data?.pipelineRunOrError?.__typename === 'PipelineRun' ? data?.pipelineRunOrError : null;
+    data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
 
   const repoMatch = useRepositoryForRun(pipelineRun);
@@ -289,7 +289,7 @@ const OPEN_PLAYGROUND_UNKNOWN =
 const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on Run {
         id
         pipeline {
           name

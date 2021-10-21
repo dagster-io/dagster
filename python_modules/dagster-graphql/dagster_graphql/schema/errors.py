@@ -97,10 +97,19 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         )
 
 
-class GraphenePipelineRunNotFoundError(graphene.ObjectType):
+class GraphenePipelineRunNotFoundError(graphene.Interface):
     class Meta:
         interfaces = (GrapheneError,)
         name = "PipelineRunNotFoundError"
+
+    run_id = graphene.NonNull(graphene.String)
+    message = graphene.String(required=True)
+
+
+class GrapheneRunNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GraphenePipelineRunNotFoundError, GrapheneError)
+        name = "RunNotFoundError"
 
     run_id = graphene.NonNull(graphene.String)
 
@@ -186,10 +195,17 @@ class GrapheneInvalidOutputError(graphene.ObjectType):
         name = "InvalidOutputError"
 
 
-class GraphenePipelineRunConflict(graphene.ObjectType):
+class GraphenePipelineRunConflict(graphene.Interface):
+    message = graphene.NonNull(graphene.String)
+
     class Meta:
-        interfaces = (GrapheneError,)
         name = "PipelineRunConflict"
+
+
+class GrapheneRunConflict(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError, GraphenePipelineRunConflict)
+        name = "RunConflict"
 
 
 create_execution_params_error_types = (
@@ -295,6 +311,7 @@ types = [
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
+    GrapheneRunConflict,
     GraphenePipelineRunNotFoundError,
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
@@ -304,6 +321,7 @@ types = [
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
     GrapheneRunGroupNotFoundError,
+    GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,

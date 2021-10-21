@@ -25,7 +25,7 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: LatestMaterializationMetadataFragment | undefined;
   asOf: string | null;
 }> = ({latest, asOf}) => {
-  const latestRun = latest?.runOrError.__typename === 'PipelineRun' ? latest?.runOrError : null;
+  const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)

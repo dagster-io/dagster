@@ -2,7 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PipelineRunStatus, PipelineRunsFilter} from '../types/globalTypes';
+import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -77,7 +77,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     return {};
   }
 
-  const obj: PipelineRunsFilter = {};
+  const obj: RunsFilter = {};
 
   for (const item of search) {
     if (item.token === 'pipeline' || item.token === 'job') {
@@ -88,7 +88,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       if (!obj.statuses) {
         obj.statuses = [];
       }
-      obj.statuses.push(item.value as PipelineRunStatus);
+      obj.statuses.push(item.value as RunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
@@ -130,7 +130,7 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'status',
-      values: () => Object.keys(PipelineRunStatus),
+      values: () => Object.keys(RunStatus),
     },
     {
       token: 'pipeline',
@@ -163,14 +163,14 @@ function searchSuggestionsForRuns(
   return suggestions;
 }
 
-interface RunsFilterProps {
+interface RunsFilterInputProps {
   loading?: boolean;
   tokens: TokenizingFieldValue[];
   onChange: (tokens: TokenizingFieldValue[]) => void;
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilter: React.FC<RunsFilterProps> = ({
+export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   loading,
   tokens,
   onChange,

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, PipelineRunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionStatusQuery
@@ -14,7 +14,7 @@ export interface PartitionStatusQuery_partitionSetOrError_PartitionSet_partition
   __typename: "PartitionStatus";
   id: string;
   partitionName: string;
-  runStatus: PipelineRunStatus | null;
+  runStatus: RunStatus | null;
 }
 
 export interface PartitionStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses {

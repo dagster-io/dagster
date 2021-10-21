@@ -18,9 +18,9 @@ from .errors import (
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .inputs import GraphenePipelineRunsFilter
-from .pipelines.pipeline import GraphenePipelineRun
-from .pipelines.status import GraphenePipelineRunStatus
+from .inputs import GrapheneRunsFilter
+from .pipelines.pipeline import GrapheneRun
+from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
@@ -49,7 +49,7 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
-    runStatus = graphene.Field(GraphenePipelineRunStatus)
+    runStatus = graphene.Field(GrapheneRunStatus)
 
     class Meta:
         name = "PartitionStatus"
@@ -82,12 +82,12 @@ class GraphenePartition(graphene.ObjectType):
     runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
     tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        non_null_list(GrapheneRun),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
-    status = graphene.Field(GraphenePipelineRunStatus)
+    status = graphene.Field(GrapheneRunStatus)
 
     class Meta:
         name = "Partition"

@@ -106,7 +106,7 @@ export const AssetNode: React.FC<{
           )}
           {event ? (
             <Stats>
-              {runOrError.__typename === 'PipelineRun' && (
+              {runOrError.__typename === 'Run' && (
                 <StatsRow>
                   <Link
                     data-tooltip={`${runOrError.pipelineName}${

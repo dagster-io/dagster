@@ -82,16 +82,16 @@ function buildRun(
   const id = faker.random.uuid().slice(0, 8);
   const startTime = new Date(isoDateString).getTime() / 1000;
   const result: PartitionRunMatrixRunFragment = {
-    __typename: 'PipelineRun',
+    __typename: 'Run',
     id: id,
     runId: id,
     stats: {
       id: id,
       startTime,
-      __typename: 'PipelineRunStatsSnapshot',
+      __typename: 'RunStatsSnapshot',
     },
     stepStats: Object.entries(statuses).map(([key, status]) => ({
-      __typename: 'PipelineRunStepStats',
+      __typename: 'RunStepStats',
       stepKey: key,
       status: status,
       materializations: [],

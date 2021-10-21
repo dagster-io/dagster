@@ -9,7 +9,7 @@ snapshots = Snapshot()
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_in_memory_instance_lazy_repository] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -42,7 +42,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_in_memory_instance_managed_grpc_env] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -75,7 +75,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_in_memory_instance_multi_location] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -108,7 +108,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_postgres_instance_lazy_repository] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -141,7 +141,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_postgres_instance_managed_grpc_env] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -174,7 +174,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_postgres_instance_multi_location] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -207,7 +207,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_sqlite_instance_deployed_grpc_env] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -240,7 +240,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_sqlite_instance_lazy_repository] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -273,7 +273,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_sqlite_instance_managed_grpc_env] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',
@@ -306,7 +306,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_sqlite_instance_multi_location] 1'] = {
     'runConfigSchemaOrError': {
         'isRunConfigValid': {
-            '__typename': 'PipelineConfigValidationInvalid',
+            '__typename': 'RunConfigValidationInvalid',
             'errors': [
                 {
                     '__typename': 'FieldNotDefinedConfigError',

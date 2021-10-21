@@ -397,7 +397,7 @@ class GrapheneStepMaterializationEvent(graphene.ObjectType):
         name = "StepMaterializationEvent"
 
     materialization = graphene.NonNull(GrapheneMaterialization)
-    stepStats = graphene.NonNull(lambda: GraphenePipelineRunStepStats)
+    stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
     def __init__(self, materialization, assetLineage, **basic_params):
@@ -503,7 +503,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
         name = "DagsterRunEvent"
 
 
-class GraphenePipelineRunStepStats(graphene.ObjectType):
+class GraphenePipelineRunStepStats(graphene.Interface):
     runId = graphene.NonNull(graphene.String)
     stepKey = graphene.NonNull(graphene.String)
     status = graphene.Field(GrapheneStepEventStatus)
@@ -514,6 +514,20 @@ class GraphenePipelineRunStepStats(graphene.ObjectType):
 
     class Meta:
         name = "PipelineRunStepStats"
+
+
+class GrapheneRunStepStats(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+    stepKey = graphene.NonNull(graphene.String)
+    status = graphene.Field(GrapheneStepEventStatus)
+    startTime = graphene.Field(graphene.Float)
+    endTime = graphene.Field(graphene.Float)
+    materializations = non_null_list(GrapheneMaterialization)
+    expectationResults = non_null_list(GrapheneExpectationResult)
+
+    class Meta:
+        interfaces = (GraphenePipelineRunStepStats,)
+        name = "RunStepStats"
 
     def __init__(self, stats):
         self._stats = check.inst_param(stats, "stats", RunStepKeyStatsSnapshot)

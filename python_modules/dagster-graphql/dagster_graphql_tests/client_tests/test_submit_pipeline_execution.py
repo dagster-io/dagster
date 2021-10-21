@@ -8,7 +8,7 @@ EXPECTED_RUN_ID = "foo"
 
 launch_pipeline_success_response = {
     "launchPipelineExecution": {
-        "__typename": "LaunchPipelineRunSuccess",
+        "__typename": "LaunchRunSuccess",
         "run": {"runId": EXPECTED_RUN_ID},
     }
 }
@@ -77,7 +77,7 @@ def test_job_tags_success(mock_client: MockClient):
 def test_complex_tags_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -150,7 +150,7 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -195,7 +195,7 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -245,7 +245,7 @@ def no_location_or_repo_provided_mock_config(mock_client):
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -329,7 +329,7 @@ def test_failure_with_invalid_output_error(mock_client: MockClient):
 
 @python_client_test_suite
 def test_failure_with_pipeline_config_invalid(mock_client: MockClient):
-    error_type = "PipelineConfigValidationInvalid"
+    error_type = "RunConfigValidationInvalid"
     errors = [
         {
             "__typename": "some_error",
@@ -393,7 +393,7 @@ def test_failure_with_python_error(mock_client: MockClient):
 
 
 def failure_with_pipeline_run_conflict_mock_config(mock_client: MockClient):
-    error_type, message = "PipelineRunConflict", "some conflict"
+    error_type, message = "RunConflict", "some conflict"
     response = {
         "launchPipelineExecution": {
             "__typename": error_type,
@@ -417,7 +417,7 @@ def test_failure_with_pipeline_run_conflict(mock_client: MockClient):
         )
     exc_args = exc_info.value.args
 
-    assert exc_args[0] == "PipelineRunConflict"
+    assert exc_args[0] == "RunConflict"
     assert exc_args[1] == "some conflict"
 
 
@@ -434,7 +434,7 @@ def test_failure_with_job_run_conflict(mock_client: MockClient):
         )
     exc_args = exc_info.value.args
 
-    assert exc_args[0] == "PipelineRunConflict"
+    assert exc_args[0] == "RunConflict"
     assert exc_args[1] == "some conflict"
 
 

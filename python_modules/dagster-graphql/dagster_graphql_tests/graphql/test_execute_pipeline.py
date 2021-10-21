@@ -39,7 +39,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -62,7 +62,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -87,7 +87,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
@@ -229,10 +229,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "RunConfigValidationInvalid"
 
     def test_basis_start_pipeline_not_found_error(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "sjkdfkdjkf")
@@ -329,9 +326,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # block until run finishes
         graphql_context.instance.run_launcher.join()
@@ -344,7 +339,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
 
         non_engine_event_types = [
             message["__typename"]
@@ -375,9 +370,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         def _fetch_events(after):
             events_result = execute_dagster_graphql(
@@ -390,7 +383,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+            assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
             return events_result.data["pipelineRunOrError"]["events"]
 
         full_logs = []
@@ -521,7 +514,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = result.data["launchPipelineExecution"]["run"]
         run_id = run["runId"]

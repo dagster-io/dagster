@@ -2,11 +2,11 @@ import graphene
 
 from ..logs.events import GrapheneDagsterRunEvent
 from ..util import non_null_list
-from .pipeline import GraphenePipelineRun
+from .pipeline import GrapheneRun
 
 
 class GraphenePipelineRunLogsSubscriptionSuccess(graphene.ObjectType):
-    run = graphene.NonNull(GraphenePipelineRun)
+    run = graphene.NonNull(GrapheneRun)
     messages = non_null_list(GrapheneDagsterRunEvent)
     hasMorePastEvents = graphene.NonNull(graphene.Boolean)
 

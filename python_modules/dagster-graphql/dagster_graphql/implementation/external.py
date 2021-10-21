@@ -80,7 +80,7 @@ def get_subset_external_pipeline(context, selector):
 
 
 def ensure_valid_config(external_pipeline, mode, run_config):
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationInvalid
+    from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.str_param(mode, "mode")
@@ -95,7 +95,7 @@ def ensure_valid_config(external_pipeline, mode, run_config):
     if not validated_config.success:
 
         raise UserFacingGraphQLError(
-            GraphenePipelineConfigValidationInvalid.for_validation_errors(
+            GrapheneRunConfigValidationInvalid.for_validation_errors(
                 external_pipeline, validated_config.errors
             )
         )

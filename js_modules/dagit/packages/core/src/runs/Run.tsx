@@ -11,7 +11,7 @@ import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '.
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -46,13 +46,13 @@ interface RunProps {
   run?: RunFragment;
 }
 
-const runStatusEmoji = (status: PipelineRunStatus) => {
+const runStatusEmoji = (status: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.CANCELED:
-    case PipelineRunStatus.CANCELING:
-    case PipelineRunStatus.FAILURE:
+    case RunStatus.CANCELED:
+    case RunStatus.CANCELING:
+    case RunStatus.FAILURE:
       return '🔴';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return '🟢';
     default:
       return '🔵';

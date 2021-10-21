@@ -30,8 +30,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
     variables: {runId},
   });
 
-  const run =
-    data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
+  const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
 
   const repoMatch = useRepositoryForRun(run);
@@ -112,7 +111,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
     return <Run run={undefined} runId={runId} />;
   }
 
-  if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
+  if (data.pipelineRunOrError.__typename !== 'Run') {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
@@ -131,7 +130,7 @@ const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
-      ... on PipelineRun {
+      ... on Run {
         id
         pipeline {
           __typename

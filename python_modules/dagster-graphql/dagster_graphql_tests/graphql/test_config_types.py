@@ -21,7 +21,7 @@ query PipelineQuery(
         ... on PipelineConfigValidationValid {
             pipelineName
         }
-        ... on PipelineConfigValidationInvalid {
+        ... on RunConfigValidationInvalid {
             pipelineName
             errors {
                 __typename
@@ -150,9 +150,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         errors = result.data["isPipelineConfigValid"]["errors"]
         assert len(errors) == 1
@@ -171,9 +169,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
@@ -197,9 +193,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
@@ -214,9 +208,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
@@ -232,9 +224,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
@@ -256,9 +246,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
@@ -314,9 +302,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         error_data = single_error_data(result)
         assert error_data["reason"] == "MISSING_REQUIRED_FIELD"
         assert error_data["field"]["name"] == "op"
@@ -331,9 +317,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert {"FieldNotDefinedConfigError", "MissingFieldConfigError"} == {
             error_data["__typename"]
             for error_data in result.data["isPipelineConfigValid"]["errors"]
@@ -377,7 +361,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
 
-        assert valid_data["__typename"] == "PipelineConfigValidationInvalid"
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
         assert valid_data["pipelineName"] == "more_complicated_nested_config"
         assert len(valid_data["errors"]) == 1
         error_data = valid_data["errors"][0]
@@ -414,7 +398,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
 
-        assert valid_data["__typename"] == "PipelineConfigValidationInvalid"
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
         assert valid_data["pipelineName"] == "more_complicated_nested_config"
         assert len(valid_data["errors"]) == 4
 
@@ -501,7 +485,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
-        assert valid_data["__typename"] == "PipelineConfigValidationInvalid"
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
         assert valid_data["pipelineName"] == "pipeline_with_list"
         assert len(valid_data["errors"]) == 1
         assert ["solids", "solid_with_list", "config"] == field_stack(valid_data["errors"][0])
@@ -517,7 +501,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         valid_data = result.data["isPipelineConfigValid"]
-        assert valid_data["__typename"] == "PipelineConfigValidationInvalid"
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
         assert valid_data["pipelineName"] == "pipeline_with_list"
         assert len(valid_data["errors"]) == 1
         entries = valid_data["errors"][0]["stack"]["entries"]

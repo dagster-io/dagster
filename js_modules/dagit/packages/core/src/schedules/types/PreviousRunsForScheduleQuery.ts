@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviousRunsForScheduleQuery
@@ -14,26 +14,26 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelin
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_pipeline {
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin {
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_tags {
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -41,52 +41,52 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_r
   endTime: number | null;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats = PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
+export type PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
+  pipeline: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
-  repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin | null;
+  repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
-  tags: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
-  stats: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  tags: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_tags[];
+  stats: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results[];
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs {
+  __typename: "Runs";
+  results: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns;
+export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs;
 
 export interface PreviousRunsForScheduleQuery {
   pipelineRunsOrError: PreviousRunsForScheduleQuery_pipelineRunsOrError;
 }
 
 export interface PreviousRunsForScheduleQueryVariables {
-  filter?: PipelineRunsFilter | null;
+  filter?: RunsFilter | null;
   limit?: number | null;
 }

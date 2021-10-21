@@ -1,66 +1,66 @@
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Popover} from '../ui/Popover';
 import {TagWIP} from '../ui/TagWIP';
 
 import {RunStats} from './RunStats';
-import {RunStatus} from './RunStatusDots';
+import {RunStatusIndicator} from './RunStatusDots';
 
-const statusToIntent = (status: PipelineRunStatus) => {
+const statusToIntent = (status: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.QUEUED:
-    case PipelineRunStatus.NOT_STARTED:
-    case PipelineRunStatus.MANAGED:
-    case PipelineRunStatus.CANCELING:
+    case RunStatus.QUEUED:
+    case RunStatus.NOT_STARTED:
+    case RunStatus.MANAGED:
+    case RunStatus.CANCELING:
       return 'none';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return 'success';
-    case PipelineRunStatus.STARTING:
+    case RunStatus.STARTING:
       return 'none';
-    case PipelineRunStatus.FAILURE:
-    case PipelineRunStatus.CANCELED:
+    case RunStatus.FAILURE:
+    case RunStatus.CANCELED:
       return 'danger';
-    case PipelineRunStatus.STARTED:
+    case RunStatus.STARTED:
       return 'primary';
     default:
       return assertUnreachable(status);
   }
 };
 
-const statusToString = (status: PipelineRunStatus) => {
+const statusToString = (status: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.QUEUED:
+    case RunStatus.QUEUED:
       return 'Queued';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return 'Success';
-    case PipelineRunStatus.STARTING:
+    case RunStatus.STARTING:
       return 'Starting';
-    case PipelineRunStatus.NOT_STARTED:
+    case RunStatus.NOT_STARTED:
       return 'Not started';
-    case PipelineRunStatus.FAILURE:
+    case RunStatus.FAILURE:
       return 'Failure';
-    case PipelineRunStatus.STARTED:
+    case RunStatus.STARTED:
       return 'Started';
-    case PipelineRunStatus.MANAGED:
+    case RunStatus.MANAGED:
       return 'Managed';
-    case PipelineRunStatus.CANCELING:
+    case RunStatus.CANCELING:
       return 'Canceling';
-    case PipelineRunStatus.CANCELED:
+    case RunStatus.CANCELED:
       return 'Canceled';
     default:
       return assertUnreachable(status);
   }
 };
 
-export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
+export const RunStatusTag = (props: {status: RunStatus}) => {
   const {status} = props;
   return (
     <TagWIP intent={statusToIntent(status)}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatus status={status} size={10} />
+        <RunStatusIndicator status={status} size={10} />
         <div>{statusToString(status)}</div>
       </Box>
     </TagWIP>
@@ -69,7 +69,7 @@ export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
 
 interface Props {
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export const RunStatusTagWithStats = (props: Props) => {

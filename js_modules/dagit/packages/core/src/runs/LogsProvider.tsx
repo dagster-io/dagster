@@ -3,7 +3,7 @@ import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunFragments} from './RunFragments';
@@ -38,19 +38,19 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
     const {__typename} = message;
     switch (__typename) {
       case 'RunStartEvent':
-        return PipelineRunStatus.STARTED;
+        return RunStatus.STARTED;
       case 'RunEnqueuedEvent':
-        return PipelineRunStatus.QUEUED;
+        return RunStatus.QUEUED;
       case 'RunStartingEvent':
-        return PipelineRunStatus.STARTING;
+        return RunStatus.STARTING;
       case 'RunCancelingEvent':
-        return PipelineRunStatus.CANCELING;
+        return RunStatus.CANCELING;
       case 'RunCanceledEvent':
-        return PipelineRunStatus.CANCELED;
+        return RunStatus.CANCELED;
       case 'RunSuccessEvent':
-        return PipelineRunStatus.SUCCESS;
+        return RunStatus.SUCCESS;
       case 'RunFailureEvent':
-        return PipelineRunStatus.FAILURE;
+        return RunStatus.FAILURE;
     }
   }
   return null;
@@ -99,7 +99,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
-    (status: PipelineRunStatus) => {
+    (status: RunStatus) => {
       const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
@@ -109,11 +109,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
       if (local) {
         const toWrite = {...local, status};
         if (
-          status === PipelineRunStatus.FAILURE ||
-          status === PipelineRunStatus.SUCCESS ||
-          status === PipelineRunStatus.STARTING ||
-          status === PipelineRunStatus.CANCELING ||
-          status === PipelineRunStatus.CANCELED
+          status === RunStatus.FAILURE ||
+          status === RunStatus.SUCCESS ||
+          status === RunStatus.STARTING ||
+          status === RunStatus.CANCELING ||
+          status === RunStatus.CANCELED
         ) {
           toWrite.canTerminate = false;
         }
@@ -214,7 +214,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
 
       const slice = () => {
         const count = nodes.length;
-        if (data?.pipelineRunOrError.__typename === 'PipelineRun') {
+        if (data?.pipelineRunOrError.__typename === 'Run') {
           return data?.pipelineRunOrError.events.map((event, ii) => ({
             ...event,
             clientsideKey: `csk${count + ii}`,
@@ -228,15 +228,13 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
       setAfter((current) => current + newSlice.length);
 
       const status =
-        data?.pipelineRunOrError.__typename === 'PipelineRun'
-          ? data?.pipelineRunOrError.status
-          : null;
+        data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
 
       if (
         status &&
-        status !== PipelineRunStatus.FAILURE &&
-        status !== PipelineRunStatus.SUCCESS &&
-        status !== PipelineRunStatus.CANCELED
+        status !== RunStatus.FAILURE &&
+        status !== RunStatus.SUCCESS &&
+        status !== RunStatus.CANCELED
       ) {
         startPolling(POLL_INTERVAL);
       }
@@ -293,7 +291,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
 `;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
-  fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
+  fragment PipelineRunLogsSubscriptionStatusFragment on Run {
     id
     runId
     status
@@ -304,7 +302,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
 const RUN_LOGS_QUERY = gql`
   query RunLogsQuery($runId: ID!, $after: Cursor) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on Run {
         id
         runId
         status

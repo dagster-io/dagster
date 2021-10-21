@@ -21,7 +21,7 @@ export interface RunFragmentForRepositoryMatch_repositoryOrigin {
 }
 
 export interface RunFragmentForRepositoryMatch {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   pipeline: RunFragmentForRepositoryMatch_pipeline;
   pipelineSnapshotId: string | null;
