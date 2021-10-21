@@ -110,7 +110,7 @@ export const RunActionsMenu: React.FC<{
                 targetTagName="div"
               >
                 <MenuItemWIP
-                  text="Open in Playground..."
+                  text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
                   href={playgroundPath()}
@@ -283,7 +283,7 @@ export const RunBulkActionsMenu: React.FC<{
 });
 
 const OPEN_PLAYGROUND_UNKNOWN =
-  'Playground is unavailable because the pipeline is not present in the current repository.';
+  'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
 const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`

@@ -321,7 +321,7 @@ def do_it_all():
     do_something()
 ```
 
-Unlike with presets, this config will be used, by default, any time the job is launched, not just when it's launched from the Dagit Playground. I.e. it will also be used when launching the job via a schedule, sensor, `do_it_all_job.execute_in_process` or the GraphQL API. In all these cases, it can instead be overridden with config specified at runtime.
+Unlike with presets, this config will be used, by default, any time the job is launched, not just when it's launched from the Dagit Launchpad. I.e. it will also be used when launching the job via a schedule, sensor, `do_it_all_job.execute_in_process` or the GraphQL API. In all these cases, it can instead be overridden with config specified at runtime.
 
 Alternatively, you can provide "partial" config via a <PyObject module="dagster" object="ConfigMapping" />.
 
@@ -469,7 +469,7 @@ def do_it_all_schedule():
     return do_it_all_preset.run_config
 ```
 
-With the new APIs, you can supply the config in one place (the job), and it will both show up in the Playground and be used by the schedule.
+With the new APIs, you can supply the config in one place (the job), and it will both show up in the Launchpad and be used by the schedule.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config_and_schedule.py
 from dagster import ScheduleDefinition, job, op

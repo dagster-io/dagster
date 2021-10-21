@@ -31,7 +31,7 @@ interface TabConfig {
 const pipelineTabs: {[key: string]: TabConfig} = {
   overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
   playground: {
-    title: 'Playground',
+    title: 'Launchpad',
     pathComponent: 'playground',
     icon: 'manually-entered-data',
     isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
