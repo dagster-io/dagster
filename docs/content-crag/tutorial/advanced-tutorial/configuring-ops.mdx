@@ -5,7 +5,7 @@ description: Ops can be parameterized with runtime configuration
 
 # Configuring Ops
 
-<CodeReferenceLink filePath="examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/advanced/configuring_ops/" />
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_ops/" />
 
 In many situations, we'd like to be able to configure ops at run time. For example, we may want whomever is running the job to decide what dataset it operates on. Configuration is useful when you want the person or system that is launching a job to be able to make choices about what the job does, without needing to modify the job definition.
 
@@ -81,7 +81,7 @@ Select the "Launchpad" tab to get to the place for entering config and launching
 ops:
   download_csv:
     config:
-      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/cereal.csv"
+      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
 ```
 
 Let's enter it into the config editor:
@@ -127,7 +127,7 @@ When executing jobs with the Dagster CLI, we'll need to provide the run config i
 ops:
   download_csv:
     config:
-      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/cereal.csv"
+      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
 ```
 
 We can pass config files in this format to the Dagster CLI tool with the `-c` flag.
