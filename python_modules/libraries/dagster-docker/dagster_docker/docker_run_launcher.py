@@ -5,7 +5,7 @@ import docker
 from dagster import check
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.grpc.types import ExecuteRunArgs
+from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
@@ -98,15 +98,24 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         validate_docker_image(docker_image)
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteRunArgs(
-                pipeline_origin=pipeline_code_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
+        if not context.resume_from_failure:
+            input_json = serialize_dagster_namedtuple(
+                ExecuteRunArgs(
+                    pipeline_origin=pipeline_code_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=self._instance.get_ref(),
+                )
             )
-        )
-
-        command = "dagster api execute_run {}".format(json.dumps(input_json))
+            command = "dagster api execute_run {}".format(json.dumps(input_json))
+        else:
+            input_json = serialize_dagster_namedtuple(
+                ResumeRunArgs(
+                    pipeline_origin=pipeline_code_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=self._instance.get_ref(),
+                )
+            )
+            command = "dagster api resume_run {}".format(json.dumps(input_json))
 
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self.env_vars} if self.env_vars else {}

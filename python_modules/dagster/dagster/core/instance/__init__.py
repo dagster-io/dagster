@@ -35,6 +35,7 @@ from dagster.core.errors import (
     DagsterRunConflict,
 )
 from dagster.core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
@@ -1448,6 +1449,50 @@ records = instance.get_event_records(
 
         try:
             self._run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+        except:
+            error = serializable_error_info_from_exc_info(sys.exc_info())
+            self.report_engine_event(
+                error.message,
+                run,
+                EngineEventData.engine_error(error),
+            )
+            self.report_run_failed(run)
+            raise
+
+        return run
+
+    def resume_run(self, run_id: str, workspace: "IWorkspace"):
+        """Resume a pipeline run.
+
+        This method should be called on runs which have already been launched, but whose run workers
+        have died.
+
+        Args:
+            run_id (str): The id of the run the launch.
+        """
+        from dagster.core.launcher import LaunchRunContext
+        from dagster.core.events import EngineEventData
+
+        run = self.get_run_by_id(run_id)
+        if run is None:
+            raise DagsterInvariantViolationError(
+                f"Could not load run {run_id} that was passed to resume_run"
+            )
+        if run.status not in IN_PROGRESS_RUN_STATUSES:
+            raise DagsterInvariantViolationError(
+                f"Run {run_id} is not in a state that can be resumed"
+            )
+
+        self.report_engine_event(
+            "Launching a new run worker to resume run",
+            run,
+            EngineEventData([]),
+        )
+
+        try:
+            self._run_launcher.launch_run(
+                LaunchRunContext(pipeline_run=run, workspace=workspace, resume_from_failure=True)
+            )
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(

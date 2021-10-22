@@ -73,6 +73,7 @@ def host_mode_execution_context_event_generator(
     raise_on_error,
     executor_defs,
     output_capture,
+    resume_from_failure: bool = False,
 ):
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
@@ -118,6 +119,7 @@ def host_mode_execution_context_event_generator(
             log_manager=log_manager,
             executor=executor,
             output_capture=None,
+            resume_from_failure=resume_from_failure,
         )
 
         yield execution_context
@@ -127,7 +129,7 @@ def host_mode_execution_context_event_generator(
             user_facing_exc_info = (
                 # pylint does not know original_exc_info exists is is_user_code_error is true
                 # pylint: disable=no-member
-                dagster_error.original_exc_info
+                dagster_error.original_exc_info  # type: ignore
                 if dagster_error.is_user_code_error
                 else sys.exc_info()
             )
@@ -142,7 +144,7 @@ def host_mode_execution_context_event_generator(
                 error_info=error_info,
             )
             log_manager.log_dagster_event(
-                level=logging.ERROR, msg=event.message, dagster_event=event
+                level=logging.ERROR, msg=event.message, dagster_event=event  # type: ignore
             )
             yield event
         else:
