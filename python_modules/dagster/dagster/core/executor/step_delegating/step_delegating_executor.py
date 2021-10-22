@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData, log_step_event
+from dagster.core.events import DagsterEvent, EngineEventData, EventMetadataEntry, log_step_event
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
@@ -49,12 +49,12 @@ class StepDelegatingExecutor(Executor):
         self, pipeline_context, steps, active_execution
     ) -> StepHandlerContext:
         return StepHandlerContext(
-            instance=pipeline_context.plan_data.instance,
+            instance=pipeline_context.instance,
             execute_step_args=ExecuteStepArgs(
                 pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
                 pipeline_run_id=pipeline_context.pipeline_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
-                instance_ref=pipeline_context.plan_data.instance.get_ref(),
+                instance_ref=pipeline_context.instance.get_ref(),
                 retry_mode=self.retries,
                 known_state=active_execution.get_known_state(),
             ),
@@ -95,8 +95,8 @@ class StepDelegatingExecutor(Executor):
                 )
 
                 events = self._pop_events(
-                    pipeline_context.plan_data.instance,
-                    pipeline_context.plan_data.pipeline_run.run_id,
+                    pipeline_context.instance,
+                    pipeline_context.run_id,
                 )
                 for dagster_event in events:
                     yield dagster_event
@@ -137,31 +137,46 @@ class StepDelegatingExecutor(Executor):
                 events = []
 
                 if active_execution.check_for_interrupts():
-                    yield DagsterEvent.engine_event(
-                        pipeline_context,
-                        "Executor received termination signal, forwarding to steps",
-                        EngineEventData.interrupted(list(running_steps.keys())),
-                    )
-                    active_execution.mark_interrupted()
-                    for _, step in running_steps.items():
-                        events.extend(
-                            self._log_new_events(
-                                self._step_handler.terminate_step(
-                                    self._get_step_handler_context(
-                                        pipeline_context, [step], active_execution
-                                    )
-                                ),
-                                pipeline_context,
-                                running_steps,
-                            )
+                    if not pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+                        yield DagsterEvent.engine_event(
+                            pipeline_context,
+                            "Executor received termination signal, forwarding to steps",
+                            EngineEventData.interrupted(list(running_steps.keys())),
                         )
+                        active_execution.mark_interrupted()
+                        for _, step in running_steps.items():
+                            events.extend(
+                                self._log_new_events(
+                                    self._step_handler.terminate_step(
+                                        self._get_step_handler_context(
+                                            pipeline_context, [step], active_execution
+                                        )
+                                    ),
+                                    pipeline_context,
+                                    running_steps,
+                                )
+                            )
+                    else:
+                        yield DagsterEvent.engine_event(
+                            pipeline_context,
+                            "Executor received termination signal, not forwarding to steps because "
+                            "run will be resumed",
+                            EngineEventData(
+                                metadata_entries=[
+                                    EventMetadataEntry.text(
+                                        str(running_steps.keys()), "steps_in_flight"
+                                    )
+                                ]
+                            ),
+                        )
+                        active_execution.mark_interrupted()
 
                     return
 
                 events.extend(
                     self._pop_events(
-                        pipeline_context.plan_data.instance,
-                        pipeline_context.plan_data.pipeline_run.run_id,
+                        pipeline_context.instance,
+                        pipeline_context.run_id,
                     )
                 )
 

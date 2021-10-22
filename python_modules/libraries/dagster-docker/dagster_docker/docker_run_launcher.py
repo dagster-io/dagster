@@ -3,7 +3,13 @@ import os
 
 import docker
 from dagster import check
-from dagster.core.launcher.base import LaunchRunContext, RunLauncher
+from dagster.core.launcher.base import (
+    CheckRunHealthResult,
+    LaunchRunContext,
+    RunLauncher,
+    WorkerStatus,
+)
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
@@ -200,3 +206,15 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container.stop()
 
         return True
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+        container = self._get_container(run)
+        if container == None:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+        if container.status == "running":
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        return CheckRunHealthResult(WorkerStatus.FAILED)

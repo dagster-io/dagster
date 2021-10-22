@@ -8,6 +8,7 @@ import pendulum
 from dagster import DagsterInstance, check
 from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
+from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler import execute_scheduler_iteration
@@ -245,3 +246,12 @@ class BackfillDaemon(DagsterDaemon):
 
     def run_iteration(self, instance, workspace):
         yield from execute_backfill_iteration(instance, workspace, self._logger)
+
+
+class MonitoringDaemon(DagsterDaemon):
+    @classmethod
+    def daemon_type(cls):
+        return "MONITORING"
+
+    def run_iteration(self, instance, workspace):
+        yield from execute_monitoring_iteration(instance, workspace, self._logger)
