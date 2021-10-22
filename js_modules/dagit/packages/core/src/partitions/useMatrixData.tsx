@@ -10,6 +10,7 @@ import {StepEventStatus} from '../types/globalTypes';
 
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
+import {PartitionRuns} from './useChunkedPartitionsQuery';
 
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
 type StatusSquareColor =
@@ -66,7 +67,7 @@ export function isStepKeyForNode(nodeName: string, stepKey: string) {
 
 function buildMatrixData(
   layout: GanttChartLayout,
-  partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[],
+  partitions: PartitionRuns[],
   options: DisplayOptions,
 ) {
   // Note this is sorting partition runs in place, I don't think it matters and
@@ -74,8 +75,7 @@ function buildMatrixData(
   partitions.forEach((p) => p.runs.sort(byStartTimeAsc));
 
   const partitionColumns = partitions.map((p) => ({
-    name: p.name,
-    runs: p.runs,
+    ...p,
     steps: layout.boxes.map(({node}) => {
       const datapoints = p.runs
         .map((r, idx) => ({
@@ -151,7 +151,7 @@ function buildMatrixData(
 
 interface MatrixDataInputs {
   solidHandles: SolidHandle[] | false;
-  partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[];
+  partitions: PartitionRuns[];
   stepQuery: string;
   options: DisplayOptions;
 }

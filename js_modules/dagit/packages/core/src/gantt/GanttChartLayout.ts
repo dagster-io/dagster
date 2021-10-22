@@ -228,12 +228,15 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
   }
 };
 
-const ColorsForStates = {
+const TextColorForStates = {
+  [IStepState.RUNNING]: ColorsWIP.Blue700,
+};
+const BackgroundColorForStates = {
+  [IStepState.RUNNING]: ColorsWIP.Blue100,
   [IStepState.RETRY_REQUESTED]: ColorsWIP.Yellow500,
-  [IStepState.RUNNING]: ColorsWIP.Gray400,
   [IStepState.SUCCEEDED]: ColorsWIP.Green500,
   [IStepState.FAILED]: ColorsWIP.Red500,
-  [IStepState.SKIPPED]: 'rgb(173, 185, 152)',
+  [IStepState.SKIPPED]: ColorsWIP.Gray500,
 };
 
 export const boxStyleFor = (
@@ -254,15 +257,16 @@ export const boxStyleFor = (
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      background: `${ColorsForStates[state] || ColorsWIP.Gray400}`,
+      color: TextColorForStates[state] || '#fff',
+      background: BackgroundColorForStates[state] || ColorsWIP.Gray400,
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: ColorsWIP.Gray200,
+    color: ColorsWIP.Gray600,
     background: ColorsWIP.White,
-    border: `1.5px dotted ${ColorsWIP.Gray200}`,
+    border: `1.5px dotted ${ColorsWIP.Gray500}`,
   };
 };
 

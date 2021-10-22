@@ -9,7 +9,7 @@ import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {CursorPaginationControls} from '../ui/CursorControls';
+import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -189,7 +189,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                 />
                 {pipelineRunsOrError.results.length > 0 ? (
                   <div style={{marginTop: '16px'}}>
-                    <CursorPaginationControls {...paginationProps} />
+                    <CursorHistoryControls {...paginationProps} />
                   </div>
                 ) : null}
               </>

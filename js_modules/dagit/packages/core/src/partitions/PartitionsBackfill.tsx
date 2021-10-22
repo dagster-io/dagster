@@ -594,7 +594,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                 <div>
                   See the{' '}
                   <a
-                    href="https://docs.dagster.io/overview/daemon"
+                    href="https://docs.dagster.io/deployment/dagster-daemon"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -621,7 +621,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   Check your instance configuration in <code>dagster.yaml</code> to either configure{' '}
                   the{' '}
                   <a
-                    href="https://docs.dagster.io/overview/pipeline-runs/run-coordinator"
+                    href="https://docs.dagster.io/deployment/run-coordinator"
                     target="_blank"
                     rel="noreferrer"
                   >

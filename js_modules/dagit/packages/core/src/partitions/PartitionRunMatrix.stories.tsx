@@ -4,14 +4,14 @@ import moment from 'moment';
 import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {StepEventStatus} from '../types/globalTypes';
+import {RunStatus, StepEventStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {PartitionRunMatrix} from './PartitionRunMatrix';
 import {
-  PartitionRunMatrixRunFragment,
-  PartitionRunMatrixRunFragment_tags,
-} from './types/PartitionRunMatrixRunFragment';
+  PartitionSetLoaderRunFragment,
+  PartitionSetLoaderRunFragment_tags,
+} from './types/PartitionSetLoaderRunFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -33,7 +33,7 @@ interface ISolidHandle {
 // On the real PartitionView, the tags in the filter bar are passed as a GraphQL query param,
 // to make them work just filter our sample data.
 function simulateTagFilteringInQuery(
-  runs: PartitionRunMatrixRunFragment[],
+  runs: PartitionSetLoaderRunFragment[],
   runTags: TokenizingFieldValue[],
 ) {
   return runs.filter((r) =>
@@ -77,23 +77,28 @@ function buildSolidHandles(solidNames: string[], deps: string[]) {
 function buildRun(
   isoDateString: string,
   statuses: {[stepKey: string]: StepEventStatus},
-  tags: PartitionRunMatrixRunFragment_tags[] = [],
+  tags: PartitionSetLoaderRunFragment_tags[] = [],
 ) {
   const id = faker.random.uuid().slice(0, 8);
   const startTime = new Date(isoDateString).getTime() / 1000;
-  const result: PartitionRunMatrixRunFragment = {
+  const result: PartitionSetLoaderRunFragment = {
     __typename: 'Run',
     id: id,
     runId: id,
+    status: RunStatus.SUCCESS,
     stats: {
       id: id,
       startTime,
+      endTime: startTime + 1,
+      materializations: 0,
       __typename: 'RunStatsSnapshot',
     },
     stepStats: Object.entries(statuses).map(([key, status]) => ({
       __typename: 'RunStepStats',
       stepKey: key,
       status: status,
+      startTime: startTime,
+      endTime: startTime + 1,
       materializations: [],
       expectationResults: [],
     })),
@@ -120,7 +125,7 @@ const PipelineMocks = {
 export const BasicTestCases = () => {
   const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
   const [stepQuery, setStepQuery] = React.useState('');
-  const partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[] = [];
+  const partitions: {name: string; runs: PartitionSetLoaderRunFragment[]}[] = [];
 
   // Good Run
   partitions.push({
@@ -231,6 +236,7 @@ export const BasicTestCases = () => {
         setStepQuery={setStepQuery}
         partitions={partitions.map((p) => ({
           ...p,
+          runsLoaded: true,
           runs: simulateTagFilteringInQuery(p.runs, runTags),
         }))}
       />
@@ -242,12 +248,12 @@ export const LargeDataset = () => {
   const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
   const [stepQuery, setStepQuery] = React.useState('');
   const partitions = React.useMemo(() => {
-    const results: {name: string; runs: PartitionRunMatrixRunFragment[]}[] = [];
+    const results: {name: string; runs: PartitionSetLoaderRunFragment[]}[] = [];
     for (let ii = 0; ii < 300; ii++) {
       const date = moment().startOf('year').add(ii, 'days');
       const runCount = faker.random.number(10);
 
-      const runs: PartitionRunMatrixRunFragment[] = [];
+      const runs: PartitionSetLoaderRunFragment[] = [];
       for (let x = 0; x < runCount; x++) {
         runs.push(
           buildRun(date.clone().add(x, 'minutes').toISOString(), {
@@ -277,6 +283,7 @@ export const LargeDataset = () => {
         setStepQuery={setStepQuery}
         partitions={partitions.map((p) => ({
           ...p,
+          runsLoaded: true,
           runs: simulateTagFilteringInQuery(p.runs, runTags),
         }))}
       />
