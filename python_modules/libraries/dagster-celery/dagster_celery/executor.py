@@ -105,22 +105,22 @@ def celery_executor(init_context):
     )
 
 
-def _submit_task(app, pipeline_context, step, queue, priority, known_state):
+def _submit_task(app, plan_context, step, queue, priority, known_state):
     from .tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=pipeline_context.pipeline_run.run_id,
+        pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
+        pipeline_run_id=plan_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
-        instance_ref=pipeline_context.instance.get_ref(),
-        retry_mode=pipeline_context.executor.retries.for_inner_plan(),
+        instance_ref=plan_context.instance.get_ref(),
+        retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
     )
 
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=pipeline_context.reconstructable_pipeline.to_dict(),
+        executable_dict=plan_context.reconstructable_pipeline.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,
@@ -150,11 +150,11 @@ class CeleryExecutor(Executor):
     def retries(self):
         return self._retries
 
-    def execute(self, pipeline_context, execution_plan):
+    def execute(self, plan_context, execution_plan):
         from .core_execution_loop import core_celery_execution_loop
 
         return core_celery_execution_loop(
-            pipeline_context, execution_plan, step_execution_fn=_submit_task
+            plan_context, execution_plan, step_execution_fn=_submit_task
         )
 
     @staticmethod
