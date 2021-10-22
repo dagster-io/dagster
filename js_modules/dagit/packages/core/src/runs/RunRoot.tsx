@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
