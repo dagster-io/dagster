@@ -12,7 +12,7 @@ from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
+from dagster.core.execution.stats import build_run_step_stats_from_events
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
@@ -306,73 +306,6 @@ class SqlEventLogStorage(EventLogStorage):
         check.str_param(run_id, "run_id")
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
-        STEP_STATS_EVENT_TYPES = [
-            DagsterEventType.STEP_START.value,
-            DagsterEventType.STEP_SUCCESS.value,
-            DagsterEventType.STEP_SKIPPED.value,
-            DagsterEventType.STEP_FAILURE.value,
-            DagsterEventType.STEP_RESTARTED.value,
-        ]
-
-        by_step_query = (
-            db.select(
-                [
-                    SqlEventLogStorageTable.c.step_key,
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
-                    db.func.count(SqlEventLogStorageTable.c.id).label("n_events_of_type_for_step"),
-                ]
-            )
-            .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.step_key != None)
-            .where(SqlEventLogStorageTable.c.dagster_event_type.in_(STEP_STATS_EVENT_TYPES))
-        )
-
-        if step_keys:
-            by_step_query = by_step_query.where(SqlEventLogStorageTable.c.step_key.in_(step_keys))
-
-        by_step_query = by_step_query.group_by(
-            SqlEventLogStorageTable.c.step_key,
-            SqlEventLogStorageTable.c.dagster_event_type,
-        )
-
-        with self.run_connection(run_id) as conn:
-            results = conn.execute(by_step_query).fetchall()
-
-        by_step_key = defaultdict(dict)
-        for result in results:
-            step_key = result.step_key
-            if result.dagster_event_type == DagsterEventType.STEP_START.value:
-                by_step_key[step_key]["start_time"] = (
-                    datetime_as_float(result.timestamp) if result.timestamp else None
-                )
-                by_step_key[step_key]["attempts"] = by_step_key[step_key].get("attempts", 0) + 1
-            if result.dagster_event_type == DagsterEventType.STEP_RESTARTED.value:
-                by_step_key[step_key]["attempts"] = (
-                    # In case we see step retarted events but not a step started event, we want to
-                    # only count the restarted events, since the attempt count represents
-                    # the number of times we have successfully started runnning the step
-                    by_step_key[step_key].get("attempts", 0)
-                    + result.n_events_of_type_for_step
-                )
-            if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
-                by_step_key[step_key]["end_time"] = (
-                    datetime_as_float(result.timestamp) if result.timestamp else None
-                )
-                by_step_key[step_key]["status"] = StepEventStatus.FAILURE
-            if result.dagster_event_type == DagsterEventType.STEP_SUCCESS.value:
-                by_step_key[step_key]["end_time"] = (
-                    datetime_as_float(result.timestamp) if result.timestamp else None
-                )
-                by_step_key[step_key]["status"] = StepEventStatus.SUCCESS
-            if result.dagster_event_type == DagsterEventType.STEP_SKIPPED.value:
-                by_step_key[step_key]["end_time"] = (
-                    datetime_as_float(result.timestamp) if result.timestamp else None
-                )
-                by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
-
-        materializations = defaultdict(list)
-        expectation_results = defaultdict(list)
         raw_event_query = (
             db.select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
@@ -380,14 +313,21 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
+                        DagsterEventType.STEP_START.value,
+                        DagsterEventType.STEP_SUCCESS.value,
+                        DagsterEventType.STEP_SKIPPED.value,
+                        DagsterEventType.STEP_FAILURE.value,
+                        DagsterEventType.STEP_RESTARTED.value,
                         DagsterEventType.ASSET_MATERIALIZATION.value,
                         DagsterEventType.STEP_EXPECTATION_RESULT.value,
+                        DagsterEventType.STEP_RESTARTED.value,
+                        DagsterEventType.STEP_UP_FOR_RETRY.value,
+                        DagsterEventType.ENGINE_EVENT.value,
                     ]
                 )
             )
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
-
         if step_keys:
             raw_event_query = raw_event_query.where(
                 SqlEventLogStorageTable.c.step_key.in_(step_keys)
@@ -397,34 +337,15 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(raw_event_query).fetchall()
 
         try:
-            for (json_str,) in results:
-                event = check.inst_param(
+            records = [
+                check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
                 )
-                if event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-                    materializations[event.step_key].append(
-                        event.dagster_event.event_specific_data.materialization
-                    )
-                elif event.dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-                    expectation_results[event.step_key].append(
-                        event.dagster_event.event_specific_data.expectation_result
-                    )
+                for (json_str,) in results
+            ]
+            return build_run_step_stats_from_events(run_id, records)
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
-
-        return [
-            RunStepKeyStatsSnapshot(
-                run_id=run_id,
-                step_key=step_key,
-                status=value.get("status"),
-                start_time=value.get("start_time"),
-                end_time=value.get("end_time"),
-                materializations=materializations.get(step_key),
-                expectation_results=expectation_results.get(step_key),
-                attempts=value.get("attempts"),
-            )
-            for step_key, value in by_step_key.items()
-        ]
 
     def _apply_migration(self, migration_name, migration_fn, print_fn, force):
         if self.has_secondary_index(migration_name):
