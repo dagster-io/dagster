@@ -112,6 +112,16 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
         return;
       }
       const rect = el.getBoundingClientRect();
+      if (
+        rect.top === 0 &&
+        rect.left === 0 &&
+        rect.right === 0 &&
+        rect.bottom === 0 &&
+        rect.width === 0 &&
+        rect.height === 0
+      ) {
+        return;
+      }
       this.setState({
         previewPosition: {
           left: rect.left + rect.width,
