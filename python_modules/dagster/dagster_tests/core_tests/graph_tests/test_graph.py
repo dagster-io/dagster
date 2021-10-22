@@ -23,7 +23,7 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline import PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,

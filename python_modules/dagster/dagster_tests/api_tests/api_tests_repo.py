@@ -13,7 +13,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.sensor import RunRequest
+from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.test_utils import default_mode_def_for_test
 
 

@@ -2,8 +2,8 @@ from typing import Any, Optional
 
 from dagster import check
 from dagster.core.definitions.job import JobDefinition
-from dagster.core.definitions.logger import LoggerDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.logger_definition import LoggerDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 
 from .output import RUN_ID_PLACEHOLDER

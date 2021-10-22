@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin

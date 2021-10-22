@@ -13,7 +13,7 @@ from dagster import (
     lambda_solid,
     reconstructable,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance

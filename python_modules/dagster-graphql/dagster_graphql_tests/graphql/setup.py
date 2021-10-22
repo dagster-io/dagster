@@ -59,7 +59,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter

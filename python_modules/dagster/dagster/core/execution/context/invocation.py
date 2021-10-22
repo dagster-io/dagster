@@ -5,12 +5,12 @@ from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle
-from dagster.core.definitions.hook import HookDefinition
+from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op_def import OpDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import IContainsGenerator, Resources, ScopedResourcesBuilder
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import (
     DagsterInvalidConfigError,

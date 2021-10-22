@@ -3,7 +3,7 @@ from typing import List
 
 from dagster import executor, pipeline, reconstructable, solid
 from dagster.config.field_utils import Permissive
-from dagster.core.definitions.executor import multiple_process_executor_requirements
+from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import execute_pipeline

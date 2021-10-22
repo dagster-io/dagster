@@ -6,11 +6,11 @@ from dagster import check
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph import graph
 from ...definitions.dependency import Node
-from ...definitions.hook import HookDefinition
+from ...definitions.hook_definition import HookDefinition
 from ...definitions.mode import ModeDefinition
-from ...definitions.op_def import OpDefinition
-from ...definitions.resource import IContainsGenerator, Resources
-from ...definitions.solid import SolidDefinition
+from ...definitions.op_definition import OpDefinition
+from ...definitions.resource_definition import IContainsGenerator, Resources
+from ...definitions.solid_definition import SolidDefinition
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep

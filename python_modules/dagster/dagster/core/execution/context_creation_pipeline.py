@@ -22,9 +22,9 @@ from typing import (
 
 from dagster import check
 from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
-from dagster.core.definitions.executor import check_cross_process_constraints
-from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.executor_definition import check_cross_process_constraints
+from dagster.core.definitions.pipeline_definition_definition_base import IPipeline
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.memoization import validate_reexecution_memoization

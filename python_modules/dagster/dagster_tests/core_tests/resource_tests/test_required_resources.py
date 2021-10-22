@@ -20,7 +20,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions.configurable import configured
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.types.dagster_type import create_any_type

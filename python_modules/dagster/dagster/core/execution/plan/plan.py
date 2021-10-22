@@ -25,9 +25,9 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.executor import ExecutorRequirement
+from dagster.core.definitions.executor_definition import ExecutorRequirement
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,

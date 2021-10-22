@@ -1,6 +1,6 @@
 import kubernetes
 from dagster import Field, StringSource, check, executor
-from dagster.core.definitions.executor import multiple_process_executor_requirements
+from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData

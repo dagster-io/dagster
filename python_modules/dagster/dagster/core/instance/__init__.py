@@ -26,8 +26,8 @@ from typing import (
 import yaml
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterHomeNotSetError,
     DagsterInvariantViolationError,

@@ -4,8 +4,8 @@ from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
-from dagster.core.definitions.pipeline import PipelineSubsetDefinition
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition import PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext

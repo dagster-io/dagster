@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.config.snap import ConfigSchemaSnapshot, snap_from_config_type
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
 from dagster.utils import merge_dicts
 
 

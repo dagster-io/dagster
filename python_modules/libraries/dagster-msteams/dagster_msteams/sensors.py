@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from dagster.core.definitions.pipeline_sensor import (
+from dagster.core.definitions.pipeline_definition_definition_sensor import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )

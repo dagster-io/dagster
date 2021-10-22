@@ -1,6 +1,6 @@
 import pytest
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.resources_init import (
@@ -65,7 +65,7 @@ def test_clean_event_generator_exit():
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/)
     """
     from dagster.core.execution.context.init import InitResourceContext
-    from dagster.core.definitions.resource import ScopedResourcesBuilder
+    from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 
     pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()

@@ -4,8 +4,8 @@ from typing import Any, Optional
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
 from dagster.core.instance import DagsterInstance

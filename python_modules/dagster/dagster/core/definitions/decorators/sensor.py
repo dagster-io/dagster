@@ -3,7 +3,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
 from dagster import check
-from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError

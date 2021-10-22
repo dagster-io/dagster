@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optio
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.definitions.solid import NodeDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.solid_definition import NodeDefinition
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,

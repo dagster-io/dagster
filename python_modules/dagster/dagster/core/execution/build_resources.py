@@ -3,7 +3,7 @@ from typing import Any, Dict, Generator, Optional
 
 from dagster import check
 from dagster.config.validate import process_config
-from dagster.core.definitions.resource import ResourceDefinition, Resources, ScopedResourcesBuilder
+from dagster.core.definitions.resource_definition import ResourceDefinition, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.run_config import define_resource_dictionary_cls
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.resources_init import resource_initialization_manager

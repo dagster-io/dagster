@@ -8,15 +8,15 @@ from abc import ABC, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
 from dagster import check
-from dagster.core.definitions.hook import HookDefinition
+from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op_def import OpDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
+from dagster.core.definitions.pipeline_definition_definition_base import IPipeline
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
-    from dagster.core.definitions.resource import Resources
+    from dagster.core.definitions.resource_definition import Resources
     from .hook import HookContext
 
 

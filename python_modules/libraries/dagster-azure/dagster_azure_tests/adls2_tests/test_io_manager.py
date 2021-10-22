@@ -13,7 +13,7 @@ from dagster import (
     op,
     resource,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan

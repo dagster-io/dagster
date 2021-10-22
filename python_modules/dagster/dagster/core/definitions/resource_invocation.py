@@ -9,7 +9,7 @@ from ...config import Shape
 from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.resource import ResourceDefinition
+    from dagster.core.definitions.resource_definition import ResourceDefinition
     from dagster.core.execution.context.init import InitResourceContext, UnboundInitResourceContext
 
 
