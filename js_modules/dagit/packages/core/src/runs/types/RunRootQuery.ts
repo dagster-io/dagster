@@ -83,7 +83,13 @@ export interface RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
 export type RunRootQuery_pipelineRunOrError_Run_stats = RunRootQuery_pipelineRunOrError_Run_stats_PythonError | RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
 
 export interface RunRootQuery_pipelineRunOrError_Run_stepStats_attempts {
-  __typename: "RunStepAttempt";
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunRootQuery_pipelineRunOrError_Run_stepStats_markers {
+  __typename: "RunMarker";
   startTime: number | null;
   endTime: number | null;
 }
@@ -95,6 +101,7 @@ export interface RunRootQuery_pipelineRunOrError_Run_stepStats {
   startTime: number | null;
   endTime: number | null;
   attempts: RunRootQuery_pipelineRunOrError_Run_stepStats_attempts[];
+  markers: RunRootQuery_pipelineRunOrError_Run_stepStats_markers[];
 }
 
 export interface RunRootQuery_pipelineRunOrError_Run {

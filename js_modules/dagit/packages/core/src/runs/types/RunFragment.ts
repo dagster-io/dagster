@@ -79,7 +79,13 @@ export interface RunFragment_stats_RunStatsSnapshot {
 export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_RunStatsSnapshot;
 
 export interface RunFragment_stepStats_attempts {
-  __typename: "RunStepAttempt";
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunFragment_stepStats_markers {
+  __typename: "RunMarker";
   startTime: number | null;
   endTime: number | null;
 }
@@ -91,6 +97,7 @@ export interface RunFragment_stepStats {
   startTime: number | null;
   endTime: number | null;
   attempts: RunFragment_stepStats_attempts[];
+  markers: RunFragment_stepStats_markers[];
 }
 
 export interface RunFragment {

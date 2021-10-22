@@ -75,6 +75,10 @@ export const RunFragments = {
           startTime
           endTime
         }
+        markers {
+          startTime
+          endTime
+        }
       }
     }
 

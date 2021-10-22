@@ -93,6 +93,7 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   return logCaptureSteps;
 };
 
+const fromTimestamp = (ts: number | null) => (ts ? ts * 1000 : undefined);
 export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
@@ -107,10 +108,10 @@ export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
     return metadata;
   }
   if (run.stats.startTime) {
-    metadata.startedPipelineAt = run.stats.startTime;
+    metadata.startedPipelineAt = fromTimestamp(run.stats.startTime);
   }
   if (run.stats.endTime) {
-    metadata.exitedAt = run.stats.endTime;
+    metadata.exitedAt = fromTimestamp(run.stats.endTime);
   }
 
   run.stepStats.forEach((stepStat) => {
@@ -120,8 +121,8 @@ export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
       state: stepStatusToStepState(stepStat.status),
 
       // execution start and stop (user-code) inclusive of all retries
-      start: stepStat.startTime || undefined,
-      end: stepStat.endTime || undefined,
+      start: fromTimestamp(stepStat.startTime),
+      end: fromTimestamp(stepStat.endTime),
 
       // current state + prev state transition times
       transitions: [],
@@ -131,8 +132,8 @@ export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
       attempts: stepStat.attempts.map(
         (attempt, idx) =>
           ({
-            start: attempt.startTime,
-            end: attempt.endTime,
+            start: fromTimestamp(attempt.startTime),
+            end: fromTimestamp(attempt.endTime),
             exitState:
               idx === stepStat.attempts.length - 1
                 ? stepStatusToStepState(stepStat.status)
@@ -141,7 +142,11 @@ export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
       ),
 
       // accumulated metadata
-      markers: [],
+      markers: stepStat.markers.map((marker, idx) => ({
+        start: fromTimestamp(marker.startTime),
+        end: fromTimestamp(marker.endTime),
+        key: `marker_${idx}`,
+      })),
     };
   });
 
@@ -186,6 +191,11 @@ export function extractMetadataFromLogs(
     step.state = state;
     step.attempts = [];
   };
+
+  console.log(
+    'MARKER EVENTS',
+    logs.filter((log) => log.__typename === 'EngineEvent' && log.stepKey === 'one'),
+  );
 
   logs.forEach((log) => {
     const timestamp = Number.parseInt(log.timestamp, 10);
