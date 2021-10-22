@@ -10,6 +10,7 @@ import {showLaunchError} from '../execute/showLaunchError';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
@@ -46,16 +47,16 @@ interface RunProps {
   run?: RunFragment;
 }
 
-const runStatusEmoji = (status: RunStatus) => {
+const runStatusFavicon = (status: RunStatus) => {
   switch (status) {
     case RunStatus.CANCELED:
     case RunStatus.CANCELING:
     case RunStatus.FAILURE:
-      return '🔴';
+      return '/favicon-run-failed.svg';
     case RunStatus.SUCCESS:
-      return '🟢';
+      return '/favicon-run-success.svg';
     default:
-      return '🔵';
+      return '/favicon-run-pending.svg';
   }
 };
 
@@ -67,10 +68,9 @@ export const Run: React.FC<RunProps> = (props) => {
     defaults: {selection: ''},
   });
 
+  useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
-    run
-      ? `${runStatusEmoji(run.status)} ${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]`
-      : `Run: ${runId}`,
+    run ? `${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]` : `Run: ${runId}`,
   );
 
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
