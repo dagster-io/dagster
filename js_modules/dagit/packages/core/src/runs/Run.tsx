@@ -279,15 +279,15 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   };
 
   const gantt = (metadata: IRunMetadataDict) => {
-    if (logs.loading) {
+    if (logs.loading || !run) {
       return <GanttChartLoadingState runId={runId} />;
     }
 
-    if (run?.status === 'QUEUED') {
+    if (run.status === 'QUEUED') {
       return <QueuedState runId={runId} />;
     }
 
-    if (run?.executionPlan && runtimeGraph) {
+    if (run.executionPlan && runtimeGraph) {
       return (
         <GanttChart
           options={{

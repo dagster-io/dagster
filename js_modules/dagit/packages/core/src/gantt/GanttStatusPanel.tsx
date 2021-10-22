@@ -72,7 +72,12 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
 
   return (
     <div style={{overflowY: 'auto'}}>
-      <RunGroupPanel runId={runId} />
+      <RunGroupPanel
+        runId={runId}
+        runStatusLastChangedAt={
+          metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
+        }
+      />
       <SidebarSection title={`${isFinished ? 'Not Executed' : 'Preparing'} (${preparing.length})`}>
         <div>
           {preparing.length === 0 ? (
