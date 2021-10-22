@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
 name: dagster
-version: 0.11.3
+version: 0.0.1-dev
 kubeVersion: ">= 1.15.0-0"
 description: Dagster is a data orchestrator for machine learning, analytics, and ETL.
 type: application
@@ -15,7 +15,7 @@ sources:
   - https://github.com/dagster-io/dagster/tree/master/helm/dagster
 dependencies:
   - name: dagster-user-deployments
-    version: 0.11.3
+    version: 0.0.1-dev
     condition: dagster-user-deployments.enableSubchart
   - name: postgresql
     version: 8.1.0
@@ -34,4 +34,4 @@ maintainers:
     email: rex@elementl.com
     url: https://dagster.io
 icon: https://dagster.io/images/logo.png
-appVersion: 0.11.3
+appVersion: dev
