@@ -478,8 +478,9 @@ def test_multiproc_invalid():
         ],
     )
     # which is invalid for multiproc
-    assert add_result.exit_code != 0
-    assert "DagsterUnmetExecutorRequirementsError" in add_result.output
+    assert add_result.exit_code == 0
+    # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
+    assert re.match(r"Using temporary directory [a-zA-Z0-9/_]+ for storage", add_result.output)
 
 
 def test_tags_pipeline_or_job():
