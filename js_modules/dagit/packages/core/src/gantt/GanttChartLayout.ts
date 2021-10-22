@@ -230,10 +230,6 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 
 const TextColorForStates = {
   [IStepState.RUNNING]: ColorsWIP.Blue700,
-  [IStepState.RETRY_REQUESTED]: 'rgba(0, 0, 0, 0.85)',
-  [IStepState.SUCCEEDED]: 'rgba(0, 0, 0, 0.85)',
-  [IStepState.FAILED]: 'rgba(0, 0, 0, 0.85)',
-  [IStepState.SKIPPED]: 'rgba(0, 0, 0, 0.85)',
 };
 const BackgroundColorForStates = {
   [IStepState.RUNNING]: ColorsWIP.Blue100,
@@ -261,7 +257,7 @@ export const boxStyleFor = (
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      color: TextColorForStates[state] || ColorsWIP.Gray900,
+      color: TextColorForStates[state] || '#fff',
       background: BackgroundColorForStates[state] || ColorsWIP.Gray400,
     };
   }
