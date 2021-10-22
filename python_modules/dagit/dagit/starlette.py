@@ -28,6 +28,9 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon.ico",
     "/favicon.png",
     "/favicon.svg",
+    "/favicon-run-pending.svg",
+    "/favicon-run-failed.svg",
+    "/favicon-run-success.svg",
     "/asset-manifest.json",
     "/robots.txt",
 ]
