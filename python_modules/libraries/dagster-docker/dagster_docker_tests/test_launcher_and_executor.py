@@ -128,7 +128,8 @@ def test_recovery():
                 "class": "DockerRunLauncher",
                 "module": "dagster_docker",
                 "config": launcher_config,
-            }
+            },
+            "run_monitoring": {"enabled": True},
         }
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker_slow", docker_image)
@@ -163,8 +164,8 @@ def test_recovery():
 
             instance.run_launcher._get_container(  # pylint:disable=protected-access
                 instance.get_run_by_id(run.run_id)
-            ).stop(timeout=0)
-            instance.resume_run(run.run_id, workspace)
+            ).stop()
+            instance.resume_run(run.run_id, workspace, attempt_number=1)
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
             for log in instance.all_logs(run.run_id):

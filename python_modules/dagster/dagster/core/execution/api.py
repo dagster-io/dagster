@@ -7,7 +7,7 @@ from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinitio
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -797,12 +797,20 @@ def pipeline_execution_iterator(
             if reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELING:
                 event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
             else:
-                event = DagsterEvent.pipeline_failure(
-                    pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, treating as failure.",
-                    pipeline_canceled_info,
-                )
+                if pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+                    event = DagsterEvent.engine_event(
+                        pipeline_context,
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, not treating as failure because run will be resumed.",
+                        EngineEventData(),
+                    )
+                else:
+                    event = DagsterEvent.pipeline_failure(
+                        pipeline_context,
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, treating as failure.",
+                        pipeline_canceled_info,
+                    )
         elif pipeline_exception_info:
             event = DagsterEvent.pipeline_failure(
                 pipeline_context,
