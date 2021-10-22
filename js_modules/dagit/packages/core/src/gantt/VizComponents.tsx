@@ -17,6 +17,15 @@ export const OptionsContainer = styled.div`
   ${CursorControlsContainer} {
     margin-top: 0;
     gap: 8px;
+
+    @media (max-width: 1100px) {
+      & .hideable-button-text {
+        display: none;
+      }
+      & div[role='img'] {
+        margin: 0;
+      }
+    }
   }
 `;
 
