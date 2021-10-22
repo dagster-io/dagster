@@ -66,6 +66,16 @@ export const RunFragments = {
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
       ...RunDetailsFragment
+      stepStats {
+        stepKey
+        status
+        startTime
+        endTime
+        attempts {
+          startTime
+          endTime
+        }
+      }
     }
 
     ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
