@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -105,7 +104,6 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
 
 const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
-  useDocumentTitle(`Run: ${runId}`);
 
   if (!data || !data.pipelineRunOrError) {
     return <Run run={undefined} runId={runId} />;

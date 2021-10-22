@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-restricted-imports
 import {Popover2, Popover2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
@@ -5,6 +6,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
+import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagit-popover.bp3-popover2,
@@ -15,6 +17,34 @@ export const GlobalPopoverStyle = createGlobalStyle`
   .dagit-popover .bp3-popover2-content,
   .dagit-popover .bp3-popover-content {
     border-radius: 4px;
+
+    .bp3-input-group {
+      .bp3-icon.bp3-icon-search {
+        width: 16px;
+        height: 16px;
+        background: ${ColorsWIP.Gray900};
+        mask-image: url(${require('./icon-svgs/search.svg').default});
+        mask-size: cover;
+        &::before { 
+          content: '';
+        }
+        svg {
+          display: none;
+        }
+      }
+        
+      .bp3-input {
+        border: none;
+        border-radius: 8px;
+        box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px, ${
+  ColorsWIP.KeylineGray
+} inset 2px 2px 1.5px;
+        font-family: ${FontFamily.default};
+        ::placeholder {
+          color: ${ColorsWIP.Gray500};
+        }
+      }
+    }
   }
 
   .dagit-popover .bp3-popover2-content > :first-child {

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from './Box';
 import {ButtonWIP} from './Button';
 import {IconWIP} from './Icon';
 
@@ -20,10 +19,7 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
   advanceCursor,
 }) => {
   return (
-    <Box
-      margin={{top: 16}}
-      flex={{direction: 'row', alignItems: 'center', gap: 12, justifyContent: 'center'}}
-    >
+    <CursorControlsContainer>
       <ButtonWIP disabled={!hasPrevCursor} icon={<IconWIP name="arrow_back" />} onClick={popCursor}>
         Previous
       </ButtonWIP>
@@ -34,7 +30,7 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
       >
         Next
       </ButtonWIP>
-    </Box>
+    </CursorControlsContainer>
   );
 };
 
@@ -45,10 +41,9 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
   advanceCursor,
 }) => {
   return (
-    <CursorHistoryControlsContainer>
+    <CursorControlsContainer>
       <ButtonWIP
         icon={<IconWIP name="arrow_back" />}
-        style={{marginRight: 4}}
         disabled={!hasNextCursor}
         onClick={advanceCursor}
       >
@@ -56,23 +51,19 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
       </ButtonWIP>
       <ButtonWIP
         rightIcon={<IconWIP name="arrow_forward" />}
-        style={{marginLeft: 4}}
         disabled={!hasPrevCursor}
         onClick={popCursor}
       >
         <span className="hideable-button-text">Newer</span>
       </ButtonWIP>
-    </CursorHistoryControlsContainer>
+    </CursorControlsContainer>
   );
 };
 
-const CursorHistoryControlsContainer = styled.div`
+export const CursorControlsContainer = styled.div`
   display: flex;
+  justify-content: center;
   align-items: center;
-
-  @media (max-width: 1000px) {
-    & .hideable-button-text {
-      display: none;
-    }
-  }
+  gap: 12px;
+  margin-top: 16px;
 `;

@@ -17,9 +17,11 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
 };
 
 export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description, icon, action}) => {
+  const singleContentElement = [title, description, action].filter(Boolean).length === 1;
+
   return (
     <Box
-      flex={{gap: 20, alignItems: 'flex-start'}}
+      flex={{gap: 20, alignItems: singleContentElement ? 'center' : 'flex-start'}}
       background={ColorsWIP.Gray50}
       padding={24}
       style={{
@@ -36,7 +38,12 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description,
       ) : (
         <IconWIP name={icon} size={48} color={ColorsWIP.Gray400} />
       )}
-      <Box flex={{gap: 8, direction: 'column'}}>
+      <Box
+        flex={{
+          gap: 8,
+          direction: 'column',
+        }}
+      >
         {title && <Subheading style={{color: ColorsWIP.Gray900}}>{title}</Subheading>}
         {description && <div style={{color: ColorsWIP.Gray500}}>{description}</div>}
         {action}

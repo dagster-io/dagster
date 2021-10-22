@@ -14,7 +14,7 @@ const RUN_STATUS_COLORS = {
   NOT_STARTED: ColorsWIP.Gray600,
   STARTING: ColorsWIP.Gray400,
   MANAGED: ColorsWIP.Gray400,
-  STARTED: ColorsWIP.Gray400,
+  STARTED: ColorsWIP.Blue500,
   SUCCESS: ColorsWIP.Green500,
   FAILURE: ColorsWIP.Red500,
   CANCELING: ColorsWIP.Red500,

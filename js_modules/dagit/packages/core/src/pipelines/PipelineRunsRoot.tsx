@@ -12,7 +12,7 @@ import {
 } from '../runs/RunsFilterInput';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
-import {CursorPaginationControls} from '../ui/CursorControls';
+import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -122,7 +122,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 />
                 {hasNextCursor || hasPrevCursor ? (
                   <div style={{marginTop: '20px'}}>
-                    <CursorPaginationControls {...paginationProps} />
+                    <CursorHistoryControls {...paginationProps} />
                   </div>
                 ) : null}
               </>
