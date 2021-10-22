@@ -9,7 +9,7 @@ const DAGSTER_REPO =
 
 const DOCS_SNIPPET = path.join(
   DAGSTER_REPO,
-  "/examples/docs_snippets_crag/docs_snippets_crag"
+  "/examples/docs_snippets/docs_snippets"
 );
 
 export interface SnapshotStats {

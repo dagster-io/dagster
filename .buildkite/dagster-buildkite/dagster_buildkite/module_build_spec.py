@@ -10,7 +10,7 @@ MYPY_EXCLUDES = [
     "python_modules/libraries/dagster-databricks",
     "python_modules/libraries/dagster-dbt",
     "python_modules/libraries/dagster-docker",
-    "examples/docs_snippets_crag",
+    "examples/docs_snippets",
 ]
 
 
