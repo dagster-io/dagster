@@ -141,7 +141,7 @@ dask-worker-space
 
 # Examples outputs
 examples/docs_snippets/docs_snippets/**/**/output/
-examples/docs_snippets_crag/docs_snippets_crag/**/**/output/
+examples/docs_snippets/docs_snippets/**/**/output/
 examples/**/**/example.db
 
 # Telemetry instance id

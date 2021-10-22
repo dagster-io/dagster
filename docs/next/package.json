@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=3001 next-remote-watch ../content-crag",
+    "dev": "PORT=3001 next-remote-watch ../content",
     "build": "next build",
     "build-master": "VERSIONING_DISABLED=true next build",
     "start": "next start",
     "snapshot": "ts-node -O '{\"module\": \"commonjs\"}' scripts/snapshot.ts && yarn format",
     "test": "jest",
-    "format": "prettier --config ./.prettierrc.js --write \"../content-crag/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content-crag/**/*.mdx\" --output --silent"
+    "format": "prettier --config ./.prettierrc.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.18.0",

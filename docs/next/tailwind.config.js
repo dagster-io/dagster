@@ -7,7 +7,7 @@ module.exports = {
     "./pages/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
     "./layouts/**/*.{js,jsx,ts,tsx}",
-    "../content-crag/**/*.mdx",
+    "../content/**/*.mdx",
   ],
   darkMode: "class",
   variants: {

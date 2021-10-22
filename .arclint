@@ -8,7 +8,7 @@
     "isort": {
       "type": "isort",
       "include": "(\\.py$)",
-      "exclude": "(examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/)"
+      "exclude": "(examples/docs_snippets/docs_snippets/intro_tutorial/)"
     },
     "eslint": {
       "type": "eslint",
