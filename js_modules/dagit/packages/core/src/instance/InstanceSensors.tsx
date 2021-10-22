@@ -103,7 +103,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
             <p>
               This instance does not have any sensors defined. Visit the{' '}
               <a
-                href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                href="https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules"
                 target="_blank"
                 rel="noreferrer"
               >

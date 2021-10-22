@@ -26,7 +26,7 @@ export const Default = () => {
           <div>
             This instance does not have any schedules defined. Visit the{' '}
             <a
-              href="https://docs.dagster.io/overview/schedules-sensors/schedules"
+              href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors"
               target="_blank"
               rel="noreferrer"
             >
