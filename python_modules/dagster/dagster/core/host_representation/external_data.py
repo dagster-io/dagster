@@ -571,7 +571,7 @@ def external_sensor_data_from_def(sensor_def):
     first_target = sensor_def.targets[0] if sensor_def.targets else None
 
     asset_keys = None
-    if isinstance(sensor_def, AssetSensorDefinition):
+    if hasattr(sensor_def, "asset_key"):
         asset_keys = [sensor_def.asset_key]
 
     return ExternalSensorData(
