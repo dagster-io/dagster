@@ -1433,6 +1433,20 @@
                             "type": "null"
                         }
                     ]
+                },
+                "additionalCeleryArgs": {
+                    "title": "Additionalceleryargs",
+                    "items": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

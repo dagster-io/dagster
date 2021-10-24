@@ -60,7 +60,7 @@ spec:
           imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $celeryK8sRunLauncherConfig.image) | quote }}
           command: ["dagster-celery"]
-          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}", {{- if $queue.additionalCeleryArgs -}}"--", "{{- join "\",\"" $queue.additionalCeleryArgs -}}" {{- end -}}]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:

@@ -86,7 +86,11 @@ def test_celery_queue_inherit_config_source(
     }
 
     workerQueues = [
-        {"name": "dagster", "replicaCount": 2},
+        {
+            "name": "dagster",
+            "replicaCount": 2,
+            "additionalCeleryArgs": ["-E", "--concurrency", "16"],
+        },
         {"name": "extra-queue-1", "replicaCount": 1, "configSource": {"worker_concurrency": 4}},
     ]
 
@@ -109,6 +113,36 @@ def test_celery_queue_inherit_config_source(
     assert len(celery_queue_deployments) == 2
 
     assert len(celery_queue_configmaps) == 2
+
+    dagster_container_spec = celery_queue_deployments[0].spec.template.spec.containers[0]
+    assert dagster_container_spec.command == ["dagster-celery"]
+    assert dagster_container_spec.args == [
+        "worker",
+        "start",
+        "-A",
+        "dagster_celery_k8s.app",
+        "-y",
+        "/opt/dagster/dagster_home/celery-config.yaml",
+        "-q",
+        "dagster",
+        "--",
+        "-E",
+        "--concurrency",
+        "16",
+    ]
+
+    extra_queue_container_spec = celery_queue_deployments[1].spec.template.spec.containers[0]
+    assert extra_queue_container_spec.command == ["dagster-celery"]
+    assert extra_queue_container_spec.args == [
+        "worker",
+        "start",
+        "-A",
+        "dagster_celery_k8s.app",
+        "-y",
+        "/opt/dagster/dagster_home/celery-config.yaml",
+        "-q",
+        "extra-queue-1",
+    ]
 
     dagster_celery = yaml.full_load(celery_queue_configmaps[0].data["celery.yaml"])
     extra_queue_celery = yaml.full_load(celery_queue_configmaps[1].data["celery.yaml"])
