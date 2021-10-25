@@ -316,7 +316,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       );
     }
 
-    return <NonIdealState icon="error" title="Unable to build execution plan" />;
+    return <NonIdealState icon="error" title="Loading execution plan" />;
   };
 
   return (

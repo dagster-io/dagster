@@ -39,19 +39,17 @@ export const FallthroughRoot = () => {
                 <Box padding={{vertical: 64}}>
                   <NonIdealState
                     icon="no-results"
-                    title={firstRepo ? 'No pipelines or jobs' : 'No repositories'}
+                    title={"No code locations defined"}
                     description={
-                      firstRepo
-                        ? 'Your repository is loaded but no pipelines or jobs were found.'
-                        : 'Add a repository to get started.'
+                      "No user code locations are configured for this deployment. For instructions on setting up this deployment, view the Cloud docs."
                     }
                     action={
                       <a
-                        href="https://docs.dagster.io/getting-started"
+                        href="https://docs.dagster.cloud/"
                         target="_blank"
                         rel="noreferrer"
                       >
-                        <ButtonWIP>View Documentation</ButtonWIP>
+                        <ButtonWIP>View Cloud Documentation</ButtonWIP>
                       </a>
                     }
                   />
