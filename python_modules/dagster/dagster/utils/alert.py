@@ -26,7 +26,7 @@ def _default_failure_email_body(context) -> str:
 
 
 def _default_failure_email_subject(context) -> str:
-    return f"Dagster Pipeline Failed: {context.pipeline_run.pipeline_name}"
+    return f"Dagster Run Failed: {context.pipeline_run.pipeline_name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}
@@ -97,7 +97,7 @@ def make_email_on_pipeline_failure_sensor(
             Defaults to the plain text that contains error message, pipeline name, and run ID.
         email_subject_fn (Optional(Callable[[PipelineFailureSensorContext], str])): Function which
             takes in the ``PipelineFailureSensorContext`` outputs the email subject you want to send.
-            Defaults to "Dagster Pipeline Failed: <pipeline_name>".
+            Defaults to "Dagster Run Failed: <pipeline_name>".
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
@@ -189,7 +189,7 @@ def make_email_on_run_failure_sensor(
     dagit_base_url: Optional[str] = None,
     job_selection: Optional[List[Union["PipelineDefinition", "GraphDefinition"]]] = None,
 ):
-    """Create a pipeline failure sensor that sends email via the SMTP protocol.
+    """Create a job failure sensor that sends email via the SMTP protocol.
 
     Args:
         email_from (str): The sender email address to send the message from.
@@ -197,17 +197,17 @@ def make_email_on_run_failure_sensor(
         email_to (List[str]): The receipt email addresses to send the message to.
         email_body_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
             takes in the ``RunFailureSensorContext`` outputs the email body you want to send.
-            Defaults to the plain text that contains error message, pipeline name, and run ID.
+            Defaults to the plain text that contains error message, job name, and run ID.
         email_subject_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
             takes in the ``RunFailureSensorContext`` outputs the email subject you want to send.
-            Defaults to "Dagster Pipeline Failed: <pipeline_name>".
+            Defaults to "Dagster Run Failed: <job_name>".
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
-        name: (Optional[str]): The name of the sensor. Defaults to "email_on_pipeline_failure".
+        name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the failed pipeline run.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
+            messages to include deeplinks to the failed run.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
 
