@@ -110,7 +110,7 @@ html_title = "Dagster"
 
 
 def setup(app):
-    app.add_stylesheet("css/custom.css")
+    app.add_css_file("css/custom.css")
 
 
 # Theme options are theme-specific and customize the look and feel of a theme

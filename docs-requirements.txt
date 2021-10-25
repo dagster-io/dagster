@@ -33,9 +33,9 @@
 -e ./python_modules/libraries/dagster-twilio
 -e ./python_modules/libraries/dagstermill
 -e ./python_modules/automation
-docutils==0.15.2
-Sphinx==3.5.2
-sphinx-click==2.5.0
+docutils==0.17.1
+Sphinx==4.2.0
+sphinx-click==3.0.1
 recommonmark==0.7.1
-nbsphinx==0.8.2
+nbsphinx==0.8.7
 pendulum==1.4.4
