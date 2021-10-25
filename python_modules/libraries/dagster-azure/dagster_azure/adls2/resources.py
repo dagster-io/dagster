@@ -25,6 +25,9 @@ def adls2_resource(context):
 
     The underlying client is a :py:class:`~azure.storage.filedatalake.DataLakeServiceClient`.
 
+    Attach this resource definition to a :py:class:`~dagster.JobDefinition` in order to make it
+    available to your ops.
+
     Example:
 
         .. code-block:: python
