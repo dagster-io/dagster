@@ -385,7 +385,7 @@
             "path": "/guides/dagster/run-attribution"
           },
           {
-            "title": "Migrating to Graphs, Jobs, and Ops (Experimental)",
+            "title": "Migrating to Graphs, Jobs, and Ops",
             "path": "/guides/dagster/graph_job_op"
           },
           {
