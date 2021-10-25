@@ -26,7 +26,7 @@ def do_something_with_exc(some_exception):  # pylint: disable=W0613
     pass
 
 
-# start_submit_marker_default
+# # start_submit_marker_default
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
@@ -40,7 +40,7 @@ try:
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
-# end_submit_marker_default
+# # end_submit_marker_default
 
 
 # start_submit_marker_job_name_only
@@ -58,7 +58,7 @@ except DagsterGraphQLClientError as exc:
 # end_submit_marker_job_name_only
 
 
-# start_run_status_marker
+# # start_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
 from dagster import PipelineRunStatus
 
@@ -71,10 +71,10 @@ try:
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
-# end_run_status_marker
+# # end_run_status_marker
 
 
-# start_reload_repo_location_marker
+# # start_reload_repo_location_marker
 from dagster_graphql import (
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
@@ -88,9 +88,9 @@ else:
         "Repository location reload failed because of a "
         f"{reload_info.failure_type} error: {reload_info.message}"
     )
-# end_reload_repo_location_marker
+# # end_reload_repo_location_marker
 
-# start_shutdown_repo_location_marker
+# # start_shutdown_repo_location_marker
 from dagster_graphql import (
     ShutdownRepositoryLocationInfo,
     ShutdownRepositoryLocationStatus,
@@ -101,4 +101,4 @@ if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
     do_something_on_success()
 else:
     raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
-# end_shutdown_repo_location_marker
+# # end_shutdown_repo_location_marker
