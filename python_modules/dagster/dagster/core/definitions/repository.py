@@ -1006,7 +1006,7 @@ class RepositoryDefinition:
     def get_all_jobs(self):
         """Return all jobs in the repository as a list.
 
-        Note that this will construct any pipeline/job in the lazily evaluated dictionary that has
+        Note that this will construct any job in the lazily evaluated dictionary that has
         not yet been constructed.
 
         Returns:
