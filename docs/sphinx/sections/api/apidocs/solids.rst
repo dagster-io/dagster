@@ -89,7 +89,7 @@ Composing solids
 .. currentmodule:: dagster
 
 
-.. _events:
+.. _solid_events:
 
 Events
 ------

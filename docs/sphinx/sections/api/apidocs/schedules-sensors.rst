@@ -58,11 +58,7 @@ Sensors
 
 .. autodecorator:: asset_sensor
 
-.. autodecorator:: job_failure_sensor
-
 .. autodecorator:: pipeline_failure_sensor
-
-.. autoclass:: JobFailureSensorContext
 
 .. autoclass:: PipelineFailureSensorContext
 

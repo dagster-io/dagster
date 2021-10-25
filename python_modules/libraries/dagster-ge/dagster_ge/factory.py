@@ -119,8 +119,8 @@ def ge_validation_solid_factory(
     input_dagster_type=DataFrame,
     batch_kwargs=None,
 ):
-    """
-        Generates solids for interacting with GE.
+    """Generates solids for interacting with GE.
+
     Args:
         name (str): the name of the solid
         datasource_name (str): the name of your DataSource, see your great_expectations.yml
@@ -159,8 +159,7 @@ def ge_validation_op_factory(
     input_dagster_type=DataFrame,
     batch_kwargs=None,
 ):
-    """
-    Generates ops for interacting with GE.
+    """Generates ops for interacting with GE.
 
     Args:
         name (str): the name of the op
@@ -274,8 +273,7 @@ def ge_validation_solid_factory_v3(
     runtime_method_type="batch_data",
     extra_kwargs=None,
 ):
-    """
-        Generates solids for interacting with GE (v3 API)
+    """Generates solids for interacting with GE (v3 API)
 
     Args:
         name (str): the name of the solid
@@ -337,8 +335,7 @@ def ge_validation_op_factory_v3(
     runtime_method_type="batch_data",
     extra_kwargs=None,
 ):
-    """
-    Generates ops for interacting with GE (v3 API)
+    """Generates ops for interacting with GE (v3 API)
 
     Args:
         name (str): the name of the op

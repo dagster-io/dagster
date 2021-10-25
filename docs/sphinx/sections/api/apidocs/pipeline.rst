@@ -64,7 +64,7 @@ Dependencies and aliases
 Pipeline configuration
 ----------------------
 
-.. _config_schema:
+.. _pipeline_config_schema:
 
 Run Config Schema
 ^^^^^^^^^^^^^^^^^^^^^^^

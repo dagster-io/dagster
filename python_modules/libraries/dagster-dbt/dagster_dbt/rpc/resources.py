@@ -162,7 +162,7 @@ class DbtRpcClient(DbtResource):
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``list`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for `compiling projects via RPC
+        response. For more details, see the dbt docs for `list
         <https://docs.getdbt.com/reference/commands/rpc/#list>`_.
 
         Args:

@@ -27,8 +27,8 @@ more advanced use cases, we suggest building your own ops which directly interac
 Resources
 =========
 
-CLI
-~~~
+CLI Resources
+~~~~~~~~~~~~~
 
 .. autoclass:: DbtCliResource
     :members:
@@ -40,8 +40,8 @@ CLI
     :annotation: ResourceDefinition
 
 
-RPC
-~~~
+RPC Resources
+~~~~~~~~~~~~~
 
 .. autoclass:: DbtRpcClient
     :members:
@@ -90,8 +90,8 @@ Solids [Legacy]
 
 dagster_dbt provides a set of solids that may be used in legacy pipelines.
 
-CLI
-~~~
+CLI Solids
+~~~~~~~~~~
 
 .. autofunction:: dbt_cli_compile
 
@@ -105,8 +105,8 @@ CLI
 
 .. autofunction:: dbt_cli_test
 
-RPC
-~~~
+RPC Solids
+~~~~~~~~~~
 
 .. autofunction:: create_dbt_rpc_run_sql_solid
 

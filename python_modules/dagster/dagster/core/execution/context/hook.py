@@ -41,9 +41,7 @@ class HookContext:
         job_name (str): The name of the job where this hook is being triggered.
         run_id (str): The id of the run where this hook is being triggered.
         mode_def (ModeDefinition): The mode with which the pipeline is being run.
-        solid_exception (Optional[BaseException]): The thrown exception in a failed solid.
         op_exception (Optional[BaseException]): The thrown exception in a failed op.
-        solid_output_values (Dict): Computed output values in a solid.
         op_output_values (Dict): Computed output values in an op.
     """
 
