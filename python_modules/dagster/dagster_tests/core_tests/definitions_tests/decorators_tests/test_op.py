@@ -17,6 +17,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.types.dagster_type import Int, String
 
 
 def execute_op_in_graph(an_op):
@@ -58,6 +59,11 @@ def test_ins():
     def my_op(a: int, b: str) -> int:
         return a + int(b)
 
+    assert my_op.ins == {
+        "a": In(metadata={"x": 1}, dagster_type=Int),
+        "b": In(metadata={"y": 2}, dagster_type=String),
+    }
+
     @graph
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
@@ -77,6 +83,11 @@ def test_out():
     def my_op() -> int:
         return 1
 
+    assert my_op.outs == {
+        "result": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        )
+    }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
@@ -89,6 +100,14 @@ def test_multi_out():
 
     assert len(my_op.output_defs) == 2
 
+    assert my_op.outs == {
+        "a": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        ),
+        "b": Out(
+            metadata={"y": 2}, dagster_type=String, is_required=True, io_manager_key="io_manager"
+        ),
+    }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "a"
     assert my_op.output_defs[1].metadata == {"y": 2}
