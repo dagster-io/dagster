@@ -138,7 +138,18 @@ def _filter_outputs_by_handle(
     step_key = str(node_handle)
     output_found = False
     for step_output_handle, value in output_dict.items():
-        if (
+
+        # For the mapped output case, where step keys are in the format
+        # "step_key[upstream_mapped_output_name]" within the step output handle.
+        if step_output_handle.step_key.startswith(f"{step_key}["):
+            output_found = True
+            key_start = step_output_handle.step_key.find("[")
+            key_end = step_output_handle.step_key.find("]")
+            upstream_mapped_output_name = step_output_handle.step_key[key_start + 1 : key_end]
+            mapped_outputs[upstream_mapped_output_name] = value
+
+        # For all other cases, search for exact match.
+        elif (
             step_key == step_output_handle.step_key
             and step_output_handle.output_name == output_name
         ):

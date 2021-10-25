@@ -55,6 +55,13 @@ def test_dynamic():
     result = process_directory.execute_in_process()
     assert result.success
 
+    assert result.output_for_node("process_file") == {
+        "empty_stuff_bin": 0,
+        "program_py": 34,
+        "words_txt": 40,
+    }
+    assert result.output_for_node("summarize_directory") == 74
+
 
 def test_dep_dsl():
     result = define_dep_dsl_graph().execute_in_process(
