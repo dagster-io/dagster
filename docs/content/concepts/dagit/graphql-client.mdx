@@ -18,7 +18,7 @@ Dagster provides a GraphQL Python Client to interface with <Link href="/concepts
 
 The Dagster Python Client provides bindings in Python to programmatically interact with Dagster's GraphQL API.
 
-When is this useful? Dagster exposes a powerful GraphQL API, but this level of flexibility is not always necessary. For example, when submitting a new pipeline run, you may only want to think about the pipeline name and configuration and to think less about maintaining a long GraphQL query.
+When is this useful? Dagster exposes a powerful GraphQL API, but this level of flexibility is not always necessary. For example, when submitting a new job run, you may only want to think about the job name and configuration and to think less about maintaining a long GraphQL query.
 
 `DagsterGraphQLClient` provides a way to solve this issue by providing a module with a simple interface to interact with the GraphQL API.
 
@@ -27,7 +27,7 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
 - <PyObject
   module="dagster_graphql"
   object="DagsterGraphQLClient"
-  method="submit_pipeline_execution"
+  method="submit_job_execution"
   />
 - <PyObject
   module="dagster_graphql"
@@ -57,9 +57,9 @@ client = DagsterGraphQLClient("localhost", port_number=3000)
 
 ## Examples
 
-### Getting a Pipeline Run's Status
+### Getting a Job Run's Status
 
-You can use the client to get the status of a pipeline run as follows:
+You can use the client to get the status of a job run as follows:
 
 ```python file=/concepts/dagit/graphql/client_example.py startafter=start_run_status_marker endbefore=end_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
@@ -98,42 +98,19 @@ else:
     )
 ```
 
-### Submitting a Pipeline Run
+### Submitting a Job Run
 
-#### Using a Mode definition and a Run Configuration
-
-You can use the client to submit a pipeline run as follows:
+You can use the client to submit a job run as follows:
 
 ```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_default endbefore=end_submit_marker_default
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
+    new_run_id: str = client.submit_job_execution(
+        JOB_NAME,
         repository_location_name=REPO_LOCATION_NAME,
         repository_name=REPO_NAME,
         run_config={},
-        mode="default",
-    )
-    do_something_on_success(new_run_id)
-except DagsterGraphQLClientError as exc:
-    do_something_with_exc(exc)
-    raise exc
-```
-
-#### Using a Preset
-
-You can also submit a pipeline from a preset with the client:
-
-```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_preset endbefore=end_submit_marker_preset
-from dagster_graphql import DagsterGraphQLClientError
-
-try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
-        repository_location_name=REPO_LOCATION_NAME,
-        repository_name=REPO_NAME,
-        preset=PRESET_NAME,
     )
     do_something_on_success(new_run_id)
 except DagsterGraphQLClientError as exc:
@@ -143,7 +120,7 @@ except DagsterGraphQLClientError as exc:
 
 ### Shutting down a Repository Location Server
 
-If you're running your own gRPC server, we generally recommend updating your repository code by building a new Docker image with a new tag and redeploying your server using that new image, but sometimes you may want to restart your server without changing the image (for example, if your pipeline definitions are generated programatically from a database, and you want to restart the server and re-generate your repositories even though the underlying Python code hasn't changed). In these situations, `reload_repository_location` is insufficient, since it refreshes Dagit's information about the repositories but doesn't actually restart the server or reload the repository definition.
+If you're running your own gRPC server, we generally recommend updating your repository code by building a new Docker image with a new tag and redeploying your server using that new image, but sometimes you may want to restart your server without changing the image (for example, if your job definitions are generated programatically from a database, and you want to restart the server and re-generate your repositories even though the underlying Python code hasn't changed). In these situations, `reload_repository_location` is insufficient, since it refreshes Dagit's information about the repositories but doesn't actually restart the server or reload the repository definition.
 
 One way to cause your server to restart and your repositories to be reloaded is to run your server in an environment like Kubernetes that automatically restarts services when they fail (or docker-compose with `restart: always` set on the service), and then use the `shutdown_repository_location` function on the GraphQL client to shut down the server. The server will then be restarted by your environment, which will be automatically detected by Dagit.
 
@@ -164,16 +141,15 @@ else:
 
 #### Repository Location and Repository Inference
 
-Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will infer the repository name and repository location name if the pipeline name is unique.
+Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will infer the repository name and repository location name if the job name is unique.
 
-```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_pipeline_name_only endbefore=end_submit_marker_pipeline_name_only
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_job_name_only endbefore=end_submit_marker_job_name_only
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
+    new_run_id: str = client.submit_job_execution(
+        JOB_NAME,
         run_config={},
-        mode="default",
     )
     do_something_on_success(new_run_id)
 except DagsterGraphQLClientError as exc:
