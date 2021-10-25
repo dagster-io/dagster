@@ -534,3 +534,21 @@ def test_failure(capsys):
                 warn_found = True
 
         assert warn_found
+
+
+@pytest.mark.notebook_test
+def test_hello_world_graph():
+    from dagstermill.examples.repository import build_hello_world_job
+    from dagster import reconstructable
+
+    with instance_for_test() as instance:
+        result = None
+        try:
+            result = execute_pipeline(
+                reconstructable(build_hello_world_job),
+                instance=instance,
+            )
+            assert result.success
+        finally:
+            if result:
+                cleanup_result_notebook(result)
