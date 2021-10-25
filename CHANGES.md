@@ -1,5 +1,24 @@
 # Changelog
 
+# 0.13.1
+
+### New
+
+* All dbt resources ([dbt_cli_resource](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource), [dbt_rpc_resource](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_rpc_resource), and [dbt_rpc_sync_resource](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_rpc_sync_resource)) now support the `ls` command.
+
+### Docs
+
+* Various fixes to broken links on pages in 0.13.0 docs release
+* Improvements to Gantt chart color scheme
+
+### Bug fixes
+
+* Previously, the Dagster CLI would use a completely ephemeral dagster instance if $DAGSTER_HOME was not set. Since the new job abstraction by default requires a non-ephemeral dagster instance, this has been changed to instead create a persistent instance that is cleaned up at the end of an execution.
+
+### Dagit
+
+* Run-status-colorized dagster logo is back on job execution page
+
 # 0.13.0 "Get the Party Started"
 
 ### Major Changes
