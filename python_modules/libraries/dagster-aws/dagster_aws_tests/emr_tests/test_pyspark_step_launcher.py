@@ -21,8 +21,8 @@ def test_wait_for_completion(_mock_is_emr_step_complete, _mock_read_events):
         action_on_failure="",
         cluster_id="",
         spark_config={},
-        local_pipeline_package_path="",
-        deploy_local_pipeline_package=False,
+        local_job_package_path="",
+        deploy_local_job_package=False,
     )
     yielded_events = list(
         launcher.wait_for_completion(mock.MagicMock(), None, None, None, None, check_interval=0)
