@@ -17,7 +17,7 @@ from dagster.cli.workspace.cli_target import (
     job_target_argument,
     python_job_target_argument,
     python_pipeline_or_job_config_argument,
-    repository_target_argument,
+    job_repository_target_argument,
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
@@ -40,7 +40,7 @@ def job_cli():
     name="list",
     help="List the jobs in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
 )
-@repository_target_argument
+@job_repository_target_argument
 def job_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo, True)
 
@@ -135,7 +135,7 @@ def job_execute_command(**kwargs):
     ),
 )
 @job_target_argument
-@python_pipeline_or_job_config_argument("launch")
+@python_pipeline_or_job_config_argument("launch", True)
 @click.option(
     "--config-json",
     type=click.STRING,

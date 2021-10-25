@@ -55,7 +55,7 @@ from .utils import get_instance_for_service
 @click.group(name="pipeline")
 def pipeline_cli():
     """
-    Commands for working with Dagster pipelines.
+    Commands for working with Dagster pipelines/jobs.
     """
 
 
@@ -67,7 +67,9 @@ def apply_click_params(command, *click_params):
 
 @pipeline_cli.command(
     name="list",
-    help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
+    help="List the pipelines/jobs in a repository. {warning}".format(
+        warning=WORKSPACE_TARGET_WARNING
+    ),
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
@@ -120,7 +122,7 @@ def format_description(desc, indent):
 
 def get_pipeline_in_same_python_env_instructions(command_name):
     return (
-        "This commands targets a pipeline. The pipeline can be specified in a number of ways:"
+        "This commands targets a pipeline/job. The pipeline/job can be specified in a number of ways:"
         "\n\n1. dagster pipeline {command_name} -f /path/to/file.py -a define_some_pipeline"
         "\n\n2. dagster pipeline {command_name} -m a_module.submodule -a define_some_pipeline"
         "\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>"
@@ -142,7 +144,7 @@ def get_pipeline_instructions(command_name):
 
 def get_partitioned_pipeline_instructions(command_name):
     return (
-        "This commands targets a partitioned pipeline. The pipeline and partition set must be "
+        "This commands targets a partitioned pipeline/job. The pipeline/job and partition set must be "
         "defined in a repository, which can be specified in a number of ways:"
         "\n\n1. dagster pipeline {command_name} -p <<pipeline_name>> (works if .{default_filename} exists)"
         "\n\n2. dagster pipeline {command_name} -p <<pipeline_name>> -w path/to/{default_filename}"
@@ -153,7 +155,7 @@ def get_partitioned_pipeline_instructions(command_name):
 
 @pipeline_cli.command(
     name="print",
-    help="Print a pipeline.\n\n{instructions}".format(
+    help="Print a pipeline/job.\n\n{instructions}".format(
         instructions=get_pipeline_instructions("print")
     ),
 )
@@ -325,7 +327,9 @@ def add_step_to_table(memoized_plan):
 @click.option(
     "--mode", type=click.STRING, help="The name of the mode in which to execute the pipeline."
 )
-@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this pipeline run")
+@click.option(
+    "--tags", type=click.STRING, help="JSON string of tags to use for this pipeline/job run"
+)
 @click.option(
     "-s",
     "--solid-selection",
@@ -576,7 +580,7 @@ def do_execute_command(
 @click.option(
     "--config-json",
     type=click.STRING,
-    help="JSON string of run config to use for this pipeline run. Cannot be used with -c / --config.",
+    help="JSON string of run config to use for this pipeline/job run. Cannot be used with -c / --config.",
 )
 @click.option(
     "--preset",
@@ -603,7 +607,7 @@ def do_execute_command(
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
-@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
+@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline/job run")
 def pipeline_launch_command(**kwargs):
     with get_instance_for_service("``dagster pipeline launch``") as instance:
         return execute_launch_command(instance, kwargs)
@@ -801,7 +805,7 @@ def validate_partition_slice(partition_names, name, value):
 
 @pipeline_cli.command(
     name="backfill",
-    help="Backfill a partitioned pipeline.\n\n{instructions}".format(
+    help="Backfill a partitioned pipeline/job.\n\n{instructions}".format(
         instructions=get_partitioned_pipeline_instructions("backfill")
     ),
 )
@@ -839,7 +843,9 @@ def validate_partition_slice(partition_names, name, value):
         "dagster pipeline backfill log_daily_stats --to 20191201"
     ),
 )
-@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this pipeline run")
+@click.option(
+    "--tags", type=click.STRING, help="JSON string of tags to use for this pipeline/job run"
+)
 @click.option("--noprompt", is_flag=True)
 def pipeline_backfill_command(**kwargs):
     with DagsterInstance.get() as instance:

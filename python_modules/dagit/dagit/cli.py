@@ -36,7 +36,7 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
 @click.command(
     name="ui",
     help=(
-        "Run dagit. Loads a repository or pipeline.\n\n{warning}".format(
+        "Run dagit. Loads a repository or pipeline/job.\n\n{warning}".format(
             warning=WORKSPACE_TARGET_WARNING
         )
         + (
