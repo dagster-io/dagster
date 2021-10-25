@@ -70,7 +70,7 @@ def test_compute_log_manager(gcs_bucket):
             # Check GCS directly
             stderr_gcs = (
                 storage.Client()
-                .get_bucket(gcs_bucket)
+                .bucket(gcs_bucket)
                 .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
                 .download_as_bytes()
                 .decode("utf-8")
@@ -143,7 +143,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 # Check GCS directly
                 stderr_gcs = (
                     storage.Client()
-                    .get_bucket(gcs_bucket)
+                    .bucket(gcs_bucket)
                     .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
                     .download_as_bytes()
                     .decode("utf-8")

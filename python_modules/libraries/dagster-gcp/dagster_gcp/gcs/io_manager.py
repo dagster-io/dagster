@@ -13,7 +13,7 @@ class PickledObjectGCSIOManager(IOManager):
     def __init__(self, bucket, client=None, prefix="dagster"):
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client or storage.Client()
-        self.bucket_obj = self.client.get_bucket(bucket)
+        self.bucket_obj = self.client.bucket(bucket)
         check.invariant(self.bucket_obj.exists())
         self.prefix = check.str_param(prefix, "prefix")
 

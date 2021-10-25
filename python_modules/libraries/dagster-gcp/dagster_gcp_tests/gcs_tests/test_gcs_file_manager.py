@@ -20,7 +20,7 @@ def test_gcs_file_manager_write():
     assert file_handle.gcs_bucket == "some-bucket"
     assert file_handle.gcs_key.startswith("some-key/")
 
-    assert gcs_mock.get_bucket().blob().upload_from_file.call_count == 1
+    assert gcs_mock.bucket().blob().upload_from_file.call_count == 1
 
     file_handle = file_manager.write_data(foo_bytes, ext="foo")
 
@@ -30,7 +30,7 @@ def test_gcs_file_manager_write():
     assert file_handle.gcs_key.startswith("some-key/")
     assert file_handle.gcs_key[-4:] == ".foo"
 
-    assert gcs_mock.get_bucket().blob().upload_from_file.call_count == 2
+    assert gcs_mock.bucket().blob().upload_from_file.call_count == 2
 
 
 @mock.patch("dagster_gcp.gcs.resources.storage.client.Client")
