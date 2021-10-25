@@ -9,7 +9,6 @@
 ### Docs
 
 * Various fixes to broken links on pages in 0.13.0 docs release
-* Improvements to Gantt chart color scheme
 
 ### Bug fixes
 
@@ -18,6 +17,7 @@
 ### Dagit
 
 * Run-status-colorized dagster logo is back on job execution page
+* Improvements to Gantt chart color scheme
 
 # 0.13.0 "Get the Party Started"
 
