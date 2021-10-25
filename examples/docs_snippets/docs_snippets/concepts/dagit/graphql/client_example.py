@@ -9,10 +9,9 @@ client = DagsterGraphQLClient("localhost", port_number=3000)
 
 RUN_ID = "foo"
 REPO_NAME = "bar"
-PIPELINE_NAME = "baz"
+JOB_NAME = "baz"
 REPO_NAME = "quux"
 REPO_LOCATION_NAME = "corge"
-PRESET_NAME = "waldo"
 
 
 def do_something_on_success(some_arg=None):  # pylint: disable=W0613
@@ -27,58 +26,39 @@ def do_something_with_exc(some_exception):  # pylint: disable=W0613
     pass
 
 
-# start_submit_marker_default
+# # start_submit_marker_default
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
+    new_run_id: str = client.submit_job_execution(
+        JOB_NAME,
         repository_location_name=REPO_LOCATION_NAME,
         repository_name=REPO_NAME,
         run_config={},
-        mode="default",
     )
     do_something_on_success(new_run_id)
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
-# end_submit_marker_default
+# # end_submit_marker_default
 
 
-# start_submit_marker_preset
+# start_submit_marker_job_name_only
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
-        repository_location_name=REPO_LOCATION_NAME,
-        repository_name=REPO_NAME,
-        preset=PRESET_NAME,
-    )
-    do_something_on_success(new_run_id)
-except DagsterGraphQLClientError as exc:
-    do_something_with_exc(exc)
-    raise exc
-# end_submit_marker_preset
-
-
-# start_submit_marker_pipeline_name_only
-from dagster_graphql import DagsterGraphQLClientError
-
-try:
-    new_run_id: str = client.submit_pipeline_execution(
-        PIPELINE_NAME,
+    new_run_id: str = client.submit_job_execution(
+        JOB_NAME,
         run_config={},
-        mode="default",
     )
     do_something_on_success(new_run_id)
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
-# end_submit_marker_pipeline_name_only
+# end_submit_marker_job_name_only
 
 
-# start_run_status_marker
+# # start_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
 from dagster import PipelineRunStatus
 
@@ -91,10 +71,10 @@ try:
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
-# end_run_status_marker
+# # end_run_status_marker
 
 
-# start_reload_repo_location_marker
+# # start_reload_repo_location_marker
 from dagster_graphql import (
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
@@ -108,9 +88,9 @@ else:
         "Repository location reload failed because of a "
         f"{reload_info.failure_type} error: {reload_info.message}"
     )
-# end_reload_repo_location_marker
+# # end_reload_repo_location_marker
 
-# start_shutdown_repo_location_marker
+# # start_shutdown_repo_location_marker
 from dagster_graphql import (
     ShutdownRepositoryLocationInfo,
     ShutdownRepositoryLocationStatus,
@@ -121,4 +101,4 @@ if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
     do_something_on_success()
 else:
     raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
-# end_shutdown_repo_location_marker
+# # end_shutdown_repo_location_marker
