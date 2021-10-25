@@ -47,12 +47,12 @@ Now, you can create issues in GitHub from Dagster with the GitHub resource:
 
    import os
 
-   from dagster import solid, execute_pipeline, ModeDefinition
+   from dagster import job, op
    from dagster_github import github_resource
 
 
-   @solid(resource_defs={'github'})
-   def github_solid(context):
+   @op(resource_defs={'github'})
+   def github_op(context):
        context.resources.github.create_issue(
            repo_name='dagster',
            repo_owner='dagster-io',
@@ -60,14 +60,12 @@ Now, you can create issues in GitHub from Dagster with the GitHub resource:
            body='this open source thing seems like a pretty good idea',
        )
 
-   @pipeline(
-       mode_defs=[ModeDefinition(resource_defs={'github': github_resource})],
-   )
-   def github_pipeline():
-       github_solid()
+   @job(resource_defs={'github': github_resource})
+   def github_job():
+       github_op()
 
-   execute_pipeline(
-       github_pipeline, {'resources': {'github': {'config': {
+   github_job.execute_in_process(
+       run_config={'resources': {'github': {'config': {
            "github_app_id": os.getenv('GITHUB_APP_ID'),
            "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
            "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
@@ -82,16 +80,16 @@ as part of your github config like below.
 
 .. code-block:: python
 
-   execute_pipeline(
-       github_pipeline, {'resources': {'github': {'config': {
+   github_job.execute_in_process(
+       run_config={'resources': {'github': {'config': {
            "github_app_id": os.getenv('GITHUB_APP_ID'),
            "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
            "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
            "github_hostname": os.getenv('GITHUB_HOSTNAME'),
        }}}}
 
-By provisioning ``github_resource`` as a Dagster pipeline resource, you can post to GitHub from
-within any solid execution.
+By provisioning ``github_resource`` as a Dagster job resource, you can post to GitHub from
+within any op execution.
 
 Executing GraphQL queries
 -------------------------
@@ -100,12 +98,12 @@ Executing GraphQL queries
 
    import os
 
-   from dagster import solid, execute_pipeline, ModeDefinition
+   from dagster import job, op
    from dagster_github import github_resource
 
 
-   @solid(resource_defs={'github'})
-   def github_solid(context):
+   @op(resource_defs={'github'})
+   def github_op(context):
        context.resources.github.execute(
            query="""
            query get_repo_id($repo_name: String!, $repo_owner: String!) {
@@ -117,14 +115,12 @@ Executing GraphQL queries
            variables={"repo_name": repo_name, "repo_owner": repo_owner},
        )
 
-   @pipeline(
-       mode_defs=[ModeDefinition(resource_defs={'github': github_resource})],
-   )
-   def github_pipeline():
-       github_solid()
+   @job(resource_defs={'github': github_resource})
+   def github_job():
+       github_op()
 
-   execute_pipeline(
-       github_pipeline, {'resources': {'github': {'config': {
+   github_job.execute_in_process(
+       run_config={'resources': {'github': {'config': {
            "github_app_id": os.getenv('GITHUB_APP_ID'),
            "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
            "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
