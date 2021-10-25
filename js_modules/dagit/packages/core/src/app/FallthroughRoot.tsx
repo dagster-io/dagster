@@ -74,15 +74,11 @@ const FinalRedirectOrLoadingRoot = () => {
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={firstRepo ? 'No pipelines or jobs' : 'No repositories'}
-        description={
-          firstRepo
-            ? 'Your repository is loaded but no pipelines or jobs were found.'
-            : 'Add a repository to get started.'
-        }
+        title="No code locations defined"
+        description="No user code locations are configured for this deployment. For instructions on setting up this deployment, view the Cloud docs."
         action={
-          <ExternalAnchorButton href="https://docs.dagster.io/getting-started">
-            View documentation
+          <ExternalAnchorButton href="https://docs.dagster.cloud/">
+            View Cloud Documentation
           </ExternalAnchorButton>
         }
       />
