@@ -1,15 +1,9 @@
+import os
 import textwrap
 from contextlib import contextmanager
 from typing import Any, Dict, Union
 
-from dagster import (
-    AssetKey,
-    EventMetadataEntry,
-    InputContext,
-    OutputContext,
-    StringSource,
-    io_manager,
-)
+from dagster import AssetKey, EventMetadataEntry, InputContext, OutputContext, io_manager
 from dagster.core.storage.io_manager import IOManager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
@@ -29,12 +23,11 @@ def spark_field_to_snowflake_type(spark_field: StructField):
         return spark_type
 
 
-SNOWFLAKE_CONFIG_SCHEMA = {
-    "account": StringSource,
-    "user": StringSource,
-    "password": StringSource,
-    "database": StringSource,
-    "warehouse": StringSource,
+SHARED_SNOWFLAKE_CONF = {
+    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+    "user": os.getenv("SNOWFLAKE_USER", ""),
+    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+    "warehouse": "TINY_WAREHOUSE",
 }
 
 
@@ -60,56 +53,63 @@ def connect_snowflake(config, schema="public"):
 
 
 @io_manager(
-    config_schema=SNOWFLAKE_CONFIG_SCHEMA,
-)
-def snowflake_io_manager(_):
-    return SnowflakeIOManager()
-
-
-@io_manager(
-    config_schema=SNOWFLAKE_CONFIG_SCHEMA,
+    config_schema={"database": str},
     required_resource_keys={"partition_start", "partition_end"},
 )
-def time_partitioned_snowflake_io_manager(_):
-    return TimePartitionedSnowflakeIOManager()
+def snowflake_io_manager(init_context):
+    return SnowflakeIOManager(
+        config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
+    )
 
 
 class SnowflakeIOManager(IOManager):
     """
-    This IOManager can handle Outputs that are either pandas DataFrames or ParquetPointers (which
-    are just paths that spark can interpret which store some parquet files). In either case, the
-    data will be written to a Snowflake table specified by metadata on the relevant OutputDefinition.
+    This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
+    the data will be written to a Snowflake table specified by metadata on the relevant Out.
+
+    If an Out has {"partitioned": True} in its metadata, we just overwrite a single partition, based
+    on the values specified by the partition_start and partition_end resources.
 
     Because we specify a get_output_asset_key() function, AssetMaterialization events will be
     automatically created each time an output is processed with this IOManager.
     """
 
-    def get_output_asset_key(self, context: OutputContext):
-        return AssetKey(["snowflake", *context.metadata["table"].split(".")])
+    def __init__(self, config):
+        self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.metadata["table"].split(".")
 
-        with connect_snowflake(config=context.resource_config, schema=schema) as con:
-            con.execute(self._get_cleanup_statement(table, context.resources))
+        with connect_snowflake(config=self._config, schema=schema) as con:
+            con.execute(
+                self._get_cleanup_statement(
+                    table,
+                    context.resources,
+                    is_partitioned=context.metadata.get("partitioned") is True,
+                )
+            )
 
         if isinstance(obj, SparkDataFrame):
-            yield from self._handle_spark_output(context.resource_config, obj, schema, table)
+            yield from self._handle_spark_output(obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
-            yield from self._handle_pandas_output(context.resource_config, obj, schema, table)
+            yield from self._handle_pandas_output(obj, schema, table)
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-    def _handle_pandas_output(self, config: Dict, obj: PandasDataFrame, schema: str, table: str):
+        yield EventMetadataEntry.text(
+            self._get_select_statement(context.resources, context.metadata), "Query"
+        )
+
+    def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
         yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
-        with connect_snowflake(config=config, schema=schema) as con:
+        with connect_snowflake(config=self._config, schema=schema) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
                 table,
@@ -119,30 +119,34 @@ class SnowflakeIOManager(IOManager):
                 method=pd_writer,
             )
 
-    def _handle_spark_output(self, config: Dict, df: SparkDataFrame, schema: str, table: str):
+    def _handle_spark_output(self, df: SparkDataFrame, schema: str, table: str):
         options = {
-            "sfURL": f"{config['account']}.snowflakecomputing.com",
-            "sfUser": config["user"],
-            "sfPassword": config["password"],
-            "sfDatabase": config["database"],
+            "sfURL": f"{self._config['account']}.snowflakecomputing.com",
+            "sfUser": self._config["user"],
+            "sfPassword": self._config["password"],
+            "sfDatabase": self._config["database"],
             "sfSchema": schema,
-            "sfWarehouse": config["warehouse"],
+            "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
         yield EventMetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
-    def _get_cleanup_statement(self, table: str, _resources):
-        return f"""
-        DELETE FROM {table} WHERE true;
+    def _get_cleanup_statement(self, table: str, resources, is_partitioned: bool):
         """
-
-    def _get_select_statement(self, _resources, metadata: Dict[str, Any]):
-        col_str = ", ".join(f'"{c}"' for c in metadata["columns"]) if "columns" in metadata else "*"
-        return f"""
-        SELECT {col_str} FROM {metadata["table"]};
+        Returns a SQL statement that deletes data in the given table to make way for the output data
+        being written.
         """
+        if is_partitioned:
+            return f"""
+            DELETE FROM {table}
+            {self._partition_where_clause(resources)}
+            """
+        else:
+            return f"""
+            DELETE FROM {table} WHERE true;
+            """
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
         resources = context.resources
@@ -152,7 +156,7 @@ class SnowflakeIOManager(IOManager):
         else:
             # loading as a root input
             metadata = context.metadata
-        with connect_snowflake(config=context.resource_config) as con:
+        with connect_snowflake(config=self._config) as con:
             result = read_sql(
                 sql=self._get_select_statement(resources, metadata),
                 con=con,
@@ -160,33 +164,28 @@ class SnowflakeIOManager(IOManager):
             result.columns = map(str.lower, result.columns)
             return result
 
+    def _get_select_statement(self, resources, metadata: Dict[str, Any]):
+        col_str = ", ".join(f"{c}" for c in metadata["columns"]) if "columns" in metadata else "*"
+        is_partitioned = metadata.get("partitioned") is True
+        if is_partitioned:
+            return (
+                f"""SELECT * FROM {self._config["database"]}.{metadata["table"]}\n"""
+                + self._partition_where_clause(resources)
+            )
+        else:
+            return f"""SELECT {col_str} FROM {metadata["table"]}"""
 
-class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
-    """
-    This version of the SnowflakeIOManager divides its data into seperate time partitions. Based on
-    the values specified by the partition_start and partition_end resources, this will first delete
-    the data that is present within those bounds, then load the output data into the table.
+    def _partition_where_clause(self, resources):
+        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{resources.partition_start}' AND '{resources.partition_end}'"""
 
-    This is useful for pipelines that run on a schedule, updating each hour (or day, etc.) with new
-    data.
-    """
+    def get_output_asset_key(self, context: OutputContext):
+        return AssetKey(["snowflake", *context.metadata["table"].split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):
-        return [context.resources.partition_start]
-
-    def _get_cleanup_statement(self, table: str, resources):
-        return f"""
-        DELETE FROM {table} WHERE
-            TO_TIMESTAMP(time::INT) BETWEEN
-                '{resources.partition_start}' AND '{resources.partition_end}';
-        """
-
-    def _get_select_statement(self, resources, metadata: Dict[str, Any]):
-        return f"""
-        SELECT * FROM {metadata["table"]} WHERE
-            TO_TIMESTAMP(time::INT) BETWEEN
-                '{resources.partition_start}' AND '{resources.partition_end}';
-        """
+        if context.metadata.get("partitioned") is True:
+            return [context.resources.partition_start]
+        else:
+            return None
 
 
 def pandas_columns_to_markdown(dataframe: PandasDataFrame) -> str:

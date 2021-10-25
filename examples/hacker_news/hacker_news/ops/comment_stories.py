@@ -1,5 +1,8 @@
-from dagster import In, Out, op
+from dagster import In, Out, Output, op
+from dagster.utils.log import get_dagster_logger
 from pandas import DataFrame, Series
+
+logger = get_dagster_logger()
 
 
 @op(
@@ -43,7 +46,10 @@ def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     depth = 0
     while remaining_comments.shape[0] > 0 and depth < max_depth:
         depth += 1
+        logger.debug(f"At depth {depth}")
+
         # join comments with stories and remove all comments that match a story
+        remaining_comments = remaining_comments[~remaining_comments.index.isnull()]
         comment_stories = remaining_comments.merge(stories, left_on="parent", right_index=True)
         comment_stories.rename(columns={"parent": "story_id"}, inplace=True)
         full_comment_stories = full_comment_stories.append(comment_stories)
@@ -56,4 +62,4 @@ def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
         remaining_comments = remaining_comments[["parent_y", "commenter_id"]]
         remaining_comments.rename(columns={"parent_y": "parent"}, inplace=True)
 
-    return full_comment_stories
+    yield Output(metadata={"# comments": full_comment_stories.shape[0]}, value=full_comment_stories)
