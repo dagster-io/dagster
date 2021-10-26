@@ -44,7 +44,7 @@ We love to see our community members get involved! If you are planning to contri
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended.
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
 
    ```bash
    make dev_install
