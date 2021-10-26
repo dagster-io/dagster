@@ -34,7 +34,7 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             "graphene>=2.1.3",
-            "graphql-core>=2.1,<3",  # compatability with graphql-ws in dagit
+            "graphql-core",
             "gevent-websocket>=0.10.1",
             "gevent",
             "requests",
