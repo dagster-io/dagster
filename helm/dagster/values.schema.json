@@ -636,6 +636,18 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "internal": {
+                    "title": "Internal",
+                    "type": "boolean"
+                },
+                "usePassword": {
+                    "title": "Usepassword",
+                    "type": "boolean"
+                },
+                "password": {
+                    "title": "Password",
+                    "type": "string"
+                },
                 "host": {
                     "title": "Host",
                     "type": "string"
@@ -655,6 +667,9 @@
             },
             "required": [
                 "enabled",
+                "internal",
+                "usePassword",
+                "password",
                 "host",
                 "port",
                 "brokerDbNumber",

@@ -608,6 +608,9 @@ redis:
   # Note: If `internal` is true, then redis pod will be created regardless of `enabled` flag.
   internal: false
 
+  usePassword: false
+  password: "test"
+
   # Redis host URL
   host: ""
 
