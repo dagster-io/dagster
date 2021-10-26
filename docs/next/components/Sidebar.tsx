@@ -27,15 +27,21 @@ const TopLevelNavigation = () => {
           <Link key={item.path} href={item.path}>
             <a
               className={cx(
-                "group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-900 dark:text-gray-200",
+                "transition group flex items-center px-2 py-2 text-md font-medium rounded-md text-gray-800 dark:text-gray-200",
                 {
-                  "bg-gray-200 dark:bg-gray-600": match,
+                  "bg-white text-blurple dark:bg-gray-600": match,
                   "hover:text-gray-900 hover:bg-gray-50 dark:hover:text-gray-300 dark:hover:bg-gray-700": !match,
                 }
               )}
             >
               <svg
-                className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500"
+                className={cx(
+                  "mr-3 h-6 w-6 text-gray-400 transition",
+                  {
+                    "text-blurple": match,
+                    "group-hover:text-gray-600": !match,
+                  }
+                )}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -75,7 +81,7 @@ const SecondaryNavigation = () => {
           <div key={section.title} className="mt-8">
             <h3
               className={cx(
-                "px-3 text-xs font-semibold text-blue-500 dark:text-blue-200 uppercase tracking-wider",
+                "px-3 text-sm font-semibold text-gable-green dark:text-gray-200 uppercase tracking-wider",
                 {
                   "DocSearch-lvl1": match,
                 }
@@ -115,9 +121,9 @@ const ThirdLevelNavigation = ({ section }) => {
     <Link href={section.path}>
       <a
         className={cx(
-          "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700",
+          "group flex items-center px-3 py-2 text-md font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700",
           {
-            "bg-blue-100 text-gray-900 hover:bg-blue-100 dark:bg-gray-600":
+            "bg-white text-blurple":
               section.path === asPathWithoutAnchor,
           }
         )}
@@ -385,7 +391,7 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
 
       {/* Static sidebar for desktop */}
       <div className="hidden z-50 lg:block fixed top-0 bottom-0 lg:flex-shrink-0">
-        <div className="h-full flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900">
+        <div className="h-full flex flex-col w-80 pt-4 pb-4 bg-gray-100 dark:bg-gray-900">
           <SidebarContents />
         </div>
       </div>
