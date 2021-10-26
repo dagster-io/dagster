@@ -15,8 +15,8 @@ from dagster import (
     resource,
 )
 from dagster_dbt import (
-    DbtRpcResource,
     DbtRpcOutput,
+    DbtRpcResource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_test,

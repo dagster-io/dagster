@@ -2,8 +2,8 @@ import pytest
 import responses
 from dagster import ModeDefinition, execute_solid, solid
 from dagster_dbt import (
-    DbtRpcResource,
     DbtRpcOutput,
+    DbtRpcResource,
     DbtRpcSyncResource,
     dbt_rpc_resource,
     dbt_rpc_sync_resource,

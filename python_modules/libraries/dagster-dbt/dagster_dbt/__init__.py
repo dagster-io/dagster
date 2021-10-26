@@ -33,8 +33,8 @@ from .ops import (
     dbt_test_op,
 )
 from .rpc import (
-    DbtRpcResource,
     DbtRpcOutput,
+    DbtRpcResource,
     DbtRpcSyncResource,
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,

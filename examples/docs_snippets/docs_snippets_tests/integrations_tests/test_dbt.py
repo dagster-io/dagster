@@ -1,5 +1,6 @@
 import pytest
 from docs_snippets.integrations.dbt import (
+    scope_dbt_asset_mats,
     scope_dbt_cli_config_exclude_models,
     scope_dbt_cli_config_executable,
     scope_dbt_cli_config_profile_and_target,
@@ -26,6 +27,7 @@ from docs_snippets.integrations.dbt import (
 @pytest.mark.parametrize(
     "scope",
     [
+        scope_dbt_asset_mats,
         scope_dbt_cli_resource_config,
         scope_dbt_cli_run,
         scope_dbt_cli_run_specific_models,
