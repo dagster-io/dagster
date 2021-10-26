@@ -445,6 +445,7 @@ runLauncher:
           labels: {}
           nodeSelector: {}
           configSource: {}
+          additionalCeleryArgs: []
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
