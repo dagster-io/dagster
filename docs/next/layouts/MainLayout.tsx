@@ -339,18 +339,10 @@ const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
           <div className="flex items-center">
             <Search />
           </div>
-          <div>
-            <button
-              onClick={openFeedback}
-              className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 dark:text-gray-300 text-sm border border-gray-200 dark:border-gray-500 rounded-md hover:bg-gray-100"
-            >
-              Share Feedback
-            </button>
-          </div>
         </div>
         {/* End Search Bar */}
       </div>
-      <div className="relative xl:w-96">
+      <div className="relative">
         {/* Start secondary column */}
         <div className="px-4 sm:px-6 lg:px-8 flex space-x-6 items-center">
           {/* Github Icon */}
@@ -414,11 +406,19 @@ const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
               <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
             </svg>
           </a>
+          <div>
+            <button
+              onClick={openFeedback}
+              className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 dark:text-gray-300 text-sm border border-gray-200 dark:border-gray-500 rounded-md hover:bg-gray-100"
+            >
+              Share Feedback
+            </button>
+          </div>
           <button
             onClick={() => setDarkMode(!isDarkMode)}
             type="button"
             className={cx(
-              "relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500",
+              "hidden relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500",
               {
                 "bg-gray-800": isDarkMode,
                 "bg-gray-200": !isDarkMode,
