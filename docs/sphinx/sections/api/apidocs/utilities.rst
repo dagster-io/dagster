@@ -11,6 +11,8 @@ Utilities
 
 .. autofunction:: config_from_yaml_strings
 
+.. autofunction:: get_dagster_logger
+
 .. autoclass:: ExperimentalWarning
 
 .. currentmodule:: dagster.utils.forked_pdb
@@ -20,7 +22,3 @@ Utilities
 .. currentmodule:: dagster.utils
 
 .. autofunction:: make_email_on_run_failure_sensor
-
-.. currentmodule:: dagster.utils.log
-
-.. autofunction:: get_dagster_logger

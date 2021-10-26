@@ -9,9 +9,9 @@ Dagster is compatible and configurable with [Python's logging module](https://do
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                             |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| <PyObject module="dagster.utils.log" object="get_dagster_logger"/> | A function that returns a python logger that will automatically be captured by Dagster. |
+| Name                                                     | Description                                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="get_dagster_logger"/> | A function that returns a python logger that will automatically be captured by Dagster. |
 
 ## Capturing Python Logs <Experimental />
 
@@ -61,11 +61,10 @@ Note: if a `python_log_level` is set (see: [Configuring A Python Log Level](#con
 
 ### Example: Creating a captured python logger without modifying `dagster.yaml`
 
-If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster.utils.log" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
+If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
 
 ```python file=/concepts/logging/python_logger.py startafter=start_get_logger endbefore=end_get_logger dedent=4
-from dagster.utils.log import get_dagster_logger
-from dagster import op
+from dagster import get_dagster_logger, op
 
 @op
 def ambitious_op():
