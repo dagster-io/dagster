@@ -1196,10 +1196,16 @@ def test_configured_resource_unused():
 
 
 def test_context_manager_resource():
+    event_list = []
+
     @resource
     @contextmanager
     def cm_resource():
-        yield "foo"
+        try:
+            event_list.append("foo")
+            yield "foo"
+        finally:
+            event_list.append("finally")
 
     @op(required_resource_keys={"cm"})
     def basic(context):
@@ -1207,6 +1213,8 @@ def test_context_manager_resource():
 
     with build_op_context(resources={"cm": cm_resource}) as context:
         basic(context)
+
+    assert event_list == ["foo", "finally"]
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1219,4 +1227,7 @@ def test_context_manager_resource():
     def call_basic():
         basic()
 
+    event_list = []
+
     assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
+    assert event_list == ["foo", "finally"]
