@@ -200,6 +200,7 @@ from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
 from dagster.utils.backcompat import ExperimentalWarning
+from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
     date_partition_range,
@@ -356,6 +357,7 @@ __all__ = [
     "DagsterUserCodeExecutionError",
     # Logging
     "DagsterLogManager",
+    "get_dagster_logger",
     # Utilities
     "check_dagster_type",
     "execute_solid",

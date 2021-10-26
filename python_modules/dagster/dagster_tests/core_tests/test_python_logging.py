@@ -1,9 +1,16 @@
 import logging
 
 import pytest
-from dagster import ModeDefinition, execute_pipeline, pipeline, reconstructable, resource, solid
+from dagster import (
+    ModeDefinition,
+    execute_pipeline,
+    get_dagster_logger,
+    pipeline,
+    reconstructable,
+    resource,
+    solid,
+)
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.utils.log import get_dagster_logger
 
 
 def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
