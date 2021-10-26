@@ -4,7 +4,7 @@ from dagster.core.definitions.executor import multiple_process_executor_requirem
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.retries import get_retries_config
+from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
@@ -102,7 +102,8 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             ),
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
-        )
+        ),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
 
