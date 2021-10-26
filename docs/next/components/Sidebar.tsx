@@ -252,18 +252,12 @@ const VersionDropdown = () => {
 const SidebarContents = () => {
   return (
     <>
-      <div className="flex items-center flex-shrink-0 px-6 pt-2 pb-4">
+      <div className="flex items-center flex-shrink-0 px-6 pt-2 pb-6">
         <a href="/" className="flex items-center">
           <img
-            className="w-5 h-5 inline-block"
-            src="https://docs.dagster.io/assets/logos/small.png"
+            className="w-36 inline-block"
+            src="/assets/logos/dagster-logo.svg"
           />
-          <span className="ml-2 text-lg font-extrabold dark:text-gray-200">
-            Dagster
-          </span>
-          <span className="ml-1 text-lg font-extrabold text-gray-700 dark:text-gray-200">
-            Docs
-          </span>
         </a>
       </div>
       <VersionDropdown />

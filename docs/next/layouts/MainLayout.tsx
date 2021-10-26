@@ -539,16 +539,11 @@ const Layout = ({ children }) => {
                 <div className="flex items-center justify-between bg-gray-50 border-b border-gray-200 px-4 py-1.5">
                   <div className="flex items-center">
                     <img
-                      className="w-6 h-6 inline-block"
-                      src="https://docs.dagster.io/assets/logos/small.png"
+                      className="w-32 inline-block"
+                      src="/assets/logos/dagster-logo.svg"
                     />
                   </div>
-                  <div>
-                    <span className="text-lg font-extrabold">Dagster</span>
-                    <span className="ml-1 text-lg font-extrabold text-gray-700">
-                      Docs
-                    </span>
-                  </div>
+                  
                   <div>
                     <button
                       onClick={openMobileMenu}
