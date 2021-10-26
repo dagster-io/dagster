@@ -31,7 +31,7 @@ const Link = ({ href, children, version }: LinkProps) => {
     return <NextLink href={versionedHref}>{children}</NextLink>;
   }
 
-  if (currentVersion == defaultVersion) {
+  if (currentVersion === defaultVersion) {
     const versionedHref = path.join("/", href);
     return <NextLink href={versionedHref}>{children}</NextLink>;
   }

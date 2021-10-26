@@ -286,6 +286,12 @@ const Experimental = () => {
 };
 
 export default {
+  a: ({ children, ...props }) => (
+    // Hydrate the links in raw MDX to include versions
+    <Link href={props.href}>
+      <a {...props}> {children}</a>
+    </Link>
+  ),
   img: ({ children, ...props }) => (
     <div className="mx-auto">
       <img {...(props as any)} />
