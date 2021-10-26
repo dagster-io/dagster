@@ -11,9 +11,7 @@ def scope_dbt_asset_mats():
         dbt_result = context.resources.dbt.run()
         for materialization in generate_materializations(dbt_result):
             yield materialization._replace(
-                metadata_entries=[
-                    ...
-                ]  # insert whatever metadata you want here
+                metadata_entries=[...]  # insert whatever metadata you want here
             )
         yield Output(dbt_result)
 
@@ -38,9 +36,7 @@ def scope_dbt_cli_run():
     from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op
 
-    my_dbt_resource = dbt_cli_resource.configured(
-        {"project_dir": "path/to/dbt/project"}
-    )
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -112,9 +108,7 @@ def scope_dbt_cli_run_after_another_op():
     from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
 
-    my_dbt_resource = dbt_cli_resource.configured(
-        {"project_dir": "path/to/dbt/project"}
-    )
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -127,18 +121,14 @@ def scope_dbt_rpc_resource():
     # start_marker_dbt_rpc_resource
     from dagster_dbt import dbt_rpc_resource
 
-    my_remote_rpc = dbt_rpc_resource.configured(
-        {"host": "80.80.80.80", "port": 8080}
-    )
+    my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
     # end_marker_dbt_rpc_resource
 
 
 def scope_dbt_rpc_run():
     from dagster_dbt import dbt_rpc_resource
 
-    my_remote_rpc = dbt_rpc_resource.configured(
-        {"host": "80.80.80.80", "port": 8080}
-    )
+    my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
     # start_marker_dbt_rpc_run
     from dagster import job
@@ -157,9 +147,7 @@ def scope_dbt_rpc_run_specific_models():
     from dagster import job, op
     from dagster_dbt import dbt_rpc_resource
 
-    my_remote_rpc = dbt_rpc_resource.configured(
-        {"host": "80.80.80.80", "port": 8080}
-    )
+    my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
     @op(required_resource_keys={"dbt"})
     def run_staging_models(context):
@@ -177,9 +165,7 @@ def scope_dbt_rpc_run_and_wait():
     from dagster import job, op
     from dagster_dbt import dbt_rpc_sync_resource
 
-    my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
-        {"host": "80.80.80.80", "port": 8080}
-    )
+    my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
 
     @op(required_resource_keys={"dbt_sync"})
     def run_staging_models_and_wait(context):
@@ -269,9 +255,7 @@ def scope_dbt_rpc_resource_example():
     # start_marker_dbt_rpc_resource_example
     from dagster_dbt import dbt_rpc_resource
 
-    custom_resource = dbt_rpc_resource.configured(
-        {"host": HOST, "post": PORT}
-    )
+    custom_resource = dbt_rpc_resource.configured({"host": HOST, "post": PORT})
     # end_marker_dbt_rpc_resource_example
 
 
