@@ -217,4 +217,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        return CheckRunHealthResult(WorkerStatus.FAILED)
+        return CheckRunHealthResult(
+            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+        )
