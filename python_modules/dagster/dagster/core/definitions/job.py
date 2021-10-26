@@ -210,7 +210,7 @@ class JobDefinition(PipelineDefinition):
         if not self._cached_partition_set:
 
             self._cached_partition_set = PartitionSetDefinition(
-                pipeline_name=self.name,
+                job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
