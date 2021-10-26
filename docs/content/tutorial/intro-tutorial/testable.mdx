@@ -27,7 +27,7 @@ def test_find_highest_calorie_cereal():
     assert result == "hi-cal cereal"
 ```
 
-We'll also write a test for the entire pipeline. The <PyObject
+We'll also write a test for the entire job. The <PyObject
 module="dagster" object="JobDefinition" method="execute_in_process" /> method synchronously executes a job and returns a <PyObject module="dagster"
 object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the outputs produced by ops, and (as we'll see later) other events associated with execution.
 

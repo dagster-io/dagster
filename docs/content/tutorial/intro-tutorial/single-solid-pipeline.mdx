@@ -25,7 +25,7 @@ Let's write our first Dagster op and save it as `hello_cereal.py`.
 
 A op is a unit of computation in a job. Typically, you'll define ops by annotating ordinary Python functions with the <PyObject module="dagster" object="op" displayText="@op" /> decorator.
 
-Our first op does three things: downloads a csv of cereal data, reads it into a list of dictionaries which each represent a row in the CSV, and logs the number of rows it finds.
+Our first op does three things: downloads a CSV of cereal data, reads it into a list of dictionaries which each represent a row in the CSV, and logs the number of rows it finds.
 
 ```python file=/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py startafter=start_solid_marker endbefore=end_solid_marker
 import requests
@@ -66,7 +66,7 @@ Assuming you’ve saved this job as `hello_cereal.py`, you can execute it via an
 
 ### Dagit
 
-To visualize your job (which only has one node) in Dagit, from the directory in which you've saved the job file, just run:
+To visualize your job (which only has one op) in Dagit, from the directory in which you've saved the job file, just run:
 
 ```bash
 dagit -f hello_cereal.py
@@ -98,7 +98,7 @@ height={946}
 
 The large upper left pane is empty here, but, in jobs with parameters, this is where you'll be able to edit job configuration on the fly.
 
-Click the "Launch Execution" button on the bottom right to execute this plan directly from Dagit. A new window should open, and you'll see a much more structured view of the stream of Dagster events start to appear in the left-hand pane.
+Click the "Launch Execution" button on the bottom right to execute this job directly from Dagit. A new window should open, and you'll see a much more structured view of the stream of Dagster events start to appear in the left-hand pane.
 
 If you have pop-up blocking enabled, you may need to tell your browser to allow pop-ups from 127.0.0.1—or, just navigate to the "Runs" tab to see this, and every run of your job.
 

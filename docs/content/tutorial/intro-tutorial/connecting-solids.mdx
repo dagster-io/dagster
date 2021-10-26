@@ -19,10 +19,10 @@ Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a late
 
 ## Let's Get Serial
 
-We'll expand the job we worked with in the first section of the tutorial into two ops:
+We'll expand the job we worked with in the first section of the tutorial into two ops that:
 
-- The first op will download the cereal data and return it as an output.
-- The second op will consume the cereal data produced by the first op and find the cereal with the most sugar.
+- Download the cereal data and return it as an output.
+- Consume the cereal data produced by the first op and find the cereal with the most sugar.
 
 This will allow us to re-run the code that finds the sugariest cereal without re-running the code that downloads the cereal data. If we spot a bug in our sugariness code, or if we decide we want to compute some other statistics about the cereal data, we won't need to re-download the data.
 
