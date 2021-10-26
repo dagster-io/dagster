@@ -29,7 +29,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 ```
 
-The `lines` object returned by Python's built-in `csv.DictReader` is a list of `collections.OrderedDict`, each of which represents one row of the dataset:
+The object returned by Python's built-in `csv.DictReader` is a list of `collections.OrderedDict`, each of which represents one row of the dataset:
 
 ```python
 [
