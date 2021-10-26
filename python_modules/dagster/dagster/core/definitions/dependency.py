@@ -542,11 +542,11 @@ class DependencyDefinition(
     .. code-block:: python
 
         dependency_structure = {
-            'op_b': {
-                'input': DependencyDefinition('op_a', 'result')
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_op', 'result')
             }
-            'op_b': {
-                'input': DependencyDefinition('graph_a', 'result')
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_graph', 'result')
             }
         }
 
@@ -562,11 +562,11 @@ class DependencyDefinition(
 
 
     Args:
-        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
+        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
             passed between the two nodes originates.
         output (Optional[str]): The name of the output that is depended on. (default: "result")
         description (Optional[str]): Human-readable description of this dependency.
-        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
+        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
             passed between the two nodes originates.
     """
 
@@ -622,7 +622,7 @@ class MultiDependencyDefinition(
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a pipeline whose keys represent the dependent op and dependent
+    dependency structure of a job or pipeline whose keys represent the dependent ops or graphs and dependent
     input, so this object only contains information about the dependee.
 
     Concretely, if the input named 'input' of op_c depends on the outputs named 'result' of
@@ -652,10 +652,8 @@ class MultiDependencyDefinition(
             op_c(op_a(), op_b())
 
     Args:
-        node (str): The name of the node (op/graph) that is depended on, that is, from which the value
-            passed between the two nodes originates.
-        output (Optional[str]): The name of the output that is depended on. (default: "result")
-        description (Optional[str]): Human-readable description of this dependency.
+        dependencies (List[Union[DependencyDefinition, Type[MappedInputPlaceHolder]]]): List of
+            upstream dependencies fanned in to this input.
     """
 
     def __new__(
