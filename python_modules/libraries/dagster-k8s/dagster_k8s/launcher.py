@@ -299,7 +299,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             args=["dagster", "api", "execute_run", input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component="run_coordinator",
+            component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
