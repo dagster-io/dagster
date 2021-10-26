@@ -8,6 +8,34 @@
   }
 }
 
+@layer base {
+  @font-face {
+    font-family: Neue Montreal;
+    font-weight: 400;
+    src: url(/fonts/PPNeueMontreal-Regular.woff) format("woff");
+  }
+
+  @font-face {
+    font-family: Diatype Mono;
+    font-weight: 400;
+    src: url(/fonts/ABCDiatypeMono-Regular.woff) format("woff");
+  }
+
+  html {
+    font-feature-settings: "ss02"; 
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background: #DEDDFF; /* WebKit/Blink Browsers */
+    color: #21463D;
+  }
+  ::-moz-selection {
+    background: #DEDDFF; /* WebKit/Blink Browsers */
+    color: #21463D;
+  }
+}
+
 /* These classes contain anchor links in the API docs. This property a scroll-margin top to compensate
 for the navigation bar. */
 

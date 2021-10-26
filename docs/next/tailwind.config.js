@@ -21,9 +21,41 @@ module.exports = {
   },
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Neue Montreal", ...defaultTheme.fontFamily.sans],
+        mono: ["Diatype Mono", ...defaultTheme.fontFamily.mono]
+      },
+      borderRadius: {
+        'xl': '36px'
+      },
+      boxShadow: {
+        inner: 'inset 5px 5px 15px 0 rgba(0, 0, 0, 0.05)',
+      },
       colors: {
-        gray: colors.trueGray,
-        cyan: colors.cyan,
+        gray: colors.trueGray, //remove later
+        cyan: colors.cyan, //remove later
+        "gable-green": "#163B36",
+        "sea-foam": "#A7FFBF",
+        "blurple": "#4F43DD",
+        "lavender": "#DEDDFF",
+        primary: {
+          "900":"#0E0CA7",
+          "500":"#4F43DD",
+          "300":"#B9B4F1",
+          "100": "#EDECFC"
+        },
+        gray: {
+          "900": '#231F1B',
+          "800": '#3A3631',
+          "700": '#524E48',
+          "600": '#6B6762',
+          "500": '#86837F',
+          "400": '#A19D99',
+          "300": '#BDBAB7',
+          "200": '#DAD8D6',
+          "100": '#F5F4F2',
+          "50": '#FEFDFB'
+        }
       },
       animation: {
         wiggle: "wiggle 1s ease-in-out infinite",
