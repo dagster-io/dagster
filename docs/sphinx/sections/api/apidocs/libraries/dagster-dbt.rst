@@ -93,7 +93,9 @@ Errors
 Utils
 =====
 
-.. autofunction:: utils.generate_materializations
+.. currentmodule:: dagster_dbt.utils
+
+.. autofunction:: generate_materializations
 
 Solids [Legacy]
 ===============
@@ -102,6 +104,8 @@ dagster_dbt provides a set of solids that may be used in legacy pipelines.
 
 CLI Solids
 ~~~~~~~~~~
+
+.. currentmodule:: dagster_dbt
 
 .. autofunction:: dbt_cli_compile
 

@@ -57,7 +57,10 @@ Typically, you'll want to configure your `project_dir` here, as in most cases, y
 from dagster_dbt import dbt_cli_resource
 
 my_dbt_resource = dbt_cli_resource.configured(
-    {"project_dir": "path/to/dbt/project", "profiles_dir": "path/to/dbt/profiles"}
+    {
+        "project_dir": "path/to/dbt/project",
+        "profiles_dir": "path/to/dbt/profiles",
+    }
 )
 ```
 
@@ -267,18 +270,18 @@ For full documentation on all available config, [visit the API docs for dagster-
 
 `dagster_dbt` is configured to automatically create [Asset Materializations](/concepts/assets/asset-materializations) for each of your dbt models when you run the `run` command (via either the CLI or over RPC). These materializations are populated with metadata that is automatically parsed from the dbt response. The available metadata differs between dbt versions. If there's anything you would like to add to these materializations, you can explicitly invoke the underlying <PyObject module='dagster_dbt.utils' object='generate_materializations'/> utility function, and modify each of the resulting materializations like so:
 
-```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats
+```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats dedent=4
 from dagster import op, Output
-    from dagster_dbt.utils import generate_materializations
+from dagster_dbt.utils import generate_materializations
 
-    @op(required_resource_keys={"dbt"})
-    def dbt_run_with_custom_assets(context):
-        dbt_result = context.resources.dbt.run()
-        for materialization in generate_materializations(dbt_result):
-            yield materialization._replace(
-                metadata_entries=[...]  # insert whatever metadata you want here
-            )
-        yield Output(dbt_result)
+@op(required_resource_keys={"dbt"})
+def dbt_run_with_custom_assets(context):
+    dbt_result = context.resources.dbt.run()
+    for materialization in generate_materializations(dbt_result):
+        yield materialization._replace(
+            metadata_entries=[...]  # insert whatever metadata you want here
+        )
+    yield Output(dbt_result)
 ```
 
 **dbt CLI: Set the dbt profile and target to load**
