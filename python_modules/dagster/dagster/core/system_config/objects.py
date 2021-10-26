@@ -7,7 +7,7 @@ from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
 )
-from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item

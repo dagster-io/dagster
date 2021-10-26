@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from ...decorator_utils import get_function_params, validate_expected_params
 from ..events import HookExecutionResult
-from ..hook import HookDefinition
+from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.hook import HookContext

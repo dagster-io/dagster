@@ -8,8 +8,12 @@ from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
-from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
-from dagster.core.definitions.resource_definition import IContainsGenerator, Resources, ScopedResourcesBuilder
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import (
+    IContainsGenerator,
+    Resources,
+    ScopedResourcesBuilder,
+)
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import (

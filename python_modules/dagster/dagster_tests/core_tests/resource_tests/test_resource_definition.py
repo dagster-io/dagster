@@ -26,7 +26,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import pipeline
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import make_values_resource
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster.core.events.log import EventLogEntry, construct_event_logger

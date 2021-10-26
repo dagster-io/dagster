@@ -28,7 +28,7 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.output import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle

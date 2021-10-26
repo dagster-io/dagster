@@ -5,14 +5,14 @@ from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
-from .executor import ExecutorDefinition
-from .graph import GraphDefinition
-from .hook import HookDefinition
+from .executor_definition import ExecutorDefinition
+from .graph_definition import GraphDefinition
+from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
-from .pipeline import PipelineDefinition
+from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .resource import ResourceDefinition
+from .resource_definition import ResourceDefinition
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -253,7 +253,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
-    from .graph import default_job_io_manager
+    from .graph_definition import default_job_io_manager
 
     if (
         # pylint: disable=comparison-with-callable

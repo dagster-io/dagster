@@ -23,7 +23,7 @@ from dagster.cli.workspace.cli_target import (
     python_pipeline_target_argument,
     repository_target_argument,
 )
-from dagster.core.definitions.pipeline_definition_definition_base import IPipeline
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run

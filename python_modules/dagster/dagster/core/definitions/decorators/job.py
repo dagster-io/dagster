@@ -5,11 +5,11 @@ from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping
-from ..graph import GraphDefinition
-from ..hook import HookDefinition
-from ..job import JobDefinition
-from ..logger import LoggerDefinition
-from ..resource import ResourceDefinition
+from ..graph_definition import GraphDefinition
+from ..hook_definition import HookDefinition
+from ..job_definition import JobDefinition
+from ..logger_definition import LoggerDefinition
+from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:

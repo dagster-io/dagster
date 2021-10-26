@@ -11,7 +11,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,

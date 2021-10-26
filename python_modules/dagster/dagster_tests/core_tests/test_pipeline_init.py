@@ -1,6 +1,6 @@
 import pytest
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.resources_init import (

@@ -7,7 +7,7 @@ from dagster import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter

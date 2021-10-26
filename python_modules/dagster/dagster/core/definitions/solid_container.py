@@ -8,8 +8,8 @@ from dagster.core.types.dagster_type import DagsterTypeKind
 from .dependency import DependencyStructure, IDependencyDefinition, Node, NodeInvocation
 
 if TYPE_CHECKING:
-    from .solid import NodeDefinition
-    from .graph import GraphDefinition
+    from .solid_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
 
 def validate_dependency_dict(
@@ -117,8 +117,8 @@ def create_execution_structure(
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
     """
-    from .solid import NodeDefinition
-    from .graph import GraphDefinition
+    from .solid_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
     check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(
@@ -222,7 +222,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                             ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                         )
                 if not solid_dict[from_solid].definition.has_input(from_input):
-                    from .graph import GraphDefinition
+                    from .graph_definition import GraphDefinition
 
                     input_list = solid_dict[from_solid].definition.input_dict.keys()
                     node_type = (

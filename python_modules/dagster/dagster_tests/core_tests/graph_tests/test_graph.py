@@ -17,13 +17,13 @@ from dagster import (
     success_hook,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.graph import GraphDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline_definition_definition import PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,

@@ -11,8 +11,8 @@ from dagster import check
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
-from dagster.core.definitions.pipeline_definition_definition import PipelineDefinition
-from dagster.core.definitions.pipeline_definition_definition_base import IPipeline
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder

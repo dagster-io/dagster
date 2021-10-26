@@ -12,7 +12,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.execution.plan.inputs import (
     FromConfig,

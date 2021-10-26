@@ -45,10 +45,10 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
-from .hook import HookDefinition
+from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
-from .logger import LoggerDefinition
-from .node import NodeDefinition
+from .logger_definition import LoggerDefinition
+from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
@@ -56,10 +56,10 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
-    from .solid import SolidDefinition
+    from .solid_definition import SolidDefinition
     from .partition import PartitionedConfig
-    from .executor import ExecutorDefinition
-    from .job import JobDefinition
+    from .executor_definition import ExecutorDefinition
+    from .job_definition import JobDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
@@ -454,9 +454,9 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
-        from .job import JobDefinition
+        from .job_definition import JobDefinition
         from .partition import PartitionedConfig
-        from .executor import ExecutorDefinition, multi_or_in_process_executor
+        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
 
@@ -531,7 +531,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: "ExecutorDefinition",
         logger_defs: Optional[Dict[str, LoggerDefinition]],
     ) -> ConfigType:
-        from .job import JobDefinition
+        from .job_definition import JobDefinition
 
         return (
             JobDefinition(
@@ -575,8 +575,8 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from .job import JobDefinition
-        from .executor import execute_in_process_executor
+        from .job_definition import JobDefinition
+        from .executor_definition import execute_in_process_executor
 
         if len(self.input_defs) > 0:
             raise DagsterInvariantViolationError(

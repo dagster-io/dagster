@@ -28,9 +28,9 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .dependency import IDependencyDefinition, NodeHandle, NodeInvocation
-from .graph import GraphDefinition
+from .graph_definition import GraphDefinition
 from .input import InputDefinition, InputMapping
-from .node import NodeDefinition
+from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .solid_invocation import solid_invocation_result
 

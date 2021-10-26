@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 

@@ -3,8 +3,8 @@ from dagster import check
 from dagster.core.snap import ConfigSchemaSnapshot, ModeDefSnap
 
 from ..util import non_null_list
-from .logger import GrapheneLogger
-from .resource import GrapheneResource
+from .logger_definition import GrapheneLogger
+from .resource_definition import GrapheneResource
 
 
 class GrapheneMode(graphene.ObjectType):

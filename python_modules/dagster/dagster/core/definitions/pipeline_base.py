@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
 
 if TYPE_CHECKING:
-    from .pipeline import PipelineDefinition
+    from .pipeline_definition import PipelineDefinition
 
 
 class IPipeline(ABC):

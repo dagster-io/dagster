@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
 ) -> Any:
-    from .resource import is_context_provided
+    from .resource_definition import is_context_provided
 
     if not resource_def.resource_fn:
         return None

@@ -20,11 +20,11 @@ from dagster.utils import check
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
 from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
-from .graph import GraphDefinition
-from .logger import LoggerDefinition
+from .graph_definition import GraphDefinition
+from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
-from .resource import ResourceDefinition
-from .solid import NodeDefinition, SolidDefinition
+from .resource_definition import ResourceDefinition
+from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(

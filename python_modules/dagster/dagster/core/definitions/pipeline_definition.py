@@ -32,11 +32,11 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
-from .graph import GraphDefinition
-from .hook import HookDefinition
+from .graph_definition import GraphDefinition
+from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .preset import PresetDefinition
-from .solid import NodeDefinition
+from .node_definition import NodeDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -1011,7 +1011,7 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
-    from dagster.core.definitions.job import JobDefinition
+    from dagster.core.definitions.job_definition import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with

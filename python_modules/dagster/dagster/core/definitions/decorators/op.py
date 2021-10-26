@@ -10,7 +10,7 @@ from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid import SolidDefinition
+from ..solid_definition import SolidDefinition
 from .solid import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
@@ -58,7 +58,7 @@ class _Op:
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
-        from ..op_def import OpDefinition
+        from ..op_definition import OpDefinition
 
         if self.input_defs is not None and self.ins is not None:
             check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")

@@ -8,7 +8,7 @@ from dagster import check
 
 if TYPE_CHECKING:
     from .solid import SolidDefinition
-    from .resource import ResourceDefinition
+    from .resource_definition import ResourceDefinition
 
 
 class SolidVersionContext(

@@ -24,7 +24,7 @@ from logging.handlers import RotatingFileHandler
 import click
 import yaml
 from dagster import check
-from dagster.core.definitions.pipeline_definition_definition_base import IPipeline
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
