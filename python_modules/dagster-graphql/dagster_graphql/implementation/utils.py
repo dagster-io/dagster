@@ -54,7 +54,7 @@ def pipeline_selector_from_graphql(data):
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
-        pipeline_name=data["pipelineName"],
+        pipeline_name=data.get("pipelineName") or data.get("jobName"),
         solid_selection=data.get("solidSelection"),
     )
 
