@@ -623,6 +623,11 @@ redis:
   # Set DB number for Redis backend DB (default 0)
   backendDbNumber: 0
 
+  # If your Redis connection needs configuration options, you can use this field to specific the
+  # exact connection URL needed, rather than letting it be constructed from the Helm values.
+  brokerUrl: ""
+  backendUrl: ""
+
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
 ####################################################################################################

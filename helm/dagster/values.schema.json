@@ -663,6 +663,14 @@
                 "backendDbNumber": {
                     "title": "Backenddbnumber",
                     "type": "integer"
+                },
+                "brokerUrl": {
+                    "title": "Brokerurl",
+                    "type": "string"
+                },
+                "backendUrl": {
+                    "title": "Backendurl",
+                    "type": "string"
                 }
             },
             "required": [
@@ -673,7 +681,9 @@
                 "host",
                 "port",
                 "brokerDbNumber",
-                "backendDbNumber"
+                "backendDbNumber",
+                "brokerUrl",
+                "backendUrl"
             ]
         },
         "Flower": {

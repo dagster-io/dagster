@@ -10,6 +10,8 @@ class Redis(BaseModel):
     port: int
     brokerDbNumber: int
     backendDbNumber: int
+    brokerUrl: str
+    backendUrl: str
 
     class Config:
         extra = Extra.allow
