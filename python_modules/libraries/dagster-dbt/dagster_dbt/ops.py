@@ -76,7 +76,7 @@ Examples:
 )
 def dbt_run_op(context):
     dbt_output = context.resources.dbt.run()
-    if context.op_config["yield_materializations"]:
+    if context.op_config["yield_materializations"] and "results" in dbt_output.result:
         for materialization in generate_materializations(
             dbt_output, asset_key_prefix=context.op_config["asset_key_prefix"]
         ):
@@ -87,6 +87,11 @@ def dbt_run_op(context):
 @op(**_DEFAULT_OP_PROPS)
 def dbt_compile_op(context):
     return context.resources.dbt.compile()
+
+
+@op(**_DEFAULT_OP_PROPS)
+def dbt_ls_op(context):
+    return context.resources.dbt.ls()
 
 
 @op(**_DEFAULT_OP_PROPS)
@@ -112,6 +117,7 @@ def dbt_docs_generate_op(context):
 for op, cmd in [
     (dbt_run_op, "run"),
     (dbt_compile_op, "compile"),
+    (dbt_compile_op, "ls"),
     (dbt_test_op, "test"),
     (dbt_snapshot_op, "snapshot"),
     (dbt_seed_op, "seed"),

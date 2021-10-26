@@ -26,15 +26,16 @@ from .errors import (
 from .ops import (
     dbt_compile_op,
     dbt_docs_generate_op,
+    dbt_ls_op,
     dbt_run_op,
     dbt_seed_op,
     dbt_snapshot_op,
     dbt_test_op,
 )
 from .rpc import (
-    DbtRpcClient,
+    DbtRpcResource,
     DbtRpcOutput,
-    DbtRpcSyncClient,
+    DbtRpcSyncResource,
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
     dbt_rpc_docs_generate,
@@ -72,7 +73,8 @@ __all__ = [
     "DbtOutput",
     "DbtCliOutput",
     "DbtCliResource",
-    "DbtRpcClient",
+    "DbtRpcResource",
+    "DbtRpcSyncResource",
     "DbtRpcOutput",
     "create_dbt_rpc_run_sql_solid",
     "dbt_cli_resource",

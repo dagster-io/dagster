@@ -7,7 +7,7 @@ from urllib.error import URLError
 
 import pytest
 import responses
-from dagster_dbt import DbtRpcClient
+from dagster_dbt import DbtRpcResource
 
 TEST_HOSTNAME = "127.0.0.1"
 TEST_PORT = 8580
@@ -163,7 +163,7 @@ def terminal_poll_result(rpc_logs):  # pylint: disable=redefined-outer-name
 # ======= CLIENT ========
 @pytest.fixture(scope="session")
 def client():
-    return DbtRpcClient(host="0.0.0.0", port=8580)
+    return DbtRpcResource(host="0.0.0.0", port=8580)
 
 
 # ======= UTILS ========

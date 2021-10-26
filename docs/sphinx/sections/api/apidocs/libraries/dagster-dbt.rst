@@ -15,6 +15,8 @@ more advanced use cases, we suggest building your own ops which directly interac
 
 .. autofunction:: dbt_compile_op
 
+.. autofunction:: dbt_ls_op
+
 .. autofunction:: dbt_test_op
 
 .. autofunction:: dbt_snapshot_op
@@ -43,7 +45,10 @@ CLI Resources
 RPC Resources
 ~~~~~~~~~~~~~
 
-.. autoclass:: DbtRpcClient
+.. autoclass:: DbtRpcResource
+    :members:
+
+.. autoclass:: DbtRpcSyncResource
     :members:
 
 .. autoclass:: DbtRpcOutput
@@ -84,6 +89,11 @@ Errors
 .. autoexception:: DagsterDbtCliUnexpectedOutputError
 
 .. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
+
+Utils
+=====
+
+.. autofunction:: utils.generate_materializations
 
 Solids [Legacy]
 ===============
