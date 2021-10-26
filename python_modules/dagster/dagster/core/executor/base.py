@@ -5,12 +5,12 @@ from dagster.core.execution.retries import RetryMode
 
 class Executor(abc.ABC):  # pylint: disable=no-init
     @abc.abstractmethod
-    def execute(self, pipeline_context, execution_plan):
+    def execute(self, plan_context, execution_plan):
         """
         For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 
         Args:
-            pipeline_context (PlanOrchestrationContext): The pipeline orchestration context.
+            plan_context (PlanOrchestrationContext): The plan's orchestration context.
             execution_plan (ExecutionPlan): The plan to execute.
 
         Returns:

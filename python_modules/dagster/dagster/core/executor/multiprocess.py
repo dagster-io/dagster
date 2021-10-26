@@ -94,16 +94,16 @@ class MultiprocessExecutor(Executor):
     def retries(self):
         return self._retries
 
-    def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
+    def execute(self, plan_context, execution_plan):
+        check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        pipeline = pipeline_context.reconstructable_pipeline
+        pipeline = plan_context.reconstructable_pipeline
 
         limit = self.max_concurrent
 
         yield DagsterEvent.engine_event(
-            pipeline_context,
+            plan_context,
             "Executing steps using multiprocess executor: parent process (pid: {pid})".format(
                 pid=os.getpid()
             ),
@@ -125,7 +125,7 @@ class MultiprocessExecutor(Executor):
                 while (not stopping and not active_execution.is_complete) or active_iters:
                     if active_execution.check_for_interrupts():
                         yield DagsterEvent.engine_event(
-                            pipeline_context,
+                            plan_context,
                             "Multiprocess executor: received termination signal - "
                             "forwarding to active child processes",
                             EngineEventData.interrupted(list(term_events.keys())),
@@ -145,7 +145,7 @@ class MultiprocessExecutor(Executor):
                             break
 
                         for step in steps:
-                            step_context = pipeline_context.for_step(step)
+                            step_context = plan_context.for_step(step)
                             term_events[step.key] = multiprocessing.Event()
                             active_iters[step.key] = self.execute_step_out_of_process(
                                 pipeline,
@@ -172,7 +172,7 @@ class MultiprocessExecutor(Executor):
                                 sys.exc_info()
                             )
                             yield DagsterEvent.engine_event(
-                                pipeline_context,
+                                plan_context,
                                 (
                                     "Multiprocess executor: child process for step {step_key} "
                                     "unexpectedly exited with code {exit_code}"
@@ -181,7 +181,7 @@ class MultiprocessExecutor(Executor):
                                 step_handle=active_execution.get_step_by_key(key).handle,
                             )
                             step_failure_event = DagsterEvent.step_failure_event(
-                                step_context=pipeline_context.for_step(
+                                step_context=plan_context.for_step(
                                     active_execution.get_step_by_key(key)
                                 ),
                                 step_failure_data=StepFailureData(
@@ -198,10 +198,10 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
-                        active_execution.verify_complete(pipeline_context, key)
+                        active_execution.verify_complete(plan_context, key)
 
                     # process skipped and abandoned steps
-                    yield from active_execution.plan_events_iterator(pipeline_context)
+                    yield from active_execution.plan_events_iterator(plan_context)
 
                 errs = {pid: err for pid, err in errors.items() if err}
 
@@ -218,7 +218,7 @@ class MultiprocessExecutor(Executor):
                     )
                 ):
                     yield DagsterEvent.engine_event(
-                        pipeline_context,
+                        plan_context,
                         "Multiprocess executor: interrupted all active child processes",
                         event_specific_data=EngineEventData(),
                     )
@@ -237,7 +237,7 @@ class MultiprocessExecutor(Executor):
                     )
 
         yield DagsterEvent.engine_event(
-            pipeline_context,
+            plan_context,
             "Multiprocess executor: parent process exiting after {duration} (pid: {pid})".format(
                 duration=format_duration(timer_result.millis), pid=os.getpid()
             ),
