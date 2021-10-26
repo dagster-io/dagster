@@ -1,6 +1,8 @@
 import os
+import responses
 
 from airflow.operators.bash_operator import BashOperator
+from airflow.operators.http_operator import SimpleHttpOperator
 from dagster import build_op_context, job
 from dagster_airflow import operator_to_op
 from tempfile import TemporaryDirectory
@@ -21,9 +23,8 @@ failure_bash_task = BashOperator(
 def test_simple_bash_task():
 
     with TemporaryDirectory() as tmpdir:
-        print(tmpdir)
         simple_bash_task = BashOperator(
-            task_id="bash_task", bash_command="touch my_file.txt", cwd=tmpdir
+            task_id="bash_task", bash_command=f"cd {tmpdir}; touch my_file.txt"
         )
 
         dagster_op = operator_to_op(simple_bash_task)
@@ -34,12 +35,26 @@ def test_simple_bash_task():
 
         run_result = my_job.execute_in_process()
 
-        print(os.listdir(tmpdir))
         assert "my_file.txt" in os.listdir(tmpdir)
 
-    # assert run_result.output_for_node("converted_op") == "hello world"
-    # for e in run_result.events_for_node("converted_op"):
-    #     print(e)
+
+def test_http_task():
+    http_task = SimpleHttpOperator(task_id="http_task", endpoint="foo")
+
+    dagster_op = operator_to_op(http_task)
+
+    @job
+    def my_job():
+        dagster_op()
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(rsps.POST, "https://mycoolwebsite.com/foo", body="foo")
+        result = my_job.execute_in_process()
+        assert result.success
+        assert len(rsps.calls) == 1
+        response = rsps.calls[0].response
+        assert response.content == b"foo"
+
     assert False
 
 
@@ -66,6 +81,3 @@ def test_failure_bash_task(capsys):
     print(out)
     print(err)
     assert "hello world" in out
-
-
-test_simple_bash_task()
