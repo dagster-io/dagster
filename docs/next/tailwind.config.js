@@ -1,5 +1,6 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
+const { red } = require("tailwindcss/colors");
 
 module.exports = {
   important: "html",
@@ -87,73 +88,23 @@ module.exports = {
             "code::after": {
               content: '""',
             },
+            "a code": {
+              background: theme("colors.gray.100"),
+              color: theme("colors.blurple"),
+              padding: "4px 6px",
+              transition: "all .3s",
+            },
+            "a code:hover": {
+              text_decoration: "underline",
+              background: theme("colors.primary.100"),
+              color: theme("colors.primary.900"),
+            },
             "pre a": {
               backgroundColor: theme("colors.yellow.100"),
               marginRight: 8,
             },
           },
-        },
-        dark: {
-          css: [
-            {
-              color: theme("colors.gray.300"),
-              '[class~="lead"]': {
-                color: theme("colors.gray.300"),
-              },
-              a: {
-                color: theme("colors.white"),
-              },
-              strong: {
-                color: theme("colors.white"),
-              },
-              "ol > li::before": {
-                color: theme("colors.gray.400"),
-              },
-              "ul > li::before": {
-                backgroundColor: theme("colors.gray.600"),
-              },
-              hr: {
-                borderColor: theme("colors.gray.200"),
-              },
-              blockquote: {
-                color: theme("colors.gray.200"),
-                borderLeftColor: theme("colors.gray.600"),
-              },
-              h1: {
-                color: theme("colors.white"),
-              },
-              h2: {
-                color: theme("colors.white"),
-              },
-              h3: {
-                color: theme("colors.white"),
-              },
-              h4: {
-                color: theme("colors.white"),
-              },
-              "figure figcaption": {
-                color: theme("colors.gray.400"),
-              },
-              code: {
-                color: theme("colors.white"),
-              },
-              "a code": {
-                color: theme("colors.white"),
-              },
-              pre: {
-                color: theme("colors.gray.200"),
-                backgroundColor: theme("colors.gray.800"),
-              },
-              thead: {
-                color: theme("colors.white"),
-                borderBottomColor: theme("colors.gray.400"),
-              },
-              "tbody tr": {
-                borderBottomColor: theme("colors.gray.600"),
-              },
-            },
-          ],
-        },
+        }
       }),
     },
   },

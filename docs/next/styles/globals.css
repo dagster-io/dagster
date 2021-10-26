@@ -23,7 +23,6 @@
 
   html {
     font-feature-settings: "ss02"; 
-    scroll-behavior: smooth;
   }
 
   ::selection {
@@ -33,6 +32,14 @@
   ::-moz-selection {
     background: #DEDDFF; /* WebKit/Blink Browsers */
     color: #21463D;
+  }
+
+  code {
+    background: #F5F4F2;
+    color: #163B36;
+    font-family: "Diatype Mono";
+    padding: 4px 6px;
+    border-radius: 4px;
   }
 }
 
@@ -82,7 +89,7 @@ dl > dd > dl {
 
 .sig-prename,
 .sig-name {
-  @apply text-blue-600 text-lg !important;
+  @apply p-0 text-gable-green text-lg !important;
 }
 
 dt > a.reference.internal {
@@ -297,7 +304,7 @@ dt > a.reference.internal {
 }
 
 .DocSearch-Hit[aria-selected="true"] .DocSearch-Hit-path {
-  color: theme("colors.blue.200");
+  color: theme("colors.primary.300");
 }
 
 .DocSearch-Hit-title {
