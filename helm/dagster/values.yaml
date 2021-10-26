@@ -428,6 +428,7 @@ runLauncher:
       nameOverride: "celery-workers"
 
       # Additional config options for Celery, applied to all queues.
+      # These can be overridden per-queue below.
       # For available options, see:
       # https://docs.celeryproject.org/en/stable/userguide/configuration.html
       configSource: {}
@@ -437,11 +438,13 @@ runLauncher:
       #
       # Optionally, labels and node selectors can be set on the Celery queue's workers.
       # Specifying a queue's node selector will override any existing node selector defaults.
+      # configSource will be merged with the shared configSource above.
       workerQueues:
         - name: "dagster"
           replicaCount: 2
           labels: {}
           nodeSelector: {}
+          configSource: {}
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
