@@ -156,7 +156,8 @@ Celery options
 pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//
 {{- else if .Values.redis.enabled -}}
 {{- $password := ternary (printf ":%s@" .Values.redis.password) "" .Values.redis.usePassword -}}
-redis://{{ $password }}{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.brokerDbNumber | default 0}}
+{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.brokerDbNumber | default 0) -}}
+{{- ternary .Values.redis.brokerUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
 {{- end -}}
 {{- end -}}
 
@@ -165,7 +166,8 @@ redis://{{ $password }}{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Val
 rpc://
 {{- else if .Values.redis.enabled -}}
 {{- $password := ternary (printf ":%s@" .Values.redis.password) "" .Values.redis.usePassword -}}
-redis://{{ $password }}{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}
+{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.backendDbNumber | default 0) -}}
+{{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
 {{- end -}}
 {{- end -}}
 

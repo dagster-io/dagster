@@ -69,3 +69,20 @@ def test_celery_backend_with_redis_with_password(template: HelmTemplate):
 
     assert configmap.data["DAGSTER_K8S_CELERY_BROKER"] == expected_celery_broker
     assert configmap.data["DAGSTER_K8S_CELERY_BACKEND"] == expected_celery_backend
+
+
+def test_celery_backend_override_connection_string(template: HelmTemplate):
+    broker_url = "host:6380,password=password,ssl=True"
+    backend_url = "host:6381,password=password,ssl=True"
+    helm_values = DagsterHelmValues.construct(
+        redis=Redis.construct(
+            enabled=True,
+            brokerUrl=broker_url,
+            backendUrl=backend_url,
+        ),
+    )
+
+    [configmap] = template.render(helm_values)
+
+    assert configmap.data["DAGSTER_K8S_CELERY_BROKER"] == broker_url
+    assert configmap.data["DAGSTER_K8S_CELERY_BACKEND"] == backend_url
