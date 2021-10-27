@@ -326,38 +326,39 @@ def make_airflow_dag_for_operator(
 ):
     """Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
-        `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
+    `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
 
-        Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
-        Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you
-        are looking for a containerized solution to provide better isolation, see instead
-        :py:func:`make_airflow_dag_containerized`.
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
+    Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you
+    are looking for a containerized solution to provide better isolation, see instead
+    :py:func:`make_airflow_dag_containerized`.
 
-        This function should be invoked in an Airflow DAG definition file, such as that created by an
-        invocation of the dagster-airflow scaffold CLI tool.
+    This function should be invoked in an Airflow DAG definition file, such as that created by an
+    invocation of the dagster-airflow scaffold CLI tool.
 
-        Args:
-            recon_repo (:class:`dagster.ReconstructableRepository`): reference to a Dagster RepositoryDefinition
-                that can be reconstructed in another process
-            job_name (str): The name of the job definition.
-            operator (type): The operator to use. Must be a class that inherits from
-                :py:class:`BaseOperator <airflow.models.BaseOperator>`
-            run_config (Optional[dict]): The config, if any, with which to compile
-                the pipeline/job to an execution plan, as a Python dict.
-            mode (Optional[str]): The mode in which to execute the pipeline.
-            instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline/job.
-            dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
-                :py:class:`DAG <airflow:airflow.models.DAG>`).
-            dag_description (Optional[str]): The description to use for the compiled Airflow DAG
-                (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
-            dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
-                :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
-            op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlyinpipelineirflow
-          [Deprecated]       operator.
-    pipelineob_name (str): The name of the job definition.
-        Returns:
-            (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
-            list of its constituent tasks.
+    Args:
+        recon_repo (:class:`dagster.ReconstructableRepository`): reference to a Dagster RepositoryDefinition
+            that can be reconstructed in another process
+        job_name (str): The name of the job definition.
+        operator (type): The operator to use. Must be a class that inherits from
+            :py:class:`BaseOperator <airflow.models.BaseOperator>`
+        run_config (Optional[dict]): The config, if any, with which to compile
+            the pipeline to an execution plan, as a Python dict.
+        mode (Optional[str]): The mode in which to execute the pipeline.
+        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
+        dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
+            :py:class:`DAG <airflow:airflow.models.DAG>`).
+        dag_description (Optional[str]): The description to use for the compiled Airflow DAG
+            (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
+        dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
+            :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
+        op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
+            operator.
+        pipeline_name (str): [Deprecated] The name of the pipeline definition.
+
+    Returns:
+        (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
+        list of its constituent tasks.
     """
     check.subclass_param(operator, "operator", BaseOperator)
 

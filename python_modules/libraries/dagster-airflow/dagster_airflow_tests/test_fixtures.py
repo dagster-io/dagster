@@ -209,7 +209,7 @@ def dagster_airflow_docker_operator_pipeline():
 
             dag, tasks = make_airflow_dag_containerized_for_recon_repo(
                 recon_repo=recon_repo,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 image=image,
                 mode=mode,
                 run_config=run_config,
