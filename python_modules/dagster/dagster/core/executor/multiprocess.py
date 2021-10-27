@@ -52,10 +52,12 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         pipeline = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
+            job_def = pipeline.get_definition().coerce_to_job(
+                mode=self.pipeline_run.mode, run_config=self.run_config
+            )
             execution_plan = create_execution_plan(
-                pipeline=pipeline,
+                job_def,
                 run_config=self.run_config,
-                mode=self.pipeline_run.mode,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
             )

@@ -130,11 +130,12 @@ def query_on_dask_worker(
             pipeline_run.solids_to_execute
         )
 
+        job_def = subset_pipeline.get_definition().coerce_to_job(run_config=run_config, mode=mode)
+
         execution_plan = create_execution_plan(
-            subset_pipeline,
+            job_def,
             run_config=run_config,
             step_keys_to_execute=step_keys,
-            mode=mode,
         )
 
         return execute_plan(

@@ -159,10 +159,12 @@ def step_run_ref_to_step_context(
         step_run_ref.pipeline_run.solids_to_execute
     )
 
+    job_def = pipeline.get_definition().coerce_to_job(
+        mode=step_run_ref.pipeline_run.mode, run_config=step_run_ref.run_config
+    )
     execution_plan = create_execution_plan(
-        pipeline,
+        job_def,
         step_run_ref.run_config,
-        mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
     )
 

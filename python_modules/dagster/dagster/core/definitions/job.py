@@ -4,8 +4,10 @@ from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
+from .executor import ExecutorDefinition
 from .graph import GraphDefinition
 from .hook import HookDefinition
+from .logger import LoggerDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
 from .pipeline import PipelineDefinition
@@ -218,6 +220,27 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    @property
+    def mode_def(self):
+        return self.mode_definitions[0]
+
+    @property
+    def executor_def(self) -> ExecutorDefinition:
+        return self.mode_def.executor_defs[0]
+
+    @property
+    def resource_defs(self) -> Dict[str, ResourceDefinition]:
+        return self.mode_def.resource_defs
+
+    @property
+    def loggers(self) -> Dict[str, LoggerDefinition]:
+        return self.mode_def.loggers
+
+    def coerce_to_job(
+        self, mode: Optional[str] = None, run_config: Optional[Dict[str, Any]] = None
+    ) -> "JobDefinition":
+        return self
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):

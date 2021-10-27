@@ -241,11 +241,14 @@ def execute_step_command(input_json):
                 args.pipeline_origin
             ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
+            pipeline_def = recon_pipeline.get_definition()
+            job_def = pipeline_def.coerce_to_job(
+                mode=pipeline_run.mode, run_config=pipeline_run.run_config
+            )
             execution_plan = create_execution_plan(
-                recon_pipeline,
+                job_def,
                 run_config=pipeline_run.run_config,
                 step_keys_to_execute=args.step_keys_to_execute,
-                mode=pipeline_run.mode,
                 known_state=args.known_state,
             )
 

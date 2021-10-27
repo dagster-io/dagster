@@ -66,8 +66,8 @@ def get_aws_environment():
     return default_env
 
 
-def check_storage_specified(pipeline_def, mode_def):
-    if not can_isolate_steps(pipeline_def, mode_def):
+def check_storage_specified(job_def):
+    if not can_isolate_steps(job_def):
         raise AirflowException(
             "DAGs created using dagster-airflow run each step in its own process, but your "
             "pipeline includes solid outputs that will not be stored somewhere where other "
@@ -116,11 +116,13 @@ def invoke_steps_within_python_operator(
                 pipeline_name
             ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
+            job_def = recon_pipeline.get_definition().coerce_to_job(
+                mode=mode, run_config=run_config
+            )
             execution_plan = create_execution_plan(
-                recon_pipeline,
+                job_def,
                 run_config=run_config,
                 step_keys_to_execute=step_keys,
-                mode=mode,
             )
             if should_skip_step(execution_plan, instance, pipeline_run.run_id):
                 raise AirflowSkipException(

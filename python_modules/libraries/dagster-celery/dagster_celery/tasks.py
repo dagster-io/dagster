@@ -34,10 +34,12 @@ def create_task(celery_app, **task_kwargs):
 
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
+        job_def = pipeline.get_definition().coerce_to_job(
+            mode=pipeline_run.mode, run_config=pipeline_run.run_config
+        )
         execution_plan = create_execution_plan(
-            pipeline,
+            job_def,
             pipeline_run.run_config,
-            mode=pipeline_run.mode,
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,
         )

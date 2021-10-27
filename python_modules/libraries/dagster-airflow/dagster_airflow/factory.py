@@ -108,12 +108,9 @@ class DagsterOperatorParameters(
     ):
         pipeline_def = recon_repo.get_definition().get_pipeline(pipeline_name)
 
-        if mode is None:
-            mode = pipeline_def.get_default_mode_name()
+        job_def = pipeline_def.coerce_to_job(mode=mode, run_config=run_config)
 
-        mode_def = pipeline_def.get_mode_definition(mode)
-
-        check_storage_specified(pipeline_def, mode_def)
+        check_storage_specified(job_def)
 
         return super(DagsterOperatorParameters, cls).__new__(
             cls,
@@ -200,7 +197,8 @@ def _make_airflow_dag(
     if mode is None:
         mode = pipeline.get_default_mode_name()
 
-    execution_plan = create_execution_plan(pipeline, run_config, mode=mode)
+    job_def = pipeline.get_definition().coerce_to_job(mode=mode, run_config=run_config)
+    execution_plan = create_execution_plan(job_def, run_config)
 
     tasks = {}
 

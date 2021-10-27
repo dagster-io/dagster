@@ -320,16 +320,15 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
+        pipeline = self.get_reconstructable_pipeline(
+            external_pipeline.name
+        ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute)
+        job_def = pipeline.get_definition().coerce_to_job(mode=mode, run_config=run_config)
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 create_execution_plan(
-                    pipeline=self.get_reconstructable_pipeline(
-                        external_pipeline.name
-                    ).subset_for_execution_from_existing_pipeline(
-                        external_pipeline.solids_to_execute
-                    ),
+                    job_def,
                     run_config=run_config,
-                    mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
                     known_state=known_state,
                 ),

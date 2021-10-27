@@ -347,11 +347,13 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
             else recon_pipeline
         )
 
+        job_def = pipeline.get_definition().coerce_to_job(
+            mode=args.mode, run_config=args.run_config
+        )
         return snapshot_from_execution_plan(
             create_execution_plan(
-                pipeline=pipeline,
+                job_def,
                 run_config=args.run_config,
-                mode=args.mode,
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
             ),

@@ -276,10 +276,12 @@ def execute_list_versions_command(instance, kwargs):
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
 
+    pipeline_def = pipeline.get_definition()
+    job_def = pipeline_def.coerce_to_job(mode=mode, run_config=run_config)
+
     memoized_plan = create_execution_plan(
-        pipeline,
+        job_def,
         run_config=run_config,
-        mode=mode,
         instance=instance,
         tags={MEMOIZED_RUN_TAG: "true"},
     )

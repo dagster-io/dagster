@@ -713,36 +713,33 @@ def _get_execution_plan_from_run(
                 pipeline_run.pipeline_name,
                 execution_plan_snapshot,
             )
+
+    job_def = pipeline.get_definition().coerce_to_job(mode=pipeline_run.mode)
     return create_execution_plan(
-        pipeline,
+        job_def,
         run_config=pipeline_run.run_config,
-        mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
     )
 
 
 def create_execution_plan(
-    pipeline: Union[IPipeline, PipelineDefinition],
+    job_def: JobDefinition,
     run_config: Optional[dict] = None,
-    mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: KnownExecutionState = None,
     instance: Optional[DagsterInstance] = None,
     tags: Optional[Dict[str, str]] = None,
 ) -> ExecutionPlan:
-    pipeline = _check_pipeline(pipeline)
-    pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    job_def = check.inst_param(job_def, "job_def", JobDefinition)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-    mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance, "instance", DagsterInstance)
     tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
+    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
     return ExecutionPlan.build(
-        pipeline,
+        job_def,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -991,17 +988,18 @@ def _resolve_reexecute_step_selection(
         pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection)
 
     parent_logs = instance.all_logs(parent_pipeline_run.run_id)
+    job_def = pipeline.get_definition().coerce_to_job(
+        mode=mode, run_config=parent_pipeline_run.run_config
+    )
     parent_plan = create_execution_plan(
-        pipeline,
+        job_def,
         parent_pipeline_run.run_config,
-        mode,
         known_state=KnownExecutionState.derive_from_logs(parent_logs),
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     execution_plan = create_execution_plan(
-        pipeline,
+        job_def,
         run_config,
-        mode,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=KnownExecutionState.for_reexecution(parent_logs, step_keys_to_execute),
         tags=parent_pipeline_run.tags,

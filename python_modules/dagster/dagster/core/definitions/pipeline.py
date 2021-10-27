@@ -1,5 +1,16 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
@@ -47,6 +58,8 @@ if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from .job import JobDefinition
+    from .executor import ExecutorDefinition
 
 
 class PipelineDefinition:
@@ -553,6 +566,40 @@ class PipelineDefinition:
         update_wrapper(pipeline_def, self, updated=())
 
         return pipeline_def
+
+    def coerce_to_job(
+        self, mode: Optional[str] = None, run_config: Optional[Dict[str, Any]] = None
+    ) -> "JobDefinition":
+        from .job import JobDefinition
+
+        run_config = check.opt_dict_param(run_config, "run_config")
+        mode = check.opt_str_param(mode, "mode", default=self.get_default_mode_name())
+        mode = cast(str, mode)
+
+        executor_def = resolve_executor_def(self, run_config, mode)
+
+        original_mode_def = self.get_mode_definition(mode)
+
+        mode_def_for_job = ModeDefinition(
+            name=mode,
+            resource_defs=original_mode_def.resource_defs,
+            logger_defs=original_mode_def.loggers,
+            executor_defs=[executor_def],
+            description=original_mode_def.description,
+            _config_mapping=original_mode_def.config_mapping,
+            _partitioned_config=original_mode_def.partitioned_config,
+        )
+
+        return JobDefinition(
+            name=self.name,
+            mode_def=mode_def_for_job,
+            graph_def=self.graph,
+            description=self.description,
+            preset_defs=[preset_def for preset_def in self.preset_defs if preset_def.mode == mode],
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            solid_retry_policy=self._solid_retry_policy,
+        )
 
     # make Callable for decorator reference updates
     def __call__(self, *args, **kwargs):
@@ -1064,3 +1111,32 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
+
+
+def resolve_executor_def(
+    pipeline_def: PipelineDefinition, run_config: Dict[str, Any], mode: str
+) -> "ExecutorDefinition":
+    from dagster.core.system_config.objects import ResolvedRunConfig
+
+    resolved_run_config = ResolvedRunConfig.build(
+        pipeline_def=pipeline_def, run_config=run_config, mode=mode
+    )
+
+    mode_definition = pipeline_def.get_mode_definition(mode)
+    selected_executor = resolved_run_config.execution.execution_engine_name
+    if selected_executor is None:
+        if len(mode_definition.executor_defs) == 1:
+            return mode_definition.executor_defs[0]
+
+        check.failed(
+            f"No executor selected but there are {len(mode_definition.executor_defs)} options."
+        )
+
+    else:
+        for executor_def in mode_definition.executor_defs:
+            if executor_def.name == selected_executor:
+                return executor_def
+
+        check.failed(
+            f'Could not find executor "{selected_executor}". This should have been caught at config validation time.'
+        )

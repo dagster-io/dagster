@@ -782,7 +782,7 @@ class TestRunStorage:
         from dagster.core.snap import snapshot_from_execution_plan
 
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
-        execution_plan = create_execution_plan(pipeline_def)
+        execution_plan = create_execution_plan(pipeline_def.coerce_to_job())
         ep_snapshot = snapshot_from_execution_plan(
             execution_plan, pipeline_def.get_pipeline_snapshot_id()
         )

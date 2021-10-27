@@ -208,13 +208,17 @@ class DagsterDockerOperator(DockerOperator):
 
     def _should_skip(self, pipeline_run):
         recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
+        subset_recon_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute
+        )
+
+        job_def = subset_recon_pipeline.get_definition().coerce_to_job(
+            mode=self.mode, run_config=self.run_config
+        )
         execution_plan = create_execution_plan(
-            recon_pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
-            ),
+            job_def,
             run_config=self.run_config,
             step_keys_to_execute=self.step_keys,
-            mode=self.mode,
         )
         return should_skip_step(execution_plan, instance=self.instance, run_id=pipeline_run.run_id)
 

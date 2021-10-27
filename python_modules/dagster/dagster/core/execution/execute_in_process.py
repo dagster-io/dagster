@@ -29,9 +29,10 @@ def core_execute_in_process(
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)
+    job_def = pipeline_def.coerce_to_job(mode=mode_def.name, run_config=run_config)
 
     execution_plan = create_execution_plan(
-        pipeline,
+        job_def,
         run_config=run_config,
         mode=mode_def.name,
     )
