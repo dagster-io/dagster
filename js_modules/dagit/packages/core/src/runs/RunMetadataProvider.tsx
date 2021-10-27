@@ -192,11 +192,6 @@ export function extractMetadataFromLogs(
     step.attempts = [];
   };
 
-  console.log(
-    'MARKER EVENTS',
-    logs.filter((log) => log.__typename === 'EngineEvent' && log.stepKey === 'one'),
-  );
-
   logs.forEach((log) => {
     const timestamp = Number.parseInt(log.timestamp, 10);
 
