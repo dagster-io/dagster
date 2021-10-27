@@ -11,7 +11,6 @@ from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
-from dagster.serdes import serialize_dagster_namedtuple
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
@@ -114,12 +113,7 @@ class DockerStepHandler(StepHandler):
             ),
             detach=True,
             network=self._networks[0] if len(self._networks) else None,
-            command=[
-                "dagster",
-                "api",
-                "execute_step",
-                serialize_dagster_namedtuple(execute_step_args),
-            ],
+            command=execute_step_args.get_command_args(),
             environment=(
                 {env_name: os.getenv(env_name) for env_name in self._env_vars}
                 if self._env_vars

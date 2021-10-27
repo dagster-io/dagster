@@ -11,7 +11,6 @@ from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.types.dagster_type import Optional
-from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental
 from dagster_k8s.launcher import K8sRunLauncher
@@ -156,8 +155,7 @@ class K8sStepHandler(StepHandler):
         job_name = "dagster-job-%s" % (k8s_name_key)
         pod_name = "dagster-job-%s" % (k8s_name_key)
 
-        input_json = serialize_dagster_namedtuple(step_handler_context.execute_step_args)
-        args = ["dagster", "api", "execute_step", input_json]
+        args = step_handler_context.execute_step_args.get_command_args()
 
         job_config = self._job_config
         if not job_config.job_image:

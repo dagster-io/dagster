@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import List
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -11,7 +12,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -62,6 +63,16 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
+
+    def get_command_args(self) -> List[str]:
+        return [
+            self.pipeline_origin.executable_path,
+            "-m",
+            "dagster",
+            "api",
+            "execute_run",
+            serialize_dagster_namedtuple(self),
+        ]
 
 
 @whitelist_for_serdes
@@ -130,6 +141,16 @@ class ExecuteStepArgs(
                 should_verify_step, "should_verify_step", False
             ),
         )
+
+    def get_command_args(self) -> List[str]:
+        return [
+            self.pipeline_origin.executable_path,
+            "-m",
+            "dagster",
+            "api",
+            "execute_step",
+            serialize_dagster_namedtuple(self),
+        ]
 
 
 @whitelist_for_serdes
