@@ -242,8 +242,8 @@ def test_fetch_logs_on_fail(
         spark_config=None,
         action_on_failure="",
         cluster_id="",
-        local_pipeline_package_path="",
-        deploy_local_pipeline_package=False,
+        local_job_package_path="",
+        deploy_local_job_package=False,
         wait_for_logs=True,
     )
 
