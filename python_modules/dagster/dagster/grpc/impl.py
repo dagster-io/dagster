@@ -293,14 +293,21 @@ def get_partition_config(recon_repo, partition_set_name, partition_name):
         )
 
 
+def _get_target_for_partition_execution_error(partition_set_def):
+    if partition_set_def.job_name:
+        return f"partitioned config on job '{partition_set_def.job_name}'"
+    else:
+        return f"partition set '{partition_set_def.name}'"
+
+
 def get_partition_names(recon_repo, partition_set_name):
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: "Error occurred during the execution of the partition generation function for "
-            "partition set {partition_set_name}".format(partition_set_name=partition_set_def.name),
+            lambda: f"Error occurred during the execution of the partition generation function for "
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             return ExternalPartitionNamesData(
                 partition_names=partition_set_def.get_partition_names()
@@ -319,7 +326,7 @@ def get_partition_tags(recon_repo, partition_set_name, partition_name):
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: "Error occurred during the evaluation of the `tags_for_partition` function for "
-            "partition set {partition_set_name}".format(partition_set_name=partition_set_def.name),
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionTagsData(name=partition.name, tags=tags)
@@ -362,8 +369,8 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: "Error occurred during the partition generation for partition set "
-            "{partition_set_name}".format(partition_set_name=partition_set_def.name),
+            lambda: "Error occurred during the partition generation for "
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             all_partitions = partition_set_def.get_partitions()
         partitions = [
@@ -373,16 +380,14 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
         partition_data = []
         for partition in partitions:
 
-            def _error_message_fn(partition_set_name, partition_name):
+            def _error_message_fn(partition_name):
                 return lambda: (
                     "Error occurred during the partition config and tag generation for "
-                    "partition set {partition_set_name}::{partition_name}".format(
-                        partition_set_name=partition_set_name, partition_name=partition_name
-                    )
+                    f"'{partition_name}' in {_get_target_for_partition_execution_error(partition_set_def)}"
                 )
 
             with user_code_error_boundary(
-                PartitionExecutionError, _error_message_fn(partition_set_def.name, partition.name)
+                PartitionExecutionError, _error_message_fn(partition.name)
             ):
                 run_config = partition_set_def.run_config_for_partition(partition)
                 tags = partition_set_def.tags_for_partition(partition)
