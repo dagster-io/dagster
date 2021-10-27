@@ -22,6 +22,7 @@ from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .graph import GraphDefinition
+from .job import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline import PipelineDefinition
 from .run_request import JobType, RunRequest, SkipReason
@@ -233,7 +234,13 @@ class ScheduleDefinition:
                     "Attempted to provide both run_config_fn and run_config as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            elif job and job.has_preset("default") and run_config_fn is None and run_config is None:
+            elif (
+                job
+                and isinstance(job, JobDefinition)
+                and job.has_preset("default")
+                and run_config_fn is None
+                and run_config is None
+            ):
                 self._run_config_fn = lambda _context: job.get_preset("default").run_config
             else:
                 self._run_config_fn = check.opt_callable_param(
