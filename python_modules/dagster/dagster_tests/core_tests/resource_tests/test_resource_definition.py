@@ -1209,12 +1209,13 @@ def test_context_manager_resource():
 
     @op(required_resource_keys={"cm"})
     def basic(context):
+        event_list.append("compute")
         assert context.resources.cm == "foo"
 
     with build_op_context(resources={"cm": cm_resource}) as context:
         basic(context)
 
-    assert event_list == ["foo", "finally"]
+    assert event_list == ["foo", "compute", "finally"]  # Ensures that we teardown after compute
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1230,4 +1231,4 @@ def test_context_manager_resource():
     event_list = []
 
     assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
-    assert event_list == ["foo", "finally"]
+    assert event_list == ["foo", "compute", "finally"]

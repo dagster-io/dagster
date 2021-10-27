@@ -293,13 +293,15 @@ def single_resource_event_generator(context, resource_name, resource_def):
                         if is_context_provided(get_function_params(resource_def.resource_fn))
                         else resource_def.resource_fn()
                     )
+
                     # Flag for whether resource is generator. This is used to ensure that teardown
                     # occurs when resources are initialized out of execution.
                     is_gen = inspect.isgenerator(resource_or_gen) or isinstance(
                         resource_or_gen, ContextDecorator
                     )
-                    gen = ensure_gen(resource_or_gen)
-                    resource = next(gen)
+
+                    resource_iter = _wrapped_resource_iterator(resource_or_gen)
+                    resource = next(resource_iter)
                 resource = InitializedResource(
                     resource, format_duration(timer_result.millis), is_gen
                 )
@@ -315,7 +317,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
 
     with user_code_error_boundary(DagsterResourceFunctionError, msg_fn, log_manager=context.log):
         try:
-            next(gen)
+            next(resource_iter)
         except StopIteration:
             pass
         else:
@@ -401,3 +403,26 @@ def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_
             resource_keys = resource_keys.union([output_def.io_manager_key])
 
     return frozenset(resource_keys)
+
+
+def _wrapped_resource_iterator(resource_or_gen):
+    """Returns an iterator which yields a single item, which is the resource.
+
+    If the resource is not a context manager, then resource teardown happens following the first yield.
+    If the resource is a context manager, then resource initialization happens as the passed-in
+    context manager opens. Resource teardown happens as the passed-in context manager closes (which will occur after all compute is finished).
+    """
+
+    # Context managers created using contextlib.contextdecorator are not usable as iterators.
+    # Opening context manager and directly yielding preserves initialization/teardown behavior,
+    # while also letting the context manager be used as an iterator.
+    if isinstance(resource_or_gen, ContextDecorator):
+
+        def _gen_resource():
+            with resource_or_gen as resource:
+                yield resource
+
+        return _gen_resource()
+
+    # Otherwise, coerce to generator without opening context manager
+    return ensure_gen(resource_or_gen)
