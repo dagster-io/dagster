@@ -355,7 +355,7 @@ class DagsterInstance:
                     "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
                     '\texport DAGSTER_HOME="~/dagster_home"\n'
                     "or PowerShell\n"
-                    "$env:DAGSTER_HOME = ($home + '\dagster_home')"
+                    "$env:DAGSTER_HOME = ($home + '\\dagster_home')"
                     "or batch"
                     "set DAGSTER_HOME=%UserProfile%/dagster_home"
                     "Alternatively, DagsterInstance.ephemeral() can be used for a transient instance.\n"
