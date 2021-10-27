@@ -22,7 +22,6 @@ from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .graph import GraphDefinition
-from .job import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline import PipelineDefinition
 from .run_request import JobType, RunRequest, SkipReason
@@ -229,6 +228,8 @@ class ScheduleDefinition:
             self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
             self._run_config_fn = None
         else:
+            from .job import JobDefinition
+
             if run_config_fn and run_config:
                 raise DagsterInvalidDefinitionError(
                     "Attempted to provide both run_config_fn and run_config as arguments"
