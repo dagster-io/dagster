@@ -15,8 +15,8 @@ from dagster import (
     resource,
 )
 from dagster_dbt import (
-    DbtRpcClient,
     DbtRpcOutput,
+    DbtRpcResource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_test,
@@ -111,7 +111,7 @@ class TestDBTSingleOperationSolids:
     def test_dbt_rpc_single_op(self, op: str):
         op_solid, op_config = SINGLE_OP_CONFIGS[op]
 
-        mocked_rpc_client = MagicMock(spec=DbtRpcClient)
+        mocked_rpc_client = MagicMock(spec=DbtRpcResource)
         mocked_client_op_method = getattr(mocked_rpc_client, op)
 
         @resource

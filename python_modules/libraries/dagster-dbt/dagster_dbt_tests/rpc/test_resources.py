@@ -2,9 +2,9 @@ import pytest
 import responses
 from dagster import ModeDefinition, execute_solid, solid
 from dagster_dbt import (
-    DbtRpcClient,
     DbtRpcOutput,
-    DbtRpcSyncClient,
+    DbtRpcResource,
+    DbtRpcSyncResource,
     dbt_rpc_resource,
     dbt_rpc_sync_resource,
     local_dbt_rpc_resource,
@@ -91,7 +91,7 @@ def test_dbt_rpc_resource():
 
     @solid(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "<default host>"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
@@ -111,7 +111,7 @@ def test_local_dbt_rpc_resource():
 
     @solid(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "0.0.0.0"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
@@ -125,7 +125,7 @@ def test_dbt_rpc_sync_resource():
 
     @solid(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         assert context.resources.dbt_rpc.host == "<default host>"
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
@@ -142,7 +142,7 @@ def test_dbt_rpc_sync_resource():
 
 @pytest.mark.parametrize(
     "client_class,resource",
-    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+    [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
 def test_dbt_rpc_resource_status(
     dbt_rpc_server, client_class, resource
@@ -165,7 +165,7 @@ def test_dbt_rpc_resource_status(
 def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         out = context.resources.dbt_rpc.cli("run")
         return out
 
@@ -188,7 +188,7 @@ def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):  # pylint: disable=unu
 def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         out = context.resources.dbt_rpc.cli("run")
         return out
 
@@ -210,7 +210,7 @@ def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):  # pylint: disable=un
 
 @pytest.mark.parametrize(
     "client_class,resource",
-    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+    [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
 def test_dbt_rpc_resource_cli(
     dbt_rpc_server, client_class, resource
@@ -232,7 +232,7 @@ def test_dbt_rpc_resource_cli(
 
 @pytest.mark.parametrize(
     "client_class,resource",
-    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+    [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
 def test_dbt_rpc_resource_run(
     dbt_rpc_server, client_class, resource
@@ -254,7 +254,7 @@ def test_dbt_rpc_resource_run(
 
 @pytest.mark.parametrize(
     "client_class,resource",
-    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+    [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
 def test_dbt_rpc_resource_generate_docs(
     dbt_rpc_server, client_class, resource
@@ -276,7 +276,7 @@ def test_dbt_rpc_resource_generate_docs(
 
 @pytest.mark.parametrize(
     "client_class,resource",
-    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+    [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
 )
 def test_dbt_rpc_resource_run_operation(
     dbt_rpc_server, client_class, resource
