@@ -728,3 +728,27 @@ def test_schedule_decorators_bad():
         @schedule(cron_schedule="bad_schedule_two", pipeline_name="foo_pipeline")
         def bad_cron_string_two(context):
             return {}
+
+
+def test_scheduled_jobs():
+    from dagster import job, op, Field, String
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    DEFAULT_FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @job(config=DEFAULT_FOO_CONFIG)
+    def foo_job():
+        foo_op()
+
+    my_schedule = ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", job=foo_job)
+
+    context_without_time = build_schedule_context()
+    execution_time = datetime(year=2019, month=2, day=27)
+    context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
+    execution_data = my_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].run_config == DEFAULT_FOO_CONFIG

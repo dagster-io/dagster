@@ -233,11 +233,14 @@ class ScheduleDefinition:
                     "Attempted to provide both run_config_fn and run_config as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            self._run_config_fn = check.opt_callable_param(
-                run_config_fn,
-                "run_config_fn",
-                default=lambda _context: check.opt_dict_param(run_config, "run_config"),
-            )
+            elif job and job.has_preset("default") and run_config_fn is None and run_config is None:
+                self._run_config_fn = lambda _context: job.get_preset("default").run_config
+            else:
+                self._run_config_fn = check.opt_callable_param(
+                    run_config_fn,
+                    "run_config_fn",
+                    default=lambda _context: check.opt_dict_param(run_config, "run_config"),
+                )
 
             if tags_fn and tags:
                 raise DagsterInvalidDefinitionError(
