@@ -58,14 +58,19 @@ def test_dynamic_output_values():
         yield DynamicOutput(1, "a")
         yield DynamicOutput(2, "b")
 
+    @op
+    def add_one(x):
+        return x + 1
+
     @graph
     def a():
-        two_outs()
+        two_outs().map(add_one)
 
     result = a.execute_in_process()
 
     assert result.success
     assert result.output_for_node("two_outs") == {"a": 1, "b": 2}
+    assert result.output_for_node("add_one") == {"a": 2, "b": 3}
 
 
 def test_execute_graph():
