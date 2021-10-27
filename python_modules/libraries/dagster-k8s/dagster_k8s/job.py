@@ -558,7 +558,7 @@ def construct_dagster_k8s_job(
         )
 
     job_container = kubernetes.client.V1Container(
-        name=job_name,
+        name="dagster",
         image=job_image,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
