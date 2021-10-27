@@ -1,3 +1,4 @@
+from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
@@ -218,6 +219,27 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
+        """Apply a set of hooks to all op instances within the job."""
+
+        hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+
+        job_def = JobDefinition(
+            name=self.name,
+            graph_def=self._graph_def,
+            mode_def=self.mode_definitions[0],
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=hook_defs | self.hook_defs,
+            description=self._description,
+            solid_retry_policy=self._solid_retry_policy,
+            _op_selection_data=self._op_selection_data,
+        )
+
+        update_wrapper(job_def, self, updated=())
+
+        return job_def
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
