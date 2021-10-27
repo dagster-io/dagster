@@ -306,6 +306,18 @@ class SqlEventLogStorage(EventLogStorage):
         check.str_param(run_id, "run_id")
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
+        # Originally, this was two different queries:
+        # 1) one query which aggregated top-level step stats by grouping by event type / step_key in
+        #    a single query, using pure SQL (e.g. start_time, end_time, status, attempt counts).
+        # 2) one query which fetched all the raw events for a specific event type and then inspected
+        #    the deserialized event object to aggregate stats derived from sequences of events.
+        #    (e.g. marker events, materializations, expectations resuls, attempts timing, etc.)
+        #
+        # For simplicity, we now just do the second type of query and derive the stats in Python
+        # from the raw events.  This has the benefit of being easier to read and also the benefit of
+        # being able to share code with the in-memory event log storage implementation.  We may
+        # choose to revisit this in the future, especially if we are able to do JSON-column queries
+        # in SQL as a way of bypassing the serdes layer in all cases.
         raw_event_query = (
             db.select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
