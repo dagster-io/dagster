@@ -164,19 +164,9 @@ def _make_airflow_dag(
     dag_kwargs=None,
     op_kwargs=None,
     operator=DagsterPythonOperator,
-    pipeline_name=None,
 ):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
     check.str_param(job_name, "job_name")
-    check.opt_str_param(pipeline_name, "pipeline_name")
-    pipeline_name = canonicalize_backcompat_args(
-        new_val=job_name,
-        new_arg="job_name",
-        old_val=pipeline_name,
-        old_arg="pipeline_name",
-        breaking_version="future versions",
-        coerce_old_to_new=lambda val: not val,
-    )
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode")
     # Default to use the (persistent) system temp directory rather than a TemporaryDirectory,
@@ -191,10 +181,10 @@ def _make_airflow_dag(
     check.inst_param(instance, "instance", DagsterInstance)
 
     # Only used for Airflow; internally we continue to use pipeline.name
-    dag_id = check.opt_str_param(dag_id, "dag_id", _rename_for_airflow(pipeline_name))
+    dag_id = check.opt_str_param(dag_id, "dag_id", _rename_for_airflow(job_name))
 
     dag_description = check.opt_str_param(
-        dag_description, "dag_description", _make_dag_description(pipeline_name)
+        dag_description, "dag_description", _make_dag_description(job_name)
     )
     check.subclass_param(operator, "operator", BaseOperator)
 
@@ -206,7 +196,7 @@ def _make_airflow_dag(
     op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
-    pipeline = recon_repo.get_definition().get_pipeline(pipeline_name)
+    pipeline = recon_repo.get_definition().get_pipeline(job_name)
 
     if mode is None:
         mode = pipeline.get_default_mode_name()
@@ -222,7 +212,7 @@ def _make_airflow_dag(
 
         operator_parameters = DagsterOperatorParameters(
             recon_repo=recon_repo,
-            pipeline_name=pipeline_name,
+            pipeline_name=job_name,
             run_config=run_config,
             mode=mode,
             task_id=solid_handle,
@@ -251,7 +241,7 @@ def _make_airflow_dag(
 
 def make_airflow_dag(
     module_name,
-    pipeline_name,
+    job_name,
     run_config=None,
     mode=None,
     instance=None,
@@ -259,7 +249,7 @@ def make_airflow_dag(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
-    job_name=None,
+    pipeline_name=None,
 ):
     """Construct an Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -275,13 +265,13 @@ def make_airflow_dag(
     invocation of the dagster-airflow scaffold CLI tool.
 
     Args:
-        module_name (str): The name of the importable module in which the pipeline definition can be
+        module_name (str): The name of the importable module in which the pipeline/job definition can be
             found.
-        pipeline_name (str): The name of the pipeline definition.
+        job_name (str): The name of the job definition.
         run_config (Optional[dict]): The config, if any, with which to compile
-            the pipeline to an execution plan, as a Python dict.
+            the pipeline/job to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
-        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
+        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline/job.
         dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
             :py:class:`DAG <airflow:airflow.models.DAG>`).
         dag_description (Optional[str]): The description to use for the compiled Airflow DAG
@@ -291,6 +281,7 @@ def make_airflow_dag(
         op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
             operator (a subclass of
             :py:class:`PythonOperator <airflow:airflow.operators.python_operator.PythonOperator>`).
+        pipeline_name (str): [Deprecated] The name of the pipeline definition.
 
     Returns:
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
@@ -298,9 +289,16 @@ def make_airflow_dag(
 
     """
     check.str_param(module_name, "module_name")
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
 
-    recon_repo = ReconstructableRepository.for_module(module_name, pipeline_name)
-
+    recon_repo = ReconstructableRepository.for_module(module_name, job_name)
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
@@ -311,7 +309,6 @@ def make_airflow_dag(
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
-        pipeline_name=pipeline_name,
     )
 
 
@@ -329,40 +326,49 @@ def make_airflow_dag_for_operator(
 ):
     """Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
-    `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
+        `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
 
-    Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
-    Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you
-    are looking for a containerized solution to provide better isolation, see instead
-    :py:func:`make_airflow_dag_containerized`.
+        Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
+        Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you
+        are looking for a containerized solution to provide better isolation, see instead
+        :py:func:`make_airflow_dag_containerized`.
 
-    This function should be invoked in an Airflow DAG definition file, such as that created by an
-    invocation of the dagster-airflow scaffold CLI tool.
+        This function should be invoked in an Airflow DAG definition file, such as that created by an
+        invocation of the dagster-airflow scaffold CLI tool.
 
-    Args:
-        recon_repo (:class:`dagster.ReconstructableRepository`): reference to a Dagster RepositoryDefinition
-            that can be reconstructed in another process
-        pipeline_name (str): The name of the pipeline definition.
-        operator (type): The operator to use. Must be a class that inherits from
-            :py:class:`BaseOperator <airflow.models.BaseOperator>`
-        run_config (Optional[dict]): The config, if any, with which to compile
-            the pipeline to an execution plan, as a Python dict.
-        mode (Optional[str]): The mode in which to execute the pipeline.
-        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
-        dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
-            :py:class:`DAG <airflow:airflow.models.DAG>`).
-        dag_description (Optional[str]): The description to use for the compiled Airflow DAG
-            (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
-        dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
-            :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
-        op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
-            operator.
-
-    Returns:
-        (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
-        list of its constituent tasks.
+        Args:
+            recon_repo (:class:`dagster.ReconstructableRepository`): reference to a Dagster RepositoryDefinition
+                that can be reconstructed in another process
+            job_name (str): The name of the job definition.
+            operator (type): The operator to use. Must be a class that inherits from
+                :py:class:`BaseOperator <airflow.models.BaseOperator>`
+            run_config (Optional[dict]): The config, if any, with which to compile
+                the pipeline/job to an execution plan, as a Python dict.
+            mode (Optional[str]): The mode in which to execute the pipeline.
+            instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline/job.
+            dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
+                :py:class:`DAG <airflow:airflow.models.DAG>`).
+            dag_description (Optional[str]): The description to use for the compiled Airflow DAG
+                (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
+            dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
+                :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
+            op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlyinpipelineirflow
+          [Deprecated]       operator.
+    pipelineob_name (str): The name of the job definition.
+        Returns:
+            (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
+            list of its constituent tasks.
     """
     check.subclass_param(operator, "operator", BaseOperator)
+
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
 
     return _make_airflow_dag(
         recon_repo=recon_repo,
@@ -374,7 +380,6 @@ def make_airflow_dag_for_operator(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=operator,
-        pipeline_name=pipeline_name,
     )
 
 
@@ -389,6 +394,14 @@ def make_airflow_dag_for_recon_repo(
     op_kwargs=None,
     pipeline_name=None,
 ):
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
@@ -398,7 +411,6 @@ def make_airflow_dag_for_recon_repo(
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
-        pipeline_name=pipeline_name,
     )
 
 
@@ -426,13 +438,13 @@ def make_airflow_dag_containerized(
     invocation of the dagster-airflow scaffold CLI tool.
 
     Args:
-        module_name (str): The name of the importable module in which the pipeline definition can be
+        module_name (str): The name of the importable module in which the pipeline/job definition can be
             found.
-        pipeline_name (str): The name of the pipeline definition.
+        job_name (str): The name of the job definition.
         image (str): The name of the Docker image to use for execution (passed through to
             :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
         run_config (Optional[dict]): The config, if any, with which to compile
-            the pipeline to an execution plan, as a Python dict.
+            the pipeline/job to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
             :py:class:`DAG <airflow:airflow.models.DAG>`).
@@ -443,6 +455,7 @@ def make_airflow_dag_containerized(
         op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
             operator (a subclass of
             :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
+        pipeline_name (str): [Deprecated] The name of the pipeline definition.
 
     Returns:
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
@@ -462,6 +475,15 @@ def make_airflow_dag_containerized(
 
     op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
     op_kwargs["image"] = image
+
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
@@ -472,7 +494,6 @@ def make_airflow_dag_containerized(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
-        pipeline_name=pipeline_name,
     )
 
 
@@ -502,6 +523,14 @@ def make_airflow_dag_containerized_for_recon_repo(
 
     op_kwargs["image"] = image
 
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
@@ -513,5 +542,4 @@ def make_airflow_dag_containerized_for_recon_repo(
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
         instance=instance,
-        pipeline_name=pipeline_name,
     )
