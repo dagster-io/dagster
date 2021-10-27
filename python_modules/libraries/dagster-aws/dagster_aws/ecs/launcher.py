@@ -3,7 +3,7 @@ import dagster
 from dagster import Field, check
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
-from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
+from dagster.serdes import ConfigurableClass
 from dagster.utils.backcompat import experimental
 
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
@@ -94,15 +94,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         image = pipeline_origin.repository_origin.container_image
         task_definition = self._task_definition(metadata, image)["family"]
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
-            )
+        args = ExecuteRunArgs(
+            pipeline_origin=pipeline_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
         )
-        command = ["dagster", "api", "execute_run", input_json]
-
+        command = args.get_command_args()
         # Run a task using the same network configuration as this processes's
         # task.
 
