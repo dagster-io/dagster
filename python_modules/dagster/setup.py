@@ -118,7 +118,6 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": [
                 "dagster = dagster.cli:main",
-                "dagster-scheduler = dagster.scheduler.cli:main",
                 "dagster-daemon = dagster.daemon.cli:main",
             ]
         },
