@@ -54,4 +54,5 @@ def make_dagster_job_from_airflow_dag(
     pipeline_def = make_dagster_pipeline_from_airflow_dag(
         dag, tags, use_airflow_template_context, unique_id
     )
+    # pass in tags manually because pipeline_def.graph doesn't have it threaded
     return pipeline_def.graph.to_job(tags={**pipeline_def.tags})

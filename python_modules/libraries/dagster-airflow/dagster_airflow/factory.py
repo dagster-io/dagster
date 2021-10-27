@@ -10,6 +10,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster_airflow.operators.util import check_storage_specified
 
 from .compile import coalesce_execution_steps
@@ -154,7 +155,7 @@ class DagsterOperatorParameters(
 
 def _make_airflow_dag(
     recon_repo,
-    pipeline_name,
+    job_name,
     run_config=None,
     mode=None,
     instance=None,
@@ -163,9 +164,19 @@ def _make_airflow_dag(
     dag_kwargs=None,
     op_kwargs=None,
     operator=DagsterPythonOperator,
+    pipeline_name=None,
 ):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.str_param(job_name, "job_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
+    pipeline_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: not val,
+    )
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode")
     # Default to use the (persistent) system temp directory rather than a TemporaryDirectory,
@@ -248,6 +259,7 @@ def make_airflow_dag(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    job_name=None,
 ):
     """Construct an Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -291,7 +303,7 @@ def make_airflow_dag(
 
     return _make_airflow_dag(
         recon_repo=recon_repo,
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_config=run_config,
         mode=mode,
         instance=instance,
@@ -299,12 +311,13 @@ def make_airflow_dag(
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
+        pipeline_name=pipeline_name,
     )
 
 
 def make_airflow_dag_for_operator(
     recon_repo,
-    pipeline_name,
+    job_name,
     operator,
     run_config=None,
     mode=None,
@@ -312,6 +325,7 @@ def make_airflow_dag_for_operator(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    pipeline_name=None,
 ):
     """Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
@@ -352,7 +366,7 @@ def make_airflow_dag_for_operator(
 
     return _make_airflow_dag(
         recon_repo=recon_repo,
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_config=run_config,
         mode=mode,
         dag_id=dag_id,
@@ -360,34 +374,37 @@ def make_airflow_dag_for_operator(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=operator,
+        pipeline_name=pipeline_name,
     )
 
 
 def make_airflow_dag_for_recon_repo(
     recon_repo,
-    pipeline_name,
+    job_name,
     run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    pipeline_name=None,
 ):
     return _make_airflow_dag(
         recon_repo=recon_repo,
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
+        pipeline_name=pipeline_name,
     )
 
 
 def make_airflow_dag_containerized(
     module_name,
-    pipeline_name,
+    job_name,
     image,
     run_config=None,
     mode=None,
@@ -395,6 +412,7 @@ def make_airflow_dag_containerized(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    pipeline_name=None,
 ):
     """Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -446,7 +464,7 @@ def make_airflow_dag_containerized(
     op_kwargs["image"] = image
     return _make_airflow_dag(
         recon_repo=recon_repo,
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_config=run_config,
         mode=mode,
         dag_id=dag_id,
@@ -454,12 +472,13 @@ def make_airflow_dag_containerized(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
+        pipeline_name=pipeline_name,
     )
 
 
 def make_airflow_dag_containerized_for_recon_repo(
     recon_repo,
-    pipeline_name,
+    job_name,
     image,
     run_config=None,
     mode=None,
@@ -468,9 +487,10 @@ def make_airflow_dag_containerized_for_recon_repo(
     dag_kwargs=None,
     op_kwargs=None,
     instance=None,
+    pipeline_name=None,
 ):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.str_param(job_name, "job_name")
     check.str_param(image, "image")
     check.opt_dict_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -478,11 +498,13 @@ def make_airflow_dag_containerized_for_recon_repo(
     check.opt_str_param(dag_description, "dag_description")
     check.opt_dict_param(dag_kwargs, "dag_kwargs")
     op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
+    check.opt_str_param(pipeline_name, "pipeline_name")
+
     op_kwargs["image"] = image
 
     return _make_airflow_dag(
         recon_repo=recon_repo,
-        pipeline_name=pipeline_name,
+        job_name=job_name,
         run_config=run_config,
         mode=mode,
         dag_id=dag_id,
@@ -491,4 +513,5 @@ def make_airflow_dag_containerized_for_recon_repo(
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
         instance=instance,
+        pipeline_name=pipeline_name,
     )
