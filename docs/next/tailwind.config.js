@@ -90,19 +90,36 @@ module.exports = {
             },
             "a code": {
               background: theme("colors.gray.100"),
-              color: theme("colors.blurple"),
+              color: theme("colors.primary.900"),
               padding: "4px 6px",
               transition: "all .3s",
             },
             "a code:hover": {
               text_decoration: "underline",
               background: theme("colors.primary.100"),
-              color: theme("colors.primary.900"),
+              color: theme("colors.blurple"),
             },
             "pre a": {
-              backgroundColor: theme("colors.yellow.100"),
+              backgroundColor: theme("colors.primary.100"),
               marginRight: 8,
             },
+            "a": {
+              color: theme("colors.primary.900"),
+              transition: ".3s all",
+              textDecoration: "none",
+            },
+            "a:hover": {
+              textDecoration: "underline",
+            },
+            ".scroll-margin-top a": {
+              boxShadow: "none",
+            },
+            "a strong":{
+              color: theme("colors.primary.900"),
+            },
+            "a strong:hover":{
+              textDecoration: "underline",
+            }
           },
         }
       }),

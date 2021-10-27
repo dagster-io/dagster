@@ -22,7 +22,8 @@
   }
 
   html {
-    font-feature-settings: "ss02"; 
+    font-feature-settings: "ss02";
+    letter-spacing: 0.025em;
   }
 
   ::selection {
@@ -36,7 +37,7 @@
 
   code {
     background: #F5F4F2;
-    color: #163B36;
+    color: #21463D;
     font-family: "Diatype Mono";
     padding: 4px 6px;
     border-radius: 4px;
@@ -193,8 +194,9 @@ dt > a.reference.internal {
   flex: none;
   width: 1.5rem;
   height: 1.5rem;
-  background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z' stroke='%232563EB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");
+  background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='#cccccc' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z' stroke='%232563EB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");
   background-size: 100%;
+  display:none;
 }
 
 .DocSearch-MagnifierLabel svg {
@@ -208,18 +210,24 @@ dt > a.reference.internal {
 .DocSearch-Input {
   appearance: none;
   background: transparent;
-  height: 4.5rem;
+  height: 3.5rem;
   font-size: 1rem;
   font-weight: 500;
   color: black;
-  margin-left: 1rem;
   margin-right: 1rem;
   flex: auto;
   min-width: 0;
+  transition: .3s all ease;
+  border-radius: 12px;
+  margin-bottom: 1rem
+
 }
 
 .DocSearch-Input:focus {
-  outline: 2px dotted transparent;
+  outline: none !important;
+  border: 1px solid theme("colors.gray.300");
+  --tw-ring-color: none;
+  background-color: theme("colors.gray.100");
 }
 
 .DocSearch-Input::-webkit-search-cancel-button,
@@ -244,6 +252,7 @@ dt > a.reference.internal {
   background-color: theme("colors.gray.50");
   border: 1px solid theme("colors.gray.300");
   padding: 0.125rem 0.375rem;
+  margin-bottom: 1rem;
 }
 
 .DocSearch-Cancel::before {
@@ -260,7 +269,7 @@ dt > a.reference.internal {
 .DocSearch-Hit-source {
   line-height: 1.5rem;
   font-weight: bold;
-  color: theme("colors.gray.600");
+  color: theme("colors.gable-green");
   margin-top: 1.5rem;
   margin-bottom: 1rem;
 }
@@ -304,7 +313,7 @@ dt > a.reference.internal {
 }
 
 .DocSearch-Hit[aria-selected="true"] .DocSearch-Hit-path {
-  color: theme("colors.primary.300");
+  color: theme("colors.lavender");
 }
 
 .DocSearch-Hit-title {
@@ -355,7 +364,7 @@ dt > a.reference.internal {
 }
 
 .DocSearch-Hit[aria-selected="true"] > a {
-  background: theme("colors.blue.500");
+  background: theme("colors.blurple");
 }
 
 .DocSearch-Hit + .DocSearch-Hit {
@@ -407,7 +416,7 @@ dt > a.reference.internal {
 
 .DocSearch-Hits mark {
   background: none;
-  color: theme("colors.blue.500");
+  color: theme("colors.blurple");
 }
 
 .DocSearch-Hit[aria-selected="true"] mark {
@@ -422,6 +431,7 @@ dt > a.reference.internal {
   margin: 0 1.5rem;
   border-top: 1px solid theme("colors.gray.200");
   padding: 1.25rem 0;
+  display: none;
 }
 
 .DocSearch-Commands {
@@ -464,8 +474,8 @@ dt > a.reference.internal {
 
 .DocSearch-StartScreen,
 .DocSearch-NoResults {
-  padding-top: 2.5rem;
-  padding-bottom: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 0;
 }
 
 .DocSearch-StartScreen .DocSearch-Help {
@@ -490,7 +500,7 @@ dt > a.reference.internal {
 
 .DocSearch-NoResults-Prefill-List button {
   font-weight: 500;
-  color: theme("colors.blue.600");
+  color: theme("colors.primary.900");
 }
 
 .DocSearch-NoResults-Prefill-List + .DocSearch-Help {
@@ -501,6 +511,6 @@ dt > a.reference.internal {
 
 .DocSearch-NoResults-Prefill-List + .DocSearch-Help a {
   box-shadow: theme("boxShadow.sm");
-  color: theme("colors.blue.700");
+  color: theme("colors.primary.900");
   font-weight: 500;
 }
