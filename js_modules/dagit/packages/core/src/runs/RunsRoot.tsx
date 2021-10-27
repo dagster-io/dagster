@@ -3,15 +3,13 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
+import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -26,10 +24,10 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilter,
+  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-} from './RunsFilter';
+} from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
@@ -57,20 +55,19 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables
   >({
     nextCursorForResult: (runs) => {
-      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
       return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
-      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
         return [];
       }
       return data.pipelineRunsOrError.results;
@@ -84,7 +81,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const setStatusFilter = (statuses: PipelineRunStatus[]) => {
+  const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);
@@ -92,9 +89,14 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   };
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
-    ? ['status', 'tag', 'snapshotId', 'id', 'job']
-    : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
+  const enabledFilters: RunFilterTokenType[] = [
+    'status',
+    'tag',
+    'snapshotId',
+    'id',
+    'job',
+    'pipeline',
+  ];
 
   return (
     <Page>
@@ -107,7 +109,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <Tab
                 title="Queued"
                 count={
-                  queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
+                  queryResult.data?.queuedCount?.__typename === 'Runs'
                     ? queryResult.data?.queuedCount.count
                     : 'indeterminate'
                 }
@@ -117,7 +119,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <Tab
                 title="In progress"
                 count={
-                  queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
+                  queryResult.data?.inProgressCount?.__typename === 'Runs'
                     ? queryResult.data?.inProgressCount.count
                     : 'indeterminate'
                 }
@@ -138,18 +140,22 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         }
       />
       {selectedTab === 'queued' ? (
-        <Group direction="column" spacing={8} padding={{horizontal: 24, vertical: 16}}>
+        <Box
+          flex={{direction: 'column', gap: 8}}
+          padding={{horizontal: 24, vertical: 16}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Alert
             intent="info"
             title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
           />
           <QueueDaemonAlert />
-        </Group>
+        </Box>
       ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+            if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
                 <Box padding={{vertical: 64}}>
                   <NonIdealState
@@ -162,14 +168,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             }
 
             if (showScheduled) {
-              return (
-                <Box
-                  padding={{vertical: 16}}
-                  border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-                >
-                  <AllScheduledTicks />
-                </Box>
-              );
+              return <AllScheduledTicks />;
             }
 
             return (
@@ -179,7 +178,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   onSetFilter={setFilterTokens}
                   actionBarComponents={
                     showScheduled ? null : (
-                      <RunsFilter
+                      <RunsFilterInput
                         tokens={filterTokens}
                         onChange={setFilterTokens}
                         loading={queryResult.loading}
@@ -190,7 +189,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                 />
                 {pipelineRunsOrError.results.length > 0 ? (
                   <div style={{marginTop: '16px'}}>
-                    <CursorPaginationControls {...paginationProps} />
+                    <CursorHistoryControls {...paginationProps} />
                   </div>
                 ) : null}
               </>
@@ -203,7 +202,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
 };
 
 const COUNT_FRAGMENT = gql`
-  fragment CountFragment on PipelineRuns {
+  fragment CountFragment on Runs {
     count
   }
 `;
@@ -212,12 +211,12 @@ const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery(
     $limit: Int
     $cursor: String
-    $filter: PipelineRunsFilter!
-    $queuedFilter: PipelineRunsFilter!
-    $inProgressFilter: PipelineRunsFilter!
+    $filter: RunsFilter!
+    $queuedFilter: RunsFilter!
+    $inProgressFilter: RunsFilter!
   ) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...RunTableRunFragment

@@ -3,25 +3,29 @@
 .. toctree::
    :hidden:
 
+   sections/api/apidocs/assets
    sections/api/apidocs/cli
    sections/api/apidocs/config
    sections/api/apidocs/errors
    sections/api/apidocs/execution
+   sections/api/apidocs/graphs
    sections/api/apidocs/hooks
    sections/api/apidocs/internals
+   sections/api/apidocs/jobs
    sections/api/apidocs/loggers
-   sections/api/apidocs/modes-resources
+   sections/api/apidocs/modes
+   sections/api/apidocs/ops
    sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
    sections/api/apidocs/pipeline
    sections/api/apidocs/presets
    sections/api/apidocs/repositories
+   sections/api/apidocs/resources
    sections/api/apidocs/schedules-sensors
    sections/api/apidocs/solids
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
-   sections/api/apidocs/experimental
    sections/api/apidocs/memoization
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
@@ -38,6 +42,7 @@
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s
+   sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
    sections/api/apidocs/libraries/dagster-mysql
    sections/api/apidocs/libraries/dagster-pagerduty
@@ -53,5 +58,4 @@
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio
    sections/api/apidocs/libraries/dagstermill
-   sections/api/apidocs/libraries/lakehouse
    sections/api/apidocs/libraries/dagster-graphql

@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
 import {GanttChart, GanttChartLoadingState} from './GanttChart';
@@ -18,16 +18,16 @@ const APOLLO_MOCKS = {
     rootRunId: 'r1',
     runs: [
       {
-        __typename: 'PipelineRun',
+        __typename: 'Run',
         id: 'r1',
         runId: 'r1',
         parentRunId: null,
-        status: PipelineRunStatus.FAILURE,
+        status: RunStatus.FAILURE,
         stepKeysToExecute: [],
         pipelineName: 'Test',
         tags: [],
         stats: {
-          __typename: 'PipelineRunStatsSnapshot',
+          __typename: 'RunStatsSnapshot',
           id: 'r1',
           enqueuedTime: R1_START,
           launchTime: R1_START + 12,
@@ -36,16 +36,16 @@ const APOLLO_MOCKS = {
         },
       },
       {
-        __typename: 'PipelineRun',
+        __typename: 'Run',
         id: 'r2',
         runId: 'r2',
         parentRunId: 'r1',
-        status: PipelineRunStatus.STARTING,
+        status: RunStatus.STARTING,
         stepKeysToExecute: [],
         pipelineName: 'Test',
         tags: [],
         stats: {
-          __typename: 'PipelineRunStatsSnapshot',
+          __typename: 'RunStatsSnapshot',
           id: 'r2',
           enqueuedTime: R2_START,
           launchTime: R2_START + 12,
@@ -86,7 +86,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: '',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineStartingEvent',
+    __typename: 'RunStartingEvent',
   },
   {
     message: 'Started process for pipeline (pid: 76720).',
@@ -100,7 +100,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: 'Started execution of pipeline "composition".',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineStartEvent',
+    __typename: 'RunStartEvent',
   },
   {
     message: 'Executing steps in process (pid: 76720)',
@@ -329,7 +329,7 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     message: 'Finished execution of pipeline "composition".',
     timestamp: '0',
     stepKey: null,
-    __typename: 'PipelineSuccessEvent',
+    __typename: 'RunSuccessEvent',
   },
   {
     message: 'Process for pipeline exited (pid: 76720).',

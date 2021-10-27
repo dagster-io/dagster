@@ -98,6 +98,10 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
 
   &.bp3-intent-primary.bp3-active {
     background-color: ${ColorsWIP.Blue500};
+
+    ${IconWrapper} {
+      background-color: ${ColorsWIP.White};
+    }
   }
 
   &.bp3-disabled ${IconWrapper} {

@@ -12,13 +12,13 @@ Dagster follows [SemVer](https://semver.org/). We attempt to isolate breaking ch
 
 APIs from the core `dagster` package, divided roughly by topic:
 
-- [Solids](/\_apidocs/solids) APIs to define or decorate functions as solids, declare their inputs and outputs, compose solids with each other, as well as the datatypes that solid execution can return or yield.
+- [Jobs](/\_apidocs/jobs) APIs to define jobs that execute a set of ops with specific parameters.
 
-- [Pipelines](/\_apidocs/pipeline) APIs to define pipelines, dependencies and fan-in dependencies between solids, and aliased instances of solids.
+- [Ops](/\_apidocs/ops) APIs to define or decorate functions as ops, declare their inputs and outputs, compose ops with each other, as well as the datatypes that op execution can return or yield.
 
-- [Modes & Resources](/\_apidocs/modes-resources) APIs to define pipeline modes and resources.
+- [Graphs](/\_apidocs/ops) APIs to define a logical structure of ops.
 
-- [Presets](/\_apidocs/presets) APIs to define configuration presets.
+- [Resources](/\_apidocs/resources) APIs to define resources which can provide specific implementations of certain functionality within a job.
 
 - [Loggers](/\_apidocs/loggers) APIs to define where logs go.
 
@@ -28,15 +28,15 @@ APIs from the core `dagster` package, divided roughly by topic:
 
 - [Types](/\_apidocs/types) Primitive types available for the input and output values of solids, and the APIs used to define and test new Dagster types.
 
-- [Dagster CLI](/\_apidocs/cli) Browse repositories and execute pipelines from the command line
+- [Dagster CLI](/\_apidocs/cli) Browse repositories and execute jobs from the command line
 
-- [Schedules & Sensors](/\_apidocs/schedules-sensors) APIs to define schedules and sensors that initiate pipeline execution, as well as some built-in helpers for common cases.
+- [Schedules & Sensors](/\_apidocs/schedules-sensors) APIs to define schedules and sensors that initiate job execution, as well as some built-in helpers for common cases.
 
-- [Partitions](/\_apidocs/partitions) APIs to define partitions of the config space over which pipeline runs can be backfilled.
+- [Partitions](/\_apidocs/partitions) APIs to define partitions of the config space over which job runs can be backfilled.
 
 - [Errors](/\_apidocs/errors) Errors thrown by the Dagster framework.
 
-- [Execution](/\_apidocs/execution) APIs to execute and test pipelines and individual solids, the execution context available to solids, pipeline configuration, and the default executors available for executing pipelines.
+- [Execution](/\_apidocs/execution) APIs to execute and test jobs and individual ops, the execution context available to ops, job configuration, and the default executors available for executing jobs.
 
 - [Hooks](/\_apidocs/hooks) APIs to define Dagster hooks, which can be triggered on specific Dagster events.
 
@@ -44,13 +44,23 @@ APIs from the core `dagster` package, divided roughly by topic:
 
 - [Dynamic Mapping & Collect](/\_apidocs/dynamic) APIs that allow graph structures to be determined at run time.
 
-- [Experimental Core APIs](/\_apidocs/experimental) The next iteration of Dagster's core abstractions, currently under development.
-
 - [Software-Defined Assets](/\_apidocs/assets) (Experimental). Software-defined assets sit on top of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront.
 
 - [Utilities](/\_apidocs/utilities) Miscellaneous helpers used by Dagster that may be useful to users.
 
 - [Internals](/\_apidocs/internals) Core internal APIs that are important if you are interested in understanding how Dagster works with an eye towards extending it: logging, executors, system storage, the Dagster instance & plugin machinery, storage, schedulers.
+
+## Legacy
+
+APIs from the core `dagster`package that are still supported, but no longer recommended.
+
+- [Solids](/\_apidocs/solids) APIs to define or decorate functions as solids, declare their inputs and outputs, compose solids with each other, as well as the datatypes that solid execution can return or yield.
+
+- [Pipelines](/\_apidocs/pipeline) APIs to define pipelines, dependencies and fan-in dependencies between solids, and aliased instances of solids.
+
+- [Modes](/\_apidocs/modes) APIs to define pipeline modes.
+
+- [Presets](/\_apidocs/presets) APIs to define configuration presets.
 
 ## Libraries
 
@@ -89,6 +99,8 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 - [MLflow](/\_apidocs/libraries/dagster-mlflow) (`dagster-mlflow`) Provides resources and hooks for using MLflow functionalities with Dagster runs.
 
 - [Microsoft Teams](/\_apidocs/libraries/dagster-msteams) (`dagster-msteams`) Includes a simple integration with Microsoft Teams.
+
+- [MLflow](/\_apidocs/libraries/dagster-mlflow) (`dagster-mlflow`) Resources and hooks for integrating with MLflow.
 
 - [MySQL](/\_apidocs/libraries/dagster-mysql) (`dagster-mysql`) Includes implementations of run and event log storage built on MySQL.
 

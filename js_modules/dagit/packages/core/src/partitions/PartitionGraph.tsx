@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
 
@@ -18,11 +17,18 @@ interface PartitionGraphProps {
   getStepDataForRun: (run: PartitionGraphFragment) => {[key: string]: PointValue[]};
   title?: string;
   yLabel?: string;
+  isJob: boolean;
 }
 
 export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref) => {
-  const {runsByPartitionName, getPipelineDataForRun, getStepDataForRun, title, yLabel} = props;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {
+    runsByPartitionName,
+    getPipelineDataForRun,
+    getStepDataForRun,
+    title,
+    yLabel,
+    isJob,
+  } = props;
   const [hiddenPartitions, setHiddenPartitions] = React.useState<{[name: string]: boolean}>(
     () => ({}),
   );
@@ -141,7 +147,7 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
     labels: Object.keys(runsByPartitionName),
     datasets: [
       {
-        label: flagPipelineModeTuples ? 'Total job' : 'Total pipeline',
+        label: isJob ? 'Total job' : 'Total pipeline',
         data: pipelineData,
         borderColor: ColorsWIP.Gray500,
         backgroundColor: 'rgba(0,0,0,0)',
@@ -183,10 +189,10 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 };
 
 const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFragment) => {
-  if (!a.stats || a.stats.__typename !== 'PipelineRunStatsSnapshot' || !a.stats.startTime) {
+  if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
     return 1;
   }
-  if (!b.stats || b.stats.__typename !== 'PipelineRunStatsSnapshot' || !b.stats.startTime) {
+  if (!b.stats || b.stats.__typename !== 'RunStatsSnapshot' || !b.stats.startTime) {
     return -1;
   }
   return b.stats.startTime - a.stats.startTime;

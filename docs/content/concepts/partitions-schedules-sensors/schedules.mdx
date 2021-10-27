@@ -1,96 +1,96 @@
 ---
 title: Schedules | Dagster
-description: Schedules are ...
+description: A Dagster schedule submits job runs at a fixed interval.
 ---
 
 # Schedules
 
-Dagster includes a scheduler that can be used to launch runs on a fixed interval.
+A Dagster schedule submits job runs at a fixed interval.
 
 ## Relevant APIs
 
-| Name                                             | Description                                                                                                                                                                                                                                                               |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="daily_schedule" decorator />   | Decorator that defines a schedule that executes every day at a fixed time                                                                                                                                                                                                 |
-| <PyObject object="hourly_schedule" decorator />  | Decorator that defines a schedule that executes every hour at a fixed time                                                                                                                                                                                                |
-| <PyObject object="weekly_schedule" decorator />  | Decorator that defines a schedule that executes every week on a fixed day and time                                                                                                                                                                                        |
-| <PyObject object="monthly_schedule" decorator /> | Decorator that defines a schedule that executes every month on a fixed day and time                                                                                                                                                                                       |
-| <PyObject object="schedule" decorator />         | Decorator that defines a schedule that executes according to a given cron schedule. It's important to note that schedules created using this schedule are [non-partition based schedules](/concepts/partitions-schedules-sensors/schedules#non-partition-based-schedules) |
-| <PyObject object="ScheduleEvaluationContext" />  | The context passed to the schedule definition execution function                                                                                                                                                                                                          |
-| <PyObject object="build_schedule_context" />     | A function that constructs a `ScheduleEvaluationContext`                                                                                                                                                                                                                  |
-| <PyObject object="ScheduleDefinition"  />        | Class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above                                                                                                                                |
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
+| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                |
+| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
+| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
 
 ## Overview
 
-A _schedule_ is a definition in Dagster that is used to execute a pipeline at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition is responsible for generating run configuration for the pipeline on each tick.
+A _schedule_ is a definition in Dagster that is used to execute a job at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
 
 Each schedule:
 
-- Targets a single pipeline
-- Defines a function that returns run configuration for the targeted pipeline.
-- Optionally defines tags, a mode, and a solid selection for the targeted pipeline.
+- Targets a single job.
+- Optionally defines a function that returns run configuration for the targeted job.
+- Optionally defines tags and an op selection for the targeted job.
 - Optionally defines a `should_execute` function, which can be used to skip some ticks.
 
 Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
 
 ---
 
-## Defining a schedule
+## Defining schedules
 
-There are two types of schedules in Dagster:
+You define a schedule by constructing a <PyObject object="ScheduleDefinition" />.
 
-- Partition-based
-- Non-partition-based
+### A basic schedule
 
-Partition-based schedules are best when your pipeline operates on data that is partitioned by time (for example, a pipeline that fills in a daily partition of a table). Non-partition-based schedules are best when you just want to run an operation on a fixed interval (for example, a pipeline that rebuilds the same table on each execution)
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and "@monthly" if your croniter dependency's version is >= 1.0.12.
 
-### Partition-based schedules
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
+@job
+def my_job():
+    ...
 
-Partition-based schedules generate an underlying <PyObject object="PartitionSetDefinition"/> to execute against. The scheduler will make sure that a run is executed for every partition in the partition set, starting from the time that the schedule is turned on.
 
-For example, if we wanted to create a schedule that runs at 11:00 AM every day, we could use <PyObject object="daily_schedule" decorator />, a decorator that produces a partition-based daily schedule.
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_partition_based_schedule endbefore=end_partition_based_schedule
-@daily_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_time=datetime.time(11, 0),
-    execution_timezone="US/Central",
-)
-def my_daily_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
-The decorated schedule function should accept a `datetime` and return the run config for the pipeline run associated with that partition. The scheduler will ensure that the schedule function is evaluated exactly once for every partition to generate run config, which is then used to create and launch a pipeline run.
+### A schedule that provides run config
 
-Partition-based schedules require a `start_date` that indicates when the set of partitions begins. The scheduler will only kick off runs for times after both the `start_date` and the time when the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
+If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
 
-By default, the partition that is used for the run will be one partition earlier than the partition that includes the current time, to capture a common ETL use case - for example, a daily schedule will fill in the previous day's partition, and a monthly schedule will fill in last month's partition. You can customize this behavior by changing the `partition_days_offset` parameter for a daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine the partition. Setting the value to 0 will cause the schedule to fill in the partition that corresponds to the current day, and increasing it above 1 will cause it to fill in an even earlier partition. A similarly-named parameter also exists for the other execution intervals.
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context):
+    context.log.info(context.op_config["scheduled_date"])
 
-### Non-partition-based schedules
 
-When you want to run a schedule on a fixed interval and don't need partitions, you can use the <PyObject object="schedule" decorator /> decorator to define your schedule.
+@job
+def configurable_job():
+    configurable_op()
 
-For example, this schedule runs at 1:00 AM in US/Central time every day:
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_non_partition_based_schedule endbefore=end_non_partition_based_schedule
-@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_schedule():
-    return {"solids": {"process_data": {"config": {"dataset_name": "my_dataset"}}}}
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
 ```
 
-You can pass a context argument to the decorated function in order to get run information, such as the scheduled execution time:
+If you don't need access to the context parameter, you can omit it from the decorated function.
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_execution_time endbefore=end_execution_time
-@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_execution_time_schedule(context):
-    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {
-        "solids": {
-            "process_data": {"config": {"dataset_name": "my_dataset", "execution_date": date}}
-        }
-    }
+### A schedule from a partitioned job
+
+When you have [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+
+For example, if you have a date-partitioned job that fills in a date-partition of a table each time it runs, you likely want to run that job every day, on the partition for that day.
+
+The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job - callled `do_stuff_partitioned`, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(do_stuff_partitioned)
 ```
+
+Note that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to previous day. For example, the schedule would kick off the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the schedule waits until the end of the time window to kick off the run. Kicking off a run at the end of a time window means the run can process data from within that time window.
+
+Similar is true for hourly-, weekly-, and monthly- partitioned jobs.
+
+You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to 30 and `hour_of_day` to 1, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`
 
 ### Timezones
 
@@ -99,19 +99,12 @@ You can customize the timezone in which your schedule executes by setting the `e
 For example, the following schedule executes daily at 9AM in US/Pacific time:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
-@daily_schedule(
-    pipeline_name="my_data_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_time=datetime.time(9, 0),
-    execution_timezone="US/Pacific",
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
 )
-def my_timezone_schedule(date):
-    return {
-        "solids": {
-            "process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d %H:%M:%S")}}
-        }
-    }
 ```
+
+The <PyObject object="schedule" decorator /> decorator accepts the same argument.
 
 ### Daylight Savings Time
 
@@ -131,200 +124,21 @@ Once your schedule is started, if you're running the [dagster-daemon](/deploymen
 
 ## Testing Schedules
 
-### Testing Partition Schedules
+To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-run-config).
 
-In order to unit test a partition schedule, you can invoke it directly with a provided datetime. This will return the run config generated by the decorated function for the given date. This config can then be validated against a pipeline using the <PyObject object="validate_run_config" /> function.
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_partition_schedule endbefore=end_test_partition_schedule
-@hourly_schedule(
-    pipeline_name="test_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-)
-def hourly_schedule_to_test(date):
-    return {
-        "solids": {
-            "process_data_for_date": {
-                "config": {
-                    "date": date.strftime("%Y-%m-%d %H"),
-                }
-            }
-        }
-    }
-
-
-from dagster import validate_run_config
-
-
-def test_hourly_schedule():
-    run_config = hourly_schedule_to_test(datetime.datetime(2020, 1, 1))
-    assert validate_run_config(pipeline_for_test, run_config)
-```
-
-### Testing Cron Schedules
-
-Cron schedules can also be tested by directly invoking them. The invocation of this schedule will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function.
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule endbefore=end_test_cron_schedule
-@schedule(cron_schedule="* * * * *", pipeline_name="my_pipeline_on_cron")
-def my_cron_schedule():
-    return {}
-
-
-from dagster import validate_run_config
-
-
-def test_my_cron_schedule():
-    run_config = my_cron_schedule()
-    assert validate_run_config(my_pipeline_on_cron, run_config)
-```
-
-If using the context parameter in your decorated function, then `build_schedule_context` can be used to construct a `ScheduleEvaluationContext` for passing through.
+It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule_context endbefore=end_test_cron_schedule_context
-@schedule(cron_schedule="0 1 * * *", pipeline_name="pipeline_for_test")
-def my_schedule_uses_context(context):
-    date_str = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {
-        "solids": {
-            "process_data_for_date": {
-                "config": {
-                    "date": date_str,
-                }
-            }
-        }
-    }
-
-
 from dagster import build_schedule_context, validate_run_config
 
 
-def test_my_cron_schedule_with_context():
+def test_configurable_job_schedule():
     context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
-    run_config = my_schedule_uses_context(context)
-    assert validate_run_config(pipeline_for_test, run_config)
+    run_config = configurable_job_schedule(context)
+    assert validate_run_config(configurable_job, run_config)
 ```
 
-## Examples
-
-### Hourly partition-based schedule
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_hourly_schedule endbefore=end_hourly_schedule
-@hourly_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_time=datetime.time(hour=0, minute=25),
-    execution_timezone="US/Central",
-)
-def my_hourly_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d %H")}}}}
-```
-
-### Daily partition-based schedule
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_daily_schedule endbefore=end_daily_schedule
-@daily_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_time=datetime.time(hour=9, minute=0),
-    execution_timezone="US/Central",
-)
-def my_daily_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
-```
-
-### Weekly partition-based schedule
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_weekly_schedule endbefore=end_weekly_schedule
-@weekly_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_day_of_week=1,  # Monday
-    execution_timezone="US/Central",
-)
-def my_weekly_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
-```
-
-### Monthly partition-based schedule
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_monthly_schedule endbefore=end_monthly_schedule
-@monthly_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_timezone="US/Central",
-    execution_day_of_month=15,
-    execution_time=datetime.time(hour=9, minute=0),
-)
-def my_monthly_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m")}}}}
-```
-
-## Patterns
-
-### Using a preset in a schedule definition
-
-If you already have a preset defined for a pipeline you want to schedule, you can extract the necessary attributes from the preset and pass them to the schedule decorator.
-
-In this example, we directly use the `solid_selection`, `mode`, `tags`, and `run_config` from the preset:
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_preset endbefore=end_preset
-@daily_schedule(
-    start_date=datetime.datetime(2020, 1, 1),
-    pipeline_name="my_pipeline",
-    solid_selection=preset.solid_selection,
-    mode=preset.mode,
-    tags_fn_for_date=lambda _: preset.tags,
-)
-def my_preset_schedule(_date):
-    return preset.run_config
-```
-
-You might need to modify the preset's run config to include information about the date partition:
-
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_modified_preset endbefore=end_modified_preset
-import copy
-
-
-@daily_schedule(
-    start_date=datetime.datetime(2020, 1, 1),
-    pipeline_name="my_pipeline",
-    solid_selection=preset.solid_selection,
-    mode=preset.mode,
-    tags_fn_for_date=lambda _: preset.tags,
-)
-def my_modified_preset_schedule(date):
-    modified_run_config = copy.deepcopy(preset.run_config)
-    modified_run_config["solids"]["process_data_for_date"]["config"]["date"] = date.strftime(
-        "%Y-%m-%d"
-    )
-    return modified_run_config
-```
-
-If you find yourself using presets to generate schedule definitions frequently, you can use a helper function similar to this one to take a preset and return a schedule.
-
-```python file=concepts/partitions_schedules_sensors/schedules/preset_helper.py startafter=start_preset_helper endbefore=end_preset_helper
-def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_date):
-    preset = pipeline.get_preset(preset_name)
-    if not preset:
-        raise Exception(
-            "Preset {preset_name} was not found "
-            "on pipeline {pipeline_name}".format(
-                preset_name=preset_name, pipeline_name=pipeline.name
-            )
-        )
-
-    @daily_schedule(
-        start_date=start_date,
-        pipeline_name=pipeline.name,
-        solid_selection=preset.solid_selection,
-        mode=preset.mode,
-        tags_fn_for_date=lambda _: preset.tags,
-    )
-    def my_schedule(_date):
-        return preset.run_config
-
-    return my_schedule
-```
+If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
 ## Troubleshooting
 

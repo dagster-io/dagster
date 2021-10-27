@@ -9,9 +9,9 @@ Dagster is compatible and configurable with [Python's logging module](https://do
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                             |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| <PyObject module="dagster.utils.log" object="get_dagster_logger"/> | A function that returns a python logger that will automatically be captured by Dagster. |
+| Name                                                     | Description                                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="get_dagster_logger"/> | A function that returns a python logger that will automatically be captured by Dagster. |
 
 ## Capturing Python Logs <Experimental />
 
@@ -55,15 +55,16 @@ width={1165}
 height={250}
 />
 
+Please note that you should generally be fairly selective about which logs you wish to capture, especially in a production context. It is possible to overload the event log storage with these events, which may cause certain pages in Dagit to take a long time to load. Consider only capturing the most critical logs, and avoid including debug information if you expect to maintain a large amount of run history.
+
 Note: if a `python_log_level` is set (see: [Configuring A Python Log Level](#configuring-a-python-log-level)), then the loggers listed here will be set to the given level before a run is launched.
 
 ### Example: Creating a captured python logger without modifying `dagster.yaml`
 
-If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster.utils.log" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
+If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
 
 ```python file=/concepts/logging/python_logger.py startafter=start_get_logger endbefore=end_get_logger dedent=4
-from dagster.utils.log import get_dagster_logger
-from dagster import op
+from dagster import get_dagster_logger, op
 
 @op
 def ambitious_op():
@@ -76,6 +77,8 @@ def ambitious_op():
 
     return None
 ```
+
+Note: The logging module retains global state, meaning the logger returned by this function will be identical if this function is called multiple times with the same arguments in the same process. This means that there may be unpredictable or unituitive results if you set the level of the returned python logger to different values in different parts of your code.
 
 ### Example: Capturing logs from all python loggers
 

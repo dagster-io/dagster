@@ -58,29 +58,34 @@ Note that using Cloud SQL for run and event log storage does not require that Da
 
 ## Using GCS for IO Management
 
-You'll probably also want to configure a GCS bucket to store intermediates via persistent [IO Managers](/concepts/io-management/io-managers). This enables reexecution, review and audit of solid intermediate results, and cross-node cooperation (e.g., with the multiprocessing or Dagster celery executors).
+You'll probably also want to configure a GCS bucket to store op outputs via persistent [IO Managers](/concepts/io-management/io-managers). This enables reexecution, review and audit of op outputs, and cross-node cooperation (e.g., with the <PyObject module="dagster" object="multiprocess_executor" /> or <PyObject module="dagster_celery" object="celery_executor" />).
 
-You'll first need to need to use <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
+You'll first need to need to create a job using <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/> as its IO Manager (or [define a custom IO Manager](/concepts/io-management/io-managers#defining-an-io-manager)):
 
-```python file=/deploying/gcp/io_manager.py
-from dagster import ModeDefinition
+```python file=/deploying/gcp/gcp_job.py
+from dagster import job
 from dagster_gcp.gcs.io_manager import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 
-prod_mode = ModeDefinition(
-    name="prod",
-    resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},
+
+@job(
+    resource_defs={
+        "gcs": gcs_resource,
+        "io_manager": gcs_pickle_io_manager,
+    },
+    config={
+        "resources": {
+            "io_manager": {
+                "config": {
+                    "gcs_bucket": "my-cool-bucket",
+                    "gcs_prefix": "good/prefix-for-files-",
+                }
+            }
+        }
+    },
 )
+def gcs_job():
+    ...
 ```
 
-Then, add the following YAML block in your pipeline config:
-
-```yaml file=/deploying/gcp/io_manager.yaml
-resources:
-  io_manager:
-    config:
-      gcs_bucket: my-cool-bucket
-      gcs_prefix: good/prefix-for-files-
-```
-
-With this in place, your pipeline runs will store intermediates on GCS in the location `gs://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`.
+With this in place, your job runs will store outputs on GCS in the location `gs://<bucket>/dagster/storage/<job run id>/files/<op name>.compute`.

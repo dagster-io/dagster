@@ -1,31 +1,13 @@
 """System-provided config objects and constructors."""
-import warnings
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Type,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.core.definitions.executor import ExecutorDefinition, execute_in_process_executor
-from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
-from dagster.utils.merger import deep_merge_dicts
-
-if TYPE_CHECKING:
-    from dagster.config import ConfigType
 
 
 class SolidConfig(
@@ -104,7 +86,6 @@ class ResolvedRunConfig(
         [
             ("solids", Dict[str, SolidConfig]),
             ("execution", "ExecutionConfig"),
-            ("intermediate_storage", "IntermediateStorageConfig"),
             ("resources", Dict[str, ResourceConfig]),
             ("loggers", Dict[str, dict]),
             ("original_config_dict", Any),
@@ -116,16 +97,12 @@ class ResolvedRunConfig(
         cls,
         solids=None,
         execution=None,
-        intermediate_storage=None,
         resources=None,
         loggers=None,
         original_config_dict=None,
         mode=None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
-        check.opt_inst_param(
-            intermediate_storage, "intermediate_storage", IntermediateStorageConfig
-        )
         check.opt_dict_param(original_config_dict, "original_config_dict")
         check.opt_dict_param(resources, "resources", key_type=str)
         check.opt_str_param(mode, "mode")
@@ -137,7 +114,6 @@ class ResolvedRunConfig(
             cls,
             solids=check.opt_dict_param(solids, "solids", key_type=str, value_type=SolidConfig),
             execution=execution,
-            intermediate_storage=intermediate_storage,
             resources=resources,
             loggers=check.opt_dict_param(loggers, "loggers", key_type=str, value_type=dict),
             original_config_dict=original_config_dict,
@@ -171,13 +147,10 @@ class ResolvedRunConfig(
                 run_config
             )
 
-        config_evr = process_config(
-            run_config_schema.run_config_schema_type,
-            run_config_storage_field_backcompat(run_config),
-        )
+        config_evr = process_config(run_config_schema.run_config_schema_type, run_config)
         if not config_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config for pipeline {}".format(pipeline_def.name),
+                f"Error in config for {pipeline_def.target_type}".format(pipeline_def.name),
                 config_evr.errors,
                 run_config,
             )
@@ -185,14 +158,6 @@ class ResolvedRunConfig(
         config_value = config_evr.value
 
         mode_def = pipeline_def.get_mode_definition(mode)
-
-        config_mapped_intermediate_storage_configs = config_map_objects(
-            config_value,
-            mode_def.intermediate_storage_defs,
-            "intermediate_storage",
-            IntermediateStorageDefinition,
-            "intermediate storage",
-        )
 
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
@@ -203,20 +168,26 @@ class ResolvedRunConfig(
         ):
             config_mapped_execution_configs: Optional[Dict[str, Any]] = {}
         else:
-            config_mapped_execution_configs = config_map_objects(
-                config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
-            )
+            if pipeline_def.is_job:
+                executor_config = config_value.get("execution", {})
+                config_mapped_execution_configs = config_map_executor(
+                    executor_config, mode_def.executor_defs[0]
+                )
+            else:
+                config_mapped_execution_configs = config_map_objects(
+                    config_value,
+                    mode_def.executor_defs,
+                    "execution",
+                    ExecutorDefinition,
+                    "executor",
+                )
 
         resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
         resource_configs = config_value.get("resources", {})
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
 
-        node_key = (
-            "ops"
-            if pipeline_def._is_using_graph_job_op_apis  # pylint: disable=protected-access
-            else "solids"
-        )
+        node_key = "ops" if pipeline_def.is_job else "solids"
         solid_config_dict = composite_descent(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
@@ -224,26 +195,10 @@ class ResolvedRunConfig(
         return ResolvedRunConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
-            intermediate_storage=IntermediateStorageConfig.from_dict(
-                config_mapped_intermediate_storage_configs
-            ),
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
             resources=config_mapped_resource_configs,
             mode=mode,
-        )
-
-    def intermediate_storage_def_for_mode(
-        self, mode_definition: ModeDefinition
-    ) -> IntermediateStorageDefinition:
-        for intermediate_storage_def in mode_definition.intermediate_storage_defs:
-            if intermediate_storage_def.name == self.intermediate_storage.intermediate_storage_name:
-                return intermediate_storage_def
-
-        check.failed(
-            "Could not find storage mode {}. Should have be caught by config system".format(
-                self.intermediate_storage.intermediate_storage_name
-            )
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -266,14 +221,6 @@ class ResolvedRunConfig(
             else {}
         )
 
-        # Backcompat: if the intermediate storage name is not the default, then intermediate storage
-        # will be used in the execution, and should be included in the config blob. This mirrors the
-        # check in StepExecutionContext.get_io_manager().
-        if self.intermediate_storage.intermediate_storage_name != "in_memory":
-            env_dict["storage"] = {
-                self.intermediate_storage.intermediate_storage_name: self.intermediate_storage.intermediate_storage_config
-            }
-
         env_dict["resources"] = {
             resource_name: {"config": resource_config.config}
             for resource_name, resource_config in self.resources.items()
@@ -284,24 +231,19 @@ class ResolvedRunConfig(
         return env_dict
 
 
-def run_config_storage_field_backcompat(run_config: Dict[str, Any]) -> Dict[str, Any]:
-    """This method will be removed after "storage" is removed in run config.
+def config_map_executor(
+    executor_config: Dict[str, Any],
+    executor_def: ExecutorDefinition,
+) -> Dict[str, Any]:
+    executor_config_evr = executor_def.apply_config_mapping(executor_config)
+    if not executor_config_evr.success:
+        raise DagsterInvalidConfigError(
+            f"Invalid configuration provided for executor '{executor_def.name}'",
+            executor_config_evr.errors,
+            executor_config,
+        )
 
-    For backwards compatibility, we treat "storage" as as alias of "intermediate_storage", i.e.
-    run config that has been passed in through the "storage" entry will be used to define intermediate
-    storage. When "storage" and "intermediate_storage" are both specified, intermediate storage config
-    will override storage config.
-
-    Tracking https://github.com/dagster-io/dagster/issues/3280
-    """
-
-    intermediate_storage_dict = {}
-    if run_config.get("storage"):
-        intermediate_storage_dict = {
-            "intermediate_storage": run_config.get("intermediate_storage")
-            or run_config.get("storage")
-        }
-    return deep_merge_dicts(run_config, intermediate_storage_dict)
+    return {executor_def.name: executor_config_evr.value}
 
 
 def config_map_resources(
@@ -379,15 +321,15 @@ def config_map_loggers(
 
 def config_map_objects(
     config_value: Any,
-    defs: Union[List[IntermediateStorageDefinition], List[ExecutorDefinition]],
+    defs: List[ExecutorDefinition],
     keyed_by: str,
     def_type: Type,
     name_of_def_type: str,
 ) -> Optional[Dict[str, Any]]:
-    """This function executes the config mappings for executors and {system, intermediate} storage
-    definitions with respect to ConfigurableDefinition. It calls the ensure_single_item macro on the
-    incoming config and then applies config mapping to the result and the first executor_def with
-    the same name on the mode_def."""
+    """This function executes the config mappings for executors definitions with respect to
+    ConfigurableDefinition. It calls the ensure_single_item macro on the incoming config and then
+    applies config mapping to the result and the first executor_def with the same name on
+    the mode_def."""
 
     config = config_value.get(keyed_by)
 
@@ -449,44 +391,3 @@ class ExecutionConfig(
             execution_engine_name, execution_engine_config = ensure_single_item(config)
             return ExecutionConfig(execution_engine_name, execution_engine_config.get("config"))
         return ExecutionConfig(None, None)
-
-
-class IntermediateStorageConfig(
-    NamedTuple(
-        "_FilesConfig",
-        [
-            ("intermediate_storage_name", str),
-            ("intermediate_storage_config", Dict[str, Any]),
-        ],
-    )
-):
-    def __new__(cls, intermediate_storage_name, intermediate_storage_config):
-        return super(IntermediateStorageConfig, cls).__new__(
-            cls,
-            intermediate_storage_name=check.opt_str_param(
-                intermediate_storage_name,
-                "intermediate_storage_name",
-                "in_memory",
-            ),
-            intermediate_storage_config=check.opt_dict_param(
-                intermediate_storage_config, "intermediate_storage_config", key_type=str
-            ),
-        )
-
-    @staticmethod
-    def from_dict(config=None):
-        check.opt_dict_param(config, "config", key_type=str)
-        if config:
-            warnings.warn(
-                (
-                    'The "storage" and "intermediate_storage" entries in the run config are deprecated as of 0.10.0, '
-                    "and will removed in a future release. Loading inputs and storing outputs are now handled "
-                    'by "IO managers", which are resources that can be configured via '
-                    'the "io_manager" resource key.'
-                )
-            )
-            intermediate_storage_name, intermediate_storage_config = ensure_single_item(config)
-            return IntermediateStorageConfig(
-                intermediate_storage_name, intermediate_storage_config.get("config")
-            )
-        return IntermediateStorageConfig(None, None)

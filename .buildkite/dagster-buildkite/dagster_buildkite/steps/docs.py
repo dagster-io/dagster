@@ -26,24 +26,12 @@ def docs_steps() -> List[dict]:
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        # Make sure the docs site can build end-to-end.
-        StepBuilder("crag docs next")
+        StepBuilder("docs sphinx json build")
         .run(
-            "pushd docs/next",
-            "yarn",
-            "yarn crag-test",
-            "yarn crag-build-master",
+            "pip install -U virtualenv",
+            "cd docs",
+            "tox -vv -e py38-sphinx",
         )
-        .on_integration_image(SupportedPython.V3_7)
+        .on_integration_image(SupportedPython.V3_8)
         .build(),
-        # TODO: Yuhan to fix
-        # StepBuilder("docs sphinx json build")
-        # .run(
-        #     "pip install -e python_modules/automation",
-        #     "pip install -r docs-requirements.txt -qqq",
-        #     "pushd docs; make build",
-        #     "git diff --exit-code",
-        # )
-        # .on_integration_image(SupportedPython.V3_7)
-        # .build(),
     ]

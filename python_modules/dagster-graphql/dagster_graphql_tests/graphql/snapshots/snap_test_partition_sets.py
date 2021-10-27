@@ -16,8 +16,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -27,8 +26,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -38,8 +36,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -49,8 +46,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -60,8 +56,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -71,8 +66,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -82,8 +76,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -93,8 +86,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -104,8 +96,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -115,8 +106,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -148,8 +138,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -159,8 +148,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -170,8 +158,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -181,8 +168,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -192,8 +178,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -203,8 +188,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -214,8 +198,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -225,8 +208,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -236,8 +218,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -247,8 +228,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -280,8 +260,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -291,8 +270,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -302,8 +280,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -313,8 +290,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -324,8 +300,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -335,8 +310,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -346,8 +320,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -357,8 +330,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -368,8 +340,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -379,8 +350,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_in_memory_ins
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -412,8 +382,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -423,8 +392,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -434,8 +402,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -445,8 +412,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -456,8 +422,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -467,8 +432,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -478,8 +442,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -489,8 +452,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -500,8 +462,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -511,8 +472,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -544,8 +504,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -555,8 +514,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -566,8 +524,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -577,8 +534,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -588,8 +544,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -599,8 +554,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -610,8 +564,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -621,8 +574,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -632,8 +584,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -643,8 +594,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -676,8 +626,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -687,8 +636,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -698,8 +646,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -709,8 +656,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -720,8 +666,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -731,8 +676,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -742,8 +686,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -753,8 +696,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -764,8 +706,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -775,8 +716,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_postgres_inst
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -808,8 +748,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -819,8 +758,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -830,8 +768,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -841,8 +778,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -852,8 +788,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -863,8 +798,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -874,8 +808,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -885,8 +818,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -896,8 +828,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -907,8 +838,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -940,8 +870,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -951,8 +880,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -962,8 +890,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -973,8 +900,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -984,8 +910,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -995,8 +920,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1006,8 +930,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1017,8 +940,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1028,8 +950,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1039,8 +960,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1072,8 +992,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1083,8 +1002,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1094,8 +1012,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1105,8 +1022,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1116,8 +1032,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1127,8 +1042,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1138,8 +1052,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1149,8 +1062,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1160,8 +1072,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1171,8 +1082,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1204,8 +1114,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '0',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1215,8 +1124,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '1',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1226,8 +1134,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '2',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1237,8 +1144,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '3',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1248,8 +1154,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '4',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1259,8 +1164,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '5',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1270,8 +1174,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '6',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1281,8 +1184,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '7',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1292,8 +1194,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '8',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {
@@ -1303,8 +1204,7 @@ snapshots['TestPartitionSets.test_get_partition_set[non_launchable_sqlite_instan
                 {
                     'name': '9',
                     'runConfigOrError': {
-                        'yaml': '''intermediate_storage:
-  filesystem: {}
+                        'yaml': '''{}
 '''
                     },
                     'tagsOrError': {

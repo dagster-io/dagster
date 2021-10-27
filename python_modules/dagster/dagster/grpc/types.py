@@ -19,7 +19,8 @@ from dagster.utils.error import SerializableErrorInfo
 class ExecutionPlanSnapshotArgs(
     namedtuple(
         "_ExecutionPlanSnapshotArgs",
-        "pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id known_state",
+        "pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id "
+        "known_state",
     )
 ):
     def __new__(
@@ -52,6 +53,21 @@ class ExecutionPlanSnapshotArgs(
 class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
     def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
         return super(ExecuteRunArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin,
+                "pipeline_origin",
+                PipelinePythonOrigin,
+            ),
+            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+        )
+
+
+@whitelist_for_serdes
+class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
+    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+        return super(ResumeRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
                 pipeline_origin,

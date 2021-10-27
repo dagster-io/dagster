@@ -40,15 +40,15 @@
             "path": "/tutorial/intro-tutorial/setup"
           },
           {
-            "title": "A Single-Solid Pipeline",
+            "title": "A Single-Op Job",
             "path": "/tutorial/intro-tutorial/single-solid-pipeline"
           },
           {
-            "title": "Connecting Solids in Pipelines",
+            "title": "Connecting Ops in Jobs",
             "path": "/tutorial/intro-tutorial/connecting-solids"
           },
           {
-            "title": "Testing Solids and Pipelines",
+            "title": "Testing Ops and Jobs",
             "path": "/tutorial/intro-tutorial/testable"
           }
         ]
@@ -57,15 +57,15 @@
         "title": "Advanced Tutorials",
         "children": [
           {
-            "title": "Configuring Solids",
-            "path": "/tutorial/intro-tutorial/configuring-solids"
+            "title": "Configuring Ops",
+            "path": "/tutorial/advanced-tutorial/configuring-ops"
           },
           {
             "title": "Dagster Types",
             "path": "/tutorial/advanced-tutorial/types"
           },
           {
-            "title": "Modes, Resources, & Presets",
+            "title": "Resources & Built-In Config",
             "path": "/tutorial/advanced-tutorial/pipelines"
           },
           {
@@ -73,11 +73,11 @@
             "path": "/tutorial/advanced-tutorial/materializations"
           },
           {
-            "title": "Organizing Pipelines in Repositories & Workspaces",
+            "title": "Organizing Jobs in Repositories & Workspaces",
             "path": "/tutorial/advanced-tutorial/repositories"
           },
           {
-            "title": "Scheduling Pipeline Runs",
+            "title": "Scheduling Job Runs",
             "path": "/tutorial/advanced-tutorial/scheduling"
           }
         ]
@@ -90,40 +90,40 @@
     "path": "/concepts",
     "children": [
       {
-        "title": "Solids & Pipelines",
+        "title": "Ops, Jobs, and Graphs",
         "children": [
           {
-            "title": "Solids",
+            "title": "Ops",
             "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Pipelines",
+            "title": "Jobs & Graphs",
             "path": "/concepts/solids-pipelines/pipelines"
           },
           {
-            "title": "Pipeline Execution",
+            "title": "Job Execution",
             "path": "/concepts/solids-pipelines/pipeline-execution"
           },
           {
-            "title": "Composite Solids",
+            "title": "Nesting Graphs",
             "path": "/concepts/solids-pipelines/composite-solids"
           },
           {
-            "title": "Solid Events",
-            "path": "/concepts/solids-pipelines/solid-events"
+            "title": "Op Events",
+            "path": "/concepts/solids-pipelines/op-events"
           },
           {
-            "title": "Solid Hooks",
-            "path": "/concepts/solids-pipelines/solid-hooks"
+            "title": "Op Hooks",
+            "path": "/concepts/solids-pipelines/op-hooks"
           }
         ]
       },
       {
-        "title": "Modes & Resources",
+        "title": "Resources",
         "children": [
           {
-            "title": "Modes & Resources",
-            "path": "/concepts/modes-resources"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
@@ -288,16 +288,16 @@
             "path": "/deployment/guides/kubernetes/deploying-with-helm"
           },
           {
-            "title": "Deploying Dagster with Helm, Advanced",
-            "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
-          },
-          {
             "title": "Customizing your Kubernetes Deployment",
             "path": "/deployment/guides/kubernetes/customizing-your-deployment"
           },
           {
             "title": "How to Migrate Your Instance",
             "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
+          },
+          {
+            "title": "Per-Op Limits in Kubernetes",
+            "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
           }
         ]
       },
@@ -353,7 +353,7 @@
             "path": "/integrations/great-expectations"
           },
           {
-            "title": "Dagster with Spark",
+            "title": "Dagster with PySpark",
             "path": "/integrations/spark"
           },
           {
@@ -381,19 +381,15 @@
             "path": "/guides/dagster/memoization"
           },
           {
-            "title": "Lakehouse (Experimental)",
-            "path": "/guides/dagster/lakehouse"
-          },
-          {
-            "title": "Lakehouse with Pandas and PySpark (Experimental)",
-            "path": "/guides/dagster/multi-type-lakehouse"
+            "title": "Software-Defined Assets (Experimental)",
+            "path": "/guides/dagster/software-defined-assets"
           },
           {
             "title": "Run Attribution (Experimental)",
             "path": "/guides/dagster/run-attribution"
           },
           {
-            "title": "Migrating to Graphs, Jobs, and Ops (Experimental)",
+            "title": "Migrating to Graphs, Jobs, and Ops",
             "path": "/guides/dagster/graph_job_op"
           },
           {
@@ -417,20 +413,20 @@
         "title": "Core",
         "children": [
           {
-            "title": "Solids",
-            "path": "/_apidocs/solids"
+            "title": "Jobs",
+            "path": "/_apidocs/jobs"
           },
           {
-            "title": "Pipelines",
-            "path": "/_apidocs/pipeline"
+            "title": "Ops",
+            "path": "/_apidocs/ops"
           },
           {
-            "title": "Modes & Resources",
-            "path": "/_apidocs/modes-resources"
+            "title": "Graphs",
+            "path": "/_apidocs/graphs"
           },
           {
-            "title": "Presets",
-            "path": "/_apidocs/presets"
+            "title": "Resources",
+            "path": "/_apidocs/resources"
           },
           {
             "title": "Loggers",
@@ -481,14 +477,6 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Experimental Core APIs",
-            "path": "/_apidocs/experimental"
-          },
-          {
-            "title": "Software-Defined Assets",
-            "path": "/_apidocs/assets"
-          },
-          {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
           },
@@ -499,6 +487,27 @@
           {
             "title": "Internals",
             "path": "/_apidocs/internals"
+          }
+        ]
+      },
+      {
+        "title": "Legacy",
+        "children": [
+          {
+            "title": "Solids",
+            "path": "/_apidocs/solids"
+          },
+          {
+            "title": "Pipelines",
+            "path": "/_apidocs/pipeline"
+          },
+          {
+            "title": "Modes",
+            "path": "/_apidocs/modes"
+          },
+          {
+            "title": "Presets",
+            "path": "/_apidocs/presets"
           }
         ]
       },
@@ -628,10 +637,6 @@
           {
             "title": "Twilio (dagster-twilio)",
             "path": "/_apidocs/libraries/dagster-twilio"
-          },
-          {
-            "title": "Lakehouse (experimental)",
-            "path": "/_apidocs/libraries/lakehouse"
           }
         ]
       }

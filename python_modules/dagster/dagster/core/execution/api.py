@@ -3,11 +3,11 @@ from contextlib import contextmanager
 from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
 from dagster import check
-from dagster.core.definitions import IPipeline, PipelineDefinition
+from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -54,7 +54,10 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(
-    pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
+    pipeline: IPipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
@@ -70,13 +73,24 @@ def execute_run_iterator(
 
         return gen_execute_on_cancel()
 
-    check.invariant(
-        pipeline_run.status == PipelineRunStatus.NOT_STARTED
-        or pipeline_run.status == PipelineRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
-        ),
-    )
+    if not resume_from_failure:
+        # this should be the first run worker to start
+        check.invariant(
+            pipeline_run.status == PipelineRunStatus.NOT_STARTED
+            or pipeline_run.status == PipelineRunStatus.STARTING,
+            desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            ),
+        )
+    else:
+        check.invariant(
+            pipeline_run.status == PipelineRunStatus.STARTED
+            or pipeline_run.status == PipelineRunStatus.STARTING,
+            desc="Pipeline run {} ({}) in state {}, expected STARTED or STARTING because it's "
+            "resuming from a run worker failure".format(
+                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            ),
+        )
 
     if pipeline_run.solids_to_execute:
         pipeline_def = pipeline.get_definition()
@@ -113,6 +127,7 @@ def execute_run_iterator(
                 raise_on_error=False,
                 executor_defs=None,
                 output_capture=None,
+                resume_from_failure=resume_from_failure,
             ),
         )
     )
@@ -139,11 +154,16 @@ def execute_run(
         PipelineExecutionResult: The result of the execution.
     """
     if isinstance(pipeline, PipelineDefinition):
+        if isinstance(pipeline, JobDefinition):
+            error = "execute_run requires a reconstructable job but received job definition directly instead."
+        else:
+            error = (
+                "execute_run requires a reconstructable pipeline but received pipeline definition "
+                "directly instead."
+            )
         raise DagsterInvariantViolationError(
-            "execute_run requires an IPipeline but received a PipelineDefinition "
-            "directly instead. To support hand-off to other processes provide a "
-            "ReconstructablePipeline which can be done using reconstructable(). For in "
-            "process only execution you can use InMemoryPipeline."
+            f"{error} To support hand-off to other processes please wrap your definition in "
+            "a call to reconstructable(). Learn more about reconstructable here: https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
@@ -680,7 +700,11 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 def _get_execution_plan_from_run(
     pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
 ) -> ExecutionPlan:
-    if pipeline_run.execution_plan_snapshot_id:
+    if (
+        # need to rebuild execution plan so it matches the subsetted graph
+        pipeline.solids_to_execute is None
+        and pipeline_run.execution_plan_snapshot_id
+    ):
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             pipeline_run.execution_plan_snapshot_id
         )
@@ -738,7 +762,9 @@ def pipeline_execution_iterator(
         execution_plan (ExecutionPlan):
     """
 
-    yield DagsterEvent.pipeline_start(pipeline_context)
+    # TODO: restart event?
+    if not pipeline_context.resume_from_failure:
+        yield DagsterEvent.pipeline_start(pipeline_context)
 
     pipeline_exception_info = None
     pipeline_canceled_info = None
@@ -771,12 +797,20 @@ def pipeline_execution_iterator(
             if reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELING:
                 event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
             else:
-                event = DagsterEvent.pipeline_failure(
-                    pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, treating as failure.",
-                    pipeline_canceled_info,
-                )
+                if pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+                    event = DagsterEvent.engine_event(
+                        pipeline_context,
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, not treating as failure because run will be resumed.",
+                        EngineEventData(),
+                    )
+                else:
+                    event = DagsterEvent.pipeline_failure(
+                        pipeline_context,
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, treating as failure.",
+                        pipeline_canceled_info,
+                    )
         elif pipeline_exception_info:
             event = DagsterEvent.pipeline_failure(
                 pipeline_context,

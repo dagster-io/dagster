@@ -20,16 +20,12 @@ from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
-from ..errors import (
-    GrapheneDagsterTypeNotFoundError,
-    GraphenePipelineRunNotFoundError,
-    GraphenePythonError,
-)
+from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
-    GraphenePipelineRunEvent,
-    GraphenePipelineRunStepStats,
+    GrapheneDagsterRunEvent,
+    GrapheneRunStepStats,
     GrapheneStepMaterializationEvent,
 )
 from ..paging import GrapheneCursor
@@ -47,13 +43,13 @@ from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
-from .pipeline_run_stats import GraphenePipelineRunStatsOrError
-from .status import GraphenePipelineRunStatus
+from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
+from .status import GrapheneRunStatus
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
     materializationEvent = graphene.NonNull(GrapheneStepMaterializationEvent)
-    runOrError = graphene.NonNull(lambda: GraphenePipelineRunOrError)
+    runOrError = graphene.NonNull(lambda: GrapheneRunOrError)
     partition = graphene.Field(graphene.String)
 
     class Meta:
@@ -134,18 +130,18 @@ class GrapheneAsset(graphene.ObjectType):
         return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
-class GraphenePipelineRun(graphene.ObjectType):
+class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
-    status = graphene.NonNull(GraphenePipelineRunStatus)
+    status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    stats = graphene.NonNull(GraphenePipelineRunStatsOrError)
-    stepStats = non_null_list(GraphenePipelineRunStepStats)
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
+    stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -163,12 +159,50 @@ class GraphenePipelineRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GraphenePipelineRunEvent),
+        non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
 
     class Meta:
         name = "PipelineRun"
+
+
+class GrapheneRun(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    runId = graphene.NonNull(graphene.String)
+    # Nullable because of historical runs
+    pipelineSnapshotId = graphene.String()
+    repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
+    status = graphene.NonNull(GrapheneRunStatus)
+    pipeline = graphene.NonNull(GraphenePipelineReference)
+    pipelineName = graphene.NonNull(graphene.String)
+    solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
+    stepStats = non_null_list(GrapheneRunStepStats)
+    computeLogs = graphene.Field(
+        graphene.NonNull(GrapheneComputeLogs),
+        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="""
+        Compute logs are the stdout/stderr logs for a given solid step computation
+        """,
+    )
+    executionPlan = graphene.Field(GrapheneExecutionPlan)
+    stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
+    runConfigYaml = graphene.NonNull(graphene.String)
+    mode = graphene.NonNull(graphene.String)
+    tags = non_null_list(GraphenePipelineTag)
+    rootRunId = graphene.Field(graphene.String)
+    parentRunId = graphene.Field(graphene.String)
+    canTerminate = graphene.NonNull(graphene.Boolean)
+    assets = non_null_list(GrapheneAsset)
+    events = graphene.Field(
+        non_null_list(GrapheneDagsterRunEvent),
+        after=graphene.Argument(GrapheneCursor),
+    )
+
+    class Meta:
+        interfaces = (GraphenePipelineRun,)
+        name = "Run"
 
     def __init__(self, pipeline_run):
         super().__init__(
@@ -303,7 +337,7 @@ class GrapheneIPipelineSnapshotMixin:
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -463,7 +497,7 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -558,7 +592,7 @@ def _get_solid_handles(represented_pipeline):
     }
 
 
-class GraphenePipelineRunOrError(graphene.Union):
+class GrapheneRunOrError(graphene.Union):
     class Meta:
-        types = (GraphenePipelineRun, GraphenePipelineRunNotFoundError, GraphenePythonError)
-        name = "PipelineRunOrError"
+        types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
+        name = "RunOrError"

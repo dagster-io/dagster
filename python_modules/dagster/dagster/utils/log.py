@@ -143,8 +143,7 @@ def get_dagster_logger(name: str = None) -> logging.Logger:
 
         .. code-block:: python
 
-            from dagster import op
-            from dagster.utils.log import get_dagster_logger
+            from dagster import get_dagster_logger, op
 
             @op
             def hello_op():

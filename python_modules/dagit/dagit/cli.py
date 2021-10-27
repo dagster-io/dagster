@@ -1,18 +1,17 @@
 import os
 import sys
-import tempfile
 import threading
 from contextlib import contextmanager
 from typing import Optional
 
 import click
 from dagster import check
+from dagster.cli.utils import get_instance_for_service
 from dagster.cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
 )
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
-from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
@@ -120,23 +119,6 @@ def ui(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnin
     )
 
 
-@contextmanager
-def _get_instance():
-    if is_dagster_home_set():
-        with DagsterInstance.get() as instance:
-            yield instance
-    else:
-        # make the temp dir in the cwd since default temp dir roots
-        # have issues with FS notif based event log watching
-        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
-            click.echo(
-                f"Using temporary directory {tempdir} for storage. This will be removed when dagit exits.\n"
-                "To persist information across sessions, set the environment variable DAGSTER_HOME to a directory to use.\n"
-            )
-            with DagsterInstance.local_temp(tempdir) as instance:
-                yield instance
-
-
 def host_dagit_ui(
     host,
     port,
@@ -150,7 +132,7 @@ def host_dagit_ui(
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    with _get_instance() as instance:
+    with get_instance_for_service("dagit") as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout)
 

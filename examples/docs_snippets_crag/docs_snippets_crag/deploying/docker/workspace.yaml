@@ -1,3 +1,0 @@
-load_from:
-  # References the file copied into your Dockerfile
-  - python_file: pipelines.py

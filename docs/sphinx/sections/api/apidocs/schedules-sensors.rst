@@ -9,21 +9,37 @@ Schedules
 =========
 
 .. autodecorator:: schedule
-.. autodecorator:: monthly_schedule
-.. autodecorator:: weekly_schedule
-.. autodecorator:: hourly_schedule
-.. autodecorator:: daily_schedule
 
 .. autoclass:: ScheduleDefinition
 
 .. autoclass:: ScheduleEvaluationContext
-.. autoclass:: PartitionScheduleDefinition
 
 .. autofunction:: build_schedule_context
 
 .. currentmodule:: dagster.core.scheduler
 
 .. autoclass:: DagsterDaemonScheduler
+
+Partitioned Schedules
+=====================
+
+.. currentmodule:: dagster
+
+.. autofunction:: build_schedule_from_partitioned_job
+
+.. autoclass:: PartitionScheduleDefinition
+
+.. autodecorator:: hourly_partitioned_config
+    :noindex:
+
+.. autodecorator:: daily_partitioned_config
+    :noindex:
+
+.. autodecorator:: weekly_partitioned_config
+    :noindex:
+
+.. autodecorator:: monthly_partitioned_config
+    :noindex:
 
 Sensors
 =======
@@ -42,11 +58,7 @@ Sensors
 
 .. autodecorator:: asset_sensor
 
-.. autodecorator:: job_failure_sensor
-
 .. autodecorator:: pipeline_failure_sensor
-
-.. autoclass:: JobFailureSensorContext
 
 .. autoclass:: PipelineFailureSensorContext
 

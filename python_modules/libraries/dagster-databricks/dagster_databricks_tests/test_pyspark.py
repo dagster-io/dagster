@@ -7,14 +7,15 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
+    fs_io_manager,
     pipeline,
     reconstructable,
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.utils.merger import deep_merge_dicts
-from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
-from dagster_azure.adls2 import adls2_plus_default_intermediate_storage_defs, adls2_resource
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
@@ -88,8 +89,8 @@ MODE_DEFS = [
             "pyspark_step_launcher": databricks_pyspark_step_launcher,
             "pyspark": pyspark_resource,
             "adls2": adls2_resource,
+            "io_manager": adls2_pickle_io_manager,
         },
-        intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
     ),
     ModeDefinition(
         "prod_s3",
@@ -97,8 +98,16 @@ MODE_DEFS = [
             "pyspark_step_launcher": databricks_pyspark_step_launcher,
             "pyspark": pyspark_resource,
             "s3": s3_resource,
+            "io_manager": s3_pickle_io_manager,
         },
-        intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+    ),
+    ModeDefinition(
+        "test",
+        resource_defs={
+            "pyspark_step_launcher": databricks_pyspark_step_launcher,
+            "pyspark": pyspark_resource,
+            "io_manager": fs_io_manager,
+        },
     ),
     ModeDefinition(
         "local",
@@ -152,7 +161,7 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
 
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
-        mode="prod_s3",
+        mode="test",
         run_config={
             "resources": {
                 "pyspark_step_launcher": {
@@ -183,14 +192,12 @@ def test_do_it_live_databricks_s3():
             "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
-            },
-            "intermediate_storage": {
-                "s3": {
+                "io_manager": {
                     "config": {
                         "s3_bucket": "dagster-databricks-tests",
                         "s3_prefix": "dagster-databricks-tests",
                     }
-                }
+                },
             },
         },
     )
@@ -224,14 +231,12 @@ def test_do_it_live_databricks_adls2():
                         "credential": {"key": os.environ.get("AZURE_STORAGE_ACCOUNT_KEY")},
                     }
                 },
-            },
-            "intermediate_storage": {
-                "adls2": {
+                "io_manager": {
                     "config": {
                         "adls2_file_system": ADLS2_CONTAINER,
                         "adls2_prefix": "dagster-databricks-tests",
                     }
-                }
+                },
             },
         },
     )

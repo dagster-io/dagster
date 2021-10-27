@@ -57,7 +57,7 @@ query PipelineQuery(
         ... on PipelineConfigValidationValid {
             pipelineName
         }
-        ... on PipelineConfigValidationInvalid {
+        ... on RunConfigValidationInvalid {
             pipelineName
             errors {
                 __typename
@@ -185,6 +185,6 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         assert (
             result.data["runConfigSchemaOrError"]["isRunConfigValid"]["__typename"]
-            == "PipelineConfigValidationInvalid"
+            == "RunConfigValidationInvalid"
         )
         snapshot.assert_match(result.data)

@@ -44,7 +44,7 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
 export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
     __typename
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         reason
@@ -85,7 +85,7 @@ export function responseToYamlValidationResult(
   configJSON: Record<string, unknown>,
   response: ConfigEditorValidationFragment,
 ): YamlModeValidationResult {
-  if (response.__typename !== 'PipelineConfigValidationInvalid') {
+  if (response.__typename !== 'RunConfigValidationInvalid') {
     return {isValid: true};
   }
 

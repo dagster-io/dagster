@@ -3,15 +3,7 @@ from typing import Tuple
 from dagster import Out, Output, op
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql.types import (
-    ArrayType,
-    BooleanType,
-    DoubleType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 HN_ACTION_SCHEMA = StructType(
     [
@@ -19,10 +11,9 @@ HN_ACTION_SCHEMA = StructType(
         StructField("parent", DoubleType()),
         StructField("time", LongType()),
         StructField("type", StringType()),
-        StructField("by", StringType()),
+        StructField("user_id", StringType()),
         StructField("text", StringType()),
         StructField("kids", ArrayType(LongType())),
-        StructField("dead", BooleanType()),
         StructField("score", DoubleType()),
         StructField("title", StringType()),
         StructField("descendants", DoubleType()),
@@ -54,9 +45,11 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
             context.log.info(f"Downloaded {len(rows)} items!")
 
     non_none_rows = [row for row in rows if row is not None]
+    result = DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"])
+    result.rename(columns={"by": "user_id"}, inplace=True)
 
     return Output(
-        DataFrame(non_none_rows).drop_duplicates(subset=["id"]),
+        DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"]),
         "items",
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )

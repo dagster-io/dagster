@@ -1,26 +1,22 @@
-from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
+from dagster import job, make_values_resource, op
 
 
-@solid(required_resource_keys={"values"})
-def solid1(context):
+@op(required_resource_keys={"values"})
+def needs_value(context):
     context.log.info(f"my str: {context.resources.values['my_str']}")
 
 
-@solid(required_resource_keys={"values"})
-def solid2(context):
+@op(required_resource_keys={"values"})
+def needs_different_value(context):
     context.log.info(f"my int: {context.resources.values['my_int']}")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
-    ]
-)
-def my_pipeline():
-    solid1()
-    solid2()
+@job(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
+def different_values_job():
+    needs_value()
+    needs_different_value()
 
 
-execute_pipeline(
-    my_pipeline, run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
+result = different_values_job.execute_in_process(
+    run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
 )

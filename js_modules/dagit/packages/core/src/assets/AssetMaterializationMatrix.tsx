@@ -142,7 +142,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
               const {startTime, endTime} = materializationEvent.stepStats || {};
 
               const runId =
-                assetMaterialization.runOrError.__typename === 'PipelineRun'
+                assetMaterialization.runOrError.__typename === 'Run'
                   ? assetMaterialization.runOrError.runId
                   : '';
 

@@ -50,8 +50,8 @@ class DagsterInvalidDefinitionError(DagsterError):
 
 class DagsterInvalidSubsetError(DagsterError):
     """Indicates that a subset of a pipeline is invalid because either:
-    - One or more solids in the specified subset do not exist on the pipeline.'
-    - The subset produces an invalid pipeline.
+    - One or more ops in the specified subset do not exist on the job.'
+    - The subset produces an invalid job.
     """
 
 
@@ -229,7 +229,7 @@ class DagsterUserCodeExecutionError(DagsterError):
 
 
 class DagsterTypeCheckError(DagsterUserCodeExecutionError):
-    """Indicates an error in the solid type system at runtime. E.g. a solid receives an
+    """Indicates an error in the op type system at runtime. E.g. a op receives an
     unexpected input, or produces an output that does not match the type of the output definition.
     """
 
@@ -257,8 +257,8 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
-        self.solid_name = check.str_param(kwargs.pop("solid_name"), "solid_name")
-        self.solid_def_name = check.str_param(kwargs.pop("solid_def_name"), "solid_def_name")
+        self.op_name = check.str_param(kwargs.pop("op_name"), "op_name")
+        self.op_def_name = check.str_param(kwargs.pop("op_def_name"), "op_def_name")
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
 
 
@@ -272,7 +272,8 @@ class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     """
     Indicates that an unexpected error occurred while executing the body of a config mapping
-    function defined in a :py:class:`~dagster.CompositeSolidDefinition` during config parsing.
+    function defined in a :py:class:`~dagster.JobDefinition` or `~dagster.GraphDefinition` during
+    config parsing.
     """
 
 
@@ -295,8 +296,8 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method
     """Indicates that an unknown resource was accessed in the body of an execution step. May often
-    happen by accessing a resource in the compute function of a solid without first supplying the
-    solid with the correct `required_resource_keys` argument.
+    happen by accessing a resource in the compute function of an op without first supplying the
+    op with the correct `required_resource_keys` argument.
     """
 
     def __init__(self, resource_name, *args, **kwargs):
@@ -310,7 +311,7 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
 
 class DagsterInvalidInvocationError(DagsterError):
     """
-    Indicates that an error has occurred when a solid has been invoked, but before the actual
+    Indicates that an error has occurred when an op has been invoked, but before the actual
     core compute has been reached.
     """
 
@@ -465,11 +466,10 @@ class DagsterRunConflict(DagsterError):
 class DagsterTypeCheckDidNotPass(DagsterError):
     """Indicates that a type check failed.
 
-    This is raised when ``raise_on_error`` is ``True`` in calls to the synchronous pipeline and
-    solid execution APIs (:py:func:`~dagster.execute_pipeline`, :py:func:`~dagster.execute_solid`,
-    etc.), that is, typically in test, and  a :py:class:`~dagster.DagsterType`'s type check fails
-    by returning either ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success``
-    member is ``False``.
+    This is raised when ``raise_on_error`` is ``True`` in calls to the synchronous job and
+    graph execution APIs (e.g. `graph.execute_in_process()`, `job.execute_in_process()` -- typically
+    within a test), and a :py:class:`~dagster.DagsterType`'s type check fails by returning either
+    ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success`` member is ``False``.
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
@@ -530,7 +530,7 @@ class JobError(DagsterUserCodeExecutionError):
 
 
 class DagsterUnknownStepStateError(DagsterError):
-    """When pipeline execution complete with steps in an unknown state"""
+    """When job execution completes with steps in an unknown state"""
 
 
 class DagsterObjectStoreError(DagsterError):

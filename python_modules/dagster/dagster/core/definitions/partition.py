@@ -33,7 +33,9 @@ T = TypeVar("T")
 
 class Partition(Generic[T]):
     """
-    Partition is the representation of a logical slice across an axis of a pipeline's work
+    A Partition represents a single slice of the entire set of a job's possible work. It consists
+    of a value, which is an object that represents that partition, and an optional name, which is
+    used to label the partition in a human-readable way.
 
     Args:
         value (Any): The object for this partition
@@ -295,7 +297,7 @@ class PartitionSetDefinition(Generic[T]):
     def __init__(
         self,
         name: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         partition_fn: Optional[Callable[..., Union[List[Partition[T]], List[str]]]] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
@@ -306,6 +308,7 @@ class PartitionSetDefinition(Generic[T]):
         partitions_def: Optional[
             PartitionsDefinition[T]  # pylint: disable=unsubscriptable-object
         ] = None,
+        job_name: Optional[str] = None,
     ):
         check.invariant(
             partition_fn is not None or partitions_def is not None,
@@ -314,6 +317,10 @@ class PartitionSetDefinition(Generic[T]):
         check.invariant(
             not (partition_fn and partitions_def),
             "Only one of `partition_fn` or `partitions_def` must be supplied.",
+        )
+        check.invariant(
+            not (pipeline_name and job_name),
+            "Only one of `job_name` and `pipeline_name` must be supplied.",
         )
 
         _wrap_partition_fn = None
@@ -348,6 +355,7 @@ class PartitionSetDefinition(Generic[T]):
 
         self._name = check_valid_name(name)
         self._pipeline_name = check.opt_str_param(pipeline_name, "pipeline_name")
+        self._job_name = check.opt_str_param(job_name, "job_name")
         self._partition_fn = _wrap_partition_fn
         self._solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str
@@ -374,6 +382,10 @@ class PartitionSetDefinition(Generic[T]):
     @property
     def pipeline_name(self):
         return self._pipeline_name
+
+    @property
+    def job_name(self):
+        return self._job_name
 
     @property
     def solid_selection(self):
@@ -621,7 +633,11 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
 class PartitionedConfig(Generic[T]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
-    partitions, and each partition corresponds to run configuration for the job."""
+    partitions, and each partition corresponds to run configuration for the job.
+
+    Setting PartitionedConfig as the config for a job allows you to launch backfills for that job
+    and view the run history across partitions.
+    """
 
     def __init__(
         self,
@@ -676,7 +692,11 @@ def static_partitioned_config(
     Args:
         partition_keys (List[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
+
+    Returns:
+        PartitionedConfig
     """
+    check.list_param(partition_keys, "partition_keys", str)
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -710,7 +730,11 @@ def dynamic_partitioned_config(
         partition_fn (Callable[[datetime.datetime], Sequence[str]]): A function that generates a
             list of valid partition keys, which serve as the range of values that can be provided
             to the decorated run config function.
+
+    Returns:
+        PartitionedConfig
     """
+    check.callable_param(partition_fn, "partition_fn")
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         def _partitions_wrapper(current_time: Optional[datetime] = None):

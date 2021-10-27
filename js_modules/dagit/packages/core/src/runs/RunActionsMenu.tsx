@@ -11,6 +11,7 @@ import {IconWIP} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -57,11 +58,12 @@ export const RunActionsMenu: React.FC<{
   };
 
   const pipelineRun =
-    data?.pipelineRunOrError?.__typename === 'PipelineRun' ? data?.pipelineRunOrError : null;
+    data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
 
   const repoMatch = useRepositoryForRun(pipelineRun);
   const isFinished = doneStatuses.has(run.status);
+  const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
   const playgroundPath = () => {
     const path = `/playground/setup?${qs.stringify({
@@ -70,16 +72,16 @@ export const RunActionsMenu: React.FC<{
     })}`;
 
     if (repoMatch) {
-      return workspacePipelinePath(
-        repoMatch.match.repository.name,
-        repoMatch.match.repositoryLocation.name,
-        run.pipelineName,
-        run.mode,
+      return workspacePipelinePath({
+        repoName: repoMatch.match.repository.name,
+        repoLocation: repoMatch.match.repositoryLocation.name,
+        pipelineName: run.pipelineName,
+        isJob,
         path,
-      );
+      });
     }
 
-    return workspacePipelinePathGuessRepo(run.pipelineName, run.mode, path);
+    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
   };
 
   const infoReady = called ? !loading : false;
@@ -108,7 +110,7 @@ export const RunActionsMenu: React.FC<{
                 targetTagName="div"
               >
                 <MenuItemWIP
-                  text="Open in Playground..."
+                  text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
                   href={playgroundPath()}
@@ -281,13 +283,13 @@ export const RunBulkActionsMenu: React.FC<{
 });
 
 const OPEN_PLAYGROUND_UNKNOWN =
-  'Playground is unavailable because the pipeline is not present in the current repository.';
+  'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
 const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on Run {
         id
         pipeline {
           name

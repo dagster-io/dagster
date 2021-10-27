@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {TimezoneProvider} from '../app/time/TimezoneContext';
 import {TestProvider} from '../testing/TestProvider';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
 import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RunDetailsTestQuery} from './types/RunDetailsTestQuery';
@@ -17,7 +17,7 @@ describe('RunDetails', () => {
   const RUN_DETAILS_TEST_QUERY = gql`
     query RunDetailsTestQuery {
       pipelineRunOrError(runId: "abc") {
-        ... on PipelineRun {
+        ... on Run {
           id
           ...RunDetailsFragment
         }
@@ -31,18 +31,14 @@ describe('RunDetails', () => {
       fetchPolicy: 'no-cache',
     });
 
-    if (
-      !data ||
-      !data?.pipelineRunOrError ||
-      data?.pipelineRunOrError.__typename !== 'PipelineRun'
-    ) {
+    if (!data || !data?.pipelineRunOrError || data?.pipelineRunOrError.__typename !== 'Run') {
       return null;
     }
     return <RunDetails loading={loading} run={data.pipelineRunOrError} />;
   };
 
   type MockConfig = {
-    status: PipelineRunStatus;
+    status: RunStatus;
     startTime: number | null;
     endTime: number | null;
   };
@@ -54,7 +50,16 @@ describe('RunDetails', () => {
         id: () => 'abc',
         status: () => status,
       }),
+      Run: () => ({
+        id: () => 'abc',
+        status: () => status,
+      }),
       PipelineRunStatsSnapshot: () => ({
+        id: () => 'abc-time',
+        startTime: () => startTime,
+        endTime: () => endTime,
+      }),
+      RunStatsSnapshot: () => ({
         id: () => 'abc-time',
         startTime: () => startTime,
         endTime: () => endTime,
@@ -90,7 +95,7 @@ describe('RunDetails', () => {
   });
 
   it('renders QUEUED details', async () => {
-    renderAll({status: PipelineRunStatus.QUEUED, startTime: null, endTime: null});
+    renderAll({status: RunStatus.QUEUED, startTime: null, endTime: null});
 
     await waitFor(() => {
       // Validate some basic pieces of the structure.
@@ -107,7 +112,7 @@ describe('RunDetails', () => {
 
   it('renders CANCELED details with start time', async () => {
     renderAll({
-      status: PipelineRunStatus.CANCELED,
+      status: RunStatus.CANCELED,
       startTime: START_TIME,
       endTime: END_TIME,
     });
@@ -121,7 +126,7 @@ describe('RunDetails', () => {
 
   it('renders CANCELED details without start time', async () => {
     renderAll({
-      status: PipelineRunStatus.CANCELED,
+      status: RunStatus.CANCELED,
       startTime: null,
       endTime: END_TIME,
     });
@@ -135,7 +140,7 @@ describe('RunDetails', () => {
 
   it('renders CANCELING details', async () => {
     renderAll({
-      status: PipelineRunStatus.CANCELING,
+      status: RunStatus.CANCELING,
       startTime: START_TIME,
       endTime: null,
     });
@@ -150,7 +155,7 @@ describe('RunDetails', () => {
 
   it('renders FAILURE details with start time', async () => {
     renderAll({
-      status: PipelineRunStatus.FAILURE,
+      status: RunStatus.FAILURE,
       startTime: START_TIME,
       endTime: END_TIME,
     });
@@ -164,7 +169,7 @@ describe('RunDetails', () => {
 
   it('renders FAILURE details without start time', async () => {
     renderAll({
-      status: PipelineRunStatus.FAILURE,
+      status: RunStatus.FAILURE,
       startTime: null,
       endTime: END_TIME,
     });
@@ -178,7 +183,7 @@ describe('RunDetails', () => {
 
   it('renders NOT_STARTED details', async () => {
     renderAll({
-      status: PipelineRunStatus.NOT_STARTED,
+      status: RunStatus.NOT_STARTED,
       startTime: null,
       endTime: null,
     });
@@ -192,7 +197,7 @@ describe('RunDetails', () => {
 
   it('renders STARTED details', async () => {
     renderAll({
-      status: PipelineRunStatus.STARTED,
+      status: RunStatus.STARTED,
       startTime: START_TIME,
       endTime: null,
     });
@@ -206,7 +211,7 @@ describe('RunDetails', () => {
 
   it('renders STARTING details with start time', async () => {
     renderAll({
-      status: PipelineRunStatus.STARTING,
+      status: RunStatus.STARTING,
       startTime: START_TIME,
       endTime: null,
     });
@@ -220,7 +225,7 @@ describe('RunDetails', () => {
 
   it('renders STARTING details without start time', async () => {
     renderAll({
-      status: PipelineRunStatus.STARTING,
+      status: RunStatus.STARTING,
       startTime: null,
       endTime: null,
     });
@@ -234,7 +239,7 @@ describe('RunDetails', () => {
 
   it('renders SUCCESS details', async () => {
     renderAll({
-      status: PipelineRunStatus.SUCCESS,
+      status: RunStatus.SUCCESS,
       startTime: START_TIME,
       endTime: END_TIME,
     });

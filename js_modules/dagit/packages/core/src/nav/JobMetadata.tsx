@@ -2,25 +2,25 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {timingStringForStatus} from '../runs/RunDetails';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
+import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {StyledTable} from '../ui/MetadataTable';
+import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
-import {Code} from '../ui/Text';
+import {Subheading} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
+import {FontFamily} from '../ui/styles';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -34,13 +34,11 @@ import {RunMetadataFragment} from './types/RunMetadataFragment';
 
 interface Props {
   pipelineName: string;
-  pipelineMode: string;
   repoAddress: RepoAddress;
 }
 
 export const JobMetadata: React.FC<Props> = (props) => {
-  const {pipelineName, pipelineMode, repoAddress} = props;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {pipelineName, repoAddress} = props;
 
   const {data} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
     variables: {
@@ -51,7 +49,6 @@ export const JobMetadata: React.FC<Props> = (props) => {
       },
       runsFilter: {
         pipelineName,
-        mode: flagPipelineModeTuples ? pipelineMode : undefined,
       },
     },
   });
@@ -64,7 +61,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   }, [data]);
 
   const runs = React.useMemo(() => {
-    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'PipelineRuns') {
+    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs') {
       return data.pipelineRunsOrError.results;
     }
     return [];
@@ -74,42 +71,32 @@ export const JobMetadata: React.FC<Props> = (props) => {
 
   return (
     <>
-      {job ? <ScheduleOrSensorTag job={job} mode={pipelineMode} repoAddress={repoAddress} /> : null}
+      {job ? <ScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
       {lastRun ? <LatestRunTag run={lastRun} /> : null}
       {runs.length ? <RelatedAssetsTag runs={runs} /> : null}
     </>
   );
 };
 
-const ScheduleOrSensorTag: React.FC<{job: Job; mode: string; repoAddress: RepoAddress}> = ({
+const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
   job,
-  mode,
   repoAddress,
 }) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const [open, setOpen] = React.useState(false);
 
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
-      return flagPipelineModeTuples
-        ? job.schedules.filter((schedule) => schedule.mode === mode)
-        : job.schedules;
+      return job.schedules;
     }
     return [];
-  }, [flagPipelineModeTuples, job, mode]);
+  }, [job]);
 
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
-      return flagPipelineModeTuples
-        ? job.sensors.filter((sensor) =>
-            sensor.targets?.some(
-              (target) => target.mode === mode && target.pipelineName === job.name,
-            ),
-          )
-        : job.sensors;
+      return job.sensors;
     }
     return [];
-  }, [flagPipelineModeTuples, job, mode]);
+  }, [job]);
 
   const scheduleCount = matchingSchedules.length;
   const sensorCount = matchingSensors.length;
@@ -143,22 +130,82 @@ const ScheduleOrSensorTag: React.FC<{job: Job; mode: string; repoAddress: RepoAd
           canOutsideClickClose
           canEscapeKeyClose
           isOpen={open}
+          style={{width: '50vw', minWidth: '600px', maxWidth: '800px'}}
           onClose={() => setOpen(false)}
         >
-          <DialogBody>
-            <Group direction="column" spacing={16}>
-              {matchingSchedules.map((schedule) => (
-                <MatchingSchedule
-                  key={schedule.name}
-                  schedule={schedule}
-                  repoAddress={repoAddress}
-                />
-              ))}
-              {matchingSensors.map((sensor) => (
-                <MatchingSensor key={sensor.name} sensor={sensor} repoAddress={repoAddress} />
-              ))}
-            </Group>
-          </DialogBody>
+          <Box padding={{bottom: 12}}>
+            {matchingSchedules.length ? (
+              <>
+                {matchingSensors.length ? (
+                  <Box padding={{vertical: 16, horizontal: 24}}>
+                    <Subheading>Schedules ({matchingSchedules.length})</Subheading>
+                  </Box>
+                ) : null}
+                <Table>
+                  <thead>
+                    <tr>
+                      <th style={{width: '80px'}} />
+                      <th>Schedule name</th>
+                      <th>Schedule</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchingSchedules.map((schedule) => (
+                      <tr key={schedule.name}>
+                        <td>
+                          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                        </td>
+                        <td>
+                          <Link
+                            to={workspacePathFromAddress(
+                              repoAddress,
+                              `/schedules/${schedule.name}`,
+                            )}
+                          >
+                            {schedule.name}
+                          </Link>
+                        </td>
+                        <td>{humanCronString(schedule.cronSchedule)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </>
+            ) : null}
+            {matchingSensors.length ? (
+              <>
+                {matchingSchedules.length ? (
+                  <Box padding={{vertical: 16, horizontal: 24}}>
+                    <Subheading>Sensors ({matchingSensors.length})</Subheading>
+                  </Box>
+                ) : null}
+                <Table>
+                  <thead>
+                    <tr>
+                      <th style={{width: '80px'}} />
+                      <th>Sensor name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchingSensors.map((sensor) => (
+                      <tr key={sensor.name}>
+                        <td>
+                          <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                        </td>
+                        <td>
+                          <Link
+                            to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
+                          >
+                            {sensor.name}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </>
+            ) : null}
+          </Box>
           <DialogFooter>
             <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
               OK
@@ -190,7 +237,7 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Schedule:
         <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-          {schedule.name}
+          {humanCronString(schedule.cronSchedule)}
         </Link>
         <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
       </Box>
@@ -201,10 +248,17 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
     <Tooltip
       placement="bottom"
       content={
-        <div>
-          <span>{humanCronString(schedule.cronSchedule)}</span>
-          <Code style={{marginLeft: '4px'}}>({schedule.cronSchedule})</Code>
-        </div>
+        <Box flex={{direction: 'column', gap: 4}}>
+          <div>
+            Name: <strong>{schedule.name}</strong>
+          </div>
+          <div>
+            Cron:{' '}
+            <span style={{fontFamily: FontFamily.monospace, marginLeft: '4px'}}>
+              ({schedule.cronSchedule})
+            </span>
+          </div>
+        </Box>
       }
     >
       {tag}
@@ -236,7 +290,7 @@ const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
-    if (run.stats.__typename === 'PipelineRunStatsSnapshot') {
+    if (run.stats.__typename === 'RunStatsSnapshot') {
       return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
     }
     return null;
@@ -244,11 +298,11 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
 
   const intent = () => {
     switch (run.status) {
-      case PipelineRunStatus.SUCCESS:
+      case RunStatus.SUCCESS:
         return 'success';
-      case PipelineRunStatus.CANCELED:
-      case PipelineRunStatus.CANCELING:
-      case PipelineRunStatus.FAILURE:
+      case RunStatus.CANCELED:
+      case RunStatus.CANCELING:
+      case RunStatus.FAILURE:
         return 'danger';
       default:
         return 'none';
@@ -258,7 +312,7 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   return (
     <TagWIP intent={intent()}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatus status={run.status} size={10} />
+        <RunStatusIndicator status={run.status} size={10} />
         Latest run:
         {stats ? (
           <Tooltip
@@ -343,15 +397,25 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <DialogBody>
-          <Group direction="column" spacing={16}>
-            {keys.map((key) => (
-              <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
-                {key}
-              </Link>
-            ))}
-          </Group>
-        </DialogBody>
+        <Box padding={{bottom: 12}}>
+          <Table>
+            <tbody>
+              {keys.map((key) => (
+                <tr key={key}>
+                  <td>
+                    <Link
+                      key={key}
+                      to={`/instance/assets/${key}`}
+                      style={{wordBreak: 'break-word'}}
+                    >
+                      {key}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Box>
         <DialogFooter>
           <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
             OK
@@ -378,10 +442,11 @@ const RUN_METADATA_FRAGMENT = gql`
 `;
 
 const JOB_METADATA_QUERY = gql`
-  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: PipelineRunsFilter) {
+  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
+        isJob
         name
         schedules {
           id

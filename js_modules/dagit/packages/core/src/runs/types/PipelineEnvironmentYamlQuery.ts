@@ -8,32 +8,32 @@
 // GraphQL query operation: PipelineEnvironmentYamlQuery
 // ====================================================
 
-export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_pipeline {
+export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
-export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_repositoryOrigin {
+export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run {
+  __typename: "Run";
   id: string;
-  pipeline: PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_pipeline;
+  pipeline: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_pipeline;
   pipelineSnapshotId: string | null;
   runConfigYaml: string;
-  repositoryOrigin: PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_repositoryOrigin | null;
+  repositoryOrigin: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin | null;
 }
 
-export type PipelineEnvironmentYamlQuery_pipelineRunOrError = PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRunNotFoundError | PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun;
+export type PipelineEnvironmentYamlQuery_pipelineRunOrError = PipelineEnvironmentYamlQuery_pipelineRunOrError_RunNotFoundError | PipelineEnvironmentYamlQuery_pipelineRunOrError_Run;
 
 export interface PipelineEnvironmentYamlQuery {
   pipelineRunOrError: PipelineEnvironmentYamlQuery_pipelineRunOrError;

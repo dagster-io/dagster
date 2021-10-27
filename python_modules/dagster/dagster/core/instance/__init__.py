@@ -35,6 +35,7 @@ from dagster.core.errors import (
     DagsterRunConflict,
 )
 from dagster.core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
@@ -187,7 +188,7 @@ class DagsterInstance:
     For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
     such as the following:
 
-    .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
+    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/postgres_dagster.yaml
        :caption: dagster.yaml
        :language: YAML
 
@@ -307,6 +308,12 @@ class DagsterInstance:
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
+
+        if self.run_monitoring_enabled:
+            check.invariant(
+                self.run_launcher.supports_check_run_worker_health,
+                "Run monitoring only supports select RunLaunchers",
+            )
 
     # ctors
 
@@ -553,6 +560,42 @@ class DagsterInstance:
             return telemetry_settings["enabled"]
         else:
             return dagster_telemetry_enabled_default
+
+    # run monitoring
+
+    @property
+    def run_monitoring_enabled(self) -> bool:
+        if self.is_ephemeral:
+            return False
+
+        run_monitoring_enabled_default = False
+
+        run_monitoring_settings = self.get_settings("run_monitoring")
+
+        if not run_monitoring_settings:
+            return run_monitoring_enabled_default
+
+        if "enabled" in run_monitoring_settings:
+            return run_monitoring_settings["enabled"]
+        else:
+            return run_monitoring_enabled_default
+
+    @property
+    def run_monitoring_settings(self) -> Dict:
+        check.invariant(self.run_monitoring_enabled, "run_monitoring is not enabled")
+        return self.get_settings("run_monitoring")
+
+    @property
+    def run_monitoring_start_timeout_seconds(self) -> int:
+        return self.run_monitoring_settings.get("start_timeout_seconds", 180)
+
+    @property
+    def run_monitoring_max_resume_run_attempts(self) -> int:
+        return self.run_monitoring_settings.get("max_resume_run_attempts", 3)
+
+    @property
+    def run_monitoring_poll_interval_seconds(self) -> int:
+        return self.run_monitoring_settings.get("poll_interval_seconds", 120)
 
     # python logs
 
@@ -1250,7 +1293,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "message",
-            "Sending pipeline termination request.",
+            "Sending run termination request.",
         )
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
@@ -1284,7 +1327,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "mesage",
-            "This pipeline run has been marked as canceled from outside the execution context.",
+            "This run has been marked as canceled from outside the execution context.",
         )
 
         dagster_event = DagsterEvent(
@@ -1315,7 +1358,7 @@ records = instance.get_event_records(
         message = check.opt_str_param(
             message,
             "message",
-            "This pipeline run has been marked as failed from outside the execution context.",
+            "This run has been marked as failed from outside the execution context.",
         )
 
         dagster_event = DagsterEvent(
@@ -1341,9 +1384,6 @@ records = instance.get_event_records(
 
     def file_manager_directory(self, run_id):
         return self._local_artifact_storage.file_manager_dir(run_id)
-
-    def intermediates_directory(self, run_id):
-        return self._local_artifact_storage.intermediates_dir(run_id)
 
     def storage_directory(self):
         return self._local_artifact_storage.storage_dir
@@ -1466,6 +1506,67 @@ records = instance.get_event_records(
             raise
 
         return run
+
+    def resume_run(self, run_id: str, workspace: "IWorkspace", attempt_number: int):
+        """Resume a pipeline run.
+
+        This method should be called on runs which have already been launched, but whose run workers
+        have died.
+
+        Args:
+            run_id (str): The id of the run the launch.
+        """
+        from dagster.core.launcher import LaunchRunContext
+        from dagster.core.events import EngineEventData
+        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+
+        run = self.get_run_by_id(run_id)
+        if run is None:
+            raise DagsterInvariantViolationError(
+                f"Could not load run {run_id} that was passed to resume_run"
+            )
+        if run.status not in IN_PROGRESS_RUN_STATUSES:
+            raise DagsterInvariantViolationError(
+                f"Run {run_id} is not in a state that can be resumed"
+            )
+
+        self.report_engine_event(
+            RESUME_RUN_LOG_MESSAGE,
+            run,
+        )
+
+        try:
+            self._run_launcher.launch_run(
+                LaunchRunContext(
+                    pipeline_run=run,
+                    workspace=workspace,
+                    resume_from_failure=True,
+                    resume_attempt_number=attempt_number,
+                )
+            )
+        except:
+            error = serializable_error_info_from_exc_info(sys.exc_info())
+            self.report_engine_event(
+                error.message,
+                run,
+                EngineEventData.engine_error(error),
+            )
+            self.report_run_failed(run)
+            raise
+
+        return run
+
+    def count_resume_run_attempts(self, run_id: str):
+        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+        from dagster.core.events import DagsterEventType
+
+        events = self.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
+        return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
+
+    def run_will_resume(self, run_id: str):
+        if not self.run_monitoring_enabled:
+            return False
+        return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
 
     # Scheduler
 
@@ -1642,7 +1743,12 @@ records = instance.get_event_records(
     def get_required_daemon_types(self):
         from dagster.core.run_coordinator import QueuedRunCoordinator
         from dagster.core.scheduler import DagsterDaemonScheduler
-        from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, BackfillDaemon
+        from dagster.daemon.daemon import (
+            SchedulerDaemon,
+            SensorDaemon,
+            BackfillDaemon,
+            MonitoringDaemon,
+        )
         from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
@@ -1655,6 +1761,8 @@ records = instance.get_event_records(
             daemons.append(SchedulerDaemon.daemon_type())
         if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
+        if self.run_monitoring_enabled:
+            daemons.append(MonitoringDaemon.daemon_type())
         return daemons
 
     # backfill

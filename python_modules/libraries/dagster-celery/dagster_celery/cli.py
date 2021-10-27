@@ -116,7 +116,7 @@ def launch_background_worker(subprocess_args, env):
     help=(
         "Specify the path to a config YAML file with options for the worker. This is the same "
         "config block that you provide to dagster_celery.celery_executor when configuring a "
-        "pipeline for execution with Celery, with, e.g., the URL of the broker to use."
+        "job for execution with Celery, with, e.g., the URL of the broker to use."
     ),
 )
 @click.option(
@@ -207,7 +207,7 @@ def worker_start_command(
     help=(
         "Specify the path to a config YAML file with options for the workers you are trying to "
         "manage. This is the same config block that you provide to dagster_celery.celery_executor "
-        "when configuring a pipeline for execution with Celery, with, e.g., the URL of the broker "
+        "when configuring a job for execution with Celery, with, e.g., the URL of the broker "
         "to use. Without this config file, you will not be able to find your workers (since the "
         "CLI won't know how to reach the broker)."
     ),
@@ -238,7 +238,7 @@ def worker_list_command(config_yaml=None):
     help=(
         "Specify the path to a config YAML file with options for the workers you are trying to "
         "manage. This is the same config block that you provide to dagster_celery.celery_executor "
-        "when configuring a pipeline for execution with Celery, with, e.g., the URL of the broker "
+        "when configuring a job for execution with Celery, with, e.g., the URL of the broker "
         "to use. Without this config file, you will not be able to terminate your workers (since "
         "the CLI won't know how to reach the broker)."
     ),

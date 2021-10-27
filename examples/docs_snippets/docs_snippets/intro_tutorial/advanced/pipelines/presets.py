@@ -10,14 +10,13 @@ import sqlalchemy
 import sqlalchemy.ext.declarative
 from dagster import (
     Field,
-    ModeDefinition,
-    PresetDefinition,
     String,
-    execute_pipeline,
+    config_from_files,
     file_relative_path,
-    pipeline,
+    graph,
+    op,
+    repository,
     resource,
-    solid,
 )
 
 
@@ -92,7 +91,7 @@ def sqlalchemy_postgres_warehouse_resource(context):
     return SqlAlchemyPostgresWarehouse(context.resource_config["conn_str"])
 
 
-@solid
+@op
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -100,7 +99,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 
 
-@solid(required_resource_keys={"warehouse"})
+@op(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
         "calories",
@@ -127,40 +126,21 @@ def normalize_calories(context, cereals):
 
 
 # start_presets_marker_0
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="unittest",
-            resource_defs={"warehouse": local_sqlite_warehouse_resource},
-        ),
-        ModeDefinition(
-            name="dev",
-            resource_defs={
-                "warehouse": sqlalchemy_postgres_warehouse_resource
-            },
-        ),
-    ],
-    preset_defs=[
-        PresetDefinition(
-            "unittest",
-            run_config={
-                "resources": {
-                    "warehouse": {"config": {"conn_str": ":memory:"}}
-                }
-            },
-            mode="unittest",
-        ),
-        PresetDefinition.from_files(
-            "dev",
-            config_files=[
-                file_relative_path(__file__, "presets_dev_warehouse.yaml")
-            ],
-            mode="dev",
-        ),
-    ],
-)
-def presets_pipeline():
+@graph
+def calories():
     normalize_calories(download_csv())
+
+
+calories_test_job = calories.to_job(
+    resource_defs={"warehouse": local_sqlite_warehouse_resource},
+    config={"resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}},
+)
+calories_dev_job = calories.to_job(
+    resource_defs={"warehouse": sqlalchemy_postgres_warehouse_resource},
+    config=config_from_files(
+        [file_relative_path(__file__, "presets_dev_warehouse.yaml")]
+    ),
+)
 
 
 # end_presets_marker_0
@@ -168,6 +148,15 @@ def presets_pipeline():
 
 if __name__ == "__main__":
     # start_presets_main
-    result = execute_pipeline(presets_pipeline, preset="unittest")
+    result = calories_test_job.execute_in_process()
     # end_presets_main
     assert result.success
+
+
+# start_repo_marker
+@repository
+def dev_repo():
+    return [calories_dev_job]
+
+
+# end_repo_marker

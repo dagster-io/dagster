@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, PipelineRunStatus } from "./../../types/globalTypes";
+import { BulkActionStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceBackfillsQuery
@@ -17,10 +17,10 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   canTerminate: boolean;
-  status: PipelineRunStatus;
+  status: RunStatus;
   tags: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags[];
 }
 

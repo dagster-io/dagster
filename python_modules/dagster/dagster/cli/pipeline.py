@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import textwrap
-import warnings
 
 import click
 import pendulum
@@ -37,7 +36,6 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
@@ -51,6 +49,7 @@ from dagster.utils.interrupts import capture_interrupts
 from tabulate import tabulate
 
 from .config_scaffolder import scaffold_pipeline_config
+from .utils import get_instance_for_service
 
 
 @click.group(name="pipeline")
@@ -76,7 +75,9 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_service(
+        "``dagster job list``" if using_job_op_graph_apis else "``dagster pipeline list``"
+    ) as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
@@ -342,14 +343,8 @@ def add_step_to_table(memoized_plan):
 )
 def pipeline_execute_command(**kwargs):
     with capture_interrupts():
-        if is_dagster_home_set():
-            with DagsterInstance.get() as instance:
-                execute_execute_command(instance, kwargs)
-        else:
-            warnings.warn(
-                "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
-            )
-            execute_execute_command(DagsterInstance.ephemeral(), kwargs)
+        with get_instance_for_service("``dagster pipeline execute``") as instance:
+            execute_execute_command(instance, kwargs)
 
 
 @telemetry_wrapper
@@ -610,7 +605,7 @@ def do_execute_command(
 )
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
 def pipeline_launch_command(**kwargs):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_service("``dagster pipeline launch``") as instance:
         return execute_launch_command(instance, kwargs)
 
 
@@ -915,9 +910,8 @@ def _execute_backfill_command_at_location(
     except Exception:  # pylint: disable=broad-except
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
-            "Failure fetching partition names for {partition_set_name}: {error_message}".format(
-                partition_set_name=partition_set_name,
-                error_message=error_info.message,
+            "Failure fetching partition names: {error_message}".format(
+                error_message=error_info.message
             ),
             serialized_error_info=error_info,
         )

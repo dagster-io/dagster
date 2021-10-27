@@ -32,7 +32,6 @@ setup(
             "google-api-python-client",
             "google-cloud-storage",
             "keras",
-            "lakehouse",
             "matplotlib<3.4.3",
             "mock",
             "moto>=1.3.16",

@@ -132,6 +132,13 @@ def construct_log_string(
     logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
 ) -> str:
 
+    from dagster.core.events import EVENT_TYPE_VALUE_TO_DISPLAY_STRING
+
+    event_type_str = (
+        EVENT_TYPE_VALUE_TO_DISPLAY_STRING[message_props.event_type_value]
+        if message_props.event_type_value in EVENT_TYPE_VALUE_TO_DISPLAY_STRING
+        else message_props.event_type_value
+    )
     return (
         " - ".join(
             filter(
@@ -141,7 +148,7 @@ def construct_log_string(
                     logging_metadata.run_id,
                     message_props.pid,
                     logging_metadata.step_key,
-                    message_props.event_type_value,
+                    event_type_str,
                     message_props.orig_message,
                 ),
             )

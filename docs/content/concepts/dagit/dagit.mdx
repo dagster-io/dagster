@@ -1,29 +1,29 @@
 ---
 title: Dagit UI | Dagster
-description: Dagit is a web-based interface for Dagster. You can inspect solid and pipeline definitions, launch runs, view launched runs, and view assets.
+description: Dagit is a web-based interface for Dagster. You can inspect op and job definitions, launch runs, view launched runs, and view assets.
 ---
 
 # Dagit UI
 
 Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
-You can inspect solid and pipeline definitions, launch runs, view launched runs, and view assets produced by those runs.
+You can inspect op, job, and graph definitions, launch runs, view launched runs, and view assets produced by those runs.
 
 To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the interface from in the browser, usually on port 3000.
 
-Dagit fetches definitions - pipelines, solids, schedules, partition sets - from a set of repositories configured in `workspace.yaml`. It fetches runs and assets from storage, configured in an instance's `dagster.yaml`.
+Dagit fetches definitions - jobs, ops, schedules, sensors - from a set of repositories configured in `workspace.yaml`. It fetches runs and assets from storage, configured in an instance's `dagster.yaml`.
 
 These are the main pages inside Dagit:
 
 <!-- Notes: all screenshots are from go/prod -->
 
-## Pipeline
+## Job
 
-The Pipeline page offers tools to explore a pipeline definition and launch runs for that pipeline.
+The Job page offers tools to explore a job definition and launch runs for that job.
 
-### Pipeline Definition
+### Job Definition
 
-The Definition tab shows the topology of solids that make up a pipeline. Selecting a solid reveals detailed metadata about it in the pane to the right.
+The Overview tab shows the graph of ops that make up a job. Selecting an op reveals detailed metadata about it in the pane to the right.
 
 <Image
 alt="Dagit Pipeline Definition"
@@ -32,9 +32,9 @@ width={3808}
 height={2414}
 />
 
-### Solid Definition
+### Op Definition
 
-On the Definition tab, clicking a solid, you can find detailed information about the solid definition.
+On the Definition tab, clicking an op, you can find detailed information about the op definition.
 
 <Image
 alt="Dagit Solid Definition"
@@ -43,12 +43,12 @@ width={3808}
 height={2414}
 />
 
-### Playground
+### Launchpad
 
-The Playground tab provides a code editor to let you experiment with configuration and launch runs. You can select from the set of presets for the pipeline, or provide custom configuration in the editor.
+The Launchpad tab provides a configuration editor to let you experiment with configuration and launch runs.
 
 <Image
-alt="Dagit Playground"
+alt="Dagit Launchpad"
 src="/images/concepts/dagit/playground.png"
 width={3808}
 height={2414}
@@ -56,7 +56,7 @@ height={2414}
 
 ### Runs Tab
 
-The Runs tab shows the list of recent runs for the pipeline.
+The Runs tab shows the list of recent runs for the job.
 
 <Image
 alt="Dagit Pipeline Runs Tab"
@@ -67,7 +67,7 @@ height={2414}
 
 ## Runs
 
-The Runs page lists all pipeline runs. You can filter the list by pipeline name, run ID, execution status, or pipeline tag. Click a run ID to view details for that run.
+The Runs page lists all job runs. You can filter the list by job name, run ID, execution status, or tag. Click a run ID to view details for that run.
 
 <Image
 alt="Dagit Runs Page"
@@ -80,7 +80,7 @@ height={2414}
 
 The Run page provides details for a single run, including timing information, errors, and logs.
 
-The upper left pane contains a Gantt chart, indicating how long each solid took to execute. The bottom pane displays filterable events and logs emitted during the course of execution.
+The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution.
 
 <Image
 alt="Dagit Pipeline Run"
@@ -91,7 +91,7 @@ height={2414}
 
 ### Re-executing a run
 
-The Run page also allows you to re-execute a pipeline run with the same configuration. Click the "Re-execution" dropdown button. There are several re-execution options:
+The Run page also allows you to re-execute a run with the same configuration. Click the "Re-execution" dropdown button. There are several re-execution options:
 
 <Image
 alt="Dagit Re-execution"
@@ -100,12 +100,12 @@ width={3808}
 height={2414}
 />
 
-- **All Steps**: Re-execute the pipeline run from scratch.
+- **All Steps**: Re-execute the run from scratch.
 - **Selected Steps**: Re-execute the selected steps.
-- **From Selected**: Re-execute the pipeline downstream from the selected steps
-- **From Failure**: Retry the pipeline run, skipping steps completed successfully. This is only enabled when the pipeline has failed.
+- **From Selected**: Re-execute the steps downstream from the selected steps
+- **From Failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
 
-Related runs (e.g., runs created by re-executing the same previous run) are now grouped together in the right pane for easy reference
+Related runs (e.g., runs created by re-executing the same previous run) are now grouped together in the right pane for easy reference.
 
 ## Assets
 

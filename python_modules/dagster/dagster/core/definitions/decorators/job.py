@@ -2,7 +2,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union
 
 from dagster import check
-from dagster.utils.backcompat import experimental_decorator
+from dagster.core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping
 from ..graph import GraphDefinition
@@ -69,7 +69,7 @@ class _Job:
             name=self.name,
             dependencies=dependencies,
             node_defs=solid_defs,
-            description=self.description or fn.__doc__,
+            description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config=config_mapping,
@@ -78,7 +78,7 @@ class _Job:
         )
         update_wrapper(graph_def, fn)
         return graph_def.to_job(
-            description=self.description,
+            description=self.description or format_docstring_for_description(fn),
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
@@ -89,9 +89,8 @@ class _Job:
         )
 
 
-@experimental_decorator
 def job(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
@@ -116,7 +115,7 @@ def job(
             Describes how the job is parameterized at runtime.
 
             If no value is provided, then the schema for the job's run config is a standard
-            format based on its solids and resources.
+            format based on its ops and resources.
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
@@ -141,7 +140,7 @@ def job(
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         version_strategy (Optional[VersionStrategy]):
-            Defines how each solid (and optionally, resource) in the job can be versioned. If
+            Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
 
     """

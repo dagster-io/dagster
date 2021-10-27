@@ -35,7 +35,6 @@ from .dependency import (
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
-from .op import OpDefinition
 from .preset import PresetDefinition
 from .solid import NodeDefinition
 from .utils import validate_tags
@@ -181,8 +180,6 @@ class PipelineDefinition:
                 description=None,
             )
 
-        self._is_using_graph_job_op_apis = _is_using_graph_job_op_apis(self._graph_def.solids)
-
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple pipelines/jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
@@ -266,6 +263,10 @@ class PipelineDefinition:
     @property
     def target_type(self):
         return "pipeline"
+
+    @property
+    def is_job(self) -> bool:
+        return False
 
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
@@ -419,7 +420,9 @@ class PipelineDefinition:
     def dagster_type_named(self, name):
         return self._graph_def.dagster_type_named(name)
 
-    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> "PipelineDefinition":
+    def get_pipeline_subset_def(
+        self, solids_to_execute: Optional[AbstractSet[str]]
+    ) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
@@ -553,10 +556,17 @@ class PipelineDefinition:
 
     # make Callable for decorator reference updates
     def __call__(self, *args, **kwargs):
-        raise DagsterInvariantViolationError(
-            f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
-            "using an execution API function (e.g. `execute_pipeline`)."
-        )
+        if self.is_job:
+            msg = (
+                f"Attempted to call job '{self.name}' directly. Jobs should be invoked by "
+                "using an execution API function (e.g. `job.execute_in_process`)."
+            )
+        else:
+            msg = (
+                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
+                "using an execution API function (e.g. `execute_pipeline`)."
+            )
+        raise DagsterInvariantViolationError(msg)
 
 
 class PipelineSubsetDefinition(PipelineDefinition):
@@ -583,7 +593,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return True
 
     def get_pipeline_subset_def(
-        self, solids_to_execute: AbstractSet[str]
+        self, solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
@@ -613,8 +623,11 @@ def _get_pipeline_subset_def(
     for solid_name in solids_to_execute:
         if not graph.has_solid_named(solid_name):
             raise DagsterInvalidSubsetError(
-                "Pipeline {pipeline_name} has no solid named {name}.".format(
-                    pipeline_name=pipeline_def.name, name=solid_name
+                "{target_type} {pipeline_name} has no {node_type} named {name}.".format(
+                    target_type=pipeline_def.target_type,
+                    pipeline_name=pipeline_def.name,
+                    name=solid_name,
+                    node_type="ops" if pipeline_def.is_job else "solids",
                 ),
             )
 
@@ -675,8 +688,8 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for pipeline "
-            f"{pipeline_def.name} results in an invalid pipeline"
+            f"The attempted subset {str_format_set(solids_to_execute)} for {pipeline_def.target_type} "
+            f"{pipeline_def.name} results in an invalid {pipeline_def.target_type}"
         ) from exc
 
 
@@ -739,19 +752,6 @@ def _checked_resource_reqs_for_mode(
     resource_reqs.update(
         _checked_input_resource_reqs_for_mode(dependency_structure, solid_dict, mode_def)
     )
-
-    for intermediate_storage in mode_def.intermediate_storage_defs or []:
-        for required_resource in intermediate_storage.required_resource_keys:
-            resource_reqs.add(required_resource)
-            if required_resource not in mode_resources:
-                error_msg = _get_missing_resource_error_msg(
-                    resource_type="resource",
-                    resource_key=required_resource,
-                    descriptor=f"intermediate storage {intermediate_storage.name}",
-                    mode_def=mode_def,
-                    resource_defs_of_type=mode_resources,
-                )
-                raise DagsterInvalidDefinitionError(error_msg)
 
     for solid in solid_dict.values():
         for hook_def in solid.hook_defs:
@@ -844,28 +844,6 @@ def _checked_type_resource_reqs_for_mode(
                     )
                     raise DagsterInvalidDefinitionError(error_msg)
 
-        for plugin in dagster_type.auto_plugins:
-            used_by_storage = set(
-                [
-                    intermediate_storage_def.name
-                    for intermediate_storage_def in mode_def.intermediate_storage_defs
-                    if plugin.compatible_with_storage_def(intermediate_storage_def)
-                ]
-            )
-
-            if used_by_storage:
-                for required_resource in plugin.required_resource_keys():
-                    resource_reqs.add(required_resource)
-                    if required_resource not in mode_resources:
-                        error_msg = _get_missing_resource_error_msg(
-                            resource_type="resource",
-                            resource_key=required_resource,
-                            descriptor=f"the plugin '{plugin.__name__}' on type "
-                            f"'{dagster_type.display_name}' (used with storages {used_by_storage})",
-                            mode_def=mode_def,
-                            resource_defs_of_type=mode_resources,
-                        )
-                        raise DagsterInvalidDefinitionError(error_msg)
     return resource_reqs
 
 
@@ -1033,11 +1011,15 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
+    from dagster.core.definitions.job import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    if pipeline_def.is_subset_pipeline:
+    if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
+        # JobDefinition isn't aware of full graph but it threads ignored_solids in via OpSelectionData
+        ignored_solids = pipeline_def.op_selection_data.ignored_solids
+    elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")
 
@@ -1059,7 +1041,7 @@ def _create_run_config_schema(
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,
             required_resources=required_resources,
-            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+            is_using_graph_job_op_apis=pipeline_def.is_job,
         )
     )
 
@@ -1082,14 +1064,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
-
-
-def _is_using_graph_job_op_apis(node_list: List[Node]):
-    """Recursively determine if any node definitions were constructed using the `op` decorator."""
-    for node in node_list:
-        if isinstance(node.definition, OpDefinition):
-            return True
-        elif isinstance(node.definition, GraphDefinition):
-            if _is_using_graph_job_op_apis(node.definition.solids):
-                return True
-    return False

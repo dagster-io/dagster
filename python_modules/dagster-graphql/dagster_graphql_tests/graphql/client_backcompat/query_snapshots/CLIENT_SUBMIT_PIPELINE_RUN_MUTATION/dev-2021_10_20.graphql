@@ -1,0 +1,40 @@
+mutation($executionParams: ExecutionParams!) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    __typename
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on LaunchRunSuccess {
+      run {
+        runId
+      }
+    }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      message
+    }
+    ... on RunConflict {
+      message
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

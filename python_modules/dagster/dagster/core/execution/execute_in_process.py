@@ -30,7 +30,11 @@ def core_execute_in_process(
     mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)
 
-    execution_plan = create_execution_plan(pipeline, run_config=run_config, mode=mode_def.name)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+        mode=mode_def.name,
+    )
 
     output_capture: Dict[StepOutputHandle, Any] = {}
 

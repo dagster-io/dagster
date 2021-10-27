@@ -158,7 +158,6 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
 
-        _check_io_manager_intermediate_storage(self.mode_definition, self.resolved_run_config)
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
@@ -173,10 +172,12 @@ class _PlanBuilder:
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
+        step_dict_by_key = {step.key: step for step in self._steps.values()}
         step_handles_to_execute = [step.handle for step in self._steps.values()]
 
         executable_map, resolvable_map = _compute_step_maps(
             step_dict,
+            step_dict_by_key,
             step_handles_to_execute,
             self.known_state,
         )
@@ -189,6 +190,7 @@ class _PlanBuilder:
             self.known_state,
             _compute_artifacts_persisted(
                 step_dict,
+                step_dict_by_key,
                 step_handles_to_execute,
                 pipeline_def,
                 self.resolved_run_config,
@@ -516,11 +518,13 @@ def get_step_input_source(
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
         (
-            "In pipeline {pipeline_name} solid {solid_name}, input {input_name} "
+            "In {described_target} {described_node}, input {input_name} "
             "must get a value either (a) from a dependency or (b) from the "
             "inputs section of its configuration."
         ).format(
-            pipeline_name=plan_builder.pipeline_name, solid_name=solid.name, input_name=input_name
+            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            described_node=solid.describe_node(),
+            input_name=input_name,
         )
     )
 
@@ -536,6 +540,7 @@ class ExecutionPlan(
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),
             ("step_output_versions", Dict[StepOutputHandle, str]),
+            ("step_dict_by_key", Dict[str, IExecutionStep]),
         ],
     )
 ):
@@ -548,6 +553,7 @@ class ExecutionPlan(
         known_state=None,
         artifacts_persisted=False,
         step_output_versions=None,
+        step_dict_by_key=None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -576,6 +582,18 @@ class ExecutionPlan(
                 key_type=StepOutputHandle,
                 value_type=str,
             ),
+            step_dict_by_key={step.key: step for step in step_dict.values()}
+            if step_dict_by_key is None
+            else check.dict_param(
+                step_dict_by_key,
+                "step_dict_by_key",
+                key_type=str,
+                value_type=(
+                    ExecutionStep,
+                    UnresolvedMappedExecutionStep,
+                    UnresolvedCollectExecutionStep,
+                ),
+            ),
         )
 
     @property
@@ -588,14 +606,14 @@ class ExecutionPlan(
 
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        return _get_step_output(self.step_dict, step_output_handle)
+        return _get_step_output(self.step_dict_by_key, step_output_handle)
 
     def get_manager_key(
         self,
         step_output_handle: StepOutputHandle,
         pipeline_def: PipelineDefinition,
     ) -> str:
-        return _get_manager_key(self.step_dict, step_output_handle, pipeline_def)
+        return _get_manager_key(self.step_dict_by_key, step_output_handle, pipeline_def)
 
     def has_step(self, handle: StepHandleUnion) -> bool:
         check.inst_param(handle, "handle", StepHandleTypes)
@@ -606,7 +624,10 @@ class ExecutionPlan(
         return self.step_dict[handle]
 
     def get_step_by_key(self, key: str) -> IExecutionStep:
-        return _get_step_by_key(self.step_dict, key)
+        check.str_param(key, "key")
+        if not key in self.step_dict_by_key:
+            check.failed(f"plan has no step with key {key}")
+        return self.step_dict_by_key[key]
 
     def get_executable_step_by_key(self, key: str) -> ExecutionStep:
         step = self.get_step_by_key(key)
@@ -638,7 +659,7 @@ class ExecutionPlan(
 
     def get_steps_to_execute_by_level(self) -> List[List[ExecutionStep]]:
         return _get_steps_to_execute_by_level(
-            self.step_dict, self.step_handles_to_execute, self.executable_map
+            self.step_dict, self.step_dict_by_key, self.step_handles_to_execute, self.executable_map
         )
 
     def get_executable_step_deps(self) -> Dict[str, Set[str]]:
@@ -656,6 +677,7 @@ class ExecutionPlan(
 
         _update_from_resolved_dynamic_outputs(
             self.step_dict,
+            self.step_dict_by_key,
             self.executable_map,
             self.resolvable_map,
             self.step_handles_to_execute,
@@ -689,6 +711,7 @@ class ExecutionPlan(
 
         executable_map, resolvable_map = _compute_step_maps(
             self.step_dict,
+            self.step_dict_by_key,
             step_handles_to_execute,
             self.known_state,
         )
@@ -701,6 +724,7 @@ class ExecutionPlan(
             self.known_state,
             _compute_artifacts_persisted(
                 self.step_dict,
+                self.step_dict_by_key,
                 step_handles_to_execute,
                 pipeline_def,
                 resolved_run_config,
@@ -783,7 +807,7 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"Pipeline {pipeline_def.name} uses memoization, but IO manager "
+                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "
@@ -917,6 +941,7 @@ class ExecutionPlan(
             )
 
         step_dict = {}
+        step_dict_by_key = {}
 
         for step_snap in execution_plan_snapshot.steps:
             input_snaps = step_snap.inputs
@@ -964,6 +989,7 @@ class ExecutionPlan(
                 raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
 
             step_dict[step.handle] = step
+            step_dict_by_key[step.key] = step
 
         step_handles_to_execute = [
             StepHandle.parse_from_key(key) for key in execution_plan_snapshot.step_keys_to_execute
@@ -971,6 +997,7 @@ class ExecutionPlan(
 
         executable_map, resolvable_map = _compute_step_maps(
             step_dict,
+            step_dict_by_key,
             step_handles_to_execute,
             execution_plan_snapshot.initial_known_state,
         )
@@ -993,6 +1020,7 @@ class ExecutionPlan(
 
 def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
+    step_dict_by_key: Dict[str, IExecutionStep],
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
     resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
     step_handles_to_execute: List[StepHandleUnion],
@@ -1024,6 +1052,7 @@ def _update_from_resolved_dynamic_outputs(
     for step in resolved_steps:
         step_dict[step.handle] = step
         executable_map[step.key] = step.handle
+        step_dict_by_key[step.key] = step
 
     for key_set in key_sets_to_clear:
         del resolvable_map[key_set]
@@ -1059,15 +1088,13 @@ def _check_persistent_storage_requirement(
 
     pipeline_def = pipeline.get_definition()
     executor_def = executor_def_from_config(mode_def, resolved_run_config)
-    if ExecutorRequirement.PERSISTENT_OUTPUTS not in executor_def.requirements:
+    requirements_lst = executor_def.get_requirements(
+        resolved_run_config.execution.execution_engine_config
+    )
+    if ExecutorRequirement.PERSISTENT_OUTPUTS not in requirements_lst:
         return
 
-    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
-
-    if not (
-        can_isolate_steps(pipeline_def, mode_def)
-        or (intermediate_storage_def and intermediate_storage_def.is_persistent)
-    ):
+    if not can_isolate_steps(pipeline_def, mode_def):
         if isinstance(pipeline_def, JobDefinition):
             target = "job"
             node = "op"
@@ -1083,34 +1110,6 @@ def _check_persistent_storage_requirement(
             f"includes {node} outputs that will not be stored somewhere where other processes can "
             "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
             f"    {suggestion}"
-        )
-
-
-def _check_io_manager_intermediate_storage(
-    mode_def: ModeDefinition, resolved_run_config: ResolvedRunConfig
-) -> None:
-    """Only one of io_manager and intermediate_storage should be set."""
-    # pylint: disable=comparison-with-callable
-    from dagster.core.storage.system_storage import mem_intermediate_storage
-
-    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
-    intermediate_storage_is_default = (
-        intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
-    )
-
-    io_manager = mode_def.resource_defs["io_manager"]
-    io_manager_is_default = io_manager == mem_io_manager
-
-    if not intermediate_storage_is_default and not io_manager_is_default:
-        raise DagsterInvariantViolationError(
-            'You have specified an intermediate storage, "{intermediate_storage_name}", and have '
-            "also specified a default IO manager. You must specify only one. To avoid specifying "
-            "an intermediate storage, omit the intermediate_storage_defs argument to your "
-            'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
-            'specifying a default IO manager, omit the "io_manager" key from the '
-            "resource_defs argument to your ModeDefinition.".format(
-                intermediate_storage_name=intermediate_storage_def.name
-            )
         )
 
 
@@ -1171,7 +1170,12 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
 
 
 def _compute_artifacts_persisted(
-    step_dict, step_handles_to_execute, pipeline_def, resolved_run_config, executable_map
+    step_dict,
+    step_dict_by_key,
+    step_handles_to_execute,
+    pipeline_def,
+    resolved_run_config,
+    executable_map,
 ):
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
@@ -1180,21 +1184,13 @@ def _compute_artifacts_persisted(
     """
     # pylint: disable=comparison-with-callable
 
-    # intermediate storage backcomopat
-    # https://github.com/dagster-io/dagster/issues/3043
-
     mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
-
-    if mode_def.get_intermediate_storage_def(
-        resolved_run_config.intermediate_storage.intermediate_storage_name
-    ).is_persistent:
-        return True
 
     if len(step_dict) == 0:
         return False
 
     steps_by_level = _get_steps_to_execute_by_level(
-        step_dict, step_handles_to_execute, executable_map
+        step_dict, step_dict_by_key, step_handles_to_execute, executable_map
     )
 
     if len(steps_by_level) == 0:
@@ -1204,7 +1200,9 @@ def _compute_artifacts_persisted(
         # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
         for step_input in step.step_inputs:
             for step_output_handle in step_input.get_step_output_handle_dependencies():
-                io_manager_key = _get_manager_key(step_dict, step_output_handle, pipeline_def)
+                io_manager_key = _get_manager_key(
+                    step_dict_by_key, step_output_handle, pipeline_def
+                )
                 manager_def = mode_def.resource_defs.get(io_manager_key)
                 if (
                     # no IO manager is configured
@@ -1224,12 +1222,11 @@ def _get_step_by_key(step_dict, key) -> IExecutionStep:
     check.failed(f"plan has no step with key {key}")
 
 
-def _get_steps_to_execute_by_level(step_dict, step_handles_to_execute, executable_map):
+def _get_steps_to_execute_by_level(
+    step_dict, step_dict_by_key, step_handles_to_execute, executable_map
+):
     return [
-        [
-            cast(ExecutionStep, _get_step_by_key(step_dict, step_key))
-            for step_key in sorted(step_key_level)
-        ]
+        [cast(ExecutionStep, step_dict_by_key[step_key]) for step_key in sorted(step_key_level)]
         for step_key_level in toposort(
             _get_executable_step_deps(step_dict, step_handles_to_execute, executable_map)
         )
@@ -1269,14 +1266,14 @@ def _get_executable_step_deps(
     return deps
 
 
-def _get_step_output(step_dict, step_output_handle: StepOutputHandle) -> StepOutput:
+def _get_step_output(step_dict_by_key, step_output_handle: StepOutputHandle) -> StepOutput:
     check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-    step = _get_step_by_key(step_dict, step_output_handle.step_key)
+    step = step_dict_by_key[step_output_handle.step_key]
     return step.step_output_named(step_output_handle.output_name)
 
 
-def _get_manager_key(step_dict, step_output_handle, pipeline_def):
-    step_output = _get_step_output(step_dict, step_output_handle)
+def _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def):
+    step_output = _get_step_output(step_dict_by_key, step_output_handle)
     solid_handle = step_output.solid_handle
     output_def = pipeline_def.get_solid(solid_handle).output_def_named(step_output.name)
     return output_def.io_manager_key
@@ -1284,7 +1281,7 @@ def _get_manager_key(step_dict, step_output_handle, pipeline_def):
 
 # computes executable_map and resolvable_map and returns them as a tuple. Also
 # may modify the passed in step_dict to include resolved step using known_state.
-def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
+def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, known_state):
     check.list_param(
         step_handles_to_execute,
         "step_handles_to_execute",
@@ -1316,7 +1313,7 @@ def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
             for key in step.resolved_by_step_keys:
                 if key not in step_keys_to_execute:
                     raise DagsterInvariantViolationError(
-                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{step.resolved_by_step_key}" '
+                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
                         "which is not part of the current step selection"
                     )
 
@@ -1329,6 +1326,7 @@ def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
     if known_state:
         _update_from_resolved_dynamic_outputs(
             step_dict,
+            step_dict_by_key,
             executable_map,
             resolvable_map,
             step_handles_to_execute,

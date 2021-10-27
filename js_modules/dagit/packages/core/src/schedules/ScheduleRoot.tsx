@@ -78,7 +78,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
             />
             <Box
               padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             >
               <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>
@@ -158,7 +158,7 @@ const SCHEDULE_ROOT_QUERY = gql`
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
-  query PreviousRunsForScheduleQuery($filter: PipelineRunsFilter, $limit: Int) {
+  query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
       ...PreviousRunsFragment

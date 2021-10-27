@@ -1,16 +1,19 @@
 import csv
 import os
 
-from dagster import execute_pipeline
 from dagster.utils import script_relative_path
 from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
     SqlAlchemyPostgresWarehouse as sapw1,
 )
-from docs_snippets.intro_tutorial.advanced.pipelines.modes import modes_pipeline
+from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
+    calories_dev_job as calories_dev_job_no_config,
+)
 from docs_snippets.intro_tutorial.advanced.pipelines.presets import (
     SqlAlchemyPostgresWarehouse as sapw2,
 )
-from docs_snippets.intro_tutorial.advanced.pipelines.presets import presets_pipeline
+from docs_snippets.intro_tutorial.advanced.pipelines.presets import (
+    calories_dev_job as calories_dev_job_with_config,
+)
 from docs_snippets.intro_tutorial.test_util import patch_cereal_requests
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
@@ -30,11 +33,7 @@ def test_warehouse_resource(postgres):
 
     @patch_cereal_requests
     def execute_with_mode():
-        result = execute_pipeline(
-            pipeline=modes_pipeline,
-            mode="dev",
-            run_config=run_config,
-        )
+        result = calories_dev_job_no_config.execute_in_process(run_config=run_config)
         assert result.success
 
     execute_with_mode()
@@ -43,7 +42,7 @@ def test_warehouse_resource(postgres):
 
         @patch_cereal_requests
         def execute_with_presets():
-            result = execute_pipeline(presets_pipeline, preset="unittest")
+            result = calories_dev_job_with_config.execute_in_process()
             assert result.success
 
         execute_with_presets()

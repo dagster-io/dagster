@@ -197,7 +197,7 @@ const AssetEntryRow: React.FC<{
                 showIcon
                 pipelineName={first.definition.jobName}
                 pipelineHrefContext="repo-unknown"
-                mode={'default'}
+                isJob
               />
             )}
           </td>

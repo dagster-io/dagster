@@ -1,63 +1,63 @@
-from dagster import execute_pipeline
-from docs_snippets.concepts.solids_pipelines.branching_pipeline import branching_pipeline
+from docs_snippets.concepts.solids_pipelines.branching_pipeline import branching
+from docs_snippets.concepts.solids_pipelines.dep_dsl import define_dep_dsl_graph
 from docs_snippets.concepts.solids_pipelines.dynamic_pipeline.dynamic_pipeline import (
     process_directory,
 )
-from docs_snippets.concepts.solids_pipelines.fan_in_pipeline import fan_in_pipeline
-from docs_snippets.concepts.solids_pipelines.linear_pipeline import linear_pipeline
-from docs_snippets.concepts.solids_pipelines.multiple_io_pipeline import inputs_and_outputs_pipeline
+from docs_snippets.concepts.solids_pipelines.fan_in_pipeline import fan_in
+from docs_snippets.concepts.solids_pipelines.linear_pipeline import linear
+from docs_snippets.concepts.solids_pipelines.multiple_io_pipeline import inputs_and_outputs
 from docs_snippets.concepts.solids_pipelines.order_based_dependency_pipeline import (
-    nothing_dependency_pipeline,
+    nothing_dependency,
 )
 from docs_snippets.concepts.solids_pipelines.pipelines import (
-    alias_pipeline,
-    one_plus_one_pipeline,
-    one_plus_one_pipeline_def,
-    tag_pipeline,
+    alias,
+    one_plus_one,
+    one_plus_one_from_constructor,
+    tagged_add_one,
 )
 
 
-def test_one_plus_one_pipeline():
-    result = execute_pipeline(one_plus_one_pipeline)
-    assert result.output_for_solid("add_one", output_name="result") == 2
+def test_one_plus_one():
+    result = one_plus_one.execute_in_process()
+    assert result.output_for_node("add_one") == 2
 
 
-def test_one_plus_one_pipeline_def():
-    result = execute_pipeline(one_plus_one_pipeline_def)
-    assert result.output_for_solid("add_one", output_name="result") == 2
+def test_one_plus_one_graph_def():
+    result = one_plus_one_from_constructor.execute_in_process()
+    assert result.output_for_node("add_one") == 2
 
 
-def test_linear_pipeline():
-    result = execute_pipeline(linear_pipeline)
-    assert result.output_for_solid("add_one_3", output_name="result") == 4
+def test_linear():
+    result = linear.execute_in_process()
+    assert result.output_for_node("add_one_3") == 4
 
 
-def test_other_pipelines():
-    other_pipelines = [
-        branching_pipeline,
-        inputs_and_outputs_pipeline,
-        nothing_dependency_pipeline,
-        alias_pipeline,
-        tag_pipeline,
+def test_other_graphs():
+    other_graphs = [
+        branching,
+        inputs_and_outputs,
+        nothing_dependency,
+        alias,
+        tagged_add_one,
     ]
-    for pipeline in other_pipelines:
-        result = execute_pipeline(pipeline)
+    for graph in other_graphs:
+        result = graph.execute_in_process()
         assert result.success
 
 
-def test_fan_in_pipeline():
-    result = execute_pipeline(fan_in_pipeline)
+def test_fan_in():
+    result = fan_in.execute_in_process()
     assert result.success
-    assert result.result_for_solid("sum_fan_in").output_value() == 10
+    assert result.output_for_node("sum_fan_in") == 10
 
 
-def test_dynamic_pipeline():
-    result = execute_pipeline(process_directory)
+def test_dynamic():
+    result = process_directory.execute_in_process()
     assert result.success
 
-    assert result.result_for_solid("process_file").output_value() == {
-        "empty_stuff_bin": 0,
-        "program_py": 34,
-        "words_txt": 40,
-    }
-    assert result.result_for_solid("summarize_directory").output_value() == 74
+
+def test_dep_dsl():
+    result = define_dep_dsl_graph().execute_in_process(
+        run_config={"ops": {"A": {"inputs": {"num": 0}}}}
+    )
+    assert result.success

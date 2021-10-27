@@ -1,0 +1,14 @@
+query($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on PipelineRun {
+        status
+    }
+    ... on RunNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

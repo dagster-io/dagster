@@ -1,4 +1,0 @@
-ops:
-  uses_config:
-    config:
-      iterations: 1

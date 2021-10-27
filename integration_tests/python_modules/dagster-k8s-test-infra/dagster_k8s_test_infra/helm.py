@@ -483,6 +483,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                             "name": "extra-queue-1",
                             "replicaCount": 1,
                             "labels": {"celery-label-key": "celery-label-value"},
+                            "additionalCeleryArgs": ["-E", "--concurrency", "3"],
                         },
                     ],
                     "livenessProbe": {

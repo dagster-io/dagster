@@ -4,14 +4,11 @@ docs_dev_install:
 dev:
 	cd next; yarn dev;
 
-crag_dev:
-	cd next; yarn crag-dev;
-
 build:
-	cd sphinx; make clean; make json; cd ..; python pack_json.py
+	cd sphinx; make clean; make json SPHINXOPTS="-W --keep-going"; cd ..; python pack_json.py
 
 snapshot:
-	cd next; yarn snapshot && yarn crag-snapshot; cd ..;
+	cd next; yarn snapshot; cd ..;
 
 update_version:
 	echo "Saving version $(version)"

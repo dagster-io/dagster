@@ -41,6 +41,14 @@ export enum DagsterEventType {
   PIPELINE_START = "PIPELINE_START",
   PIPELINE_STARTING = "PIPELINE_STARTING",
   PIPELINE_SUCCESS = "PIPELINE_SUCCESS",
+  RUN_CANCELED = "RUN_CANCELED",
+  RUN_CANCELING = "RUN_CANCELING",
+  RUN_DEQUEUED = "RUN_DEQUEUED",
+  RUN_ENQUEUED = "RUN_ENQUEUED",
+  RUN_FAILURE = "RUN_FAILURE",
+  RUN_START = "RUN_START",
+  RUN_STARTING = "RUN_STARTING",
+  RUN_SUCCESS = "RUN_SUCCESS",
   STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT",
   STEP_FAILURE = "STEP_FAILURE",
   STEP_INPUT = "STEP_INPUT",
@@ -107,7 +115,12 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
-export enum PipelineRunStatus {
+export enum RepositoryLocationLoadStatus {
+  LOADED = "LOADED",
+  LOADING = "LOADING",
+}
+
+export enum RunStatus {
   CANCELED = "CANCELED",
   CANCELING = "CANCELING",
   FAILURE = "FAILURE",
@@ -117,11 +130,6 @@ export enum PipelineRunStatus {
   STARTED = "STARTED",
   STARTING = "STARTING",
   SUCCESS = "SUCCESS",
-}
-
-export enum RepositoryLocationLoadStatus {
-  LOADED = "LOADED",
-  LOADING = "LOADING",
 }
 
 export enum StepEventStatus {
@@ -136,7 +144,7 @@ export enum StepKind {
   UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED",
 }
 
-export enum TerminatePipelinePolicy {
+export enum TerminateRunPolicy {
   MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY",
   SAFE_TERMINATE = "SAFE_TERMINATE",
 }
@@ -186,16 +194,6 @@ export interface PartitionSetSelector {
   repositorySelector: RepositorySelector;
 }
 
-export interface PipelineRunsFilter {
-  runIds?: (string | null)[] | null;
-  pipelineName?: string | null;
-  tags?: ExecutionTag[] | null;
-  statuses?: PipelineRunStatus[] | null;
-  snapshotId?: string | null;
-  updatedAfter?: string | null;
-  mode?: string | null;
-}
-
 export interface PipelineSelector {
   pipelineName: string;
   repositoryName: string;
@@ -206,6 +204,16 @@ export interface PipelineSelector {
 export interface RepositorySelector {
   repositoryName: string;
   repositoryLocationName: string;
+}
+
+export interface RunsFilter {
+  runIds?: (string | null)[] | null;
+  pipelineName?: string | null;
+  tags?: ExecutionTag[] | null;
+  statuses?: RunStatus[] | null;
+  snapshotId?: string | null;
+  updatedAfter?: string | null;
+  mode?: string | null;
 }
 
 export interface ScheduleSelector {

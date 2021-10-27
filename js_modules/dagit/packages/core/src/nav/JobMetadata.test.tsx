@@ -29,6 +29,11 @@ describe('JobMetadata', () => {
       launchTime: () => START_TIME,
       endTime: () => START_TIME + 1,
     }),
+    RunStatsSnapshot: () => ({
+      startTime: () => START_TIME,
+      launchTime: () => START_TIME,
+      endTime: () => START_TIME + 1,
+    }),
     Mode: () => ({
       name: () => 'my_mode',
     }),
@@ -41,6 +46,7 @@ describe('JobMetadata', () => {
     Schedule: () => ({
       name: () => 'cool_schedule',
       mode: () => 'my_mode',
+      cronSchedule: () => '(*/5 * * * *)',
     }),
     Sensor: () => ({
       name: () => 'cool_sensor',
@@ -55,11 +61,7 @@ describe('JobMetadata', () => {
   const renderWithMocks = (mocks?: any) => {
     render(
       <TestProvider apolloProps={{mocks: mocks ? [defaultMocks, mocks] : defaultMocks}}>
-        <JobMetadata
-          pipelineName={PIPELINE_NAME}
-          pipelineMode={PIPELINE_MODE}
-          repoAddress={REPO_ADDRESS}
-        />
+        <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
       </TestProvider>,
     );
   };
@@ -92,16 +94,13 @@ describe('JobMetadata', () => {
             schedules: () => new MockList(1),
             sensors: () => new MockList(0),
           }),
-          Schedule: () => ({
-            name: () => 'cool_schedule',
-          }),
         };
 
         renderWithMocks(mocks);
 
         await waitFor(() => {
           expect(screen.getByText(/schedule:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
+          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
 
@@ -210,7 +209,7 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
         await waitFor(() => {
           expect(screen.queryByText(/schedule:/i)).toBeNull();
-          expect(screen.queryByRole('link', {name: /cool_schedule/i})).toBeNull();
+          expect(screen.queryByRole('link', {name: /every 5 minutes/i})).toBeNull();
         });
       });
 
@@ -226,7 +225,7 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
         await waitFor(() => {
           expect(screen.getByText(/schedule:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
+          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
 

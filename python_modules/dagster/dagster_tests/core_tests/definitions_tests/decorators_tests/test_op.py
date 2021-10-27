@@ -16,7 +16,8 @@ from dagster import (
     op,
     solid,
 )
-from dagster.core.definitions.op import OpDefinition
+from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.types.dagster_type import Int, String
 
 
 def execute_op_in_graph(an_op):
@@ -58,6 +59,11 @@ def test_ins():
     def my_op(a: int, b: str) -> int:
         return a + int(b)
 
+    assert my_op.ins == {
+        "a": In(metadata={"x": 1}, dagster_type=Int),
+        "b": In(metadata={"y": 2}, dagster_type=String),
+    }
+
     @graph
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
@@ -77,6 +83,11 @@ def test_out():
     def my_op() -> int:
         return 1
 
+    assert my_op.outs == {
+        "result": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        )
+    }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
@@ -89,6 +100,14 @@ def test_multi_out():
 
     assert len(my_op.output_defs) == 2
 
+    assert my_op.outs == {
+        "a": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        ),
+        "b": Out(
+            metadata={"y": 2}, dagster_type=String, is_required=True, io_manager_key="io_manager"
+        ),
+    }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "a"
     assert my_op.output_defs[1].metadata == {"y": 2}
@@ -417,20 +436,20 @@ def test_solid_and_op_config_error_messages():
     def my_graph_with_solid():
         my_solid()
 
-    # Document that for now, using graphs/jobs with only solids will result in config errors being
-    # in terms of solids.
+    # Document that for now, using jobs at the top level will result in config errors being
+    # in terms of ops.
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "solids" at the root. Sample config for missing '
-        "entry: {'solids': {'my_solid': {'config': {'foo': '...'"
+        match='Missing required config entry "ops" at the root. Sample config for missing '
+        "entry: {'ops': {'my_solid': {'config': {'foo': '...'"
         "}}}}",
     ):
         my_graph_with_solid.to_job().execute_in_process()
 
 
 def test_error_message_mixed_ops_and_solids():
-    # Document that opting into using ops at all (even one op) will switch error messages entirely
-    # to ops, including in the recursive case.
+    # Document that opting into using job at the top level (even one op) will switch error messages at the top level
+    # to ops.
 
     @op(config_schema={"foo": str})
     def my_op(context):

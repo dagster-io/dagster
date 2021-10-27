@@ -15,7 +15,7 @@ BigQuery
 
 .. autofunction:: bq_delete_dataset
 
-.. autofunction:: bq_solid_for_queries
+.. autofunction:: bq_op_for_queries
 
 .. autofunction:: import_df_to_bq
 
@@ -27,7 +27,7 @@ BigQuery
 Dataproc
 --------
 
-.. autofunction:: dataproc_solid
+.. autofunction:: dataproc_op
 
 .. autodata:: dataproc_resource
   :annotation: ResourceDefinition
@@ -35,9 +35,6 @@ Dataproc
 
 GCS
 ---
-
-.. autodata:: dagster_gcp.gcs.gcs_intermediate_storage
-  :annotation: IntermediateStorageDefinition
 
 .. autodata:: gcs_resource
   :annotation: ResourceDefinition
@@ -50,3 +47,10 @@ GCS
 
 .. autodata:: dagster_gcp.gcs.gcs_pickle_io_manager
   :annotation: IOManagerDefinition
+
+Legacy APIs
+-----------
+
+.. autofunction:: bq_solid_for_queries
+
+.. autofunction:: dataproc_solid

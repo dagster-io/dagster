@@ -1,99 +1,118 @@
 ---
-title: Composite Solids | Dagster
-description: A composite solid is a solid composed of other solids with a config mapping function.
+title: Nesting Graphs | Dagster
+description: To organize the ops inside a job, you can nest sets of ops into sub-graphs.
 ---
 
-# Composite Solids
+# Nesting Graphs
 
-Dagster provides Composite Solids, which are a unit of abstraction for composing a solid from other solids.
+To organize the [ops](/concepts/solids-pipelines/solids) inside a [job](/concepts/solids-pipelines/pipelines), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 
-| Name                                                                                  | Description                                     |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| <PyObject module="dagster" object="composite_solid" displayText="@composite_solid" /> | The decorator used to define a composite solid. |
+| Name                                                   | Description                           |
+| ------------------------------------------------------ | ------------------------------------- |
+| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph. |
 
 ## Overview
 
-Solids are linked together by defining the dependencies between their inputs and outputs. Defining dependencies is usually done at the [Pipeline](/concepts/solids-pipelines/pipelines) level.
+A Dagster job is usually based on a graph of connected ops, but its graph can also contain other graphs. Nesting graphs is useful for organizing large or complicated graphs and for abstracting away complexity. Dagster supports arbitrary levels of nesting.
 
-Composite solids also let you define solid dependencies to form an entirely new solid. This is useful for:
+We use the term _node_ to refer to both ops and graphs, because both ops and graphs can be used as nodes inside graphs.
 
-- Organizing large or complicated graphs
-- Abstracting away complexity
-- Wrapping re-usable solids with domain-specific information
+## Nesting Graphs inside Graphs
 
-Refactoring a DAG of solids using composites is a very similar experience to refactoring code with functions. Defining a composite solid is similar to defining a pipeline, but composite solids can also provide mapping information to control how data and configuration enters and exists its inner graph of solids.
+### A Job without Nesting
 
----
+As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheight, then logs the result:
 
-## Defining a Composite Solid
+```python file=/concepts/solids_pipelines/unnested_ops.py
+from dagster import job, op
 
-To define a composite solid, use the <PyObject object="composite_solid" decorator /> decorator.
 
-We use function calls within the decorated function body to indicate the dependency structure between the solids making up the composite solid.
+@op
+def return_fifty():
+    return 50.0
 
-In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `return_one` solid executes after `add_one` runs successfully and emits the required output.
+
+@op
+def add_thirty_two(number):
+    return number + 32.0
+
+
+@op
+def multiply_by_one_point_eight(number):
+    return number * 1.8
+
+
+@op
+def log_number(context, number):
+    context.log.info(f"number: {number}")
+
+
+@job
+def all_together_unnested():
+    log_number(add_thirty_two(multiply_by_one_point_eight(return_fifty())))
+```
+
+### Nesting
+
+We can put the ops that perform the Celsius-to-Fahrenheit conversion into their own sub-graph and invoke that sub-graph from our job's main graph:
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_solid_example_marker endbefore=end_composite_solid_example_marker
-from dagster import InputDefinition, composite_solid, pipeline, solid
+@graph
+def celsius_to_fahrenheit(number):
+    return add_thirty_two(multiply_by_one_point_eight(number))
 
 
-@solid
-def return_one():
-    return 1
-
-
-@solid
-def add_one(number: int):
-    return number + 1
-
-
-@solid
-def multiply_by_three(number: int):
-    return number * 3
-
-
-@composite_solid(input_defs=[InputDefinition("number", int)])
-def add_one_times_three_solid(number):
-    return multiply_by_three(add_one(number))
-
-
-@pipeline
-def my_pipeline():
-    add_one_times_three_solid(return_one())
+@job
+def all_together_nested():
+    log_number(celsius_to_fahrenheit(return_fifty()))
 ```
 
-### Composite Solid Configuration
+When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in Dagit.
 
-By default, the config schemas for each solid in a composite solid is hoisted up to the composite solid itself, under the `solid` key.
+## Sub-Graph Inputs and Outputs
 
-In this example, you have two solids that both take config and are wrapped by a composite solid.
+As shown in the example above, sub-graphs can have inputs and outputs - `celsius_to_fahrenheit` accepts a `number` argument, and it has a return statement. Sub-graph inputs and outputs enable connecting the inputs and outputs of nodes inside the graph to the inputs and outputs of nodes outside the graph. In the `all_together_nested` example:
+
+- The `number` input of the `celsius_to_fahrenheit` graph is passed as an argument to the `multiply_by_one_point_eight` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and provides the output of another op or sub-graph for the `number` arg, the output of that op or sub-graph will be passed to `multiply_by_one_point_eight`, and `multiply_by_one_point_eight` will not execute until the upstream op that produces the output has completed.
+- The implementation of the `celsius_to_fahrenheit` graph returns the result of the `add_thirty_two` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and passes its output to the input of another node, the output of `add_thirty_two` will be provided to that node, and any ops that ultimately receive that input will not execute until `add_thirty_two` has completed.
+
+If you want to add a description to an input (that will display in Dagit), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
+
+### Sub-Graph Configuration
+
+To provide configuration to ops inside a sub-graph when launching a run, you provide config for them under a key with the name of that sub-graph.
+
+This example two ops that both take config and are wrapped by a graph, which is included inside a job.
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_solid_config_marker endbefore=end_composite_solid_config_marker
-@solid(config_schema={"n": int})
-def add_n(context, number: int):
-    return number + context.solid_config["n"]
+@op(config_schema={"n": float})
+def add_n(context, number):
+    return number + context.op_config["n"]
 
 
-@solid(config_schema={"m": int})
-def multiply_by_m(context, number: int):
-    return number * context.solid_config["m"]
+@op(config_schema={"m": float})
+def multiply_by_m(context, number):
+    return number * context.op_config["m"]
 
 
-@composite_solid(input_defs=[InputDefinition("number", int)])
-def add_n_times_m_solid(number):
+@graph
+def add_n_times_m_graph(number):
     return multiply_by_m(add_n(number))
+
+
+@job
+def subgraph_config_job():
+    add_n_times_m_graph(return_fifty())
 ```
 
-To run a pipeline with this composite solid, you will need to specify the config for both `add_n` and `multiply_by_m` through the composite solid:
+To kick off a run of this job, you will need to specify the config for both `add_n` and `multiply_by_m` through the sub-graph:
 
 ```yaml file=/concepts/solids_pipelines/composite_config.yaml
-solids:
-  add_n_times_m_solid:
-    inputs:
-      number: 0
-    solids:
+ops:
+  add_n_times_m_graph:
+    ops:
       add_n:
         config:
           n: 3
@@ -104,72 +123,104 @@ solids:
 
 ### Configuration Mapping
 
-Composite solids can also define a config schema. When a composite solid defines a config schema, it must also define a `config_mapping_fn` to map the composite solids config to the wrapped solids' config.
+Sub-graphs can dictate config for the ops and sub-graphs inside them. If the full config is known at the time that you're defining the graph, you can pass a dictionary to the `config` argument of the <PyObject object="graph" decorator /> decorator.
 
-```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_mapping_marker endbefore=end_composite_mapping_marker
-def config_mapping_fn(config):
-    x = config["x"]
-    return {"add_n": {"config": {"n": x}}, "multiply_by_m": {"config": {"m": x}}}
+```python file=/concepts/solids_pipelines/graph_provides_config.py
+from dagster import graph, op
 
 
-@composite_solid(
-    config_fn=config_mapping_fn,
-    config_schema={"x": int},
-    input_defs=[InputDefinition("number", int)],
-)
-def add_x_multiply_by_x(number):
+@op(config_schema={"n": float})
+def add_n(context, number):
+    return number + context.op_config["n"]
+
+
+@op(config_schema={"m": float})
+def multiply_by_m(context, number):
+    return number * context.op_config["m"]
+
+
+@graph(config={"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": 32}}})
+def celsius_to_fahrenheit(number):
     return multiply_by_m(add_n(number))
-
-
-@pipeline
-def my_pipeline_config_mapping():
-    add_x_multiply_by_x(return_one())
 ```
 
-In this example, the composite solid has only one field in the config schema: `x`. The config mapping function takes config provided to the composite solid and maps it to the wrapped solids.
+Alternatively, you can use "config mapping", i.e. you can provide a function that accepts config that's provided to the graph and generates config for the nodes inside the graph.
+
+```python file=/concepts/solids_pipelines/graph_provides_config_mapping.py
+from dagster import config_mapping, graph, op
+
+
+@op(config_schema={"n": float})
+def add_n(context, number):
+    return number + context.op_config["n"]
+
+
+@op(config_schema={"m": float})
+def multiply_by_m(context, number):
+    return number * context.op_config["m"]
+
+
+@config_mapping(config_schema={"from_unit": str})
+def generate_config(val):
+    if val["from_unit"] == "celsius":
+        n = 32
+    elif val["from_unit"] == "kelvin":
+        n = -459.67
+    else:
+        raise ValueError()
+
+    return {"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": n}}}
+
+
+@graph(config=generate_config)
+def to_fahrenheit(number):
+    return multiply_by_m(add_n(number))
+```
+
+To run a job that contains `to_fahrenheit` as a sub-graph, you need to provide a value for the `from_unit` config option:
 
 ```yaml file=/concepts/solids_pipelines/composite_config_mapping.yaml
-solids:
-  add_x_multiply_by_x:
+ops:
+  to_fahrenheit:
     config:
-      x: 1
+      from_unit: celsius
 ```
 
 ## Examples
 
 ### Multiple Outputs
 
-To have multiple outputs from a composite solid, you will need to define the outputs it maps and return a dictionary, where the keys are the output names and the values are the output values.
+To have multiple outputs from a graph, you need to define the outputs it maps and return a dictionary, where the keys are the output names and the values are the output values.
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_multi_output_marker endbefore=end_composite_multi_output_marker
-from dagster import OutputDefinition
+from dagster import GraphOut
 
 
-@solid
+@op
 def echo(i):
     print(i)
 
 
-@solid
+@op
 def one() -> int:
     return 1
 
 
-@solid
+@op
 def hello() -> str:
     return "hello"
 
 
-@composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(str, "y")])
-def composite_multi_outputs():
+@graph(out={"x": GraphOut(), "y": GraphOut()})
+def graph_with_multiple_outputs():
     x = one()
     y = hello()
     return {"x": x, "y": y}
 
 
-@pipeline
-def my_pipeline_multi_outputs():
-    x, y = composite_multi_outputs()
+@job
+def subgraph_multiple_outputs_job():
+    x, y = graph_with_multiple_outputs()
     echo(x)
     echo(y)
 ```

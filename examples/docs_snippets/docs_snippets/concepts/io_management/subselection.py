@@ -1,15 +1,5 @@
 # pylint: disable=unused-argument
-from dagster import (
-    IOManager,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    io_manager,
-    pipeline,
-    root_input_manager,
-    solid,
-)
+from dagster import IOManager, In, Out, io_manager, job, op, root_input_manager
 
 
 def write_dataframe_to_table(**_kwargs):
@@ -40,43 +30,38 @@ def my_io_manager(_):
     return MyIOManager()
 
 
-@solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
-def solid1():
+@op(out=Out(io_manager_key="my_io_manager"))
+def op1():
     """Do stuff"""
 
 
-@solid(input_defs=[InputDefinition("dataframe", root_manager_key="my_root_input_manager")])
-def solid2(dataframe):
+@op(ins={"dataframe": In(root_manager_key="my_root_input_manager")})
+def op2(dataframe):
     """Do stuff"""
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "my_io_manager": my_io_manager,
-                "my_root_input_manager": my_root_input_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "my_io_manager": my_io_manager,
+        "my_root_input_manager": my_root_input_manager,
+    }
 )
-def my_pipeline():
-    solid2(solid1())
+def my_job():
+    op2(op1())
 
 
 # end_marker
 
 
 def execute_full():
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def execute_subselection():
     # start_execute_subselection
-    execute_pipeline(
-        my_pipeline,
-        solid_selection=["solid2"],
-        run_config={"solids": {"solid2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
+    my_job.execute_in_process(
+        run_config={"ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
+        op_selection=["op2"],
     )
 
     # end_execute_subselection

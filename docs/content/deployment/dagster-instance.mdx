@@ -29,15 +29,17 @@
 
 ## Overview
 
-The <PyObject module="dagster" object="DagsterInstance" displayText="DagsterInstance" /> defines all of the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from solid compute functions, how to store local artifacts on disk, and how to launch new runs.
+The <PyObject module="dagster" object="DagsterInstance" displayText="DagsterInstance" /> defines all of the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
 
 All of the processes and services that make up your Dagster deployment should share a single instance config file so that they can effectively share information.
 
 <Warning>
-  Some important configuration, like execution parallelism, is also set on a
-  per-pipeline-run basis rather than on the instance. See{" "}
-  <Link href="/TODO">Pipeline Runs</Link> for pipeline configuration.
+  Some important configuration, like{" "}
+  <Link href="/deployment/executors">execution parallelism</Link>, is set on a
+  per-job basis rather than on the instance.
 </Warning>
+
+// This heading is referenced in a call ofDagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes.
 
 ## Default local behavior
 
@@ -61,10 +63,13 @@ By default (if `dagster.yaml` is not present or nothing is specified in that fil
         │       └── ...
         └── ...
 
-The `runs.db` and `{run_id}.db` files are SQLite database files recording information about pipeline runs and per-run event logs respectively. The `compute_logs` directories (one per pipeline run) contain the stdout and stderr logs from the execution of the compute functions of each solid in a pipeline.
+The `runs.db` and `{run_id}.db` files are SQLite database files recording information about runs and per-run event logs respectively. The `compute_logs` directories (one per run) contain the stdout and stderr logs from the execution of the compute functions of each op.
 
-If `DAGSTER_HOME` is not set, the Dagster tools will use an ephemeral instance for execution. In this case, the run and event log storages will be in-memory rather than persisted to disk, and filesystem storage will use a temporary directory that is cleaned up when the process exits. This is useful for tests and is the default when invoking Python APIs such as <PyObject module="dagster"
-object="execute_pipeline" displayText="execute_pipeline" /> directly.
+If `DAGSTER_HOME` is not set, the Dagster tools will use an ephemeral instance for execution. In this case, the run and event log storages will be in-memory rather than persisted to disk, and filesystem storage will use a temporary directory that is cleaned up when the process exits. This is useful for tests and is the default when invoking Python APIs such as <PyObject
+module="dagster"
+object="JobDefinition"
+method="execute_in_process"
+/> directly.
 
 ## Instance Configuration YAML
 
@@ -72,11 +77,11 @@ In persistent Dagster deployments, you will typically want to configure many of 
 
 To do this, provide a `$DAGSTER_HOME/dagster.yaml` file. Dagit and all Dagster tools will look for this file on startup. In the `dagster.yaml` file, you can configure many different aspects of your Dagster Instance, all of which are detailed below.
 
-Note that Dagster supports retrieving instance YAML values from environment variables, using an `env:` key instead of a string literal value. Examples of using `env:` are included in the sample configurations below:
+Note that Dagster supports retrieving instance YAML values from environment variables, using an `env:` key instead of a string literal value. Examples of using `env:` are included in the sample configurations below.
 
 ### Run Storage
 
-This configures how the history of runs is persisted - this includes metadata on a given run's status, relevant timestamps, and other useful data to inspect a run's history.
+Run storage configures how the history of runs is persisted - this includes metadata on a given run's status, relevant timestamps, and other useful data to inspect a run's history.
 
 To configure Run Storage, you should set the `run_storage` attribute in your `dagster.yaml`. There are _three_ available options:
 
@@ -110,7 +115,7 @@ run_storage:
 DB as the backing run storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_postgres endbefore=end_marker_run_storage_postgres
-# There are three ways to set run_storage to PostgresRunStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 run_storage:
@@ -162,7 +167,7 @@ run_storage:
 backing run storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_mysql endbefore=end_marker_run_storage_mysql
-# There are three ways to set run_storage to MySQLRunStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 run_storage:
@@ -211,7 +216,7 @@ run_storage:
 
 ### Event Log Storage
 
-This controls how the structured event logs produced by each run are persisted - this includes events related to solids starting/running/completing, pipeline events, and useful event-related data.
+Event log storage controls how the structured event logs produced by each run are persisted - this includes events related to ops starting/running/completing, run events, and useful event-related data.
 
 To configure Event Log Storage, you should set the `event_log_storage` attribute in your `dagster.yaml`. There are _four_ available options:
 
@@ -222,7 +227,7 @@ module="dagster.core.storage.event_log"
 object="SqliteEventLogStorage"
 /> uses a Sqlite database as the backing storage for event logs. However, it utilizes
 a seperate Sqlite database (i.e. directory) for each run. In other words, the storage
-is _run-sharded_. This means that certain useful features, like the Assets page,
+is sharded by run. This means that certain useful features, like the Assets page,
 are not usable since Dagster can't perform cross-run queries.
 
 Note that by leaving your `event_log_storage` attribute blank, Run Storage will be set to Sqlite by default. If you would like to manually specify `event_log_storage`, add the following snippet to your `dagster.yaml`:
@@ -252,8 +257,8 @@ event_log_storage:
 module="dagster.core.storage.event_log"
 object="ConsolidatedSqliteEventLogStorage"
 /> is meant to imitate the behavior of Postgres or MySQL-based event log storages,
-as it is not _run sharded_. That is, all runs are persisted to the same Sqlite DB,
-which allows for cross-run queries (& thus use of certain Dagster features, like
+as it is not sharded by run. That is, all runs are persisted to the same Sqlite DB,
+which allows for cross-run queries (and thus use of certain Dagster features, like
 the Assets page).
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_consolidated_sqlite endbefore=end_marker_event_log_storage_consolidated_sqlite
@@ -281,7 +286,7 @@ event_log_storage:
 a Postgres Database as the backing Event Log Storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_postgres endbefore=end_marker_event_log_storage_postgres
-# There are four ways to set event_log_storage to PostgresEventLogStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 event_log_storage:
@@ -333,7 +338,7 @@ event_log_storage:
 as the backing event log storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_mysql endbefore=end_marker_event_log_storage_mysql
-# There are four ways to set event_log_storage to MySQLRunStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 event_log_storage:
@@ -382,7 +387,7 @@ event_log_storage:
 
 ### Schedule Storage
 
-This option controls the backing storage used by the scheduler to manage the state of schedules (for example, tracking `Queued` runs) and persist records of attempts-related data.
+Schedule storage controls the backing storage used to manage the state of schedules and sensors.
 
 To configure Schedule Storage, you should set the `schedule_storage` key in your `dagster.yaml`. There are _three_ available options:
 
@@ -412,13 +417,13 @@ schedule_storage:
       env: SQLITE_SCHEDULE_STORAGE_DIRECTORY
 ```
 
-#### PostgreScheduleStorage
+#### PostgresScheduleStorage
 
 <PyObject module="dagster_postgres" object="PostgresScheduleStorage" /> uses a Postgres
 DB as the backing schedule storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_postgres endbefore=end_marker_schedule_storage_postgres
-# There are three ways to set schedule_storage to PostgresScheduleStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 schedule_storage:
@@ -470,7 +475,7 @@ schedule_storage:
 as the backing schedule storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_mysql endbefore=end_marker_schedule_storage_mysql
-# There are three ways to set schedule_storage to MySQLScheduleStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 schedule_storage:
@@ -519,15 +524,15 @@ schedule_storage:
 
 ### Run Launcher
 
-This determines where runs are executed.
+The run launcher determines where runs are executed.
 
-There are _two_ Dagster-provided options for the Run Launcher; users also can write custom run launchers. Check out the <Link href="/deployment/run-launcher">Run Launcher page</Link> for more information.
+There are several Dagster-provided options for the Run Launcher; users also can write custom run launchers. See the <Link href="/deployment/run-launcher">Run Launcher</Link> docs for more information.
 
 To configure the Run Launcher, set `run_launcher` in your `dagster.yaml` in one of the following ways:
 
 #### DefaultRunLauncher (Default)
 
-The <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a pipeline's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher Docs</Link> for deployment information.
+The <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher</Link> docs for deployment information.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_default endbefore=end_marker_run_launcher_default
 run_launcher:
@@ -535,9 +540,19 @@ run_launcher:
   class: DefaultRunLauncher
 ```
 
+#### DockerRunLauncher
+
+The <PyObject module="dagster_docker" object="DockerRunLauncher" /> allocates a Docker container per run. Please see the <Link href="/deployment/run-launcher#other-run-launchers">Run Launcher</Link> docs for deployment information.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_docker endbefore=end_marker_run_launcher_docker
+run_launcher:
+  module: dagster_docker.launcher
+  class: DockerRunLauncher
+```
+
 #### K8sRunLauncher
 
-The <PyObject module="dagster_k8s" object="K8sRunLauncher" /> allocates a Kubernetes Job per run. Please see the <Link href="/deployment/run-launcher#other-run-launchers">Run Launcher Docs</Link> for deployment information.
+The <PyObject module="dagster_k8s" object="K8sRunLauncher" /> allocates a Kubernetes Job per run. Please see the <Link href="/deployment/run-launcher#other-run-launchers">Run Launcher</Link> docs for deployment information.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_k8s endbefore=end_marker_run_launcher_k8s
 # there are multiple ways to configure the K8sRunLauncher
@@ -569,7 +584,7 @@ run_launcher:
 
 ### Run Coordinator
 
-This determines the policy used to determine the prioritization rules and concurrency limits for runs. Please see the <Link href="/deployment/run-coordinator">Run Coordinator Docs</Link> for more information and for troubleshooting help.
+The run coordinator determines the policy used to determine the prioritization rules and concurrency limits for runs. Please see the <Link href="/deployment/run-coordinator">Run Coordinator Docs</Link> for more information and for troubleshooting help.
 
 To configure the Run Coordinator, set the `run_coodinator` key in your `dagster.yaml`. There are _two_ options:
 
@@ -577,7 +592,7 @@ To configure the Run Coordinator, set the `run_coodinator` key in your `dagster.
 
 The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the run launcher (no notion of `Queued` runs).
 
-See the <Link href="/deployment/run-coordinator#defaultruncoordinator">Run Coordinator Docs</Link> for more information.
+See the <Link href="/deployment/run-coordinator#defaultruncoordinator">Run Coordinator</Link> docs for more information.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_default endbefore=end_marker_run_coordinator_default
 # Since DefaultRunCoordinator is the default option, omitting the `run_coordinator` key will also suffice,
@@ -589,11 +604,11 @@ run_coordinator:
 
 #### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. This sends runs to a Dequeuer process (i.e. a Scheduler / Daemon) via run storage. Note that this requires a daemon process to be active to actually launch the runs.
+The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a daemon process to be active to actually launch the runs.
 
-This option has several configuration possibilities which allow for both limit the overall number of concurrent runs and more specific limits based on run tags - e.g. perhaps only 4 runs interacting with a cloud service should run concurrently to avoid being throttled.
+This option has several configuration possibilities which allow for both limit the overall number of concurrent runs and more specific limits based on run tags - for example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
 
-For more information, see the <Link href="/deployment/run-coordinator#queuedruncoordinator">Run Coordinator Docs</Link>.
+For more information, see the <Link href="/deployment/run-coordinator#queuedruncoordinator">Run Coordinator</Link> docs.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued endbefore=end_marker_run_coordinator_queued
 # There are a few ways to configure the QueuedRunCoordinator:
@@ -731,9 +746,7 @@ compute_logs:
 
 ### Local Artifact Storage
 
-The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem IO manager to manage intermediates.
-
-Note that how a pipeline persists its artifact through IO managers is not configured this way, but instead is configured on the pipeline level (i.e. via <Link href="/concepts/io-management/io-managers">IO Managers</Link>)
+Local artifact storage is used to configure storage for any artifacts that require a local disk, or when using the filesystem IO manager to store inputs and outputs. See <Link href="/concepts/io-management/io-managers">IO Managers</Link> for more information on how other IO managers store artifacts.
 
 To configure Local Artifact Storage, set `local_artifact_storage` as follows in your `dagster.yaml`:
 
@@ -741,8 +754,8 @@ To configure Local Artifact Storage, set `local_artifact_storage` as follows in 
 
 <PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" /> is
 currently the only option for Local Artifact Storage. This configures the directory
-used by the default filesystem IO Manager, as well as any schedule-related artifacts
-that require a local disk.
+used by the default filesystem IO Manager, as well as any artifacts that require
+a local disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_local_artifact_storage endbefore=end_marker_local_artifact_storage
 # there are two possible ways to configure LocalArtifactStorage

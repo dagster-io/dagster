@@ -65,7 +65,7 @@ def _report_run_failed_if_not_finished(instance, pipeline_run_id):
         yield instance.report_run_failed(pipeline_run)
 
 
-def core_execute_run(recon_pipeline, pipeline_run, instance):
+def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure=False):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -83,11 +83,13 @@ def core_execute_run(recon_pipeline, pipeline_run, instance):
         return
 
     try:
-        yield from execute_run_iterator(recon_pipeline, pipeline_run, instance)
+        yield from execute_run_iterator(
+            recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
+        )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         yield instance.report_engine_event(
-            message="Pipeline execution terminated by interrupt",
+            message="Run execution terminated by interrupt",
             pipeline_run=pipeline_run,
         )
     except Exception:  # pylint: disable=broad-except
@@ -144,7 +146,7 @@ def _run_in_subprocess(
 
     run_event_handler(
         instance.report_engine_event(
-            "Started process for pipeline (pid: {pid}).".format(pid=pid),
+            "Started process for run (pid: {pid}).".format(pid=pid),
             pipeline_run,
             EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
         )
@@ -163,7 +165,7 @@ def _run_in_subprocess(
         if not closed:
             run_event_handler(
                 instance.report_engine_event(
-                    "Process for pipeline exited (pid: {pid}).".format(pid=pid),
+                    "Process for run exited (pid: {pid}).".format(pid=pid),
                     pipeline_run,
                 )
             )
@@ -291,14 +293,21 @@ def get_partition_config(recon_repo, partition_set_name, partition_name):
         )
 
 
+def _get_target_for_partition_execution_error(partition_set_def):
+    if partition_set_def.job_name:
+        return f"partitioned config on job '{partition_set_def.job_name}'"
+    else:
+        return f"partition set '{partition_set_def.name}'"
+
+
 def get_partition_names(recon_repo, partition_set_name):
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: "Error occurred during the execution of the partition generation function for "
-            "partition set {partition_set_name}".format(partition_set_name=partition_set_def.name),
+            lambda: f"Error occurred during the execution of the partition generation function for "
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             return ExternalPartitionNamesData(
                 partition_names=partition_set_def.get_partition_names()
@@ -317,7 +326,7 @@ def get_partition_tags(recon_repo, partition_set_name, partition_name):
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: "Error occurred during the evaluation of the `tags_for_partition` function for "
-            "partition set {partition_set_name}".format(partition_set_name=partition_set_def.name),
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionTagsData(name=partition.name, tags=tags)
@@ -360,8 +369,8 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: "Error occurred during the partition generation for partition set "
-            "{partition_set_name}".format(partition_set_name=partition_set_def.name),
+            lambda: "Error occurred during the partition generation for "
+            f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
             all_partitions = partition_set_def.get_partitions()
         partitions = [
@@ -371,16 +380,14 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
         partition_data = []
         for partition in partitions:
 
-            def _error_message_fn(partition_set_name, partition_name):
+            def _error_message_fn(partition_name):
                 return lambda: (
                     "Error occurred during the partition config and tag generation for "
-                    "partition set {partition_set_name}::{partition_name}".format(
-                        partition_set_name=partition_set_name, partition_name=partition_name
-                    )
+                    f"'{partition_name}' in {_get_target_for_partition_execution_error(partition_set_def)}"
                 )
 
             with user_code_error_boundary(
-                PartitionExecutionError, _error_message_fn(partition_set_def.name, partition.name)
+                PartitionExecutionError, _error_message_fn(partition.name)
             ):
                 run_config = partition_set_def.run_config_for_partition(partition)
                 tags = partition_set_def.tags_for_partition(partition)

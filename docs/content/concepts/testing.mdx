@@ -9,14 +9,14 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                       | Description                                                                                                           |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="execute_pipeline"     /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
-| <PyObject object="build_solid_context"  /> | A method to construct a `SolidExecutionContext`, typically to provide to the invocation of a solid for testing.       |
+| Name                                                               | Description                                                                                                 |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts. |
+| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op for testing. |
 
 ## Overview
 
-In data applications, testing computations and pipelines is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
+In data applications, testing computations and jobs is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
 We believe the underlying fact is that data applications encode much of their business logic in heavy, external systems. Examples include processing systems like Spark and data warehouses such as Snowflake and Redshift. It is difficult to structure software to isolate these dependencies or nearly impossible to run them in a lightweight manner.
 
@@ -37,21 +37,21 @@ Unit tests are not acceptance tests. They should not be the judge of whether a c
 
 So, unit tests should be viewed primarily as productivity and code quality tools, leading to more correct calculations. Here we will demonstrate how Dagster conveniently enables unit tests.
 
-### Testing a Pipeline Execution
+### Testing a Job Execution
 
-The workhouse function for unit-testing a pipeline is the <PyObject object="execute_pipeline" /> function. Using this function you can execute a pipeline in process and then test execution properties using the <PyObject object="PipelineExecutionResult" /> object that it returns.
+The workhouse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_pipeline_marker endbefore=end_test_pipeline_marker
-def test_pipeline():
-    result = execute_pipeline(do_math)
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_marker endbefore=end_test_job_marker
+def test_job():
+    result = do_math_job.execute_in_process()
 
-    # return type is PipelineExecutionResult
-    assert isinstance(result, PipelineExecutionResult)
+    # return type is ExecuteInProcessResult
+    assert isinstance(result, ExecuteInProcessResult)
     assert result.success
-    # inspect individual solid result
-    assert result.output_for_solid("add_one") == 2
-    assert result.output_for_solid("add_two") == 3
-    assert result.output_for_solid("subtract") == -1
+    # inspect individual op result
+    assert result.output_for_node("add_one") == 2
+    assert result.output_for_node("add_two") == 3
+    assert result.output_for_node("subtract") == -1
 ```
 
 You can find more unit test examples in the [Examples](#examples) section below.
@@ -62,12 +62,15 @@ As noted above, data applications often rely on and encode their business logic 
 
 To make local testing possible, you may structure your software to, as much as possible, cleanly separate this business logic from your operating environment. This is one of the reasons why Dagster flows through a context object throughout its entire computation.
 
-Attached to the context is a set of user-defined [resources](/concepts/modes-resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vented to the user.
+Attached to the context is a set of user-defined [resources](/concepts/resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. Each job contains a set of resources, and multiple jobs can be defined for a given dagster graph for each set of resources (production, local, testing, etc).
 
 For example, in order to skip external dependencies in tests, you may find yourself needing to constantly comment and uncomment like:
 
-```python file=/concepts/modes_resources/tests.py startafter=start_mode_test_before_marker endbefore=end_mode_test_before_marker
-@solid
+```python file=/concepts/resources/tests.py startafter=start_test_before_marker endbefore=end_test_before_marker
+from dagster import op
+
+
+@op
 def get_data_without_resource(context):
     dummy_data = [1, 2, 3]
     # Do not call external apis in tests
@@ -75,106 +78,111 @@ def get_data_without_resource(context):
     return dummy_data
 ```
 
-### Testing the Same Pipeline in Different Modes
+### Testing graphs
 
-Dagster allows you to execute the same pipeline in different "modes". With modes and resources, you can modify the solid above to:
+Dagster allows you to define multiple "jobs" from the same computation graph. With resources, you can modify the op above to:
 
-```python file=/concepts/modes_resources/tests.py startafter=start_mode_test_after_marker endbefore=end_mode_test_after_marker
-@solid(required_resource_keys={"api"})
+```python file=/concepts/resources/tests.py startafter=start_test_after_marker endbefore=end_test_after_marker
+from dagster import op, graph
+
+
+@op(required_resource_keys={"api"})
 def get_data(context):
     return context.resources.api.call()
 
 
-@solid
+@op
 def do_something(context, data):
     output = process(data)
     return output
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(name="unit_test", resource_defs={"api": ResourceDefinition.mock_resource()}),
-        ModeDefinition(name="prod", resource_defs={"api": api_client}),
-    ]
-)
-def download_pipeline():
+@graph
+def download():
     do_something(get_data())
+
+
+# The prod job for the download graph.
+download_job = download.to_job(resource_defs={"api": api_client})
 ```
 
-In this example, the business logic (i.e., pipelines and solids) remains the same in two different environments (i.e., resources), while the `api` resource gets mocked in the test mode using a helper method [`mock_resource`](/\_apidocs/modes-resources#dagster.ResourceDefinition.mock_resource) from the <PyObject object="ResourceDefinition" /> class.
+In this example, we define the business logic (i.e., jobs and ops) within a computation graph, independent of any particular environment. From this computation graph, we define a production job using the resources that define our production environment.
 
-This is extremely helpful when it comes to testing, because to toggle between unit-testing the pipeline and running it in production, you can simply switch the mode name:
+This is extremely helpful when it comes to testing. We can execute the computation graph with mocked versions of resources, since the computation graph is not tied to any particular enviroment. In order to mock the `api` resource, we use a helper method [`mock_resource`](/\_apidocs/resources#dagster.ResourceDefinition.mock_resource) from the <PyObject object="ResourceDefinition" /> class.
 
-```python file=/concepts/modes_resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
+```python file=/concepts/resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
 def test_local():
-    result = execute_pipeline(download_pipeline, mode="unit_test")
+
+    # Since we have access to the computation graph independent of the set of resources, we can
+    # test it locally.
+    result = download.execute_in_process(resources={"api": ResourceDefinition.mock_resource()})
     assert result.success
 
 
 def run_in_prod():
-    execute_pipeline(download_pipeline, mode="prod")
+    download_job.execute_in_process()
 ```
 
-For more information, you can check out the [Modes](/concepts/modes-resources) and [Resources](/concepts/modes-resources) sections.
+For more information, you can check out the [Resources](/concepts/resources) sections.
 
 ## Examples
 
-### Testing solids
+### Testing ops
 
-While using the `@solid` decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
+While using the `@op` decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
 
-Consider the following solid.
+Consider the following op.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_solid_marker endbefore=end_invocation_solid_marker
-@solid
-def my_solid_to_test():
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_op_marker endbefore=end_invocation_op_marker
+@op
+def my_op_to_test():
     return 5
 ```
 
 Since it has no arguments, we can invoke it directly.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_marker endbefore=end_test_solid_marker
-def test_solid_with_invocation():
-    assert my_solid_to_test() == 5
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_marker endbefore=end_test_op_marker
+def test_op_with_invocation():
+    assert my_op_to_test() == 5
 ```
 
-Consider the following solid with inputs.
+Consider the following op with inputs.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_solid_inputs_marker endbefore=end_invocation_solid_inputs_marker
-@solid
-def my_solid_with_inputs(x, y):
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_op_inputs_marker endbefore=end_invocation_op_inputs_marker
+@op
+def my_op_with_inputs(x, y):
     return x + y
 ```
 
 We can directly provide values for these inputs to the invocation.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_with_inputs_marker endbefore=end_test_solid_with_inputs_marker
-def test_inputs_solid_with_invocation():
-    assert my_solid_with_inputs(5, 6) == 11
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_with_inputs_marker endbefore=end_test_op_with_inputs_marker
+def test_inputs_op_with_invocation():
+    assert my_op_with_inputs(5, 6) == 11
 ```
 
-If your solid requires contextual information such as resources or config, this can be provided using the <PyObject module="dagster" object="build_solid_context"/> function.
+If your op requires contextual information such as resources or config, this can be provided using the <PyObject module="dagster" object="build_op_context"/> function.
 
-Consider the following solid, which requires a resource `foo`.
+Consider the following op, which requires a resource `foo`.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_solid_requires_foo_marker endbefore=end_solid_requires_foo_marker
-@solid(required_resource_keys={"foo"})
-def solid_requires_foo(context):
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
+@op(required_resource_keys={"foo"})
+def op_requires_foo(context):
     return f"found {context.resources.foo}"
 ```
 
-We construct the context using <PyObject module="dagster" object="build_solid_context"/>. Note how we can directly provide a resource instance, instead of having to create a mock resource definition.
+We construct the context using <PyObject module="dagster" object="build_op_context"/>. Note how we can directly provide a resource instance, instead of having to create a mock resource definition.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_context_marker endbefore=end_test_solid_context_marker
-from dagster import build_solid_context
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_context_marker endbefore=end_test_op_context_marker
+from dagster import build_op_context
 
 
-def test_solid_with_context():
-    context = build_solid_context(resources={"foo": "bar"})
-    assert solid_requires_foo(context) == "found bar"
+def test_op_with_context():
+    context = build_op_context(resources={"foo": "bar"})
+    assert op_requires_foo(context) == "found bar"
 ```
 
-We can also provide a resource definition to <PyObject module="dagster" object="build_solid_context"/>. It does not have a `resource_config` argument, so any config should be supplied to the resource via the <PyObject module="dagster" object="ResourceDefinition" method="configured"/> API.
+We can also provide a resource definition to <PyObject module="dagster" object="build_op_context"/>. It does not have a `resource_config` argument, so any config should be supplied to the resource via the <PyObject module="dagster" object="ResourceDefinition" method="configured"/> API.
 
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_resource_def_marker endbefore=end_test_resource_def_marker
 @resource(config_schema={"my_str": str})
@@ -182,73 +190,45 @@ def my_foo_resource(context):
     return context.resource_config["my_str"]
 
 
-def test_solid_resource_def():
-    context = build_solid_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
-    assert solid_requires_foo(context) == "found bar"
+def test_op_resource_def():
+    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    assert op_requires_foo(context) == "found bar"
 ```
 
-### Testing pipeline execution with configs
+### Testing job execution with configs
 
-Sometimes, you may want to test with different configuration. You can execute pipeline with a specified run config via the `run_config`:
+Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_pipeline_with_config endbefore=end_test_pipeline_with_config
-def test_pipeline_with_config():
-    result = execute_pipeline(
-        do_math,
-        run_config={
-            "solids": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}
-        },
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
+def test_job_with_config():
+    result = do_math_job.execute_in_process(
+        run_config={"ops": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
     )
 
     assert result.success
 
-    assert result.output_for_solid("add_one") == 3
-    assert result.output_for_solid("add_two") == 5
-    assert result.output_for_solid("subtract") == -2
-```
-
-### Testing subset execution
-
-You can execute only a subset of a pipeline via the `solid_selection` argument and test the result by checking `solid_result_list` which is a list of <PyObject object="SolidExecutionResult" />.
-
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_subset_execution endbefore=end_test_subset_execution
-def test_subset_execution():
-    result = execute_pipeline(
-        do_math,
-        solid_selection=["add_one", "add_two"],
-    )
-
-    assert result.success
-    assert result.output_for_solid("add_one") == 2
-    assert result.output_for_solid("add_two") == 3
-
-    # solid_result_list returns List[SolidExecutionResult]
-    # this checks to see that only two were executed
-    assert {solid_result.solid.name for solid_result in result.solid_result_list} == {
-        "add_one",
-        "add_two",
-    }
+    assert result.output_for_node("add_one") == 3
+    assert result.output_for_node("add_two") == 5
+    assert result.output_for_node("subtract") == -2
 ```
 
 ### Testing event stream
 
-The event stream is the most generic way that a solid communicates what happened during its computation. Solids communicate events for starting, input/output type checking, and user-provided events such as expectations, materializations, and outputs.
+The event stream is the most generic way that an op communicates what happened during its computation. Ops communicate events for starting, input/output type checking, and user-provided events such as expectations, materializations, and outputs.
 
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
 def test_event_stream():
-    pipeline_result = execute_pipeline(
-        emit_events_pipeline, {"solids": {"emit_events_solid": {"inputs": {"input_num": 1}}}}
+    job_result = emit_events_job.execute_in_process(
+        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
     )
-    assert pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("emit_events_solid")
+    assert job_result.success
 
-    assert isinstance(solid_result, SolidExecutionResult)
+    # when one op has multiple outputs, you need to specify output name
+    assert job_result.output_for_node("emit_events_op", output_name="a_num") == 2
 
-    # when one has multiple outputs, you need to specify output name
-    assert solid_result.output_value(output_name="a_num") == 2
-
-    assert [se.event_type for se in solid_result.step_events] == [
+    events_for_step = job_result.events_for_node("emit_events_op")
+    assert [se.event_type for se in events_for_step] == [
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_INPUT,
         DagsterEventType.STEP_EXPECTATION_RESULT,
@@ -258,7 +238,7 @@ def test_event_stream():
         DagsterEventType.STEP_SUCCESS,
     ]
 
-    # solids communicate what they did via the event stream, viewable in tools (e.g. dagit)
+    # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
     (
         _start,
         _input_event,
@@ -267,7 +247,7 @@ def test_event_stream():
         _num_output_event,
         _num_handled_output_operation,
         _success,
-    ) = solid_result.step_events
+    ) = events_for_step
 
     # apologies for verboseness here! we can do better.
     expectation_result = expectation_event.event_specific_data.expectation_result

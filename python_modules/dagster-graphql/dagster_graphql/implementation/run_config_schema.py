@@ -34,7 +34,7 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
 def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_config):
     from ..schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
-        GraphenePipelineConfigValidationInvalid,
+        GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationValid,
     )
 
@@ -55,7 +55,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
-            GraphenePipelineConfigValidationInvalid(
+            GrapheneRunConfigValidationInvalid(
                 pipeline_name=represented_pipeline.name,
                 errors=[
                     GraphenePipelineConfigValidationError.from_dagster_error(

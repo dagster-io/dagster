@@ -71,14 +71,22 @@ def test_single_out():
 
 
 def test_multi_out():
+    called = {}
+
     @graph(out={"out_1": GraphOut(), "out_2": GraphOut()})
     def composite_return_mult():
         one, two = return_mult()
-        return {"out_1": one, "out_2": two}
+        return (one, two)
+
+    @op
+    def echo(in_one, in_two):
+        called["one"] = in_one
+        called["two"] = in_two
 
     @graph
     def my_graph():
-        composite_return_mult()
+        one, two = composite_return_mult()
+        echo(one, two)
 
     result = composite_return_mult.execute_in_process()
     assert result.output_value("out_1") == 1
@@ -88,6 +96,7 @@ def test_multi_out():
     assert result.success
     assert result.output_for_node("composite_return_mult", "out_1") == 1
     assert result.output_for_node("composite_return_mult", "out_2") == 2
+    assert called == {"one": 1, "two": 2}
 
 
 def test_graph_in_graph():

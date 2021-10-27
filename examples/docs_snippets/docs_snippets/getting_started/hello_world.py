@@ -2,21 +2,21 @@
 
 # start_pipeline_marker
 
-from dagster import pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def get_name():
     return "dagster"
 
 
-@solid
+@op
 def hello(context, name: str):
     context.log.info(f"Hello, {name}!")
 
 
-@pipeline
-def hello_pipeline():
+@job
+def hello_dagster():
     hello(get_name())
 
 
@@ -24,9 +24,7 @@ def hello_pipeline():
 
 
 # start_execute_marker
-from dagster import execute_pipeline
-
 if __name__ == "__main__":
-    result = execute_pipeline(hello_pipeline)
+    result = hello_dagster.execute_in_process()
 
 # end_execute_marker

@@ -1,21 +1,21 @@
-from dagster import pipeline, repository, schedule, solid
+from dagster import job, op, repository, schedule
 
 
-@solid
+@op
 def hello():
     return 1
 
 
-@pipeline
-def my_pipeline():
+@job
+def my_job():
     hello()
 
 
-@schedule(cron_schedule="* * * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
+@schedule(cron_schedule="* * * * *", job=my_job, execution_timezone="US/Central")
 def my_schedule(_context):
     return {}
 
 
 @repository
 def deploy_docker_repository():
-    return [my_pipeline, my_schedule]
+    return [my_job, my_schedule]

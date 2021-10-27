@@ -187,3 +187,8 @@ many_events_job = many_events.to_job(
         "various forms of metadata that can be attached to them."
     )
 )
+
+
+many_events_subset_job = many_events.to_job(
+    name="many_events_subset_job", op_selection=["many_materializations_and_passing_expectations*"]
+)

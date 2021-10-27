@@ -17,7 +17,7 @@ from dagster.core.storage.root_input_manager import IInputManagerDefinition
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
     """Definition of an IO manager resource.
 
-    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
     An IOManagerDefinition is a :py:class:`ResourceDefinition` whose `resource_fn` returns an
     :py:class:`IOManager`.
@@ -94,7 +94,7 @@ class IOManager(InputManager, OutputManager):
     """
     Base class for user-provided IO managers.
 
-    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
     Extend this class to handle how objects are loaded and stored. Users should implement
     ``handle_output`` to store an object and ``load_input`` to retrieve an object.
@@ -102,7 +102,7 @@ class IOManager(InputManager, OutputManager):
 
     @abstractmethod
     def load_input(self, context):
-        """User-defined method that loads an input to a solid.
+        """User-defined method that loads an input to an op.
 
         Args:
             context (InputContext): The input context, which describes the input that's being loaded
@@ -114,11 +114,11 @@ class IOManager(InputManager, OutputManager):
 
     @abstractmethod
     def handle_output(self, context, obj):
-        """User-defined method that stores an output of a solid.
+        """User-defined method that stores an output of an op.
 
         Args:
             context (OutputContext): The context of the step output that produces this object.
-            obj (Any): The object, returned by the solid, to be stored.
+            obj (Any): The object, returned by the op, to be stored.
         """
 
     def get_output_asset_key(self, _context) -> Optional[AssetKey]:
@@ -171,7 +171,7 @@ def io_manager(
     """
     Define an IO manager.
 
-    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an
     :py:class:`IOManager`.
@@ -206,17 +206,14 @@ def io_manager(
         def my_io_manager(init_context):
             return MyIOManager()
 
-        @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager_key")])
-        def my_solid(_):
+        @op(out=Out(io_manager_key="my_io_manager_key"))
+        def my_op(_):
             return do_stuff()
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"my_io_manager_key": my_io_manager})]
-        )
-        def my_pipeline():
-            my_solid()
+        @job(resource_defs={"my_io_manager_key": my_io_manager})
+        def my_job():
+            my_op()
 
-        execute_pipeline(my_pipeline)
     """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _IOManagerDecoratorCallable()(config_schema)

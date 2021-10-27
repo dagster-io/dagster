@@ -1,14 +1,14 @@
-from dagster import execute_pipeline, pipeline, repository, solid
+from dagster import job, op, repository
 from dagster.core.definitions.run_request import RunRequest
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
-    email_on_pipeline_failure,
-    my_slack_on_pipeline_failure,
-    my_slack_on_pipeline_success,
-    slack_on_pipeline_failure,
+    email_on_run_failure,
+    my_slack_on_run_failure,
+    my_slack_on_run_success,
+    slack_on_run_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
     isolated_run_request,
-    log_file_pipeline,
+    log_file_job,
     my_directory_sensor,
     sensor_A,
     sensor_B,
@@ -17,20 +17,20 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
 )
 
 
-@solid(config_schema={"fail": bool})
+@op(config_schema={"fail": bool})
 def foo(context):
     if context.solid_config["fail"]:
         raise Exception("This will always fail!")
 
 
-@pipeline
-def your_pipeline_name():
-    return foo()
+@job
+def your_job_name():
+    foo()
 
 
-def test_log_file_pipeline():
-    result = execute_pipeline(
-        log_file_pipeline, run_config={"solids": {"process_file": {"config": {"filename": "test"}}}}
+def test_log_file_job():
+    result = log_file_job.execute_in_process(
+        run_config={"ops": {"process_file": {"config": {"filename": "test"}}}}
     )
     assert result.success
 
@@ -52,20 +52,20 @@ def test_interval_sensors():
     assert sensor_B
 
 
-def test_pipeline_failure_sensor_def():
+def test_run_failure_sensor_def():
     @repository
     def my_repo():
         return [
-            my_slack_on_pipeline_failure,
-            slack_on_pipeline_failure,
-            email_on_pipeline_failure,
-            my_slack_on_pipeline_success,
+            my_slack_on_run_failure,
+            slack_on_run_failure,
+            email_on_run_failure,
+            my_slack_on_run_success,
         ]
 
-    assert my_repo.has_sensor_def("my_slack_on_pipeline_failure")
-    assert my_repo.has_sensor_def("slack_on_pipeline_failure")
-    assert my_repo.has_sensor_def("email_on_pipeline_failure")
-    assert my_repo.has_sensor_def("my_slack_on_pipeline_success")
+    assert my_repo.has_sensor_def("my_slack_on_run_failure")
+    assert my_repo.has_sensor_def("slack_on_run_failure")
+    assert my_repo.has_sensor_def("email_on_run_failure")
+    assert my_repo.has_sensor_def("my_slack_on_run_success")
 
 
 def test_sensor_testing_example():

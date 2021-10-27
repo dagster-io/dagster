@@ -4,7 +4,7 @@ import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
@@ -59,7 +59,7 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
       {!isFinalStatus ? (
         <ButtonWIP
           icon={<IconWIP name="cancel" />}
-          intent="warning"
+          intent="danger"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
         >
@@ -117,8 +117,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const isFinalStatus = !!doneStatuses.has(run.status);
   const isFailedWithPlan =
-    run.executionPlan &&
-    (run.status === PipelineRunStatus.FAILURE || run.status === PipelineRunStatus.CANCELED);
+    run.executionPlan && (run.status === RunStatus.FAILURE || run.status === RunStatus.CANCELED);
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',

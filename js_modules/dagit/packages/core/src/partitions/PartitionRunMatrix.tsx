@@ -11,7 +11,7 @@ import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExpl
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
+import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
@@ -38,6 +38,7 @@ import {
   PartitionRunMatrixPipelineQueryVariables,
 } from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
+import {PartitionRuns} from './useChunkedPartitionsQuery';
 import {
   DisplayOptions,
   isStepKeyForNode,
@@ -64,7 +65,7 @@ interface PartitionRunSelection {
 
 interface PartitionRunMatrixProps {
   pipelineName: string;
-  partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[];
+  partitions: PartitionRuns[];
   repoAddress: RepoAddress;
   runTags: TokenizingFieldValue[];
   setRunTags: (val: TokenizingFieldValue[]) => void;
@@ -181,7 +182,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         style={{width: '90vw'}}
         title={focused ? `${focused.partitionName} runs (${focused.stepName})` : ''}
       >
-        <DialogBody>
+        <Box padding={{bottom: 12}}>
           {focused && (
             <PartitionRunListForStep
               pipelineName={props.pipelineName}
@@ -199,7 +200,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               )}
             />
           )}
-        </DialogBody>
+        </Box>
         <DialogFooter>
           <ButtonWIP intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
             OK
@@ -262,7 +263,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             <GridColumn disabled>
               <TopLabel />
               <LeftLabel
-                style={{width: 32, textAlign: 'right'}}
+                style={{width: 42}}
                 onClick={() =>
                   setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
                 }
@@ -281,19 +282,18 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 >
                   <RedBox
                     $filled={totalFailurePercent > 0}
-                    style={{background: `rgba(255, 0, 0, ${(totalFailurePercent / 100) * 0.6})`}}
+                    style={{background: `rgba(255, 0, 0, ${(totalFailurePercent / 100) * 0.5})`}}
                   >
                     {`${totalFailurePercent}%`}
                   </RedBox>
                 </LeftLabel>
               ))}
-              <Divider />
             </GridColumn>
           )}
           <GridColumn disabled>
             <TopLabel />
             <LeftLabel
-              style={{width: 42}}
+              style={{width: 42, paddingRight: 8}}
               onClick={() =>
                 setStepSort(stepSort === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
               }
@@ -309,12 +309,12 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 key={idx}
                 title={TITLE_FINAL_FAILURES}
                 hovered={name === hovered?.stepName}
+                style={{marginRight: 6}}
               >
                 <RedBox
                   $filled={finalFailurePercent > 0}
                   style={{
                     background: `rgba(255, 0, 0, ${(finalFailurePercent / 100) * 0.6})`,
-                    right: 12,
                   }}
                 >
                   {`${finalFailurePercent}%`}
@@ -342,13 +342,18 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 }}
               >
                 <TopLabelTilted label={p.name} />
-                <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
+                {p.runsLoaded ? (
+                  <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
+                ) : (
+                  <LeftLabel style={{textAlign: 'center', opacity: 0.2}}>–</LeftLabel>
+                )}
                 <Divider />
                 {sortPartitionSteps(p.steps).map((s) => (
                   <PartitionStepSquare
                     key={s.name}
                     step={s}
                     runs={p.runs}
+                    runsLoaded={p.runsLoaded}
                     options={options}
                     minUnix={minUnix}
                     maxUnix={maxUnix}
@@ -389,7 +394,7 @@ export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
     }
     stats {
       __typename
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         startTime
       }
@@ -522,10 +527,10 @@ const RunMatrixSettings: React.FC<{
 const RedBox = styled.div<{$filled: boolean}>`
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: ${(p) => (p.$filled ? `2px` : `6px`)};
   font-size: 14px;
   cursor: pointer;
-  color: ${(p) => (p.$filled ? ColorsWIP.Red500 : ColorsWIP.Gray300)};
+  color: ${(p) => (p.$filled ? ColorsWIP.Red700 : ColorsWIP.Gray300)};
   line-height: 20px;
   padding: ${(p) => (p.$filled ? `0 4px;` : `0`)};
   border-radius: 3px;
@@ -542,7 +547,6 @@ const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sortin
       opacity: $sorting ? 1 : 0.25,
       marginTop: 4,
       marginLeft: 'auto',
-      marginRight: 8,
     }}
   />
 );
@@ -550,6 +554,7 @@ const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sortin
 const PartitionStepSquare: React.FC<{
   step: MatrixStep;
   runs: PartitionRunMatrixRunFragment[];
+  runsLoaded: boolean;
   options: DisplayOptions;
   basePath: string;
   hovered: PartitionRunSelection | null;
@@ -561,6 +566,7 @@ const PartitionStepSquare: React.FC<{
 }> = ({
   step,
   runs,
+  runsLoaded,
   options,
   hovered,
   setHovered,
@@ -574,7 +580,7 @@ const PartitionStepSquare: React.FC<{
   const {name, color, unix} = step;
 
   const className = `square
-  ${runs.length === 0 && 'empty'}
+  ${!runsLoaded ? 'loading' : runs.length === 0 ? 'empty' : ''} 
   ${(options.showPrevious ? color : StatusSquareFinalColor[color] || color).toLowerCase()}`;
 
   const content = (

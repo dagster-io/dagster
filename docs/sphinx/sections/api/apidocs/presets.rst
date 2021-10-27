@@ -1,7 +1,7 @@
 .. currentmodule:: dagster
 
-Presets
-=======
+[Legacy] Presets
+================
 
 .. autoclass:: PresetDefinition
     :members:

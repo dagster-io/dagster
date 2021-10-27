@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
@@ -11,6 +10,7 @@ import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithToo
 import {TypeListFragment} from './types/TypeListFragment';
 
 interface ITypeListProps {
+  isGraph: boolean;
   types: Array<TypeListFragment>;
 }
 
@@ -30,14 +30,12 @@ function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment
 }
 
 export const TypeList: React.FC<ITypeListProps> = (props) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const groups = groupTypes(props.types);
-  console.log(groups);
   return (
     <>
       <SidebarSubhead />
       <Box padding={{vertical: 16, horizontal: 24}}>
-        <SidebarTitle>{flagPipelineModeTuples ? 'Graph types' : 'Pipeline types'}</SidebarTitle>
+        <SidebarTitle>{props.isGraph ? 'Graph types' : 'Pipeline types'}</SidebarTitle>
       </Box>
       {Object.keys(groups).map((title, idx) => {
         const typesForSection = groups[title];
@@ -84,6 +82,5 @@ const StyledUL = styled.ul`
 `;
 
 const TypeLI = styled.li`
-  text-overflow: ellipsis;
-  overflow: hidden;
+  list-style-type: none;
 `;

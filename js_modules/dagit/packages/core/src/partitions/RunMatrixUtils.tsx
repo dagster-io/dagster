@@ -34,15 +34,18 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-    background: ${ColorsWIP.Gray100};
-    cursor: default;
-    ${TopLabelTiltedInner} {
-      background: ${ColorsWIP.White};
-      .tilted {
-        background: ${ColorsWIP.Gray100};
+      background: ${ColorsWIP.Gray100};
+      cursor: default;
+      ${TopLabelTiltedInner} {
+        background: ${ColorsWIP.White};
+        .tilted {
+          background: ${ColorsWIP.Gray100};
+        }
       }
-    }
-  }`}
+      .square {
+        filter: brightness(95%);
+      }
+    }`}
 
   ${({disabled}) =>
     disabled &&
@@ -105,10 +108,16 @@ export const GridColumn = styled.div<{
     }
     &:before {
       content: ' ';
+      background: rgba(248, 247, 245, 1);
       border-radius: 10px;
       display: inline-block;
       width: 20px;
       height: 20px;
+    }
+    &.loading {
+      &:before {
+        background: radial-gradient(white 0%, white 45%, rgba(248, 247, 245, 1) 60%);
+      }
     }
     &.success {
       &:before {
@@ -186,11 +195,6 @@ export const GridColumn = styled.div<{
           ${STEP_STATUS_COLORS.SKIPPED} 49%,
           ${STEP_STATUS_COLORS.FAILURE} 51%
         );
-      }
-    }
-    &.missing {
-      &:before {
-        background: ${ColorsWIP.Gray50};
       }
     }
   }

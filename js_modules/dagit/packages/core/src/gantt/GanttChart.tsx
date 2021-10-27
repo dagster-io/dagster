@@ -6,7 +6,12 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
+import {
+  EMPTY_RUN_METADATA,
+  IRunMetadataDict,
+  IStepMetadata,
+  IStepState,
+} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
 import {Checkbox} from '../ui/Checkbox';
@@ -15,7 +20,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
+import {Spinner, SpinnerWrapper} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
@@ -503,6 +508,7 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
           ...boxStyleFor(box.state, {metadata, options}),
         }}
       >
+        {box.state === IStepState.RUNNING ? <Spinner purpose="body-text" /> : undefined}
         {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
       </div>,
     );
@@ -714,6 +720,12 @@ const GanttChartContainer = styled.div`
     &.dynamic {
       filter: brightness(125%);
     }
+
+    ${SpinnerWrapper} {
+      display: inline-block;
+      vertical-align: text-bottom;
+      padding-right: 4px;
+    }
   }
 
   .marker-dot {
@@ -788,7 +800,8 @@ export const QueuedState = ({runId}: {runId: string}) => (
       first={
         <NonIdealState
           icon="arrow_forward"
-          description="This run is currently queued."
+          title="Run Queued"
+          description="This run is queued for execution and will start soon."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />
       }

@@ -8,8 +8,8 @@ import {PipelineNav} from '../nav/PipelineNav';
 import {PipelinePartitionsRoot} from '../partitions/PipelinePartitionsRoot';
 import {RepoAddress} from '../workspace/types';
 
+import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineOverviewRoot} from './PipelineOverviewRoot';
-import {useEnforceModeInPipelinePath} from './PipelinePathUtils';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
 
 interface Props {
@@ -19,8 +19,6 @@ interface Props {
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {canLaunchPipelineExecution} = usePermissions();
-
-  useEnforceModeInPipelinePath();
 
   return (
     <div
@@ -35,6 +33,12 @@ export const PipelineRoot: React.FC<Props> = (props) => {
       <PipelineNav repoAddress={repoAddress} />
       <Switch>
         <Route
+          path="/workspace/:repoPath/pipeline_or_job/:pipelinePath"
+          render={(props: RouteComponentProps<{repoPath: string; pipelinePath: string}>) => {
+            return <PipelineOrJobDisambiguationRoot {...props} repoAddress={repoAddress} />;
+          }}
+        />
+        <Route
           path={[
             '/workspace/:repoPath/pipelines/:pipelinePath/playground/setup',
             '/workspace/:repoPath/jobs/:pipelinePath/playground/setup',
@@ -42,7 +46,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
           render={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
             const {pipelinePath, repoPath} = props.match.params;
             if (!canLaunchPipelineExecution) {
-              return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
+              return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
             }
             return (
               <PipelineExecutionSetupRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />
@@ -57,7 +61,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
           render={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
             const {pipelinePath, repoPath} = props.match.params;
             if (!canLaunchPipelineExecution) {
-              return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
+              return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
             }
             return (
               <PipelineExecutionRoot
@@ -82,7 +86,10 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             '/workspace/:repoPath/jobs/:pipelinePath/runs',
           ]}
           render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-            <PipelineRunsRoot pipelinePath={props.match.params.pipelinePath} />
+            <PipelineRunsRoot
+              pipelinePath={props.match.params.pipelinePath}
+              repoAddress={repoAddress}
+            />
           )}
         />
         <Route
@@ -97,16 +104,13 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             />
           )}
         />
-
         <Route
           path={[
             '/workspace/:repoPath/pipelines/:pipelinePath/overview',
             '/workspace/:repoPath/jobs/:pipelinePath/overview',
           ]}
           render={(props) => (
-            <Redirect
-              to={`/workspace/${props.match.params.repoPath}/jobs/${props.match.params.pipelinePath}`}
-            />
+            <Redirect to={`/workspace/${props.match.url.replace(/\/overview$/i, '')}`} />
           )}
         />
         <Route

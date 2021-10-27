@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, PipelineRunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RepositoryPipelinesListQuery
@@ -21,11 +21,11 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   mode: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_schedules {
@@ -52,6 +52,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   __typename: "Pipeline";
   id: string;
   description: string | null;
+  isJob: boolean;
   name: string;
   modes: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_modes[];
   runs: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs[];

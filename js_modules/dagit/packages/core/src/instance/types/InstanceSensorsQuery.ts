@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositoryLocationLoadStatus, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { RepositoryLocationLoadStatus, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceSensorsQuery
@@ -139,10 +139,10 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
 export type InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData = InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_SensorData | InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_ScheduleData;
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
@@ -256,10 +256,10 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
 export type InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData = InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData | InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData;
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {

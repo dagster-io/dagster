@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import NamedTuple, Optional
 
 from dagster.core.instance import MayHaveInstanceWeakref
@@ -14,10 +15,32 @@ class LaunchRunContext(NamedTuple):
 
     pipeline_run: PipelineRun
     workspace: Optional[IWorkspace]
+    resume_from_failure: bool = False
+    resume_attempt_number: Optional[int] = None
 
     @property
     def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
         return self.pipeline_run.pipeline_code_origin
+
+
+class WorkerStatus(Enum):
+    RUNNING = "RUNNING"
+    NOT_FOUND = "NOT_FOUND"
+    FAILED = "FAILED"
+    SUCCESS = "SUCCESS"
+    UNKNOWN = "UNKNOWN"
+
+
+class CheckRunHealthResult(NamedTuple):
+    """
+    Result of a check_run_worker_health call.
+    """
+
+    status: WorkerStatus
+    msg: Optional[str] = None
+
+    def __str__(self) -> str:
+        return f"{self.status.value}: '{self.msg}'"
 
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):
@@ -60,3 +83,13 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
 
     def join(self, timeout=30):
         pass
+
+    @property
+    def supports_check_run_worker_health(self):
+        """
+        Whether the run launcher supports check_run_worker_health.
+        """
+        return False
+
+    def check_run_worker_health(self, run: PipelineRun) -> CheckRunHealthResult:
+        raise NotImplementedError()

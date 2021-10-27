@@ -8,23 +8,31 @@
 // GraphQL fragment: LatestMaterializationMetadataFragment
 // ====================================================
 
-export interface LatestMaterializationMetadataFragment_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface LatestMaterializationMetadataFragment_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface LatestMaterializationMetadataFragment_runOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface LatestMaterializationMetadataFragment_runOrError_Run_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
+export interface LatestMaterializationMetadataFragment_runOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  repositoryOrigin: LatestMaterializationMetadataFragment_runOrError_Run_repositoryOrigin | null;
 }
 
-export type LatestMaterializationMetadataFragment_runOrError = LatestMaterializationMetadataFragment_runOrError_PipelineRunNotFoundError | LatestMaterializationMetadataFragment_runOrError_PipelineRun;
+export type LatestMaterializationMetadataFragment_runOrError = LatestMaterializationMetadataFragment_runOrError_RunNotFoundError | LatestMaterializationMetadataFragment_runOrError_Run;
 
 export interface LatestMaterializationMetadataFragment_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

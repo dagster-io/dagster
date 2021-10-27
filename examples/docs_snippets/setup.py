@@ -16,5 +16,5 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster"],
-        extras_require={"full": ["seaborn", "scikit-learn"]},
+        extras_require={"full": ["seaborn", "scikit-learn", "moto==1.3.16"]},
     )

@@ -41,6 +41,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
     Example usage:
 
     .. code-block:: python
+
         from dagster import op
 
         @op
@@ -148,19 +149,19 @@ class Output(
         ],
     )
 ):
-    """Event corresponding to one of a solid's outputs.
+    """Event corresponding to one of a op's outputs.
 
-    Solid compute functions must explicitly yield events of this type when they have more than
-    one output, or when they also yield events of other types, or when defining a solid using the
-    :py:class:`SolidDefinition` API directly.
+    Op compute functions must explicitly yield events of this type when they have more than
+    one output, or when they also yield events of other types, or when defining a op using the
+    :py:class:`OpDefinition` API directly.
 
-    Outputs are values produced by solids that will be consumed by downstream solids in a pipeline.
-    They are type-checked at solid boundaries when their corresponding :py:class:`OutputDefinition`
-    or the downstream :py:class:`InputDefinition` is typed.
+    Outputs are values produced by ops that will be consumed by downstream ops in a job.
+    They are type-checked at op boundaries when their corresponding :py:class:`Out`
+    or the downstream :py:class:`In` is typed.
 
     Args:
         value (Any): The value returned by the compute function.
-        output_name (Optional[str]): Name of the corresponding output definition. (default:
+        output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
@@ -210,7 +211,7 @@ class DynamicOutput(
 ):
     """
     (Experimental) Variant of :py:class:`Output <dagster.Output>` used to support
-    dynamic mapping & collect. Each ``DynamicOutput`` produced by a solid represents
+    dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
     one item in a set that can be processed individually with ``map`` or gathered
     with ``collect``.
 
@@ -221,10 +222,10 @@ class DynamicOutput(
             The value returned by the compute function.
         mapping_key (str):
             The key that uniquely identifies this dynamic value relative to its peers.
-            This key will be used to identify the downstream solids when mapped, ie
-            ``mapped_solid[example_mapping_key]``
+            This key will be used to identify the downstream ops when mapped, ie
+            ``mapped_op[example_mapping_key]``
         output_name (Optional[str]):
-            Name of the corresponding :py:class:`DynamicOutputDefinition` defined on the solid.
+            Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this output.
@@ -391,12 +392,12 @@ class Materialization(
         ],
     )
 ):
-    """Event indicating that a solid has materialized a value.
+    """Event indicating that an op has materialized a value.
 
     Solid compute functions may yield events of this type whenever they wish to indicate to the
     Dagster framework (and the end user) that they have produced a materialized value as a
-    side effect of computation. Unlike outputs, materializations can not be passed to other solids,
-    and their persistence is controlled by solid logic, rather than by the Dagster framework.
+    side effect of computation. Unlike outputs, materializations can not be passed to other ops,
+    and their persistence is controlled by op logic, rather than by the Dagster framework.
 
     Solid authors should use these events to organize metadata about the side effects of their
     computations to enable downstream tooling like artifact catalogues and diff tools.
@@ -407,7 +408,7 @@ class Materialization(
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
         asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
-            across pipeline runs
+            across runs
         partition (Optional[str]): The name of the partition that was materialized.
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
             materialization.  Used for search and organization of the asset entry in the asset
@@ -491,7 +492,7 @@ class ExpectationResult(
 ):
     """Event corresponding to a data quality test.
 
-    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Op compute functions may yield events of this type whenever they wish to indicate to the
     Dagster framework (and the end user) that a data quality test has produced a (positive or
     negative) result.
 
@@ -586,9 +587,9 @@ class TypeCheck(
 
 
 class Failure(Exception):
-    """Event indicating solid failure.
+    """Event indicating op failure.
 
-    Raise events of this type from within solid compute functions or custom type checks in order to
+    Raise events of this type from within op compute functions or custom type checks in order to
     indicate an unrecoverable failure in user code to the Dagster machinery and return
     structured metadata about the failure.
 
@@ -620,7 +621,7 @@ class Failure(Exception):
 
 class RetryRequested(Exception):
     """
-    An exception to raise from a solid to indicate that it should be retried.
+    An exception to raise from an op to indicate that it should be retried.
 
     Args:
         max_retries (Optional[int]):
@@ -633,7 +634,7 @@ class RetryRequested(Exception):
 
         .. code-block:: python
 
-            @solid
+            @op
             def flakes():
                 try:
                     flakey_operation()

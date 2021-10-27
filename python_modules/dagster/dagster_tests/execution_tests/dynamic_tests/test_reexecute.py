@@ -8,7 +8,7 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 @solid
@@ -37,7 +37,7 @@ def emit(_):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def dynamic_pipeline():
     # pylint: disable=no-member
     emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
@@ -52,17 +52,12 @@ def test_map():
 
 def test_reexec_from_parent_basic():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(
-            dynamic_pipeline, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
         parent_run_id = parent_result.run_id
 
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={
-                "storage": {"filesystem": {}},
-            },
             step_selection=["emit"],
             instance=instance,
         )
@@ -76,17 +71,12 @@ def test_reexec_from_parent_basic():
 
 def test_reexec_from_parent_1():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(
-            dynamic_pipeline, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
         parent_run_id = parent_result.run_id
 
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={
-                "storage": {"filesystem": {}},
-            },
             step_selection=["multiply_inputs[0]"],
             instance=instance,
         )
@@ -98,9 +88,7 @@ def test_reexec_from_parent_1():
 
 def test_reexec_from_parent_dynamic_fails():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(
-            dynamic_pipeline, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
         parent_run_id = parent_result.run_id
 
         # not currently supported, this needs to know all fan outs of previous step, should just run previous step
@@ -111,9 +99,6 @@ def test_reexec_from_parent_dynamic_fails():
             reexecute_pipeline(
                 pipeline=dynamic_pipeline,
                 parent_run_id=parent_run_id,
-                run_config={
-                    "storage": {"filesystem": {}},
-                },
                 step_selection=["multiply_inputs[?]"],
                 instance=instance,
             )
@@ -121,17 +106,12 @@ def test_reexec_from_parent_dynamic_fails():
 
 def test_reexec_from_parent_2():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(
-            dynamic_pipeline, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
         parent_run_id = parent_result.run_id
 
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={
-                "storage": {"filesystem": {}},
-            },
             step_selection=["multiply_by_two[1]"],
             instance=instance,
         )
@@ -143,17 +123,12 @@ def test_reexec_from_parent_2():
 
 def test_reexec_from_parent_3():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(
-            dynamic_pipeline, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
         parent_run_id = parent_result.run_id
 
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={
-                "storage": {"filesystem": {}},
-            },
             step_selection=["multiply_inputs[1]", "multiply_by_two[2]"],
             instance=instance,
         )

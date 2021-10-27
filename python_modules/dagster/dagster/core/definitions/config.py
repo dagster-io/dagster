@@ -29,20 +29,20 @@ class ConfigMapping(
         ],
     )
 ):
-    """Defines a config mapping for a graph.
+    """Defines a config mapping for a graph (or job).
 
     By specifying a config mapping function, you can override the configuration for the child
-    ops contained within a graph.
+    ops and graphs contained within a graph.
 
     Config mappings require the configuration schema to be specified as ``config_schema``, which will
     be exposed as the configuration schema for the graph, as well as a configuration mapping
-    function, ``config_fn``, which maps the config provided to the graph to the config
-    that will be provided to the child ops.
+    function, ``config_fn``, which maps the config provided to the composite solid to the config
+    that will be provided to the child nodes.
 
     Args:
         config_fn (Callable[[dict], dict]): The function that will be called
-            to map the composite config to a config appropriate for the child ops.
-        config_schema (ConfigSchema): The schema of the composite config.
+            to map the graph config to a config appropriate for the child nodes.
+        config_schema (ConfigSchema): The schema of the graph config.
         receive_processed_config_values (Optional[bool]): If true, config values provided to the config_fn
             will be converted to their dagster types before being passed in. For example, if this
             value is true, enum config passed to config_fn will be actual enums, while if false,

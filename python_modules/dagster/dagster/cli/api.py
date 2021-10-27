@@ -1,6 +1,5 @@
 import os
 import sys
-from collections import namedtuple
 
 import click
 from dagster import check, seven
@@ -16,16 +15,11 @@ from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
-from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
-from dagster.serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
+from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-
-
-@whitelist_for_serdes
-class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
-    pass
 
 
 @click.group(name="api")
@@ -60,7 +54,10 @@ def execute_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             _execute_run_command_body(
-                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer
+                recon_pipeline,
+                args.pipeline_run_id,
+                instance,
+                send_to_buffer,
             )
 
             for line in buffer:
@@ -69,21 +66,74 @@ def execute_run_command(input_json):
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
 
-    # we need to send but the fact that we have loaded the args so the calling
-    # process knows it is safe to clean up the temp input file
-    write_stream_fn(ExecuteRunArgsLoadComplete())
-
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for pipeline (pid: {pid}).".format(pid=pid),
+        "Started process for run (pid: {pid}).".format(pid=pid),
         pipeline_run,
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
 
     try:
         for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+            write_stream_fn(event)
+    finally:
+        instance.report_engine_event(
+            "Process for run exited (pid: {pid}).".format(pid=pid),
+            pipeline_run,
+        )
+
+
+@api_cli.command(
+    name="resume_run",
+    help=(
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
+    ),
+)
+@click.argument("input_json", type=click.STRING)
+def resume_run_command(input_json):
+    with capture_interrupts():
+        args = deserialize_as(input_json, ResumeRunArgs)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+
+        with (
+            DagsterInstance.from_ref(args.instance_ref)
+            if args.instance_ref
+            else DagsterInstance.get()
+        ) as instance:
+            buffer = []
+
+            def send_to_buffer(event):
+                buffer.append(serialize_dagster_namedtuple(event))
+
+            _resume_run_command_body(
+                recon_pipeline,
+                args.pipeline_run_id,
+                instance,
+                send_to_buffer,
+            )
+
+            for line in buffer:
+                click.echo(line)
+
+
+def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+
+    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+
+    pid = os.getpid()
+    instance.report_engine_event(
+        "Started process for resuming pipeline (pid: {pid}).".format(pid=pid),
+        pipeline_run,
+        EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
+    )
+
+    try:
+        for event in core_execute_run(
+            recon_pipeline, pipeline_run, instance, resume_from_failure=True
+        ):
             write_stream_fn(event)
     finally:
         instance.report_engine_event(

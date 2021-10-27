@@ -12,7 +12,6 @@ from dagster import (
     SolidDefinition,
     TypeCheck,
     check,
-    seven,
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
@@ -37,7 +36,7 @@ from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
-from .serialize import PICKLE_PROTOCOL, read_value
+from .serialize import PICKLE_PROTOCOL
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -181,7 +180,6 @@ class Manager:
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
-                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
@@ -274,7 +272,6 @@ class Manager:
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
-                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
                 solid_handle=NodeHandle(solid_def.name, parent=None),
@@ -356,10 +353,6 @@ class Manager:
     def teardown_resources(self):
         if self.resource_manager is not None:
             self.resource_manager.teardown()
-
-    def load_parameter(self, input_name, input_value):
-        input_def = self.solid_def.input_def_named(input_name)
-        return read_value(input_def.dagster_type, seven.json.loads(input_value))
 
     def load_input_parameter(self, input_name: str):
         # load input from source

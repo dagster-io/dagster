@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes";
+import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviousRunsForSensorQuery
@@ -14,14 +14,26 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineR
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_tags {
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -29,50 +41,52 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_res
   endTime: number | null;
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats = PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
+export type PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
-  tags: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
-  stats: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  tags: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tags[];
+  stats: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats;
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results[];
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs {
+  __typename: "Runs";
+  results: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type PreviousRunsForSensorQuery_pipelineRunsOrError = PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns;
+export type PreviousRunsForSensorQuery_pipelineRunsOrError = PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForSensorQuery_pipelineRunsOrError_Runs;
 
 export interface PreviousRunsForSensorQuery {
   pipelineRunsOrError: PreviousRunsForSensorQuery_pipelineRunsOrError;
 }
 
 export interface PreviousRunsForSensorQueryVariables {
-  filter?: PipelineRunsFilter | null;
+  filter?: RunsFilter | null;
   limit?: number | null;
 }

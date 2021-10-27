@@ -17,7 +17,7 @@ import {
 import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
@@ -136,25 +136,25 @@ export const PartitionProgress = (props: Props) => {
     <TooltipTable>
       <tbody>
         <TooltipTableRow
-          runStatus={PipelineRunStatus.QUEUED}
+          runStatus={RunStatus.QUEUED}
           humanText="Queued"
           count={numQueued}
           numTotal={numTotal}
         />
         <TooltipTableRow
-          runStatus={PipelineRunStatus.STARTED}
+          runStatus={RunStatus.STARTED}
           humanText="In progress"
           count={numInProgress}
           numTotal={numTotal}
         />
         <TooltipTableRow
-          runStatus={PipelineRunStatus.SUCCESS}
+          runStatus={RunStatus.SUCCESS}
           humanText="Succeeded"
           count={numSucceeded}
           numTotal={numTotal}
         />
         <TooltipTableRow
-          runStatus={PipelineRunStatus.FAILURE}
+          runStatus={RunStatus.FAILURE}
           humanText="Failed"
           count={numFailed}
           numTotal={numTotal}
@@ -189,7 +189,7 @@ export const PartitionProgress = (props: Props) => {
                     <Link
                       to={workspacePathFromAddress(
                         repoAddress,
-                        `/pipelines/${pipelineName}/runs?${qs.stringify({
+                        `/pipeline_or_job/${pipelineName}/runs?${qs.stringify({
                           q: stringFromValue([
                             {token: 'tag', value: `dagster/backfill=${backfillId}`},
                           ]),
@@ -240,7 +240,7 @@ export const PartitionProgress = (props: Props) => {
 };
 
 const TooltipTableRow: React.FC<{
-  runStatus?: PipelineRunStatus;
+  runStatus?: RunStatus;
   humanText: string;
   count: number;
   numTotal: number;

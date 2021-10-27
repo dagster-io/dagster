@@ -2,7 +2,7 @@ import time
 import uuid
 
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.utils import file_relative_path, merge_dicts
+from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -39,7 +39,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -62,7 +62,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -87,7 +87,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
@@ -229,10 +229,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data["launchPipelineExecution"]["__typename"]
-            == "PipelineConfigValidationInvalid"
-        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "RunConfigValidationInvalid"
 
     def test_basis_start_pipeline_not_found_error(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "sjkdfkdjkf")
@@ -258,22 +255,25 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
     def _csv_hello_world_event_sequence(self):
         # expected non engine event sequence from executing csv_hello_world pipeline
         return [
-            "PipelineStartingEvent",
-            "PipelineStartEvent",
+            "RunStartingEvent",
+            "RunStartEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
+            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
-            "PipelineSuccessEvent",
+            "RunSuccessEvent",
         ]
 
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
@@ -326,9 +326,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # block until run finishes
         graphql_context.instance.run_launcher.join()
@@ -341,7 +339,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
 
         non_engine_event_types = [
             message["__typename"]
@@ -372,9 +370,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         def _fetch_events(after):
             events_result = execute_dagster_graphql(
@@ -387,7 +383,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+            assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
             return events_result.data["pipelineRunOrError"]["events"]
 
         full_logs = []
@@ -470,35 +466,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         logs = result["messages"]
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
-
-    def test_basic_inmemory_sync_execution(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        result = sync_execute_get_run_log_data(
-            context=graphql_context,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                    "runConfigData": csv_hello_world_solids_config(),
-                }
-            },
-        )
-
-        logs = result["messages"]
-        assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
-
-        start_event = first_event_of_type(logs, "PipelineStartEvent")
-        assert start_event["level"] == "DEBUG"
-        assert start_event["eventType"] == "PIPELINE_START"
-
-        sum_solid_output = get_step_output_event(logs, "sum_solid")
-        assert sum_solid_output["stepKey"] == "sum_solid"
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
     def test_basic_filesystem_sync_execution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -507,10 +477,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": merge_dicts(
-                        csv_hello_world_solids_config(),
-                        {"intermediate_storage": {"filesystem": {}}},
-                    ),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "mode": "default",
                 }
             },
@@ -518,11 +485,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         logs = result["messages"]
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
-        assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
+        assert first_event_of_type(logs, "RunStartEvent")["level"] == "DEBUG"
 
         sum_solid_output = get_step_output_event(logs, "sum_solid")
         assert sum_solid_output["stepKey"] == "sum_solid"
@@ -547,7 +514,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = result.data["launchPipelineExecution"]["run"]
         run_id = run["runId"]

@@ -1,4 +1,4 @@
-from dagster import Float, In, InputDefinition, Int, List, Out, OutputDefinition, graph, op
+from dagster import Float, In, Int, List, Out, graph, op
 
 
 @op(out=Out(Int))
@@ -16,17 +16,17 @@ def div_two(num):
     return num / 2
 
 
-@graph(output_defs=[OutputDefinition(Int)])
+@graph
 def emit_two():
     return add([emit_one(), emit_one()])
 
 
-@graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+@graph
 def add_four(num):
     return add([emit_two(), emit_two(), num])
 
 
-@graph(input_defs=[InputDefinition("num", Float)], output_defs=[OutputDefinition(Float)])
+@graph
 def div_four(num):
     return div_two(num=div_two(num))
 

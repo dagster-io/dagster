@@ -13,9 +13,10 @@ export default {
 export const Default = () => {
   return (
     <Group spacing={24} direction="column">
+      <NonIdealState icon="star" title="This run is currently queued." />
       <NonIdealState
         icon="star"
-        description="This run is currently queued."
+        title="This run is currently queued."
         action={<a href={`/instance/runs?q=status%3AQUEUED`}>View queued runs</a>}
       />
       <NonIdealState
@@ -25,7 +26,7 @@ export const Default = () => {
           <div>
             This instance does not have any schedules defined. Visit the{' '}
             <a
-              href="https://docs.dagster.io/overview/schedules-sensors/schedules"
+              href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors"
               target="_blank"
               rel="noreferrer"
             >

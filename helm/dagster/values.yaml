@@ -428,6 +428,7 @@ runLauncher:
       nameOverride: "celery-workers"
 
       # Additional config options for Celery, applied to all queues.
+      # These can be overridden per-queue below.
       # For available options, see:
       # https://docs.celeryproject.org/en/stable/userguide/configuration.html
       configSource: {}
@@ -437,11 +438,14 @@ runLauncher:
       #
       # Optionally, labels and node selectors can be set on the Celery queue's workers.
       # Specifying a queue's node selector will override any existing node selector defaults.
+      # configSource will be merged with the shared configSource above.
       workerQueues:
         - name: "dagster"
           replicaCount: 2
           labels: {}
           nodeSelector: {}
+          configSource: {}
+          additionalCeleryArgs: []
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -604,6 +608,9 @@ redis:
   # Note: If `internal` is true, then redis pod will be created regardless of `enabled` flag.
   internal: false
 
+  usePassword: false
+  password: "test"
+
   # Redis host URL
   host: ""
 
@@ -615,6 +622,11 @@ redis:
 
   # Set DB number for Redis backend DB (default 0)
   backendDbNumber: 0
+
+  # If your Redis connection needs configuration options, you can use this field to specific the
+  # exact connection URL needed, rather than letting it be constructed from the Helm values.
+  brokerUrl: ""
+  backendUrl: ""
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers

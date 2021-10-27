@@ -1,7 +1,7 @@
 {% macro day_diff_from_run(start) %}
     DATEDIFF(
         day,
-        "{{start}}"::timestamp,
-        '{{ var("run_date") }}'::timestamp
+        "{{start}}"::int::timestamp,
+        current_date()
     )
 {% endmacro %}

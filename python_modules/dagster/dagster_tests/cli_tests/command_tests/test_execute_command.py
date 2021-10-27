@@ -114,7 +114,7 @@ def test_execute_preset_command():
             ],
         )
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         # Can't use --preset with --config
         bad_res = runner.invoke(
@@ -366,7 +366,7 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
                 "RepositoryDefinition. Got 123."
             ),
         ):
@@ -387,7 +387,7 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
                 "RepositoryDefinition."
             ),
         ):
@@ -426,65 +426,6 @@ def test_default_memory_run_storage():
         assert result.success
 
 
-def test_override_with_in_memory_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
-def test_override_with_filesystem_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "filesystem_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
 def test_multiproc():
     with instance_for_test():
         runner = CliRunner()
@@ -503,7 +444,7 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         add_result = runner_pipeline_or_job_execute(
             runner,
@@ -517,7 +458,7 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
 
 def test_multiproc_invalid():
@@ -537,8 +478,9 @@ def test_multiproc_invalid():
         ],
     )
     # which is invalid for multiproc
-    assert add_result.exit_code != 0
-    assert "DagsterUnmetExecutorRequirementsError" in add_result.output
+    assert add_result.exit_code == 0
+    # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
+    assert re.match(r"Using temporary directory [a-zA-Z0-9/_]+ for storage", add_result.output)
 
 
 def test_tags_pipeline_or_job():

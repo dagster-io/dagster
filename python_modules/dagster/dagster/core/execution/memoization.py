@@ -30,5 +30,5 @@ def validate_reexecution_memoization(
     raise DagsterInvariantViolationError(
         "Cannot perform reexecution with in-memory io managers.\n"
         "To enable reexecution, you can set a persistent io manager, such as the "
-        'fs_io_manager, in the resource_defs argument on your ModeDefinition: resource_defs={"io_manager": fs_io_manager}'
+        'fs_io_manager, in the resource_defs argument on your job: resource_defs={"io_manager": fs_io_manager}'
     )

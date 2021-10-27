@@ -10,8 +10,9 @@ import {showLaunchError} from '../execute/showLaunchError';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -34,11 +35,11 @@ import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
 } from './types/LaunchPipelineReexecution';
-import {RunFragment} from './types/RunFragment';
 import {
-  RunPipelineRunEventFragment,
-  RunPipelineRunEventFragment_ExecutionStepFailureEvent,
-} from './types/RunPipelineRunEventFragment';
+  RunDagsterRunEventFragment,
+  RunDagsterRunEventFragment_ExecutionStepFailureEvent,
+} from './types/RunDagsterRunEventFragment';
+import {RunFragment} from './types/RunFragment';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
@@ -46,16 +47,16 @@ interface RunProps {
   run?: RunFragment;
 }
 
-const runStatusEmoji = (status: PipelineRunStatus) => {
+const runStatusFavicon = (status: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.CANCELED:
-    case PipelineRunStatus.CANCELING:
-    case PipelineRunStatus.FAILURE:
-      return '🔴';
-    case PipelineRunStatus.SUCCESS:
-      return '🟢';
+    case RunStatus.CANCELED:
+    case RunStatus.CANCELING:
+    case RunStatus.FAILURE:
+      return '/favicon-run-failed.svg';
+    case RunStatus.SUCCESS:
+      return '/favicon-run-success.svg';
     default:
-      return '🔵';
+      return '/favicon-run-pending.svg';
   }
 };
 
@@ -67,16 +68,15 @@ export const Run: React.FC<RunProps> = (props) => {
     defaults: {selection: ''},
   });
 
+  useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
-    run
-      ? `${runStatusEmoji(run.status)} ${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]`
-      : `Run: ${runId}`,
+    run ? `${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]` : `Run: ${runId}`,
   );
 
-  const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
+  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
+    ) as RunDagsterRunEventFragment_ExecutionStepFailureEvent;
 
     if (errorNode) {
       showCustomAlert({
@@ -127,7 +127,7 @@ interface RunWithDataProps {
   metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
   onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
+  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
 }
 
 const logTypeFromQuery = (queryLogType: string) => {
@@ -279,15 +279,15 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   };
 
   const gantt = (metadata: IRunMetadataDict) => {
-    if (logs.loading) {
+    if (logs.loading || !run) {
       return <GanttChartLoadingState runId={runId} />;
     }
 
-    if (run?.status === 'QUEUED') {
+    if (run.status === 'QUEUED') {
       return <QueuedState runId={runId} />;
     }
 
-    if (run?.executionPlan && runtimeGraph) {
+    if (run.executionPlan && runtimeGraph) {
       return (
         <GanttChart
           options={{

@@ -21,9 +21,9 @@ from .utils import delete_job
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
-    """RunLauncher that starts a Kubernetes Job for each pipeline run.
+    """RunLauncher that starts a Kubernetes Job for each Dagster job run.
 
-    Encapsulates each pipeline run in a separate, isolated invocation of ``dagster-graphql``.
+    Encapsulates each run in a separate, isolated invocation of ``dagster-graphql``.
 
     You may configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:
@@ -34,7 +34,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             module: dagster_k8s.launcher
             class: K8sRunLauncher
             config:
-                service_account_name: pipeline_run_service_account
+                service_account_name: your_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret
@@ -299,7 +299,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             args=["dagster", "api", "execute_run", input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component="run_coordinator",
+            component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
@@ -351,9 +351,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate pipeline; can_terminate returned {}".format(
-                    can_terminate
-                ),
+                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
                 pipeline_run=run,
                 cls=self.__class__,
             )
@@ -367,13 +365,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             termination_result = delete_job(job_name=job_name, namespace=self.job_namespace)
             if termination_result:
                 self._instance.report_engine_event(
-                    message="Pipeline was terminated successfully.",
+                    message="Run was terminated successfully.",
                     pipeline_run=run,
                     cls=self.__class__,
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Pipeline was not terminated successfully; delete_job returned {}".format(
+                    message="Run was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
                     pipeline_run=run,
@@ -382,7 +380,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return termination_result
         except Exception:  # pylint: disable=broad-except
             self._instance.report_engine_event(
-                message="Pipeline was not terminated successfully; encountered error in delete_job",
+                message="Run was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())

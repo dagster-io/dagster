@@ -9,9 +9,8 @@ from dagster import (
     String,
     check_dagster_type,
     dagster_type_loader,
-    execute_pipeline,
-    pipeline,
-    solid,
+    job,
+    op,
 )
 
 
@@ -65,7 +64,7 @@ else:
     )
 
 
-@solid
+@op
 def sort_by_calories(context, cereals: LessSimpleDataFrame):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(
@@ -80,16 +79,15 @@ def sort_by_calories(context, cereals: LessSimpleDataFrame):
     )
 
 
-@pipeline
-def custom_type_pipeline():
+@job
+def custom_type_job():
     sort_by_calories()
 
 
 if __name__ == "__main__":
-    execute_pipeline(
-        custom_type_pipeline,
-        {
-            "solids": {
+    custom_type_job.execute_in_process(
+        run_config={
+            "ops": {
                 "sort_by_calories": {
                     "inputs": {"cereals": {"csv_path": "cereal.csv"}}
                 }

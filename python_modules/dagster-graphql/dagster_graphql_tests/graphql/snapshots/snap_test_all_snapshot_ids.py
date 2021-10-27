@@ -212,38 +212,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -707,29 +675,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -756,6 +701,59 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         ],
         "given_name": null,
         "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.99f8eb4a88ea9a68393302634d514aa5abf8514b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"alp_a\\": {}, \\"alp_b\\": {}, \\"noop_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.28035361ae42a6bf7a7ad8e82c7f0aac1768525f"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.99f8eb4a88ea9a68393302634d514aa5abf8514b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -794,77 +792,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.c90e0ebd9c26f679b0fb66b1da8175f8f34a09e1": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"alp_a\\": {}, \\"alp_b\\": {}, \\"noop_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.28035361ae42a6bf7a7ad8e82c7f0aac1768525f"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.c90e0ebd9c26f679b0fb66b1da8175f8f34a09e1",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -895,29 +822,6 @@ snapshots['test_all_snapshot_ids 1'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -1171,7 +1075,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.c90e0ebd9c26f679b0fb66b1da8175f8f34a09e1"
+      "root_config_key": "Shape.99f8eb4a88ea9a68393302634d514aa5abf8514b"
     }
   ],
   "name": "asset_lineage_pipeline",
@@ -1279,7 +1183,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 10'] = 'a22d16e6fbbb5f38ebe44dab0d9317f5c80821bf'
+snapshots['test_all_snapshot_ids 10'] = '380cc909246845a88fc77b671efa899843b792e3'
 
 snapshots['test_all_snapshot_ids 11'] = '''{
   "__class__": "PipelineSnapshot",
@@ -1481,38 +1385,6 @@ snapshots['test_all_snapshot_ids 11'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -2171,29 +2043,6 @@ snapshots['test_all_snapshot_ids 11'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -2258,6 +2107,59 @@ snapshots['test_all_snapshot_ids 11'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.a9f93957427d1da6d5c86e0ecc4ecb2eaf3c88d6": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.2c26874cb8ab2e6a7e6aaf6a8613343df2315e99"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.a9f93957427d1da6d5c86e0ecc4ecb2eaf3c88d6",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -2288,29 +2190,6 @@ snapshots['test_all_snapshot_ids 11'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -2378,77 +2257,6 @@ snapshots['test_all_snapshot_ids 11'] = '''{
         ],
         "given_name": null,
         "key": "Shape.fc7a2f7afa9f18d675103b54bdc6f5a5012b04c6",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.ff6defef24575bd9f3680873833ad3c26cba7da3": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.2c26874cb8ab2e6a7e6aaf6a8613343df2315e99"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.ff6defef24575bd9f3680873833ad3c26cba7da3",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -2665,7 +2473,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.ff6defef24575bd9f3680873833ad3c26cba7da3"
+      "root_config_key": "Shape.a9f93957427d1da6d5c86e0ecc4ecb2eaf3c88d6"
     }
   ],
   "name": "composites_pipeline",
@@ -2993,7 +2801,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 12'] = '7a0db62aacaf0858920713e542dc416535a063f5'
+snapshots['test_all_snapshot_ids 12'] = 'd63ecedb0840f745a7d430623db8f9e830a0ba9d'
 
 snapshots['test_all_snapshot_ids 13'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3169,6 +2977,29 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -3195,38 +3026,6 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -3470,23 +3269,23 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -3548,6 +3347,82 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.b59e30e90d1d73d983f6a6e8adf0c43123278b4a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -3565,52 +3440,6 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -3666,77 +3495,6 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         ],
         "given_name": null,
         "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.a323c64031e2b57911885d982b74a852a51e7aa0": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.b59e30e90d1d73d983f6a6e8adf0c43123278b4a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.a323c64031e2b57911885d982b74a852a51e7aa0",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -3833,6 +3591,29 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -3898,29 +3679,6 @@ snapshots['test_all_snapshot_ids 13'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -4031,6 +3789,22 @@ snapshots['test_all_snapshot_ids 13'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -4207,18 +3981,18 @@ snapshots['test_all_snapshot_ids 13'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.a323c64031e2b57911885d982b74a852a51e7aa0"
+      "root_config_key": "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93"
     }
   ],
   "name": "csv_hello_world",
@@ -4299,7 +4073,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 14'] = '71da8227c5227b3e8a2d1ee30ba74b0e42aeca56'
+snapshots['test_all_snapshot_ids 14'] = 'b9cba8fc3833bd35a92d085c833fb2c176a1c3b0'
 
 snapshots['test_all_snapshot_ids 15'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4475,6 +4249,29 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -4501,38 +4298,6 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -4776,23 +4541,23 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -4854,6 +4619,82 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.b59e30e90d1d73d983f6a6e8adf0c43123278b4a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -4871,52 +4712,6 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -4972,77 +4767,6 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         ],
         "given_name": null,
         "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.a323c64031e2b57911885d982b74a852a51e7aa0": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.b59e30e90d1d73d983f6a6e8adf0c43123278b4a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.a323c64031e2b57911885d982b74a852a51e7aa0",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -5139,6 +4863,29 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -5204,29 +4951,6 @@ snapshots['test_all_snapshot_ids 15'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -5337,6 +5061,22 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -5513,18 +5253,18 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.a323c64031e2b57911885d982b74a852a51e7aa0"
+      "root_config_key": "Shape.3d6e40b8d0dddca6fdb3e0d4476da12ebd51ae93"
     }
   ],
   "name": "csv_hello_world_df_input",
@@ -5605,7 +5345,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 16'] = '325b0ea3ca89d8a20c4ff1596865baa2f0b2b46e'
+snapshots['test_all_snapshot_ids 16'] = '0ec39f5264dfebdaf4f116aa382f520c3d50c42f'
 
 snapshots['test_all_snapshot_ids 17'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5781,6 +5521,29 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -5807,38 +5570,6 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -6082,23 +5813,23 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -6163,6 +5894,59 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.33e8054768b0cd845d8386d1bb26ff7bddf99a89": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.24296dfa65b1ece08ac690b0da05733a0098a6b7"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.33e8054768b0cd845d8386d1bb26ff7bddf99a89",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -6186,6 +5970,29 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -6203,123 +6010,6 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.72700450de0b3f248b800dae537775ba97e33d2d": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.24296dfa65b1ece08ac690b0da05733a0098a6b7"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.72700450de0b3f248b800dae537775ba97e33d2d",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -6436,6 +6126,29 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -6466,29 +6179,6 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -6599,6 +6289,22 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -6754,18 +6460,18 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.72700450de0b3f248b800dae537775ba97e33d2d"
+      "root_config_key": "Shape.33e8054768b0cd845d8386d1bb26ff7bddf99a89"
     }
   ],
   "name": "csv_hello_world_two",
@@ -6812,7 +6518,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 18'] = '897c5f29c14db09feacab1da4d08dadd2a4485fa'
+snapshots['test_all_snapshot_ids 18'] = '6d3361813d56b1132dab0c1851b63dd1e867d133'
 
 snapshots['test_all_snapshot_ids 19'] = '''{
   "__class__": "PipelineSnapshot",
@@ -6988,6 +6694,29 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -7014,38 +6743,6 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -7289,23 +6986,23 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -7367,6 +7064,82 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.44fddb6660e68964451da901372a7fab64965353": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.d32aced6bbe156f2c759c7be934cb688ff2d591a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44fddb6660e68964451da901372a7fab64965353",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -7384,52 +7157,6 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -7546,71 +7273,23 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ab31cffb72982bd88b0e5b5cc96a0d52e4b71ded": {
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.d32aced6bbe156f2c759c7be934cb688ff2d591a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
           }
         ],
         "given_name": null,
-        "key": "Shape.ab31cffb72982bd88b0e5b5cc96a0d52e4b71ded",
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -7732,29 +7411,6 @@ snapshots['test_all_snapshot_ids 19'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -7859,6 +7515,22 @@ snapshots['test_all_snapshot_ids 19'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -8056,18 +7728,18 @@ snapshots['test_all_snapshot_ids 19'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.ab31cffb72982bd88b0e5b5cc96a0d52e4b71ded"
+      "root_config_key": "Shape.44fddb6660e68964451da901372a7fab64965353"
     }
   ],
   "name": "csv_hello_world_with_expectations",
@@ -8182,9 +7854,9 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '021cef0ca767128d1b29ae424a935b13796048f7'
+snapshots['test_all_snapshot_ids 2'] = 'bbb7d7d94f614593ea31ccf5c74dd86afd5fe6c2'
 
-snapshots['test_all_snapshot_ids 20'] = 'e557e14c39e8fe705f11fbc1a4d3c75b3afe9f88'
+snapshots['test_all_snapshot_ids 20'] = '407c33c4e21e4557507897c005fb34793938f051'
 
 snapshots['test_all_snapshot_ids 21'] = '''{
   "__class__": "PipelineSnapshot",
@@ -8360,6 +8032,29 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -8386,38 +8081,6 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -8661,23 +8324,76 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.0a925e589b392dbd9c309ed8411a5373902e8363": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
         "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.a345c2bd1490b60a20b00e0b8db645f24e7c3dc5"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.0a925e589b392dbd9c309ed8411a5373902e8363",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "base_dir",
+            "type_key": "StringSourceType"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -8762,6 +8478,29 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -8837,52 +8576,6 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         ],
         "given_name": null,
         "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -9024,6 +8717,29 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -9054,100 +8770,6 @@ snapshots['test_all_snapshot_ids 21'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e7241cb95ea8fcf05b20751a11d89e3b6c68bcfa": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.a345c2bd1490b60a20b00e0b8db645f24e7c3dc5"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e7241cb95ea8fcf05b20751a11d89e3b6c68bcfa",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -9258,6 +8880,22 @@ snapshots['test_all_snapshot_ids 21'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -9502,18 +9140,18 @@ snapshots['test_all_snapshot_ids 21'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.e7241cb95ea8fcf05b20751a11d89e3b6c68bcfa"
+      "root_config_key": "Shape.0a925e589b392dbd9c309ed8411a5373902e8363"
     }
   ],
   "name": "dynamic_pipeline",
@@ -9694,7 +9332,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 22'] = '14d48a3bc2cfbb63e0f8bd4b6e809adaa65da7ba'
+snapshots['test_all_snapshot_ids 22'] = 'e11932fa1ec76e1efa67e154e0f1455226a11729'
 
 snapshots['test_all_snapshot_ids 23'] = '''{
   "__class__": "PipelineSnapshot",
@@ -9934,38 +9572,6 @@ snapshots['test_all_snapshot_ids 23'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -10427,77 +10033,6 @@ snapshots['test_all_snapshot_ids 23'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.5247a94eeffe247a936655304afdc4739301cf9a": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}, \\"retry_count\\": {\\"config\\": {\\"count\\": 0}}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.f994e46fce6cf828439d2b351cc1dd04c3ccf616"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"collect\\": {}, \\"fail\\": {}, \\"fail_2\\": {}, \\"fail_3\\": {}, \\"reset\\": {}, \\"spawn\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.267b4eec6f6315d7d7110ea363bb19a26a6eb113"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.5247a94eeffe247a936655304afdc4739301cf9a",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -10533,29 +10068,6 @@ snapshots['test_all_snapshot_ids 23'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.7df68601e94646b87c0edb05b7142282503f0f64": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -10579,23 +10091,53 @@ snapshots['test_all_snapshot_ids 23'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.94120ccb0c48fa34953791f151af58e56581d22c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
         "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}, \\"retry_count\\": {\\"config\\": {\\"count\\": 0}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.f994e46fce6cf828439d2b351cc1dd04c3ccf616"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"collect\\": {}, \\"fail\\": {}, \\"fail_2\\": {}, \\"fail_3\\": {}, \\"reset\\": {}, \\"spawn\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.267b4eec6f6315d7d7110ea363bb19a26a6eb113"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.94120ccb0c48fa34953791f151af58e56581d22c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -10719,29 +10261,6 @@ snapshots['test_all_snapshot_ids 23'] = '''{
         ],
         "given_name": null,
         "key": "Shape.dc1eacbaac67d3ef292c2c343ce6fd5c3560d40a",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -11146,7 +10665,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
           "name": "retry_count"
         }
       ],
-      "root_config_key": "Shape.5247a94eeffe247a936655304afdc4739301cf9a"
+      "root_config_key": "Shape.94120ccb0c48fa34953791f151af58e56581d22c"
     }
   ],
   "name": "eventually_successful",
@@ -11290,7 +10809,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 24'] = 'f8c155b21204c32bfbfb3185def72ba1c33d8e32'
+snapshots['test_all_snapshot_ids 24'] = '0a57042e9dea1b235d3b6e63b093ace55bec0bb9'
 
 snapshots['test_all_snapshot_ids 25'] = '''{
   "__class__": "PipelineSnapshot",
@@ -11492,38 +11011,6 @@ snapshots['test_all_snapshot_ids 25'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -11767,6 +11254,59 @@ snapshots['test_all_snapshot_ids 25'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.07c141b38785c38657ec77afa4127560533a23cf": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"hard_fail_or_0\\": {\\"config\\": {\\"fail\\": false}}, \\"increment\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.7586665b4f8a1c2a1dea6cb5bfb01dd01a32e293"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.07c141b38785c38657ec77afa4127560533a23cf",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -11984,29 +11524,6 @@ snapshots['test_all_snapshot_ids 25'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -12124,100 +11641,6 @@ snapshots['test_all_snapshot_ids 25'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e2b5d33a471be356e121a77ceea2400dab75f8a3": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"hard_fail_or_0\\": {\\"config\\": {\\"fail\\": false}}, \\"increment\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.7586665b4f8a1c2a1dea6cb5bfb01dd01a32e293"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e2b5d33a471be356e121a77ceea2400dab75f8a3",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -12485,7 +11908,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.e2b5d33a471be356e121a77ceea2400dab75f8a3"
+      "root_config_key": "Shape.07c141b38785c38657ec77afa4127560533a23cf"
     }
   ],
   "name": "hard_failer",
@@ -12559,7 +11982,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 26'] = '36c8169e2fa211de4c4b698e4a71c3de749d671f'
+snapshots['test_all_snapshot_ids 26'] = '37458d7d5e127419fe0eeff12e7f30a6440cc86b'
 
 snapshots['test_all_snapshot_ids 27'] = '''{
   "__class__": "PipelineSnapshot",
@@ -12735,6 +12158,29 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -12761,38 +12207,6 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -13036,23 +12450,23 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -13137,6 +12551,29 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -13160,7 +12597,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.4b608f9ed30ad975f2411cac621b298a63eca9da": {
+      "Shape.51e2d917adfe21f653629d2d194274ae17bc69d8": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -13179,15 +12616,6 @@ snapshots['test_all_snapshot_ids 27'] = '''{
           },
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
@@ -13198,11 +12626,11 @@ snapshots['test_all_snapshot_ids 27'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -13212,19 +12640,10 @@ snapshots['test_all_snapshot_ids 27'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.800f644991ef71d03133ae0d01e27cf59dfbc9bc"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.4b608f9ed30ad975f2411cac621b298a63eca9da",
+        "key": "Shape.51e2d917adfe21f653629d2d194274ae17bc69d8",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -13266,29 +12685,6 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.800f644991ef71d03133ae0d01e27cf59dfbc9bc": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -13309,29 +12705,6 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         ],
         "given_name": null,
         "key": "Shape.800f644991ef71d03133ae0d01e27cf59dfbc9bc",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -13402,6 +12775,29 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -13432,29 +12828,6 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -13521,6 +12894,22 @@ snapshots['test_all_snapshot_ids 27'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -13655,18 +13044,18 @@ snapshots['test_all_snapshot_ids 27'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.4b608f9ed30ad975f2411cac621b298a63eca9da"
+      "root_config_key": "Shape.51e2d917adfe21f653629d2d194274ae17bc69d8"
     }
   ],
   "name": "hello_world_with_tags",
@@ -13708,7 +13097,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 28'] = '61574d2f3f51995138b713d0161b39300a947e1f'
+snapshots['test_all_snapshot_ids 28'] = '1e0387588b054d74561b198fbde08a9dcc35539d'
 
 snapshots['test_all_snapshot_ids 29'] = '''{
   "__class__": "PipelineSnapshot",
@@ -13916,38 +13305,6 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -14240,6 +13597,59 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.29631ee30e87a6a03864aa8b5d8b0431598dfe61": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.5139b59598a4a4307257868733385b3175e06893"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.29631ee30e87a6a03864aa8b5d8b0431598dfe61",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -14393,29 +13803,6 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -14539,29 +13926,6 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -14579,77 +13943,6 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.f4cbdd95fabe9138d935e3fae496873986d17cef": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.5139b59598a4a4307257868733385b3175e06893"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.f4cbdd95fabe9138d935e3fae496873986d17cef",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -14838,7 +14131,7 @@ snapshots['test_all_snapshot_ids 29'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.f4cbdd95fabe9138d935e3fae496873986d17cef"
+      "root_config_key": "Shape.29631ee30e87a6a03864aa8b5d8b0431598dfe61"
     }
   ],
   "name": "infinite_loop_pipeline",
@@ -15078,38 +14371,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -15480,6 +14741,59 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.4a97e1bf7e705f26f2ce40aeb4c2063f949f5e26": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"tag_asset_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.4624799494d58c315c1b60caa7012c36bdc7a2cb"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.4a97e1bf7e705f26f2ce40aeb4c2063f949f5e26",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -15561,29 +14875,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -15648,77 +14939,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.c09240ee3d22add7507afabbc73252ac16f7de1b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"tag_asset_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.4624799494d58c315c1b60caa7012c36bdc7a2cb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.c09240ee3d22add7507afabbc73252ac16f7de1b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -15749,29 +14969,6 @@ snapshots['test_all_snapshot_ids 3'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -15983,7 +15180,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.c09240ee3d22add7507afabbc73252ac16f7de1b"
+      "root_config_key": "Shape.4a97e1bf7e705f26f2ce40aeb4c2063f949f5e26"
     }
   ],
   "name": "asset_tag_pipeline",
@@ -16023,7 +15220,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = '752f480236dc4e66c2dbd2efddead99f6cd95191'
+snapshots['test_all_snapshot_ids 30'] = 'd7199814fae72c1939dfdbcfddd907c41c8c37fd'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
@@ -16225,38 +15422,6 @@ snapshots['test_all_snapshot_ids 31'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -16708,29 +15873,6 @@ snapshots['test_all_snapshot_ids 31'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -16763,7 +15905,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.99b8535eaa38290790e4beff3d266247042e22fa": {
+      "Shape.9b6b81031c8d3d91fd894ff39f5a56bf67366be1": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -16779,15 +15921,6 @@ snapshots['test_all_snapshot_ids 31'] = '''{
             "is_required": false,
             "name": "execution",
             "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -16815,19 +15948,10 @@ snapshots['test_all_snapshot_ids 31'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.3ce25333fa832e83592b2d9c5ff9facdec7a9e04"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.99b8535eaa38290790e4beff3d266247042e22fa",
+        "key": "Shape.9b6b81031c8d3d91fd894ff39f5a56bf67366be1",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -16896,29 +16020,6 @@ snapshots['test_all_snapshot_ids 31'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -17130,7 +16231,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.99b8535eaa38290790e4beff3d266247042e22fa"
+      "root_config_key": "Shape.9b6b81031c8d3d91fd894ff39f5a56bf67366be1"
     }
   ],
   "name": "materialization_pipeline",
@@ -17170,7 +16271,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 32'] = 'cef0b84cb61583fc390d27ef614907417df49a49'
+snapshots['test_all_snapshot_ids 32'] = '7d3d8f19e0091b03da584358bd732e44caadea62'
 
 snapshots['test_all_snapshot_ids 33'] = '''{
   "__class__": "PipelineSnapshot",
@@ -17372,38 +16473,6 @@ snapshots['test_all_snapshot_ids 33'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -17778,6 +16847,59 @@ snapshots['test_all_snapshot_ids 33'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.2b2f32ec0e5f739ae34c81197917c93f85d44eb5": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.d0b1433c0b88701844499828b79c37b8e96b3d77"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.2b2f32ec0e5f739ae34c81197917c93f85d44eb5",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -17899,100 +17021,6 @@ snapshots['test_all_snapshot_ids 33'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.92cb6d5a793434c42f98b9f30548c900ca4e977d": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.d0b1433c0b88701844499828b79c37b8e96b3d77"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.92cb6d5a793434c42f98b9f30548c900ca4e977d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -18128,29 +17156,6 @@ snapshots['test_all_snapshot_ids 33'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -18370,7 +17375,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.92cb6d5a793434c42f98b9f30548c900ca4e977d"
+      "root_config_key": "Shape.2b2f32ec0e5f739ae34c81197917c93f85d44eb5"
     }
   ],
   "name": "more_complicated_config",
@@ -18437,7 +17442,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 34'] = '40615c7b44da22ee3390682dea49d0c2521db9f9'
+snapshots['test_all_snapshot_ids 34'] = '714da580f31c7d6d529e85e5e76552df2e5a6bf9'
 
 snapshots['test_all_snapshot_ids 35'] = '''{
   "__class__": "PipelineSnapshot",
@@ -18654,38 +17659,6 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -19010,6 +17983,59 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.3e77c728b00a7ab580c1e17b4c32391d1aa019f8": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.5bbac6808da091a190b86e54ee6141db520e7a9e"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.3e77c728b00a7ab580c1e17b4c32391d1aa019f8",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -19182,29 +18208,6 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -19322,100 +18325,6 @@ snapshots['test_all_snapshot_ids 35'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.dd237e5c0f22966001d80baccca6017729afef71": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.5bbac6808da091a190b86e54ee6141db520e7a9e"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.dd237e5c0f22966001d80baccca6017729afef71",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -19627,7 +18536,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.dd237e5c0f22966001d80baccca6017729afef71"
+      "root_config_key": "Shape.3e77c728b00a7ab580c1e17b4c32391d1aa019f8"
     }
   ],
   "name": "more_complicated_nested_config",
@@ -19658,7 +18567,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = '6d73f0938c2d6a7b68cfbec4a2d4bda17a4d1a05'
+snapshots['test_all_snapshot_ids 36'] = 'e212acc955fa2729307019d0d8a6b67b49fe14fb'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",
@@ -19860,38 +18769,6 @@ snapshots['test_all_snapshot_ids 37'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -20294,6 +19171,59 @@ snapshots['test_all_snapshot_ids 37'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.7148533ddd928b4d21af44e121185f39f14bb4f7": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"solid_asset_a\\": {}, \\"solid_asset_b\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.8d9af8803c982dd39b25e0ca1fe10e7e0ca03146"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.7148533ddd928b4d21af44e121185f39f14bb4f7",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -20311,29 +19241,6 @@ snapshots['test_all_snapshot_ids 37'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -20475,29 +19382,6 @@ snapshots['test_all_snapshot_ids 37'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -20515,77 +19399,6 @@ snapshots['test_all_snapshot_ids 37'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.f8913028401c8553c7c5396ac9553af58eda1f59": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"solid_asset_a\\": {}, \\"solid_asset_b\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.8d9af8803c982dd39b25e0ca1fe10e7e0ca03146"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.f8913028401c8553c7c5396ac9553af58eda1f59",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -20795,7 +19608,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.f8913028401c8553c7c5396ac9553af58eda1f59"
+      "root_config_key": "Shape.7148533ddd928b4d21af44e121185f39f14bb4f7"
     }
   ],
   "name": "multi_asset_pipeline",
@@ -20869,7 +19682,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 38'] = '022ca7832a80975732647856e44b2e83b70ce118'
+snapshots['test_all_snapshot_ids 38'] = '5661d7612b74d80b365e768ce79b1d98f9ea0c9f'
 
 snapshots['test_all_snapshot_ids 39'] = '''{
   "__class__": "PipelineSnapshot",
@@ -21045,6 +19858,29 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -21071,38 +19907,6 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -21346,23 +20150,23 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -21424,6 +20228,29 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -21441,6 +20268,165 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.4b60a410c9058fc94082d59ec90889414a6761cc": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.bef10374a7619a637bcc228e2146e8ee88399f1f"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"return_six\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.4b60a410c9058fc94082d59ec90889414a6761cc",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.5306fc278121643bf33132433d20f39d47e5e1ec": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.925f3ae96836d265d0fb075a626a325f5cba738b"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"return_six\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.5306fc278121643bf33132433d20f39d47e5e1ec",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.6441b5543b420209f8bef18dd83e7a45bee8bab7": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.d88e9c40a16e151ee61aabfa8ee02817e19d1925"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"return_six\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.6441b5543b420209f8bef18dd83e7a45bee8bab7",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -21476,123 +20462,6 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         ],
         "given_name": null,
         "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.771cd01f776e2dae26d9c10c78998f266549739f": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.d88e9c40a16e151ee61aabfa8ee02817e19d1925"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"return_six\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.771cd01f776e2dae26d9c10c78998f266549739f",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -21709,77 +20578,6 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.b9f5bcd3d33172e5c7cd8105235aa9c6406fcc08": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.925f3ae96836d265d0fb075a626a325f5cba738b"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"return_six\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.b9f5bcd3d33172e5c7cd8105235aa9c6406fcc08",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.bef10374a7619a637bcc228e2146e8ee88399f1f": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -21812,6 +20610,29 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -21829,77 +20650,6 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.d025f52d17b7998d6bfd522275a2cb1ddc6f389a": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.bef10374a7619a637bcc228e2146e8ee88399f1f"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"return_six\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.fd6fa5bda84b2d9bf99daa92ffaa130e49aab8ca"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.d025f52d17b7998d6bfd522275a2cb1ddc6f389a",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -21959,29 +20709,6 @@ snapshots['test_all_snapshot_ids 39'] = '''{
         ],
         "given_name": null,
         "key": "Shape.de97af1dab49255e847483b3b93bf53f75ab76d7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -22051,6 +20778,22 @@ snapshots['test_all_snapshot_ids 39'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -22185,18 +20928,18 @@ snapshots['test_all_snapshot_ids 39'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.771cd01f776e2dae26d9c10c78998f266549739f"
+      "root_config_key": "Shape.6441b5543b420209f8bef18dd83e7a45bee8bab7"
     },
     {
       "__class__": "ModeDefSnap",
@@ -22223,18 +20966,18 @@ snapshots['test_all_snapshot_ids 39'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.b9f5bcd3d33172e5c7cd8105235aa9c6406fcc08"
+      "root_config_key": "Shape.5306fc278121643bf33132433d20f39d47e5e1ec"
     },
     {
       "__class__": "ModeDefSnap",
@@ -22275,18 +21018,18 @@ snapshots['test_all_snapshot_ids 39'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.d025f52d17b7998d6bfd522275a2cb1ddc6f389a"
+      "root_config_key": "Shape.4b60a410c9058fc94082d59ec90889414a6761cc"
     }
   ],
   "name": "multi_mode_with_loggers",
@@ -22326,9 +21069,9 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 4'] = 'db650eaaa67afe25fc5e22c4f41df23b7905ea55'
+snapshots['test_all_snapshot_ids 4'] = 'a5caeb120d0b5aa88d2503b62f8307fd5803ebd6'
 
-snapshots['test_all_snapshot_ids 40'] = 'c52f74e84706c6329056c253e11477f9c8af4e5b'
+snapshots['test_all_snapshot_ids 40'] = '8476f4a9d936410b6ffe6a2ed3a2df24a8acf0c4'
 
 snapshots['test_all_snapshot_ids 41'] = '''{
   "__class__": "PipelineSnapshot",
@@ -22530,38 +21273,6 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -22828,77 +21539,6 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.14493d7be9eb4a5a47ab1097bf1f61853ae230a0": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "resources",
-            "type_key": "Shape.3126959eee8a3298c0666a45577fc71ab60e09ff"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"apply_to_three\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.68aa80b83eeb19f6dadca37a62c43d2e4fa06a12"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.14493d7be9eb4a5a47ab1097bf1f61853ae230a0",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -23032,77 +21672,6 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.6289192a1b68237960bc57c74ba65720d006243b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "resources",
-            "type_key": "Shape.a1b764225632d54b96a7b06985c831a7cff72498"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"apply_to_three\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.68aa80b83eeb19f6dadca37a62c43d2e4fa06a12"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.6289192a1b68237960bc57c74ba65720d006243b",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.68aa80b83eeb19f6dadca37a62c43d2e4fa06a12": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -23164,6 +21733,59 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.710401a2657dfe5bb4ed67a48704b9f4f4ab5902": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "resources",
+            "type_key": "Shape.3126959eee8a3298c0666a45577fc71ab60e09ff"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"apply_to_three\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.68aa80b83eeb19f6dadca37a62c43d2e4fa06a12"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.710401a2657dfe5bb4ed67a48704b9f4f4ab5902",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -23181,29 +21803,6 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -23236,6 +21835,59 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         ],
         "given_name": null,
         "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.9e77bb616a683309a7f28dff9428798e3c95b02c": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "resources",
+            "type_key": "Shape.a1b764225632d54b96a7b06985c831a7cff72498"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"apply_to_three\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.68aa80b83eeb19f6dadca37a62c43d2e4fa06a12"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.9e77bb616a683309a7f28dff9428798e3c95b02c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -23336,29 +21988,6 @@ snapshots['test_all_snapshot_ids 41'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -23639,7 +22268,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
           "name": "op"
         }
       ],
-      "root_config_key": "Shape.14493d7be9eb4a5a47ab1097bf1f61853ae230a0"
+      "root_config_key": "Shape.710401a2657dfe5bb4ed67a48704b9f4f4ab5902"
     },
     {
       "__class__": "ModeDefSnap",
@@ -23691,7 +22320,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
           "name": "op"
         }
       ],
-      "root_config_key": "Shape.14493d7be9eb4a5a47ab1097bf1f61853ae230a0"
+      "root_config_key": "Shape.710401a2657dfe5bb4ed67a48704b9f4f4ab5902"
     },
     {
       "__class__": "ModeDefSnap",
@@ -23743,7 +22372,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
           "name": "op"
         }
       ],
-      "root_config_key": "Shape.6289192a1b68237960bc57c74ba65720d006243b"
+      "root_config_key": "Shape.9e77bb616a683309a7f28dff9428798e3c95b02c"
     }
   ],
   "name": "multi_mode_with_resources",
@@ -23785,7 +22414,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 42'] = 'e8d1b441d9aaac212f0bc164346fc5fdc64cd4e0'
+snapshots['test_all_snapshot_ids 42'] = 'f4ae11cdc795382b0156640638b93398254a02ef'
 
 snapshots['test_all_snapshot_ids 43'] = '''{
   "__class__": "PipelineSnapshot",
@@ -23987,38 +22616,6 @@ snapshots['test_all_snapshot_ids 43'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -24317,77 +22914,6 @@ snapshots['test_all_snapshot_ids 43'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.38826ff9c0e01284861ded164d52110e693fd1fd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"throw_a_thing\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.d0f408acdf75a2a6072241ad7a61cb664a92d13d"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.38826ff9c0e01284861ded164d52110e693fd1fd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -24509,29 +23035,6 @@ snapshots['test_all_snapshot_ids 43'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -24664,29 +23167,6 @@ snapshots['test_all_snapshot_ids 43'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -24704,6 +23184,59 @@ snapshots['test_all_snapshot_ids 43'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.edc179ee8b78c89f83213eb33a5fa4829593cbe5": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"throw_a_thing\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.d0f408acdf75a2a6072241ad7a61cb664a92d13d"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.edc179ee8b78c89f83213eb33a5fa4829593cbe5",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -24892,7 +23425,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.38826ff9c0e01284861ded164d52110e693fd1fd"
+      "root_config_key": "Shape.edc179ee8b78c89f83213eb33a5fa4829593cbe5"
     }
   ],
   "name": "naughty_programmer_pipeline",
@@ -24932,7 +23465,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 44'] = 'c938ec5d970f58b04bf50a483f27953ebc31f687'
+snapshots['test_all_snapshot_ids 44'] = 'b23d88ae9cffb056671ef270cf6aaad592a5f00c'
 
 snapshots['test_all_snapshot_ids 45'] = '''{
   "__class__": "PipelineSnapshot",
@@ -25134,38 +23667,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -25444,30 +23945,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.1e3d5d6c506f3c60d1f8b77889e2180b8f71598a": {
+      "Shape.0611f3352ec9c778c838cec235f5ef6d9f87814e": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -25483,15 +23961,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
             "is_required": false,
             "name": "execution",
             "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -25519,19 +23988,33 @@ snapshots['test_all_snapshot_ids 45'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.0055486a40861c19b2b5295e3afadb63203baee7"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.1e3d5d6c506f3c60d1f8b77889e2180b8f71598a",
+        "key": "Shape.0611f3352ec9c778c838cec235f5ef6d9f87814e",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -25697,29 +24180,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -25814,29 +24274,6 @@ snapshots['test_all_snapshot_ids 45'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -26069,7 +24506,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.1e3d5d6c506f3c60d1f8b77889e2180b8f71598a"
+      "root_config_key": "Shape.0611f3352ec9c778c838cec235f5ef6d9f87814e"
     }
   ],
   "name": "no_config_chain_pipeline",
@@ -26143,7 +24580,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 46'] = '6a9434705a881d3a63e4ca0ecb5881f140e44926'
+snapshots['test_all_snapshot_ids 46'] = '16c036d1aaf8c2d1da3aacb7ffded74fc3cf4572'
 
 snapshots['test_all_snapshot_ids 47'] = '''{
   "__class__": "PipelineSnapshot",
@@ -26319,6 +24756,29 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -26345,38 +24805,6 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -26620,30 +25048,30 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.223bede275c0a4f2195bacd1e35e10c3451483f1": {
+      "Shape.1f5f712185a733425b9db6cc4edb5aaebdb512fd": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -26662,15 +25090,6 @@ snapshots['test_all_snapshot_ids 47'] = '''{
           },
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
@@ -26681,11 +25100,11 @@ snapshots['test_all_snapshot_ids 47'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -26695,19 +25114,10 @@ snapshots['test_all_snapshot_ids 47'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.cc93adfd9d4295d647c8763e37a002ed3e92b6a8"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.223bede275c0a4f2195bacd1e35e10c3451483f1",
+        "key": "Shape.1f5f712185a733425b9db6cc4edb5aaebdb512fd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -26792,6 +25202,29 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -26844,52 +25277,6 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         ],
         "given_name": null,
         "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -26960,6 +25347,29 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -27016,29 +25426,6 @@ snapshots['test_all_snapshot_ids 47'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -27105,6 +25492,22 @@ snapshots['test_all_snapshot_ids 47'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -27239,18 +25642,18 @@ snapshots['test_all_snapshot_ids 47'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.223bede275c0a4f2195bacd1e35e10c3451483f1"
+      "root_config_key": "Shape.1f5f712185a733425b9db6cc4edb5aaebdb512fd"
     }
   ],
   "name": "no_config_pipeline",
@@ -27290,7 +25693,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 48'] = 'a99fb62086111d8121b97fb29d1fc9a849121501'
+snapshots['test_all_snapshot_ids 48'] = '1774c511609dff340fe0ac5f053dd959287699dc'
 
 snapshots['test_all_snapshot_ids 49'] = '''{
   "__class__": "PipelineSnapshot",
@@ -27498,38 +25901,6 @@ snapshots['test_all_snapshot_ids 49'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -27845,6 +26216,59 @@ snapshots['test_all_snapshot_ids 49'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.3cff2f7fecc2cce36397b6c7f9cc39066fbad859": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.3cff2f7fecc2cce36397b6c7f9cc39066fbad859",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -27949,29 +26373,6 @@ snapshots['test_all_snapshot_ids 49'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -28036,77 +26437,6 @@ snapshots['test_all_snapshot_ids 49'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.b351ef464e8a8a094f615bd472a4e0b1b35cdb52": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.b351ef464e8a8a094f615bd472a4e0b1b35cdb52",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -28163,29 +26493,6 @@ snapshots['test_all_snapshot_ids 49'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -28397,7 +26704,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.b351ef464e8a8a094f615bd472a4e0b1b35cdb52"
+      "root_config_key": "Shape.3cff2f7fecc2cce36397b6c7f9cc39066fbad859"
     }
   ],
   "name": "noop_pipeline",
@@ -28643,38 +26950,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -29036,77 +27311,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.5c614dc4e67298b12f788f70dc615d3b5f0a0a58": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"backcompat_materialize\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.ca1df67c3c4f4de84cadb9ce629ab37480345286"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.5c614dc4e67298b12f788f70dc615d3b5f0a0a58",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -29159,29 +27363,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -29314,29 +27495,6 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -29354,6 +27512,59 @@ snapshots['test_all_snapshot_ids 5'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.feda240eca201b17038984fcfb6f5ed794e3c9e1": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"backcompat_materialize\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.ca1df67c3c4f4de84cadb9ce629ab37480345286"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.feda240eca201b17038984fcfb6f5ed794e3c9e1",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -29542,7 +27753,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.5c614dc4e67298b12f788f70dc615d3b5f0a0a58"
+      "root_config_key": "Shape.feda240eca201b17038984fcfb6f5ed794e3c9e1"
     }
   ],
   "name": "backcompat_materialization_pipeline",
@@ -29582,7 +27793,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 50'] = '0965b76124e758660317760c7e9bbc66282f33b0'
+snapshots['test_all_snapshot_ids 50'] = '2290b3c558988d5ac3b68b109c7a6da33a237696'
 
 snapshots['test_all_snapshot_ids 51'] = '''{
   "__class__": "PipelineSnapshot",
@@ -29790,38 +28001,6 @@ snapshots['test_all_snapshot_ids 51'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -30241,30 +28420,39 @@ snapshots['test_all_snapshot_ids 51'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "marker_to_close",
+            "type_key": "String"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "retries",
+            "type_key": "Selector.1bfb167aea90780aa679597800c71bd8c65ed0b2"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.977391db1a329874866cf7779d89df71f6b25c38": {
+      "Shape.a39a38a9970567c01a2afe24b91b92603d408aae": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -30280,15 +28468,6 @@ snapshots['test_all_snapshot_ids 51'] = '''{
             "is_required": false,
             "name": "execution",
             "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -30316,51 +28495,10 @@ snapshots['test_all_snapshot_ids 51'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.c8f346c2403a9e9edd9eb5e823540b9c93684f02"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.977391db1a329874866cf7779d89df71f6b25c38",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "marker_to_close",
-            "type_key": "String"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"enabled\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "retries",
-            "type_key": "Selector.1bfb167aea90780aa679597800c71bd8c65ed0b2"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
+        "key": "Shape.a39a38a9970567c01a2afe24b91b92603d408aae",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -30473,29 +28611,6 @@ snapshots['test_all_snapshot_ids 51'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -30749,7 +28864,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.977391db1a329874866cf7779d89df71f6b25c38"
+      "root_config_key": "Shape.a39a38a9970567c01a2afe24b91b92603d408aae"
     }
   ],
   "name": "partitioned_asset_lineage_pipeline",
@@ -30857,7 +28972,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 52'] = '30099d2414fc896c225f202240997d12950d6835'
+snapshots['test_all_snapshot_ids 52'] = 'd6959c8f4ad494d45190382ae1b75eed7d8fd75e'
 
 snapshots['test_all_snapshot_ids 53'] = '''{
   "__class__": "PipelineSnapshot",
@@ -31059,38 +29174,6 @@ snapshots['test_all_snapshot_ids 53'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -31334,6 +29417,59 @@ snapshots['test_all_snapshot_ids 53'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.045bad58385b187e6f032c8093dc8f803c2173bf": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"solid_partitioned_asset\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.c7d0dfe50d8aa3e32f2241707449e69f36d64616"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.045bad58385b187e6f032c8093dc8f803c2173bf",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -31516,100 +29652,6 @@ snapshots['test_all_snapshot_ids 53'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.7d3aa264d80a9bfb60cd9bf5d8833789ba92ad32": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"solid_partitioned_asset\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.c7d0dfe50d8aa3e32f2241707449e69f36d64616"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.7d3aa264d80a9bfb60cd9bf5d8833789ba92ad32",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -31730,29 +29772,6 @@ snapshots['test_all_snapshot_ids 53'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -31964,7 +29983,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.7d3aa264d80a9bfb60cd9bf5d8833789ba92ad32"
+      "root_config_key": "Shape.045bad58385b187e6f032c8093dc8f803c2173bf"
     }
   ],
   "name": "partitioned_asset_pipeline",
@@ -32004,7 +30023,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 54'] = 'add65b837f2a576c75a652ddc9e963a50ab7c15d'
+snapshots['test_all_snapshot_ids 54'] = 'f47246e452e3b9c0c57bbd576683d5441dda874f'
 
 snapshots['test_all_snapshot_ids 55'] = '''{
   "__class__": "PipelineSnapshot",
@@ -32206,38 +30225,6 @@ snapshots['test_all_snapshot_ids 55'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -32654,29 +30641,6 @@ snapshots['test_all_snapshot_ids 55'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -32776,6 +30740,59 @@ snapshots['test_all_snapshot_ids 55'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.add4283a7669ad94024f7ff72502eebb4d9fb24a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.1815cce831ccec1452ddd0b2102af6d1e95cd5ee"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.add4283a7669ad94024f7ff72502eebb4d9fb24a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -32806,100 +30823,6 @@ snapshots['test_all_snapshot_ids 55'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e230b779ac8564ee437a53592600eacf6426fd5f": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.1815cce831ccec1452ddd0b2102af6d1e95cd5ee"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e230b779ac8564ee437a53592600eacf6426fd5f",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -33140,7 +31063,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.e230b779ac8564ee437a53592600eacf6426fd5f"
+      "root_config_key": "Shape.add4283a7669ad94024f7ff72502eebb4d9fb24a"
     }
   ],
   "name": "pipeline_with_enum_config",
@@ -33180,7 +31103,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 56'] = '37eeba13bfe6d0acdff7b5f5d0af26412328019d'
+snapshots['test_all_snapshot_ids 56'] = 'ef8f6e1267d630cbb47a752b22942873682dab4a'
 
 snapshots['test_all_snapshot_ids 57'] = '''{
   "__class__": "PipelineSnapshot",
@@ -33367,38 +31290,6 @@ snapshots['test_all_snapshot_ids 57'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -33642,77 +31533,6 @@ snapshots['test_all_snapshot_ids 57'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0279ca0df968d943bda0d12d8ec12b17f3905833": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"emit_failed_expectation\\": {}, \\"emit_successful_expectation\\": {}, \\"emit_successful_expectation_no_metadata\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.9e01a4004a80418857ab4960f0ccac5e002baa54"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0279ca0df968d943bda0d12d8ec12b17f3905833",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.17b6a168d89648299f5fa63c548ecef2405875ca": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -33834,29 +31654,6 @@ snapshots['test_all_snapshot_ids 57'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -34030,29 +31827,6 @@ snapshots['test_all_snapshot_ids 57'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -34070,6 +31844,59 @@ snapshots['test_all_snapshot_ids 57'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.fd2bd345780165c465ed6584d8bd3c1b68e68861": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"emit_failed_expectation\\": {}, \\"emit_successful_expectation\\": {}, \\"emit_successful_expectation_no_metadata\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.9e01a4004a80418857ab4960f0ccac5e002baa54"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.fd2bd345780165c465ed6584d8bd3c1b68e68861",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -34274,7 +32101,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.0279ca0df968d943bda0d12d8ec12b17f3905833"
+      "root_config_key": "Shape.fd2bd345780165c465ed6584d8bd3c1b68e68861"
     }
   ],
   "name": "pipeline_with_expectations",
@@ -34341,7 +32168,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 58'] = '164c63e77df00e62164363992831c060db1417ac'
+snapshots['test_all_snapshot_ids 58'] = 'ccee9e79e861f70039a162d85d2fd5e0fa71dd84'
 
 snapshots['test_all_snapshot_ids 59'] = '''{
   "__class__": "PipelineSnapshot",
@@ -34543,38 +32370,6 @@ snapshots['test_all_snapshot_ids 59'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -35003,77 +32798,6 @@ snapshots['test_all_snapshot_ids 59'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.58232d90af3ae5fb07eda270c193a8229040fb9e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"fail_subset\\": {}, \\"one\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.54bd3fb74da7cf630182dc93d4d28a2891bafce8"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.58232d90af3ae5fb07eda270c193a8229040fb9e",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -35126,29 +32850,6 @@ snapshots['test_all_snapshot_ids 59'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -35219,6 +32920,59 @@ snapshots['test_all_snapshot_ids 59'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.a98cef82efc423348163557c74e7aec70eed0f0d": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"fail_subset\\": {}, \\"one\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.54bd3fb74da7cf630182dc93d4d28a2891bafce8"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.a98cef82efc423348163557c74e7aec70eed0f0d",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -35249,29 +33003,6 @@ snapshots['test_all_snapshot_ids 59'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -35518,7 +33249,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.58232d90af3ae5fb07eda270c193a8229040fb9e"
+      "root_config_key": "Shape.a98cef82efc423348163557c74e7aec70eed0f0d"
     }
   ],
   "name": "pipeline_with_invalid_definition_error",
@@ -35592,9 +33323,9 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 6'] = 'd54ba34c704219bbb4a8ac3d8b71e66a624701e8'
+snapshots['test_all_snapshot_ids 6'] = '642ad4fd55568b0bb5b714b069f6ed540e7e75a7'
 
-snapshots['test_all_snapshot_ids 60'] = '29c0fe37b9f414db648b6126dd5859d107d1ff06'
+snapshots['test_all_snapshot_ids 60'] = '28fa8762a76677673865ff3c0c013affa13c0ea7'
 
 snapshots['test_all_snapshot_ids 61'] = '''{
   "__class__": "PipelineSnapshot",
@@ -35796,38 +33527,6 @@ snapshots['test_all_snapshot_ids 61'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -36224,100 +33923,6 @@ snapshots['test_all_snapshot_ids 61'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.8b5a19624af0e05b9ae68622bf30e3ef4587dcb8": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.24a41342bb40d518b66929ae9df264c0ba0aa10a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.8b5a19624af0e05b9ae68622bf30e3ef4587dcb8",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -36382,6 +33987,59 @@ snapshots['test_all_snapshot_ids 61'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.be581dcf2ba1eca73981fe7187a89c4ac315f25c": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.d1d1bf8f5e40482a3fe0b3ca2c139fa567615512"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.24a41342bb40d518b66929ae9df264c0ba0aa10a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.be581dcf2ba1eca73981fe7187a89c4ac315f25c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -36435,29 +34093,6 @@ snapshots['test_all_snapshot_ids 61'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -36669,7 +34304,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.8b5a19624af0e05b9ae68622bf30e3ef4587dcb8"
+      "root_config_key": "Shape.be581dcf2ba1eca73981fe7187a89c4ac315f25c"
     }
   ],
   "name": "pipeline_with_list",
@@ -36700,7 +34335,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 62'] = '66d7ae94cd0e8058c71fdb9bb0b7b9721a7b59a7'
+snapshots['test_all_snapshot_ids 62'] = 'ba09f2acf892f51457819c7fdf24f37b59fb2d97'
 
 snapshots['test_all_snapshot_ids 63'] = '''{
   "__class__": "PipelineSnapshot",
@@ -36902,38 +34537,6 @@ snapshots['test_all_snapshot_ids 63'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -37336,77 +34939,6 @@ snapshots['test_all_snapshot_ids 63'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.4d7165336e8fdc1dd247222564f2222e3b326646": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"R1\\": {}, \\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.39d9cccb14e07ae3e8fc978d9ab7053c668dc0dc"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"solid_with_required_resource\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.0057d8ec3a9d25930397ae7953ad116cb5f6c8a6"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.4d7165336e8fdc1dd247222564f2222e3b326646",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -37442,6 +34974,59 @@ snapshots['test_all_snapshot_ids 63'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.7390ec76bb38b5941f2935619c5a8a06e36a8e8c": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"R1\\": {}, \\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.39d9cccb14e07ae3e8fc978d9ab7053c668dc0dc"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"solid_with_required_resource\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.0057d8ec3a9d25930397ae7953ad116cb5f6c8a6"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.7390ec76bb38b5941f2935619c5a8a06e36a8e8c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -37459,29 +35044,6 @@ snapshots['test_all_snapshot_ids 63'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -37605,29 +35167,6 @@ snapshots['test_all_snapshot_ids 63'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -37853,7 +35392,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.4d7165336e8fdc1dd247222564f2222e3b326646"
+      "root_config_key": "Shape.7390ec76bb38b5941f2935619c5a8a06e36a8e8c"
     }
   ],
   "name": "required_resource_pipeline",
@@ -37895,7 +35434,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 64'] = 'a304ef599e2c67052319cc3a96fe1a1bb853ba5f'
+snapshots['test_all_snapshot_ids 64'] = '5429e9b8e509044d51a6c9cd6fc858bae22a0e58'
 
 snapshots['test_all_snapshot_ids 65'] = '''{
   "__class__": "PipelineSnapshot",
@@ -38071,6 +35610,29 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -38097,38 +35659,6 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -38372,94 +35902,23 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.207c6c69f4b866818f6dd963667015aabd5f6d6b": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.e20b0373dffb8d124d3559d45a3aeb89f818ec30"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.207c6c69f4b866818f6dd963667015aabd5f6d6b",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -38544,6 +36003,29 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -38596,52 +36078,6 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         ],
         "given_name": null,
         "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -38747,6 +36183,29 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -38764,6 +36223,59 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.d20e936c583214187733b5fee8b1a614accc27ac": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.e20b0373dffb8d124d3559d45a3aeb89f818ec30"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.d20e936c583214187733b5fee8b1a614accc27ac",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -38859,29 +36371,6 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -38942,6 +36431,22 @@ snapshots['test_all_snapshot_ids 65'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -39151,18 +36656,18 @@ snapshots['test_all_snapshot_ids 65'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.207c6c69f4b866818f6dd963667015aabd5f6d6b"
+      "root_config_key": "Shape.d20e936c583214187733b5fee8b1a614accc27ac"
     }
   ],
   "name": "retry_multi_input_early_terminate_pipeline",
@@ -39310,7 +36815,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 66'] = 'f7cf6d6b9a0493df4cf540601af34d49115eced9'
+snapshots['test_all_snapshot_ids 66'] = 'e96b7c632748760f1d2f0676fe8d713edc1d1f24'
 
 snapshots['test_all_snapshot_ids 67'] = '''{
   "__class__": "PipelineSnapshot",
@@ -39516,6 +37021,29 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -39542,38 +37070,6 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -39849,29 +37345,6 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.0f759441a0a5dcbc16a099b6d7d106319ac492f9": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -39915,6 +37388,29 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         ],
         "given_name": null,
         "key": "Shape.17b6a168d89648299f5fa63c548ecef2405875ca",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "base_dir",
+            "type_key": "StringSourceType"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -39988,6 +37484,59 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.319d724fa982ff0fce31fbfcddb82800f33723de": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "solids",
+            "type_key": "Shape.5cb721e007deb0ccde56cb931d61bbe76e9829e8"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.319d724fa982ff0fce31fbfcddb82800f33723de",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -40028,6 +37577,29 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         ],
         "given_name": null,
         "key": "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -40195,52 +37767,6 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.8b359615f8038ae235307d27a5081ba53ebbc43f": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -40340,6 +37866,29 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -40376,29 +37925,6 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -40416,77 +37942,6 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.f5335c87fb42c375003b160417db3fcfa141fb49": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": true,
-            "name": "solids",
-            "type_key": "Shape.5cb721e007deb0ccde56cb931d61bbe76e9829e8"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.f5335c87fb42c375003b160417db3fcfa141fb49",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -40530,6 +37985,22 @@ snapshots['test_all_snapshot_ids 67'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -40769,18 +38240,18 @@ snapshots['test_all_snapshot_ids 67'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.f5335c87fb42c375003b160417db3fcfa141fb49"
+      "root_config_key": "Shape.319d724fa982ff0fce31fbfcddb82800f33723de"
     }
   ],
   "name": "retry_multi_output_pipeline",
@@ -40929,7 +38400,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 68'] = '47073266bd88972ce5190afc454f7cd6a3acc285'
+snapshots['test_all_snapshot_ids 68'] = 'cb35fdc331304ade6be81e4849d9b0035775241e'
 
 snapshots['test_all_snapshot_ids 69'] = '''{
   "__class__": "PipelineSnapshot",
@@ -41105,6 +38576,29 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41131,38 +38625,6 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -41406,71 +38868,23 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.01257d1c006e953b9c4832adda9b9df1e278a6fd": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
             "default_provided": false,
             "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"a\\": {}, \\"b\\": {}, \\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.5929a4251c540c56ab6b8250a0ff4fd11fb7eceb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"start\\": {}, \\"will_fail\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.e50a680efa626d3db1bfaed6823d0a100d4e3880"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.01257d1c006e953b9c4832adda9b9df1e278a6fd",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41503,6 +38917,47 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         ],
         "given_name": null,
         "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.3b0ba30c46522b00ce5e5f22b81dd040a9985cb3": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "a",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "b",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.3b0ba30c46522b00ce5e5f22b81dd040a9985cb3",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41555,6 +39010,29 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41572,47 +39050,6 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.5929a4251c540c56ab6b8250a0ff4fd11fb7eceb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "a",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "b",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.5929a4251c540c56ab6b8250a0ff4fd11fb7eceb",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41671,29 +39108,6 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41764,6 +39178,59 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.bcf76766ae3f1654308b8d88c83df1411dd5ccfa": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"a\\": {}, \\"b\\": {}, \\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.3b0ba30c46522b00ce5e5f22b81dd040a9985cb3"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"start\\": {}, \\"will_fail\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.e50a680efa626d3db1bfaed6823d0a100d4e3880"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.bcf76766ae3f1654308b8d88c83df1411dd5ccfa",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -41794,29 +39261,6 @@ snapshots['test_all_snapshot_ids 69'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -41918,6 +39362,22 @@ snapshots['test_all_snapshot_ids 69'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -42101,18 +39561,18 @@ snapshots['test_all_snapshot_ids 69'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.01257d1c006e953b9c4832adda9b9df1e278a6fd"
+      "root_config_key": "Shape.bcf76766ae3f1654308b8d88c83df1411dd5ccfa"
     }
   ],
   "name": "retry_resource_pipeline",
@@ -42364,6 +39824,29 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -42390,38 +39873,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -42665,23 +40116,23 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -42766,6 +40217,29 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -42818,123 +40292,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         ],
         "given_name": null,
         "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.718df8a60c8b682ba64c78c7ad5d457e43714a8d": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"after_failure\\": {}, \\"always_succeed\\": {}, \\"conditionally_fail\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.c83365bd90c040f827d1b3ed0ba3df6049a81df1"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.718df8a60c8b682ba64c78c7ad5d457e43714a8d",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -42999,6 +40356,29 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         ],
         "given_name": null,
         "key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -43085,29 +40465,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -43125,6 +40482,59 @@ snapshots['test_all_snapshot_ids 7'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.f2331653fae7dd9e00235894ca65d288e62fdd6d": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"after_failure\\": {}, \\"always_succeed\\": {}, \\"conditionally_fail\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.c83365bd90c040f827d1b3ed0ba3df6049a81df1"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.f2331653fae7dd9e00235894ca65d288e62fdd6d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -43168,6 +40578,22 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -43344,18 +40770,18 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.718df8a60c8b682ba64c78c7ad5d457e43714a8d"
+      "root_config_key": "Shape.f2331653fae7dd9e00235894ca65d288e62fdd6d"
     }
   ],
   "name": "chained_failure_pipeline",
@@ -43463,7 +40889,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 70'] = '6cb266c3a113bbc6328fc1104fdbf987c5515c34'
+snapshots['test_all_snapshot_ids 70'] = '75de970918555bdb06e4879b155cd6dc2bfc9e80'
 
 snapshots['test_all_snapshot_ids 71'] = '''{
   "__class__": "PipelineSnapshot",
@@ -43671,38 +41097,6 @@ snapshots['test_all_snapshot_ids 71'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -43963,39 +41357,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "\\"INFO\\"",
-            "description": null,
-            "is_required": false,
-            "name": "log_level",
-            "type_key": "String"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "\\"dagster\\"",
-            "description": null,
-            "is_required": false,
-            "name": "name",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.248871bc8698517d29b4401e4761383a470e69ba": {
+      "Shape.20c6aebfeda75fb685f132b2b6e5523bbc2abbe9": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -44011,15 +41373,6 @@ snapshots['test_all_snapshot_ids 71'] = '''{
             "is_required": false,
             "name": "execution",
             "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           },
           {
             "__class__": "ConfigFieldSnap",
@@ -44047,19 +41400,42 @@ snapshots['test_all_snapshot_ids 71'] = '''{
             "is_required": false,
             "name": "solids",
             "type_key": "Shape.f5e7bd675a1ecd6b9f358ba7a36c16632b1fe21c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
           }
         ],
         "given_name": null,
-        "key": "Shape.248871bc8698517d29b4401e4761383a470e69ba",
+        "key": "Shape.20c6aebfeda75fb685f132b2b6e5523bbc2abbe9",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
+            "description": null,
+            "is_required": false,
+            "name": "log_level",
+            "type_key": "String"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
+            "description": null,
+            "is_required": false,
+            "name": "name",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -44193,29 +41569,6 @@ snapshots['test_all_snapshot_ids 71'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -44310,29 +41663,6 @@ snapshots['test_all_snapshot_ids 71'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -44621,7 +41951,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.248871bc8698517d29b4401e4761383a470e69ba"
+      "root_config_key": "Shape.20c6aebfeda75fb685f132b2b6e5523bbc2abbe9"
     }
   ],
   "name": "scalar_output_pipeline",
@@ -44742,7 +42072,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 72'] = '3135a7ae3327aaa80de08dafaf4bdef3da3158e7'
+snapshots['test_all_snapshot_ids 72'] = '416ef17f467d8e0b8c77735b54852df5b5c600ce'
 
 snapshots['test_all_snapshot_ids 73'] = '''{
   "__class__": "PipelineSnapshot",
@@ -44918,7 +42248,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15": {
+      "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -44926,47 +42256,24 @@ snapshots['test_all_snapshot_ids 73'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "multiprocess",
-            "type_key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
+            "name": "in_process",
+            "type_key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c"
           },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "multiprocess",
+            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
           }
         ],
         "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
+        "key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -45233,77 +42540,6 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"multiprocess\\": {\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -45330,6 +42566,59 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         ],
         "given_name": null,
         "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.35f7aafae10b34f58c7880799eab79d291759d7d": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "ops",
+            "type_key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.35f7aafae10b34f58c7880799eab79d291759d7d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -45405,35 +42694,49 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
+      "Shape.604644f3392978312d2e4fe04bf000e62bf6d779": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "field_aliases": {
-          "solids": "ops"
+          "ops": "solids"
         },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "outputs",
-            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
+            "name": "noop_solid",
+            "type_key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5"
           }
         ],
         "given_name": null,
-        "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
+        "key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"multiprocess\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -45463,23 +42766,32 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "marker_to_close",
+            "type_key": "String"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "retries",
+            "type_key": "Selector.1bfb167aea90780aa679597800c71bd8c65ed0b2"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -45518,32 +42830,6 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -45557,10 +42843,13 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
+      "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
@@ -45568,12 +42857,21 @@ snapshots['test_all_snapshot_ids 73'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
+            "name": "config",
+            "type_key": "Any"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "outputs",
+            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
           }
         ],
         "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
+        "key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -45597,29 +42895,6 @@ snapshots['test_all_snapshot_ids 73'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -45785,7 +43060,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe"
+      "root_config_key": "Shape.35f7aafae10b34f58c7880799eab79d291759d7d"
     }
   ],
   "name": "simple_job_a",
@@ -45825,7 +43100,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 74'] = '5c9bb3ab67427ecad659f4d01355a987a097edd4'
+snapshots['test_all_snapshot_ids 74'] = '3d4edcb9bda521ac54262c5f59b13abb003fc17c'
 
 snapshots['test_all_snapshot_ids 75'] = '''{
   "__class__": "PipelineSnapshot",
@@ -46001,7 +43276,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15": {
+      "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -46009,47 +43284,24 @@ snapshots['test_all_snapshot_ids 75'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "multiprocess",
-            "type_key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
+            "name": "in_process",
+            "type_key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c"
           },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "multiprocess",
+            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
           }
         ],
         "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
+        "key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -46316,77 +43568,6 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"multiprocess\\": {\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -46413,6 +43594,59 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         ],
         "given_name": null,
         "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.35f7aafae10b34f58c7880799eab79d291759d7d": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "ops",
+            "type_key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.35f7aafae10b34f58c7880799eab79d291759d7d",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -46488,35 +43722,49 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
+      "Shape.604644f3392978312d2e4fe04bf000e62bf6d779": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "field_aliases": {
-          "solids": "ops"
+          "ops": "solids"
         },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "outputs",
-            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
+            "name": "noop_solid",
+            "type_key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5"
           }
         ],
         "given_name": null,
-        "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
+        "key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"multiprocess\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -46546,23 +43794,32 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "marker_to_close",
+            "type_key": "String"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "retries",
+            "type_key": "Selector.1bfb167aea90780aa679597800c71bd8c65ed0b2"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -46601,32 +43858,6 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -46640,10 +43871,13 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
+      "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
@@ -46651,12 +43885,21 @@ snapshots['test_all_snapshot_ids 75'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
+            "name": "config",
+            "type_key": "Any"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "outputs",
+            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
           }
         ],
         "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
+        "key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -46680,29 +43923,6 @@ snapshots['test_all_snapshot_ids 75'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -46868,7 +44088,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.0ced210ccf3407adefa51cde9fd7eb647009dbfe"
+      "root_config_key": "Shape.35f7aafae10b34f58c7880799eab79d291759d7d"
     }
   ],
   "name": "simple_job_b",
@@ -46908,7 +44128,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 76'] = 'ed533d48bfe13a5b7b64450b5852281cc915658f'
+snapshots['test_all_snapshot_ids 76'] = '90cfd7df618786effafb0377d8942a88a91028a7'
 
 snapshots['test_all_snapshot_ids 77'] = '''{
   "__class__": "PipelineSnapshot",
@@ -47116,38 +44336,6 @@ snapshots['test_all_snapshot_ids 77'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -47463,77 +44651,6 @@ snapshots['test_all_snapshot_ids 77'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.40944b8a1c00129404502a46a79730d93962e7c9": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"solid_asset_a\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.f1612d5762c0a8d1e571fa7f6d8e275d2c57045a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.40944b8a1c00129404502a46a79730d93962e7c9",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -47574,6 +44691,59 @@ snapshots['test_all_snapshot_ids 77'] = '''{
         ],
         "given_name": null,
         "key": "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.535d17949cd5b03bf10faf7eff1a0ee18614ee57": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"solid_asset_a\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.f1612d5762c0a8d1e571fa7f6d8e275d2c57045a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.535d17949cd5b03bf10faf7eff1a0ee18614ee57",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -47632,29 +44802,6 @@ snapshots['test_all_snapshot_ids 77'] = '''{
         ],
         "given_name": null,
         "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -47755,29 +44902,6 @@ snapshots['test_all_snapshot_ids 77'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -48015,7 +45139,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.40944b8a1c00129404502a46a79730d93962e7c9"
+      "root_config_key": "Shape.535d17949cd5b03bf10faf7eff1a0ee18614ee57"
     }
   ],
   "name": "single_asset_pipeline",
@@ -48055,7 +45179,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 78'] = '663053dd05fe134ec528669d4799efa519599e07'
+snapshots['test_all_snapshot_ids 78'] = '12ef0ffa3e4b6c20e5240b43f49cea1c2a77eb53'
 
 snapshots['test_all_snapshot_ids 79'] = '''{
   "__class__": "PipelineSnapshot",
@@ -48257,38 +45381,6 @@ snapshots['test_all_snapshot_ids 79'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -48656,77 +45748,6 @@ snapshots['test_all_snapshot_ids 79'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.5e1c130dea429813fb2c1d649766d3795e16fee4": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"spew\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.d52f39b8bf34f0cceecb53ec526621d609908398"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.5e1c130dea429813fb2c1d649766d3795e16fee4",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -48785,23 +45806,53 @@ snapshots['test_all_snapshot_ids 79'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.7caa6973101d3a1f75402c55d1b10dc40f3468ad": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
         "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"spew\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.d52f39b8bf34f0cceecb53ec526621d609908398"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.7caa6973101d3a1f75402c55d1b10dc40f3468ad",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -48928,29 +45979,6 @@ snapshots['test_all_snapshot_ids 79'] = '''{
         "fields": [],
         "given_name": null,
         "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -49162,7 +46190,7 @@ snapshots['test_all_snapshot_ids 79'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.5e1c130dea429813fb2c1d649766d3795e16fee4"
+      "root_config_key": "Shape.7caa6973101d3a1f75402c55d1b10dc40f3468ad"
     }
   ],
   "name": "spew_pipeline",
@@ -49202,9 +46230,9 @@ snapshots['test_all_snapshot_ids 79'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 8'] = '05430a3d6b472c6f1efff1336c5e248878acafc6'
+snapshots['test_all_snapshot_ids 8'] = '40a3dfb5eebccc11d023f55647484da6a9d4ff2f'
 
-snapshots['test_all_snapshot_ids 80'] = '36e3484012959a7bfe86870bca98243911b880a9'
+snapshots['test_all_snapshot_ids 80'] = '7f59f3d9be44d9f5e10e8910527d3445e65a6b63'
 
 snapshots['test_all_snapshot_ids 81'] = '''{
   "__class__": "PipelineSnapshot",
@@ -49380,6 +46408,29 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Selector.2571019f1a5201853d11032145ac3e534067f214": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": true,
+            "name": "env",
+            "type_key": "String"
+          }
+        ],
+        "given_name": null,
+        "key": "Selector.2571019f1a5201853d11032145ac3e534067f214",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SELECTOR"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -49406,38 +46457,6 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         ],
         "given_name": null,
         "key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -49681,23 +46700,23 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
+      "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "base_dir",
+            "type_key": "StringSourceType"
           }
         ],
         "given_name": null,
-        "key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19",
+        "key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -49730,77 +46749,6 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         ],
         "given_name": null,
         "key": "Shape.241ac489ffa5f718db6444bae7849fb86a62e441",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.3321c7033024c1d21f891048d050aefc0ace6a65": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"in_process\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"simple_solid\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.59cea50d986c572e8feb16c6f1f4b8cffd069f2a"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.3321c7033024c1d21f891048d050aefc0ace6a65",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -49847,6 +46795,29 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         ],
         "given_name": null,
         "key": "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -49937,52 +46908,6 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.743e47901855cb245064dd633e217bfcb49a11a7": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Any"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -50047,6 +46972,29 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "io_manager",
+            "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -50083,29 +47031,6 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
       "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -50123,6 +47048,59 @@ snapshots['test_all_snapshot_ids 81'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.ff0e6c945a9f71b0e3993eb0f94ef9d8950e14e0": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"in_process\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {\\"config\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.c2c57770aaa8b396a9e2db0762cc977ca34ead8a"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"simple_solid\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "solids",
+            "type_key": "Shape.59cea50d986c572e8feb16c6f1f4b8cffd069f2a"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.ff0e6c945a9f71b0e3993eb0f94ef9d8950e14e0",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -50166,6 +47144,22 @@ snapshots['test_all_snapshot_ids 81'] = '''{
           "__enum__": "ConfigScalarKind.STRING"
         },
         "type_param_keys": null
+      },
+      "StringSourceType": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "fields": null,
+        "given_name": null,
+        "key": "StringSourceType",
+        "kind": {
+          "__enum__": "ConfigTypeKind.SCALAR_UNION"
+        },
+        "scalar_kind": null,
+        "type_param_keys": [
+          "String",
+          "Selector.2571019f1a5201853d11032145ac3e534067f214"
+        ]
       }
     }
   },
@@ -50300,18 +47294,18 @@ snapshots['test_all_snapshot_ids 81'] = '''{
           "__class__": "ResourceDefSnap",
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
+            "type_key": "Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851"
           },
           "description": null,
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.3321c7033024c1d21f891048d050aefc0ace6a65"
+      "root_config_key": "Shape.ff0e6c945a9f71b0e3993eb0f94ef9d8950e14e0"
     }
   ],
   "name": "tagged_pipeline",
@@ -50353,7 +47347,7 @@ snapshots['test_all_snapshot_ids 81'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 82'] = '8c4b6f22d91204d29cb93af764529c3885ccc541'
+snapshots['test_all_snapshot_ids 82'] = '7088369d2eed9dfb93d2ddd8d8a029dab695cd9e'
 
 snapshots['test_all_snapshot_ids 9'] = '''{
   "__class__": "PipelineSnapshot",
@@ -50529,7 +47523,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15": {
+      "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -50537,47 +47531,24 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "multiprocess",
-            "type_key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e"
-          }
-        ],
-        "given_name": null,
-        "key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15",
-        "kind": {
-          "__enum__": "ConfigTypeKind.SELECTOR"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"config\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "filesystem",
-            "type_key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd"
+            "name": "in_process",
+            "type_key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c"
           },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
-            "name": "in_memory",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            "name": "multiprocess",
+            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
           }
         ],
         "given_name": null,
-        "key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb",
+        "key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2",
         "kind": {
           "__enum__": "ConfigTypeKind.SELECTOR"
         },
@@ -50821,6 +47792,59 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.00353c2b6c92ecc3d1ead764b7372a5236189f30": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"multiprocess\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
+            "description": null,
+            "is_required": false,
+            "name": "execution",
+            "type_key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "loggers",
+            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"simple_graph\\": {\\"ops\\": {\\"noop_solid\\": {}}}}",
+            "description": null,
+            "is_required": false,
+            "name": "ops",
+            "type_key": "Shape.7a0d66bb516a8510f4352ce295616019209edee9"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"io_manager\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "resources",
+            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.00353c2b6c92ecc3d1ead764b7372a5236189f30",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.0bb49540f1708dcf5378009c9571eba999502e19": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -50945,106 +47969,49 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.4e267bb29cd6a87ee89fb2f9a2a5042c712cde15": {
+      "Shape.604644f3392978312d2e4fe04bf000e62bf6d779": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "field_aliases": {
-          "solids": "ops"
+          "ops": "solids"
         },
         "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"multiprocess\\": {\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}}",
-            "description": null,
-            "is_required": false,
-            "name": "execution",
-            "type_key": "Selector.986e19e764b826d3c111d7bf840b1003f6b8ee15"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "intermediate_storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
-          },
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
-            "name": "loggers",
-            "type_key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"io_manager\\": {}}",
-            "description": null,
-            "is_required": false,
-            "name": "resources",
-            "type_key": "Shape.0bb49540f1708dcf5378009c9571eba999502e19"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"simple_graph\\": {\\"solids\\": {\\"noop_solid\\": {}}}}",
-            "description": null,
-            "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.e059a3871c1437ff778cf42fa00a8e73111df743"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "storage",
-            "type_key": "Selector.a2588a6acfaabe9de47899395c58b06786b9e2eb"
+            "name": "noop_solid",
+            "type_key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5"
           }
         ],
         "given_name": null,
-        "key": "Shape.4e267bb29cd6a87ee89fb2f9a2a5042c712cde15",
+        "key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339": {
+      "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"multiprocess\\": {}}",
             "description": null,
             "is_required": false,
             "name": "config",
-            "type_key": "Any"
-          },
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": false,
-            "default_value_as_json_str": null,
-            "description": null,
-            "is_required": false,
-            "name": "outputs",
-            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
+            "type_key": "Selector.6237bc2ea7729f9eda86ff21db22185813927fe2"
           }
         ],
         "given_name": null,
-        "key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339",
+        "key": "Shape.6eed5e43812fc2db07a53a5c86abfa02ef577154",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51074,23 +48041,58 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
+      "Shape.7a0d66bb516a8510f4352ce295616019209edee9": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "ops": "solids"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"ops\\": {\\"noop_solid\\": {}}}",
+            "description": null,
+            "is_required": false,
+            "name": "simple_graph",
+            "type_key": "Shape.a667157a353aa1a2d03fcf2dfeba84554d5cf1ad"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.7a0d66bb516a8510f4352ce295616019209edee9",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
+      "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
+            "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "config",
-            "type_key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed"
+            "name": "marker_to_close",
+            "type_key": "String"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
+            "description": null,
+            "is_required": false,
+            "name": "retries",
+            "type_key": "Selector.1bfb167aea90780aa679597800c71bd8c65ed0b2"
           }
         ],
         "given_name": null,
-        "key": "Shape.889b7348071b49700db678dab98bb0a15fd57ecd",
+        "key": "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51129,38 +48131,12 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
+      "Shape.a667157a353aa1a2d03fcf2dfeba84554d5cf1ad": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "field_aliases": {
-          "solids": "ops"
-        },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": null,
-            "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.c7bf2f6fb35fe3909dee263aa1c808fdeb1ab901": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
+          "ops": "solids"
         },
         "fields": [
           {
@@ -51169,12 +48145,12 @@ snapshots['test_all_snapshot_ids 9'] = '''{
             "default_value_as_json_str": "{\\"noop_solid\\": {}}",
             "description": null,
             "is_required": false,
-            "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
+            "name": "ops",
+            "type_key": "Shape.604644f3392978312d2e4fe04bf000e62bf6d779"
           }
         ],
         "given_name": null,
-        "key": "Shape.c7bf2f6fb35fe3909dee263aa1c808fdeb1ab901",
+        "key": "Shape.a667157a353aa1a2d03fcf2dfeba84554d5cf1ad",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51194,36 +48170,13 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.e059a3871c1437ff778cf42fa00a8e73111df743": {
+      "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
         "field_aliases": {
-          "solids": "ops"
+          "ops": "solids"
         },
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"solids\\": {\\"noop_solid\\": {}}}",
-            "description": null,
-            "is_required": false,
-            "name": "simple_graph",
-            "type_key": "Shape.c7bf2f6fb35fe3909dee263aa1c808fdeb1ab901"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.e059a3871c1437ff778cf42fa00a8e73111df743",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
@@ -51231,12 +48184,21 @@ snapshots['test_all_snapshot_ids 9'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
-            "name": "base_dir",
-            "type_key": "String"
+            "name": "config",
+            "type_key": "Any"
+          },
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "outputs",
+            "type_key": "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
           }
         ],
         "given_name": null,
-        "key": "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed",
+        "key": "Shape.e20183fcf9f186a6569b322579dcc1e6fae8d0d5",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51260,29 +48222,6 @@ snapshots['test_all_snapshot_ids 9'] = '''{
         ],
         "given_name": null,
         "key": "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
-            "description": null,
-            "is_required": false,
-            "name": "config",
-            "type_key": "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -51448,7 +48387,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.4e267bb29cd6a87ee89fb2f9a2a5042c712cde15"
+      "root_config_key": "Shape.00353c2b6c92ecc3d1ead764b7372a5236189f30"
     }
   ],
   "name": "composed_graph",

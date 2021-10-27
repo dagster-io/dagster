@@ -55,7 +55,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
     return <Spinner purpose="section" />;
   }
 
-  if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+  if (data.pipelineRunsOrError.__typename !== 'Runs') {
     return (
       <NonIdealState
         icon="error"
@@ -139,7 +139,7 @@ const StatBox = styled.div`
 `;
 
 const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
-  query PartitionRunListForStepQuery($filter: PipelineRunsFilter!) {
+  query PartitionRunListForStepQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {
       ... on PipelineRuns {
         results {

@@ -228,7 +228,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             args=["dagster", "api", "execute_run", input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component="run_coordinator",
+            component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             env_vars=env_vars,
         )
@@ -350,7 +350,7 @@ def _get_validated_celery_k8s_executor_config(run_config):
         )
 
     execution_config_schema = resolve_to_config_type(celery_k8s_config())
-    execution_run_config = run_config["execution"][CELERY_K8S_CONFIG_KEY].get("config", {})
+    execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get("config", {})
     res = process_config(execution_config_schema, execution_run_config)
 
     check.invariant(

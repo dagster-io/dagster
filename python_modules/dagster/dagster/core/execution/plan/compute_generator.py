@@ -72,10 +72,11 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             (
-                "Error in solid {solid_name}: If you are returning an AssetMaterialization "
-                "or an ExpectationResult from solid you must yield them to avoid "
+                "Error in {described_op}: If you are returning an AssetMaterialization "
+                "or an ExpectationResult from {node_type} you must yield them to avoid "
                 "ambiguity with an implied result from returning a value.".format(
-                    solid_name=context.solid.name
+                    described_op=context.describe_op(),
+                    node_type=context.solid_def.node_type_str,
                 )
             )
         )
@@ -89,12 +90,14 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
             context.log.warn(
-                'Value "None" returned for non-required output "{output_name}" of solid {solid_name}. '
-                "This value will be passed to downstream solids. For conditional execution use\n"
+                'Value "None" returned for non-required output "{output_name}" of {described_op}. '
+                "This value will be passed to downstream {node_type}s. For conditional execution use\n"
                 '  yield Output(value, "{output_name}")\n'
-                "when you want the downstream solids to execute, "
+                "when you want the downstream {node_type}s to execute, "
                 "and do not yield it when you want downstream solids to skip.".format(
-                    output_name=output_defs[0].name, solid_name=context.solid.name
+                    output_name=output_defs[0].name,
+                    described_op=context.describe_op(),
+                    node_type=context.solid_def.node_type_str,
                 )
             )
         yield Output(value=result, output_name=output_defs[0].name)
@@ -111,20 +114,26 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
         if not output_defs:
             raise DagsterInvariantViolationError(
                 (
-                    "Error in solid {solid_name}: Unexpectedly returned output {result} "
-                    "of type {type_}. Solid is explicitly defined to return no "
+                    "Error in {described_op}: Unexpectedly returned output {result} "
+                    "of type {type_}. {node_type} is explicitly defined to return no "
                     "results."
-                ).format(solid_name=context.solid.name, result=result, type_=type(result))
+                ).format(
+                    described_op=context.describe_op(),
+                    result=result,
+                    type_=type(result),
+                    node_type=context.solid_def.node_type_str.capitalize(),
+                )
             )
 
         raise DagsterInvariantViolationError(
             (
-                "Error in solid {solid_name}: Solid unexpectedly returned "
+                "Error in {described_op}: {node_type} unexpectedly returned "
                 "output {result} of type {type_}. Should "
                 "be a generator, containing or yielding "
                 "{n_results} results: {{{expected_results}}}."
             ).format(
-                solid_name=context.solid.name,
+                described_op=context.describe_op(),
+                node_type=context.solid_def.node_type_str,
                 result=result,
                 type_=type(result),
                 n_results=len(output_defs),

@@ -106,7 +106,7 @@ export const AssetNode: React.FC<{
           )}
           {event ? (
             <Stats>
-              {runOrError.__typename === 'PipelineRun' && (
+              {runOrError.__typename === 'Run' && (
                 <StatsRow>
                   <Link
                     data-tooltip={`${runOrError.pipelineName}${
@@ -274,6 +274,6 @@ const UpstreamNotice = styled.div`
   margin-top: -4px;
   margin-bottom: -4px;
   padding: 2.5px 5px;
-  margin-right: -8px;
+  margin-right: -6px;
   border-top-right-radius: 3px;
 `;

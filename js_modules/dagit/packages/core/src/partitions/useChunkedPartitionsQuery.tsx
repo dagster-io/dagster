@@ -5,7 +5,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -28,6 +28,12 @@ interface PaginationState {
   pageSize: number | 'all';
 }
 
+export interface PartitionRuns {
+  name: string;
+  runsLoaded: boolean;
+  runs: PartitionSetLoaderRunFragment[];
+}
+
 const PaginationStateQueryConfig: QueryPersistedStateConfig<PaginationState> = {
   encode: (state) => ({
     cursor: state.cursor || undefined,
@@ -45,7 +51,7 @@ interface DataState {
   runs: PartitionSetLoaderRunFragment[];
   partitionNames: string[];
   loading: boolean;
-  loadingPercent: number;
+  loadingCursorIdx: number;
   error?: PythonErrorFragment;
 }
 
@@ -53,7 +59,7 @@ const InitialDataState: DataState = {
   runs: [],
   partitionNames: [],
   loading: false,
-  loadingPercent: 0,
+  loadingCursorIdx: 0,
 };
 
 /**
@@ -64,13 +70,13 @@ export function useChunkedPartitionsQuery(
   partitionSetName: string,
   runsFilter: TokenizingFieldValue[],
   repoAddress: RepoAddress,
+  jobName?: string,
 ) {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const client = useApolloClient();
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const {loading, loadingPercent} = dataState;
 
   const [{cursor, cursorStack, pageSize}, setPaginationState] = useQueryPersistedState(
     PaginationStateQueryConfig,
@@ -115,6 +121,7 @@ export function useChunkedPartitionsQuery(
           namesResult.data.partitionSetOrError.partitionsOrError.__typename === 'Partitions' &&
           namesResult.data.partitionSetOrError.partitionsOrError.results.map((r) => r.name)) ||
         [];
+      let loadingCursorIdx = partitionNames.length;
 
       if (
         namesResult.data.partitionSetOrError.__typename === 'PartitionSet' &&
@@ -125,40 +132,43 @@ export function useChunkedPartitionsQuery(
           partitionSet.partitionsOrError.__typename === 'PythonError'
             ? partitionSet.partitionsOrError
             : undefined;
-        setDataState((state) => ({...state, error, partitionNames: []}));
+        setDataState((state) => ({...state, error, loadingCursorIdx, partitionNames}));
       } else {
-        setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
+        setDataState((state) => ({...state, partitionNames, loadingCursorIdx}));
       }
 
       // Load runs in each of these partitions incrementally, running several queries in parallel
       // to maximize the throughput we can achieve from the GraphQL interface.
       const parallelQueries = 5;
-      for (let ii = partitionNames.length; ii >= 0; ii -= parallelQueries) {
-        const sliceStartIdx = Math.max(ii - parallelQueries, 0);
-        const sliceNames = partitionNames.slice(sliceStartIdx, ii);
+
+      while (loadingCursorIdx > 0) {
+        const nextCursorIdx = Math.max(loadingCursorIdx - parallelQueries, 0);
+        const sliceNames = partitionNames.slice(nextCursorIdx, loadingCursorIdx);
         const fetched = await Promise.all(
-          sliceNames.map((partitionName) =>
-            fetchRunsForFilter(client, {
-              limit: 1000,
-              filter: {
-                tags: [
-                  ...runTags,
-                  {key: DagsterTag.PartitionSet, value: partitionSetName},
-                  {key: DagsterTag.Partition, value: partitionName},
-                ],
-              },
-            }),
-          ),
+          sliceNames.map((partitionName) => {
+            const partitionSetTag = {key: DagsterTag.PartitionSet, value: partitionSetName};
+            const partitionTag = {key: DagsterTag.Partition, value: partitionName};
+            // for jobs, filter by pipelineName/jobName instead of by partition set tag.  This
+            // preserves partition run history across the pipeline => job transition
+            const runsFilter = jobName
+              ? {
+                  pipelineName: jobName,
+                  tags: [...runTags, partitionTag],
+                }
+              : {tags: [...runTags, partitionTag, partitionSetTag]};
+            return fetchRunsForFilter(client, {limit: 1000, filter: runsFilter});
+          }),
         );
         if (version.current !== v) {
           return;
         }
+
+        loadingCursorIdx = nextCursorIdx;
         setDataState((state) => ({
           ...state,
           runs: [...state.runs].concat(...fetched),
-          loading: sliceStartIdx > 0,
-          loadingPercent:
-            0.05 + 0.95 * ((partitionNames.length - sliceStartIdx) / partitionNames.length),
+          loading: loadingCursorIdx > 0,
+          loadingCursorIdx,
         }));
       }
 
@@ -186,7 +196,7 @@ export function useChunkedPartitionsQuery(
         // Fetch runs in the partition set that are in the STARTED state, indicating active updates
         const pending = await fetchRunsForFilter(client, {
           filter: {
-            statuses: [PipelineRunStatus.STARTED],
+            statuses: [RunStatus.STARTED],
             tags: [...runTags, {key: DagsterTag.PartitionSet, value: partitionSetName}],
           },
         });
@@ -214,29 +224,32 @@ export function useChunkedPartitionsQuery(
     return () => {
       version.current += 1;
     };
-  }, [pageSize, cursor, client, partitionSetName, runsFilter, repositorySelector]);
+  }, [pageSize, cursor, client, partitionSetName, runsFilter, repositorySelector, jobName]);
 
   // Note: cursor === null is page zero and cursors specify subsequent pages.
+  const {loading, loadingCursorIdx, partitionNames, error} = dataState;
+  const loadingPercent =
+    0.05 + 0.95 * ((partitionNames.length - loadingCursorIdx) / partitionNames.length);
 
   return {
     loading,
     loadingPercent,
     partitions: assemblePartitions(dataState),
-    error: dataState.error,
+    error,
     pageSize,
     setPageSize: (pageSize: number | 'all') => {
       setPaginationState({cursor: null, cursorStack: [], pageSize});
     },
     paginationProps: {
       hasPrevCursor: cursor !== null,
-      hasNextCursor: dataState.partitionNames.length >= pageSize,
+      hasNextCursor: partitionNames.length >= pageSize,
       popCursor: () => {
         if (cursor === null) {
           return;
         }
         setDataState({
           loading: false,
-          loadingPercent: 0,
+          loadingCursorIdx: 0,
           partitionNames: [],
           runs: [],
         });
@@ -249,7 +262,7 @@ export function useChunkedPartitionsQuery(
       advanceCursor: () => {
         setDataState({
           loading: false,
-          loadingPercent: 0,
+          loadingCursorIdx: 0,
           partitionNames: [],
           runs: [],
         });
@@ -276,32 +289,27 @@ async function fetchRunsForFilter(
     variables,
   });
   return (
-    (result.data.pipelineRunsOrError.__typename === 'PipelineRuns' &&
+    (result.data.pipelineRunsOrError.__typename === 'Runs' &&
       result.data.pipelineRunsOrError.results) ||
     []
   );
 }
-function assemblePartitions(data: {
-  partitionNames: string[];
-  runs: PartitionSetLoaderRunFragment[];
-}) {
+
+function assemblePartitions(data: DataState) {
   // Note: Partitions don't have any unique keys beside their names, so we use names
   // extensively in our display layer as React keys. To create unique empty partitions
   // we use different numbers of zero-width space characters
-  const results: {
-    __typename: 'Partition';
-    name: string;
-    runs: PartitionSetLoaderRunFragment[];
-  }[] = [];
-  for (const name of data.partitionNames) {
+  const results: PartitionRuns[] = [];
+
+  data.partitionNames.forEach((name, idx) =>
     results.push({
-      __typename: 'Partition',
       name,
+      runsLoaded: idx >= data.loadingCursorIdx,
       runs: data.runs.filter((r) =>
         r.tags.some((t) => t.key === DagsterTag.Partition && t.value === name),
       ),
-    });
-  }
+    }),
+  );
   return results;
 }
 
@@ -316,9 +324,9 @@ const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
 `;
 
 const PARTITION_SET_LOADER_QUERY = gql`
-  query PartitionSetLoaderQuery($filter: PipelineRunsFilter!, $cursor: String, $limit: Int) {
+  query PartitionSetLoaderQuery($filter: RunsFilter!, $cursor: String, $limit: Int) {
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...PartitionSetLoaderRunFragment

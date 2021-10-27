@@ -636,6 +636,18 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "internal": {
+                    "title": "Internal",
+                    "type": "boolean"
+                },
+                "usePassword": {
+                    "title": "Usepassword",
+                    "type": "boolean"
+                },
+                "password": {
+                    "title": "Password",
+                    "type": "string"
+                },
                 "host": {
                     "title": "Host",
                     "type": "string"
@@ -651,14 +663,27 @@
                 "backendDbNumber": {
                     "title": "Backenddbnumber",
                     "type": "integer"
+                },
+                "brokerUrl": {
+                    "title": "Brokerurl",
+                    "type": "string"
+                },
+                "backendUrl": {
+                    "title": "Backendurl",
+                    "type": "string"
                 }
             },
             "required": [
                 "enabled",
+                "internal",
+                "usePassword",
+                "password",
                 "host",
                 "port",
                 "brokerDbNumber",
-                "backendDbNumber"
+                "backendDbNumber",
+                "brokerUrl",
+                "backendUrl"
             ]
         },
         "Flower": {
@@ -1417,6 +1442,31 @@
                     "anyOf": [
                         {
                             "$ref": "#/definitions/NodeSelector"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "configSource": {
+                    "title": "Configsource",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "additionalCeleryArgs": {
+                    "title": "Additionalceleryargs",
+                    "items": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
                         },
                         {
                             "type": "null"

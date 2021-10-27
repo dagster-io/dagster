@@ -26,10 +26,10 @@ export const RunStats = ({runId}: {runId: string}) => {
 
   const result = stats.data.pipelineRunOrError;
 
-  if (result.__typename !== 'PipelineRun') {
+  if (result.__typename !== 'Run') {
     return <PythonErrorInfo error={result} />;
   }
-  if (result.stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (result.stats.__typename !== 'RunStatsSnapshot') {
     return <PythonErrorInfo error={result.stats} />;
   }
 
@@ -59,15 +59,15 @@ const RUN_STATS_QUERY = gql`
       ... on PythonError {
         ...PythonErrorFragment
       }
-      ... on PipelineRunNotFoundError {
+      ... on RunNotFoundError {
         message
       }
-      ... on PipelineRun {
+      ... on Run {
         id
         runId
         pipelineName
         stats {
-          ... on PipelineRunStatsSnapshot {
+          ... on RunStatsSnapshot {
             id
             stepsSucceeded
             stepsFailed

@@ -1,7 +1,6 @@
 import os
 
 import pendulum
-import yaml
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -172,7 +171,6 @@ mutation(
 
 def default_execution_params():
     return {
-        "runConfigData": {"intermediate_storage": {"filesystem": None}},
         "selector": {"name": "no_config_pipeline", "solidSelection": None},
         "mode": "default",
     }
@@ -357,11 +355,6 @@ def test_next_tick(graphql_context):
         assert tick["evaluationResult"]
         assert tick["evaluationResult"]["runRequests"]
         assert len(tick["evaluationResult"]["runRequests"]) == 1
-        assert tick["evaluationResult"]["runRequests"][0]["runConfigYaml"] == yaml.dump(
-            {"intermediate_storage": {"filesystem": {}}},
-            default_flow_style=False,
-            allow_unicode=True,
-        )
 
 
 def test_next_tick_bad_schedule(graphql_context):

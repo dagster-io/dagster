@@ -1,11 +1,4 @@
-from dagster import (
-    InputDefinition,
-    dagster_type_loader,
-    execute_pipeline,
-    pipeline,
-    solid,
-    usable_as_dagster_type,
-)
+from dagster import In, dagster_type_loader, job, op, usable_as_dagster_type
 
 
 # def_start_marker
@@ -24,14 +17,14 @@ class Apple:
         self.cultivar = cultivar
 
 
-@solid(input_defs=[InputDefinition("input_apple", Apple)])
-def my_solid(context, input_apple):
+@op(ins={"input_apple": In(Apple)})
+def my_op(context, input_apple):
     context.log.info(f"input apple diameter: {input_apple.diameter}")
 
 
-@pipeline
-def my_pipeline():
-    my_solid()
+@job
+def my_job():
+    my_op()
 
 
 # def_end_marker
@@ -39,11 +32,10 @@ def my_pipeline():
 
 def execute_with_config():
     # execute_start_marker
-    execute_pipeline(
-        my_pipeline,
+    my_job.execute_in_process(
         run_config={
-            "solids": {
-                "my_solid": {
+            "ops": {
+                "my_op": {
                     "inputs": {
                         "input_apple": {"diameter": 2.4, "juiciness": 6.0, "cultivar": "honeycrisp"}
                     }

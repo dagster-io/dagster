@@ -3,7 +3,6 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
 
@@ -14,7 +13,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
     id
     runId
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         startTime
         endTime
@@ -42,12 +41,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
 
 export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
-  if (
-    stats &&
-    stats.__typename === 'PipelineRunStatsSnapshot' &&
-    stats.endTime &&
-    stats.startTime
-  ) {
+  if (stats && stats.__typename === 'RunStatsSnapshot' && stats.endTime && stats.startTime) {
     return stats.endTime - stats.startTime;
   }
 
@@ -69,7 +63,7 @@ export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
 
 export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
-  if (stats && stats.__typename === 'PipelineRunStatsSnapshot') {
+  if (stats && stats.__typename === 'RunStatsSnapshot') {
     return stats.materializations;
   }
   return undefined;
@@ -151,9 +145,9 @@ export const StepSelector: React.FC<{
   all: string[];
   hidden: string[];
   onChangeHidden: (hidden: string[]) => void;
-}> = ({all, hidden, onChangeHidden}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-  const jobLabel = flagPipelineModeTuples ? 'Total job' : 'Total pipeline';
+  isJob: boolean;
+}> = ({all, hidden, isJob, onChangeHidden}) => {
+  const jobLabel = isJob ? 'Total job' : 'Total pipeline';
 
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {

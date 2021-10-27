@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { SensorSelector, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorRootQuery
@@ -46,10 +46,10 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificDa
 export type SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData | SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error_cause {

@@ -6,6 +6,6 @@ run_launcher:
       - DAGSTER_POSTGRES_USER
       - DAGSTER_POSTGRES_PASSWORD
       - DAGSTER_POSTGRES_DB
-  container_kwargs:
-    volumes:
-        - repo.py:/opt/dagster/app/
+    container_kwargs:
+      volumes:
+          - repo.py:/opt/dagster/app/

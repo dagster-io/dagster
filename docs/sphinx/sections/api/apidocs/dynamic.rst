@@ -5,6 +5,6 @@ These APIs provide the means for a simple kind of *dynamic orchestration* — wh
 
 .. currentmodule:: dagster
 
-.. autoclass:: DynamicOutputDefinition
+.. autoclass:: DynamicOut
 
 .. autoclass:: DynamicOutput

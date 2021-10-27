@@ -113,7 +113,7 @@ class DagsterOperatorParameters(
 
         mode_def = pipeline_def.get_mode_definition(mode)
 
-        check_storage_specified(pipeline_def, mode_def, run_config)
+        check_storage_specified(pipeline_def, mode_def)
 
         return super(DagsterOperatorParameters, cls).__new__(
             cls,

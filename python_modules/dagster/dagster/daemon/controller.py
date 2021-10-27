@@ -13,6 +13,7 @@ from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
+    MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
     get_default_daemon_logger,
@@ -285,6 +286,8 @@ def create_daemon_of_type(daemon_type, instance):
         )
     elif daemon_type == BackfillDaemon.daemon_type():
         return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+    elif daemon_type == MonitoringDaemon.daemon_type():
+        return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 

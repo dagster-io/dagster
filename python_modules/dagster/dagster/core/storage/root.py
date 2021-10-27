@@ -21,9 +21,6 @@ class LocalArtifactStorage(ConfigurableClass):
         check.str_param(run_id, "run_id")
         return os.path.join(self.base_dir, "storage", run_id, "files")
 
-    def intermediates_dir(self, run_id):
-        return os.path.join(self.base_dir, "storage", run_id, "")
-
     @property
     def storage_dir(self):
         return os.path.join(self.base_dir, "storage")

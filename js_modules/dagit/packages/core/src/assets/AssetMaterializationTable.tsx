@@ -2,7 +2,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
@@ -16,6 +15,8 @@ import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
@@ -27,7 +28,6 @@ export const AssetMaterializationTable: React.FC<{
   materializations: HistoricalMaterialization[];
   shouldBucketPartitions?: boolean;
 }> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const list = React.useMemo(() => {
     if (shouldBucketPartitions) {
       return materializations;
@@ -43,7 +43,7 @@ export const AssetMaterializationTable: React.FC<{
           <th style={{minWidth: 240}}>Materialization Metadata</th>
           {hasLineage && <th>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
-          <th style={{minWidth: 150}}>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
+          <th style={{minWidth: 150}}>Job / Pipeline</th>
           <th style={{width: 100}}>Run</th>
         </tr>
       </thead>
@@ -67,7 +67,13 @@ const AssetMaterializationRow: React.FC<{
   hasLineage: boolean;
 }> = ({assetMaterialization, isPartitioned, hasLineage}) => {
   const {latest, predecessors} = assetMaterialization;
-  const run = latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : undefined;
+  const run = latest.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
+  const repositoryOrigin = run?.repositoryOrigin;
+  const repoAddress = repositoryOrigin
+    ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)
+    : null;
+  const repo = useRepository(repoAddress);
+
   if (!run) {
     return <span />;
   }
@@ -109,9 +115,9 @@ const AssetMaterializationRow: React.FC<{
       <td>
         <PipelineReference
           pipelineName={run.pipelineName}
-          pipelineHrefContext="repo-unknown"
+          pipelineHrefContext={repoAddress || 'repo-unknown'}
           snapshotId={run.pipelineSnapshotId}
-          mode={run.mode}
+          isJob={!!repo && isThisThingAJob(repo, run.pipelineName)}
         />
       </td>
       <td>

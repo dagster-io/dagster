@@ -28,7 +28,6 @@ def test_execute_hammer_through_dagit():
             variables = {
                 "executionParams": {
                     "runConfigData": {
-                        "intermediate_storage": {"filesystem": {}},
                         "execution": {"dask": {"config": {"cluster": {"local": {}}}}},
                     },
                     "selector": selector,
@@ -62,5 +61,5 @@ def test_execute_hammer_through_dagit():
                 x["__typename"] for x in subscribe_results[0].data["pipelineRunLogs"]["messages"]
             ]
 
-            assert "PipelineStartEvent" in messages
-            assert "PipelineSuccessEvent" in messages
+            assert "RunStartEvent" in messages
+            assert "RunSuccessEvent" in messages

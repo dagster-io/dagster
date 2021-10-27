@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {Box} from '../ui/Box';
@@ -22,14 +22,25 @@ function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   return stepsTag ? stepsTag.value : '*';
 }
 
-export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
-  const queryResult = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
+export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: number}> = ({
+  runId,
+  runStatusLastChangedAt,
+}) => {
+  const {data, refetch} = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
     variables: {runId},
     fetchPolicy: 'cache-and-network',
     pollInterval: 15000, // 15s
   });
 
-  const group = queryResult.data?.runGroupOrError;
+  // Because the RunGroupPanel makes it's own query for the runs and their statuses,
+  // the log + gantt chart UI can show that the run is "completed" for up to 15s before
+  // it's reflected in the sidebar. Observing this single timestamp from our parent
+  // allows us to refetch data immediately when the run's exitedAt / startedAt, etc. is set.
+  React.useEffect(() => {
+    refetch();
+  }, [refetch, runStatusLastChangedAt]);
+
+  const group = data?.runGroupOrError;
 
   if (!group || group.__typename === 'RunGroupNotFoundError') {
     return null;
@@ -75,7 +86,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
             >
               {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
               <Box padding={{top: 4}}>
-                <RunStatus status={g.status} />
+                <RunStatusIndicator status={g.status} />
               </Box>
 
               <div

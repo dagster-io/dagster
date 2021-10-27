@@ -1,6 +1,14 @@
 import time
 
-from dagster import InputDefinition, Output, OutputDefinition, pipeline, solid
+from dagster import (
+    InputDefinition,
+    ModeDefinition,
+    Output,
+    OutputDefinition,
+    fs_io_manager,
+    pipeline,
+    solid,
+)
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -33,7 +41,8 @@ def nonce_solid(name, n_inputs, n_outputs):
 
 
 @pipeline(
-    description="Demo pipeline that spits out different types of log messages to the event log."
+    description="Demo pipeline that spits out different types of log messages to the event log.",
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
 )
 def log_spew():
     one_in_one_out = nonce_solid("one_in_one_out", 1, 1)

@@ -14,19 +14,12 @@ def main(quiet):
     Especially on macOS, there are still many missing wheels for Python 3.9, which means that some
     dependencies may have to be built from source. You may find yourself needing to install system
     packages such as freetype, gfortran, etc.; on macOS, Homebrew should suffice.
-
-    Tensorflow is still not available for 3.9 (2020-12-10), so we have put conditional logic in place
-    around examples, etc., that make use of it. https://github.com/tensorflow/tensorflow/issues/44485
-
-    Pyarrow is still not available for 3.9 (2020-12-10). https://github.com/apache/arrow/pull/8386
-
-    As a consequence of pyarrow, the snowflake connector also is not yet avaialble for 3.9 (2020-12-10).
-    https://github.com/snowflakedb/snowflake-connector-python/issues/562
     """
 
     # Previously, we did a pip install --upgrade pip here. We have removed that and instead
-    # depend on the user to ensure an up-to-date pip is installed and available. For context, there
-    # is a lengthy discussion here: https://github.com/pypa/pip/issues/5599
+    # depend on the user to ensure an up-to-date pip is installed and available. If you run into
+    # build errors, try this first. For context, there is a lengthy discussion here:
+    # https://github.com/pypa/pip/issues/5599
 
     # On machines with less memory, pyspark install will fail... see:
     # https://stackoverflow.com/a/31526029/11295366
@@ -82,7 +75,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-slack",
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
-        "-e python_modules/libraries/lakehouse",
         "-e python_modules/libraries/dagster-airflow",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",

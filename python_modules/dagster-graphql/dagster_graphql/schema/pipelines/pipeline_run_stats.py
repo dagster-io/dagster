@@ -5,7 +5,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from ..errors import GraphenePythonError
 
 
-class GraphenePipelineRunStatsSnapshot(graphene.ObjectType):
+class GraphenePipelineRunStatsSnapshot(graphene.Interface):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
     stepsSucceeded = graphene.NonNull(graphene.Int)
@@ -19,6 +19,23 @@ class GraphenePipelineRunStatsSnapshot(graphene.ObjectType):
 
     class Meta:
         name = "PipelineRunStatsSnapshot"
+
+
+class GrapheneRunStatsSnapshot(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    runId = graphene.NonNull(graphene.String)
+    stepsSucceeded = graphene.NonNull(graphene.Int)
+    stepsFailed = graphene.NonNull(graphene.Int)
+    materializations = graphene.NonNull(graphene.Int)
+    expectations = graphene.NonNull(graphene.Int)
+    enqueuedTime = graphene.Field(graphene.Float)
+    launchTime = graphene.Field(graphene.Float)
+    startTime = graphene.Field(graphene.Float)
+    endTime = graphene.Field(graphene.Float)
+
+    class Meta:
+        interfaces = (GraphenePipelineRunStatsSnapshot,)
+        name = "RunStatsSnapshot"
 
     def __init__(self, stats):
         self._stats = check.inst_param(stats, "stats", PipelineRunStatsSnapshot)
@@ -36,7 +53,7 @@ class GraphenePipelineRunStatsSnapshot(graphene.ObjectType):
         )
 
 
-class GraphenePipelineRunStatsOrError(graphene.Union):
+class GrapheneRunStatsSnapshotOrError(graphene.Union):
     class Meta:
-        types = (GraphenePipelineRunStatsSnapshot, GraphenePythonError)
-        name = "PipelineRunStatsOrError"
+        types = (GrapheneRunStatsSnapshot, GraphenePythonError)
+        name = "RunStatsSnapshotOrError"

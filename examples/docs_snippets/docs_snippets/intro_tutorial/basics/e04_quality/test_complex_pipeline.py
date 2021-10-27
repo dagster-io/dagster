@@ -1,12 +1,10 @@
-from dagster import execute_pipeline
-
 from ..connecting_solids.complex_pipeline import (
-    complex_pipeline,
+    diamond,
     find_highest_calorie_cereal,
 )
 
 
-# start_solid_test
+# start_op_test
 def test_find_highest_calorie_cereal():
     cereals = [
         {"name": "hi-cal cereal", "calories": 400},
@@ -16,16 +14,13 @@ def test_find_highest_calorie_cereal():
     assert result == "hi-cal cereal"
 
 
-# end_solid_test
+# end_op_test
 
-# start_pipeline_test
-def test_complex_pipeline():
-    res = execute_pipeline(complex_pipeline)
+# start_job_test
+def test_diamond():
+    res = diamond.execute_in_process()
     assert res.success
-    highest_protein_cereal = res.result_for_solid(
-        "find_highest_protein_cereal"
-    ).output_value()
-    assert highest_protein_cereal == "Special K"
+    assert res.output_for_node("find_highest_protein_cereal") == "Special K"
 
 
-# end_pipeline_test
+# end_job_test

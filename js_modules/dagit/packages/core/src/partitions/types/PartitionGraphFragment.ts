@@ -10,8 +10,8 @@ import { StepEventStatus } from "./../../types/globalTypes";
 // GraphQL fragment: PartitionGraphFragment
 // ====================================================
 
-export interface PartitionGraphFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PartitionGraphFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   startTime: number | null;
   endTime: number | null;
@@ -31,7 +31,7 @@ export interface PartitionGraphFragment_stats_PythonError {
   cause: PartitionGraphFragment_stats_PythonError_cause | null;
 }
 
-export type PartitionGraphFragment_stats = PartitionGraphFragment_stats_PipelineRunStatsSnapshot | PartitionGraphFragment_stats_PythonError;
+export type PartitionGraphFragment_stats = PartitionGraphFragment_stats_RunStatsSnapshot | PartitionGraphFragment_stats_PythonError;
 
 export interface PartitionGraphFragment_stepStats_materializations {
   __typename: "Materialization";
@@ -43,7 +43,7 @@ export interface PartitionGraphFragment_stepStats_expectationResults {
 }
 
 export interface PartitionGraphFragment_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;
@@ -53,7 +53,7 @@ export interface PartitionGraphFragment_stepStats {
 }
 
 export interface PartitionGraphFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   stats: PartitionGraphFragment_stats;

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorsRootQuery
@@ -59,10 +59,10 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typ
 export type SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData = SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_SensorData | SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_ScheduleData;
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause {
@@ -154,10 +154,10 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export type SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData = SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData | SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData;
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {

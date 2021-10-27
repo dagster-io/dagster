@@ -7,6 +7,7 @@ from dagster import (
     PipelineDefinition,
     SensorDefinition,
     SolidDefinition,
+    build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
     graph,
@@ -15,7 +16,6 @@ from dagster import (
     pipeline,
     repository,
     schedule,
-    schedule_from_partitions,
     sensor,
     solid,
 )
@@ -419,7 +419,7 @@ def test_job_scheduled_partitions():
         return {}
 
     my_job = my_graph.to_job(config=daily_schedule_config)
-    my_schedule = schedule_from_partitions(my_job)
+    my_schedule = build_schedule_from_partitioned_job(my_job)
 
     @repository
     def schedule_repo():

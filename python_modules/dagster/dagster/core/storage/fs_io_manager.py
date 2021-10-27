@@ -27,50 +27,50 @@ def fs_io_manager(init_context):
 
     Example usage:
 
-    1. Specify a pipeline-level IO manager using the reserved resource key ``"io_manager"``,
-    which will set the given IO manager on all solids across a pipeline.
+    1. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,
+    which will set the given IO manager on all ops in a job.
 
     .. code-block:: python
 
-        @solid
-        def solid_a(context, df):
+        from dagster import fs_io_manager, job, op
+
+        @op
+        def op_a():
+            # create df ...
             return df
 
-        @solid
-        def solid_b(context, df):
+        @op
+        def op_b(df):
             return df[:5]
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        "io_manager": fs_io_manager.configured({"base_path": "/my/base/path"})
-                    }
-                )
-            ]
+        @job(
+            resource_defs={
+                "io_manager": fs_io_manager.configured({"base_path": "/my/base/path"})
+            }
         )
-        def pipe():
-            solid_b(solid_a())
+        def job():
+            op_b(op_a())
 
 
-    2. Specify IO manager on :py:class:`OutputDefinition`, which allows the user to set
-    different IO managers on different step outputs.
+    2. Specify IO manager on :py:class:`Out`, which allows the user to set different IO managers on
+    different step outputs.
 
     .. code-block:: python
 
-        @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
-        def solid_a(context, df):
+        from dagster import fs_io_manager, job, op, Out
+
+        @op(out=Out(io_manager_key="my_io_manager"))
+        def op_a():
+            # create df ...
             return df
 
-        @solid
-        def solid_b(context, df):
+        @op
+        def op_b(df):
             return df[:5]
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"my_io_manager": fs_io_manager})]
-        )
-        def pipe():
-            solid_b(solid_a())
+        @job(resource_defs={"my_io_manager": fs_io_manager})
+        def job():
+            op_b(op_a())
 
     """
     base_dir = init_context.resource_config.get(
@@ -198,24 +198,18 @@ def custom_path_fs_io_manager(init_context):
 
     .. code-block:: python
 
-        @solid(
-            output_defs=[
-                OutputDefinition(
-                    io_manager_key="io_manager", metadata={"path": "path/to/sample_output"}
-                )
-            ]
-        )
-        def sample_data(context, df):
+        from dagster import custom_path_fs_io_manager, job, op
+
+        @op(out=Out(metadata={"path": "path/to/sample_output"}))
+        def sample_data(df):
             return df[:5]
 
         my_custom_path_fs_io_manager = custom_path_fs_io_manager.configured(
             {"base_dir": "path/to/basedir"}
         )
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"io_manager": my_custom_path_fs_io_manager})],
-        )
-        def pipe():
+        @job(resource_defs={"io_manager": my_custom_path_fs_io_manager})
+        def my_job():
             sample_data()
 
     """

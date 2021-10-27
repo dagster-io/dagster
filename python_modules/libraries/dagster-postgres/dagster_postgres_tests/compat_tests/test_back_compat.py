@@ -265,16 +265,6 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         assert result.success
         assert len(instance.get_runs()) == 3
 
-        runs = instance.get_runs(filters=PipelineRunsFilter(mode="default"))
-        assert len(runs) == 2
-        assert runs[0].mode == "default"
-        assert runs[1].mode == "default"
-
-        # Ensure historical runs have their mode filled post-data migration
-        runs = instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
-        assert len(runs) == 1
-        assert runs[0].mode == "the_mode"
-
 
 def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
     _reconstruct_from_file(

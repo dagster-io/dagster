@@ -8,8 +8,6 @@ def usable_as_dagster_type(
     description=None,
     loader=None,
     materializer=None,
-    serialization_strategy=None,
-    auto_plugins=None,
 ):
     """Decorate a Python class to make it usable as a Dagster Type.
 
@@ -32,16 +30,6 @@ def usable_as_dagster_type(
             this type. As a rule, you should use the
             :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
             decorator to construct these arguments.
-        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
-            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
-            this value when automatically persisting it between execution steps. You should set
-            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
-            for this type.
-        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
 
     Examples:
 
@@ -83,8 +71,6 @@ def usable_as_dagster_type(
                 python_type=bare_cls,
                 loader=loader,
                 materializer=materializer,
-                serialization_strategy=serialization_strategy,
-                auto_plugins=auto_plugins,
             ),
         )
         return bare_cls

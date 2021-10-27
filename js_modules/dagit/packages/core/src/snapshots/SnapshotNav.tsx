@@ -38,6 +38,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   });
 
   const currentPipelineState = useActivePipelineForName(pipelineName);
+  const isJob = !!currentPipelineState?.isJob;
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
   const {data, loading} = useQuery<SnapshotQuery>(SNAPSHOT_PARENT_QUERY, {
@@ -97,12 +98,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         <>
           <TagWIP icon="schema">
             Snapshot of{' '}
-            <Link
-              to={workspacePipelinePathGuessRepo(
-                explorerPath.pipelineName,
-                explorerPath.pipelineMode,
-              )}
-            >
+            <Link to={workspacePipelinePathGuessRepo(explorerPath.pipelineName, isJob)}>
               {explorerPath.pipelineName}
             </Link>
           </TagWIP>
@@ -110,7 +106,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         </>
       }
       tabs={
-        <Tabs large={false} selectedTabId={activeTab}>
+        <Tabs selectedTabId={activeTab}>
           {tabs.map((tab) => {
             const {href, text, pathComponent} = tab;
             return <Tab key={text} id={pathComponent} title={text} to={href} />;

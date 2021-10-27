@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
+import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
@@ -12,6 +13,7 @@ import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Markdown} from '../ui/Markdown';
 import {Tooltip} from '../ui/Tooltip';
+import {FontFamily} from '../ui/styles';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -86,9 +88,15 @@ export const MetadataEntry: React.FC<{
           label={entry.label}
           copyContent={() => entry.jsonString}
           content={() => (
-            <div style={{whiteSpace: 'pre-wrap'}}>
+            <Box
+              background={ColorsWIP.Gray100}
+              margin={{bottom: 12}}
+              padding={24}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace}}
+            >
               {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
-            </div>
+            </Box>
           )}
         >
           [Show JSON]
@@ -115,7 +123,11 @@ export const MetadataEntry: React.FC<{
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}
-          content={() => <Markdown>{entry.mdStr}</Markdown>}
+          content={() => (
+            <DialogBody>
+              <Markdown>{entry.mdStr}</Markdown>
+            </DialogBody>
+          )}
         >
           [Show Markdown]
         </MetadataEntryModalAction>
@@ -241,7 +253,7 @@ const MetadataEntryModalAction: React.FunctionComponent<{
         onClose={() => setOpen(false)}
         isOpen={open}
       >
-        <DialogBody>{props.content()}</DialogBody>
+        {props.content()}
         <DialogFooter>
           <ButtonWIP onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>
             Copy

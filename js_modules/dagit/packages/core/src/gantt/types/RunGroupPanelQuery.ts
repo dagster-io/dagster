@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunGroupPanelQuery
@@ -25,8 +25,8 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {
   value: string;
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -47,14 +47,14 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonEr
   cause: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError_cause | null;
 }
 
-export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
+export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   parentRunId: string | null;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   pipelineName: string;
   tags: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags[];

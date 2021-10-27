@@ -10,6 +10,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -62,6 +63,7 @@ const SensorRow: React.FC<{
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
+  const repo = useRepository(repoAddress);
   const {name, sensorState} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
@@ -80,12 +82,12 @@ const SensorRow: React.FC<{
             <Box flex={{direction: 'column', gap: 2}}>
               {sensor.targets.map((target) => (
                 <PipelineReference
-                  key={`${target.pipelineName}:${target.mode}`}
+                  key={target.pipelineName}
                   showIcon
                   size="small"
                   pipelineName={target.pipelineName}
                   pipelineHrefContext={repoAddress}
-                  mode={target.mode}
+                  isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                 />
               ))}
             </Box>

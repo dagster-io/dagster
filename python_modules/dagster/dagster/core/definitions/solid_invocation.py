@@ -191,7 +191,7 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            "When yielding outputs from a solid generator, they should be wrapped in an `Output` object."
+                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
@@ -200,14 +200,14 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of solid '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield event
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
-                        f"Invocation of solid '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
                     )
 
         return to_gen(result)
@@ -232,7 +232,7 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            "When yielding outputs from a solid generator, they should be wrapped in an `Output` object."
+                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
@@ -241,14 +241,14 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of solid '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield output
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
-                        f"Invocation of solid '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
                     )
 
         return type_check_gen(result)
@@ -265,15 +265,15 @@ def _type_check_function_output(
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             (
-                f"Error in solid '{solid_def.name}'': If you are returning an AssetMaterialization "
+                f"Error in {solid_def.node_type_str} '{solid_def.name}'': If you are returning an AssetMaterialization "
                 "or an ExpectationResult from solid you must yield them to avoid "
                 "ambiguity with an implied result from returning a value."
             )
         )
     if isinstance(result, DynamicOutput):
         raise DagsterInvariantViolationError(
-            f"Error in solid '{solid_def.name}': Attempted to return a DynamicOutput from solid. "
-            "DynamicOutputs are only supported using yield syntax."
+            f"Error in {solid_def.node_type_str} '{solid_def.name}': Attempted to return a DynamicOutput from {solid_def.node_type_str}. "
+            "DynamicOuts are only supported using yield syntax."
         )
     if (
         not isinstance(result, Output)
@@ -286,14 +286,14 @@ def _type_check_function_output(
 
     if len(solid_def.output_defs) > 1 and not isinstance(result, (Output, DynamicOutput)):
         raise DagsterInvariantViolationError(
-            "Multiple output definitions but no Output wrapper provided is ambiguous."
+            "Multiple outputs but no Output wrapper provided is ambiguous."
         )
     received_output = None
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
     if isinstance(result, (Output, DynamicOutput)):
         if result.output_name not in output_defs:
             raise DagsterInvariantViolationError(
-                f'Invocation of solid "{solid_def.name}" returned an output "{result.output_name}" '
+                f'Invocation of {solid_def.node_type_str} "{solid_def.name}" returned an output "{result.output_name}" '
                 "that does not exist. The available outputs are "
                 f"{[output_def.name for output_def in solid_def.output_defs]}"
             )
@@ -307,7 +307,7 @@ def _type_check_function_output(
     for output_def in solid_def.output_defs:
         if output_def.is_required and not output_def.name == received_output:
             raise DagsterInvariantViolationError(
-                f"Invocation of solid '{solid_def.name}' did not return an output for non-optional "
+                f"Invocation of {solid_def.node_type_str} '{solid_def.name}' did not return an output for non-optional "
                 f"output '{output_def.name}'."
             )
     return result

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op import OpDefinition
+from dagster.core.definitions.op_def import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.policy import RetryPolicy
@@ -33,9 +33,7 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
     from dagster.core.definitions.dependency import Node, NodeHandle
-    from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.definitions.resource import Resources
@@ -117,7 +115,7 @@ class PlanData(NamedTuple):
     """The data about a run that is available during both orchestration and execution.
 
     This object does not contain any information that requires access to user code, such as the
-    pipeline definition, resources, or intermediate storage.
+    pipeline definition and resources.
     """
 
     pipeline: IPipeline
@@ -132,12 +130,10 @@ class ExecutionData(NamedTuple):
     """The data that is available to the system during execution.
 
     This object contains information that requires access to user code, such as the pipeline
-    definition, resources, and intermediate storage.
+    definition and resources.
     """
 
     scoped_resources_builder: ScopedResourcesBuilder
-    intermediate_storage: "IntermediateStorage"
-    intermediate_storage_def: "IntermediateStorageDefinition"
     resolved_run_config: ResolvedRunConfig
     pipeline_def: PipelineDefinition
     mode_def: ModeDefinition
@@ -167,11 +163,13 @@ class PlanOrchestrationContext(IPlanContext):
         log_manager: DagsterLogManager,
         executor: Executor,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
+        resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
         self._log_manager = log_manager
         self._executor = executor
         self._output_capture = output_capture
+        self._resume_from_failure = resume_from_failure
 
     @property
     def plan_data(self) -> PlanData:
@@ -206,12 +204,16 @@ class PlanOrchestrationContext(IPlanContext):
             output_capture=self.output_capture,
         )
 
+    @property
+    def resume_from_failure(self) -> bool:
+        return self._resume_from_failure
+
 
 class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
     """Context for the orchestration of a step.
 
     This context assumes inability to run user code directly. Thus, it does not include any resource
-    or intermediate storage information.
+    information.
     """
 
     def __init__(self, plan_data, log_manager, executor, step, output_capture):
@@ -233,7 +235,7 @@ class PlanExecutionContext(IPlanContext):
     """Context for the execution of a plan.
 
     This context assumes that user code can be run directly, and thus includes resource and
-    intermediate storage information.
+    information.
     """
 
     def __init__(
@@ -276,14 +278,6 @@ class PlanExecutionContext(IPlanContext):
         return self._execution_data.resolved_run_config
 
     @property
-    def intermediate_storage_def(self) -> "IntermediateStorageDefinition":
-        return self._execution_data.intermediate_storage_def
-
-    @property
-    def intermediate_storage(self) -> "IntermediateStorage":
-        return self._execution_data.intermediate_storage
-
-    @property
     def scoped_resources_builder(self) -> ScopedResourcesBuilder:
         return self._execution_data.scoped_resources_builder
 
@@ -301,7 +295,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     """Context for the execution of a step.
 
     This context assumes that user code can be run directly, and thus includes resource and
-    intermediate storage information.
+    information.
     """
 
     def __init__(
@@ -326,7 +320,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
@@ -342,9 +335,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._step_launcher: Optional[StepLauncher] = None
         if len(step_launcher_resources) > 1:
             raise DagsterInvariantViolationError(
-                "Multiple required resources for solid {solid_name} have inherit StepLauncher"
-                "There should be at most one step launcher resource per solid.".format(
-                    solid_name=step.solid_handle.name
+                "Multiple required resources for {described_op} have inherited StepLauncher"
+                "There should be at most one step launcher resource per {node_type}.".format(
+                    described_op=self.describe_op(), node_type=self.solid_def.node_type_str
                 )
             )
         elif len(step_launcher_resources) == 1:
@@ -407,24 +400,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             .io_manager_key
         )
 
-        # backcompat: if intermediate storage is specified and the user hasn't overridden
-        # io_manager_key on the output, use the intermediate storage.
-        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
-            from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
-
-            output_manager = IntermediateStorageAdapter(self.intermediate_storage)
-        else:
-            output_manager = getattr(self.resources, io_manager_key)
+        output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
-
-    def using_default_intermediate_storage(self) -> bool:
-        from dagster.core.storage.system_storage import mem_intermediate_storage
-
-        # pylint: disable=comparison-with-callable
-        return (
-            self.intermediate_storage_def is None
-            or self.intermediate_storage_def == mem_intermediate_storage
-        )
 
     def get_output_context(self, step_output_handle) -> OutputContext:
         return get_output_context(
@@ -556,8 +533,8 @@ class TypeCheckContext:
 
     Attributes:
         log (DagsterLogManager): Centralized log dispatch from user code.
-        resources (Any): An object whose attributes contain the resources available to this solid.
-        run_id (str): The id of this pipeline run.
+        resources (Any): An object whose attributes contain the resources available to this op.
+        run_id (str): The id of this job run.
     """
 
     def __init__(

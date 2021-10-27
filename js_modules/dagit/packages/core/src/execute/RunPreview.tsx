@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
@@ -25,10 +24,10 @@ import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,
-  RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
+  RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
 } from './types/RunPreviewValidationFragment';
 
-type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
+type ValidationError = RunPreviewValidationFragment_RunConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
 
 function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
@@ -190,7 +189,6 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     runConfigSchema,
   } = props;
   const [errorsOnly, setErrorsOnly] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const rootCompositeChildren = React.useMemo(() => {
     if (!runConfigSchema) {
@@ -225,7 +223,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     error: ValidationErrorOrNode;
   }[] = [];
 
-  if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
+  if (validation && validation.__typename === 'RunConfigValidationInvalid') {
     validation.errors.forEach((e) => {
       const path = errorStackToYamlPath(e.stack.entries);
 
@@ -389,7 +387,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</SectionTitle>
+              <SectionTitle>Ops</SectionTitle>
               <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
             </Section>
             <div style={{height: 50}} />
@@ -418,7 +416,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
     __typename
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         reason

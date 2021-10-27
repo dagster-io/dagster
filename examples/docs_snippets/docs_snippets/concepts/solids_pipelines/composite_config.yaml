@@ -1,8 +1,6 @@
-solids:
-  add_n_times_m_solid:
-    inputs:
-      number: 0
-    solids:
+ops:
+  add_n_times_m_graph:
+    ops:
       add_n:
         config:
           n: 3

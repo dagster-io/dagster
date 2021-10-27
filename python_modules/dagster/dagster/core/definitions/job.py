@@ -1,8 +1,8 @@
-import warnings
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -30,9 +30,13 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        _op_selection_data: Optional[OpSelectionData] = None,
     ):
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
+        self._op_selection_data = check.opt_inst_param(
+            _op_selection_data, "_op_selection_data", OpSelectionData
+        )
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -47,8 +51,12 @@ class JobDefinition(PipelineDefinition):
         )
 
     @property
-    def target_type(self):
+    def target_type(self) -> str:
         return "job"
+
+    @property
+    def is_job(self) -> bool:
+        return True
 
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
@@ -59,12 +67,13 @@ class JobDefinition(PipelineDefinition):
         instance: Optional["DagsterInstance"] = None,
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
+        op_selection: Optional[List[str]] = None,
     ) -> "ExecuteInProcessResult":
         """
-        (Experimental) Execute the Job in-process, gathering results in-memory.
+        Execute the Job in-process, gathering results in-memory.
 
-        The executor_def on the Job will be ignored, and replaced with the in-process executor.
-        If using the default io_manager, it will switch from filesystem to in-memory.
+        The `executor_def` on the Job will be ignored, and replaced with the in-process executor.
+        If using the default `io_manager`, it will switch from filesystem to in-memory.
 
 
         Args:
@@ -77,15 +86,23 @@ class JobDefinition(PipelineDefinition):
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
-
+            op_selection (Optional[List[str]]): A list of op selection queries (including single op
+                names) to execute. For example:
+                * ``['some_op']``: selects ``some_op`` itself.
+                * ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
+                * ``['*some_op+++']``: select ``some_op``, all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+                * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
+                ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
         Returns:
-            ExecuteInProcessResult
+            :py:class:`~dagster.ExecuteInProcessResult`
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
         check.invariant(
@@ -112,7 +129,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
-        )
+        ).get_job_def_for_op_selection(op_selection)
 
         if partition_key:
             if not base_mode.partitioned_config:
@@ -134,14 +151,53 @@ class JobDefinition(PipelineDefinition):
             raise_on_error=raise_on_error,
         )
 
-    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
+    @property
+    def op_selection_data(self) -> Optional[OpSelectionData]:
+        return self._op_selection_data
 
-        warnings.warn(
-            f"Attempted to subset job {self.name}. The subsetted job will be represented by a "
-            "PipelineDefinition."
+    def get_job_def_for_op_selection(
+        self,
+        op_selection: Optional[List[str]] = None,
+    ) -> "JobDefinition":
+        if not op_selection:
+            return self
+
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+
+        # TODO: https://github.com/dagster-io/dagster/issues/2115
+        #   op selection currently still operates on PipelineSubsetDefinition. ideally we'd like to
+        #   1) move away from creating PipelineSubsetDefinition
+        #   2) consolidate solid selection and step selection
+        #   3) enable subsetting nested graphs/ops which isn't working with the current setting
+        solids_to_execute = (
+            self._op_selection_data.resolved_op_selection if self._op_selection_data else None
         )
+        if op_selection:
+            solids_to_execute = parse_solid_selection(
+                super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute),
+                op_selection,
+            )
+        subset_pipeline_def = super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
+        ignored_solids = [
+            solid
+            for solid in self._graph_def.solids
+            if not subset_pipeline_def.has_solid_named(solid.name)
+        ]
 
-        return super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
+        return JobDefinition(
+            name=self.name,
+            description=self.description,
+            mode_def=self.get_mode_definition(),
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            solid_retry_policy=self._solid_retry_policy,
+            graph_def=subset_pipeline_def.graph,
+            version_strategy=self.version_strategy,
+            _op_selection_data=OpSelectionData(
+                resolved_op_selection=solids_to_execute, ignored_solids=ignored_solids
+            ),
+        )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
         if not self.is_single_mode:
@@ -154,7 +210,7 @@ class JobDefinition(PipelineDefinition):
         if not self._cached_partition_set:
 
             self._cached_partition_set = PartitionSetDefinition(
-                pipeline_name=self.name,
+                job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,

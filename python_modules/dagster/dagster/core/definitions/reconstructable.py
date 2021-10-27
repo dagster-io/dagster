@@ -110,7 +110,13 @@ class ReconstructablePipeline(
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
         if isinstance(defn, JobDefinition):
-            return self.repository.get_definition().get_pipeline(self.pipeline_name)
+            return (
+                self.repository.get_definition()
+                .get_pipeline(self.pipeline_name)
+                .get_job_def_for_op_selection(
+                    list(self.solids_to_execute) if self.solids_to_execute else None
+                )
+            )
         else:
             return (
                 self.repository.get_definition()
@@ -122,11 +128,14 @@ class ReconstructablePipeline(
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
         check.list_param(solid_selection, "solid_selection", of_type=str)
-        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
+        pipeline_def = self.get_definition()
+        solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
         if len(solids_to_execute) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=solid_selection,
+                    node_type="ops" if pipeline_def.is_job else "solids",
+                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         return solids_to_execute
@@ -156,7 +165,6 @@ class ReconstructablePipeline(
         solids_to_execute = (
             self._resolve_solid_selection(solid_selection) if solid_selection else None
         )
-
         return self._subset_for_execution(solids_to_execute, solid_selection)
 
     def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
@@ -236,44 +244,73 @@ class ReconstructableSchedule(
 def reconstructable(target):
     """
     Create a :py:class:`~dagster.core.definitions.reconstructable.ReconstructablePipeline` from a
-    function that returns a :py:class:`~dagster.PipelineDefinition`, or a function decorated with
-    :py:func:`@pipeline <dagster.pipeline>`
+    function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
+    or a function decorated with :py:func:`@pipeline <dagster.pipeline>`/:py:func:`@job <dagster.job>`.
 
-    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    When your pipeline/job must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline/job
     on the other side of the process boundary.
 
-    This function implements a very conservative strategy for reconstructing pipelines, so that
-    its behavior is easy to predict, but as a consequence it is not able to reconstruct certain
-    kinds of pipelines, such as those defined by lambdas, in nested scopes (e.g., dynamically
-    within a method call), or in interactive environments such as the Python REPL or Jupyter
-    notebooks.
+    Passing a job created with ``~dagster.GraphDefinition.to_job`` to ``reconstructable()``,
+    requires you to wrap that job's definition in a module-scoped function, and pass that function
+    instead:
 
-    If you need to reconstruct pipelines constructed in these ways, you should use
+    .. code-block:: python
+
+        from dagster import graph, reconstructable
+
+        @graph
+        def my_graph():
+            ...
+
+        def define_my_job():
+            return my_graph.to_job()
+
+        reconstructable(define_my_job)
+
+    This function implements a very conservative strategy for reconstruction, so that its behavior
+    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of pipelines
+    or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
+    call), or in interactive environments such as the Python REPL or Jupyter notebooks.
+
+    If you need to reconstruct objects constructed in these ways, you should use
     :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
-    which allows you to specify your own strategy for reconstructing a pipeline.
+    which allows you to specify your own reconstruction strategy.
 
     Examples:
 
     .. code-block:: python
 
-        from dagster import PipelineDefinition, pipeline, reconstructable
+        from dagster import job, reconstructable
 
-        @pipeline
-        def foo_pipeline():
+        @job
+        def foo_job():
             ...
 
-        reconstructable_foo_pipeline = reconstructable(foo_pipeline)
+        reconstructable_foo_job = reconstructable(foo_job)
 
 
-        def make_bar_pipeline():
-            return PipelineDefinition(...)
+        @graph
+        def foo():
+            ...
 
-        reconstructable_bar_pipeline = reconstructable(bar_pipeline)
+        def make_bar_job():
+            return foo.to_job()
+
+        reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions import PipelineDefinition, JobDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+        if isinstance(target, JobDefinition):
+            raise DagsterInvariantViolationError(
+                "Reconstructable target was not a function returning a job definition, or a job "
+                "definition produced by a decorated function. If your job was constructed using "
+                "``GraphDefinition.to_job``, you must wrap the ``to_job`` call in a function at "
+                "module scope, ie not within any other functions. "
+                "To learn more, check out the docs on ``reconstructable``: "
+                "https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
             "by a decorated function, got {type}.".format(type=type(target)),
@@ -283,7 +320,7 @@ def reconstructable(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
-            "build_reconstructable_pipeline."
+            "build_reconstructable_target."
         )
 
     if seven.qualname_differs(target):
@@ -309,10 +346,10 @@ def reconstructable(target):
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct pipelines defined in interactive environments "
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments "
             "like <stdin>, IPython, or Jupyter notebooks. "
             "Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_pipeline."
+            "use build_reconstructable_target."
         )
 
     pointer = FileCodePointer(
@@ -323,7 +360,7 @@ def reconstructable(target):
 
 
 @experimental
-def build_reconstructable_pipeline(
+def build_reconstructable_target(
     reconstructor_module_name,
     reconstructor_function_name,
     reconstructable_args=None,
@@ -418,6 +455,9 @@ def build_reconstructable_pipeline(
     )
 
 
+build_reconstructable_pipeline = build_reconstructable_target
+
+
 def bootstrap_standalone_recon_pipeline(pointer):
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
@@ -437,7 +477,7 @@ def _check_is_loadable(definition):
     if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
         raise DagsterInvariantViolationError(
             (
-                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
                 "RepositoryDefinition. Got {definition}."
             ).format(definition=repr(definition))
         )
@@ -491,7 +531,7 @@ def pipeline_def_from_pointer(pointer):
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a PipelineDefinition. "
+        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy code). "
         "Received a {type}".format(str=pointer.describe(), type=type(target))
     )
 
@@ -520,7 +560,7 @@ def repository_def_from_pointer(pointer):
     if not repo_def:
         raise DagsterInvariantViolationError(
             "CodePointer ({str}) must resolve to a "
-            "RepositoryDefinition or a PipelineDefinition. "
+            "RepositoryDefinition, JobDefinition, or PipelineDefinition. "
             "Received a {type}".format(str=pointer.describe(), type=type(target))
         )
     return repo_def

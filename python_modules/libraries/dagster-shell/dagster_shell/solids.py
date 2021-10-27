@@ -95,9 +95,9 @@ def create_shell_command_op(
 ):
     """This function is a factory that constructs ops to execute a shell command.
 
-    Note that you can only use `shell_command_op` if you know the command you'd like to execute
+    Note that you can only use ``shell_command_op`` if you know the command you'd like to execute
     at pipeline construction time. If you'd like to construct shell commands dynamically during
-    pipeline execution and pass them between ops, you should use `shell_op` instead.
+    pipeline execution and pass them between ops, you should use ``shell_op`` instead.
 
     Examples:
 
@@ -142,9 +142,9 @@ def create_shell_command_solid(
 ):
     """This function is a factory that constructs solids to execute a shell command.
 
-    Note that you can only use `shell_command_solid` if you know the command you'd like to execute
+    Note that you can only use ``shell_command_solid`` if you know the command you'd like to execute
     at pipeline construction time. If you'd like to construct shell commands dynamically during
-    pipeline execution and pass them between solids, you should use `shell_solid` instead.
+    pipeline execution and pass them between solids, you should use ``shell_solid`` instead.
 
     Examples:
 

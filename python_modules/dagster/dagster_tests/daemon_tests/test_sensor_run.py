@@ -62,7 +62,7 @@ def the_pipeline():
     the_solid()
 
 
-@graph
+@graph()
 def the_graph():
     the_solid()
 
@@ -80,7 +80,7 @@ def config_pipeline():
     config_solid()
 
 
-@graph
+@graph()
 def config_graph():
     config_solid()
 
@@ -120,7 +120,7 @@ def failure_pipeline():
     failure_solid()
 
 
-@graph
+@graph()
 def failure_graph():
     failure_solid()
 
@@ -643,11 +643,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
             # Error repeats on subsequent ticks
 
@@ -662,11 +662,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

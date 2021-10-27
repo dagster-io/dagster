@@ -27,17 +27,11 @@ def docker_service_up(docker_compose_file):
     build_process.wait()
     assert build_process.returncode == 0
 
-    env_file = file_relative_path(docker_compose_file, ".env")
-
-    up_process = subprocess.Popen(
-        ["docker-compose", "--env-file", env_file, "-f", docker_compose_file, "up", "--no-start"]
-    )
+    up_process = subprocess.Popen(["docker-compose", "-f", docker_compose_file, "up", "--no-start"])
     up_process.wait()
     assert up_process.returncode == 0
 
-    start_process = subprocess.Popen(
-        ["docker-compose", "--env-file", env_file, "-f", docker_compose_file, "start"]
-    )
+    start_process = subprocess.Popen(["docker-compose", "-f", docker_compose_file, "start"])
     start_process.wait()
     assert start_process.returncode == 0
 
@@ -81,7 +75,7 @@ LAUNCH_PIPELINE_MUTATION = """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
         status
@@ -103,18 +97,18 @@ TERMINATE_MUTATION = """
 mutation($runId: String!) {
   terminatePipelineExecution(runId: $runId){
     __typename
-    ... on TerminatePipelineExecutionSuccess{
+    ... on TerminateRunSuccess{
       run {
         runId
       }
     }
-    ... on TerminatePipelineExecutionFailure {
+    ... on TerminateRunFailure {
       run {
         runId
       }
       message
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       runId
     }
     ... on PythonError {
@@ -166,14 +160,14 @@ def test_deploy_docker():
         assert nodes
 
         names = {node["name"] for node in nodes[0]["pipelines"]}
-        assert names == {"my_pipeline", "hanging_pipeline"}
+        assert names == {"my_job", "hanging_job"}
 
         variables = {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "example_pipelines",
+                    "repositoryLocationName": "example_user_code",
                     "repositoryName": "deploy_docker_repository",
-                    "pipelineName": "my_pipeline",
+                    "pipelineName": "my_job",
                 },
                 "mode": "default",
             }
@@ -187,10 +181,7 @@ def test_deploy_docker():
             )
         ).json()
 
-        assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
-        )
+        assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         run_id = run["runId"]
@@ -202,9 +193,9 @@ def test_deploy_docker():
         variables = {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "example_pipelines",
+                    "repositoryLocationName": "example_user_code",
                     "repositoryName": "deploy_docker_repository",
-                    "pipelineName": "hanging_pipeline",
+                    "pipelineName": "hanging_job",
                 },
                 "mode": "default",
             }
@@ -218,10 +209,7 @@ def test_deploy_docker():
             )
         ).json()
 
-        assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
-        )
+        assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         hanging_run_id = run["runId"]
@@ -238,7 +226,7 @@ def test_deploy_docker():
 
         assert (
             terminate_res["data"]["terminatePipelineExecution"]["__typename"]
-            == "TerminatePipelineExecutionSuccess"
+            == "TerminateRunSuccess"
         )
 
         _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)

@@ -123,7 +123,7 @@ def test_executor_config_ignored_by_execute_in_process():
         my_solid()
 
     my_job = my_graph.to_job(
-        config={"execution": {"multiprocess": {"config": {"max_concurrent": 5}}}}
+        config={"execution": {"config": {"multiprocess": {"max_concurrent": 5}}}}
     )
 
     result = my_job.execute_in_process()

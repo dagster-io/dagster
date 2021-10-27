@@ -548,7 +548,7 @@ def external_partition_set_data_from_def(partition_set_def):
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
     return ExternalPartitionSetData(
         name=partition_set_def.name,
-        pipeline_name=partition_set_def.pipeline_name,
+        pipeline_name=partition_set_def.pipeline_name or partition_set_def.job_name,
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )

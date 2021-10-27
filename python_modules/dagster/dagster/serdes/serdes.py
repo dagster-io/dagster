@@ -14,7 +14,6 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
-
 from abc import ABC, abstractmethod
 from enum import Enum
 from inspect import Parameter, isclass, signature

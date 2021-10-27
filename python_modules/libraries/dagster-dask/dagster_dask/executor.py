@@ -96,17 +96,15 @@ def dask_executor(init_context):
                     }
             }
 
-    If you'd like to configure a dask executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    To use the `dask_executor`, set it as the `executor_def` when defining a job:
 
     .. code-block:: python
 
-        from dagster import ModeDefinition, default_executors, pipeline
+        from dagster import job
         from dagster_dask import dask_executor
 
-        @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
-        def dask_enabled_pipeline():
+        @job(executor_def=dask_executor)
+        def dask_enabled_job():
             pass
 
     """
@@ -164,25 +162,25 @@ class DaskExecutor(Executor):
     def retries(self):
         return RetryMode.DISABLED
 
-    def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
+    def execute(self, plan_context, execution_plan):
+        check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
-            isinstance(pipeline_context.executor, DaskExecutor),
-            "pipeline_context",
-            "Expected executor to be DaskExecutor got {}".format(pipeline_context.executor),
+            isinstance(plan_context.executor, DaskExecutor),
+            "plan_context",
+            "Expected executor to be DaskExecutor got {}".format(plan_context.executor),
         )
 
         check.invariant(
-            pipeline_context.instance.is_persistent,
+            plan_context.instance.is_persistent,
             "Dask execution requires a persistent DagsterInstance",
         )
 
         step_levels = execution_plan.get_steps_to_execute_by_level()
 
-        pipeline_name = pipeline_context.pipeline_name
+        pipeline_name = plan_context.pipeline_name
 
-        instance = pipeline_context.instance
+        instance = plan_context.instance
 
         cluster_type = self.cluster_type
         if cluster_type == "existing":
@@ -246,20 +244,20 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    run_config = dict(pipeline_context.run_config, execution={"in_process": {}})
+                    run_config = dict(plan_context.run_config, execution={"in_process": {}})
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
-                    recon_pipeline = pipeline_context.reconstructable_pipeline
+                    recon_pipeline = plan_context.reconstructable_pipeline
 
                     future = client.submit(
                         query_on_dask_worker,
                         dependencies,
                         recon_pipeline,
-                        pipeline_context.pipeline_run,
+                        plan_context.pipeline_run,
                         run_config,
                         [step.key],
-                        pipeline_context.pipeline_run.mode,
+                        plan_context.pipeline_run.mode,
                         instance.get_ref(),
                         key=dask_task_name,
                         resources=get_dask_resource_requirements(step.tags),

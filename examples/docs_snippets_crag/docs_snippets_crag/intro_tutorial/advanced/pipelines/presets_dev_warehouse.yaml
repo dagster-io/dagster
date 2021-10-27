@@ -1,4 +1,0 @@
-resources:
-  warehouse:
-    config:
-      conn_str: "postgres://test:test@localhost:5432/test"

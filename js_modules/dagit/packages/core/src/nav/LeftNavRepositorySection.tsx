@@ -3,9 +3,7 @@ import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -137,13 +135,6 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
   return (
     <Container>
       <ListContainer>
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 8}}
-          padding={{horizontal: 24, bottom: 12}}
-        >
-          <IconWIP name="job" />
-          <span style={{fontSize: '16px', fontWeight: 600}}>Jobs and pipelines</span>
-        </Box>
         {visibleRepos.size ? (
           <FlatContentList {...match?.params} repos={visibleOptions} />
         ) : allRepos.length > 0 ? (

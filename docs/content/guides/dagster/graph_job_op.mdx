@@ -1,17 +1,17 @@
 ---
-title: Migrating to Ops, Graphs, and Jobs | Dagster
-description: This guide describes how to migrate code to the new Graph, Job, and Op APIs.
+title: Migrating to Ops, Jobs, and Graphs | Dagster
+description: This guide describes how to migrate code to the new Job, Op, and Graph APIs.
 ---
 
-# Migrating to Ops, Graphs, and Jobs
+# Migrating to Ops, Jobs, and Graphs
 
 Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
 
-A detailed API reference for the new APIs can be found [here](/\_apidocs/experimental).
+You can also check out the more detailed API reference docs for [Jobs](/\_apidocs/jobs), [Ops](/\_apidocs/ops), and [Graphs](/\_apidocs/graphs).
 
-Migrating a pipeline to a graph does not require migrating all your other pipelines to graphs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
+Migrating a pipeline to jobs does not require migrating all your other pipelines to jobs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
 
-In Dagit, graphs and jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
+In Dagit, jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
 
 ## A simple pipeline
 
@@ -31,10 +31,10 @@ def do_it_all():
     do_something()
 ```
 
-And here's an equivalent <PyObject module="dagster" object="graph" /> containing a single <PyObject module="dagster" object="op" />:
+And here's an equivalent <PyObject module="dagster" object="job" /> containing a single <PyObject module="dagster" object="op" />:
 
 ```python file=/guides/dagster/graph_job_op/simple_graph.py
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -42,18 +42,18 @@ def do_something():
     return "foo"
 
 
-@graph
+@job
 def do_it_all():
     do_something()
 ```
 
-Note that graphs can be built out of solids as well as ops. So you don't need to convert all your solids to ops in order to use <PyObject module="dagster" object="graph" decorator />.
+Note that jobs can be built out of solids as well as ops. So you don't need to convert all your solids to ops in order to use <PyObject module="dagster" object="job" decorator />.
 
-In both cases, you can load the pipeline / graph in Dagit with:
+In both cases, you can load the pipeline / job in Dagit with:
 
     dagit -f <path/to/file>
 
-If you want to execute the graph in process, instead of using <PyObject module="dagster" object="execute_pipeline" />, you can invoke its <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> method.
+If you want to execute the job in process, instead of using <PyObject module="dagster" object="execute_pipeline" />, you can invoke its <PyObject module="dagster" object="JobDefinition" method="execute_in_process" /> method.
 
 ```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_execute endbefore=end_execute
 result = do_it_all.execute_in_process()
@@ -92,11 +92,10 @@ def do_it_all():
     do_something()
 ```
 
-With the new APIs, supplying resources to a graph involves building a job from it:
+With the new APIs, resources are supplied directly to a job:
 
 ```python file=/guides/dagster/graph_job_op/graph_with_resources.py
-# start_graph_with_resources
-from dagster import graph, op, resource
+from dagster import job, op, resource
 
 
 @resource
@@ -109,17 +108,16 @@ def do_something():
     ...
 
 
-@graph
+@job(resource_defs={"external_service": external_service})
 def do_it_all():
     do_something()
 
 
-do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_service})
 # end_graph_with_resources
 
 # start_execute_graph
 def execute_graph_in_process():
-    result = do_it_all_job.execute_in_process()
+    result = do_it_all.execute_in_process()
     assert result.output_for_node("do_something")
 
 
@@ -163,12 +161,12 @@ def test_do_it_all():
     execute_pipeline(do_it_all, mode="test")
 ```
 
-This made it difficult to construct mock resources that were specific to a particular test. It also used string indirection instead of object pointers for referring to the mode (`mode="test"`), which is error-prone. With the new APIs, you can supply those resources at the time you execute the pipeline in the test:
+This made it difficult to construct mock resources that were specific to a particular test. It also used string indirection instead of object pointers for referring to the mode (`mode="test"`), which is error-prone. With the new APIs, you can override the resources to a job at the time you execute:
 
 ```python file=/guides/dagster/graph_job_op/graph_job_test.py
 from unittest.mock import MagicMock
 
-from dagster import graph, op, resource
+from dagster import job, op, resource
 
 
 @resource
@@ -181,16 +179,14 @@ def do_something():
     ...
 
 
-@graph
+@job(resource_defs={"external_service": external_service})
 def do_it_all():
     do_something()
 
 
-do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_service})
-
-
 def test_do_it_all():
-    do_it_all.execute_in_process(resources={"external_service": MagicMock()})
+    result = do_it_all.graph.execute_in_process(resources={"external_service": MagicMock()})
+    assert result.success
 ```
 
 ### A pipeline with prod and dev modes
@@ -239,6 +235,8 @@ These modes typically correspond to different [Dagster Instances](/deployment/da
 With this setup, both modes show up on both instances . This is awkward because, even though the production mode shows up on the development instance, it's not meant to be executed there. And vice versa with the dev mode and the production instance.
 
 With the new APIs, the convention is to include development jobs and production jobs in separate [repositories](/concepts/repositories-workspaces/repositories). Then the [workspace](/concepts/repositories-workspaces/workspaces) for the production instance can point to the repository with the production jobs, and the workspace for the development instance can point to the development jobs.
+
+So that we don't have to re-write the computation graph that underlies each job, we can use the <PyObject object="graph"/> decorator to define the computation graph independently, and then create two different jobs from it using the <PyObject object="GraphDefinition" method="to_job" /> method.
 
 ```python file=/guides/dagster/graph_job_op/prod_dev_jobs.py startafter=start endbefore=end
 @graph
@@ -297,10 +295,10 @@ def do_it_all():
     do_something()
 ```
 
-With the new APIs, you can accomplish this by supplying config when building the job.
+With the new APIs, you can accomplish this by supplying config to the job.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config.py
-from dagster import graph, op
+from dagster import job, op
 
 
 @op(config_schema={"param": str})
@@ -308,33 +306,40 @@ def do_something(_):
     ...
 
 
-@graph
+@job(
+    config={
+        "ops": {
+            "do_something": {
+                "config": {
+                    "param": "some_val",
+                }
+            }
+        }
+    }
+)
 def do_it_all():
     do_something()
-
-
-do_it_all_job = do_it_all.to_job(
-    config={"solids": {"do_something": {"config": {"param": "some_val"}}}}
-)
 ```
 
-Unlike with presets, this config will be used, by default, any time the job is launched, not just when it's launched from the Dagit Playground. I.e. it will also be used when launching the job via a schedule, sensor, `do_it_all_job.execute_in_process` or the GraphQL API. In all these cases, it can instead be overridden with config specified at runtime.
+Unlike with presets, this config will be used, by default, any time the job is launched, not just when it's launched from the Dagit Launchpad. I.e. it will also be used when launching the job via a schedule, sensor, `do_it_all_job.execute_in_process` or the GraphQL API. In all these cases, it can instead be overridden with config specified at runtime.
 
 Alternatively, you can provide "partial" config via a <PyObject module="dagster" object="ConfigMapping" />.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start endbefore=end
-do_it_all_job = do_it_all.to_job(
-    config=ConfigMapping(
-        config_fn=lambda conf: {"solids": {"do_something": {"config": {"param": conf["arg"]}}}},
-        config_schema={"arg": str},
-    )
-)
+@config_mapping(config_schema={"arg": str})
+def my_config_mapping(conf):
+    return {"solids": {"do_something": {"config": {"param": conf["arg"]}}}}
+
+
+@job(config=my_config_mapping)
+def do_it_all():
+    do_something()
 ```
 
 Then, when running the job, you only need to supply more compact config:
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start_execute endbefore=end_execute
-do_it_all_job.execute_in_process(run_config={"arg": "some_value"})
+do_it_all.execute_in_process(run_config={"arg": "some_value"})
 ```
 
 ## Schedules
@@ -367,10 +372,10 @@ def do_it_all_repository():
     return [do_it_all, do_it_all_schedule]
 ```
 
-With the new APIs, a schedule targets a pipeline by referencing the graph or job object.
+With the new APIs, a schedule targets a job or graph by referencing the job/graph object.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_schedule.py
-from dagster import ScheduleDefinition, graph, op
+from dagster import ScheduleDefinition, job, op
 
 
 @op
@@ -378,7 +383,7 @@ def do_something():
     ...
 
 
-@graph
+@job
 def do_it_all():
     do_something()
 
@@ -386,7 +391,7 @@ def do_it_all():
 do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=do_it_all)
 ```
 
-This makes it easier to catch errors and makes it possible to reference the graph or job from the schedule.
+This makes it easier to catch errors and makes it possible to reference the job/graph from the schedule.
 
 The same pattern works for sensors.
 
@@ -417,7 +422,7 @@ def do_it_all_schedule(context):
 With the new APIs, you can simply reference the graph or job object:
 
 ```python file=/guides/dagster/graph_job_op/graph_with_schedule_return_config.py
-from dagster import graph, op, schedule
+from dagster import job, op, schedule
 
 
 @op(config_schema={"date": str})
@@ -425,12 +430,12 @@ def do_something(_):
     ...
 
 
-@graph
+@job
 def do_it_all():
     do_something()
 
 
-@schedule(cron_schedule="0 0 * * *", job=do_it_all.to_job(), execution_timezone="US/Central")
+@schedule(cron_schedule="0 0 * * *", job=do_it_all, execution_timezone="US/Central")
 def do_it_all_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return {"solids": {"do_something": {"config": {"date": date}}}}
@@ -464,10 +469,10 @@ def do_it_all_schedule():
     return do_it_all_preset.run_config
 ```
 
-With the new APIs, you can supply the config in one place (the job), and it will both show up in the Playground and be used by the schedule.
+With the new APIs, you can supply the config in one place (the job), and it will both show up in the Launchpad and be used by the schedule.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_config_and_schedule.py
-from dagster import ScheduleDefinition, graph, op
+from dagster import ScheduleDefinition, job, op
 
 
 @op(config_schema={"param": str})
@@ -475,15 +480,15 @@ def do_something(_):
     ...
 
 
-@graph
+config = {"solids": {"do_something": {"config": {"param": "some_val"}}}}
+
+
+@job(config=config)
 def do_it_all():
     do_something()
 
 
-do_it_all_schedule = ScheduleDefinition(
-    job=do_it_all.to_job(config={"solids": {"do_something": {"config": {"param": "some_val"}}}}),
-    cron_schedule="0 0 * * *",
-)
+do_it_all_schedule = ScheduleDefinition(job=do_it_all, cron_schedule="0 0 * * *")
 ```
 
 ### Partition Schedules
@@ -518,10 +523,16 @@ def do_it_all_repo():
     return [do_it_all, do_it_all_schedule]
 ```
 
-With the graph APIs, you can first define a partitioning for the job. These partitions exist independently of any schedule, and can be used for backfills. A schedule can then be derived from that partitioning, while providing execution time information. The resulting schedule can be independently passed to a repository, and the underlying job will be inferred.
+With the job APIs, you can first define a graph, and then a job with partitioning. These partitions exist independently of any schedule, and can be used for backfills. A schedule can then be derived from that partitioning, while providing execution time information. The resulting schedule can be independently passed to a repository, and the underlying job will be inferred.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_partition_schedule.py
-from dagster import daily_partitioned_config, graph, op, repository, schedule_from_partitions
+from dagster import (
+    build_schedule_from_partitioned_job,
+    daily_partitioned_config,
+    job,
+    op,
+    repository,
+)
 
 
 @op(config_schema={"date": str})
@@ -529,18 +540,17 @@ def do_something_with_config(context):
     return context.op_config["date"]
 
 
-@graph
-def do_it_all():
-    do_something_with_config()
-
-
 @daily_partitioned_config(start_date="2020-01-01")
 def do_it_all_config(start, _end):
     return {"solids": {"do_something_with_config": {"config": {"date": str(start)}}}}
 
 
-do_it_all_job = do_it_all.to_job(config=do_it_all_config)
-do_it_all_schedule = schedule_from_partitions(do_it_all_job)
+@job(config=do_it_all_config)
+def do_it_all():
+    do_something_with_config()
+
+
+do_it_all_schedule = build_schedule_from_partitioned_job(do_it_all)
 
 
 @repository
@@ -812,7 +822,7 @@ def return_multi():
 def do_two_things():
     do_something()
     one, two = return_multi()
-    return {"one": one, "two": two}
+    return (one, two)
 
 
 @op
@@ -825,4 +835,35 @@ def do_yet_more(arg1, arg2):
 def do_it_all():
     one, two = do_two_things()
     do_yet_more(one, two)
+```
+
+### Executors
+
+Each mode on a pipeline could have multiple executors, but each job can only have one executor configured. This can be added via the `executor_def` argument to `to_job` and `@job`. Since there is only one executor per job, there is no need to specify the name of the executor in config anymore.
+
+```python file=/guides/dagster/graph_job_op/executor_config_job.py
+from dagster import job, multiprocess_executor
+
+
+@job(executor_def=multiprocess_executor, config={"execution": {"config": {"max_concurrent": 5}}})
+def do_it_all():
+    ...
+```
+
+The default executor for a pipeline was the in-process executor. For a job, the default executor can switch between multi-process and in-process configurations. By default, multi-process is enabled. Multi-process and in-process can be switched via config.
+
+```python file=/guides/dagster/graph_job_op/executor_config_switch.py
+from dagster import job
+
+
+# This job will run with multiprocessing execution
+@job
+def do_it_all():
+    ...
+
+
+# This job will run with in-process execution
+@job(config={"execution": {"config": {"in_process": {}}}})
+def do_it_all_in_proc():
+    ...
 ```

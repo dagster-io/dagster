@@ -18,6 +18,8 @@ class CeleryWorkerQueue(BaseModel):
     name: str
     labels: Optional[kubernetes.Labels]
     nodeSelector: Optional[kubernetes.NodeSelector]
+    configSource: Optional[dict]
+    additionalCeleryArgs: Optional[List[str]]
 
     class Config:
         extra = Extra.forbid

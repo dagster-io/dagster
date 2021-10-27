@@ -133,6 +133,21 @@ def test_submit_run():
             assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
 
 
+def test_get_required_daemon_types():
+    from dagster.daemon.daemon import (
+        SensorDaemon,
+        BackfillDaemon,
+        SchedulerDaemon,
+    )
+
+    with instance_for_test() as instance:
+        assert instance.get_required_daemon_types() == [
+            SensorDaemon.daemon_type(),
+            BackfillDaemon.daemon_type(),
+            SchedulerDaemon.daemon_type(),
+        ]
+
+
 def test_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         with pytest.raises(

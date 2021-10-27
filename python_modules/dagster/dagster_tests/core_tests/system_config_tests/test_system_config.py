@@ -39,7 +39,7 @@ def create_creation_data(pipeline_def):
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),
-        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+        is_using_graph_job_op_apis=pipeline_def.is_job,
     )
 
 
@@ -635,30 +635,6 @@ def test_mix_required_inputs():
 
     assert "left" in inputs_fields_dict
     assert not "right" in inputs_fields_dict
-
-
-def test_files_default_config():
-    pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
-
-    env_type = create_run_config_schema_type(pipeline_def)
-    assert "storage" in env_type.fields
-
-    config_value = process_config(env_type, {})
-    assert config_value.success
-
-    assert "storage" not in config_value
-
-
-def test_storage_in_memory_config():
-    pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
-
-    env_type = create_run_config_schema_type(pipeline_def)
-    assert "storage" in env_type.fields
-
-    config_value = process_config(env_type, {"intermediate_storage": {"in_memory": {}}})
-    assert config_value.success
-
-    assert config_value.value["intermediate_storage"] == {"in_memory": {}}
 
 
 def test_directly_init_environment_config():

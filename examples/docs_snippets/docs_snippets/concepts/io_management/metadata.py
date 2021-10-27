@@ -1,4 +1,4 @@
-from dagster import IOManager, ModeDefinition, OutputDefinition, io_manager, pipeline, solid
+from dagster import IOManager, Out, io_manager, job, op
 
 
 def connect():
@@ -13,18 +13,18 @@ def read_dataframe_from_table(**_kwargs):
     pass
 
 
-# solids_start_marker
-@solid(output_defs=[OutputDefinition(metadata={"schema": "some_schema", "table": "some_table"})])
-def solid1():
+# ops_start_marker
+@op(out=Out(metadata={"schema": "some_schema", "table": "some_table"}))
+def op_1():
     """Return a Pandas DataFrame"""
 
 
-@solid(output_defs=[OutputDefinition(metadata={"schema": "other_schema", "table": "other_table"})])
-def solid2(_input_dataframe):
+@op(out=Out(metadata={"schema": "other_schema", "table": "other_table"}))
+def op_2(_input_dataframe):
     """Return a Pandas DataFrame"""
 
 
-# solids_end_marker
+# ops_end_marker
 
 # io_manager_start_marker
 class MyIOManager(IOManager):
@@ -47,6 +47,6 @@ def my_io_manager(_):
 # io_manager_end_marker
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
-def my_pipeline():
-    solid2(solid1())
+@job(resource_defs={"io_manager": my_io_manager})
+def my_job():
+    op_2(op_1())

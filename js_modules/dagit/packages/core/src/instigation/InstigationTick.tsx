@@ -113,7 +113,7 @@ export const RunList: React.FunctionComponent<{
     return <Spinner purpose="section" />;
   }
 
-  if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+  if (data.pipelineRunsOrError.__typename !== 'Runs') {
     return (
       <NonIdealState
         icon="error"
@@ -154,7 +154,11 @@ export const FailedRunList: React.FunctionComponent<{
             <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
-        <NonIdealState icon="sensors" description="Sensor does not target a pipeline." />
+        <NonIdealState
+          icon="sensors"
+          title="No runs to display"
+          description="This sensor does not target a pipeline or job."
+        />
       </Box>
     </Group>
   );
@@ -182,7 +186,7 @@ export const TICK_TAG_FRAGMENT = gql`
 `;
 
 const LAUNCHED_RUN_LIST_QUERY = gql`
-  query LaunchedRunListQuery($filter: PipelineRunsFilter!) {
+  query LaunchedRunListQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {
       ... on PipelineRuns {
         results {

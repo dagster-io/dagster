@@ -35,7 +35,6 @@ from dagster.core.types.dagster_type import (
     construct_dagster_type_dictionary,
 )
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
@@ -191,6 +190,10 @@ class GraphDefinition(NodeDefinition):
     @property
     def node_type_str(self) -> str:
         return "graph"
+
+    @property
+    def is_graph_job_op_node(self) -> bool:
+        return True
 
     @property
     def solids(self) -> List[Node]:
@@ -392,7 +395,6 @@ class GraphDefinition(NodeDefinition):
     def node_names(self):
         return list(self._node_dict.keys())
 
-    @experimental
     def to_job(
         self,
         name: Optional[str] = None,
@@ -404,6 +406,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -441,23 +444,25 @@ class GraphDefinition(NodeDefinition):
             logger_defs (Optional[Dict[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
-                How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+                How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
+                which can be switched between multi-process and in-process modes of execution. The
+                default mode of execution is multi-process.
             version_strategy (Optional[VersionStrategy]):
                 Defines how each solid (and optionally, resource) in the job can be versioned. If
                 provided, memoizaton will be enabled for this job.
 
         Returns:
-            JobDefinition: The "Job" currently implemented as a single-mode job
+            JobDefinition
         """
         from .job import JobDefinition
         from .partition import PartitionedConfig
-        from .executor import ExecutorDefinition, multiprocess_executor
+        from .executor import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def = check.opt_inst_param(
-            executor_def, "executor_def", ExecutorDefinition, default=multiprocess_executor
+            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
 
         if resource_defs and "io_manager" in resource_defs:
@@ -468,6 +473,7 @@ class GraphDefinition(NodeDefinition):
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
         presets = []
         config_mapping = None
         partitioned_config = None
@@ -507,7 +513,7 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             hook_defs=hooks,
             version_strategy=version_strategy,
-        )
+        ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -559,7 +565,7 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            ExecuteInProcessResult
+            :py:class:`~dagster.ExecuteInProcessResult`
         """
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process

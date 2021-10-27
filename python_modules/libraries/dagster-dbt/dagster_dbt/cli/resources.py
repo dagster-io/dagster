@@ -172,6 +172,27 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("seed", show=show, select=select, exclude=exclude, **kwargs)
 
+    def ls(
+        self,
+        select: List[str] = None,
+        models: List[str] = None,
+        exclude: List[str] = None,
+        **kwargs,
+    ) -> DbtCliOutput:
+        """
+        Run the ``ls`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the resources to include in the output.
+            models (List[str], optional): the models to include in the output.
+            exclude (List[str], optional): the resources to exclude from the output.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
+                parsed log output as well as the contents of run_results.json (if applicable).
+        """
+        return self.cli("ls", select=select, models=models, exclude=exclude, **kwargs)
+
     def freshness(self, select: List[str] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.

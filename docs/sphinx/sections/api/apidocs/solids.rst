@@ -1,9 +1,10 @@
 .. currentmodule:: dagster
 
-Solids
-======
+[Legacy] Solids
+===============
 
-The foundational unit of computation in Dagster.
+As of Dagster 0.13.0, we recommend `Ops` as an alternative to `Solids`. They can generally be used
+interchangeably.
 
 -----
 
@@ -26,14 +27,46 @@ Inputs & outputs
 
 -------
 
+Retries
+-------
+
+
+.. autoclass:: RetryPolicy
+    :noindex:
+
+.. autoclass:: Backoff
+    :noindex:
+
+.. autoclass:: Jitter
+    :noindex:
+
 Execution
 ---------
 
-.. autoclass:: RetryPolicy
+.. autofunction:: execute_solid
 
-.. autoclass:: Backoff
+.. autofunction:: execute_solid_within_pipeline
 
-.. autoclass:: Jitter
+.. autofunction:: execute_solids_within_pipeline
+
+.. autoclass:: SolidExecutionResult
+   :members:
+   :inherited-members:
+
+.. autoclass:: CompositeSolidExecutionResult
+   :members:
+   :inherited-members:
+
+
+Execution context
+-----------------
+.. currentmodule:: dagster
+
+.. autoclass:: SolidExecutionContext
+   :members:
+   :inherited-members:
+
+.. autofunction:: build_solid_context
 
 -------
 
@@ -49,13 +82,14 @@ Composing solids
 .. autoclass:: OutputMapping
 
 .. autoclass:: ConfigMapping
+    :noindex:
 
 
 
 .. currentmodule:: dagster
 
 
-.. _events:
+.. _solid_events:
 
 Events
 ------
@@ -69,21 +103,27 @@ Event types
 ^^^^^^^^^^^
 
 .. autoclass:: Output
+    :noindex:
     :members:
 
 .. autoclass:: AssetMaterialization
+    :noindex:
     :members:
 
 .. autoclass:: ExpectationResult
+    :noindex:
     :members:
 
 .. autoclass:: TypeCheck
+    :noindex:
     :members:
 
 .. autoclass:: Failure
+    :noindex:
     :members:
 
 .. autoclass:: RetryRequested
+    :noindex:
 
 -------
 
@@ -94,9 +134,11 @@ Dagster uses event metadata to communicate arbitrary user-specified metadata abo
 events.
 
 .. autoclass:: EventMetadata
+    :noindex:
     :members:
 
 .. autoclass:: EventMetadataEntry
+    :noindex:
     :members:
 
 Metadata types
@@ -106,27 +148,35 @@ The type alias for the union of the structured event metadata types is `EventMet
 This consists of the following data types:
 
 .. autoclass:: JsonMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: MarkdownMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PathMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: TextMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: UrlMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: FloatMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: IntMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PythonArtifactMetadataEntryData
+    :noindex:
     :members:
 
 -------
@@ -139,4 +189,5 @@ Assets materialized with an :py:class:`AssetKey` are highlighted in `dagit` on t
 dashboard.
 
 .. autoclass:: AssetKey
+    :noindex:
     :members:

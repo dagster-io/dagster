@@ -1,7 +1,7 @@
+---
 {{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
 {{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
 {{ range $queue := $celeryK8sRunLauncherConfig.workerQueues }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -60,7 +60,7 @@ spec:
           imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $celeryK8sRunLauncherConfig.image) | quote }}
           command: ["dagster-celery"]
-          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}", {{- if $queue.additionalCeleryArgs -}}"--", "{{- join "\",\"" $queue.additionalCeleryArgs -}}" {{- end -}}]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
@@ -125,7 +125,7 @@ spec:
             name: {{ template "dagster.fullname" $ }}-instance
         - name: dagster-celery
           configMap:
-            name: {{ template "dagster.fullname" $ }}-celery
+            name: {{ template "dagster.fullname" $ }}-celery-{{- $queue.name }}
     {{- with $celeryK8sRunLauncherConfig.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

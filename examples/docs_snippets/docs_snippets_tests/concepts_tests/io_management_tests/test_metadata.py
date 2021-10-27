@@ -1,6 +1,5 @@
-from dagster import execute_pipeline
-from docs_snippets.concepts.io_management.metadata import my_pipeline
+from docs_snippets.concepts.io_management.metadata import my_job
 
 
 def test_metadata():
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()

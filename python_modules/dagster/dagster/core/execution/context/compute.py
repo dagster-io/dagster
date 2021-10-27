@@ -110,14 +110,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
 
         .. code-block:: python
 
-            @solid
-            def debug_solid(context):
+            @op
+            def debug(context):
                 context.pdb.set_trace()
 
         """
@@ -248,3 +248,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
+
+
+class OpExecutionContext(SolidExecutionContext):
+    pass

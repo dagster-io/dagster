@@ -198,6 +198,10 @@ class SolidDefinition(NodeDefinition):
         return "solid"
 
     @property
+    def is_graph_job_op_node(self) -> bool:
+        return False
+
+    @property
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
@@ -384,6 +388,10 @@ class CompositeSolidDefinition(GraphDefinition):
     @property
     def node_type_str(self):
         return "composite solid"
+
+    @property
+    def is_graph_job_op_node(self) -> bool:
+        return False
 
 
 def _check_io_managers_on_composite_solid(

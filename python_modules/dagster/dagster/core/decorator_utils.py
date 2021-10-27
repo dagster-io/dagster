@@ -1,3 +1,4 @@
+import textwrap
 from typing import Any, Callable, List, Optional, Set
 
 from dagster.seven import funcsigs
@@ -52,3 +53,10 @@ def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
         funcsigs.Parameter.POSITIONAL_ONLY,
     }
     return [p.name for p in params if p.kind in accepted_param_types]
+
+
+def format_docstring_for_description(fn: Callable) -> Optional[str]:
+    if fn.__doc__ is not None:
+        return textwrap.dedent(fn.__doc__).strip()
+    else:
+        return None

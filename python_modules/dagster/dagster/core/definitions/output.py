@@ -309,7 +309,14 @@ class Out(
     )
 ):
     """
-    Experimental replacement for :py:class:`OutputDefinition` intended to decrease verbosity.
+    Defines an output from an op's compute function.
+
+    Ops can have multiple outputs, in which case outputs cannot be anonymous.
+
+    Many ops have only one output, in which case the user can provide a single output definition
+    that will be given the default name, "result".
+
+    Outs may be typed using the Dagster type system.
 
     Args:
         dagster_type (Optional[Union[Type, DagsterType]]]):
@@ -325,10 +332,10 @@ class Out(
             into the table.
         asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the OutputContext) which should be associated
-            with this OutputDefinition. Used for tracking lineage information through Dagster.
+            with this Out. Used for tracking lineage information through Dagster.
         asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
-            partitions from the OutputContext) which should be associated with this OutputDefinition.
+            partitions from the OutputContext) which should be associated with this Out.
     """
 
     def __new__(
@@ -353,6 +360,18 @@ class Out(
             asset_partitions=asset_partitions,
         )
 
+    @staticmethod
+    def from_definition(output_def: "OutputDefinition"):
+        return Out(
+            dagster_type=output_def.dagster_type,
+            description=output_def.description,
+            is_required=output_def.is_required,
+            io_manager_key=output_def.io_manager_key,
+            metadata=output_def.metadata,
+            asset_key=output_def._asset_key,  # pylint: disable=protected-access
+            asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
+        )
+
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
@@ -372,8 +391,40 @@ class Out(
 
 class DynamicOut(Out):
     """
-    Experimental replacement for :py:class:`DynamicOutputDefinition` intended to decrease verbosity.
-    Variant of :py:class:`Out` for an output that will dynamically alter the graph at runtime.
+    Variant of :py:class:`Out <dagster.Out>` for an output that will dynamically alter the graph at
+    runtime.
+
+    When using in a composition function such as :py:func:`@graph <dagster.graph>`,
+    dynamic outputs must be used with either
+
+    * ``map`` - clone downstream ops for each separate :py:class:`DynamicOut`
+    * ``collect`` - gather across all :py:class:`DynamicOut` in to a list
+
+    Uses the same constructor as :py:class:`Out <dagster.Out>`
+
+        .. code-block:: python
+
+            @op(
+                config_schema={
+                    "path": Field(str, default_value=file_relative_path(__file__, "sample"))
+                },
+                out=DynamicOut(str),
+            )
+            def files_in_directory(context):
+                path = context.op_config["path"]
+                dirname, _, filenames = next(os.walk(path))
+                for file in filenames:
+                    yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
+
+            @job
+            def process_directory():
+                files = files_in_directory()
+
+                # use map to invoke an op on each dynamic output
+                file_results = files.map(process_file)
+
+                # use collect to gather the results in to a list
+                summarize_directory(file_results.collect())
     """
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
@@ -395,8 +446,7 @@ class DynamicOut(Out):
 
 class GraphOut(NamedTuple("_GraphOut", [("description", Optional[str])])):
     """
-    Experimental replacement for :py:class:`OutputDefinition` on graphs intended to decrease verbosity.
-    It represents the information about the outputs that the graph maps.
+    Represents information about the outputs that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the output.

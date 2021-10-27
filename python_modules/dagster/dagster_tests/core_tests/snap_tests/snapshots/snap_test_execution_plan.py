@@ -6,11 +6,13 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_create_execution_plan_with_dep 1'] = '''{
+snapshots[
+    "test_create_execution_plan_with_dep 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "1d7f214f0584150df209c62a02074780527c95bb",
+  "pipeline_snapshot_id": "588501f8b7b5a1a7dd65fc0aa091bab26670e5c2",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "solid_one",
@@ -48,6 +50,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "solid_handle_id": "solid_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "solid_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "solid_one",
@@ -116,6 +119,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "solid_handle_id": "solid_two",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "solid_two",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "solid_two",
@@ -125,13 +129,15 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_noop_execution_plan 1'] = '''{
+snapshots[
+    "test_create_noop_execution_plan 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "0965b76124e758660317760c7e9bbc66282f33b0",
+  "pipeline_snapshot_id": "2290b3c558988d5ac3b68b109c7a6da33a237696",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -168,6 +174,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
       "solid_handle_id": "noop_solid",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "noop_solid",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "noop_solid",
@@ -177,13 +184,15 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
+snapshots[
+    "test_create_noop_execution_plan_with_tags 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "3248f027c9045c80d4d5124967cad459be986f0c",
+  "pipeline_snapshot_id": "bb5c233d49c4c6832472f7eea29ba6ec92b78463",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -231,6 +240,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
       "solid_handle_id": "noop_solid",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "noop_solid",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "noop_solid",
@@ -243,13 +253,15 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
       }
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_with_composite 1'] = '''{
+snapshots[
+    "test_create_with_composite 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "574214af42cfa7ee95c5720ce8cc862e2b440a04",
+  "pipeline_snapshot_id": "3aad6c74f16d0c802e9fc139412d5f9e1766f54a",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",
@@ -349,6 +361,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "add",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "add",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add",
@@ -425,6 +438,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_1.add_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_1.add_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add_one",
@@ -471,6 +485,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_1.return_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_1.return_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "return_one",
@@ -551,6 +566,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_2.add_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_2.add_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "add_one",
@@ -597,6 +613,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "solid_handle_id": "comp_2.return_one",
       "step_handle": {
         "__class__": "StepHandle",
+        "key": "comp_2.return_one",
         "solid_handle": {
           "__class__": "SolidHandle",
           "name": "return_one",
@@ -610,4 +627,4 @@ snapshots['test_create_with_composite 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""

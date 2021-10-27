@@ -1,4 +1,4 @@
-from dagster import solid, usable_as_dagster_type
+from dagster import op, usable_as_dagster_type
 
 
 @usable_as_dagster_type
@@ -8,6 +8,6 @@ class EvenType:
         self.num = num
 
 
-@solid
+@op
 def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)

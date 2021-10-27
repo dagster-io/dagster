@@ -1,27 +1,27 @@
 ---
 title: "Advanced: Dagster Types | Dagster"
-description: Besides Python 3's typing system, Dagster provides a type system that helps users describe what kind of values their solids accept and produce.
+description: Besides Python 3's typing system, Dagster provides a type system that helps users describe what kind of values their ops accept and produce.
 ---
 
 # Advanced: Dagster Types
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/" />
 
-## Verifying Solid Outputs and Inputs
+## Verifying Op Outputs and Inputs
 
-Dagster lets developers express what they expect their solid inputs and outputs to look like through [Dagster Types](/\_apidocs/types).
+Dagster lets developers express what they expect their op inputs and outputs to look like through [Dagster Types](/\_apidocs/types).
 
-The dagster type system is gradual and optional - pipelines can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere.
+The dagster type system is gradual and optional - jobs can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere.
 
-Dagster type-checking happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects.
+Dagster type-checking happens at op execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects.
 
-- When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed.
-- When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
+- When a type is specified for an op's input, then the type check occurs immediately before the op is executed.
+- When a type is specified for an op's output, then the type check occurs immediately after the op is executed.
 
-Let's look back at our simple `download_csv` solid.
+Let's look back at our simple `download_csv` op.
 
 ```python file=/intro_tutorial/basics/e04_quality/inputs_typed.py startafter=start_inputs_typed_marker_0 endbefore=end_inputs_typed_marker_0
-@solid
+@op
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -29,7 +29,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 ```
 
-The `lines` object returned by Python's built-in `csv.DictReader` is a list of `collections.OrderedDict`, each of which represents one row of the dataset:
+The object returned by Python's built-in `csv.DictReader` is a list of `collections.OrderedDict`, each of which represents one row of the dataset:
 
 ```python
 [
@@ -49,7 +49,7 @@ The `lines` object returned by Python's built-in `csv.DictReader` is a list of `
 ]
 ```
 
-This is a simple representation of a "data frame", or a table of data. We'd like to be able to use Dagster's type system to type the output of `download_csv`, so that we can do type checking when we construct the pipeline, ensuring that any solid consuming the output of `download_csv` expects to receive data in this format.
+This is a simple representation of a "data frame", or a table of data. We'd like to be able to use Dagster's type system to type the output of `download_csv`, so that we can do type checking when we construct the job, ensuring that any op consuming the output of `download_csv` expects to receive data in this format.
 
 ### Constructing a Dagster Type
 
@@ -70,10 +70,10 @@ SimpleDataFrame = DagsterType(
 )
 ```
 
-Now we can annotate the rest of our pipeline with our new type:
+Now we can annotate the rest of our job with our new type:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_1 endbefore=end_custom_types_marker_1
-@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+@op(out=Out(SimpleDataFrame))
 def download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -81,13 +81,13 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 
 
-@solid(input_defs=[InputDefinition("cereals", SimpleDataFrame)])
+@op(ins={"cereals": In(SimpleDataFrame)})
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 ```
 
-The type metadata now appears in Dagit and the system will ensure the input and output to this solid indeed match the criteria for `SimpleDataFrame`. As usual, run:
+The type metadata now appears in Dagit and the system will ensure the input and output to this op indeed match the criteria for `SimpleDataFrame`. As usual, run:
 
 ```bash
 dagit -f custom_types.py
@@ -96,8 +96,8 @@ dagit -f custom_types.py
 <Image
 alt="custom_types_figure_one.png"
 src="/images/tutorial/custom_types_figure_one.png"
-width={1680}
-height={946}
+width={2756}
+height={2098}
 />
 
 You can see that the output of `download_csv` (which by default has the name `result`) is marked to be of type `SimpleDataFrame`.
@@ -106,10 +106,10 @@ You can see that the output of `download_csv` (which by default has the name `re
 
 ### When Type Checks Fail
 
-Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fail the pipeline. Let's replace our `download_csv` solid with the following bad logic:
+Now, if our op logic fails to return the right type, we'll see a type check failure, which will fail the job. Let's replace our `download_csv` op with the following bad logic:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
-@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+@op(out=Out(SimpleDataFrame))
 def bad_download_csv(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
@@ -117,10 +117,10 @@ def bad_download_csv(context):
     return ["not_a_dict"]
 ```
 
-When we run the pipeline with this solid, we'll see an error in your terminal like:
+When we run the job with this op, we'll see an error in your terminal like:
 
 ```bash
-2021-02-05 11:31:46 - dagster - ERROR - custom_type_pipeline - 241c9208-6367-474f-8625-5b64fbf74568 - 25500 - bad_download_csv - STEP_FAILURE - Execution of step "bad_download_csv" failed.
+2021-10-18 13:15:37 - dagster - ERROR - custom_type_job - 66d26360-84bc-41a3-8848-fba271354673 - 16200 - bad_download_csv - STEP_FAILURE - Execution of step "bad_download_csv" failed.
 
 dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "SimpleDataFrame".
 ```
@@ -128,10 +128,10 @@ dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step outpu
 We will also see the error message in Dagit:
 
 <Image
-alt="custom_types_2_dagit_error_messasge.png"
+alt="custom_types_2_dagit_error_message.png"
 src="/images/tutorial/custom_types_2_dagit_error_message.png"
-width={2880}
-height={1596}
+width={2756}
+height={2098}
 />
 
 <br />
@@ -190,8 +190,8 @@ Dagit knows how to display and archive structured metadata of this kind for futu
 <Image
 alt="custom_types_figure_two.png"
 src="/images/tutorial/custom_types_figure_two.png"
-width={1680}
-height={946}
+width={2756}
+height={2098}
 />
 
 <br />

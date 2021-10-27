@@ -1,15 +1,16 @@
 from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
-from docs_snippets.guides.dagster.reexecution.unreliable_pipeline import unreliable_pipeline
+from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
 
 instance = DagsterInstance.ephemeral()
-# Initial execution
-pipeline_result_full = execute_pipeline(unreliable_pipeline, instance=DagsterInstance.ephemeral())
 
-if not pipeline_result_full.success:
-    # Re-execution: Entire pipeline
+# Initial execution
+job_execution_result = execute_pipeline(unreliable_job, instance=instance)
+
+if not job_execution_result.success:
+    # re-execute the entire job
     reexecute_pipeline(
-        unreliable_pipeline,
-        parent_run_id=pipeline_result_full.run_id,
+        unreliable_job,
+        parent_run_id=job_execution_result.run_id,
         instance=instance,
     )
 
@@ -18,12 +19,12 @@ if not pipeline_result_full.success:
 
 # start_partial_execution_marker
 
-# Re-execution: Starting with the "unreliable" solid and all its descendents
-reexecution_result_specific_selection = reexecute_pipeline(
-    unreliable_pipeline,
-    parent_run_id=pipeline_result_full.run_id,
+# re-execute the job, but only the "unreliable" op and all its descendents
+reexecute_pipeline(
+    unreliable_job,
+    parent_run_id=job_execution_result.run_id,
     instance=instance,
-    step_selection=["unreliable+*"],
+    step_selection=["unreliable*"],
 )
 
 # end_partial_execution_marker

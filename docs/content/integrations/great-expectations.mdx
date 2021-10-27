@@ -6,22 +6,22 @@ title: Dagster with Great Expectations | Dagster
 
 <CodeReferenceLink filePath="examples/ge_example" />
 
-This example demonstrates how to use the GE solid factory [`dagster-ge`](/\_apidocs/libraries/dagster_ge) to test incoming data against a set of expectations built through [Great Expectations](https://docs.greatexpectations.io/en/latest/)' tooling.
+This example demonstrates how to use the GE op factory [`dagster-ge`](/\_apidocs/libraries/dagster_ge) to test incoming data against a set of expectations built through [Great Expectations](https://docs.greatexpectations.io/en/latest/)' tooling.
 
 For this example, we'll be using two versions of a dataset of baseball team payroll and wins, with one version modified to hold incorrect data.
 
-You can use <PyObject module="dagster_ge" object="ge_validation_solid_factory" /> to generate Dagster solids that integrate with Great Expectations. For example, here we show a basic call to this GE solid factory, with two required arguments: `datasource_name` and expectation `suite_name`.
+You can use <PyObject module="dagster_ge" object="ge_validation_op_factory" /> to generate Dagster ops that integrate with Great Expectations. For example, here we show a basic call to this GE op factory, with two required arguments: `datasource_name` and expectation `suite_name`.
 
 ```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_factory endbefore=end_ge_demo_marker_factory
-payroll_expectations = ge_validation_solid_factory(
-    name="ge_validation_solid", datasource_name="getest", suite_name="basic.warning"
+payroll_expectations = ge_validation_op_factory(
+    name="ge_validation_op", datasource_name="getest", suite_name="basic.warning"
 )
 ```
 
-The GE validations will happen inside the solids created above. Each of the solids will yield an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The solids will output the full result in case you want to process it differently. Here's how other solids could use the full result, where `expectation` is the result:
+The GE validations will happen inside the ops created above. Each of the ops will yield an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The op will output the full result in case you want to process it differently. Here's how other ops could use the full result, where `expectation` is the result:
 
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_solid endbefore=end_ge_demo_marker_solid
-@solid
+```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_op endbefore=end_ge_demo_marker_op
+@op
 def postprocess_payroll(numrows, expectation):
     if expectation["success"]:
         return numrows
@@ -29,60 +29,32 @@ def postprocess_payroll(numrows, expectation):
         raise ValueError
 ```
 
-Now let's take a brief look at the configurations in this example:
+You can configure the GE Data Context via the `ge_data_context` resource from `dagster-ge` integration package. All we need to do to expose GE to Dagster is to provide the root of the GE directory (the path to the great_expectations file on your machine).
 
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_preset endbefore=end_ge_demo_marker_preset
-preset_defs = [
-    PresetDefinition(
-        "sample_preset_success",
-        mode="basic",
-        run_config={
-            "resources": {
-                "ge_data_context": {
-                    "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
-                }
-            },
-            "solids": {
-                "read_in_datafile": {
-                    "inputs": {
-                        "csv_path": {"value": file_relative_path(__file__, "./data/succeed.csv")}
-                    }
-                }
-            },
+Finally, here's the full job definition using the GE op, with a default run configuration to use the correct set of data:
+
+```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_job endbefore=end_ge_demo_marker_job
+@job(
+    resource_defs={"ge_data_context": ge_data_context},
+    config={
+        "resources": {
+            "ge_data_context": {
+                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
+            }
         },
-    ),
-    PresetDefinition(
-        "sample_preset_fail",
-        mode="basic",
-        run_config={
-            "resources": {
-                "ge_data_context": {
-                    "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
+        "ops": {
+            "read_in_datafile": {
+                "inputs": {
+                    "csv_path": {"value": file_relative_path(__file__, "./data/succeed.csv")}
                 }
-            },
-            "solids": {
-                "read_in_datafile": {
-                    "inputs": {
-                        "csv_path": {"value": file_relative_path(__file__, "./data/fail.csv")}
-                    }
-                }
-            },
+            }
         },
-    ),
-]
-```
-
-We've got two presets: one inputs a data file which will pass the expectation, while another won't. You can configure the GE Data Context via the `ge_data_context` resource from `dagster-ge` integration package. All we need to do to expose GE to Dagster is to provide the root of the GE directory (the path to the great_expectations file on your machine).
-
-Finally, here's the full pipeline using the GE solid, with presets to use both the correct and incorrect data:
-
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_pipeline endbefore=end_ge_demo_marker_pipeline
-@pipeline(
-    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
-    preset_defs=preset_defs,
+    },
 )
-def payroll_data_pipeline():
+def payroll_data():
     output_df = read_in_datafile()
 
-    return postprocess_payroll(process_payroll(output_df), payroll_expectations(output_df))
+    postprocess_payroll(process_payroll(output_df), payroll_expectations(output_df))
 ```
+
+We can see that we can easily swap the path for `succeed.csv` with `fail.csv` to exercise our job with incorrect data.

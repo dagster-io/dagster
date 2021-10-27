@@ -1,4 +1,4 @@
-from dagster import PythonObjectDagsterType, make_python_type_usable_as_dagster_type, solid
+from dagster import PythonObjectDagsterType, make_python_type_usable_as_dagster_type, op
 
 
 class EvenType:
@@ -12,6 +12,6 @@ EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
 make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
 
-@solid
+@op
 def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)

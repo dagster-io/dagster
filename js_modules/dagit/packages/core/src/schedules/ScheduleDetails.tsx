@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -17,6 +16,7 @@ import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {TagWIP} from '../ui/TagWIP';
 import {Code, Heading, Mono} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
@@ -36,8 +36,10 @@ export const ScheduleDetails: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const copyToClipboard = useCopyToClipboard();
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
 
   const [copyText, setCopyText] = React.useState('Click to copy');
 
@@ -96,14 +98,16 @@ export const ScheduleDetails: React.FC<{
                 />
               </TagWIP>
             ) : null}
-            <Tooltip content={copyText}>
-              <ButtonLink
-                color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
-                onClick={copyId}
-              >
-                <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
-              </ButtonLink>
-            </Tooltip>
+            <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
+              <Tooltip content={copyText}>
+                <ButtonLink
+                  color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
+                  onClick={copyId}
+                >
+                  <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
+                </ButtonLink>
+              </Tooltip>
+            </Box>
           </>
         }
         right={
@@ -140,12 +144,12 @@ export const ScheduleDetails: React.FC<{
             </td>
           </tr>
           <tr>
-            <td>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</td>
+            <td>{isJob ? 'Job' : 'Pipeline'}</td>
             <td>
               <PipelineReference
                 pipelineName={pipelineName}
                 pipelineHrefContext={repoAddress}
-                mode={schedule.mode}
+                isJob={isJob}
               />
             </td>
           </tr>

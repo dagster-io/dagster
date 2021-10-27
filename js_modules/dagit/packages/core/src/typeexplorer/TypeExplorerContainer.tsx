@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
-import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from './TypeExplorer';
@@ -23,7 +23,7 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
   typeName,
   repoAddress,
 }) => {
-  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
     TYPE_EXPLORER_CONTAINER_QUERY,
     {
@@ -43,7 +43,12 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
           data.pipelineOrError.dagsterTypeOrError &&
           data.pipelineOrError.dagsterTypeOrError.__typename === 'RegularDagsterType'
         ) {
-          return <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />;
+          return (
+            <TypeExplorer
+              isGraph={data.pipelineOrError.isJob}
+              type={data.pipelineOrError.dagsterTypeOrError}
+            />
+          );
         } else {
           return <div>Type Not Found</div>;
         }
@@ -61,6 +66,7 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
       __typename
       ... on Pipeline {
         id
+        isJob
         dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
           __typename
           ... on RegularDagsterType {

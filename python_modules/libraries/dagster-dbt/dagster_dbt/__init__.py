@@ -23,6 +23,14 @@ from .errors import (
     DagsterDbtError,
     DagsterDbtRpcUnexpectedPollOutputError,
 )
+from .ops import (
+    dbt_compile_op,
+    dbt_docs_generate_op,
+    dbt_run_op,
+    dbt_seed_op,
+    dbt_snapshot_op,
+    dbt_test_op,
+)
 from .rpc import (
     DbtRpcClient,
     DbtRpcOutput,

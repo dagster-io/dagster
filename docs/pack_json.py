@@ -94,21 +94,18 @@ def copy_searchindex(src_dir, dest_dir, src_file="searchindex.json", dest_file="
 
 def main():
     json_directory = file_relative_path(__file__, "sphinx/_build/json")
-    content_master_directory = file_relative_path(__file__, "./content/api")
-    crag_content_master_directory = file_relative_path(__file__, "./content-crag/api")
+    content_dir = file_relative_path(__file__, "./content/api")
 
     directories_to_pack = {
         os.path.join(json_directory, "sections"): "sections.json",
         os.path.join(json_directory, "_modules"): "modules.json",
     }
 
-    # TODO remove the double write logic once CRAG is public
-    for content_dir in [content_master_directory, crag_content_master_directory]:
-        for directory, output_file in directories_to_pack.items():
-            data = pack_directory_json(directory)
-            write_json(os.path.join(content_dir, output_file), data)
+    for directory, output_file in directories_to_pack.items():
+        data = pack_directory_json(directory)
+        write_json(os.path.join(content_dir, output_file), data)
 
-        copy_searchindex(content_dir, json_directory)
+    copy_searchindex(content_dir, json_directory)
 
     # objects.inv
     shutil.copyfile(

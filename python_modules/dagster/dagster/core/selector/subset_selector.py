@@ -1,12 +1,44 @@
 import re
 import sys
 from collections import defaultdict
+from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional
 
-from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.dependency import DependencyStructure, Node
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 MAX_NUM = sys.maxsize
+
+
+if TYPE_CHECKING:
+    from dagster.core.execution.plan.plan import ExecutionPlan
+
+
+class OpSelectionData(
+    NamedTuple(
+        "_OpSelectionData",
+        [
+            ("resolved_op_selection", Optional[AbstractSet[str]]),
+            ("ignored_solids", List[Node]),
+        ],
+    )
+):
+    """The data about op selection.
+
+    Attributes:
+        resolved_op_selection (Optional[AbstractSet[str]])): The names of selected ops.
+        ignored_solids (List[Node]): The solids in the original full graph but outside the current
+            selection. This is used in run config resolution to handle unsatisfied inputs correctly.
+    """
+
+    def __new__(cls, resolved_op_selection=None, ignored_solids=None):
+        return super(OpSelectionData, cls).__new__(
+            cls,
+            resolved_op_selection=check.opt_set_param(
+                resolved_op_selection, "resolved_op_selection", str
+            ),
+            ignored_solids=check.opt_list_param(ignored_solids, "ignored_solids", Node),
+        )
 
 
 def generate_dep_graph(pipeline_def):
@@ -186,6 +218,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
     """
     check.list_param(solid_selection, "solid_selection", of_type=str)
 
+    # special case: select all
+    if len(solid_selection) == 1 and solid_selection[0] == "*":
+        return frozenset(pipeline_def.graph.node_names())
+
     graph = generate_dep_graph(pipeline_def)
     solids_set = set()
 
@@ -194,8 +230,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
         subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=solid_selection,
+                    node_type="ops" if pipeline_def.is_job else "solids",
+                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         solids_set.update(subset)
@@ -220,7 +258,6 @@ def parse_step_selection(step_deps, step_selection):
             subset selected.
     """
     check.list_param(step_selection, "step_selection", of_type=str)
-
     # reverse step_deps to get the downstream_deps
     # make sure we have all items as keys, including the ones without downstream dependencies
     downstream_deps = defaultdict(set, {k: set() for k in step_deps.keys()})
