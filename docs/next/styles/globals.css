@@ -93,6 +93,19 @@ dl > dd > dl {
   @apply p-0 text-gable-green text-lg !important;
 }
 
+.sig-param {
+  @apply p-0 text-gray-800 text-sm !important;
+}
+.sig-name.descname {margin-right: 6px;}
+
+em{
+  font-style: initial;
+}
+
+em.property {
+  @apply p-0 text-gray-700 font-mono !important;
+}
+
 dt > a.reference.internal {
   @apply absolute top-3 right-3 opacity-50 text-sm;
 }
@@ -357,9 +370,8 @@ dt > a.reference.internal {
 
 .DocSearch-Hit > a {
   display: block;
-  background: theme("colors.gray.50");
+  background: theme("colors.gray.100");
   border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   padding: 0 1.25rem 0 1rem;
 }
 
