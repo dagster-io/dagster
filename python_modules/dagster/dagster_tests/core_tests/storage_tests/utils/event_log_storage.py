@@ -1047,6 +1047,7 @@ class TestEventLogStorage:
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
 
+    @pytest.mark.skip("skip until we can support in cloud")
     def test_run_step_stats_with_resource_markers(self, storage):
         @solid(required_resource_keys={"foo"})
         def foo_solid():
