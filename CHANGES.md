@@ -1,5 +1,41 @@
 # Changelog
 
+# 0.13.2
+
+### New
+
+- Updated dagstermill to better support job/op/graph changes by adding a `define_dagstermill_op` factory function. Also updated documentation and examples to reflect these changes.
+- Changed run history for jobs in Dagit to include legacy mode tags for runs that were created from pipelines that have since been converted to use jobs.
+- The new [get_dagster_logger()](https://docs.dagster.io/_apidocs/utilities#dagster.utils.log.get_dagster_logger) method is now importable from the top level dagster module (`from dagster import get_dagster_logger`)
+- [dagster-dbt] All dagster-dbt resources (`dbt_cli_resource`, `dbt_rpc_resource`, and `dbt_rpc_sync_resource`) now support the `dbt ls` command: `context.resources.dbt.ls()`.
+- Added `ins` and `outs` properties to `OpDefinition`.
+- Updated the run status favicon of the Run page in Dagit.
+- There is now a `resources_config` argument on `build_solid_context`. The config argument has been renamed to `solid_config`.
+- [helm] When deploying Redis using the Dagster helm chart, by default the new cluster will not require authentication to start a connection to it.
+- [dagster-k8s] The component name on Kubernetes jobs for run and step workers is now `run_worker` and `step_worker`, respectively.
+- Launching a run within a container will now always use the same Python environment that was originally used to load the run’s job. This allows you to you use a single image containing multiple Python environments in different code locations, with each code location specifying a different Python environment.
+
+### Bugfixes
+
+- Fixed a bug where decorating a job with a hook would create a pipeline.
+- Fixed a bug with retrieving output results from a mapped input on `execute_in_process`
+- Fixed a bug where schedules referencing a job were not creating runs using that job’s default run config.
+- [dagster-k8s] Fixed a bug where the retry mode was not being passed along through the k8s executor.
+
+### Breaking Changes
+
+- The first argument on `Executor.execute(...)` has changed from `pipeline_context` to `plan_context`
+
+### Community Contributions
+
+- When using multiple Celery workers in the Dagster helm chart, each worker can now be individually configured. See the [helm chart](https://github.com/dagster-io/dagster/blob/master/helm/dagster/values.yaml#L436-L448) for more information. Thanks [@acrulopez](https://github.com/acrulopez)!
+- [dagster-k8s] Changed Kubernetes job containers to use the fixed name `dagster`, rather than repeating the job name. Thanks [@skirino](https://github.com/dagster-io/dagster/commits?author=skirino)!
+
+### Documentation
+
+- Adding “Python Logging” back to the navigation pane.
+- Updated documentation for `dagster-aws`, `dagster-github`, and `dagster-slack` to reference job/op/graph APIs.
+
 # 0.13.1
 
 ### New
