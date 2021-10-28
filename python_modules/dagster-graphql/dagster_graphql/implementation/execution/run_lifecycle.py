@@ -39,7 +39,12 @@ def is_resume_retry(execution_params):
 
 
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
-    ensure_valid_config(external_pipeline, execution_params.mode, execution_params.run_config)
+    if execution_params.mode is None and len(external_pipeline.available_modes) == 1:
+        mode = external_pipeline.available_modes[0]
+    else:
+        mode = execution_params.mode
+
+    ensure_valid_config(external_pipeline, mode, execution_params.run_config)
 
     step_keys_to_execute, known_state = compute_step_keys_to_execute(
         graphene_info, execution_params
@@ -48,7 +53,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
     external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info=graphene_info,
         external_pipeline=external_pipeline,
-        mode=execution_params.mode,
+        mode=mode,
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -67,7 +72,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         if execution_params.selector.solid_selection
         else None,
         run_config=execution_params.run_config,
-        mode=execution_params.mode,
+        mode=mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,

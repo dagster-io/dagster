@@ -45,9 +45,11 @@ from dagster import (
     daily_schedule,
     graph,
     hourly_schedule,
+    job,
     lambda_solid,
     logger,
     monthly_schedule,
+    op,
     pipeline,
     repository,
     resource,
@@ -1238,6 +1240,15 @@ def composed_graph():
     simple_graph()
 
 
+@job(config={"ops": {"a_solid_with_config": {"config": {"one": "hullo"}}}})
+def job_with_default_config():
+    @op(config_schema={"one": Field(String)})
+    def a_solid_with_config(context):
+        return context.op_config["one"]
+
+    a_solid_with_config()
+
+
 @repository
 def empty_repo():
     return []
@@ -1286,6 +1297,7 @@ def define_pipelines():
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
+        job_with_default_config,
     ]
 
 
