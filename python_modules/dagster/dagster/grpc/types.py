@@ -89,6 +89,16 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
+    def get_command_args(self) -> List[str]:
+        return [
+            self.pipeline_origin.executable_path,
+            "-m",
+            "dagster",
+            "api",
+            "resume_run",
+            serialize_dagster_namedtuple(self),
+        ]
+
 
 @whitelist_for_serdes
 class ExecuteExternalPipelineArgs(

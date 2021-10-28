@@ -175,8 +175,10 @@ def get_user_defined_k8s_config(tags):
     )
 
 
-def get_job_name_from_run_id(run_id):
-    return "dagster-run-{}".format(run_id)
+def get_job_name_from_run_id(run_id, resume_attempt_number=None):
+    return "dagster-run-{}".format(run_id) + (
+        "" if not resume_attempt_number else "-{}".format(resume_attempt_number)
+    )
 
 
 @whitelist_for_serdes

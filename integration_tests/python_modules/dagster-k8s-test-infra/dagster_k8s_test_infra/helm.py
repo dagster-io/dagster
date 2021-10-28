@@ -73,6 +73,41 @@ def namespace(pytestconfig, should_cleanup):
 
 
 @pytest.fixture(scope="session")
+def run_monitoring_namespace(pytestconfig, should_cleanup):
+    """If an existing Helm chart namespace is specified via pytest CLI with the argument
+    --existing-helm-namespace, we will use that chart.
+
+    Otherwise, provision a test namespace and install Helm chart into that namespace.
+
+    Yields the Helm chart namespace.
+    """
+    existing_helm_namespace = pytestconfig.getoption("--existing-helm-namespace")
+
+    if existing_helm_namespace:
+        namespace = existing_helm_namespace
+    else:
+        # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
+        namespace = get_test_namespace()
+
+        print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+        kube_api = kubernetes.client.CoreV1Api()
+
+        print("Creating namespace %s" % namespace)
+        kube_namespace = kubernetes.client.V1Namespace(
+            metadata=kubernetes.client.V1ObjectMeta(name=namespace)
+        )
+        kube_api.create_namespace(kube_namespace)
+
+    yield namespace
+
+    # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
+    # w/ a kind cluster
+    if should_cleanup:
+        print("Deleting namespace %s" % namespace)
+        kube_api.delete_namespace(name=namespace)
+
+
+@pytest.fixture(scope="session")
 def configmaps(namespace, should_cleanup):
     print(
         f"Creating k8s test object ConfigMaps: {TEST_CONFIGMAP_NAME}, {TEST_OTHER_CONFIGMAP_NAME}, {TEST_VOLUME_CONFIGMAP_NAME}"
@@ -282,7 +317,9 @@ def helm_namespace_for_k8s_run_launcher(
     aws_configmap,
     secrets,
 ):  # pylint: disable=unused-argument
-    with helm_chart_for_k8s_run_launcher(namespace, dagster_docker_image, should_cleanup):
+    with helm_chart_for_k8s_run_launcher(
+        namespace, dagster_docker_image, should_cleanup, run_monitoring=True
+    ):
         yield namespace
 
 
@@ -507,7 +544,9 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": True},
+        "dagsterDaemon": {
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}
+        },
     }
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
@@ -515,7 +554,9 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
 
 
 @contextmanager
-def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True):
+def helm_chart_for_k8s_run_launcher(
+    namespace, docker_image, should_cleanup=True, run_monitoring=False
+):
     check.str_param(namespace, "namespace")
     check.str_param(docker_image, "docker_image")
     check.bool_param(should_cleanup, "should_cleanup")
@@ -570,7 +611,10 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
-        "dagsterDaemon": {"enabled": True},
+        "dagsterDaemon": {
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5} if run_monitoring else {},
+        },
     }
 
     with _helm_chart_helper(

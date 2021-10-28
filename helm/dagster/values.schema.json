@@ -2055,6 +2055,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "runMonitoring": {
+                    "title": "Runmonitoring",
+                    "type": "object"
                 }
             },
             "required": [
@@ -2073,7 +2077,8 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe",
-                "annotations"
+                "annotations",
+                "runMonitoring"
             ]
         },
         "Busybox": {
