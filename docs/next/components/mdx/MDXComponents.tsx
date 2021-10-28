@@ -286,12 +286,18 @@ const Experimental = () => {
 };
 
 export default {
-  a: ({ children, ...props }) => (
+  a: ({ children, ...props }) => {
+    // Skip if in-page links
+    if (props.href.startsWith("#")) {
+      return <a {...props}>{children}</a>;
+    }
     // Hydrate the links in raw MDX to include versions
-    <Link href={props.href}>
-      <a {...props}> {children}</a>
-    </Link>
-  ),
+    return (
+      <Link href={props.href}>
+        <a {...props}> {children}</a>
+      </Link>
+    );
+  },
   img: ({ children, ...props }) => (
     <div className="mx-auto">
       <img {...(props as any)} />
