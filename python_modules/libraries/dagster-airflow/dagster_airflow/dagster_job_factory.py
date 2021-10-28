@@ -4,9 +4,9 @@ from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_
 def make_dagster_job_from_airflow_dag(
     dag, tags=None, use_airflow_template_context=False, unique_id=None
 ):
-    """Construct a Dagster pipeline corresponding to a given Airflow DAG.
+    """Construct a Dagster job corresponding to a given Airflow DAG.
 
-    Tasks in the resulting pipeline will execute the ``execute()`` method on the corresponding
+    Tasks in the resulting job will execute the ``execute()`` method on the corresponding
     Airflow Operator. Dagster, any dependencies required by Airflow Operators, and the module
     containing your DAG definition must be available in the Python environment within which your
     Dagster solids execute.
@@ -22,12 +22,11 @@ def make_dagster_job_from_airflow_dag(
 
         .. code-block:: python
 
-            execute_pipeline(
-                make_dagster_job_from_airflow_dag(
+            my_dagster_job = make_dagster_job_from_airflow_dag(
                     dag=dag,
                     tags={'airflow_execution_date': utc_execution_date_str}
-                )
             )
+            my_dagster_job.execute_in_process()
 
     3. (Recommended) Add ``{'airflow_execution_date': utc_date_string}`` to the run tags,
         such as in the Dagit UI. This will override behavior from (1) and (2)
@@ -38,7 +37,7 @@ def make_dagster_job_from_airflow_dag(
 
     Args:
         dag (DAG): The Airflow DAG to compile into a Dagster job
-        tags (Dict[str, Field]): Pipeline tags. Optionally include
+        tags (Dict[str, Field]): Job tags. Optionally include
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
         use_airflow_template_context (bool): If True, will call get_template_context() on the
@@ -48,7 +47,7 @@ def make_dagster_job_from_airflow_dag(
             framework authors to enforce unique op names within a repo.
 
     Returns:
-        job_def (PipelineDefinition): The generated Dagster job
+        job_def (JobDefinition): The generated Dagster job
 
     """
     pipeline_def = make_dagster_pipeline_from_airflow_dag(

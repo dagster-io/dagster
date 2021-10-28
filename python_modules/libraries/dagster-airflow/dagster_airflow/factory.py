@@ -281,7 +281,7 @@ def make_airflow_dag(
         op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
             operator (a subclass of
             :py:class:`PythonOperator <airflow:airflow.operators.python_operator.PythonOperator>`).
-        pipeline_name (str): [Deprecated] The name of the pipeline definition.
+        pipeline_name (str): (legacy) The name of the pipeline definition.
 
     Returns:
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
@@ -354,7 +354,7 @@ def make_airflow_dag_for_operator(
             :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
         op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
             operator.
-        pipeline_name (str): [Deprecated] The name of the pipeline definition.
+        pipeline_name (str): (legacy) The name of the pipeline definition.
 
     Returns:
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
@@ -456,7 +456,7 @@ def make_airflow_dag_containerized(
         op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
             operator (a subclass of
             :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
-        pipeline_name (str): [Deprecated] The name of the pipeline definition.
+        pipeline_name (str): (legacy) The name of the pipeline definition.
 
     Returns:
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
