@@ -102,8 +102,20 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
+        {{- if $deployment.volumeMounts }}
+          volumeMounts:
+          {{- range $volumeMount := $deployment.volumeMounts }}
+            - {{ $volumeMount | toYaml | nindent 16 }}
+          {{- end }}
+        {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
       tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
+      {{- if $deployment.volumes }}
+      volumes:
+        {{- range $volume := $deployment.volumes }}
+        - {{ $volume | toYaml | nindent 12 }}
+        {{- end }}
+      {{- end }}
 ---
 {{ end }}
