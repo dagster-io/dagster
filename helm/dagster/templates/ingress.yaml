@@ -1,5 +1,15 @@
 {{- if .Values.ingress.enabled -}}
-apiVersion: extensions/v1beta1
+# See: https://github.com/apache/airflow/blob/main/chart/templates/webserver/webserver-ingress.yaml
+#      https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+{{- $apiIsStable := semverCompare ">= 1.19.x" (include "kubeVersion" .) -}}
+{{- $dagitPathType := .Values.ingress.dagit.pathType | default "Prefix"}}
+{{- $readOnlyDagitPathType := .Values.ingress.readOnlyDagit.pathType | default "Prefix"}}
+{{- $flowerPathType := .Values.ingress.flower.pathType | default "Prefix"}}
+{{- if $apiIsStable }}
+apiVersion: networking.k8s.io/v1
+{{- else }}
+apiVersion: networking.k8s.io/v1beta1
+{{- end }}
 kind: Ingress
 metadata:
   name: {{ include "dagster.fullname" . }}-ingress
@@ -10,7 +20,9 @@ metadata:
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
-  # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  {{- if and .Values.ingress.ingressClassName $apiIsStable }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
   tls:
     {{- if .Values.ingress.dagit.tls.enabled }}
     - hosts:
@@ -33,19 +45,47 @@ spec:
         paths:
           {{- range .Values.ingress.dagit.precedingPaths }}
           - path: {{ .path }}
+            {{- if $apiIsStable }}
+            pathType: {{ $dagitPathType }}
+            {{- end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
           - path: {{ .Values.ingress.dagit.path | default "/*" }}
+            {{ if $apiIsStable }}
+            pathType: {{ $dagitPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ include "dagster.dagit.fullname" . }}
+                port:
+                  number: {{ .Values.dagit.service.port | default 80 }}
+              {{- else }}
               serviceName: {{ include "dagster.dagit.fullname" . }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
+              {{- end }}
           {{- range .Values.ingress.dagit.succeedingPaths }}
           - path: {{ .path }}
+            {{ if $apiIsStable }}
+            pathType: {{ $dagitPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
     {{- if .Values.dagit.enableReadOnly }}
     - host: {{ .Values.ingress.readOnlyDagit.host }}
@@ -53,19 +93,47 @@ spec:
         paths:
           {{- range .Values.ingress.readOnlyDagit.precedingPaths }}
           - path: {{ .path }}
+            {{ if $apiIsStable }}
+            pathType: {{ $readOnlyDagitPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
           - path: {{ .Values.ingress.readOnlyDagit.path | default "/*" }}
+            {{ if $apiIsStable }}
+            pathType: {{ $readOnlyDagitPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
+                port:
+                  number: {{ .Values.dagit.service.port | default 80 }}
+              {{- else }}
               serviceName: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
+              {{- end }}
           {{- range .Values.ingress.readOnlyDagit.succeedingPaths }}
           - path: {{ .path }}
+            {{ if $apiIsStable }}
+            pathType: {{ $readOnlyDagitPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
     {{end}}
     {{- if .Values.flower.enabled }}
@@ -74,19 +142,46 @@ spec:
         paths:
           {{- range .Values.ingress.flower.precedingPaths }}
           - path: {{ .path }}
+            {{ if $apiIsStable }}
+            pathType: {{ $flowerPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
           - path: {{ .Values.ingress.flower.path | default "/*" }}
+            {{ if $apiIsStable }}
+            pathType: {{ $flowerPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ template "dagster.fullname" . }}-flower-service
+                port: {{ .Values.flower.service.port }}
+              {{- else }}
               serviceName: {{ template "dagster.fullname" . }}-flower-service
               servicePort: {{ .Values.flower.service.port }}
+              {{- end }}
           {{- range .Values.ingress.flower.succeedingPaths }}
           - path: {{ .path }}
+            {{ if $apiIsStable }}
+            pathType: {{ $flowerPathType }}
+            {{ end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ .serviceName }}
+                port: {{ .servicePort }}
+              {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
+              {{- end }}
           {{- end }}
     {{end}}
 {{end}}

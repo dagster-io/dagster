@@ -690,12 +690,17 @@ ingress:
 
   annotations: {}
 
+  # Specify ingressClassName for Kubernetes >= 1.19
+  ingressClassName: ""
+
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    # pathType is only for k8s >= 1.19
+    pathType: Prefix
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -728,6 +733,8 @@ ingress:
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    # pathType is only for k8s >= 1.19
+    pathType: Prefix
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -760,6 +767,8 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     tls:
       enabled: false

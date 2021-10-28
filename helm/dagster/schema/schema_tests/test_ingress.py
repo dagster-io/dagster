@@ -1,5 +1,5 @@
 import pytest
-from kubernetes.client import models
+from kubernetes.client.models import V1Ingress
 from schema.charts.dagster.subschema.dagit import Dagit
 from schema.charts.dagster.subschema.ingress import (
     DagitIngressConfiguration,
@@ -18,7 +18,7 @@ def helm_template() -> HelmTemplate:
         helm_dir_path="helm/dagster",
         subchart_paths=["charts/dagster-user-deployments"],
         output="templates/ingress.yaml",
-        model=models.ExtensionsV1beta1Ingress,
+        model=V1Ingress,
     )
 
 
