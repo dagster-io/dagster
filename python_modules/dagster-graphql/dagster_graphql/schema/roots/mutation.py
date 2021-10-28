@@ -53,6 +53,16 @@ from ..util import non_null_list
 def create_execution_params(graphene_info, graphql_execution_params):
     preset_name = graphql_execution_params.get("preset")
     selector = pipeline_selector_from_graphql(graphql_execution_params["selector"])
+    external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
+    has_provided_run_config = graphql_execution_params.get("runConfigData") is not None
+
+    if (
+        not has_provided_run_config
+        and external_pipeline.is_job
+        and external_pipeline.has_preset("default")
+    ):
+        preset_name = "default"
+
     if preset_name:
         if graphql_execution_params.get("runConfigData"):
             raise UserFacingGraphQLError(
