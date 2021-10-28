@@ -15,6 +15,7 @@ from dagster import (
     OutputDefinition,
     RetryRequested,
     pipeline,
+    resource,
     seven,
     solid,
 )
@@ -164,11 +165,17 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
 
 
 def _mode_def(event_callback):
+    @resource
+    def foo_resource():
+        time.sleep(0.1)
+        return "foo"
+
     return ModeDefinition(
+        resource_defs={"foo": foo_resource},
         logger_defs={
             "callback": construct_event_logger(event_callback),
             "console": colored_console_logger,
-        }
+        },
     )
 
 
@@ -1039,6 +1046,27 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.FAILURE
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
+
+    @pytest.mark.skip("skip until we can support in cloud")
+    def test_run_step_stats_with_resource_markers(self, storage):
+        @solid(required_resource_keys={"foo"})
+        def foo_solid():
+            pass
+
+        def _pipeline():
+            foo_solid()
+
+        events, result = _synthesize_events(_pipeline, check_success=False)
+        for event in events:
+            storage.store_event(event)
+
+        step_stats = storage.get_step_stats_for_run(result.run_id)
+        assert len(step_stats) == 1
+        assert step_stats[0].step_key == "foo_solid"
+        assert step_stats[0].status == StepEventStatus.SUCCESS
+        assert step_stats[0].end_time > step_stats[0].start_time
+        assert len(step_stats[0].markers) == 1
+        assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
     def test_get_event_records(self, storage):
         if isinstance(storage, SqliteEventLogStorage):

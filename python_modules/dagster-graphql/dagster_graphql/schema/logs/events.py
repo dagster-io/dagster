@@ -516,6 +516,14 @@ class GraphenePipelineRunStepStats(graphene.Interface):
         name = "PipelineRunStepStats"
 
 
+class GrapheneRunMarker(graphene.ObjectType):
+    startTime = graphene.Field(graphene.Float)
+    endTime = graphene.Field(graphene.Float)
+
+    class Meta:
+        name = "RunMarker"
+
+
 class GrapheneRunStepStats(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     stepKey = graphene.NonNull(graphene.String)
@@ -524,6 +532,8 @@ class GrapheneRunStepStats(graphene.ObjectType):
     endTime = graphene.Field(graphene.Float)
     materializations = non_null_list(GrapheneMaterialization)
     expectationResults = non_null_list(GrapheneExpectationResult)
+    attempts = non_null_list(GrapheneRunMarker)
+    markers = non_null_list(GrapheneRunMarker)
 
     class Meta:
         interfaces = (GraphenePipelineRunStepStats,)
@@ -539,4 +549,12 @@ class GrapheneRunStepStats(graphene.ObjectType):
             endTime=stats.end_time,
             materializations=stats.materializations,
             expectationResults=stats.expectation_results,
+            attempts=[
+                GrapheneRunMarker(startTime=attempt.start_time, endTime=attempt.end_time)
+                for attempt in stats.attempts_list
+            ],
+            markers=[
+                GrapheneRunMarker(startTime=marker.start_time, endTime=marker.end_time)
+                for marker in stats.markers
+            ],
         )
