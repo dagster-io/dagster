@@ -139,9 +139,7 @@ const StepItem: React.FunctionComponent<{
             flip: {enabled: false},
           }}
           position="bottom"
-          content={
-            'Unknown step state. Pipeline execution completed without step execution completion.'
-          }
+          content={'Unknown step state. Run completed without step execution completion.'}
         >
           {'?'}
         </Tooltip>
