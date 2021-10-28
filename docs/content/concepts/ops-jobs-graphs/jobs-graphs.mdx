@@ -9,12 +9,12 @@ A job is an executable graph of ops, with optional resources and configuration.
 
 ## Relevant APIs
 
-| Name                                                   | Description                                                                                                                                                                                                                      |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="job" decorator />                    | The decorator used to create a job.                                                                                                                                                                                              |
-| <PyObject object="JobDefinition" />                    | A job definition. Jobs are the main unit of execution and monitoring in Dagster. Typically constructed using the <PyObject object="job" decorator /> decorator.                                                                  |
-| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                                |
-| <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/solids-pipelines/composite-solids)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
+| Name                                                   | Description                                                                                                                                                                                                                   |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="job" decorator />                    | The decorator used to create a job.                                                                                                                                                                                           |
+| <PyObject object="JobDefinition" />                    | A job definition. Jobs are the main unit of execution and monitoring in Dagster. Typically constructed using the <PyObject object="job" decorator /> decorator.                                                               |
+| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
+| <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
 
 _Jobs_ are the main unit of execution and monitoring in Dagster. The core of a job is a _graph_ of ops - connected via data dependencies. Jobs can also contain [resources](/concepts/resources) and [configuration](/concepts/configuration/config-schema), which determine some of the behavior of those ops.
 
@@ -53,7 +53,7 @@ def do_stuff():
     add_one(return_five())
 ```
 
-When a defining job, you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/op-hooks), tags, and an [executor](/deployment/executors) (follow the links for explanation of how to use each of these).
+When a defining job, you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/ops-jobs-graphs/op-hooks), tags, and an [executor](/deployment/executors) (follow the links for explanation of how to use each of these).
 
 ### From a graph
 
@@ -89,7 +89,7 @@ prod_job = do_stuff.to_job(resource_defs={"server": prod_server})
 local_job = do_stuff.to_job(resource_defs={"local": local_server})
 ```
 
-`to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/solids-pipelines/op-hooks), tags, and an [executor](/deployment/executors).
+`to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/ops-jobs-graphs/op-hooks), tags, and an [executor](/deployment/executors).
 
 ## Including a job in a repository
 
