@@ -9,52 +9,45 @@
 
 # Dagster
 
-Dagster is a data orchestrator for machine learning, analytics, and ETL
+An orchestration platform for the development, production, and observation of data assets.
 
-Dagster lets you define pipelines in terms of the data flow between reusable, logical components, then test locally and run anywhere. With a unified view of pipelines and the assets they produce, Dagster can schedule and orchestrate Pandas, Spark, SQL, or anything else that Python can invoke.
+Dagster lets you define jobs in terms of the data flow between reusable, logical components, then test locally and run anywhere. With a unified view of jobs and the assets they produce, Dagster can schedule and orchestrate Pandas, Spark, SQL, or anything else that Python can invoke.
 
 Dagster is designed for data platform engineers, data engineers, and full-stack data scientists. Building a data platform with Dagster makes your stakeholders more independent and your systems more robust. Developing data pipelines with Dagster makes testing easier and deploying faster.
 
-### Develop and test on your laptop, deploy anywhere
+### Develop and test locally, then deploy anywhere
 
-With Dagster’s pluggable execution, the same pipeline can run in-process against your local file system, or on a distributed work queue against your production data lake. You can set up Dagster’s web interface in a minute on your laptop, or deploy it on-premise or in any cloud.
-
+With Dagster’s pluggable execution, the same computations can run in-process against your local file system, or on a distributed work queue against your production data lake. You can set up Dagster’s web interface in a minute on your laptop, deploy it on-premise, or in any cloud.
 
 ### Model and type the data produced and consumed by each step
 
 Dagster models data dependencies between steps in your orchestration graph and handles passing data between them. Optional typing on inputs and outputs helps catch bugs early.
 
-
 ### Link data to computations
 
-Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how they were generated and trace issues when they don’t look how you expect.
-
+Dagster’s Asset Manager tracks the data sets and ML models produced by your jobs, so you can understand how they were generated and trace issues when they don’t look how you expect.
 
 ### Build a self-service data platform
 
-Dagster helps platform teams build systems for data practitioners. Pipelines are built from shared, reusable, configurable data processing and infrastructure components. Dagster’s web interface lets anyone inspect these objects and discover how to use them.
-
+Dagster helps platform teams build systems for data practitioners. Jobs are built from shared, reusable, configurable data processing and infrastructure components. Dagit, Dagster’s web interface, lets anyone inspect these objects and discover how to use them.
 
 ### Avoid dependency nightmares
 
-Dagster’s repository model lets you isolate codebases so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
-
+Dagster’s repository model lets you isolate codebases so that problems in one job don’t bring down the rest. Each job can have its own package dependencies and Python version. Jobs are run in isolated processes so user code issues can't bring the system down.
 
 ### Debug pipelines from a rich UI
 
-Dagit, Dagster’s web interface, includes expansive facilities for understanding the pipelines it orchestrates.  When inspecting a pipeline run, you can query over logs, discover the most time consuming tasks via a Gantt chart, re-execute subsets of steps, and more.
-
-<p align="center">
-<img src="https://user-images.githubusercontent.com/4531914/79161362-3bc8cf00-7d90-11ea-8974-17edbde3dc0d.gif" />
-</p>
+Dagit, Dagster’s web interface, includes expansive facilities for understanding the jobs it orchestrates. When inspecting a run of your job, you can query over logs, discover the most time consuming tasks via a Gantt chart, re-execute subsets of steps, and more.
 
 ## Getting Started
 
 ### Installation
 
-<p align="center">
-<code>pip install dagster dagit</code>
-</p>
+Dagster is available on PyPI, and officially supports Python 3.6+.
+
+```bash
+$ pip install dagster dagit
+```
 
 This installs two modules:
 
@@ -63,54 +56,7 @@ This installs two modules:
 - **Dagit**: the UI for developing and operating Dagster pipelines, including a DAG browser, a
   type-aware config editor, and a live execution interface.
 
-### Hello dagster 👋
-
-**`hello_dagster.py`**
-
-```python
-from dagster import pipeline, solid
-
-
-@solid
-def get_name():
-    return "dagster"
-
-
-@solid
-def hello(context, name):
-    context.log.info(f"Hello, {name}!")
-
-
-@pipeline
-def hello_pipeline():
-    hello(get_name())
-```
-
-Save the code above in a file named `hello_dagster.py`. You can execute the pipeline using any one
-of the following methods:
-
-**(1) Dagster Python API**
-
-```python
-from dagster import execute_pipeline
-
-if __name__ == "__main__":
-    execute_pipeline(hello_pipeline)   # Hello, dagster!
-```
-
-**(2) Dagster CLI**
-
-```bash
-$ dagster pipeline execute -f hello_dagster.py
-```
-
-**(3) Dagit web UI**
-
-```bash
-$ dagit -f hello_dagster.py
-```
-
-## Learn
+### Learn
 
 Next, jump right into our [tutorial](https://docs.dagster.io/tutorial/), or read our [complete
 documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on
