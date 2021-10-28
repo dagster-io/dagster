@@ -29,6 +29,7 @@ from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
+from dagster.loggers import json_console_logger
 
 
 def get_ops():
@@ -905,3 +906,20 @@ def test_graph_configured_error_in_fn():
         "unexpected error during its execution.",
     ):
         configured_graph.execute_in_process()
+
+
+def test_job_non_default_logger_config():
+    @graph
+    def your_graph():
+        pass
+
+    your_job = your_graph.to_job(
+        logger_defs={"json": json_console_logger}, config={"loggers": {"json": {"config": {}}}}
+    )
+
+    result = your_job.execute_in_process()
+    assert result.success
+    result = your_job.execute_in_process(
+        run_config={"loggers": {"json": {"config": {"log_level": "DEBUG"}}}}
+    )
+    assert result.success
