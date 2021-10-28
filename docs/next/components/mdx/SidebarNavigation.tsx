@@ -102,7 +102,7 @@ const useActiveId = (itemIds) => {
   return activeId;
 };
 
-const MARGINS = ["ml-0", "ml-4", "ml-8", "ml-12"];
+const MARGINS = ["ml-0", "ml-2", "ml-4", "ml-8"];
 
 const renderItems = (items, activeId, depth) => {
   return (
@@ -112,10 +112,10 @@ const renderItems = (items, activeId, depth) => {
           <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
             <a
               href={item.url}
-              className={cx("font-semibold text-sm", {
-                "text-gray-800 dark:text-gray-100 underline bg-blue-50 dark:bg-blue-900":
+              className={cx("font-semibold text-sm text-gray-500 hover:text-gray-800 transition", {
+                "":
                   activeId === item.url.slice(1),
-                "text-gray-500 dark:text-gray-300":
+                "text-gray-500 hover:text-gray-800 transition":
                   activeId !== item.url.slice(1),
               })}
             >
