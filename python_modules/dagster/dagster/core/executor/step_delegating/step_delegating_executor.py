@@ -20,7 +20,7 @@ class StepDelegatingExecutor(Executor):
     def __init__(
         self,
         step_handler: StepHandler,
-        retries: RetryMode = RetryMode.DISABLED,
+        retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
     ):
@@ -46,40 +46,40 @@ class StepDelegatingExecutor(Executor):
         return [event.dagster_event for event in events if event.is_dagster_event]
 
     def _get_step_handler_context(
-        self, pipeline_context, steps, active_execution
+        self, plan_context, steps, active_execution
     ) -> StepHandlerContext:
         return StepHandlerContext(
-            instance=pipeline_context.instance,
+            instance=plan_context.plan_data.instance,
             execute_step_args=ExecuteStepArgs(
-                pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
-                pipeline_run_id=pipeline_context.pipeline_run.run_id,
+                pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
+                pipeline_run_id=plan_context.pipeline_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
-                instance_ref=pipeline_context.instance.get_ref(),
+                instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries,
                 known_state=active_execution.get_known_state(),
             ),
             step_tags={step.key: step.tags for step in steps},
-            pipeline_run=pipeline_context.pipeline_run,
+            pipeline_run=plan_context.pipeline_run,
         )
 
-    def _log_new_events(self, events, pipeline_context, running_steps):
+    def _log_new_events(self, events, plan_context, running_steps):
         # Note: this could lead to duplicated events if the returned events were already logged
         # (they shouldn't be)
         for event in events:
             log_step_event(
-                pipeline_context.for_step(running_steps[event.step_key]),
+                plan_context.for_step(running_steps[event.step_key]),
                 event,
             )
         return events
 
-    def execute(self, pipeline_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
-        check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
+    def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
+        check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         self._event_cursor = -1  # pylint: disable=attribute-defined-outside-init
 
         yield DagsterEvent.engine_event(
-            pipeline_context,
+            plan_context,
             f"Starting execution with step handler {self._step_handler.name}",
             EngineEventData(),
         )
@@ -87,16 +87,16 @@ class StepDelegatingExecutor(Executor):
         with execution_plan.start(retry_mode=self.retries) as active_execution:
             running_steps: Dict[str, ExecutionStep] = {}
 
-            if pipeline_context.resume_from_failure:
+            if plan_context.resume_from_failure:
                 yield DagsterEvent.engine_event(
-                    pipeline_context,
+                    plan_context,
                     "Resuming execution from failure",
                     EngineEventData(),
                 )
 
                 events = self._pop_events(
-                    pipeline_context.instance,
-                    pipeline_context.run_id,
+                    plan_context.instance,
+                    plan_context.run_id,
                 )
                 for dagster_event in events:
                     yield dagster_event
@@ -105,7 +105,7 @@ class StepDelegatingExecutor(Executor):
                 for step in possibly_in_flight_steps:
 
                     yield DagsterEvent.engine_event(
-                        pipeline_context,
+                        plan_context,
                         "Checking on status of possibly launched steps",
                         EngineEventData(),
                         step.handle,
@@ -114,16 +114,16 @@ class StepDelegatingExecutor(Executor):
                     # TODO: check if failure event included. For now, hacky assumption that
                     # we don't log anything on successful check
                     if self._step_handler.check_step_health(
-                        self._get_step_handler_context(pipeline_context, [step], active_execution)
+                        self._get_step_handler_context(plan_context, [step], active_execution)
                     ):
                         # health check failed, launch the step
                         launch_events = self._log_new_events(
                             self._step_handler.launch_step(
                                 self._get_step_handler_context(
-                                    pipeline_context, [step], active_execution
+                                    plan_context, [step], active_execution
                                 )
                             ),
-                            pipeline_context,
+                            plan_context,
                             {step.key: step for step in possibly_in_flight_steps},
                         )
                         for dagster_event in launch_events:
@@ -137,9 +137,9 @@ class StepDelegatingExecutor(Executor):
                 events = []
 
                 if active_execution.check_for_interrupts():
-                    if not pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+                    if not plan_context.instance.run_will_resume(plan_context.run_id):
                         yield DagsterEvent.engine_event(
-                            pipeline_context,
+                            plan_context,
                             "Executor received termination signal, forwarding to steps",
                             EngineEventData.interrupted(list(running_steps.keys())),
                         )
@@ -149,16 +149,16 @@ class StepDelegatingExecutor(Executor):
                                 self._log_new_events(
                                     self._step_handler.terminate_step(
                                         self._get_step_handler_context(
-                                            pipeline_context, [step], active_execution
+                                            plan_context, [step], active_execution
                                         )
                                     ),
-                                    pipeline_context,
+                                    plan_context,
                                     running_steps,
                                 )
                             )
                     else:
                         yield DagsterEvent.engine_event(
-                            pipeline_context,
+                            plan_context,
                             "Executor received termination signal, not forwarding to steps because "
                             "run will be resumed",
                             EngineEventData(
@@ -175,8 +175,8 @@ class StepDelegatingExecutor(Executor):
 
                 events.extend(
                     self._pop_events(
-                        pipeline_context.instance,
-                        pipeline_context.run_id,
+                        plan_context.instance,
+                        plan_context.run_id,
                     )
                 )
 
@@ -190,10 +190,10 @@ class StepDelegatingExecutor(Executor):
                             self._log_new_events(
                                 self._step_handler.check_step_health(
                                     self._get_step_handler_context(
-                                        pipeline_context, [step], active_execution
+                                        plan_context, [step], active_execution
                                     )
                                 ),
-                                pipeline_context,
+                                plan_context,
                                 running_steps,
                             )
                         )
@@ -204,10 +204,10 @@ class StepDelegatingExecutor(Executor):
                         self._log_new_events(
                             self._step_handler.launch_step(
                                 self._get_step_handler_context(
-                                    pipeline_context, [step], active_execution
+                                    plan_context, [step], active_execution
                                 )
                             ),
-                            pipeline_context,
+                            plan_context,
                             running_steps,
                         )
                     )
@@ -223,10 +223,10 @@ class StepDelegatingExecutor(Executor):
                     ):
                         assert isinstance(dagster_event.step_key, str)
                         del running_steps[dagster_event.step_key]
-                        active_execution.verify_complete(pipeline_context, dagster_event.step_key)
+                        active_execution.verify_complete(plan_context, dagster_event.step_key)
 
                 # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(pipeline_context):
+                for event in active_execution.plan_events_iterator(plan_context):
                     yield event
 
                 time.sleep(self._sleep_seconds)

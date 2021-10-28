@@ -15,6 +15,8 @@ more advanced use cases, we suggest building your own ops which directly interac
 
 .. autofunction:: dbt_compile_op
 
+.. autofunction:: dbt_ls_op
+
 .. autofunction:: dbt_test_op
 
 .. autofunction:: dbt_snapshot_op
@@ -43,7 +45,10 @@ CLI Resources
 RPC Resources
 ~~~~~~~~~~~~~
 
-.. autoclass:: DbtRpcClient
+.. autoclass:: DbtRpcResource
+    :members:
+
+.. autoclass:: DbtRpcSyncResource
     :members:
 
 .. autoclass:: DbtRpcOutput
@@ -85,6 +90,13 @@ Errors
 
 .. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
 
+Utils
+=====
+
+.. currentmodule:: dagster_dbt.utils
+
+.. autofunction:: generate_materializations
+
 Solids [Legacy]
 ===============
 
@@ -92,6 +104,8 @@ dagster_dbt provides a set of solids that may be used in legacy pipelines.
 
 CLI Solids
 ~~~~~~~~~~
+
+.. currentmodule:: dagster_dbt
 
 .. autofunction:: dbt_cli_compile
 

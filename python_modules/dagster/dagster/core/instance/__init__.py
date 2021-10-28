@@ -1264,6 +1264,7 @@ records = instance.get_event_records(
             pipeline_name=pipeline_run.pipeline_name,
             message=message,
             event_specific_data=engine_event_data,
+            step_key=step_key,
         )
         event_record = EventLogEntry(
             message=message,

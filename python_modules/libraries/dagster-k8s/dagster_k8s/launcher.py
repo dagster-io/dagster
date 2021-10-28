@@ -7,7 +7,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -286,20 +286,17 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
-            )
+        run_args = ExecuteRunArgs(
+            pipeline_origin=pipeline_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=None,
         )
-
         job = construct_dagster_k8s_job(
             job_config=job_config,
-            args=["dagster", "api", "execute_run", input_json],
+            args=run_args.get_command_args(),
             job_name=job_name,
             pod_name=pod_name,
-            component="run_coordinator",
+            component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
         )
 

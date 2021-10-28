@@ -107,7 +107,7 @@ def continent_config(partition_key: str):
     return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
 
 
-@op
+@op(config_schema={"continent_name": str})
 def continent_op(context):
     context.log.info(context.op_config["continent_name"])
 

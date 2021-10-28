@@ -26,7 +26,7 @@ from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import merge_dicts
 from dagster.utils.forked_pdb import ForkedPdb
 
-from .compute import SolidExecutionContext
+from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -36,7 +36,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class UnboundSolidExecutionContext(SolidExecutionContext):
+class UnboundSolidExecutionContext(OpExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -259,7 +259,7 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     return validated_config
 
 
-class BoundSolidExecutionContext(SolidExecutionContext):
+class BoundSolidExecutionContext(OpExecutionContext):
     """The solid execution context that is passed to the compute function during invocation.
 
     This context is bound to a specific solid definition, for which the resources and config have
@@ -405,7 +405,7 @@ def build_op_context(
     resources_config: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
-) -> SolidExecutionContext:
+) -> OpExecutionContext:
     """Builds op execution context from provided parameters.
 
     ``op`` is currently built on top of `solid`, and thus this function creates a `SolidExecutionContext`.

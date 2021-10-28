@@ -4,14 +4,13 @@ from dagster.core.definitions.executor import multiple_process_executor_requirem
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.retries import get_retries_config
+from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.types.dagster_type import Optional
-from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental
 from dagster_k8s.launcher import K8sRunLauncher
@@ -102,7 +101,8 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             ),
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
-        )
+        ),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
 
@@ -155,8 +155,7 @@ class K8sStepHandler(StepHandler):
         job_name = "dagster-job-%s" % (k8s_name_key)
         pod_name = "dagster-job-%s" % (k8s_name_key)
 
-        input_json = serialize_dagster_namedtuple(step_handler_context.execute_step_args)
-        args = ["dagster", "api", "execute_step", input_json]
+        args = step_handler_context.execute_step_args.get_command_args()
 
         job_config = self._job_config
         if not job_config.job_image:

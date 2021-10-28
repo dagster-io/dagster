@@ -43,7 +43,7 @@ class RetryPolicy(
     ),
 ):
     """
-    A declarative policy for when to request retries when an exception occurs during solid execution.
+    A declarative policy for when to request retries when an exception occurs during op execution.
 
     Args:
         max_retries (int):

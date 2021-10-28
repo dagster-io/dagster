@@ -206,15 +206,15 @@ def run_failure_sensor(
     Takes a :py:class:`~dagster.RunFailureSensorContext`.
 
     Args:
-        name (Optional[str]): The name of the pipeline failure sensor. Defaults to the name of the
+        name (Optional[str]): The name of the job failure sensor. Defaults to the name of the
             decorated function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
-        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+        pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
     """
@@ -251,21 +251,21 @@ def run_failure_sensor(
 class RunStatusSensorDefinition(SensorDefinition):
     """
     Define a sensor that reacts to a given status of pipeline execution, where the decorated
-    function will be run when a pipeline is at the given status.
+    function will be evaluated when a run is at the given status.
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        pipeline_run_status (PipelineRunStatus): The status of pipeline execution which will be
+        pipeline_run_status (PipelineRunStatus): The status of a run which will be
             monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
-        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+        pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
     """

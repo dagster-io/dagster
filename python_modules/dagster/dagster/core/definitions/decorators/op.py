@@ -179,7 +179,7 @@ def op(
     """
     Create an op with the specified parameters from the decorated function.
 
-    Input and output definitions will be inferred from the type signature of the decorated function
+    Ins and outs will be inferred from the type signature of the decorated function
     if not explicitly provided.
 
     The decorated function will be used as the op's compute function. The signature of the
@@ -220,9 +220,9 @@ def op(
             provided the same inputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
         input_defs (Optional[List[InputDefinition]]):
-            Preserved to ease migration from :py:class:`solid`
+            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of ins argument.
         output_defs (Optional[List[OutputDefinition]]):
-            Preserved to ease migration from :py:class:`solid`
+            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of out argument.
 
     Examples:
 

@@ -37,7 +37,10 @@ class CheckRunHealthResult(NamedTuple):
     """
 
     status: WorkerStatus
-    message: Optional[str] = None
+    msg: Optional[str] = None
+
+    def __str__(self) -> str:
+        return f"{self.status.value}: '{self.msg}'"
 
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):

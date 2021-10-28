@@ -374,6 +374,18 @@ class In(
             asset_partitions=asset_partitions,
         )
 
+    @staticmethod
+    def from_definition(input_def: InputDefinition):
+        return In(
+            dagster_type=input_def.dagster_type,
+            description=input_def.description,
+            default_value=input_def._default_value,  # pylint: disable=protected-access
+            root_manager_key=input_def.root_manager_key,
+            metadata=input_def.metadata,
+            asset_key=input_def._asset_key,  # pylint: disable=protected-access
+            asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+        )
+
     def to_definition(self, name: str) -> InputDefinition:
         dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
         return InputDefinition(

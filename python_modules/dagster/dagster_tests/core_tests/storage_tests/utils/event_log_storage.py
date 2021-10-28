@@ -1047,6 +1047,7 @@ class TestEventLogStorage:
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
 
+    @pytest.mark.skip("skip until we can support in cloud")
     def test_run_step_stats_with_resource_markers(self, storage):
         @solid(required_resource_keys={"foo"})
         def foo_solid():
@@ -1323,3 +1324,29 @@ class TestEventLogStorage:
 
         assert len(event_list) == len(safe_events)
         assert all([isinstance(event, EventLogEntry) for event in event_list])
+
+    def test_engine_event_markers(self, storage):
+        @solid
+        def return_one(_):
+            return 1
+
+        @pipeline
+        def a_pipe():
+            return_one()
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            run_id = make_new_run_id()
+            run = instance.create_run_for_pipeline(a_pipe, run_id=run_id)
+
+            instance.report_engine_event(
+                "blah blah", run, EngineEventData(marker_start="FOO"), step_key="return_one"
+            )
+            instance.report_engine_event(
+                "blah blah", run, EngineEventData(marker_end="FOO"), step_key="return_one"
+            )
+            logs = storage.get_logs_for_run(run_id)
+            for entry in logs:
+                assert entry.step_key == "return_one"

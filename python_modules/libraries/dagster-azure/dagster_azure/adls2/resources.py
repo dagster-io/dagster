@@ -25,25 +25,23 @@ def adls2_resource(context):
 
     The underlying client is a :py:class:`~azure.storage.filedatalake.DataLakeServiceClient`.
 
-    Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
+    Attach this resource definition to a :py:class:`~dagster.JobDefinition` in order to make it
     available to your ops.
 
     Example:
 
         .. code-block:: python
 
-            from dagster import build_op_context, op
+            from dagster import job, op
             from dagster_azure.adls2 import adls2_resource
 
             @op(required_resource_keys={'adls2'})
             def example_adls2_op(context):
                 return list(context.resources.adls2.adls2_client.list_file_systems())
 
-            adls2_resource_configured = adls2_resource.configured({
-                'storage_account': 'my_storage_account'
-            })
-            context = build_op_context(resources={'adls2': adls2_resource_configured})
-            result = example_adls2_op(context)
+            @job(resource_defs={"adls2": adls2_resource})
+            def my_job():
+                example_adls2_op()
 
     Note that your ops must also declare that they require this resource with
     `required_resource_keys`, or it will not be initialized for the execution of their compute

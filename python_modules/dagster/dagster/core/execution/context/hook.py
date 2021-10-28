@@ -383,9 +383,9 @@ def build_hook_context(
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can
             either be values or resource definitions.
         mode_def (Optional[ModeDefinition]): The mode definition used with the context.
-        solid (Optional[SolidDefinition, PendingNodeInvocation]): The solid definition which the
-            hook may be associated with.
         op (Optional[OpDefinition, PendingNodeInvocation]): The op definition which the
+            hook may be associated with.
+        solid (Optional[SolidDefinition, PendingNodeInvocation]): (legacy) The solid definition which the
             hook may be associated with.
 
     Examples:
@@ -397,7 +397,7 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
-    check.invariant(not (solid and op), "cannot set both `solid` and `op`")
+    check.invariant(not (solid and op), "cannot set both `solid` and `op` on `build_hook_context`.")
     if op:
         return UnboundHookContext(
             resources=check.opt_dict_param(resources, "resources", key_type=str),

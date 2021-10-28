@@ -526,49 +526,71 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
 class DependencyDefinition(
     NamedTuple(
-        "_DependencyDefinition", [("solid", str), ("output", str), ("description", Optional[str])]
+        "_DependencyDefinition", [("node", str), ("output", str), ("description", Optional[str])]
     ),
     IDependencyDefinition,
 ):
-    """Represents an edge in the DAG of solid instances forming a pipeline.
+    """Represents an edge in the DAG of nodes (ops or graphs) forming a job.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a pipeline whose keys represent the dependent solid and dependent
+    dependency structure of a job whose keys represent the dependent node and dependent
     input, so this object only contains information about the dependee.
 
-    Concretely, if the input named 'input' of solid_b depends on the output named 'result' of
-    solid_a, this structure will look as follows:
+    Concretely, if the input named 'input' of op_b depends on the output named 'result' of
+    op_a, and the output named 'other_result' of graph_a, the structure will look as follows:
 
     .. code-block:: python
 
         dependency_structure = {
-            'solid_b': {
-                'input': DependencyDefinition('solid_a', 'result')
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_op', 'result')
+            }
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_graph', 'result')
             }
         }
 
     In general, users should prefer not to construct this class directly or use the
-    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
-    :py:func:`@pipeline <pipeline>` API:
+    :py:class:`JobDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@job <job>` API:
 
     .. code-block:: python
 
-        @pipeline
-        def pipeline():
-            solid_b(solid_a())
+        @job
+        def the_job():
+            node_b(node_a())
 
 
     Args:
-        solid (str): The name of the solid that is depended on, that is, from which the value
-            passed between the two solids originates.
+        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
+            passed between the two nodes originates.
         output (Optional[str]): The name of the output that is depended on. (default: "result")
         description (Optional[str]): Human-readable description of this dependency.
+        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
+            passed between the two nodes originates.
     """
 
-    def __new__(cls, solid: str, output: str = DEFAULT_OUTPUT, description: Optional[str] = None):
+    def __new__(
+        cls,
+        solid: Optional[str] = None,
+        output: str = DEFAULT_OUTPUT,
+        description: Optional[str] = None,
+        node: Optional[str] = None,
+    ):
+        if solid and node:
+            raise DagsterInvalidDefinitionError(
+                "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition. Please use one or the other."
+            )
+
+        if not solid and not node:
+            raise DagsterInvalidDefinitionError(
+                "Expected node parameter to be str for DependencyDefinition"
+            )
+
+        node = node or solid
         return super(DependencyDefinition, cls).__new__(
             cls,
-            check.str_param(solid, "solid"),
+            check.str_param(node, "node"),
             check.str_param(output, "output"),
             check.opt_str_param(description, "description"),
         )
@@ -579,6 +601,13 @@ class DependencyDefinition(
     def is_fan_in(self) -> bool:
         return False
 
+    @property
+    def solid(self) -> str:
+        return self.node
+
+    def get_op_dependencies(self) -> List["DependencyDefinition"]:
+        return [self]
+
 
 class MultiDependencyDefinition(
     NamedTuple(
@@ -587,46 +616,44 @@ class MultiDependencyDefinition(
     ),
     IDependencyDefinition,
 ):
-    """Represents a fan-in edge in the DAG of solid instances forming a pipeline.
+    """Represents a fan-in edge in the DAG of op instances forming a job.
 
     This object is used only when an input of type ``List[T]`` is assembled by fanning-in multiple
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a pipeline whose keys represent the dependent solid and dependent
+    dependency structure of a job or pipeline whose keys represent the dependent ops or graphs and dependent
     input, so this object only contains information about the dependee.
 
-    Concretely, if the input named 'input' of solid_c depends on the outputs named 'result' of
-    solid_a and solid_b, this structure will look as follows:
+    Concretely, if the input named 'input' of op_c depends on the outputs named 'result' of
+    op_a and op_b, this structure will look as follows:
 
     .. code-block:: python
 
         dependency_structure = {
-            'solid_c': {
+            'op_c': {
                 'input': MultiDependencyDefinition(
                     [
-                        DependencyDefinition('solid_a', 'result'),
-                        DependencyDefinition('solid_b', 'result')
+                        DependencyDefinition('op_a', 'result'),
+                        DependencyDefinition('op_b', 'result')
                     ]
                 )
             }
         }
 
     In general, users should prefer not to construct this class directly or use the
-    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
-    :py:func:`@pipeline <pipeline>` API:
+    :py:class:`JobDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@job <job>` API:
 
     .. code-block:: python
 
-        @pipeline
-        def pipeline():
-            solid_c(solid_a(), solid_b())
+        @job
+        def the_job():
+            op_c(op_a(), op_b())
 
     Args:
-        solid (str): The name of the solid that is depended on, that is, from which the value
-            passed between the two solids originates.
-        output (Optional[str]): The name of the output that is depended on. (default: "result")
-        description (Optional[str]): Human-readable description of this dependency.
+        dependencies (List[Union[DependencyDefinition, Type[MappedInputPlaceHolder]]]): List of
+            upstream dependencies fanned in to this input.
     """
 
     def __new__(
@@ -655,6 +682,9 @@ class MultiDependencyDefinition(
 
     def get_solid_dependencies(self) -> List[DependencyDefinition]:
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
+
+    def get_node_dependencies(self) -> List[DependencyDefinition]:
+        return self.get_solid_dependencies()
 
     def is_fan_in(self) -> bool:
         return True

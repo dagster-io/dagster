@@ -254,7 +254,11 @@ const RunRow: React.FC<{
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
           </Box>
-          <RunTags tags={run.tags} mode={isJob ? null : run.mode} onSetFilter={onSetFilter} />
+          <RunTags
+            tags={run.tags}
+            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+            onSetFilter={onSetFilter}
+          />
         </Box>
       </td>
       <td>

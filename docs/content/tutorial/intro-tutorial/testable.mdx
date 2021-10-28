@@ -13,7 +13,7 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 ## Testing the Cereal Job (and its Ops)
 
-Let's go back to the `diamond` job we wrote in the [prior section](/tutorial/intro-tutorial/connecting-solids#a-more-complex-dag), and ensure that it's working as expected by writing some unit tests.
+Let's go back to the `diamond` job we wrote in the [prior section](/tutorial/intro-tutorial/connecting-ops#a-more-complex-dag), and ensure that it's working as expected by writing some unit tests.
 
 We'll start by writing a test for the `find_highest_calorie_cereal` op, which takes a set of cereals as input and returns the name of the cereal with the most calories. To run an op, we can invoke it directly, as if it's a regular Python function:
 
@@ -27,7 +27,7 @@ def test_find_highest_calorie_cereal():
     assert result == "hi-cal cereal"
 ```
 
-We'll also write a test for the entire pipeline. The <PyObject
+We'll also write a test for the entire job. The <PyObject
 module="dagster" object="JobDefinition" method="execute_in_process" /> method synchronously executes a job and returns a <PyObject module="dagster"
 object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the outputs produced by ops, and (as we'll see later) other events associated with execution.
 

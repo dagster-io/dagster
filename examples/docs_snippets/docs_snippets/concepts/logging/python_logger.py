@@ -35,8 +35,7 @@ def scope_logged_job2():
 
     # start_get_logger
 
-    from dagster.utils.log import get_dagster_logger
-    from dagster import op
+    from dagster import get_dagster_logger, op
 
     @op
     def ambitious_op():

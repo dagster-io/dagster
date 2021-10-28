@@ -483,6 +483,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                             "name": "extra-queue-1",
                             "replicaCount": 1,
                             "labels": {"celery-label-key": "celery-label-value"},
+                            "additionalCeleryArgs": ["-E", "--concurrency", "3"],
                         },
                     ],
                     "livenessProbe": {
@@ -602,6 +603,16 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                     ],
                     "port": 3030,
                     "replicaCount": 1,
+                    "volumeMounts": [
+                        {
+                            "name": "test-volume",
+                            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                            "subPath": "volume_mounted_file.yaml",
+                        }
+                    ],
+                    "volumes": [
+                        {"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}
+                    ],
                 }
             ],
         },

@@ -297,7 +297,7 @@ class PartitionSetDefinition(Generic[T]):
     def __init__(
         self,
         name: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         partition_fn: Optional[Callable[..., Union[List[Partition[T]], List[str]]]] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
@@ -308,6 +308,7 @@ class PartitionSetDefinition(Generic[T]):
         partitions_def: Optional[
             PartitionsDefinition[T]  # pylint: disable=unsubscriptable-object
         ] = None,
+        job_name: Optional[str] = None,
     ):
         check.invariant(
             partition_fn is not None or partitions_def is not None,
@@ -316,6 +317,10 @@ class PartitionSetDefinition(Generic[T]):
         check.invariant(
             not (partition_fn and partitions_def),
             "Only one of `partition_fn` or `partitions_def` must be supplied.",
+        )
+        check.invariant(
+            not (pipeline_name and job_name),
+            "Only one of `job_name` and `pipeline_name` must be supplied.",
         )
 
         _wrap_partition_fn = None
@@ -350,6 +355,7 @@ class PartitionSetDefinition(Generic[T]):
 
         self._name = check_valid_name(name)
         self._pipeline_name = check.opt_str_param(pipeline_name, "pipeline_name")
+        self._job_name = check.opt_str_param(job_name, "job_name")
         self._partition_fn = _wrap_partition_fn
         self._solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str
@@ -376,6 +382,10 @@ class PartitionSetDefinition(Generic[T]):
     @property
     def pipeline_name(self):
         return self._pipeline_name
+
+    @property
+    def job_name(self):
+        return self._job_name
 
     @property
     def solid_selection(self):

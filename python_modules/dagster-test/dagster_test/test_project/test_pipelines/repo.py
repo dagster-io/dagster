@@ -454,9 +454,8 @@ def define_resource_pipeline():
             s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
 
     @solid(required_resource_keys={"s3_resource_with_context_manager"})
-    def super_slow_solid(context):
-        with context.resources.s3_resource_with_context_manager:
-            time.sleep(1000)
+    def super_slow_solid():
+        time.sleep(1000)
 
     @pipeline(
         mode_defs=celery_mode_defs(

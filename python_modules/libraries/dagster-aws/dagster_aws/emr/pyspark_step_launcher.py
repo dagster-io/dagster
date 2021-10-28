@@ -7,7 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dagster import Field, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import raise_execution_interrupts
+from dagster.core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster.core.events import log_step_event
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -59,27 +59,56 @@ CODE_ZIP_NAME = "code.zip"
             "are copied every 5 minutes, so enabling this will add several minutes to the job "
             "runtime.",
         ),
+        "local_job_package_path": Field(
+            StringSource,
+            is_required=False,
+            description="Absolute path to the package that contains the job definition(s) "
+            "whose steps will execute remotely on EMR. This is a path on the local fileystem of "
+            "the process executing the job. The expectation is that this package will "
+            "also be available on the python path of the launched process running the Spark step "
+            "on EMR, either deployed on step launch via the deploy_local_job_package option, "
+            "referenced on s3 via the s3_job_package_path option, or installed on the cluster "
+            "via bootstrap actions.",
+        ),
         "local_pipeline_package_path": Field(
             StringSource,
-            is_required=True,
-            description="Absolute path to the package that contains the job/pipeline definition(s) "
+            is_required=False,
+            description="(legacy) Absolute path to the package that contains the pipeline definition(s) "
             "whose steps will execute remotely on EMR. This is a path on the local fileystem of "
-            "the process executing the job/pipeline. The expectation is that this package will "
+            "the process executing the pipeline. The expectation is that this package will "
             "also be available on the python path of the launched process running the Spark step "
             "on EMR, either deployed on step launch via the deploy_local_pipeline_package option, "
             "referenced on s3 via the s3_pipeline_package_path option, or installed on the cluster "
             "via bootstrap actions.",
         ),
-        "deploy_local_pipeline_package": Field(
+        "deploy_local_job_package": Field(
             bool,
             default_value=False,
             is_required=False,
             description="If set, before every step run, the launcher will zip up all the code in "
-            "local_pipeline_package_path, upload it to s3, and pass it to spark-submit's "
+            "local_job_package_path, upload it to s3, and pass it to spark-submit's "
             "--py-files option. This gives the remote process access to up-to-date user code. "
             "If not set, the assumption is that some other mechanism is used for distributing code "
-            "to the EMR cluster. If this option is set to True, s3_pipeline_package_path should "
+            "to the EMR cluster. If this option is set to True, s3_job_package_path should "
             "not also be set.",
+        ),
+        "deploy_local_pipeline_package": Field(
+            bool,
+            default_value=False,
+            is_required=False,
+            description="(legacy) If set, before every step run, the launcher will zip up all the code in "
+            "local_job_package_path, upload it to s3, and pass it to spark-submit's "
+            "--py-files option. This gives the remote process access to up-to-date user code. "
+            "If not set, the assumption is that some other mechanism is used for distributing code "
+            "to the EMR cluster. If this option is set to True, s3_job_package_path should "
+            "not also be set.",
+        ),
+        "s3_job_package_path": Field(
+            StringSource,
+            is_required=False,
+            description="If set, this path will be passed to the --py-files option of spark-submit. "
+            "This should usually be a path to a zip file.  If this option is set, "
+            "deploy_local_job_package should not be set to True.",
         ),
         "s3_pipeline_package_path": Field(
             StringSource,
@@ -91,7 +120,67 @@ CODE_ZIP_NAME = "code.zip"
     }
 )
 def emr_pyspark_step_launcher(context):
-    return EmrPySparkStepLauncher(**context.resource_config)
+
+    # Resolve legacy arguments
+    if context.resource_config.get("local_job_package_path") and context.resource_config.get(
+        "local_pipeline_package_path"
+    ):
+        raise DagsterInvariantViolationError(
+            "Provided both ``local_job_package_path`` and legacy version "
+            "``local_pipeline_package_path`` arguments to ``emr_pyspark_step_launcher`` "
+            "resource. Please choose one or the other."
+        )
+
+    if not context.resource_config.get(
+        "local_job_package_path"
+    ) and not context.resource_config.get("local_pipeline_package_path"):
+        raise DagsterInvariantViolationError(
+            "For resource ``emr_pyspark_step_launcher``, no config value provided for required "
+            "schema entry ``local_job_package_path``."
+        )
+
+    local_job_package_path = context.resource_config.get(
+        "local_job_package_path"
+    ) or context.resource_config.get("local_pipeline_package_path")
+
+    if context.resource_config.get("deploy_local_job_package") and context.resource_config.get(
+        "deploy_local_job_package"
+    ):
+        raise DagsterInvariantViolationError(
+            "Provided both ``deploy_local_job_package`` and legacy version "
+            "``deploy_local_pipeline_package`` arguments to ``emr_pyspark_step_launcher`` "
+            "resource. Please choose one or the other."
+        )
+
+    deploy_local_job_package = context.resource_config.get(
+        "deploy_local_job_package"
+    ) or context.resource_config.get("deploy_local_pipeline_package")
+
+    if context.resource_config.get("s3_job_package_path") and context.resource_config.get(
+        "s3_pipeline_package_path"
+    ):
+        raise DagsterInvariantViolationError(
+            "Provided both ``s3_job_package_path`` and legacy version "
+            "``s3_pipeline_package_path`` arguments to ``emr_pyspark_step_launcher`` "
+            "resource. Please choose one or the other."
+        )
+
+    s3_job_package_path = context.resource_config.get(
+        "s3_job_package_path"
+    ) or context.resource_config.get("s3_pipeline_package_path")
+
+    return EmrPySparkStepLauncher(
+        region_name=context.resource_config.get("region_name"),
+        staging_bucket=context.resource_config.get("staging_bucket"),
+        staging_prefix=context.resource_config.get("staging_prefix"),
+        wait_for_logs=context.resource_config.get("wait_for_logs"),
+        action_on_failure=context.resource_config.get("action_on_failure"),
+        cluster_id=context.resource_config.get("cluster_id"),
+        spark_config=context.resource_config.get("spark_config"),
+        local_job_package_path=local_job_package_path,
+        deploy_local_job_package=deploy_local_job_package,
+        s3_job_package_path=s3_job_package_path,
+    )
 
 
 emr_pyspark_step_launcher.__doc__ = "\n".join(
@@ -110,9 +199,9 @@ class EmrPySparkStepLauncher(StepLauncher):
         action_on_failure,
         cluster_id,
         spark_config,
-        local_pipeline_package_path,
-        deploy_local_pipeline_package,
-        s3_pipeline_package_path=None,
+        local_job_package_path,
+        deploy_local_job_package,
+        s3_job_package_path=None,
     ):
         self.region_name = check.str_param(region_name, "region_name")
         self.staging_bucket = check.str_param(staging_bucket, "staging_bucket")
@@ -123,20 +212,18 @@ class EmrPySparkStepLauncher(StepLauncher):
         self.spark_config = spark_config
 
         check.invariant(
-            not deploy_local_pipeline_package or not s3_pipeline_package_path,
-            "If deploy_local_pipeline_package is set to True, s3_pipeline_package_path should not "
+            not deploy_local_job_package or not s3_job_package_path,
+            "If deploy_local_job_package is set to True, s3_job_package_path should not "
             "also be set.",
         )
 
-        self.local_pipeline_package_path = check.str_param(
-            local_pipeline_package_path, "local_pipeline_package_path"
+        self.local_job_package_path = check.str_param(
+            local_job_package_path, "local_job_package_path"
         )
-        self.deploy_local_pipeline_package = check.bool_param(
-            deploy_local_pipeline_package, "deploy_local_pipeline_package"
+        self.deploy_local_job_package = check.bool_param(
+            deploy_local_job_package, "deploy_local_job_package"
         )
-        self.s3_pipeline_package_path = check.opt_str_param(
-            s3_pipeline_package_path, "s3_pipeline_package_path"
-        )
+        self.s3_job_package_path = check.opt_str_param(s3_job_package_path, "s3_job_package_path")
 
         self.emr_job_runner = EmrJobRunner(region=self.region_name)
 
@@ -188,11 +275,11 @@ class EmrPySparkStepLauncher(StepLauncher):
             main_local_path = self._main_file_local_path()
             _upload_file_to_s3(main_local_path, self._main_file_name())
 
-            if self.deploy_local_pipeline_package:
-                # Zip and upload package containing pipeline
+            if self.deploy_local_job_package:
+                # Zip and upload package containing job
                 zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
 
-                build_pyspark_zip(zip_local_path, self.local_pipeline_package_path)
+                build_pyspark_zip(zip_local_path, self.local_job_package_path)
                 _upload_file_to_s3(zip_local_path, CODE_ZIP_NAME)
 
             # Create step run ref pickle file
@@ -204,7 +291,7 @@ class EmrPySparkStepLauncher(StepLauncher):
 
     def launch_step(self, step_context, prior_attempts_count):
         step_run_ref = step_context_to_step_run_ref(
-            step_context, prior_attempts_count, self.local_pipeline_package_path
+            step_context, prior_attempts_count, self.local_job_package_path
         )
 
         run_id = step_context.pipeline_run.run_id

@@ -7,10 +7,10 @@ from dagster.core.definitions.executor import multiple_process_executor_requirem
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import execute_pipeline
+from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating import StepDelegatingExecutor, StepHandler
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import instance_for_test
-from dagster.serdes import serialize_dagster_namedtuple
 
 
 class TestStepHandler(StepHandler):
@@ -34,14 +34,7 @@ class TestStepHandler(StepHandler):
         TestStepHandler.launch_step_count += 1
         print("TestStepHandler Launching Step!")  # pylint: disable=print-call
         TestStepHandler.processes.append(
-            subprocess.Popen(
-                [
-                    "dagster",
-                    "api",
-                    "execute_step",
-                    serialize_dagster_namedtuple(step_handler_context.execute_step_args),
-                ]
-            )
+            subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
         return []
 
@@ -74,6 +67,7 @@ class TestStepHandler(StepHandler):
 def test_step_delegating_executor(exc_init):
     return StepDelegatingExecutor(
         TestStepHandler(),
+        retries=RetryMode.DISABLED,
         sleep_seconds=exc_init.executor_config.get("sleep_seconds"),
         check_step_health_interval_seconds=exc_init.executor_config.get(
             "check_step_health_interval_seconds"

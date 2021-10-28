@@ -354,6 +354,18 @@
                 "enableReadOnly"
             ]
         },
+        "VolumeMount": {
+            "title": "VolumeMount",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+        },
+        "Volume": {
+            "title": "Volume",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -434,6 +446,20 @@
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    }
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    }
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
                     }
                 }
             },
@@ -636,6 +662,18 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "internal": {
+                    "title": "Internal",
+                    "type": "boolean"
+                },
+                "usePassword": {
+                    "title": "Usepassword",
+                    "type": "boolean"
+                },
+                "password": {
+                    "title": "Password",
+                    "type": "string"
+                },
                 "host": {
                     "title": "Host",
                     "type": "string"
@@ -651,14 +689,27 @@
                 "backendDbNumber": {
                     "title": "Backenddbnumber",
                     "type": "integer"
+                },
+                "brokerUrl": {
+                    "title": "Brokerurl",
+                    "type": "string"
+                },
+                "backendUrl": {
+                    "title": "Backendurl",
+                    "type": "string"
                 }
             },
             "required": [
                 "enabled",
+                "internal",
+                "usePassword",
+                "password",
                 "host",
                 "port",
                 "brokerDbNumber",
-                "backendDbNumber"
+                "backendDbNumber",
+                "brokerUrl",
+                "backendUrl"
             ]
         },
         "Flower": {
@@ -1422,6 +1473,31 @@
                             "type": "null"
                         }
                     ]
+                },
+                "configSource": {
+                    "title": "Configsource",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "additionalCeleryArgs": {
+                    "title": "Additionalceleryargs",
+                    "items": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1517,18 +1593,6 @@
                 "livenessProbe"
             ],
             "additionalProperties": false
-        },
-        "VolumeMount": {
-            "title": "VolumeMount",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
-        },
-        "Volume": {
-            "title": "Volume",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",

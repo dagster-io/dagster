@@ -44,6 +44,15 @@ def start_daemon(timeout=60):
         seven.wait_for_process(p, timeout=timeout)
 
 
+@contextmanager
+def log_run_events(instance, run_id):
+    try:
+        yield
+    finally:
+        for log in instance.all_logs(run_id):
+            print(str(log) + "\n")  # pylint: disable=print-call
+
+
 def test_monitoring():
     # with setup_instance() as instance:
     with instance_for_test(
@@ -123,28 +132,27 @@ def test_docker_monitoring():
                     pipeline_code_origin=external_pipeline.get_python_origin(),
                 )
 
-                instance.launch_run(run.run_id, workspace)
+                with log_run_events(instance, run.run_id):
 
-                start_time = time.time()
-                while time.time() - start_time < 60:
-                    run = instance.get_run_by_id(run.run_id)
-                    if run.status == PipelineRunStatus.STARTED:
-                        break
-                    assert run.status == PipelineRunStatus.STARTING
-                    time.sleep(1)
+                    instance.launch_run(run.run_id, workspace)
 
-                time.sleep(3)
+                    start_time = time.time()
+                    while time.time() - start_time < 60:
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == PipelineRunStatus.STARTED:
+                            break
+                        assert run.status == PipelineRunStatus.STARTING
+                        time.sleep(1)
 
-                instance.run_launcher._get_container(  # pylint:disable=protected-access
-                    instance.get_run_by_id(run.run_id)
-                ).stop()
+                    time.sleep(3)
 
-                # daemon resumes the run
-                poll_for_finished_run(instance, run.run_id, timeout=60)
+                    instance.run_launcher._get_container(  # pylint:disable=protected-access
+                        instance.get_run_by_id(run.run_id)
+                    ).stop()
 
-                for log in instance.all_logs(run.run_id):
-                    print(str(log) + "\n")  # pylint: disable=print-call
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+                    # daemon resumes the run
+                    poll_for_finished_run(instance, run.run_id, timeout=90)
+                    assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
 def test_docker_monitoring_run_out_of_attempts():
@@ -213,24 +221,23 @@ def test_docker_monitoring_run_out_of_attempts():
                     pipeline_code_origin=external_pipeline.get_python_origin(),
                 )
 
-                instance.launch_run(run.run_id, workspace)
+                with log_run_events(instance, run.run_id):
 
-                start_time = time.time()
-                while time.time() - start_time < 60:
-                    run = instance.get_run_by_id(run.run_id)
-                    if run.status == PipelineRunStatus.STARTED:
-                        break
-                    assert run.status == PipelineRunStatus.STARTING
-                    time.sleep(1)
+                    instance.launch_run(run.run_id, workspace)
 
-                time.sleep(3)
+                    start_time = time.time()
+                    while time.time() - start_time < 60:
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == PipelineRunStatus.STARTED:
+                            break
+                        assert run.status == PipelineRunStatus.STARTING
+                        time.sleep(1)
 
-                instance.run_launcher._get_container(  # pylint:disable=protected-access
-                    instance.get_run_by_id(run.run_id)
-                ).stop(timeout=0)
+                    time.sleep(3)
 
-                poll_for_finished_run(instance, run.run_id, timeout=60)
+                    instance.run_launcher._get_container(  # pylint:disable=protected-access
+                        instance.get_run_by_id(run.run_id)
+                    ).stop(timeout=0)
 
-                for log in instance.all_logs(run.run_id):
-                    print(str(log) + "\n")  # pylint: disable=print-call
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE
+                    poll_for_finished_run(instance, run.run_id, timeout=60)
+                    assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE

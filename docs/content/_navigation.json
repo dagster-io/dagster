@@ -41,11 +41,11 @@
           },
           {
             "title": "A Single-Op Job",
-            "path": "/tutorial/intro-tutorial/single-solid-pipeline"
+            "path": "/tutorial/intro-tutorial/single-op-job"
           },
           {
             "title": "Connecting Ops in Jobs",
-            "path": "/tutorial/intro-tutorial/connecting-solids"
+            "path": "/tutorial/intro-tutorial/connecting-ops"
           },
           {
             "title": "Testing Ops and Jobs",
@@ -66,7 +66,7 @@
           },
           {
             "title": "Resources & Built-In Config",
-            "path": "/tutorial/advanced-tutorial/pipelines"
+            "path": "/tutorial/advanced-tutorial/resources"
           },
           {
             "title": "Materializations",
@@ -94,27 +94,27 @@
         "children": [
           {
             "title": "Ops",
-            "path": "/concepts/solids-pipelines/solids"
+            "path": "/concepts/ops-jobs-graphs/ops"
           },
           {
             "title": "Jobs & Graphs",
-            "path": "/concepts/solids-pipelines/pipelines"
+            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
           },
           {
             "title": "Job Execution",
-            "path": "/concepts/solids-pipelines/pipeline-execution"
+            "path": "/concepts/ops-jobs-graphs/job-execution"
           },
           {
             "title": "Nesting Graphs",
-            "path": "/concepts/solids-pipelines/composite-solids"
+            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
             "title": "Op Events",
-            "path": "/concepts/solids-pipelines/op-events"
+            "path": "/concepts/ops-jobs-graphs/op-events"
           },
           {
             "title": "Op Hooks",
-            "path": "/concepts/solids-pipelines/op-hooks"
+            "path": "/concepts/ops-jobs-graphs/op-hooks"
           }
         ]
       },
@@ -207,6 +207,10 @@
           {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python Logging",
+            "path": "/concepts/logging/python-logging"
           }
         ]
       },

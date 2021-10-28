@@ -55,7 +55,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
         num_prev_attempts = count_resume_run_attempts(instance, run)
         if num_prev_attempts < max_resume_run_attempts:
             msg = (
-                f"Detected that run worker status is {check_health_result.status}. Resuming run {run.run_id} with "
+                f"Detected run worker status {check_health_result}. Resuming run {run.run_id} with "
                 "a new worker."
             )
             logger.info(msg)
@@ -68,7 +68,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
             )
         else:
             msg = (
-                f"Detected that run worker status is {check_health_result.status}. Marking run {run.run_id} as "
+                f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
                 "failed, because it has surpassed the configured maximum attempts to resume the run: {max_resume_run_attempts}."
             )
             logger.info(msg)

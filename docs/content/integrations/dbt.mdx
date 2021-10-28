@@ -22,11 +22,22 @@ Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt 
 The resources that dagster_dbt provides are
 
 - `dbt_cli_resource` (<PyObject module='dagster_dbt' object='DbtCliResource'/>): for running dbt CLI commands
-- `dbt_rpc_resource` (<PyObject module='dagster_dbt' object='DbtRpcClient'/>): for sending dbt commands to an RPC server
+- `dbt_rpc_resource` (<PyObject module='dagster_dbt' object='DbtRpcResource'/>): for sending dbt commands to an RPC server
+- `dbt_rpc_sync_resource` (<PyObject module='dagster_dbt' object='DbtRpcSyncResource'/>): for sending dbt commands to an RPC server and polling until they complete
 
-Both create resources that derive from the same base class, <PyObject module='dagster_dbt' object='DbtResource'/>.
+Each resource derives from the same base class, <PyObject module='dagster_dbt' object='DbtResource'/>, which provides a consistent python interface for interacting with dbt.
 
-This library also provides pre-built ops that can be integrated into your jobs, but we recommend using the resources for most use cases, as they provide much more flexibility in how you interact with dbt. To view example jobs that take advantage of this dbt integration, check out either the [Hacker News example repo](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/dbt_metrics.py) or the [dbt example repo](https://github.com/dagster-io/dagster/tree/master/examples/dbt_example).
+This library also provides pre-built ops that take advantage of these resources. These exist solely for convenience (they just run the underlying resource command and return the result), and if you have more complex use cases that require some degree of customization, it's recommended that you build your own ops that use these resources. These ops are compatible with all of the aforementioned dbt resources:
+
+- `dbt_run_op` (<PyObject module='dagster_dbt' object='dbt_run_op'/>)
+- `dbt_compile_op` (<PyObject module='dagster_dbt' object='dbt_compile_op'/>)
+- `dbt_ls_op` (<PyObject module='dagster_dbt' object='dbt_ls_op'/>)
+- `dbt_test_op` (<PyObject module='dagster_dbt' object='dbt_test_op'/>)
+- `dbt_snapshot_op` (<PyObject module='dagster_dbt' object='dbt_snapshot_op'/>)
+- `dbt_seed_op` (<PyObject module='dagster_dbt' object='dbt_seed_op'/>)
+- `dbt_docs_generate_op` (<PyObject module='dagster_dbt' object='dbt_docs_generate_op'/>)
+
+To view example jobs that take advantage of this dbt integration, check out either the [Hacker News example repo](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/dbt_metrics.py) or the [dbt example repo](https://github.com/dagster-io/dagster/tree/master/examples/dbt_example).
 
 ## Using the dbt CLI resource in a Dagster job
 
@@ -46,7 +57,10 @@ Typically, you'll want to configure your `project_dir` here, as in most cases, y
 from dagster_dbt import dbt_cli_resource
 
 my_dbt_resource = dbt_cli_resource.configured(
-    {"project_dir": "path/to/dbt/project", "profiles_dir": "path/to/dbt/profiles"}
+    {
+        "project_dir": "path/to/dbt/project",
+        "profiles_dir": "path/to/dbt/profiles",
+    }
 )
 ```
 
@@ -58,30 +72,34 @@ There are also a few options that are not associated with command line flags, wh
 - `target_path`: the dbt target path, if you set it to something other than the default
 - `dbt_executable`: the name of the specific dbt executable you're using, if it's not just `dbt`
 
-### Examples
+### CLI Examples
 
-Below are some examples of using the `dbt_cli_resource` in different scenarios. Most dbt commands (such as `run`, `seed`, `test`, etc.) have corresponding functions, which work essentially identically, but these examples will focus on `dbt run` for simplicity.
+Below are some examples of using `dagster_dbt` library to run a `dbt` project via the CLI.
+
+For these examples, we make heavy use of the `dbt_cli_resource`. This resource has methods corresponding to most dbt commands (such as `run`, `seed`, `test`, `ls`, etc.). The methods behave essentially identically to each other, so these examples will focus on `dbt run` for simplicity.
+
+The `dagster_dbt` library provides ops that simplify cases where you simply wish to run a single one of these commands (with no special arguments) and return the result. This saves you from having to write out the boilerplate associated with creating an op from scratch. However, it's fairly common to have more complex needs, and in those cases you should create your own custom op that invokes the resource directly. The below examples will mix and match these two approaches where appropriate.
 
 Note that you can pass in any keyword to these functions that you wish, and they will get added as flags to the underlying dbt command (e.g. `my_flag_name = 'foo'` will get converted to `--my-flag-name foo`). If there is a dbt option that you would like to set, but is not reflected in the function signature, this is how you would do so.
 
 #### Using dbt_cli_resource to run your entire dbt project
 
-One common way to use this integration is to have the resource run all of the models in a dbt project. To do this, just configure the resource so it knows where your dbt project is, and fire off a `dbt.run()` command!
+One common way to use this integration is to have the resource run all of the models in a dbt project. To do this, just configure the resource so it knows where your dbt project is, and
+
+and fire off a `dbt.run()` command!
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run endbefore=end_marker_dbt_cli_run dedent=4
-from dagster import job, op
-from dagster_dbt import dbt_cli_resource
+from dagster import job
+from dagster_dbt import dbt_cli_resource, dbt_run_op
 
 my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
-@op(required_resource_keys={"dbt"})
-def run_all_models(context):
-    context.resources.dbt.run()
-
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
-    run_all_models()
+    dbt_run_op()
 ```
+
+This is essentially equivalent to the following code:
 
 #### Using dbt_cli_resource to run a specific set of models
 
@@ -91,28 +109,24 @@ Note that in both cases, the `models` option takes in a list of strings. The str
 
 ##### **... with configuration**
 
-If you know what models you want to select ahead of time, you might prefer specifying this while configuring your resource.
+If you know what models you want to select ahead of time, you might prefer specifying this while configuring your resource. Because you aren't specifying any specific arguments at runtime, you can use the prebuilt `dbt_run_op`, instead of writing your own.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_specific_models_preconfig endbefore=end_marker_dbt_cli_run_specific_models_preconfig dedent=4
-from dagster import job, op
-from dagster_dbt import dbt_cli_resource
+from dagster import job
+from dagster_dbt import dbt_cli_resource, dbt_run_op
 
 my_dbt_resource = dbt_cli_resource.configured(
     {"project_dir": "path/to/dbt/project", "models": ["tag:staging"]}
 )
 
-@op(required_resource_keys={"dbt"})
-def run_models(context):
-    context.resources.dbt.run()
-
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
-    run_models()
+    dbt_run_op()
 ```
 
 ##### **... supplying an argument**
 
-If you want to change which models you select depending on what happens during execution, you can supply this as an argument to the function call.
+If you want to change which models you select depending on what happens during execution, you should create your own op that invokes the dbt resource (rather than using a prebuilt op). This allows you to explicitly set the `models` parameter at runtime. This would look similar to the following:
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_specific_models_runtime endbefore=end_marker_dbt_cli_run_specific_models_runtime dedent=4
 from dagster import op
@@ -127,19 +141,15 @@ def run_models(context, some_condition: bool):
 
 #### Using a different dbt profile for different dagster modes
 
-Dagster supports [multiple jobs for the same graph](/concepts/solids-pipelines/pipelines#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
+Dagster supports [multiple jobs for the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
-from dagster import graph, op
-from dagster_dbt import dbt_cli_resource
-
-@op(required_resource_keys={"dbt"})
-def run_all_models(context):
-    context.resources.dbt.run()
+from dagster import graph
+from dagster_dbt import dbt_cli_resource, dbt_run_op
 
 @graph
 def my_dbt():
-    run_all_models()
+    dbt_run_op()
 
 my_dbt_graph_dev = my_dbt.to_job(
     resource_defs={
@@ -165,35 +175,25 @@ Sometimes, you'll want to run multiple different dbt commands in the same job. T
 One common use case would be to first run `dbt run` to update all of your models, and then run `dbt test` to check that they all are working as expected, seen below.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_after_another_op endbefore=end_marker_dbt_cli_run_after_another_op dedent=4
-from dagster import job, op
-from dagster_dbt import dbt_cli_resource, DbtCliOutput
+from dagster import job
+from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
 
 my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
-@op(required_resource_keys={"dbt"})
-def run_models(context) -> DbtCliOutput:
-    return context.resources.dbt.run()
-
-@op(required_resource_keys={"dbt"})
-def test_models(context, run_result: DbtCliOutput):
-    context.log.info(f"testing result of `{run_result.command}`!")
-    context.resources.dbt.test()
-
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
-    run_result = run_models()
-    test_models(run_result)
+    dbt_test_op(start_after=dbt_run_op())
 ```
 
 ## Using a dbt RPC server in a Dagster job
 
-Alongside the `dbt_rpc_resource` (which functions similarly to the `dbt_cli_resource`), `dagster-dbt` provides ops for running commands through the [dbt RPC server](https://docs.getdbt.com/reference/commands/rpc). By convention, these ops are named `dagster_dbt.dbt_rpc_*`.
+This integration provides two separate resources to help run commands against a [dbt RPC server](https://docs.getdbt.com/reference/commands/rpc). The `dbt_rpc_resource` will fire off requests against the server and return immediately, while the `dbt_rpc_sync_resource` will poll the server until each request completes.
 
-**Note** Executing an RPC command is a non-blocking operation, meaning it does not wait for the command to complete before returning. Instead, it will return a response from the RPC server indicating that the request was received. To check the status and results of your command, you will need to use the `poll()` method.
+The prebuilt ops provided by `dagster-dbt` (such as `dbt_run_op`, `dbt_test_op`, etc.) are all compatible with both of these resources.
 
 ### Configuration
 
-Your dbt RPC server can be running locally or remotely. To use the dbt RPC ops in your Dagster job, you will need to create a resource for your dbt RPC server.
+Your dbt RPC server can be running locally or remotely. To interact with the RPC server in your Dagster job, you will need to create a resource for your dbt RPC server.
 
 `dagster_dbt.dbt_rpc_resource` can be configured with your specific host and port.
 
@@ -205,50 +205,57 @@ my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080
 
 For convenience during local development, you may also use `dagster_dbt.local_dbt_rpc_resource`, which is preconfigured for a dbt RPC server that is running on `http://localhost:8580`.
 
-### Examples
+### RPC Examples
 
-#### Using `dbt_rpc_run` to send a request to run your entire dbt project
+#### Running a dbt project over RPC
+
+All of the prebuilt dbt ops in this library are compatible with the `dbt_rpc_resource` (which sends requests and then exists immediately) and the `dbt_rpc_sync_resource` (which sends requests and waits for the task to complete). Therefore, we can use the same ops as in the CLI examples as long as we provide the correct resource to the job.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run endbefore=end_marker_dbt_rpc_run dedent=4
 from dagster import job
-from dagster_dbt import dbt_rpc_run
+from dagster_dbt import dbt_run_op
 
-@job(resource_defs={"dbt_rpc": my_remote_rpc})
+@job(resource_defs={"dbt": my_remote_rpc})
 def my_dbt_job():
-    dbt_rpc_run()
+    dbt_run_op()
 ```
 
-The code snippet above shows a Dagster job with a single op `dbt_rpc_run`. The op `dbt_rpc_run` has a required resource key `"dbt_rpc"`. So, any job that uses `dbt_rpc_run` will need a resource under the key `"dbt_rpc"`.
-
-#### Using `dbt_rpc_run` to run specific models in a dbt project
+#### Running specific models in a dbt project over RPC
 
 This is similar to having `"params": {"models": "tag:staging"}` in your dbt RPC request body.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run_specific_models endbefore=end_marker_dbt_rpc_run_specific_models dedent=4
-from dagster import job
-from dagster_dbt import dbt_rpc_run
+from dagster import job, op
+from dagster_dbt import dbt_rpc_resource
 
-run_staging_models = dbt_rpc_run.configured(
-    {"models": ["tag:staging"]},
-    name="run_staging_models",
-)
+my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
-@job(resource_defs={"dbt_rpc": my_remote_rpc})
+@op(required_resource_keys={"dbt"})
+def run_staging_models(context):
+    context.resources.dbt.run(models=["tag:staging"])
+
+@job(resource_defs={"dbt": my_remote_rpc})
 def my_dbt_job():
     run_staging_models()
 ```
 
-Note that the op above will NOT wait until the dbt RPC server has finished executing your request. Instead, it will return immediately with a request token from the dbt RPC server. If you want the op to wait until execution is finished, see the `dagster_dbt.dbt_rpc_run_and_wait`.
+Note that the job above will NOT wait until the dbt RPC server has finished executing your request. Instead, it will return immediately with a request token from the dbt RPC server. If you want the op to wait until execution is finished, instead supply a `dbt_rpc_sync_resource` (seen below).
 
-#### Using `dbt_rpc_run_and_wait` to run specific models in a dbt project and poll the dbt RPC server until it has finished executing your request
+#### Running a dbt project and polling the RPC server until it has finished executing
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run_and_wait endbefore=end_marker_dbt_rpc_run_and_wait dedent=4
-from dagster import job
-from dagster_dbt import dbt_rpc_run_and_wait
+from dagster import job, op
+from dagster_dbt import dbt_rpc_sync_resource
 
-@job(resource_defs={"dbt_rpc": my_remote_rpc})
+my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
+
+@op(required_resource_keys={"dbt_sync"})
+def run_staging_models_and_wait(context):
+    context.resources.dbt.run(models=["tag:staging"])
+
+@job(resource_defs={"dbt_sync": my_remote_sync_rpc})
 def my_dbt_job():
-    dbt_rpc_run_and_wait()
+    run_staging_models_and_wait()
 ```
 
 ## Use dbt Cloud in a Dagster job
@@ -258,6 +265,24 @@ def my_dbt_job():
 ## Advanced Configuration
 
 For full documentation on all available config, [visit the API docs for dagster-dbt](/\_apidocs/libraries/dagster_dbt).
+
+**Generating Asset Materializations when you run your dbt project**
+
+`dagster_dbt` is configured to automatically create [Asset Materializations](/concepts/assets/asset-materializations) for each of your dbt models when you run the `run` command (via either the CLI or over RPC). These materializations are populated with metadata that is automatically parsed from the dbt response. The available metadata differs between dbt versions. If there's anything you would like to add to these materializations, you can explicitly invoke the underlying <PyObject module='dagster_dbt.utils' object='generate_materializations'/> utility function, and modify each of the resulting materializations like so:
+
+```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats dedent=4
+from dagster import op, Output
+from dagster_dbt.utils import generate_materializations
+
+@op(required_resource_keys={"dbt"})
+def dbt_run_with_custom_assets(context):
+    dbt_result = context.resources.dbt.run()
+    for materialization in generate_materializations(dbt_result):
+        yield materialization._replace(
+            metadata_entries=[...]  # insert whatever metadata you want here
+        )
+    yield Output(dbt_result)
+```
 
 **dbt CLI: Set the dbt profile and target to load**
 
@@ -341,11 +366,7 @@ custom_resource = dbt_rpc_resource.configured({"host": HOST, "post": PORT})
 **dbt RPC: Select specific models to run**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_select_models endbefore=end_marker_dbt_rpc_config_select_models dedent=4
-config = {"models": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
-
-from dagster_dbt import dbt_rpc_run
-
-custom_op = dbt_rpc_run.configured(config, name="custom_op")
+No match for startAfter value "start_marker_dbt_rpc_config_select_models"
 ```
 
 For more details, [visit the official documentation on dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
@@ -353,11 +374,7 @@ For more details, [visit the official documentation on dbt's node selection synt
 **dbt RPC: Exclude specific models**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_exclude_models endbefore=end_marker_dbt_rpc_config_exclude_models dedent=4
-config = {"exclude": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
-
-from dagster_dbt import dbt_rpc_run
-
-custom_op = dbt_rpc_run.configured(config, name="custom_op")
+No match for startAfter value "start_marker_dbt_rpc_config_exclude_models"
 ```
 
 For more details, [visit the official documentation on dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
@@ -365,21 +382,13 @@ For more details, [visit the official documentation on dbt's node selection synt
 **dbt RPC: Configure polling interval when using a `dbt_rpc_*_and_wait` op**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_and_wait_config_polling_interval endbefore=end_marker_dbt_rpc_and_wait_config_polling_interval dedent=4
-config = {"interval": 3}  # Poll the dbt RPC server every 3 seconds.
-
-from dagster_dbt import dbt_rpc_run
-
-custom_op = dbt_rpc_run.configured(config, name="custom_op")
+No match for startAfter value "start_marker_dbt_rpc_and_wait_config_polling_interval"
 ```
 
 **dbt RPC: Disable default asset materializations**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_disable_assets endbefore=end_marker_dbt_rpc_config_disable_assets dedent=4
-config = {"yield_materializations": False}
-
-from dagster_dbt import dbt_rpc_run
-
-custom_op = dbt_rpc_run.configured(config, name="custom_op")
+No match for endBefore value "end_marker_dbt_rpc_config_disable_assets"
 ```
 
 ## Conclusion

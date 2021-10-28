@@ -1,4 +1,0 @@
-solids:
-  k_means_iris:
-    inputs:
-      path: "iris.data"
