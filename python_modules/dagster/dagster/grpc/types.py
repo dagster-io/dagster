@@ -66,8 +66,6 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
 
     def get_command_args(self) -> List[str]:
         return [
-            self.pipeline_origin.executable_path,
-            "-m",
             "dagster",
             "api",
             "execute_run",
@@ -91,8 +89,6 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
 
     def get_command_args(self) -> List[str]:
         return [
-            self.pipeline_origin.executable_path,
-            "-m",
             "dagster",
             "api",
             "resume_run",
@@ -154,8 +150,6 @@ class ExecuteStepArgs(
 
     def get_command_args(self) -> List[str]:
         return [
-            self.pipeline_origin.executable_path,
-            "-m",
             "dagster",
             "api",
             "execute_step",
