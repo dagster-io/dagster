@@ -14,6 +14,7 @@
 - [helm] When deploying Redis using the Dagster helm chart, by default the new cluster will not require authentication to start a connection to it.
 - [dagster-k8s] The component name on Kubernetes jobs for run and step workers is now `run_worker` and `step_worker`, respectively.
 - Launching a run within a container will now always use the same Python environment that was originally used to load the run’s job. This allows you to you use a single image containing multiple Python environments in different code locations, with each code location specifying a different Python environment.
+- Improved performance for rendering the Gantt chart on the Run page for runs with very long event logs.
 
 ### Bugfixes
 
