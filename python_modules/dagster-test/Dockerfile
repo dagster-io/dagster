@@ -34,6 +34,9 @@ RUN pip install \
 
 RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
 
+# Force pypi to avoid a conflict between various dagster deps
+RUN pip install 'pyparsing<3.0.0' --force-reinstall
+
 WORKDIR /dagster_test/test_project/
 
 EXPOSE 80

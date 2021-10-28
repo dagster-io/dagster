@@ -91,3 +91,12 @@ data:
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
+
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runMonitoring.enabled) }}
+    {{- $runMonitoring := .Values.dagsterDaemon.runMonitoring }}
+    run_monitoring:
+      enabled: {{ $runMonitoring.enabled }}
+      start_timeout_seconds:  {{ $runMonitoring.startTimeoutSeconds }}
+      max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
+      poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
+    {{- end }}

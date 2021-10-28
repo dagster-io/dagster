@@ -3,6 +3,7 @@ import re
 import pytest
 import yaml
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
+from dagster.check import CheckError
 from dagster.config import Field
 from dagster.core.errors import (
     DagsterHomeNotSetError,
@@ -138,6 +139,7 @@ def test_get_required_daemon_types():
         SensorDaemon,
         BackfillDaemon,
         SchedulerDaemon,
+        MonitoringDaemon,
     )
 
     with instance_for_test() as instance:
@@ -146,6 +148,60 @@ def test_get_required_daemon_types():
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
         ]
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
+                "class": "TestRunLauncher",
+            },
+            "run_monitoring": {"enabled": True},
+        }
+    ) as instance:
+        assert instance.get_required_daemon_types() == [
+            SensorDaemon.daemon_type(),
+            BackfillDaemon.daemon_type(),
+            SchedulerDaemon.daemon_type(),
+            MonitoringDaemon.daemon_type(),
+        ]
+
+
+def test_run_monitoring():
+    with pytest.raises(CheckError):
+        with instance_for_test(
+            overrides={
+                "run_monitoring": {"enabled": True},
+            }
+        ):
+            pass
+
+    settings = {"enabled": True}
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
+                "class": "TestRunLauncher",
+            },
+            "run_monitoring": settings,
+        }
+    ) as instance:
+        assert instance.run_monitoring_enabled
+        assert instance.run_monitoring_settings == settings
+        assert instance.run_monitoring_max_resume_run_attempts == 3
+
+    settings = {"enabled": True, "max_resume_run_attempts": 5}
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
+                "class": "TestRunLauncher",
+            },
+            "run_monitoring": settings,
+        }
+    ) as instance:
+        assert instance.run_monitoring_enabled
+        assert instance.run_monitoring_settings == settings
+        assert instance.run_monitoring_max_resume_run_attempts == 5
 
 
 def test_dagster_home_not_set():

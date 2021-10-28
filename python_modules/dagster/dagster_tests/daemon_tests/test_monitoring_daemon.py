@@ -147,7 +147,11 @@ def test_monitor_started(instance, workspace, logger):
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
     assert instance.run_launcher.launch_run_calls == 2
 
+    monitor_started_run(instance, workspace, run, logger)
+    assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
+    assert instance.run_launcher.launch_run_calls == 3
+
     # exausted the 3 attempts
     monitor_started_run(instance, workspace, run, logger)
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE
-    assert instance.run_launcher.launch_run_calls == 2
+    assert instance.run_launcher.launch_run_calls == 3
