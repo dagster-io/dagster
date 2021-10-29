@@ -7,7 +7,18 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
-from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
+from dagster import (
+    ModeDefinition,
+    Shape,
+    check,
+    composite_solid,
+    fs_io_manager,
+    pipeline,
+    solid,
+    op,
+    graph,
+    job,
+)
 from dagster.config import Field
 from dagster.config.config_type import Array
 from dagster.core.host_representation.origin import (
@@ -33,6 +44,38 @@ def step_output_event_filter(pipe_iterator):
     for step_event in pipe_iterator:
         if step_event.is_successful_output:
             yield step_event
+
+
+def nesting_composite_job(depth, num_children, *args, **kwargs):
+    """Creates a job of nested graphs up to "depth" layers, with a fan-out of
+    num_children at each layer.
+
+    Total number of ops will be num_children ^ depth
+    """
+
+    @op
+    def leaf_node(_):
+        return 1
+
+    def create_wrap(inner, name):
+        @graph(name=name)
+        def wrap():
+            for i in range(num_children):
+                inner_node_alias = "%s_node_%d" % (name, i)
+                inner.alias(inner_node_alias)()
+
+        return wrap
+
+    @job(*args, **kwargs)
+    def nested_job():
+        comp_node = create_wrap(leaf_node, "layer_%d" % depth)
+
+        for i in range(depth):
+            comp_node = create_wrap(comp_node, "layer_%d" % (depth - (i + 1)))
+
+        comp_node.alias("outer")()
+
+    return nested_job
 
 
 def nesting_composite_pipeline(depth, num_children, *args, **kwargs):

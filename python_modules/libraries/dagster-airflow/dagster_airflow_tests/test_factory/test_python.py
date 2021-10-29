@@ -186,7 +186,7 @@ def test_airflow_execution_date_tags():
 def test_error_dag_python_job():
     job_name = "demo_error_job"
     recon_repo = ReconstructableRepository.for_module(
-        "dagster_test.test_project.test_pipelines.repo", job_name
+        "dagster_test.test_project.test_jobs.repo", job_name
     )
     environments_path = get_test_project_environments_path()
     environment_yaml = [
@@ -207,7 +207,7 @@ def test_error_dag_python_job():
 def test_airflow_execution_date_tags_job():
     job_name = "demo_airflow_execution_date_job"
     recon_repo = ReconstructableRepository.for_module(
-        "dagster_test.test_project.test_pipelines.repo", job_name
+        "dagster_test.test_project.test_jobs.repo", job_name
     )
     environments_path = get_test_project_environments_path()
     environment_yaml = [
