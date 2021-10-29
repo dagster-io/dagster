@@ -16,6 +16,7 @@ from dagster import (
     composite_solid,
     fs_io_manager,
     job,
+    mem_io_manager,
     pipeline,
     repository,
     resource,
@@ -279,9 +280,6 @@ add_two_numbers_no_output = dagstermill.define_dagstermill_solid(
     ],
     output_defs=[OutputDefinition(Int)],
 )
-
-
-from dagster import mem_io_manager
 
 
 @pipeline(

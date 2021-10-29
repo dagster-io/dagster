@@ -26,6 +26,7 @@ from dagster.core.execution.context.input import build_input_context
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.file_manager import FileHandle
+from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
@@ -33,7 +34,6 @@ from dagster.utils.backcompat import rename_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
-from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
