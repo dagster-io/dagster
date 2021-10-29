@@ -1,12 +1,13 @@
-from dagster import job, op
-from dagster_fivetran import fivetran_sync_op, fivetran_resource
-from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 import responses
+from dagster import job, op
+from dagster_fivetran import fivetran_resource, fivetran_sync_op
+from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
+
 from .utils import (
-    get_sample_connector_response,
-    get_sample_update_response,
-    get_sample_sync_response,
     DEFAULT_CONNECTOR_ID,
+    get_sample_connector_response,
+    get_sample_sync_response,
+    get_sample_update_response,
 )
 
 

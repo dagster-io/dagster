@@ -1,24 +1,24 @@
-from typing import Dict, Any, Tuple
-import logging
-from urllib.parse import urljoin
-import requests
-from dateutil import parser
 import datetime
-import time
-from requests.auth import HTTPBasicAuth
-from requests.exceptions import RequestException
 import json
+import logging
+import time
+from typing import Any, Dict, Tuple
+from urllib.parse import urljoin
 
+import requests
 from dagster import (
-    resource,
+    EventMetadata,
+    Failure,
     Field,
     StringSource,
-    check,
-    Failure,
-    EventMetadata,
-    get_dagster_logger,
     __version__,
+    check,
+    get_dagster_logger,
+    resource,
 )
+from dateutil import parser
+from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_CONNECTOR_PATH = "v1/connectors/"

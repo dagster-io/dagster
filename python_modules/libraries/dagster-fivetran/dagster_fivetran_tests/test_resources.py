@@ -1,14 +1,15 @@
+import datetime
+
 import pytest
 import responses
-
-from dagster import build_init_resource_context, Failure
+from dagster import Failure, build_init_resource_context
 from dagster_fivetran import fivetran_resource
-import datetime
+
 from .utils import (
-    get_sample_connector_response,
-    get_sample_update_response,
-    get_sample_sync_response,
     DEFAULT_CONNECTOR_ID,
+    get_sample_connector_response,
+    get_sample_sync_response,
+    get_sample_update_response,
 )
 
 
@@ -159,7 +160,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
             # initial state
             rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
             # n polls before updating
-            for _ in range(4):
+            for _ in range(n_polls):
                 rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
             # final state will be updated
             rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
