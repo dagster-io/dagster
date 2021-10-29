@@ -332,4 +332,5 @@ def fivetran_resource(context) -> FivetranResource:
         disable_schedule_on_trigger=context.resource_config["disable_schedule_on_trigger"],
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
+        log=context.log,
     )
