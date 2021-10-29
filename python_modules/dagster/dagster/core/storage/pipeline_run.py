@@ -196,7 +196,7 @@ def pipeline_run_from_storage(
             "Found unhandled arguments from stored PipelineRun: {args}".format(args=kwargs.keys())
         )
 
-    return PipelineRun(  # pylint: disable=redundant-keyword-arg
+    return DagsterRun(  # pylint: disable=redundant-keyword-arg
         pipeline_name=pipeline_name,
         run_id=run_id,
         run_config=run_config,
@@ -373,6 +373,14 @@ class PipelineRun(
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
         return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+
+
+class DagsterRun(PipelineRun):
+    """Serializable internal representation of a dagster run, as stored in a
+    :py:class:`~dagster.core.storage.runs.RunStorage`.
+
+    Subclasses PipelineRun for backcompat purposes. DagsterRun is the actual initialized class used throughout the system.
+    """
 
 
 @whitelist_for_serdes
