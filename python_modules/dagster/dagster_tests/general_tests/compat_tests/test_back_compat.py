@@ -16,6 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceMigrationRequired
@@ -527,3 +528,32 @@ def test_solid_handle_node_handle():
     result = _deserialize_json(test_str, legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
+
+
+def test_pipeline_run_dagster_run():
+    # serialize in current code
+    test_run = DagsterRun("test")
+    test_str = serialize_dagster_namedtuple(test_run)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineRun(
+        namedtuple(
+            "_PipelineRun",
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
+        )
+    ):
+        pass
+
+    _whitelist_for_serdes(legacy_env)(
+        PipelineRunStatus
+    )  # required in order to serialize / deserialize the run
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, PipelineRun)
+    assert result.pipeline_name == test_run.pipeline_name
