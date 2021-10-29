@@ -33,7 +33,12 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..pipeline_run import (
+    PipelineRun,
+    PipelineRunsFilter,
+    RunRecord,
+    DagsterRun,
+)
 from .base import RunStorage
 from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -271,20 +276,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         count = rows[0][0]
         return count
 
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         """Get a run by its id.
 
         Args:
             run_id (str): The id of the run
 
         Returns:
-            Optional[PipelineRun]
+            Optional[DagsterRun]
         """
         check.str_param(run_id, "run_id")
 
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
         rows = self.fetchall(query)
-        return deserialize_as(rows[0][0], PipelineRun) if len(rows) else None
+        return deserialize_as(rows[0][0], DagsterRun) if len(rows) else None
 
     def get_run_records(
         self,

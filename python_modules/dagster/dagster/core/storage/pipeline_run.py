@@ -8,7 +8,12 @@ from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    register_serdes_tuple_fallbacks,
+    unpack_inner_value,
+    whitelist_for_serdes,
+)
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -108,6 +113,23 @@ class PipelineRunSerializer(DefaultNamedTupleSerializer):
         # called by the serdes layer, delegates to helper method with expanded kwargs
         return pipeline_run_from_storage(**unpacked_dict)
 
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value,
+        whitelist_map,
+        descent_path,
+    ):
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # persist using legacy name PipelineRun
+        storage["__class__"] = "PipelineRun"
+
+        return storage
+
 
 def pipeline_run_from_storage(
     pipeline_name=None,
@@ -193,10 +215,10 @@ def pipeline_run_from_storage(
     # warn about unused arguments
     if len(kwargs):
         warnings.warn(
-            "Found unhandled arguments from stored PipelineRun: {args}".format(args=kwargs.keys())
+            "Found unhandled arguments from stored DagsterRun: {args}".format(args=kwargs.keys())
         )
 
-    return PipelineRun(  # pylint: disable=redundant-keyword-arg
+    return DagsterRun(  # pylint: disable=redundant-keyword-arg
         pipeline_name=pipeline_name,
         run_id=run_id,
         run_config=run_config,
@@ -216,7 +238,7 @@ def pipeline_run_from_storage(
 
 
 @whitelist_for_serdes(serializer=PipelineRunSerializer)
-class PipelineRun(
+class DagsterRun(
     namedtuple(
         "_PipelineRun",
         (
@@ -227,7 +249,7 @@ class PipelineRun(
         ),
     )
 ):
-    """Serializable internal representation of a pipeline run, as stored in a
+    """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.
     """
 
@@ -280,7 +302,7 @@ class PipelineRun(
                 "external_pipeline_origin is required for queued runs",
             )
 
-        return super(PipelineRun, cls).__new__(
+        return super(DagsterRun, cls).__new__(
             cls,
             pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             run_id=check.opt_str_param(run_id, "run_id", default=make_new_run_id()),
@@ -373,6 +395,14 @@ class PipelineRun(
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
         return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+
+
+# previous name for NodeHandle was SolidHandle
+register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
+
+
+class PipelineRun(DagsterRun):
+    pass
 
 
 @whitelist_for_serdes
