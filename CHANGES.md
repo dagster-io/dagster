@@ -19,6 +19,7 @@
 ### Bugfixes
 
 - Fixed a bug where decorating a job with a hook would create a pipeline.
+- Fixed a bug where providing default logger config to a job would break with a confusing error.
 - Fixed a bug with retrieving output results from a mapped input on `execute_in_process`
 - Fixed a bug where schedules referencing a job were not creating runs using that job’s default run config.
 - [dagster-k8s] Fixed a bug where the retry mode was not being passed along through the k8s executor.
