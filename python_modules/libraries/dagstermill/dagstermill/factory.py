@@ -33,6 +33,7 @@ from dagster.utils.backcompat import rename_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
+from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
@@ -173,6 +174,13 @@ def _dm_compute(
             "context",
             "StepExecutionContext must have valid run_config",
         )
+
+        if inputs and isinstance(step_context.resources.io_manager, InMemoryIOManager):
+            raise DagstermillError(
+                "Cannot pass inputs to a dagstermill solid using an in-memory IO manager. "
+                "Please specify an IO manager that can persist inputs/outputs (e.g. fs_io_manager) "
+                "for your `io_manager` resource."
+            )
 
         step_execution_context = step_context.get_step_execution_context()
 

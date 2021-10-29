@@ -552,3 +552,13 @@ def test_hello_world_graph():
         finally:
             if result:
                 cleanup_result_notebook(result)
+
+
+@pytest.mark.notebook_test
+def test_hello_world_mem_io_manager():
+    with pytest.raises(
+        DagstermillError,
+        match=("Cannot pass inputs to a dagstermill solid using an in-memory IO manager"),
+    ):
+        with exec_for_test("add_pipeline_mem_io_manager") as result:
+            assert result.success

@@ -270,6 +270,33 @@ def double_add_pipeline():
     add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
+add_two_numbers_no_output = dagstermill.define_dagstermill_solid(
+    name="add_two_numbers_no_output",
+    notebook_path=nb_test_path("add_two_numbers"),
+    input_defs=[
+        InputDefinition(name="a", dagster_type=Int),
+        InputDefinition(name="b", dagster_type=Int),
+    ],
+    output_defs=[OutputDefinition(Int)],
+)
+
+
+from dagster import mem_io_manager
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": mem_io_manager,
+            }
+        )
+    ]
+)
+def add_pipeline_mem_io_manager():
+    add_two_numbers_no_output(return_one(), return_two())
+
+
 @solid(input_defs=[], config_schema=Int)
 def load_constant(context):
     return context.solid_config
@@ -585,6 +612,7 @@ def notebook_repo():
         fan_in_notebook_pipeline,
         hello_world_no_output_notebook_no_file_manager_pipeline,
         hello_world_with_output_notebook_pipeline_legacy,
+        add_pipeline_mem_io_manager,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]
