@@ -35,7 +35,11 @@ if __name__ == "__main__":
             f"dagster{pin}",
             'typing_extensions; python_version>="3.8"',
             'apache-airflow==2.2.0',
-            'cryptography==2.8',
+            # apache-airflow-providers-docker required for DockerOperator
+            "apache-airflow-providers-docker==2.2.0",
+            "apache-airflow-providers-sqlite==2.0.1",
         ],
-        extras_require={},
+        extras_require={
+            "test": [],
+        },
     )

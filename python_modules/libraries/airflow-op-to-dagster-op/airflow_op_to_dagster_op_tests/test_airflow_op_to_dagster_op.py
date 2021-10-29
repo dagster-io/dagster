@@ -3,6 +3,8 @@ import pytest
 import responses
 
 from airflow.operators.bash_operator import BashOperator
+from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.providers.sqlite.operators.sqlite import SqliteOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.models import Connection
 from dagster import build_op_context, job
@@ -77,3 +79,49 @@ def test_http_task():
         assert len(rsps.calls) == 1
         response = rsps.calls[0].response
         assert response.content == b"foo"
+
+
+def test_docker_task(capsys):
+    docker_task = operator_to_op(
+        DockerOperator(task_id="docker_task", image='ubuntu', command="/bin/echo 'Hello world'")
+    )
+
+    @job
+    def my_job():
+        docker_task()
+
+    my_job.execute_in_process()
+
+    _, err = capsys.readouterr()
+
+    assert "Hello world" in err
+
+
+def test_sqlite_operator(capsys):
+    with TemporaryDirectory() as tmpdir:
+        connections = [
+            Connection(
+                conn_id=f'sql_alchemy_conn',
+                host=f"{tmpdir}/example.db",
+                login="",
+                password="",
+            )
+        ]
+
+        sqlite_task = operator_to_op(
+            SqliteOperator(
+                task_id="sqlite_task",
+                sql="DROP TABLE IF EXISTS normalized_cereals",
+                sqlite_conn_id="sql_alchemy_conn",
+            ),
+            connections=connections,
+        )
+
+        @job
+        def my_job():
+            sqlite_task()
+
+        my_job.execute_in_process()
+
+    out, _ = capsys.readouterr()
+    assert "DROP TABLE IF EXISTS normalized_cereals" in out
