@@ -17,7 +17,7 @@ SHARED_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": os.getenv("SNOWFLAKE_USER", ""),
     "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "database": "DEMO_DB",
+    "database": "DEMO_DB_ASSETS",
     "warehouse": "TINY_WAREHOUSE",
 }
 
@@ -134,7 +134,7 @@ class SnowflakeIOManager(IOManager):
     def _get_select_statement(
         self, _resources, asset_key: AssetKey, columns: Optional[Sequence[str]]
     ):
-        col_str = ", ".join(f'"{c}"' for c in columns) if columns else "*"
+        col_str = ", ".join(f"{c}" for c in columns) if columns else "*"
         return f"""
         SELECT {col_str} FROM {asset_key.path[-1]};
         """

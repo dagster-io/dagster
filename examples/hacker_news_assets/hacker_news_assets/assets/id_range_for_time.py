@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
-from dagster import EventMetadataEntry, Output, check
-from dagster.core.asset_defs import asset
+from dagster import check
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -50,7 +49,7 @@ def binary_search_nearest_right(get_value, start, end, max_target):
     return end
 
 
-def _id_range_for_time(start, end, hn_client):
+def id_range_for_time(start, end, hn_client):
     check.invariant(end >= start, "End time comes before start time")
 
     start = datetime.timestamp(
@@ -72,33 +71,4 @@ def _id_range_for_time(start, end, hn_client):
     start_id = binary_search_nearest_left(_get_item_timestamp, min_item_id, max_item_id, start)
     end_id = binary_search_nearest_right(_get_item_timestamp, min_item_id, max_item_id, end)
 
-    start_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(start_id), tz=timezone.utc))
-    end_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(end_id), tz=timezone.utc))
-
-    metadata_entries = [
-        EventMetadataEntry.int(value=max_item_id, label="max_item_id"),
-        EventMetadataEntry.int(value=start_id, label="start_id"),
-        EventMetadataEntry.int(value=end_id, label="end_id"),
-        EventMetadataEntry.int(value=end_id - start_id, label="items"),
-        EventMetadataEntry.text(text=start_timestamp, label="start_timestamp"),
-        EventMetadataEntry.text(text=end_timestamp, label="end_timestamp"),
-    ]
-
-    id_range = (start_id, end_id)
-    return id_range, metadata_entries
-
-
-@asset(
-    required_resource_keys={"hn_client", "partition_start", "partition_end"},
-    description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
-)
-def id_range_for_time(context):
-    """
-    For the configured time partition, searches for the range of ids that were created in that time.
-    """
-    id_range, metadata_entries = _id_range_for_time(
-        context.resources.partition_start,
-        context.resources.partition_end,
-        context.resources.hn_client,
-    )
-    yield Output(id_range, metadata_entries=metadata_entries)
+    return start_id, end_id

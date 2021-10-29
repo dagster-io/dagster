@@ -5,7 +5,7 @@ from pandas import DataFrame, Series
 @asset(
     ins={
         "stories": AssetIn(metadata={"columns": ["id"]}),
-        "comments": AssetIn(metadata={"columns": ["id", "by", "parent"]}),
+        "comments": AssetIn(metadata={"columns": ["id", "user_id", "parent"]}),
     },
     io_manager_key="warehouse_io_manager",
 )
@@ -15,7 +15,7 @@ def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
 
     Owners: sandy@elementl.com, owen@elementl.com
     """
-    comments.rename(columns={"by": "commenter_id", "id": "comment_id"}, inplace=True)
+    comments.rename(columns={"user_id": "commenter_id", "id": "comment_id"}, inplace=True)
     comments = comments.set_index("comment_id")[["commenter_id", "parent"]]
     stories = stories.set_index("id")[[]]
 
