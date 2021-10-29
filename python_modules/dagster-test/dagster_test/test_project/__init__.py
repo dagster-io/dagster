@@ -175,6 +175,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                             fn_name="define_demo_execution_repo",
                         ),
                         container_image=self._container_image,
+                        executable_path="python",
                     )
                 ),
                 repository_name="demo_execution_repo",
@@ -210,7 +211,9 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
                         pointer=FileCodePointer(
                             python_file="/dagster_test/test_project/test_pipelines/repo.py",
                             fn_name="define_demo_execution_repo",
-                        )
+                        ),
+                        container_image=self._container_image,
+                        executable_path="python",
                     )
                 ),
                 repository_name="demo_execution_repo",
