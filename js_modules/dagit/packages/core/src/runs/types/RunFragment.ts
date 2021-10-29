@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus, StepKind } from "./../../types/globalTypes";
+import { RunStatus, StepKind, StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunFragment
@@ -78,6 +78,28 @@ export interface RunFragment_stats_RunStatsSnapshot {
 
 export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_RunStatsSnapshot;
 
+export interface RunFragment_stepStats_attempts {
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunFragment_stepStats_markers {
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunFragment_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  status: StepEventStatus | null;
+  startTime: number | null;
+  endTime: number | null;
+  attempts: RunFragment_stepStats_attempts[];
+  markers: RunFragment_stepStats_markers[];
+}
+
 export interface RunFragment {
   __typename: "Run";
   id: string;
@@ -95,4 +117,5 @@ export interface RunFragment {
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunFragment_repositoryOrigin | null;
   stats: RunFragment_stats;
+  stepStats: RunFragment_stepStats[];
 }

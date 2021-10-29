@@ -13,25 +13,18 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
-DEFAULT_START_TIMEOUT_SECONDS = 180
-DEFAULT_MAX_RESUME_RUN_ATTEMPTS = 2
-
 
 def monitor_starting_run(instance: DagsterInstance, run, logger):
     check.invariant(run.status == PipelineRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
 
-    start_timeout_seconds = instance.run_monitoring_settings.get(
-        "start_timeout", DEFAULT_START_TIMEOUT_SECONDS
-    )
-
     check.invariant(
         run_stats.launch_time is not None, "Run in status STARTING doesn't have a launch time."
     )
-    if time.time() - run_stats.launch_time >= start_timeout_seconds:
+    if time.time() - run_stats.launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
             f"Run {run.run_id} has been running for {time.time() - run_stats.launch_time} seconds, "
-            f"which is longer than the timeout of {start_timeout_seconds} seconds to start. "
+            f"which is longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds to start. "
             "Marking run failed"
         )
         logger.info(msg)
@@ -49,11 +42,8 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
     check.invariant(run.status == PipelineRunStatus.STARTED)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status != WorkerStatus.RUNNING:
-        max_resume_run_attempts = instance.run_monitoring_settings.get(
-            "max_resume_run_attempts", DEFAULT_MAX_RESUME_RUN_ATTEMPTS
-        )
         num_prev_attempts = count_resume_run_attempts(instance, run)
-        if num_prev_attempts < max_resume_run_attempts:
+        if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
             msg = (
                 f"Detected run worker status {check_health_result}. Resuming run {run.run_id} with "
                 "a new worker."

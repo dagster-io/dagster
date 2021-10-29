@@ -314,6 +314,7 @@ def dagster_instance_for_k8s_run_launcher(
         compute_log_manager=NoOpComputeLogManager(),
         run_coordinator=DefaultRunCoordinator(),
         run_launcher=run_launcher,
+        settings={"run_monitoring": {"enabled": True}},
     ) as instance:
         yield instance
 

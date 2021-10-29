@@ -25,7 +25,7 @@ height={1040}
 
 ## Overview
 
-Dagster ops have [inputs and outputs](/concepts/solids-pipelines/solids#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
+Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
 
 The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 

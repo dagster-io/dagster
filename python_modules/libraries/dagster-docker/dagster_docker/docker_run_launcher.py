@@ -1,4 +1,3 @@
-import json
 import os
 
 import docker
@@ -12,7 +11,7 @@ from dagster.core.launcher.base import (
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
-from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
+from dagster.serdes import ConfigurableClass
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
@@ -105,23 +104,17 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         validate_docker_image(docker_image)
 
         if not context.resume_from_failure:
-            input_json = serialize_dagster_namedtuple(
-                ExecuteRunArgs(
-                    pipeline_origin=pipeline_code_origin,
-                    pipeline_run_id=run.run_id,
-                    instance_ref=self._instance.get_ref(),
-                )
-            )
-            command = "dagster api execute_run {}".format(json.dumps(input_json))
+            command = ExecuteRunArgs(
+                pipeline_origin=pipeline_code_origin,
+                pipeline_run_id=run.run_id,
+                instance_ref=self._instance.get_ref(),
+            ).get_command_args()
         else:
-            input_json = serialize_dagster_namedtuple(
-                ResumeRunArgs(
-                    pipeline_origin=pipeline_code_origin,
-                    pipeline_run_id=run.run_id,
-                    instance_ref=self._instance.get_ref(),
-                )
-            )
-            command = "dagster api resume_run {}".format(json.dumps(input_json))
+            command = ResumeRunArgs(
+                pipeline_origin=pipeline_code_origin,
+                pipeline_run_id=run.run_id,
+                instance_ref=self._instance.get_ref(),
+            ).get_command_args()
 
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self.env_vars} if self.env_vars else {}

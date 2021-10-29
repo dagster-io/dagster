@@ -33,7 +33,7 @@ def get_conn(conn_string):
 def mysql_config():
     return Selector(
         {
-            "mysql_url": str,
+            "mysql_url": StringSource,
             "mysql_db": {
                 "username": StringSource,
                 "password": StringSource,

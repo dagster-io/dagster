@@ -436,5 +436,65 @@
     "source": "/deployment/guides/airflow",
     "destination": "/integrations/airflow",
     "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/single-solid-pipeline",
+    "destination": "/tutorial/intro-tutorial/single-op-job",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/connecting-solids",
+    "destination": "/tutorial/intro-tutorial/connecting-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/configuring-solids",
+    "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/configuring-solids",
+    "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/pipelines",
+    "destination": "/tutorial/advanced-tutorial/resources",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solids",
+    "destination": "/concepts/ops-jobs-graphs/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/pipelines",
+    "destination": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/pipeline-execution",
+    "destination": "/concepts/ops-jobs-graphs/job-execution",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/composite-solids",
+    "destination": "/concepts/ops-jobs-graphs/nesting-graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solid-events",
+    "destination": "/concepts/ops-jobs-graphs/op-events",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solid-hooks",
+    "destination": "/concepts/ops-jobs-graphs/op-hooks",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/modes-resources",
+    "destination": "/concepts/resources",
+    "permanent": true
   }
 ]

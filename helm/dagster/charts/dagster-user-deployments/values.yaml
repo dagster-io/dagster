@@ -41,6 +41,26 @@ deployments:
       - "-f"
       - "/example_project/example_repo/repo.py"
     port: 3030
+    # Additional volumes that should be included in the Deployment's Pod. See:
+    # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+    #
+    # Example:
+    #
+    # volumes:
+    #   - name: my-volume
+    #     configMap: my-config-map
+    volumes: []
+
+    # Additional volume mounts that should be included in the container in the deployment's pod. See:
+    # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+    #
+    # Example:
+    #
+    # volumeMounts:
+    #   - name: test-volume
+    #     mountPath: /opt/dagster/test_folder
+    #     subPath: test_file.yaml
+    volumeMounts: []
 
     # Additional environment variables to set.
     # A Kubernetes ConfigMap will be created with these environment variables. See:

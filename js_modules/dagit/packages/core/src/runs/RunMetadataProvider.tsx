@@ -1,7 +1,12 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
+import {StepEventStatus} from '../types/globalTypes';
+
+import {LogsProviderLogs} from './LogsProvider';
 import {METADATA_ENTRY_FRAGMENT} from './MetadataEntry';
+import {RunContext} from './RunContext';
+import {RunFragment} from './types/RunFragment';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
 
 export enum IStepState {
@@ -86,6 +91,79 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
     (stepKey) => (logCaptureSteps[stepKey] = {logKey: stepKey, stepKeys: [stepKey]}),
   );
   return logCaptureSteps;
+};
+
+const fromTimestamp = (ts: number | null) => (ts ? ts * 1000 : undefined);
+export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
+  const metadata: IRunMetadataDict = {
+    firstLogAt: 0,
+    mostRecentLogAt: 0,
+    globalMarkers: [],
+    steps: {},
+  };
+  if (!run) {
+    return metadata;
+  }
+  if (run.stats.__typename !== 'RunStatsSnapshot') {
+    return metadata;
+  }
+  if (run.stats.startTime) {
+    metadata.startedPipelineAt = fromTimestamp(run.stats.startTime);
+  }
+  if (run.stats.endTime) {
+    metadata.exitedAt = fromTimestamp(run.stats.endTime);
+  }
+
+  run.stepStats.forEach((stepStat) => {
+    metadata.steps[stepStat.stepKey] = {
+      // state:
+      // current state
+      state: stepStatusToStepState(stepStat.status),
+
+      // execution start and stop (user-code) inclusive of all retries
+      start: fromTimestamp(stepStat.startTime),
+      end: fromTimestamp(stepStat.endTime),
+
+      // current state + prev state transition times
+      transitions: [],
+
+      // transition times organized into start+stop+exit state pairs.
+      // This is the metadata used to render boxes on the realtime vi.z
+      attempts: stepStat.attempts.map(
+        (attempt, idx) =>
+          ({
+            start: fromTimestamp(attempt.startTime),
+            end: fromTimestamp(attempt.endTime),
+            exitState:
+              idx === stepStat.attempts.length - 1
+                ? stepStatusToStepState(stepStat.status)
+                : IStepState.RETRY_REQUESTED,
+          } as IStepAttempt),
+      ),
+
+      // accumulated metadata
+      markers: stepStat.markers.map((marker, idx) => ({
+        start: fromTimestamp(marker.startTime),
+        end: fromTimestamp(marker.endTime),
+        key: `marker_${idx}`,
+      })),
+    };
+  });
+
+  return metadata;
+}
+
+const stepStatusToStepState = (status: StepEventStatus | null) => {
+  switch (status) {
+    case StepEventStatus.SUCCESS:
+      return IStepState.SUCCEEDED;
+    case StepEventStatus.FAILURE:
+      return IStepState.FAILED;
+    case StepEventStatus.SKIPPED:
+      return IStepState.SKIPPED;
+    default:
+      return IStepState.UNKNOWN;
+  }
 };
 
 export function extractMetadataFromLogs(
@@ -241,12 +319,17 @@ export function extractMetadataFromLogs(
 }
 
 interface IRunMetadataProviderProps {
-  logs: RunMetadataProviderMessageFragment[];
+  logs: LogsProviderLogs;
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
 export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, children}) => {
-  const metadata = React.useMemo(() => extractMetadataFromLogs(logs), [logs]);
+  const run = React.useContext(RunContext);
+  const runMetadata = React.useMemo(() => extractMetadataFromRun(run), [run]);
+  const metadata = React.useMemo(
+    () => (logs.loading ? runMetadata : extractMetadataFromLogs(logs.allNodes)),
+    [logs, runMetadata],
+  );
   return <>{children(metadata)}</>;
 };
 

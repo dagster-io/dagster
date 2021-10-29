@@ -30,7 +30,8 @@ RUN pip install \
     -e modules/dagster-docker \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
-    -e .
+    -e . \
+    pyparsing\<3.0.0
 
 RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
 

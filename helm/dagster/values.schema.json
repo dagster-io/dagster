@@ -354,6 +354,18 @@
                 "enableReadOnly"
             ]
         },
+        "VolumeMount": {
+            "title": "VolumeMount",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+        },
+        "Volume": {
+            "title": "Volume",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -434,6 +446,20 @@
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    }
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    }
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
                     }
                 }
             },
@@ -1568,18 +1594,6 @@
             ],
             "additionalProperties": false
         },
-        "VolumeMount": {
-            "title": "VolumeMount",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
-        },
-        "Volume": {
-            "title": "Volume",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
-        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -2041,6 +2055,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "runMonitoring": {
+                    "title": "Runmonitoring",
+                    "type": "object"
                 }
             },
             "required": [
@@ -2059,7 +2077,8 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe",
-                "annotations"
+                "annotations",
+                "runMonitoring"
             ]
         },
         "Busybox": {

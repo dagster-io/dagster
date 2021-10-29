@@ -3,10 +3,15 @@ import subprocess
 from typing import List
 
 import pytest
+from dagster_k8s.models import k8s_model_from_dict
+from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    UserDeployment,
+    UserDeployments,
+)
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
@@ -462,6 +467,64 @@ def test_user_deployment_image(template: HelmTemplate):
 
     image = user_deployments[0].spec.template.spec.containers[0].image
     image_name, image_tag = image.split(":")
+
+    assert image_name == deployment.image.repository
+    assert image_tag == deployment.image.tag
+
+
+def test_user_deployment_volumes(template: HelmTemplate):
+
+    name = "foo"
+
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
+    volume_mounts = [
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        }
+    ]
+
+    deployment = UserDeployment(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        volumes=[kubernetes.Volume.construct(None, **volume) for volume in volumes],
+        volumeMounts=[
+            kubernetes.VolumeMount.construct(None, **volume_mount) for volume_mount in volume_mounts
+        ],
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    deployed_volume_mounts = user_deployments[0].spec.template.spec.containers[0].volume_mounts
+    assert deployed_volume_mounts == [
+        k8s_model_from_dict(k8s_client.models.V1VolumeMount, volume_mount)
+        for volume_mount in volume_mounts
+    ]
+
+    deployed_volumes = user_deployments[0].spec.template.spec.volumes
+    assert deployed_volumes == [
+        k8s_model_from_dict(k8s_client.models.V1Volume, volume) for volume in volumes
+    ]
 
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag

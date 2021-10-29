@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus, StepKind } from "./../../types/globalTypes";
+import { RunStatus, StepKind, StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RunRootQuery
@@ -82,6 +82,28 @@ export interface RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
 
 export type RunRootQuery_pipelineRunOrError_Run_stats = RunRootQuery_pipelineRunOrError_Run_stats_PythonError | RunRootQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
 
+export interface RunRootQuery_pipelineRunOrError_Run_stepStats_attempts {
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunRootQuery_pipelineRunOrError_Run_stepStats_markers {
+  __typename: "RunMarker";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export interface RunRootQuery_pipelineRunOrError_Run_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  status: StepEventStatus | null;
+  startTime: number | null;
+  endTime: number | null;
+  attempts: RunRootQuery_pipelineRunOrError_Run_stepStats_attempts[];
+  markers: RunRootQuery_pipelineRunOrError_Run_stepStats_markers[];
+}
+
 export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
@@ -99,6 +121,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunRootQuery_pipelineRunOrError_Run_repositoryOrigin | null;
   stats: RunRootQuery_pipelineRunOrError_Run_stats;
+  stepStats: RunRootQuery_pipelineRunOrError_Run_stepStats[];
 }
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_RunNotFoundError | RunRootQuery_pipelineRunOrError_Run;

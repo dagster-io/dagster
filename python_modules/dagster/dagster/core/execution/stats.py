@@ -88,6 +88,9 @@ def build_run_step_stats_from_events(
     run_id: str, records: Iterable[EventLogEntry]
 ) -> List["RunStepKeyStatsSnapshot"]:
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
+    attempts = defaultdict(list)
+    attempt_events = defaultdict(list)
+    markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for event in records:
         if not event.is_dagster_event:
             continue
@@ -123,11 +126,77 @@ def build_run_step_stats_from_events(
             step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)
             by_step_key[step_key]["expectation_results"] = step_expectation_results
+        if dagster_event.event_type in (
+            DagsterEventType.STEP_UP_FOR_RETRY,
+            DagsterEventType.STEP_RESTARTED,
+        ):
+            attempt_events[step_key].append(event)
+        if dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+            if dagster_event.engine_event_data.marker_start:
+                key = dagster_event.engine_event_data.marker_start
+                if key not in markers[step_key]:
+                    markers[step_key][key] = {"key": key, "start": event.timestamp}
+                else:
+                    markers[step_key][key]["start"] = event.timestamp
+
+            if dagster_event.engine_event_data.marker_end:
+                key = dagster_event.engine_event_data.marker_end
+                if key not in markers[step_key]:
+                    markers[step_key][key] = {"key": key, "end": event.timestamp}
+                else:
+                    markers[step_key][key]["end"] = event.timestamp
+
+    for step_key, step_stats in by_step_key.items():
+        events = attempt_events[step_key]
+        step_attempts = []
+        attempt_start = step_stats.get("start_time")
+        for event in events:
+            if not event.dagster_event:
+                continue
+            if event.dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
+                step_attempts.append(
+                    RunStepMarker(start_time=attempt_start, end_time=event.timestamp)
+                )
+            elif event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
+                attempt_start = event.timestamp
+        if step_stats.get("end_time"):
+            step_attempts.append(
+                RunStepMarker(start_time=attempt_start, end_time=step_stats["end_time"])
+            )
+        attempts[step_key] = step_attempts
 
     return [
-        RunStepKeyStatsSnapshot(run_id=run_id, step_key=step_key, **value)
+        RunStepKeyStatsSnapshot(
+            run_id=run_id,
+            step_key=step_key,
+            attempts_list=attempts[step_key],
+            markers=[
+                RunStepMarker(start_time=marker.get("start"), end_time=marker.get("end"))
+                for marker in markers[step_key].values()
+            ],
+            **value,
+        )
         for step_key, value in by_step_key.items()
     ]
+
+
+@whitelist_for_serdes
+class RunStepMarker(
+    namedtuple(
+        "_RunStepMarker",
+        ("start_time end_time"),
+    )
+):
+    def __new__(
+        cls,
+        start_time=None,
+        end_time=None,
+    ):
+        return super(RunStepMarker, cls).__new__(
+            cls,
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
+        )
 
 
 @whitelist_for_serdes
@@ -135,7 +204,8 @@ class RunStepKeyStatsSnapshot(
     namedtuple(
         "_RunStepKeyStatsSnapshot",
         (
-            "run_id step_key status start_time end_time materializations expectation_results attempts"
+            "run_id step_key status start_time end_time materializations expectation_results "
+            "attempts attempts_list markers"
         ),
     )
 ):
@@ -149,8 +219,9 @@ class RunStepKeyStatsSnapshot(
         materializations=None,
         expectation_results=None,
         attempts=None,
+        attempts_list=None,
+        markers=None,
     ):
-
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
@@ -165,4 +236,6 @@ class RunStepKeyStatsSnapshot(
                 expectation_results, "expectation_results", ExpectationResult
             ),
             attempts=check.opt_int_param(attempts, "attempts"),
+            attempts_list=check.opt_list_param(attempts_list, "attempts_list", RunStepMarker),
+            markers=check.opt_list_param(markers, "markers", RunStepMarker),
         )

@@ -97,7 +97,7 @@ export const Run: React.FC<RunProps> = (props) => {
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
-          <RunMetadataProvider logs={logs.allNodes}>
+          <RunMetadataProvider logs={logs}>
             {(metadata) => (
               <RunWithData
                 run={run}
@@ -279,7 +279,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   };
 
   const gantt = (metadata: IRunMetadataDict) => {
-    if (logs.loading || !run) {
+    if (!run) {
       return <GanttChartLoadingState runId={runId} />;
     }
 
