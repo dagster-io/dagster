@@ -14,10 +14,10 @@ from dagster.cli.pipeline import (
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_pipeline_or_job_python_origin_from_kwargs,
+    job_repository_target_argument,
     job_target_argument,
     python_job_target_argument,
     python_pipeline_or_job_config_argument,
-    job_repository_target_argument,
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
