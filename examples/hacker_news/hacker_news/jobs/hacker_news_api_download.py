@@ -1,40 +1,11 @@
 from datetime import datetime
 
-from dagster import ResourceDefinition, graph, hourly_partitioned_config, in_process_executor
+from dagster import graph, hourly_partitioned_config, in_process_executor
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
-
-DOWNLOAD_RESOURCES_LOCAL = dict(
-    {
-        "partition_start": ResourceDefinition.string_resource(),
-        "partition_end": ResourceDefinition.string_resource(),
-        "hn_client": hn_snapshot_client,
-    },
-    **RESOURCES_LOCAL,
-)
-
-
-DOWNLOAD_RESOURCES_STAGING = dict(
-    **{
-        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        "partition_start": ResourceDefinition.string_resource(),
-        "partition_end": ResourceDefinition.string_resource(),
-    },
-    **RESOURCES_STAGING,
-)
-
-
-DOWNLOAD_RESOURCES_PROD = dict(
-    **{
-        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        "partition_start": ResourceDefinition.string_resource(),
-        "partition_end": ResourceDefinition.string_resource(),
-    },
-    **RESOURCES_PROD,
-)
-
+from hacker_news.resources.partition_bounds import partition_bounds
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {
@@ -51,7 +22,7 @@ DOWNLOAD_TAGS = {
 def hacker_news_api_download():
     """
     #### Owners
-    schrockn@elementl.com, cat@elementl.com
+    schrockn@elementl.com, max@elementl.com
 
     #### About
     Downloads all items from the HN API for a given day,
@@ -67,31 +38,54 @@ def hacker_news_api_download():
 def hourly_download_config(start: datetime, end: datetime):
     return {
         "resources": {
-            "partition_start": {"config": start.strftime("%Y-%m-%d %H:%M:%S")},
-            "partition_end": {"config": end.strftime("%Y-%m-%d %H:%M:%S")},
+            "partition_bounds": {
+                "config": {
+                    "start": start.strftime("%Y-%m-%d %H:%M:%S"),
+                    "end": end.strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            },
         }
     }
 
 
 download_prod_job = hacker_news_api_download.to_job(
-    resource_defs=DOWNLOAD_RESOURCES_PROD,
+    resource_defs=dict(
+        **{
+            "partition_bounds": partition_bounds,
+            "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+        },
+        **RESOURCES_PROD,
+    ),
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
 )
 
 
 download_staging_job = hacker_news_api_download.to_job(
-    resource_defs=DOWNLOAD_RESOURCES_STAGING,
+    resource_defs=dict(
+        **{
+            "partition_bounds": partition_bounds,
+            "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+        },
+        **RESOURCES_STAGING,
+    ),
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
 )
 
 download_local_job = hacker_news_api_download.to_job(
-    resource_defs=DOWNLOAD_RESOURCES_LOCAL,
+    resource_defs=dict(
+        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
+        **RESOURCES_LOCAL,
+    ),
     config={
         "resources": {
-            "partition_start": {"config": "2020-12-30 00:00:00"},
-            "partition_end": {"config": "2020-12-30 01:00:00"},
+            "partition_bounds": {
+                "config": {
+                    "start": "2020-12-30 00:00:00",
+                    "end": "2020-12-30 01:00:00",
+                }
+            },
         }
     },
     executor_def=in_process_executor,

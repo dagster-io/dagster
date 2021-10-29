@@ -23,7 +23,7 @@ logger = get_dagster_logger()
         io_manager_key="warehouse_io_manager", metadata={"table": "hackernews.comment_stories"}
     ),
 )
-def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
+def build_comment_stories(stories: DataFrame, comments: DataFrame):
     """
     Traverses the comment tree to link each comment to its root story.
 
@@ -62,4 +62,6 @@ def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
         remaining_comments = remaining_comments[["parent_y", "commenter_id"]]
         remaining_comments.rename(columns={"parent_y": "parent"}, inplace=True)
 
-    yield Output(metadata={"# comments": full_comment_stories.shape[0]}, value=full_comment_stories)
+    return Output(
+        metadata={"# comments": full_comment_stories.shape[0]}, value=full_comment_stories
+    )

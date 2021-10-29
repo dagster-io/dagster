@@ -53,7 +53,8 @@ class PartitionedParquetIOManager(IOManager):
 
     def _get_path(self, context: OutputContext):
         # filesystem-friendly string that is scoped to the start/end times of the data slice
-        partition_str = f"{context.resources.partition_start}_{context.resources.partition_end}"
+        partition_bounds = context.resources.partition_bounds
+        partition_str = partition_bounds["start"] + "_" + partition_bounds["end"]
         partition_str = "".join(c for c in partition_str if c == "_" or c.isdigit())
 
         # if local fs path, store all outptus in same directory
@@ -66,12 +67,12 @@ class PartitionedParquetIOManager(IOManager):
         return AssetKey([*self._base_path.split("://"), context.name])
 
     def get_output_asset_partitions(self, context: OutputContext):
-        return set([context.resources.partition_start])
+        return set([context.resources.partition_bounds["start"]])
 
 
 @io_manager(
     config_schema={"base_path": Field(str, is_required=False)},
-    required_resource_keys={"pyspark", "partition_start", "partition_end"},
+    required_resource_keys={"pyspark", "partition_bounds"},
 )
 def local_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(
@@ -79,8 +80,6 @@ def local_partitioned_parquet_io_manager(init_context):
     )
 
 
-@io_manager(
-    required_resource_keys={"pyspark", "partition_start", "partition_end", "s3_bucket"},
-)
+@io_manager(required_resource_keys={"pyspark", "partition_bounds", "s3_bucket"})
 def s3_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)

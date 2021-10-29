@@ -22,7 +22,7 @@ class IndexedCooMatrix:
 
 
 @op(out=Out(metadata={"key": "user_story_matrix"}))
-def build_user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
+def build_user_story_matrix(comment_stories: DataFrame):
     """
     Builds a sparse matrix where the rows are users, the columns are stories, and the values
     are whether the user commented on the story.
@@ -38,7 +38,7 @@ def build_user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
     sparse_cols = story_col_indices[deduplicated["story_id"]]
     sparse_data = np.ones(len(sparse_rows))
 
-    yield Output(
+    return Output(
         metadata={"# rows (users)": len(users), "# cols (stories)": len(stories)},
         value=IndexedCooMatrix(
             matrix=coo_matrix(

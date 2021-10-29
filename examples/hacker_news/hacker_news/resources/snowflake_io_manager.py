@@ -52,10 +52,7 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-@io_manager(
-    config_schema={"database": str},
-    required_resource_keys={"partition_start", "partition_end"},
-)
+@io_manager(config_schema={"database": str}, required_resource_keys={"partition_bounds"})
 def snowflake_io_manager(init_context):
     return SnowflakeIOManager(
         config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
@@ -68,7 +65,7 @@ class SnowflakeIOManager(IOManager):
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
 
     If an Out has {"partitioned": True} in its metadata, we just overwrite a single partition, based
-    on the values specified by the partition_start and partition_end resources.
+    on the time window specified by the partition_bounds resource.
 
     Because we specify a get_output_asset_key() function, AssetMaterialization events will be
     automatically created each time an output is processed with this IOManager.
@@ -141,7 +138,7 @@ class SnowflakeIOManager(IOManager):
         if is_partitioned:
             return f"""
             DELETE FROM {table}
-            {self._partition_where_clause(resources)}
+            {self._partition_where_clause(resources.partition_bounds)}
             """
         else:
             return f"""
@@ -170,20 +167,20 @@ class SnowflakeIOManager(IOManager):
         if is_partitioned:
             return (
                 f"""SELECT * FROM {self._config["database"]}.{metadata["table"]}\n"""
-                + self._partition_where_clause(resources)
+                + self._partition_where_clause(resources.partition_bounds)
             )
         else:
             return f"""SELECT {col_str} FROM {metadata["table"]}"""
 
-    def _partition_where_clause(self, resources):
-        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{resources.partition_start}' AND '{resources.partition_end}'"""
+    def _partition_where_clause(self, partition_bounds):
+        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{partition_bounds["start"]}' AND '{partition_bounds["end"]}'"""
 
     def get_output_asset_key(self, context: OutputContext):
         return AssetKey(["snowflake", *context.metadata["table"].split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):
         if context.metadata.get("partitioned") is True:
-            return [context.resources.partition_start]
+            return [context.resources.partition_bounds["start"]]
         else:
             return None
 

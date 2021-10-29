@@ -3,12 +3,14 @@ import os
 from dagster import ResourceDefinition
 from dagster_aws.s3 import s3_resource
 from dagster_pyspark import pyspark_resource
+from dagstermill.io_managers import local_output_notebook_io_manager
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
 )
+from .s3_notebook_io_manager import s3_notebook_io_manager
 from .snowflake_io_manager import snowflake_io_manager
 
 configured_pyspark = pyspark_resource.configured(
@@ -40,6 +42,7 @@ RESOURCES_PROD = {
     "warehouse_io_manager": snowflake_io_manager_prod,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
+    "output_notebook_io_manager": s3_notebook_io_manager,
 }
 
 snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
@@ -53,6 +56,7 @@ RESOURCES_STAGING = {
     "warehouse_io_manager": snowflake_io_manager_staging,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_staging,
+    "output_notebook_io_manager": s3_notebook_io_manager,
 }
 
 
@@ -61,4 +65,5 @@ RESOURCES_LOCAL = {
     "warehouse_io_manager": local_partitioned_parquet_io_manager,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
+    "output_notebook_io_manager": local_output_notebook_io_manager,
 }

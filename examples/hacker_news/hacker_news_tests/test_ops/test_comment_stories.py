@@ -13,7 +13,7 @@ from pandas import DataFrame
 def test_build_comment_stories(comments, stories, expected):
     comments = DataFrame(comments, columns=["id", "parent", "user_id"])
     stories = DataFrame(stories, columns=["id"])
-    comment_stories = build_comment_stories(stories=stories, comments=comments)
+    comment_stories = build_comment_stories(stories=stories, comments=comments).value
     expected = DataFrame(expected, columns=["comment_id", "story_id", "commenter_id"]).set_index(
         "comment_id"
     )

@@ -1,5 +1,4 @@
-from dagster import ModeDefinition, fs_io_manager, pipeline
-from dagstermill.io_managers import local_output_notebook_io_manager
+from dagster import ModeDefinition, ResourceDefinition, pipeline
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
     build_component_top_stories,
@@ -8,8 +7,7 @@ from hacker_news.ops.recommender_model import (
 )
 from hacker_news.ops.user_story_matrix import build_user_story_matrix
 from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
-from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
-from hacker_news.resources.s3_notebook_io_manager import s3_notebook_io_manager
+from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD
 from hacker_news.resources.snowflake_io_manager import snowflake_io_manager
 
 snowflake_manager = snowflake_io_manager.configured(
@@ -25,25 +23,19 @@ snowflake_manager = snowflake_io_manager.configured(
 DEV_MODE = ModeDefinition(
     "dev",
     description="This mode reads from the same warehouse as the prod pipeline, but does all writes locally.",
-    resource_defs={
-        "io_manager": fs_io_manager,
-        "warehouse_io_manager": fs_io_manager,
-        "warehouse_loader": snowflake_manager,
-        "output_notebook_io_manager": local_output_notebook_io_manager,
-    },
+    resource_defs=dict(
+        **RESOURCES_LOCAL,
+        **{"partition_bounds": ResourceDefinition.none_resource()},
+    ),
 )
 
 PROD_MODE = ModeDefinition(
     "prod",
     description="This mode writes some outputs to the production data warehouse.",
-    resource_defs={
-        "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-prod"}),
-        "warehouse_io_manager": snowflake_manager,
-        "warehouse_loader": snowflake_manager,
-        "output_notebook_io_manager": s3_notebook_io_manager.configured(
-            {"bucket": "hackernews-elementl-prod"}
-        ),
-    },
+    resource_defs=dict(
+        **RESOURCES_PROD,
+        **{"partition_bounds": ResourceDefinition.none_resource()},
+    ),
 )
 
 
