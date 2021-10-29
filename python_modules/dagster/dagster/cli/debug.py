@@ -31,12 +31,12 @@ def export_run(instance, run, output_file):
 @click.group(name="debug")
 def debug_cli():
     """
-    Commands for debugging Dagster pipeline runs.
+    Commands for debugging Dagster pipeline/job runs.
     """
 
 
 @debug_cli.command(
-    name="export", help="Export the relevant artifacts for a pipeline run to a file."
+    name="export", help="Export the relevant artifacts for a pipeline/job run to a file."
 )
 @click.argument("run_id", type=str)
 @click.argument("output_file", type=click.Path())

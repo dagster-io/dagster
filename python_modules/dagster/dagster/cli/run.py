@@ -5,7 +5,7 @@ from dagster.core.instance import DagsterInstance
 @click.group(name="run")
 def run_cli():
     """
-    Commands for working with Dagster pipeline runs.
+    Commands for working with Dagster pipeline/job runs.
     """
 
 
