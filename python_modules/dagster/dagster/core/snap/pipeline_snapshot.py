@@ -24,6 +24,7 @@ from dagster.serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     deserialize_value,
+    register_serdes_tuple_fallbacks,
     unpack_inner_value,
     whitelist_for_serdes,
 )
@@ -66,6 +67,17 @@ class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
         # called by the serdes layer, delegates to helper method with expanded kwargs
         return _pipeline_snapshot_from_storage(**unpacked_dict)
 
+    @classmethod
+    def value_to_storage_dict(cls, value, whitelist_map, descent_path):
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # persist using legacy name PipelineSnapshot
+        storage["__class__"] = "PipelineSnapshot"
+        return storage
+
 
 def _pipeline_snapshot_from_storage(
     name: str,
@@ -104,9 +116,9 @@ def _pipeline_snapshot_from_storage(
 
 
 @whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
-class PipelineSnapshot(
+class JobSnapshot(
     NamedTuple(
-        "_PipelineSnapshot",
+        "_JobSnapshot",
         [
             ("name", str),
             ("description", Optional[str]),
@@ -134,7 +146,7 @@ class PipelineSnapshot(
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
     ):
-        return super(PipelineSnapshot, cls).__new__(
+        return super(JobSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -242,6 +254,14 @@ class PipelineSnapshot(
             }
 
         return toposort_flatten(upstream_outputs)
+
+
+register_serdes_tuple_fallbacks({"PipelineSnapshot": JobSnapshot})
+
+
+# Keep around as superclass so as to not need to rename every invocation / type annotation of PipelineSnapshot.
+class PipelineSnapshot(JobSnapshot):
+    pass
 
 
 def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):

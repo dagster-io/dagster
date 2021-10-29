@@ -17,11 +17,28 @@ from dagster import (
     solid,
 )
 from dagster.cli.debug import DebugRunPayload
+from dagster.config.config_type import ConfigScalarKind, ConfigTypeKind
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.snap import (
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    ConfigTypeSnap,
+    LoggerDefSnap,
+    ModeDefSnap,
+    ResourceDefSnap,
+)
+from dagster.core.snap.dagster_types import (
+    DagsterTypeKind,
+    DagsterTypeNamespaceSnapshot,
+    DagsterTypeSnap,
+)
+from dagster.core.snap.dep_snapshot import DependencyStructureSnapshot
+from dagster.core.snap.pipeline_snapshot import JobSnapshot
+from dagster.core.snap.solid import SolidDefinitionsSnapshot
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.serdes.serdes import (
@@ -527,3 +544,45 @@ def test_solid_handle_node_handle():
     result = _deserialize_json(test_str, legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
+
+
+def test_pipeline_snapshot_job_snapshot():
+    @pipeline
+    def my_pipeline():
+        pass
+
+    # serialize in current code
+    test_snap = JobSnapshot.from_pipeline_def(my_pipeline)
+    test_str = serialize_dagster_namedtuple(test_snap)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    _whitelist_for_serdes(legacy_env)(ConfigSchemaSnapshot)
+    _whitelist_for_serdes(legacy_env)(DependencyStructureSnapshot)
+    _whitelist_for_serdes(legacy_env)(ModeDefSnap)
+    _whitelist_for_serdes(legacy_env)(SolidDefinitionsSnapshot)
+    _whitelist_for_serdes(legacy_env)(DagsterTypeNamespaceSnapshot)
+    _whitelist_for_serdes(legacy_env)(ConfigTypeSnap)
+    _whitelist_for_serdes(legacy_env)(ConfigTypeKind)
+    _whitelist_for_serdes(legacy_env)(ConfigScalarKind)
+    _whitelist_for_serdes(legacy_env)(ConfigFieldSnap)
+    _whitelist_for_serdes(legacy_env)(DagsterTypeSnap)
+    _whitelist_for_serdes(legacy_env)(DagsterTypeKind)
+    _whitelist_for_serdes(legacy_env)(LoggerDefSnap)
+    _whitelist_for_serdes(legacy_env)(ResourceDefSnap)
+
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineSnapshot(
+        namedtuple(
+            "_PipelineSnapshot",
+            "name description tags config_schema_snapshot dagster_type_namespace_snapshot "
+            "solid_definitions_snapshot dep_structure_snapshot mode_def_snaps lineage_snapshot "
+            "graph_def_name",
+        )
+    ):
+        pass
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, PipelineSnapshot)
+    assert result.name == test_snap.name
