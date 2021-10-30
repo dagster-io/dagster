@@ -4,6 +4,7 @@ import time
 
 import pytest
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
@@ -458,3 +459,77 @@ def test_k8s_executor_resource_requirements(
 
         updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
         assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
+
+
+def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_image": dagster_docker_image,
+                        "image_pull_policy": image_pull_policy(),
+                        "env_config_maps": ["dagster-pipeline-env"]
+                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
+                    }
+                }
+            },
+        },
+    )
+
+    pipeline_name = "retry_pipeline"
+    with get_test_project_external_pipeline_hierarchy(
+        dagster_instance_for_k8s_run_launcher, pipeline_name
+    ) as (
+        workspace,
+        location,
+        _repo,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="k8s",
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline, run_config, "k8s", None, None
+            ).execution_plan_snapshot,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+        )
+
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
+
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
+
+        assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+        stats = dagster_instance_for_k8s_run_launcher.get_run_stats(run.run_id)
+        assert stats.steps_succeeded == 1
+
+        all_logs = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+
+        assert DagsterEventType.STEP_START in [
+            event.dagster_event.event_type for event in all_logs if event.is_dagster_event
+        ]
+
+        assert DagsterEventType.STEP_UP_FOR_RETRY in [
+            event.dagster_event.event_type for event in all_logs if event.is_dagster_event
+        ]
+
+        assert DagsterEventType.STEP_RESTARTED in [
+            event.dagster_event.event_type for event in all_logs if event.is_dagster_event
+        ]
+
+        assert DagsterEventType.STEP_SUCCESS in [
+            event.dagster_event.event_type for event in all_logs if event.is_dagster_event
+        ]

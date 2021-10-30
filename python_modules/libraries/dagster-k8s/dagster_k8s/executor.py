@@ -140,6 +140,21 @@ class K8sStepHandler(StepHandler):
     def _batch_api(self):
         return self._fixed_k8s_client_batch_api or kubernetes.client.BatchV1Api()
 
+    def _get_k8s_step_job_name(self, step_handler_context):
+        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+
+        name_key = get_k8s_job_name(
+            step_handler_context.execute_step_args.pipeline_run_id,
+            step_key,
+        )
+
+        if step_handler_context.execute_step_args.known_state:
+            retry_state = step_handler_context.execute_step_args.known_state.get_retry_state()
+            if retry_state.get_attempt_count(step_key):
+                return "dagster-job-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
+
+        return "dagster-job-%s" % (name_key)
+
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
 
@@ -148,12 +163,8 @@ class K8sStepHandler(StepHandler):
         ), "Launching multiple steps is not currently supported"
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
-        pod_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
+        pod_name = job_name
 
         args = step_handler_context.execute_step_args.get_command_args()
 
@@ -204,11 +215,7 @@ class K8sStepHandler(StepHandler):
         ), "Launching multiple steps is not currently supported"
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
 
         job = self._batch_api.read_namespaced_job(namespace=self._job_namespace, name=job_name)
         if job.status.failed:
@@ -230,13 +237,8 @@ class K8sStepHandler(StepHandler):
         assert (
             len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
         ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
 
         delete_job(job_name=job_name, namespace=self._job_namespace)
         return []
