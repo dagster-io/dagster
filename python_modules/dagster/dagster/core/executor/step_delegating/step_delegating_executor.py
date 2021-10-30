@@ -55,7 +55,7 @@ class StepDelegatingExecutor(Executor):
                 pipeline_run_id=plan_context.pipeline_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
                 instance_ref=plan_context.plan_data.instance.get_ref(),
-                retry_mode=self.retries,
+                retry_mode=self.retries.for_inner_plan(),
                 known_state=active_execution.get_known_state(),
             ),
             step_tags={step.key: step.tags for step in steps},
