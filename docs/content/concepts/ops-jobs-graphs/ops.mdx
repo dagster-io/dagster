@@ -29,7 +29,7 @@ Ops are Dagster's atomic unit of computation. Individual ops should perform rela
 - Query an API and store the result in a data warehouse.
 - Send an email or Slack message.
 
-The op as computational unit enables many useful features for dataflow programming:
+The op as computational unit enables many useful features for data orchestration:
 
 - **Flexible execution strategies**: Data pipelines are frequently developed locally and later deployed to production. Ops represent sealed units of logic independent of pipeline execution strategy, making the transition from development to production painless. Collections of ops (i.e. [Jobs](/concepts/ops-jobs-graphs/jobs-graphs)) can be passed to an appropriate [Executor](/deployment/executors) for single-process execution or distribution across a cluster.
 - **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs) analogous to the arguments and return value(s) of a Python function. However, op inputs/outputs can be more richly annotated than Python function arguments. This annotation can instruct Dagster's engines how to validate, cache, serialize, and otherwise manage data as it flows between ops.
