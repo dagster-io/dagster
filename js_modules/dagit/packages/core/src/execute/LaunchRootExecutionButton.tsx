@@ -47,7 +47,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
       config={{
         icon: 'open_in_new',
         onClick: onLaunch,
-        title: 'Launch Execution',
+        title: 'Launch Run',
         disabled: props.disabled || !canLaunchPipelineExecution,
         tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
       }}
