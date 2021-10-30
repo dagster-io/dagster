@@ -52,7 +52,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -81,7 +87,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -100,7 +112,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -129,7 +147,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -149,7 +173,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -163,7 +193,8 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ template "dagster.fullname" . }}-flower-service
-                port: {{ .Values.flower.service.port }}
+                port:
+                  number: {{ .Values.flower.service.port }}
               {{- else }}
               serviceName: {{ template "dagster.fullname" . }}-flower-service
               servicePort: {{ .Values.flower.service.port }}
@@ -177,7 +208,13 @@ spec:
               {{- if $apiIsStable }}
               service:
                 name: {{ .serviceName }}
-                port: {{ .servicePort }}
+                port:
+                  {{- $portType := typeOf .servicePort }}
+                  {{- if eq $portType "string" }}
+                  name: {{ .servicePort }}
+                  {{- else }}
+                  number: {{ .servicePort }}
+                  {{- end }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
