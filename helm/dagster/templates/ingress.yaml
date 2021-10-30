@@ -53,12 +53,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -88,12 +83,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -113,12 +103,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -148,12 +133,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -174,12 +154,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
@@ -209,12 +184,7 @@ spec:
               service:
                 name: {{ .serviceName }}
                 port:
-                  {{- $portType := typeOf .servicePort }}
-                  {{- if eq $portType "string" }}
-                  name: {{ .servicePort }}
-                  {{- else }}
-                  number: {{ .servicePort }}
-                  {{- end }}
+                  {{- include "ingress.service.port" . | indent 16 }}
               {{- else }}
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
