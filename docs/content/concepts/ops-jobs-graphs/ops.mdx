@@ -1,11 +1,11 @@
 ---
 title: Ops | Dagster
-description: Ops are the functional unit of computation in Dagster and contain the core logic of your orchestration graph.
+description: Ops are the atomic unit of computation in Dagster and contain the core logic of your orchestration graph.
 ---
 
 # Ops
 
-Ops are the functional unit of work in Dagster. An op's responsibility is to read its inputs, perform an action, and emit outputs. Multiple ops can be connected to create a [Job](/concepts/ops-jobs-graphs/jobs-graphs).
+Ops are the functional unit of work in Dagster. Multiple ops can be connected to create a [Job or Graph](/concepts/ops-jobs-graphs/jobs-graphs).
 
 <Image alt="ops" src="/images/solids.png" width={3200} height={1040} />
 
@@ -13,30 +13,29 @@ Ops are the functional unit of work in Dagster. An op's responsibility is to rea
 
 | Name                                    | Description                                                                                                                                                                                     |
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="op" decorator />      | The decorator used to define ops. The decorated function is called the `compute_fn`. The decorator returns an <PyObject object="OpDefinition" />.                                               |
-| <PyObject object="In" />                | Ins define the inputs to an op compute function. These are defined on the `ins` argument to the <PyObject object="op" decorator/> decorator.                                                    |
-| <PyObject object="Out" />               | Outs define the outputs of an op compute function. These are defined on the `outs` argument to the <PyObject object="op" displayText="op" decorator/> decorator.                                |
-| <PyObject object="OpExecutionContext"/> | An optional first argument to a op's compute function, providing access to Dagster system information such as resources, logging, and the underlying Dagster instance.                          |
-| <PyObject object="OpDefinition"  />     | Class for ops. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="op" decorator /> which returns an <PyObject object="OpDefinition" />. |
+| <PyObject object="op" decorator />      | A decorator used to define ops. Returns an <PyObject object="OpDefinition" />. The decorated function is called the "compute function".                                              |
+| <PyObject object="In" />                | An input to to an op. Defined on the `ins` argument to the <PyObject object="op" decorator/> decorator.                                                    |
+| <PyObject object="Out" />               | An output of an op. Defined on the `out` argument to the <PyObject object="op" displayText="op" decorator/> decorator.                                |
+| <PyObject object="OpExecutionContext"/> | An object exposing Dagster system APIs for resource access, logging, and more. Can be injected into an op by specifying `context` as the first argument of the compute function.                           |
+| <PyObject object="OpDefinition"  />     | Class for ops. You will rarely want to instantiate this class directly. Instead, you should use the <PyObject object="op" decorator />. |
 
 ## Overview
 
-Ops are used to define computations. Ops can later be assembled into [Jobs](/concepts/ops-jobs-graphs/jobs-graphs). Ops generally perform one specific action and are used for batch computations. For example, you can use an op to:
+Ops are Dagster's atomic unit of computation. Individual ops should perform relatively simple tasks. Collections of ops can then be assembled into [Jobs or Graphs](/concepts/ops-jobs-graphs/jobs-graphs) to perform more complex tasks. Some examples of tasks appropriate for a single op:
 
-- Derive a data set from some other data sets.
+- Add computed columns to a dataframe.
 - Execute a database query.
 - Initiate a Spark job in a remote cluster.
 - Query an API and store the result in a data warehouse.
 - Send an email or Slack message.
 
-Depending on how you execute a job, Dagster can run all the ops in the job within the same process or isolate them in different processes.
+The op as computational unit enables many useful features for dataflow programming:
 
-Ops have several important properties:
-
-- **Inputs and Outputs**: Ops have defined [inputs and outputs](#inputs-and-outputs), which can be optionally typed. These types are validated at runtime.
-- **Configurable**: Ops can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
-- **Emit an Event Stream**: Ops can emit a stream of structured events, such as AssetMaterializations. These events can be viewed in [Dagit](/concepts/dagit/dagit), Dagster's UI tool.
-- **Individually testable**: See the [testing page](/concepts/testing) for more detail.
+- **Flexible execution strategies**: Data pipelines are frequently developed locally and later deployed to production. Ops represent sealed units of logic independent of pipeline execution strategy, making the transition from development to production painless. Collections of ops (i.e. [Jobs](/concepts/ops-jobs-graphs/jobs-graphs)) can be passed to an appropriate [Executor](/deployment/executors) for single-process execution or distribution across a cluster.
+- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs) analogous to the arguments and return value(s) of a Python function. However, op inputs/outputs can be more richly annotated than Python function arguments. This annotation can instruct Dagster's engines how to validate, cache, serialize, and otherwise manage data as it flows between ops.
+- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and "configuration" values independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Op configuration values can be defined and annotated in much the same way as inputs and outputs.
+- **Event streams**: Ops emit a stream of [Events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default (e.g. indicating the start of an op's execution), but op authors are additionally given access to an event API. This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of pipeline execution and data asset production.
+- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [Resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
 ---
 
