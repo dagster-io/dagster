@@ -143,7 +143,9 @@ Run launcher
 
 .. autoclass:: DefaultRunLauncher
 
-.. currentmodule:: dagster_graphql.launcher
+.. currentmodule:: dagster.grpc.types
+
+.. autoclass:: ExecuteRunArgs
 
 See also: :py:class:`dagster_k8s.K8sRunLauncher`.
 
@@ -185,3 +187,12 @@ Exception handling
 .. currentmodule:: dagster.core.errors
 
 .. autofunction:: user_code_error_boundary
+
+CLI
+---
+
+.. currentmodule:: dagster
+
+.. click:: dagster.cli.api:api_cli
+   :prog: dagster api
+   :nested:

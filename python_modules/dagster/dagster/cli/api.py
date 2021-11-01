@@ -22,23 +22,43 @@ from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
 
 
-@click.group(name="api")
+@click.group(
+    name="api",
+    help=(
+        "These commands are intended to support internal use cases. Users should generally not "
+        "invoke these commands interactively."
+    ),
+)
 def api_cli():
     """
-    [INTERNAL] These commands are intended to support internal use cases. Users should generally
-    not invoke these commands interactively.
+    These commands are intended to support internal use cases. Users should generally not invoke
+    these commands interactively.
     """
 
 
 @api_cli.command(
     name="execute_run",
     help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
+        "This is an internal utility used by Dagster components like RunLaunchers when executing "
+        "runs across process boundaries."
     ),
 )
-@click.argument("input_json", type=click.STRING)
+@click.argument(
+    "input_json",
+    type=click.STRING,
+)
 def execute_run_command(input_json):
+    """Execute a Dagster run.
+
+    This CLI API is invoked on the other side of process boundaries when it's desirable that a
+    Dagster run execution be isolated from the process requesting that the run be executed, for
+    example in implementations of :py:class:`dagster.core.launcher.RunLauncher` that launch
+    runs in separate processes.
+
+    Args:
+        input_json (str): JSON that can be deserialized into an instance of
+            :py:class:`dagster.grpc.types.ExecuteRunArgs`.
+    """
     with capture_interrupts():
         args = deserialize_as(input_json, ExecuteRunArgs)
         recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
@@ -88,8 +108,8 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
 @api_cli.command(
     name="resume_run",
     help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
+        "This is an internal utility used by Dagster components such as RunLaunchers when resuming "
+        "runs across process boundaries."
     ),
 )
 @click.argument("input_json", type=click.STRING)
@@ -203,8 +223,8 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
 @api_cli.command(
     name="execute_step",
     help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
+        "This is an internal utility used by Dagster components such as Executors when executing "
+        "steps across process boundaries."
     ),
 )
 @click.argument("input_json", type=click.STRING)
@@ -265,7 +285,7 @@ def execute_step_command(input_json):
                 click.echo(line)
 
 
-@api_cli.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
+@api_cli.command(name="grpc", help="Serves the Dagster inter-process API over GRPC.")
 @click.option(
     "--port",
     "-p",
