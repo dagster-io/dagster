@@ -38,6 +38,9 @@ if __name__ == "__main__":
             # apache-airflow-providers-docker required for DockerOperator
             "apache-airflow-providers-docker==2.2.0",
             "apache-airflow-providers-sqlite==2.0.1",
+            "apache-airflow-providers-apache-hive==2.0.2",
+            # required by HiveCliHook
+            "pandas",
         ],
         extras_require={
             "test": [],

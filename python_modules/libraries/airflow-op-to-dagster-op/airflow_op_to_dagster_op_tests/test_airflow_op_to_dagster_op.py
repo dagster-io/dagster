@@ -5,6 +5,7 @@ import responses
 from airflow.operators.bash_operator import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.sqlite.operators.sqlite import SqliteOperator
+from airflow.providers.apache.hive.operators.hive import HiveOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.models import Connection
 from dagster import build_op_context, job
@@ -125,3 +126,35 @@ def test_sqlite_operator(capsys):
 
     out, _ = capsys.readouterr()
     assert "DROP TABLE IF EXISTS normalized_cereals" in out
+
+
+def test_hive_operator(capsys):
+    # TODO: Hive CLI needs to be installed
+    with TemporaryDirectory() as tmpdir:
+        connections = [
+            Connection(
+                conn_id=f'hive_conn',
+                host=f"https://mycoolwebsite.com",
+            )
+        ]
+
+        hql_task = operator_to_op(
+            HiveOperator(
+                task_id="sqlite_task",
+                hql="DROP TABLE IF EXISTS normalized_cereals",
+                hive_cli_conn_id="hive_conn",
+                mapred_job_name="foo",  # TODO: mandatory param
+            ),
+            connections=connections,
+        )
+
+        @job
+        def my_job():
+            hql_task()
+
+        my_job.execute_in_process()
+
+    out, _ = capsys.readouterr()
+    assert "DROP TABLE IF EXISTS normalized_cereals" in out
+    print(out)
+    assert False
