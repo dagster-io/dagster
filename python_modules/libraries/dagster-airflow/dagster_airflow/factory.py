@@ -251,7 +251,7 @@ def make_airflow_dag(
     op_kwargs=None,
     pipeline_name=None,
 ):
-    """Construct an Airflow DAG corresponding to a given Dagster pipeline.
+    """Construct an Airflow DAG corresponding to a given Dagster job/pipeline.
 
     Tasks in the resulting DAG will execute the Dagster logic they encapsulate as a Python
     callable, run by an underlying :py:class:`PythonOperator <airflow:PythonOperator>`. As a
@@ -324,7 +324,7 @@ def make_airflow_dag_for_operator(
     op_kwargs=None,
     pipeline_name=None,
 ):
-    """Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
+    """Construct an Airflow DAG corresponding to a given Dagster job/pipeline and custom operator.
 
     `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
 
@@ -427,7 +427,7 @@ def make_airflow_dag_containerized(
     op_kwargs=None,
     pipeline_name=None,
 ):
-    """Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
+    """Construct a containerized Airflow DAG corresponding to a given Dagster job/pipeline.
 
     Tasks in the resulting DAG will execute the Dagster logic they encapsulate  using a subclass of
     :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`. As a

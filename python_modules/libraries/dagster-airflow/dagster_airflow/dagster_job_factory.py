@@ -47,7 +47,7 @@ def make_dagster_job_from_airflow_dag(
             framework authors to enforce unique op names within a repo.
 
     Returns:
-        job_def (JobDefinition): The generated Dagster job
+        JobDefinition: The generated Dagster job
 
     """
     pipeline_def = make_dagster_pipeline_from_airflow_dag(
