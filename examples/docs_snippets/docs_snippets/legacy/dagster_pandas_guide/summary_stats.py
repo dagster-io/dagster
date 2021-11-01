@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster import OutputDefinition, pipeline, solid
+from dagster import Out, job, op
 from dagster.utils import script_relative_path
 from dagster_pandas import create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
@@ -23,13 +23,7 @@ SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
 # end_summary
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            name="summary_stats_trip_dataframe", dagster_type=SummaryStatsTripDataFrame
-        )
-    ]
-)
+@op(out=Out(SummaryStatsTripDataFrame))
 def load_summary_stats_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
@@ -38,6 +32,6 @@ def load_summary_stats_trip_dataframe() -> DataFrame:
     )
 
 
-@pipeline
-def summary_stats_pipeline():
+@job
+def summary_stats_trip():
     load_summary_stats_trip_dataframe()

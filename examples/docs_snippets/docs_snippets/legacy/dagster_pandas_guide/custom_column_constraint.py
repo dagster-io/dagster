@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster import OutputDefinition, pipeline, solid
+from dagster import Out, job, op
 from dagster.utils import script_relative_path
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from dagster_pandas.constraints import (
@@ -42,9 +42,7 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
 # end_custom_col
 
 
-@solid(
-    output_defs=[OutputDefinition(name="custom_trip_dataframe", dagster_type=CustomTripDataFrame)],
-)
+@op(out=Out(CustomTripDataFrame))
 def load_custom_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
@@ -53,6 +51,6 @@ def load_custom_trip_dataframe() -> DataFrame:
     )
 
 
-@pipeline
-def custom_column_constraint_pipeline():
+@job
+def custom_column_constraint_trip():
     load_custom_trip_dataframe()
