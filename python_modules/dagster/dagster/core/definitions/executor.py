@@ -20,11 +20,12 @@ from .definition_config_schema import convert_user_facing_definition_config_sche
 class ExecutorRequirement(Enum):
     """
     An ExecutorDefinition can include a list of requirements that the system uses to
-    check whether the executor will be able to work for a particular pipeline execution.
+    check whether the executor will be able to work for a particular job/pipeline execution.
     """
 
     # The passed in IPipeline must be reconstructable across process boundaries
-    RECONSTRUCTABLE_PIPELINE = "RECONSTRUCTABLE_PIPELINE"
+    RECONSTRUCTABLE_PIPELINE = "RECONSTRUCTABLE_PIPELINE"  # This needs to still exist for folks who may have written their own executor
+    RECONSTRUCTABLE_JOB = "RECONSTRUCTABLE_PIPELINE"
 
     # The DagsterInstance must be loadable in a different process
     NON_EPHEMERAL_INSTANCE = "NON_EPHEMERAL_INSTANCE"
@@ -35,7 +36,7 @@ class ExecutorRequirement(Enum):
 
 def multiple_process_executor_requirements():
     return [
-        ExecutorRequirement.RECONSTRUCTABLE_PIPELINE,
+        ExecutorRequirement.RECONSTRUCTABLE_JOB,
         ExecutorRequirement.NON_EPHEMERAL_INSTANCE,
         ExecutorRequirement.PERSISTENT_OUTPUTS,
     ]
@@ -308,7 +309,7 @@ def check_cross_process_constraints(init_context):
     check.inst_param(init_context, "init_context", InitExecutorContext)
     requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
-    if ExecutorRequirement.RECONSTRUCTABLE_PIPELINE in requirements_lst:
+    if ExecutorRequirement.RECONSTRUCTABLE_JOB in requirements_lst:
         _check_intra_process_pipeline(init_context.pipeline)
 
     if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
