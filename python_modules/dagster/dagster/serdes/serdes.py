@@ -446,10 +446,15 @@ def register_serdes_tuple_fallbacks(
     """
 
     for class_name, klass in fallback_map.items():
+        serializer: Type["NamedTupleSerializer"] = DefaultNamedTupleSerializer
+
+        # If there is a registered serializer for the fallback, use that serializer.
+        if klass and klass.__name__ in whitelist_map.tuples:
+            serializer = whitelist_map.tuples[klass.__name__][1]
         whitelist_map.register_tuple(
             class_name,
             klass,
-            DefaultNamedTupleSerializer,
+            serializer,
             signature(klass.__new__).parameters,
         )
 
