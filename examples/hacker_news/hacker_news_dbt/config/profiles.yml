@@ -1,7 +1,7 @@
 hacker_news_dbt:
-  target: dev
+  target: staging
   outputs:
-    dev:
+    staging:
       type: snowflake
       account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
 
@@ -9,9 +9,9 @@ hacker_news_dbt:
       user: "{{ env_var('SNOWFLAKE_USER') }}"
       password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
 
-      database: DEMO_DB
+      database: DEMO_DB_STAGING
       warehouse: TINY_WAREHOUSE
-      schema: hacker_news_dbt_dev
+      schema: hackernews
       client_session_keep_alive: False
 
     prod:
@@ -24,5 +24,5 @@ hacker_news_dbt:
 
       database: DEMO_DB
       warehouse: TINY_WAREHOUSE
-      schema: hacker_news_dbt
+      schema: hackernews
       client_session_keep_alive: False
