@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.13.3
+
+### Bugfixes
+
+- [dagster-k8s] Fixed a bug that caused retries to occur twice with the `k8s_job_executor`
+
 # 0.13.2
 
 ### New
