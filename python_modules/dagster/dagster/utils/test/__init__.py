@@ -11,9 +11,9 @@ from dagster import (
     DependencyDefinition,
     Failure,
     ModeDefinition,
+    NodeInvocation,
     PipelineDefinition,
     RepositoryDefinition,
-    SolidInvocation,
     TypeCheck,
     check,
     execute_pipeline,
@@ -86,7 +86,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
 
 
 def _dep_key_of(solid):
-    return SolidInvocation(solid.definition.name, solid.name)
+    return NodeInvocation(solid.definition.name, solid.name)
 
 
 def build_pipeline_with_input_stubs(pipeline_def, inputs):

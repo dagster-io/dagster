@@ -4,9 +4,9 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     List,
+    NodeInvocation,
     OutputDefinition,
     PipelineDefinition,
-    SolidInvocation,
     String,
     execute_pipeline,
     solid,
@@ -44,7 +44,7 @@ def test_string_from_aliased_inputs():
     pipeline = PipelineDefinition(
         solid_defs=[str_as_input],
         name="test",
-        dependencies={SolidInvocation("str_as_input", alias="aliased"): {}},
+        dependencies={NodeInvocation("str_as_input", alias="aliased"): {}},
     )
 
     result = execute_pipeline(
