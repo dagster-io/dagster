@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import NamedTuple, Dict, Any
+from typing import Any, Dict, NamedTuple
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -10,9 +10,9 @@ from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
+    register_serdes_tuple_fallbacks,
     unpack_inner_value,
     whitelist_for_serdes,
-    register_serdes_tuple_fallbacks,
 )
 from dagster.serdes.serdes import WhitelistMap
 
