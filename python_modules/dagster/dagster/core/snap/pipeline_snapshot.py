@@ -101,7 +101,7 @@ def _pipeline_snapshot_from_storage(
     if graph_def_name is None:
         graph_def_name = name
 
-    return PipelineSnapshot(
+    return JobSnapshot(
         name=name,
         description=description,
         tags=tags,
@@ -115,10 +115,9 @@ def _pipeline_snapshot_from_storage(
     )
 
 
-@whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
-class JobSnapshot(
+class PipelineSnapshot(
     NamedTuple(
-        "_JobSnapshot",
+        "_PipelineSnapshot",
         [
             ("name", str),
             ("description", Optional[str]),
@@ -146,7 +145,7 @@ class JobSnapshot(
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
     ):
-        return super(JobSnapshot, cls).__new__(
+        return super(PipelineSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -173,7 +172,7 @@ class JobSnapshot(
         )
 
     @classmethod
-    def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
+    def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "JobSnapshot":
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
@@ -186,7 +185,7 @@ class JobSnapshot(
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
 
-        return PipelineSnapshot(
+        return JobSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
             tags=pipeline_def.tags,
@@ -256,12 +255,13 @@ class JobSnapshot(
         return toposort_flatten(upstream_outputs)
 
 
-register_serdes_tuple_fallbacks({"PipelineSnapshot": JobSnapshot})
-
-
 # Keep around as superclass so as to not need to rename every invocation / type annotation of PipelineSnapshot.
-class PipelineSnapshot(JobSnapshot):
+@whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
+class JobSnapshot(PipelineSnapshot):
     pass
+
+
+register_serdes_tuple_fallbacks({"PipelineSnapshot": JobSnapshot})
 
 
 def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):
