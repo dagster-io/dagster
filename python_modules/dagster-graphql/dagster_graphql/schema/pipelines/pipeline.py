@@ -139,6 +139,7 @@ class GraphenePipelineRun(graphene.Interface):
     status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
+    jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -176,6 +177,7 @@ class GrapheneRun(graphene.ObjectType):
     status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
+    jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -228,6 +230,9 @@ class GrapheneRun(graphene.ObjectType):
         return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run)
 
     def resolve_pipelineName(self, _graphene_info):
+        return self._pipeline_run.pipeline_name
+
+    def resolve_jobName(self, _graphene_info):
         return self._pipeline_run.pipeline_name
 
     def resolve_solidSelection(self, _graphene_info):
@@ -579,6 +584,12 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_isJob(self, _graphene_info):
         return self._external_pipeline.is_job
+
+
+class GrapheneJob(GraphenePipeline):
+    class Meta:
+        interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
+        name = "Job"
 
 
 @lru_cache(maxsize=32)

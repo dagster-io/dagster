@@ -61,7 +61,7 @@ To retrieve a list of all runs, use the `runsOrError` query.
         ... on Runs {
           results {
             runId
-            pipelineName
+            jobName
             status
             runConfigYaml
             stats {
@@ -89,7 +89,7 @@ You may eventually accumulate too many runs to return in one query. The `runsOrE
         ... on Runs {
           results {
             runId
-            pipelineName
+            jobName
             status
             runConfigYaml
             stats {
@@ -121,7 +121,7 @@ For example, the following query will return all failed runs:
         ... on Runs {
           results {
             runId
-            pipelineName
+            jobName
             status
             runConfigYaml
             stats {
@@ -205,7 +205,7 @@ For this query, the required arguments are:
           selector: {
             repositoryLocationName: $repositoryLocationName
             repositoryName: $repositoryName
-            pipelineName: $jobName
+            jobName: $jobName
           }
           runConfigData: $runConfigData
         }

@@ -83,6 +83,18 @@ class GraphenePipelineSelector(graphene.InputObjectType):
         name = "PipelineSelector"
 
 
+class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
+    pipelineName = graphene.String()
+    jobName = graphene.String()
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    solidSelection = graphene.List(graphene.NonNull(graphene.String))
+
+    class Meta:
+        description = """This type represents the fields necessary to identify a job or pipeline"""
+        name = "JobOrPipelineSelector"
+
+
 class GrapheneRepositorySelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
@@ -154,10 +166,10 @@ class GrapheneExecutionMetadata(graphene.InputObjectType):
 
 class GrapheneExecutionParams(graphene.InputObjectType):
     selector = graphene.NonNull(
-        GraphenePipelineSelector,
-        description="""Defines the pipeline and solid subset that should be executed.
+        GrapheneJobOrPipelineSelector,
+        description="""Defines the job / pipeline and solid subset that should be executed.
         All subsequent executions in the same run group (for example, a single-step
-        re-execution) are scoped to the original run's pipeline selector and solid
+        re-execution) are scoped to the original run's selector and solid
         subset.""",
     )
     runConfigData = graphene.Field(GrapheneRunConfigData)
