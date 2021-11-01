@@ -23,7 +23,7 @@ def hacker_news_legacy():
     ]
     sensors = [
         make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
-        make_hn_tables_updated_sensor(pipeline_name="download_pipeline", mode="prod"),
+        make_hn_tables_updated_sensor(pipeline_name="story_recommender", mode="prod"),
         make_hn_tables_updated_sensor(pipeline_name="dbt_pipeline", mode="prod"),
     ]
 
