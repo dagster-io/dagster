@@ -23,19 +23,19 @@ snowflake_manager = snowflake_io_manager.configured(
 DEV_MODE = ModeDefinition(
     "dev",
     description="This mode reads from the same warehouse as the prod pipeline, but does all writes locally.",
-    resource_defs=dict(
+    resource_defs={
         **RESOURCES_LOCAL,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    ),
+    },
 )
 
 PROD_MODE = ModeDefinition(
     "prod",
     description="This mode writes some outputs to the production data warehouse.",
-    resource_defs=dict(
+    resource_defs={
         **RESOURCES_PROD,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    ),
+    },
 )
 
 
