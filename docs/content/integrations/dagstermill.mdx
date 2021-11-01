@@ -70,8 +70,8 @@ What's more, every time we run the notebook from Dagit, a copy of the notebook _
 <Image
 alt="iris_output_notebook.png"
 src="/images/guides/data_science/iris_output_notebook.png"
-width={1680}
-height={921}
+width={3580}
+height={2030}
 />
 
 The output notebook is both a rich log of notebook computations as they actually occurred, including all inline plots and results, and also an important tool for interactive debugging. When a notebook fails, the output notebook can be used to determine the cause of the failure.
@@ -195,9 +195,7 @@ height={874}
 We'll use the following config:
 
 ```yaml file=/legacy/data_science/iris_classify.yaml
-intermediate_storage:
-  filesystem:
-solids:
+ops:
   download_file:
     config:
       path: "iris.data"
@@ -252,7 +250,6 @@ In our notebook, we'll stub the context as follows (in the `parameters` cell):
 
 ```python
 import dagstermill
-from dagster import Field, Int, SolidDefinition
 
 context = dagstermill.get_context(op_config=3)
 ```
