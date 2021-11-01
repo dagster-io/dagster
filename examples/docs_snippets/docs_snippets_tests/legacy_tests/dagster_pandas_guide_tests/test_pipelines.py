@@ -3,9 +3,7 @@ from docs_snippets.legacy.dagster_pandas_guide.core_trip import core_trip
 from docs_snippets.legacy.dagster_pandas_guide.custom_column_constraint import (
     custom_column_constraint_trip,
 )
-from docs_snippets.legacy.dagster_pandas_guide.shape_constrained_trip import (
-    shape_constrained_trip,
-)
+from docs_snippets.legacy.dagster_pandas_guide.shape_constrained_trip import shape_constrained_trip
 from docs_snippets.legacy.dagster_pandas_guide.summary_stats import summary_stats_trip
 
 
