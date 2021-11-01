@@ -23,12 +23,15 @@ from dagster import (
     pipeline,
     resource,
     solid,
+    Tuple,
+    String,
 )
 from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,
     PythonObjectDagsterType,
     resolve_dagster_type,
+    ListType,
 )
 
 
@@ -645,3 +648,14 @@ def test_make_usable_as_dagster_type_called_twice():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         make_python_type_usable_as_dagster_type(AType, BDagsterType)
+
+
+def test_tuple_inner_types_not_mutable():
+    tuple_type = Tuple[List[String]]
+    inner_types_1st_call = list(tuple_type.inner_types)
+    inner_types = list(tuple_type.inner_types)
+    assert inner_types_1st_call == inner_types, "inner types mutated on subsequent calls"
+
+    assert isinstance(inner_types[0], ListType)
+    assert inner_types[0].inner_type == inner_types[1]
+    assert len(inner_types) == 2
