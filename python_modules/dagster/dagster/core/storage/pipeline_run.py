@@ -2,13 +2,19 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Dict, Any
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    unpack_inner_value,
+    whitelist_for_serdes,
+    register_serdes_tuple_fallbacks,
+)
+from dagster.serdes.serdes import WhitelistMap
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -107,6 +113,22 @@ class PipelineRunSerializer(DefaultNamedTupleSerializer):
         }
         # called by the serdes layer, delegates to helper method with expanded kwargs
         return pipeline_run_from_storage(**unpacked_dict)
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # persist using legacy name PipelineRun
+        storage["__class__"] = "PipelineRun"
+        return storage
 
 
 def pipeline_run_from_storage(
@@ -215,7 +237,6 @@ def pipeline_run_from_storage(
     )
 
 
-@whitelist_for_serdes(serializer=PipelineRunSerializer)
 class PipelineRun(
     namedtuple(
         "_PipelineRun",
@@ -375,12 +396,18 @@ class PipelineRun(
         return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
 
 
+@whitelist_for_serdes(serializer=PipelineRunSerializer)
 class DagsterRun(PipelineRun):
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.
 
     Subclasses PipelineRun for backcompat purposes. DagsterRun is the actual initialized class used throughout the system.
     """
+
+
+# DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version of
+# Dagster, but is read back in as a DagsterRun.
+register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 
 
 @whitelist_for_serdes
