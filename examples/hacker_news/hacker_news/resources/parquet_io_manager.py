@@ -3,26 +3,23 @@ from typing import Union
 
 import pandas
 import pyspark
-from dagster import AssetKey, EventMetadataEntry, IOManager, OutputContext, check, io_manager
+from dagster import AssetKey, EventMetadataEntry, Field, IOManager, OutputContext, check, io_manager
+from dagster.seven.temp_dir import get_system_temp_directory
 
 
-class ParquetIOManager(IOManager):
+class PartitionedParquetIOManager(IOManager):
     """
     This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
+
+    It stores outputs for different partitions in different filepaths.
 
     Downstream ops can either load this dataframe into a spark session or simply retrieve a path
     to where the data is stored.
     """
 
-    def _get_path(self, context: OutputContext):
-
-        base_path = context.resource_config["base_path"]
-
-        return os.path.join(base_path, f"{context.name}.pq")
-
-    def get_output_asset_key(self, context: OutputContext):
-        return AssetKey([*context.resource_config["base_path"].split("://"), context.name])
+    def __init__(self, base_path):
+        self._base_path = base_path
 
     def handle_output(
         self, context: OutputContext, obj: Union[pandas.DataFrame, pyspark.sql.DataFrame]
@@ -54,42 +51,35 @@ class ParquetIOManager(IOManager):
             "for this input either in the solid signature or on the corresponding InputDefinition."
         )
 
-
-class PartitionedParquetIOManager(ParquetIOManager):
-    """
-    This works similarly to the normal ParquetIOManager, but stores outputs for different partitions
-    in different filepaths.
-    """
-
     def _get_path(self, context: OutputContext):
-
-        base_path = context.resource_config["base_path"]
-
         # filesystem-friendly string that is scoped to the start/end times of the data slice
-        partition_str = f"{context.resources.partition_start}_{context.resources.partition_end}"
+        partition_bounds = context.resources.partition_bounds
+        partition_str = partition_bounds["start"] + "_" + partition_bounds["end"]
         partition_str = "".join(c for c in partition_str if c == "_" or c.isdigit())
 
         # if local fs path, store all outptus in same directory
-        if "://" not in base_path:
-            return os.path.join(base_path, f"{context.name}-{partition_str}.pq")
+        if "://" not in self._base_path:
+            return os.path.join(self._base_path, f"{context.name}-{partition_str}.pq")
         # otherwise seperate into different dirs
-        return os.path.join(base_path, context.name, f"{partition_str}.pq")
+        return os.path.join(self._base_path, context.name, f"{partition_str}.pq")
+
+    def get_output_asset_key(self, context: OutputContext):
+        return AssetKey([*self._base_path.split("://"), context.name])
 
     def get_output_asset_partitions(self, context: OutputContext):
-        return set([context.resources.partition_start])
+        return set([context.resources.partition_bounds["start"]])
 
 
 @io_manager(
-    config_schema={"base_path": str},
-    required_resource_keys={"pyspark"},
+    config_schema={"base_path": Field(str, is_required=False)},
+    required_resource_keys={"pyspark", "partition_bounds"},
 )
-def parquet_io_manager(_):
-    return ParquetIOManager()
+def local_partitioned_parquet_io_manager(init_context):
+    return PartitionedParquetIOManager(
+        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
+    )
 
 
-@io_manager(
-    config_schema={"base_path": str},
-    required_resource_keys={"pyspark", "partition_start", "partition_end"},
-)
-def partitioned_parquet_io_manager(_):
-    return PartitionedParquetIOManager()
+@io_manager(required_resource_keys={"pyspark", "partition_bounds", "s3_bucket"})
+def s3_partitioned_parquet_io_manager(init_context):
+    return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)

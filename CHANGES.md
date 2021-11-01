@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.13.3
+
+### Bugfixes
+
+- [dagster-k8s] Fixed a bug that caused retries to occur twice with the `k8s_job_executor`
+
 # 0.13.2
 
 ### New
@@ -13,12 +19,12 @@
 - There is now a `resources_config` argument on `build_solid_context`. The config argument has been renamed to `solid_config`.
 - [helm] When deploying Redis using the Dagster helm chart, by default the new cluster will not require authentication to start a connection to it.
 - [dagster-k8s] The component name on Kubernetes jobs for run and step workers is now `run_worker` and `step_worker`, respectively.
-- Launching a run within a container will now always use the same Python environment that was originally used to load the run’s job. This allows you to you use a single image containing multiple Python environments in different code locations, with each code location specifying a different Python environment.
 - Improved performance for rendering the Gantt chart on the Run page for runs with very long event logs.
 
 ### Bugfixes
 
 - Fixed a bug where decorating a job with a hook would create a pipeline.
+- Fixed a bug where providing default logger config to a job would break with a confusing error.
 - Fixed a bug with retrieving output results from a mapped input on `execute_in_process`
 - Fixed a bug where schedules referencing a job were not creating runs using that job’s default run config.
 - [dagster-k8s] Fixed a bug where the retry mode was not being passed along through the k8s executor.

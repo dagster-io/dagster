@@ -129,7 +129,7 @@ PREDEFINED_QUERIES = {
 @click.command(
     name="ui",
     help=(
-        "Run a GraphQL query against the dagster interface to a specified repository or pipeline."
+        "Run a GraphQL query against the dagster interface to a specified repository or pipeline/job."
         "\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
     )
     + (
@@ -171,8 +171,8 @@ PREDEFINED_QUERIES = {
     "--output",
     "-o",
     type=click.STRING,
-    help="A file path to store the GraphQL response to. This flag is useful when making pipeline "
-    "execution queries, since pipeline execution causes logs to print to stdout and stderr.",
+    help="A file path to store the GraphQL response to. This flag is useful when making pipeline/job "
+    "execution queries, since pipeline/job execution causes logs to print to stdout and stderr.",
 )
 @click.option(
     "--ephemeral-instance",

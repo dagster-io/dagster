@@ -11,7 +11,7 @@ def s3_client():
 class FixedS3PickleIOManager(IOManager):
     def load_input(self, context):
         key = context.upstream_output.metadata["key"]
-        bucket = context.resource_config["bucket"]
+        bucket = context.resources.s3_bucket
         return pickle.loads(s3_client().get_object(Bucket=bucket, Key=key)["Body"].read())
 
     def handle_output(self, context, obj):
@@ -26,9 +26,9 @@ class FixedS3PickleIOManager(IOManager):
         client.put_object(Bucket=bucket, Key=key, Body=pickled_obj)
 
     def get_output_asset_key(self, context):
-        return AssetKey(["s3", context.resource_config["bucket"], context.metadata["key"]])
+        return AssetKey(["s3", context.resources.s3_bucket, context.metadata["key"]])
 
 
-@io_manager(config_schema={"bucket": str})
+@io_manager(required_resource_keys={"s3_bucket"})
 def fixed_s3_pickle_io_manager(_) -> FixedS3PickleIOManager:
     return FixedS3PickleIOManager()

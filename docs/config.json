@@ -1,5 +1,5 @@
 {
-  "index_name": "Testing",
+  "index_name": "oss_docs",
   "start_urls": [
     {
       "url": "https://docs.dagster.io/_apidocs/",

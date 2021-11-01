@@ -42,8 +42,8 @@ from .dependency import (
     IDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInvocation,
     SolidInputHandle,
-    SolidInvocation,
 )
 from .hook import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -127,7 +127,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         node_defs: Optional[List[NodeDefinition]] = None,
         dependencies: Optional[
-            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
@@ -338,7 +338,7 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(self) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
+    def dependencies(self) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property
@@ -487,7 +487,7 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(resource_defs_with_defaults, executor_def),
+                self._get_config_schema(resource_defs_with_defaults, executor_def, logger_defs),
                 config,
                 job_name,
                 self.name,
@@ -529,6 +529,7 @@ class GraphDefinition(NodeDefinition):
         self,
         resource_defs: Optional[Dict[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
+        logger_defs: Optional[Dict[str, LoggerDefinition]],
     ) -> ConfigType:
         from .job import JobDefinition
 
@@ -536,7 +537,11 @@ class GraphDefinition(NodeDefinition):
             JobDefinition(
                 name=self.name,
                 graph_def=self,
-                mode_def=ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def]),
+                mode_def=ModeDefinition(
+                    resource_defs=resource_defs,
+                    executor_defs=[executor_def],
+                    logger_defs=logger_defs,
+                ),
             )
             .get_run_config_schema("default")
             .run_config_schema_type

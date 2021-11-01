@@ -54,7 +54,7 @@ class _Op:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-        self.ins = ins
+        self.ins = check.opt_nullable_dict_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:

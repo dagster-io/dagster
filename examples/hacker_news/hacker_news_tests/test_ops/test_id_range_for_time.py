@@ -1,10 +1,11 @@
-from dagster import ResourceDefinition, build_op_context
+from dagster import build_op_context
 from hacker_news.ops.id_range_for_time import (
     binary_search_nearest_left,
     binary_search_nearest_right,
     id_range_for_time,
 )
 from hacker_news.resources.hn_resource import hn_snapshot_client
+from hacker_news.resources.partition_bounds import partition_bounds
 
 
 def test_binary_search():
@@ -40,8 +41,12 @@ def test_hello():
     """
     with build_op_context(
         resources={
-            "partition_start": ResourceDefinition.hardcoded_resource("2020-12-30 00:00:00"),
-            "partition_end": ResourceDefinition.hardcoded_resource("2020-12-30 01:00:00"),
+            "partition_bounds": partition_bounds.configured(
+                {
+                    "start": "2020-12-30 00:00:00",
+                    "end": "2020-12-30 01:00:00",
+                }
+            ),
             "hn_client": hn_snapshot_client,
         }
     ) as context:

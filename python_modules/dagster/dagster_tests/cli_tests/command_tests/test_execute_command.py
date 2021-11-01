@@ -461,8 +461,8 @@ def test_multiproc():
         assert "RUN_SUCCESS" in add_result.output
 
 
-def test_multiproc_invalid():
-    # force ephemeral instance by removing out DAGSTER_HOME
+def test_multiproc_ephemeral_directory():
+    # force ephemeral directory by removing out DAGSTER_HOME
     runner = CliRunner(env={"DAGSTER_HOME": None})
     add_result = runner.invoke(
         pipeline_execute_command,
@@ -477,10 +477,10 @@ def test_multiproc_invalid():
             "multi_mode_with_resources",  # pipeline name
         ],
     )
-    # which is invalid for multiproc
+    # which is valid for multiproc
     assert add_result.exit_code == 0
     # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
-    assert re.match(r"Using temporary directory [a-zA-Z0-9/_\\]+ for storage", add_result.output)
+    assert re.match("Using temporary directory", add_result.output)
 
 
 def test_tags_pipeline_or_job():

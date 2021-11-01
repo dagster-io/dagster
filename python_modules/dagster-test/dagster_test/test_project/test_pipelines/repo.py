@@ -448,7 +448,7 @@ def define_step_retry_pipeline():
 
         raise RetryRequested()
 
-    @pipeline(mode_defs=celery_mode_defs())
+    @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
     def retry_pipeline():
         fail_first_time()
 

@@ -1,6 +1,6 @@
 import os
 
-from dagster import DependencyDefinition, GraphDefinition, SolidInvocation, op
+from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
 from dagster.utils.yaml_utils import load_yaml_from_path
 
 
@@ -32,7 +32,7 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
             op_deps_entry[input_name] = DependencyDefinition(
                 solid=input_data["op"], output=input_data.get("output", "result")
             )
-        deps[SolidInvocation(name=def_name, alias=alias)] = op_deps_entry
+        deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
 
     return GraphDefinition(
         name=yaml_data["name"],

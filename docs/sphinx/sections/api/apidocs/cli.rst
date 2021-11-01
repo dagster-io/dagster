@@ -15,8 +15,8 @@ Dagster CLI
    :prog: dagster instance
    :nested:
 
-.. click:: dagster.cli.pipeline:pipeline_cli
-   :prog: dagster pipeline
+.. click:: dagster.cli.job:job_cli
+   :prog: dagster job
    :nested:
 
 .. click:: dagster.cli.run:run_cli
@@ -40,3 +40,10 @@ Dagster CLI
 
 .. click:: dagit.cli:cli
    :prog: dagit
+
+Legacy APIs
+-----------
+
+.. click:: dagster.cli.pipeline:pipeline_cli
+   :prog: dagster pipeline
+   :nested:

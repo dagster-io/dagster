@@ -6,7 +6,7 @@ from dagster.core.definitions.decorators.op import op
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
-    SolidInvocation,
+    NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.graph import GraphDefinition
@@ -110,7 +110,7 @@ def build_source_assets_by_key(
 
 def build_op_deps(
     assets: List[OpDefinition], source_paths: AbstractSet[AssetKey]
-) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
+) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
     for asset_op in assets:
         for output_def in asset_op.output_defs:
@@ -124,7 +124,7 @@ def build_op_deps(
 
             op_outputs_by_asset[logical_asset] = (asset_op, output_def.name)
 
-    op_defs: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]] = {}
+    op_defs: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
     for asset_op in assets:
         op_defs[asset_op.name] = {}
         for input_def in asset_op.input_defs:
