@@ -10,6 +10,7 @@ from dagster.serdes.errors import DeserializationError, SerdesUsageError, Serial
 from dagster.serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
+    EnumSerializer,
     WhitelistMap,
     _deserialize_json,
     _serialize_dagster_namedtuple,
@@ -17,6 +18,7 @@ from dagster.serdes.serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
     pack_inner_value,
+    register_serdes_enum_fallbacks,
     serialize_value,
     unpack_inner_value,
 )
@@ -555,3 +557,46 @@ def test_long_int():
     ser_x = _serialize_dagster_namedtuple(x, test_map)
     roundtrip_x = _deserialize_json(ser_x, test_map)
     assert x.num == roundtrip_x.num
+
+
+def test_enum_backcompat():
+    test_env = WhitelistMap.create()
+
+    class MyEnumSerializer(EnumSerializer):
+        @classmethod
+        def value_from_storage_str(cls, storage_str, klass):
+            return getattr(klass, storage_str)
+
+        @classmethod
+        def value_to_storage_str(cls, value, whitelist_map, descent_path):
+            val_as_str = str(value)
+            actual_enum_val = val_as_str.split(".")[1:]
+            backcompat_name = (
+                "OldEnum"  # Simulate changing the storage name to some legacy backcompat name
+            )
+            return ".".join([backcompat_name, *actual_enum_val])
+
+    @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)
+    class MyEnum(Enum):
+        RED = "color.red"
+        BLUE = "color.red"
+
+    # Ensure that serdes roundtrip preserves value
+    register_serdes_enum_fallbacks({"OldEnum": MyEnum}, whitelist_map=test_env)
+
+    my_enum = MyEnum("color.red")
+    enum_json = serialize_value(my_enum, whitelist_map=test_env)
+    result = _deserialize_json(enum_json, test_env)
+    assert result == my_enum
+
+    # ensure that "legacy" environment can correctly interpret enum stored under legacy name.
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class OldEnum(Enum):
+        RED = "color.red"
+        BLUE = "color.blue"
+
+    result = _deserialize_json(enum_json, legacy_env)
+    old_enum = OldEnum("color.red")
+    assert old_enum == result
