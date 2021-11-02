@@ -104,7 +104,7 @@ def main():
 @click.option(
     "--module-name", "-m", type=click.STRING, help="The name of the source module", required=True
 )
-@click.option("--pipeline-name", type=click.STRING, help="The name of the name")
+@click.option("--pipeline-name", type=click.STRING, help="The name of the pipeline")
 @click.option(
     "--output-path",
     "-o",
