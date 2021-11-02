@@ -35,6 +35,8 @@ class PipelineRunStatus(Enum):
     CANCELED = "CANCELED"
 
 
+RunStatus = Enum('RunStatus', {key.value:key.value for key in PipelineRunStatus})
+
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
     PipelineRunStatus.STARTING,

@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import requests.exceptions
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import RunStatus
 from dagster.utils.backcompat import experimental_class_warning
 from gql import Client, gql
 from gql.transport import Transport
@@ -12,8 +12,8 @@ from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
-    CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
-    GET_PIPELINE_RUN_STATUS_QUERY,
+    CLIENT_SUBMIT_RUN_MUTATION,
+    GET_RUN_STATUS_QUERY,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
 )
@@ -183,13 +183,10 @@ class DagsterGraphQLClient:
                 else {},
             }
 
-        res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
-        query_result = res_data["launchPipelineExecution"]
+        res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_RUN_MUTATION, variables)
+        query_result = res_data["launchRun"]
         query_result_type = query_result["__typename"]
-        if (
-            query_result_type == "LaunchRunSuccess"
-            or query_result_type == "LaunchPipelineRunSuccess"
-        ):
+        if query_result_type == "LaunchRunSuccess":
             return query_result["run"]["runId"]
         elif query_result_type == "InvalidStepError":
             raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
@@ -199,10 +196,7 @@ class DagsterGraphQLClient:
                 invalid_output_name=query_result["invalidOutputName"],
             )
             raise DagsterGraphQLClientError(query_result_type, body=error_info)
-        elif (
-            query_result_type == "RunConfigValidationInvalid"
-            or query_result_type == "PipelineConfigValidationInvalid"
-        ):
+        elif query_result_type == "RunConfigValidationInvalid":
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
@@ -299,13 +293,13 @@ class DagsterGraphQLClient:
                 The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
             DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
                 This indicates that a conflicting job run already exists in run storage.
-            DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
+            DagsterGraphQLClientError("RunConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the job
             DagsterGraphQLClientError("JobNotFoundError", message): the requested job does not exist
             DagsterGraphQLClientError("PythonError", message): an internal framework error occurred
 
         Returns:
-            str: run id of the submitted pipeline run
+            str: run id of the submitted job run
         """
         return self._core_submit_execution(
             pipeline_name=job_name,
@@ -318,28 +312,26 @@ class DagsterGraphQLClient:
             is_using_job_op_graph_apis=True,
         )
 
-    def get_run_status(self, run_id: str) -> PipelineRunStatus:
-        """Get the status of a given Pipeline Run
+    def get_run_status(self, run_id: str) -> RunStatus:
+        """Get the status of a given job Run
 
         Args:
-            run_id (str): run id of the requested pipeline run.
+            run_id (str): run id of the requested run.
 
         Raises:
             DagsterGraphQLClientError("PipelineNotFoundError", message): if the requested run id is not found
             DagsterGraphQLClientError("PythonError", message): on internal framework errors
 
         Returns:
-            PipelineRunStatus: returns a status Enum describing the state of the requested pipeline run
+            RunStatus: returns a status Enum describing the state of the requested pipeline/job run
         """
         check.str_param(run_id, "run_id")
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
-            GET_PIPELINE_RUN_STATUS_QUERY, {"runId": run_id}
-        )
-        query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
+        res_data: Dict[str, Dict[str, Any]] = self._execute(GET_RUN_STATUS_QUERY, {"runId": run_id})
+        query_result: Dict[str, Any] = res_data["runOrError"]
         query_result_type: str = query_result["__typename"]
-        if query_result_type == "PipelineRun" or query_result_type == "Run":
-            return PipelineRunStatus(query_result["status"])
+        if query_result_type == "Run":
+            return RunStatus(query_result["status"])
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 

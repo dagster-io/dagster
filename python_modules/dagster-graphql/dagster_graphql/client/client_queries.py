@@ -1,6 +1,6 @@
-CLIENT_SUBMIT_PIPELINE_RUN_MUTATION = """
+CLIENT_SUBMIT_RUN_MUTATION = """
 mutation($executionParams: ExecutionParams!) {
-  launchPipelineExecution(executionParams: $executionParams) {
+  launchRun(executionParams: $executionParams) {
     __typename
 
     ... on InvalidStepError {
@@ -10,7 +10,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchRunSuccess {
       run {
         runId
       }
@@ -21,10 +21,10 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
-    ... on PipelineRunConflict {
+    ... on RunConflict {
       message
     }
-    ... on PipelineConfigValidationInvalid {
+    ... on RunConfigValidationInvalid {
       errors {
         __typename
         message
@@ -93,14 +93,14 @@ mutation ($repositoryLocationName: String!) {
 }
 """
 
-GET_PIPELINE_RUN_STATUS_QUERY = """
+GET_RUN_STATUS_QUERY = """
 query($runId: ID!) {
-  pipelineRunOrError(runId: $runId) {
+  runOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on Run {
         status
     }
-    ... on PipelineRunNotFoundError {
+    ... on RunNotFoundError {
       message
     }
     ... on PythonError {
