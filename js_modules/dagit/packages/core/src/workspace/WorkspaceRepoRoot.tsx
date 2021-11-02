@@ -88,7 +88,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         title={<Heading>{path}</Heading>}
         tags={<TagWIP icon="folder">Repository</TagWIP>}
         tabs={
-          <Tabs large={false} selectedTabId={activeTab()}>
+          <Tabs size="small" selectedTabId={activeTab()}>
             {tabs.map(({href, text}) => (
               <Tab key={text} id={text} title={text} to={href} />
             ))}
