@@ -27,6 +27,13 @@ from dagster_airflow_tests.marks import requires_airflow_db
             "--pipeline-name",
             "resource_pipeline",
         ],
+        ["--module-name", "dagster_test.graph_job_op_toys.log_spew", "--job-name", "log_spew"],
+        [
+            "--module-name",
+            "dagster_test.graph_job_op_toys.many_events",
+            "--job-name",
+            "many_events",
+        ],
     ],
 )
 def test_build_dags(clean_airflow_home, cli_args):

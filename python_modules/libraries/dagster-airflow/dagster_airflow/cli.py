@@ -6,6 +6,7 @@ import yaml
 from dagster import check
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
@@ -31,14 +32,14 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     return run_config
 
 
-def construct_scaffolded_file_contents(module_name, pipeline_name, run_config):
+def construct_scaffolded_file_contents(module_name, job_name, run_config):
     yesterday = datetime.now() - timedelta(1)
 
     printer = IndentingStringIoPrinter(indent_level=4)
     printer.line("'''")
     printer.line(
-        "The airflow DAG scaffold for {module_name}.{pipeline_name}".format(
-            module_name=module_name, pipeline_name=pipeline_name
+        "The airflow DAG scaffold for {module_name}.{job_name}".format(
+            module_name=module_name, job_name=job_name
         )
     )
     printer.blank_line()
@@ -83,12 +84,10 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, run_config):
     printer.blank_line()
     printer.line("dag, tasks = make_airflow_dag(")
     with printer.with_indent():
-        printer.comment(
-            "NOTE: you must ensure that {module_name} is ".format(module_name=module_name)
-        )
+        printer.comment(f"NOTE: you must ensure that {module_name} is ")
         printer.comment("installed or available on sys.path, otherwise, this import will fail.")
-        printer.line("module_name='{module_name}',".format(module_name=module_name))
-        printer.line("pipeline_name='{pipeline_name}',".format(pipeline_name=pipeline_name))
+        printer.line(f"module_name='{module_name}',")
+        printer.line(f"job_name='{job_name}',")
         printer.line("run_config=yaml.safe_load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(")")
@@ -105,7 +104,7 @@ def main():
 @click.option(
     "--module-name", "-m", type=click.STRING, help="The name of the source module", required=True
 )
-@click.option("--pipeline-name", type=click.STRING, help="The name of the pipeline", required=True)
+@click.option("--pipeline-name", type=click.STRING, help="The name of the pipeline")
 @click.option(
     "--output-path",
     "-o",
@@ -133,8 +132,19 @@ def main():
     help="Specify a preset to use for this pipeline. Presets are defined on pipelines under "
     "preset_defs.",
 )
-def scaffold(module_name, pipeline_name, output_path, config, preset):
+@click.option("--job-name", type=click.STRING, help="The name of the job")
+def scaffold(module_name, pipeline_name, output_path, config, preset, job_name):
     """Creates a DAG file for a specified dagster pipeline"""
+    job_name = canonicalize_backcompat_args(
+        new_val=job_name,
+        new_arg="job_name",
+        old_val=pipeline_name,
+        old_arg="pipeline_name",
+        breaking_version="future versions",
+        coerce_old_to_new=lambda val: val,
+    )
+
+    check.invariant(job_name is not None, "You must specify either --job-name or --pipeline-name.")
     check.tuple_param(config, "config", of_type=str)
     check.invariant(isinstance(config, tuple))
     check.invariant(
@@ -142,15 +152,15 @@ def scaffold(module_name, pipeline_name, output_path, config, preset):
         "You must specify --output-path or set AIRFLOW_HOME to use this script.",
     )
 
-    run_config = construct_environment_yaml(preset, config, pipeline_name, module_name)
-    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, run_config)
+    run_config = construct_environment_yaml(preset, config, job_name, module_name)
+    file_contents = construct_scaffolded_file_contents(module_name, job_name, run_config)
 
     # Ensure output_path/dags exists
     dags_path = os.path.join(os.path.expanduser(output_path), "dags")
     if not os.path.isdir(dags_path):
         os.makedirs(dags_path)
 
-    dag_file = os.path.join(os.path.expanduser(output_path), "dags", pipeline_name + ".py")
+    dag_file = os.path.join(os.path.expanduser(output_path), "dags", job_name + ".py")
 
     click.echo("Wrote DAG scaffold to file: %s" % dag_file)
 

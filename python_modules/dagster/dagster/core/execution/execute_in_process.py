@@ -43,7 +43,7 @@ def core_execute_in_process(
             pipeline_def=pipeline_def,
             run_config=run_config,
             mode=mode_def.name,
-            tags=pipeline_def.tags,
+            tags={**pipeline_def.tags},
         )
 
         _execute_run_iterable = ExecuteRunWithPlanIterable(

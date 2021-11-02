@@ -23,7 +23,9 @@ from dagster import (
     default_executors,
     file_relative_path,
     fs_io_manager,
+    job,
     lambda_solid,
+    op,
     pipeline,
     repository,
     resource,
@@ -204,6 +206,34 @@ def demo_pipeline_gcs():
 )
 def demo_error_pipeline():
     error_solid()
+
+
+# TODO: migrate test_project to crag
+@op
+def emit_airflow_execution_date_op(context):
+    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
+    yield AssetMaterialization(
+        asset_key="airflow_execution_date",
+        metadata={
+            "airflow_execution_date": airflow_execution_date,
+        },
+    )
+    yield Output(airflow_execution_date)
+
+
+@op()
+def error_op():
+    raise Exception("Unusual error")
+
+
+@job
+def demo_error_job():
+    error_solid()
+
+
+@job
+def demo_airflow_execution_date_job():
+    emit_airflow_execution_date_op()
 
 
 @pipeline(
@@ -615,6 +645,10 @@ def define_demo_execution_repo():
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
                 "volume_mount_pipeline": define_volume_mount_pipeline,
+            },
+            "jobs": {
+                "demo_error_job": demo_error_job,
+                "demo_airflow_execution_date_job": demo_airflow_execution_date_job,
             },
             "schedules": define_schedules(),
         }
