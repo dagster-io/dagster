@@ -301,9 +301,7 @@ def test_launch_docker_invalid_image():
 
             with pytest.raises(
                 Exception,
-                match=re.escape(
-                    "Docker image name _invalid_format_image is not correctly formatted"
-                ),
+                match=re.escape("invalid reference format"),
             ):
                 instance.launch_run(run.run_id, workspace)
 

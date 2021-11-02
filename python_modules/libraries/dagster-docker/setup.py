@@ -31,6 +31,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
+        install_requires=[f"dagster{pin}", "docker"],
         zip_safe=False,
     )

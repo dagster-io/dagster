@@ -90,7 +90,6 @@ if __name__ == "__main__":
             "docker": ["docker"],
             "test": [
                 "astroid>=2.3.3,<2.5",
-                "black==20.8b1",
                 "coverage==5.3",
                 "docker",
                 "flake8>=3.7.8",

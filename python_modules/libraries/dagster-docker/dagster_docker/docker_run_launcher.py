@@ -12,7 +12,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 
@@ -100,8 +100,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         if not docker_image:
             raise Exception("No docker image specified by the instance config or repository")
-
-        validate_docker_image(docker_image)
 
         if not context.resume_from_failure:
             command = ExecuteRunArgs(

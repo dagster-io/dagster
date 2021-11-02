@@ -14,7 +14,7 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandler,
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config
 
 
 @executor(
@@ -134,8 +134,6 @@ class DockerStepHandler(StepHandler):
 
         if not step_image:
             raise Exception("No docker image specified by the executor config or repository")
-
-        validate_docker_image(step_image)
 
         try:
             step_container = self._create_step_container(

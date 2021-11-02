@@ -46,6 +46,7 @@ def main(quiet):
 
     install_targets += [
         "awscli",
+        "black==20.8b1",
         "-e python_modules/dagster[test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",

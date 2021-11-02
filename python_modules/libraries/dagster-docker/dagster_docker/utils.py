@@ -1,5 +1,4 @@
 from dagster import Array, Field, Permissive, StringSource, check
-from docker_image import reference
 
 DOCKER_CONFIG_SCHEMA = {
     "image": Field(
@@ -60,15 +59,3 @@ def validate_docker_config(network, networks, container_kwargs):
             raise Exception(
                 "'network' cannot be used in 'container_kwargs'. Use the 'network' config key instead."
             )
-
-
-def validate_docker_image(docker_image):
-    try:
-        # validate that the docker image name is valid
-        reference.Reference.parse(docker_image)
-    except Exception as e:
-        raise Exception(
-            "Docker image name {docker_image} is not correctly formatted".format(
-                docker_image=docker_image
-            )
-        ) from e
