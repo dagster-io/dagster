@@ -1,11 +1,11 @@
 from datetime import datetime
 
-from dagster import OutputDefinition, pipeline, solid
+from dagster import Out, job, op
 from dagster.utils import script_relative_path
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
 
-# start_core_trip_pipeline_marker_0
+# start_core_trip_marker_0
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name="TripDataFrame",
     columns=[
@@ -20,10 +20,10 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.boolean_column("was_member"),
     ],
 )
-# end_core_trip_pipeline_marker_0
+# end_core_trip_marker_0
 
-# start_core_trip_pipeline_marker_1
-@solid(output_defs=[OutputDefinition(name="trip_dataframe", dagster_type=TripDataFrame)])
+# start_core_trip_marker_1
+@op(out=Out(TripDataFrame))
 def load_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
@@ -32,9 +32,9 @@ def load_trip_dataframe() -> DataFrame:
     )
 
 
-# end_core_trip_pipeline_marker_1
+# end_core_trip_marker_1
 
 
-@pipeline
-def trip_pipeline():
+@job
+def core_trip():
     load_trip_dataframe()

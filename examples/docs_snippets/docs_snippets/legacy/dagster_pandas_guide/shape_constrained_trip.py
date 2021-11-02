@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster import OutputDefinition, pipeline, solid
+from dagster import Out, job, op
 from dagster.utils import script_relative_path
 from dagster_pandas import RowCountConstraint, create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
@@ -12,13 +12,7 @@ ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(
 # end_create_type
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            name="shape_constrained_trip_dataframe", dagster_type=ShapeConstrainedTripDataFrame
-        )
-    ]
-)
+@op(out=Out(ShapeConstrainedTripDataFrame))
 def load_shape_constrained_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
@@ -27,6 +21,6 @@ def load_shape_constrained_trip_dataframe() -> DataFrame:
     )
 
 
-@pipeline
-def shape_constrained_pipeline():
+@job
+def shape_constrained_trip():
     load_shape_constrained_trip_dataframe()
