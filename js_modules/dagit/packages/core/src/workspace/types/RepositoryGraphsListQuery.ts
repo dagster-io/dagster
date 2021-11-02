@@ -54,6 +54,8 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_pipeline
   id: string;
   description: string | null;
   name: string;
+  isJob: boolean;
+  graphName: string;
 }
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository {
