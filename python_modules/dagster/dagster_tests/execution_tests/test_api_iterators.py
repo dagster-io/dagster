@@ -123,7 +123,7 @@ def test_execute_run_iterator():
         with pytest.raises(
             check.CheckError,
             match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-            r" PipelineRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
                 pipeline_run.run_id
             ),
         ):
@@ -226,7 +226,7 @@ def test_execute_run_bad_state():
         with pytest.raises(
             check.CheckError,
             match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-            r" PipelineRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
                 pipeline_run.run_id
             ),
         ):

@@ -3,6 +3,7 @@ import os
 import re
 import sqlite3
 from collections import namedtuple
+from enum import Enum
 from gzip import GzipFile
 
 import pytest
@@ -24,13 +25,14 @@ from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster.serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
     _whitelist_for_serdes,
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
+    serialize_value,
 )
 from dagster.utils.test import copy_directory
 
@@ -550,8 +552,28 @@ def test_pipeline_run_dagster_run():
     ):
         pass
 
-    _whitelist_for_serdes(legacy_env)(PipelineRunStatus)
+    @_whitelist_for_serdes(legacy_env)  # pylint: disable=unused-variable
+    class PipelineRunStatus(Enum):
+        QUEUED = "QUEUED"
+        NOT_STARTED = "NOT_STARTED"
 
     result = _deserialize_json(test_str, legacy_env)
     assert isinstance(result, PipelineRun)
     assert result.pipeline_name == test_run.pipeline_name
+
+
+def test_pipeline_run_status_dagster_run_status():
+    # serialize in current code
+    test_status = DagsterRunStatus("QUEUED")
+    test_str = serialize_value(test_status)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineRunStatus(Enum):
+        QUEUED = "QUEUED"
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, PipelineRunStatus)
+    assert result.value == test_status.value

@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -14,7 +14,7 @@ from dagster.serdes import (
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import WhitelistMap
+from dagster.serdes.serdes import EnumSerializer, WhitelistMap, register_serdes_enum_fallbacks
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -26,8 +26,23 @@ from .tags import (
 )
 
 
-@whitelist_for_serdes
-class PipelineRunStatus(Enum):
+class DagsterRunStatusSerializer(EnumSerializer):
+    @classmethod
+    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+        return getattr(klass, storage_str)
+
+    @classmethod
+    def value_to_storage_str(
+        cls, value: Enum, whitelist_map: WhitelistMap, descent_path: str
+    ) -> str:
+        enum_value = value.value
+        # Store DagsterRunStatus with backcompat name PipelineRunStatus
+        backcompat_name = "PipelineRunStatus"
+        return ".".join([backcompat_name, enum_value])
+
+
+@whitelist_for_serdes(serializer=DagsterRunStatusSerializer)
+class DagsterRunStatus(Enum):
     """The status of pipeline execution."""
 
     QUEUED = "QUEUED"
@@ -40,6 +55,9 @@ class PipelineRunStatus(Enum):
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
 
+
+PipelineRunStatus = DagsterRunStatus
+register_serdes_enum_fallbacks({"PipelineRunStatus": DagsterRunStatus})
 
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
