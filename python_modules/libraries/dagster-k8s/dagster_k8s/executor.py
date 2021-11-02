@@ -12,7 +12,6 @@ from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
-from dagster.utils.backcompat import experimental
 from dagster_k8s.launcher import K8sRunLauncher
 
 from .job import (
@@ -33,10 +32,9 @@ from .utils import delete_job
     ),
     requirements=multiple_process_executor_requirements(),
 )
-@experimental
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     """
-    Executor which launches steps as Kubernetes Jobs. This executor is experimental.
+    Executor which launches steps as Kubernetes Jobs.
 
     To use the `k8s_job_executor`, set it as the `executor_def` when defining a job:
 
@@ -106,7 +104,6 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     )
 
 
-@experimental
 class K8sStepHandler(StepHandler):
     @property
     def name(self):
