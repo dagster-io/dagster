@@ -528,7 +528,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         error = None
         try:
             location = self._create_location_from_origin(origin)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             warnings.warn(
                 "Error loading repository location {location_name}:{error_string}".format(

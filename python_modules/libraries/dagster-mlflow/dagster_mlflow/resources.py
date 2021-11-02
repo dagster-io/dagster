@@ -162,7 +162,7 @@ class MlFlow(metaclass=MlflowMeta):
                 f"Starting a new mlflow run with id {run.info.run_id} "
                 f"in experiment {self.experiment_name}"
             )
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             run = mlflow.active_run()
             if "is already active" not in str(ex):
                 raise (ex)

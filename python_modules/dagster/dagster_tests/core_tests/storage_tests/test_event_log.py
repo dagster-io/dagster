@@ -82,7 +82,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         storage = SqliteEventLogStorage(tmpdir_path)
         try:
             storage.get_logs_for_run_by_log_id("foo")
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception as exc:
             exceptions.put(exc)
             exc_info = sys.exc_info()
             traceback.print_tb(exc_info[2])

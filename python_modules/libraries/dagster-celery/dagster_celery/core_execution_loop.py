@@ -87,7 +87,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                             EngineEventData(marker_end=DELEGATE_MARKER),
                             step_handle=active_execution.get_step_by_key(step_key).handle,
                         )
-                    except Exception:  # pylint: disable=broad-except
+                    except Exception:
                         # We will want to do more to handle the exception here.. maybe subclass Task
                         # Certainly yield an engine or pipeline event
                         step_events = []

@@ -34,7 +34,7 @@ def capture_error(fn):
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
             return de_exception.error
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             return GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     return _fn

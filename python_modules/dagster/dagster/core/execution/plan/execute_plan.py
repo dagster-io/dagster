@@ -284,7 +284,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
             raise dagster_error
 
     # case (6) in top comment
-    except Exception as unexpected_exception:  # pylint: disable=broad-except
+    except Exception as unexpected_exception:
         step_context.capture_step_exception(unexpected_exception)
         yield step_failure_event_from_exc_info(
             step_context,

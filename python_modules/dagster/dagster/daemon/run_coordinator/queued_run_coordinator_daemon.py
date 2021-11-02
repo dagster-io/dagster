@@ -147,7 +147,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
             try:
                 self._dequeue_run(instance, run, workspace)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
                 message = (

@@ -340,7 +340,7 @@ def reconstructable(target):
             and inspect.getmodule(target).__name__ != "__main__"
         ):
             return ReconstructablePipeline.for_module(target.__module__, target.__name__)
-    except:  # pylint: disable=bare-except
+    except:
         pass
 
     python_file = get_python_file_from_target(target)

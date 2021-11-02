@@ -73,7 +73,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
     # try to load the pipeline definition early
     try:
         recon_pipeline.get_definition()
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         yield instance.report_engine_event(
             "Could not load pipeline definition.",
             pipeline_run,
@@ -92,7 +92,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             message="Run execution terminated by interrupt",
             pipeline_run=pipeline_run,
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         yield instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
             "rather than an error in user code.",
@@ -128,7 +128,7 @@ def _run_in_subprocess(
 
         pid = os.getpid()
 
-    except:  # pylint: disable=bare-except
+    except:
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
             serializable_error_info=serializable_error_info,
@@ -357,7 +357,7 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
             ),
             args.pipeline_snapshot_id,
         )
-    except:  # pylint: disable=bare-except
+    except:
         return ExecutionPlanSnapshotErrorData(
             error=serializable_error_info_from_exc_info(sys.exc_info())
         )

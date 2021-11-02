@@ -88,7 +88,7 @@ def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags
                 pass
             else:
                 check.invariant(False, f"Unexpected run status: {run.status}")
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(f"Hit error while monitoring run {run.run_id}: " f"{str(error_info)}")
             yield error_info

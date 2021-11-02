@@ -315,13 +315,13 @@ class DagsterKubernetesClient:
             errors = []
             try:
                 self.batch_api.delete_namespaced_job(name=job_name, namespace=namespace)
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:
                 errors.append(e)
 
             for pod_name in pod_names:
                 try:
                     self.core_api.delete_namespaced_pod(name=pod_name, namespace=namespace)
-                except Exception as e:  # pylint: disable=broad-except
+                except Exception as e:
                     errors.append(e)
 
             if len(errors) > 0:

@@ -68,7 +68,7 @@ def handle_schema_errors(conn, alembic_config, msg=None):
                 db_revision, head_revision = check_alembic_revision(alembic_config, conn)
         # If exceptions were raised during the revision check, we want to swallow them and
         # allow the original exception to fall through
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             pass
 
         if db_revision != head_revision:

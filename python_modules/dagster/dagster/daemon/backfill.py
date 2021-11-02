@@ -105,7 +105,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                     )
                     instance.update_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
                     yield
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             instance.update_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)

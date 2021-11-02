@@ -227,7 +227,7 @@ async def _handle_async_results(results: AsyncGenerator, operation_id: str, webs
                 payload["errors"] = [format_graphql_error(err) for err in result.errors]
 
             await _send_message(websocket, GraphQLWS.DATA, payload, operation_id)
-    except Exception as error:  # pylint: disable=broad-except
+    except Exception as error:
         if not isinstance(error, GraphQLError):
             error = GraphQLError(str(error))
 

@@ -94,7 +94,7 @@ def docker_service_up(docker_compose_file, service_name):
                 ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
                 env=env,
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             pass
 
         subprocess.check_output(
@@ -113,7 +113,7 @@ def docker_service_up(docker_compose_file, service_name):
                 ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
                 env=env,
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             pass
 
 

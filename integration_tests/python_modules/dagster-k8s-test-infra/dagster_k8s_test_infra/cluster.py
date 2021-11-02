@@ -152,7 +152,7 @@ def local_port_forward_postgres(namespace):
                 )
                 conn.close()
                 break
-            except:  # pylint: disable=bare-except, broad-except
+            except:
                 time.sleep(1)
                 continue
 
@@ -363,7 +363,7 @@ def check_export_runs(instance):
 
         try:
             export_run(instance, run, output_file)
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             print(f"Hit an error exporting dagster-debug {output_file}: {e}")
             continue
 

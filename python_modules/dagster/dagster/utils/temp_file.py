@@ -12,7 +12,7 @@ def _unlink_swallow_errors(path):
     check.str_param(path, "path")
     try:
         os.unlink(path)
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         pass
 
 

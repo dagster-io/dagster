@@ -189,7 +189,7 @@ class DockerStepHandler(StepHandler):
         try:
             container = client.containers.get(container_name)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             return [
                 DagsterEvent(
                     event_type_value=DagsterEventType.STEP_FAILURE.value,
@@ -208,7 +208,7 @@ class DockerStepHandler(StepHandler):
 
         try:
             container_info = container.wait(timeout=0.1)
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             return [
                 DagsterEvent(
                     event_type_value=DagsterEventType.STEP_FAILURE.value,
@@ -266,7 +266,7 @@ class DockerStepHandler(StepHandler):
                 )
             )
             container.stop()
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             events.append(
                 DagsterEvent(
                     event_type_value=DagsterEventType.ENGINE_EVENT.value,

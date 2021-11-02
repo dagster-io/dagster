@@ -59,7 +59,7 @@ def get_subset_external_pipeline(context, selector):
 
     try:
         subset_result = repository_location.get_subset_external_pipeline_result(selector)
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise UserFacingGraphQLError(
             GrapheneInvalidSubsetError(

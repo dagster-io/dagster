@@ -131,7 +131,7 @@ def test_thread_die_daemon(monkeypatch):
                 if iteration_ran["ran"] and status.healthy:
                     try:
                         controller.check_daemon_threads()  # Should eventually throw since the sensor thread is interrupted
-                    except Exception as e:  # pylint: disable=broad-except
+                    except Exception as e:
                         assert (
                             "Stopping dagster-daemon process since the following threads are no longer running: ['SENSOR']"
                             in str(e)
