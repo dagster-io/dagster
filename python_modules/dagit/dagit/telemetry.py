@@ -64,7 +64,7 @@ def upload_logs(stop_event, raise_errors=False):
                 in_progress = False
 
             stop_event.wait(600)  # Sleep for 10 minutes
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         if raise_errors:
             raise
 
@@ -107,6 +107,6 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
             if success:
                 os.remove(curr_full_path)
 
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         if raise_errors:
             raise

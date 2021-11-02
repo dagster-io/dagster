@@ -107,7 +107,7 @@ class CloudwatchLogsHandler(logging.Handler):
             logging.error(
                 "Attempted to log: {record}".format(record=seven.json.dumps(record.__dict__))
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             pass
         logging.exception(str(exc))
 

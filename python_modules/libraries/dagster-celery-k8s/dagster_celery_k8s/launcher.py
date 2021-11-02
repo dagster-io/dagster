@@ -314,7 +314,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                     cls=self.__class__,
                 )
             return termination_result
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._instance.report_engine_event(
                 message="Dagster Job was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,

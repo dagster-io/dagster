@@ -237,7 +237,7 @@ def execute_sensor_iteration(
                     job_state,
                     sensor_debug_crash_flags,
                 )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
@@ -365,7 +365,7 @@ def _evaluate_sensor(
                     run_id=run.run_id, sensor_name=external_sensor.name
                 )
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             context.logger.error(
                 f"Run {run.run_id} created successfully but failed to launch: " f"{str(error_info)}"

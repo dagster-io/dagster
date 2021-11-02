@@ -114,7 +114,7 @@ def ipc_write_stream(file_path):
     _send(file_path, IPCStartMessage())
     try:
         yield FileBasedWriteStream(file_path)
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         _send_error(file_path, sys.exc_info(), message=None)
     finally:
         _send(file_path, IPCEndMessage())

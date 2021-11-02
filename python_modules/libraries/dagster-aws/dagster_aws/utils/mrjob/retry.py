@@ -116,7 +116,7 @@ class RetryWrapper:
             while not self.__max_tries or tries < self.__max_tries:
                 try:
                     return f(*args, **kwargs)
-                except Exception as ex:  # pylint: disable=broad-except
+                except Exception as ex:
                     if self.__retry_if(ex) and (
                         tries < self.__max_tries - 1 or not self.__max_tries
                     ):

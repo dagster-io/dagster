@@ -213,7 +213,7 @@ def make_dagster_repo_from_airflow_dags_path(
             safe_mode=safe_mode,
             store_serialized_dags=store_serialized_dags,
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
 
     return make_dagster_repo_from_airflow_dag_bag(dag_bag, repo_name, use_airflow_template_context)

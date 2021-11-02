@@ -61,7 +61,7 @@ class DagsterDockerOperator(DockerOperator):
         if not self.docker_conn_id_set:
             try:
                 from_env().version()
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass
             else:
                 kwargs["docker_conn_id"] = True
@@ -255,7 +255,7 @@ class DagsterDockerOperator(DockerOperator):
             try:
                 events = [deserialize_json_to_dagster_namedtuple(line) for line in res if line]
 
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 raise AirflowException(
                     "Could not parse response {response}".format(response=repr(res))
                 )

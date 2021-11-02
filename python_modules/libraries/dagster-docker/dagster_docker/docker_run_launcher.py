@@ -175,7 +175,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client().containers.get(container_id)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             return None
 
     def can_terminate(self, run_id):

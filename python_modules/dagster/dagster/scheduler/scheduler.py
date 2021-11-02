@@ -95,7 +95,7 @@ def launch_scheduled_runs(
                 max_catchup_runs,
                 (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
@@ -307,7 +307,7 @@ def _schedule_runs_at_time(
             try:
                 instance.submit_run(run.run_id, workspace)
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 logger.error(
                     f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
@@ -363,7 +363,7 @@ def _create_scheduler_run(
             known_state=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         execution_plan_errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}

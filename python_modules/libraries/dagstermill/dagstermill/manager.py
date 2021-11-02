@@ -136,7 +136,7 @@ class Manager:
         try:
             instance_ref = unpack_value(instance_ref_dict)
             instance = DagsterInstance.from_ref(instance_ref)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err

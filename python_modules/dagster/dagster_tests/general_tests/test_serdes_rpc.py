@@ -62,7 +62,7 @@ def test_write_error_with_custom_message():
         with ipc_write_stream(filename) as stream:
             try:
                 raise Exception("uh oh")
-            except:  # pylint: disable=bare-except
+            except:
                 stream.send_error(sys.exc_info(), message="custom")
 
         messages = []

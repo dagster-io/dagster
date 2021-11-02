@@ -35,7 +35,7 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
         subprocess.check_output(
             ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         pass
 
     subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
@@ -57,7 +57,7 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
             subprocess.check_output(
                 ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             pass
 
 

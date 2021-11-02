@@ -181,7 +181,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                     startup_timeout=self._startup_timeout,
                 )
                 self._all_processes.append(server_process)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 server_process = serializable_error_info_from_exc_info(sys.exc_info())
                 new_server_id = None
 

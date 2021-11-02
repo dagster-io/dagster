@@ -182,7 +182,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
                 schedule_name=external_schedule.name,
                 scheduled_execution_time=schedule_time,
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             schedule_data = serializable_error_info_from_exc_info(sys.exc_info())
 
         return GrapheneTickEvaluation(schedule_data)
