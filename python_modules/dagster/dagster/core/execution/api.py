@@ -787,7 +787,7 @@ def pipeline_execution_iterator(
         pipeline_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
         if pipeline_context.raise_on_error:
             raise
-    except Exception:
+    except BaseException:
         pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
         if pipeline_context.raise_on_error:
             raise  # finally block will run before this is re-raised
