@@ -1221,6 +1221,9 @@ records = instance.get_event_records(
     def handle_new_event(self, event):
         run_id = event.run_id
 
+        if not event.is_dagster_event or not event.dagster_event.is_pipeline_event:
+            raise Exception("LOGGING EVENT FAILURE")
+
         self._event_storage.store_event(event)
 
         if event.is_dagster_event and event.dagster_event.is_pipeline_event:
