@@ -15,6 +15,8 @@ from dagster import (
     ModeDefinition,
     Optional,
     OutputDefinition,
+    String,
+    Tuple,
     TypeCheck,
     check_dagster_type,
     execute_pipeline,
@@ -23,15 +25,13 @@ from dagster import (
     pipeline,
     resource,
     solid,
-    Tuple,
-    String,
 )
 from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,
+    ListType,
     PythonObjectDagsterType,
     resolve_dagster_type,
-    ListType,
 )
 
 
