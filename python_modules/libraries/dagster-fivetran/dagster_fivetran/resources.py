@@ -24,7 +24,7 @@ FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_CONNECTOR_PATH = "v1/connectors/"
 
 # default polling interval (in seconds)
-DEFAULT_POLL_INTERVAL = 5
+DEFAULT_POLL_INTERVAL = 10
 
 
 class FivetranResource:
@@ -41,13 +41,13 @@ class FivetranResource:
         request_retry_delay: float = 0.25,
         log: logging.Logger = get_dagster_logger(),
     ):
-        self.auth = HTTPBasicAuth(api_key, api_secret)
-        self.disable_schedule_on_trigger = disable_schedule_on_trigger
+        self._auth = HTTPBasicAuth(api_key, api_secret)
+        self._disable_schedule_on_trigger = disable_schedule_on_trigger
 
-        self.request_max_retries = request_max_retries
-        self.request_retry_delay = request_retry_delay
+        self._request_max_retries = request_max_retries
+        self._request_retry_delay = request_retry_delay
 
-        self.log = log
+        self._log = log
 
     @property
     def api_base_url(self) -> str:
@@ -81,17 +81,18 @@ class FivetranResource:
                     method=method,
                     url=urljoin(self.api_base_url, endpoint),
                     headers=headers,
-                    auth=self.auth,
+                    auth=self._auth,
                     data=data,
                 )
                 response.raise_for_status()
-                return response.json()
+                resp_dict = response.json()
+                return resp_dict["data"] if "data" in resp_dict else resp_dict
             except RequestException as e:
-                self.log.error("Request to Fivetran API failed: %s", e)
-                if num_retries == self.request_max_retries:
+                self._log.error("Request to Fivetran API failed: %s", e)
+                if num_retries == self._request_max_retries:
                     break
                 num_retries += 1
-                time.sleep(self.request_retry_delay)
+                time.sleep(self._request_retry_delay)
 
         raise Failure("Exceeded max number of retries.")
 
@@ -117,7 +118,7 @@ class FivetranResource:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
         """
-        connector_data = self.get_connector_details(connector_id)["data"]
+        connector_data = self.get_connector_details(connector_id)
         if connector_data["paused"]:
             raise Failure("Connector '{connector_id}' cannot be synced as it is currently paused.")
         if connector_data["status"]["setup_state"] != "connected":
@@ -136,7 +137,7 @@ class FivetranResource:
             Tuple[datetime.datetime, bool, str]: Tuple representing the timestamp of the last
                 completeded sync, if it succeeded, and currently reported sync status.
         """
-        connector_data = self.get_connector_details(connector_id)["data"]
+        connector_data = self.get_connector_details(connector_id)
 
         min_time_str = "0001-01-01 00:00:00+00"
         succeeded_at = parser.parse(connector_data["succeeded_at"] or min_time_str)
@@ -193,7 +194,7 @@ class FivetranResource:
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        if self.disable_schedule_on_trigger:
+        if self._disable_schedule_on_trigger:
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
         return self.make_request(method="POST", endpoint=f"{connector_id}/force")
@@ -231,7 +232,7 @@ class FivetranResource:
                 curr_last_sync_succeeded,
                 curr_sync_state,
             ) = self.get_connector_sync_status(connector_id)
-            self.log.info(f"Polled '{connector_id}'. Status: [{curr_sync_state}]")
+            self._log.info(f"Polled '{connector_id}'. Status: [{curr_sync_state}]")
 
             if curr_last_sync_completion > initial_last_sync_completion:
                 break
@@ -254,8 +255,8 @@ class FivetranResource:
                     "connector_details": EventMetadata.json(connector_details),
                     "log_url": EventMetadata.url(
                         self._logs_url(
-                            service=connector_details["data"]["service"],
-                            schema=connector_details["data"]["schema"],
+                            service=connector_details["service"],
+                            schema=connector_details["schema"],
                         )
                     ),
                 },

@@ -50,6 +50,7 @@ def test_fivetran_sync_op():
         rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
         result = fivetran_sync_job.execute_in_process()
-        assert result.output_for_node("fivetran_sync_op") == get_sample_connector_response(
-            data=final_data
+        assert (
+            result.output_for_node("fivetran_sync_op")
+            == get_sample_connector_response(data=final_data)["data"]
         )

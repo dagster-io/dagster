@@ -32,7 +32,7 @@ def test_get_connector_details():
         )
         assert (
             ft_resource.get_connector_details(DEFAULT_CONNECTOR_ID)
-            == get_sample_connector_response()
+            == get_sample_connector_response()["data"]
         )
 
 
@@ -70,7 +70,7 @@ def test_get_connector_details_flake(max_retries, n_flakes):
         with pytest.raises(Failure, match="Exceeded max number of retries."):
             _mock_interaction()
     else:
-        assert _mock_interaction() == get_sample_connector_response()
+        assert _mock_interaction() == get_sample_connector_response()["data"]
 
 
 @pytest.mark.parametrize(
@@ -167,7 +167,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
             return ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
 
     if succeed_at_end:
-        assert _mock_interaction() == get_sample_connector_response(data=final_data)
+        assert _mock_interaction() == get_sample_connector_response(data=final_data)["data"]
     else:
         with pytest.raises(Failure, match="failed!"):
             _mock_interaction()
