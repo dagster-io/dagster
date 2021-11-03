@@ -1,13 +1,15 @@
 from dagster import In, Int, Out, Output, VersionStrategy, job, op, resource
+from dagster.core.test_utils import instance_for_test
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
 
-def define_inty_job():
-    @resource
-    def test_s3_resource(_):
-        return construct_s3_client(max_attempts=5)
+@resource
+def s3_test_resource(_):
+    return construct_s3_client(max_attempts=5)
 
+
+def define_inty_job():
     @op(out=Out(Int))
     def return_one():
         return 1
@@ -22,7 +24,7 @@ def define_inty_job():
     @job(
         resource_defs={
             "io_manager": s3_pickle_io_manager,
-            "s3": test_s3_resource,
+            "s3": s3_test_resource,
         }
     )
     def basic_external_plan_execution():
@@ -46,10 +48,6 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
 
 def define_multiple_output_job():
-    @resource
-    def test_s3_resource(_):
-        return construct_s3_client(max_attempts=5)
-
     @op(
         out={
             "foo": Out(Int),
@@ -60,7 +58,7 @@ def define_multiple_output_job():
         yield Output(10, "foobar")
         yield Output(5, "foo")
 
-    @job(resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource})
+    @job(resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource})
     def output_prefix_execution_plan():
         return_two_outputs()
 
@@ -84,30 +82,26 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
 
 def test_memoization_s3_io_manager(mock_s3_bucket):
     class BasicVersionStrategy(VersionStrategy):
-        def get_solid_version(self, solid_def):
+        def get_solid_version(self, _):
             return "foo"
 
-    @solid
-    def basic_solid():
+    @op
+    def basic():
         return "foo"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource}
-            )
-        ],
+    @job(
+        resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource},
         version_strategy=BasicVersionStrategy(),
     )
-    def memoized_pipeline():
-        basic_solid()
+    def memoized():
+        basic()
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
     with instance_for_test() as instance:
-        result = execute_pipeline(memoized_pipeline, instance=instance, run_config=run_config)
+        result = memoized.execute_in_process(run_config=run_config, instance=instance)
         assert result.success
-        assert result.output_for_solid("basic_solid") == "foo"
+        assert result.output_for_node("basic") == "foo"
 
-        result = execute_pipeline(memoized_pipeline, instance=instance, run_config=run_config)
+        result = memoized.execute_in_process(run_config=run_config, instance=instance)
         assert result.success
-        assert len(result.step_event_list) == 0
+        assert len(result.all_node_events) == 0
