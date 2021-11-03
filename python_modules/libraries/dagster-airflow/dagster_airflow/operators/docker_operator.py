@@ -7,6 +7,7 @@ from dagster import check, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster_airflow.vendor.docker_operator import DockerOperator
@@ -227,6 +228,11 @@ class DagsterDockerOperator(DockerOperator):
         try:
             tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
+            pipeline_def = self.recon_repo.get_reconstructable_pipeline(
+                self.pipeline_name
+            ).get_definition()
+            resolved_run_config = ResolvedRunConfig.build(pipeline_def, self.run_config, self.mode)
+
             pipeline_run = self.instance.register_managed_run(
                 pipeline_name=self.pipeline_name,
                 run_id=self.run_id,
@@ -240,6 +246,7 @@ class DagsterDockerOperator(DockerOperator):
                 pipeline_snapshot=self.pipeline_snapshot,
                 execution_plan_snapshot=self.execution_plan_snapshot,
                 parent_pipeline_snapshot=self.parent_pipeline_snapshot,
+                executor_name=resolved_run_config.execution.execution_engine_name,
             )
             if self._should_skip(pipeline_run):
                 raise AirflowSkipException(

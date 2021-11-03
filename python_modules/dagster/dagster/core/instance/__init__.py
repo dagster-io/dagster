@@ -737,18 +737,20 @@ class DagsterInstance:
                     solids_to_execute=solids_to_execute
                 )
 
+        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
         step_keys_to_execute = None
 
         if execution_plan:
             step_keys_to_execute = execution_plan.step_keys_to_execute
 
         else:
-            resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
             execution_plan = ExecutionPlan.build(
                 InMemoryPipeline(pipeline_def),
                 resolved_run_config,
                 tags=tags,
             )
+
+        executor_name = resolved_run_config.execution.execution_engine_name
 
         return self.create_run(
             pipeline_name=pipeline_def.name,
@@ -770,6 +772,7 @@ class DagsterInstance:
             parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            executor_name=executor_name,
         )
 
     def _construct_run_with_snapshots(
@@ -787,6 +790,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        executor_name,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
@@ -834,6 +838,7 @@ class DagsterInstance:
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            executor_name=executor_name,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
@@ -919,6 +924,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        executor_name,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
@@ -941,6 +947,7 @@ class DagsterInstance:
             parent_pipeline_snapshot=parent_pipeline_snapshot,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            executor_name=executor_name,
         )
         return self._run_storage.add_run(pipeline_run)
 
@@ -958,6 +965,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        executor_name,
         solid_selection=None,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
@@ -986,6 +994,7 @@ class DagsterInstance:
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
             parent_pipeline_snapshot=parent_pipeline_snapshot,
+            executor_name=executor_name,
         )
 
         def get_run():
