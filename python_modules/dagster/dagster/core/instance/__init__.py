@@ -737,13 +737,13 @@ class DagsterInstance:
                     solids_to_execute=solids_to_execute
                 )
 
-        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
         step_keys_to_execute = None
 
         if execution_plan:
             step_keys_to_execute = execution_plan.step_keys_to_execute
 
         else:
+            resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
             execution_plan = ExecutionPlan.build(
                 InMemoryPipeline(pipeline_def),
                 resolved_run_config,
