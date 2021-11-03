@@ -244,7 +244,7 @@ class PipelineRun(
             "pipeline_name run_id run_config mode solid_selection solids_to_execute "
             "step_keys_to_execute status tags root_run_id parent_run_id "
             "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-            "pipeline_code_origin executor_name"
+            "pipeline_code_origin"
         ),
     )
 ):
@@ -273,7 +273,6 @@ class PipelineRun(
         # A PipelinePythonOrigin with information about where to find the pipeline definition in
         # code. Most run launchers will pass this origin as an argument to the run worker process.
         pipeline_code_origin=None,
-        executor_name=None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -327,7 +326,6 @@ class PipelineRun(
             pipeline_code_origin=check.opt_inst_param(
                 pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
             ),
-            executor_name=check.opt_str_param(executor_name, "executor_name"),
         )
 
     def with_status(self, status):

@@ -4,13 +4,13 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots[
-    "test_create_execution_plan_with_dep 1"
-] = """{
+snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
+  "executor_name": "in_process",
   "initial_known_state": null,
   "pipeline_snapshot_id": "588501f8b7b5a1a7dd65fc0aa091bab26670e5c2",
   "snapshot_version": 1,
@@ -129,13 +129,12 @@ snapshots[
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_create_noop_execution_plan 1"
-] = """{
+snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
+  "executor_name": "in_process",
   "initial_known_state": null,
   "pipeline_snapshot_id": "2290b3c558988d5ac3b68b109c7a6da33a237696",
   "snapshot_version": 1,
@@ -184,13 +183,12 @@ snapshots[
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_create_noop_execution_plan_with_tags 1"
-] = """{
+snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
+  "executor_name": "in_process",
   "initial_known_state": null,
   "pipeline_snapshot_id": "bb5c233d49c4c6832472f7eea29ba6ec92b78463",
   "snapshot_version": 1,
@@ -253,13 +251,12 @@ snapshots[
       }
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_create_with_composite 1"
-] = """{
+snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
+  "executor_name": "in_process",
   "initial_known_state": null,
   "pipeline_snapshot_id": "3aad6c74f16d0c802e9fc139412d5f9e1766f54a",
   "snapshot_version": 1,
@@ -627,4 +624,4 @@ snapshots[
       "tags": {}
     }
   ]
-}"""
+}'''
