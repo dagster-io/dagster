@@ -207,7 +207,7 @@ def test_version_strategy_depends_from_context():
     run_config = {"solids": {"my_op": {"config": {"arg": "foo"}}}}
 
     @op
-    def my_op(context):
+    def my_op():
         graph_executed.append("executed")
 
     @graph

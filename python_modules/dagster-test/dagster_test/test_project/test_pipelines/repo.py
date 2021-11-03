@@ -51,6 +51,7 @@ def celery_mode_defs(resources=None, name="default"):
     resources = merge_dicts(resources, {"io_manager": s3_pickle_io_manager})
     return [
         ModeDefinition(
+            name=name,
             resource_defs=resources
             if resources
             else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
@@ -659,7 +660,7 @@ def define_memoization_pipeline():
         return "foo"
 
     class BasicVersionStrategy(VersionStrategy):
-        def get_solid_version(self, solid_def):
+        def get_solid_version(self, _):
             return "foo"
 
     @pipeline(
