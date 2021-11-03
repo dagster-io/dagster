@@ -5,13 +5,13 @@ description: This guide describes how to migrate code to the new Job, Op, and Gr
 
 # Migrating to Ops, Jobs, and Graphs
 
-Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
+Ops, Graphs, and Jobs, are a set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
 
-You can also check out the more detailed API reference docs for [Jobs](/\_apidocs/jobs), [Ops](/\_apidocs/ops), and [Graphs](/\_apidocs/graphs).
+You can also check out the more detailed API reference docs for [Jobs](/_apidocs/jobs), [Ops](/_apidocs/ops), and [Graphs](/_apidocs/graphs).
 
 Migrating a pipeline to jobs does not require migrating all your other pipelines to jobs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
 
-In Dagit, jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
+In Dagit, we display both jobs and pipelines, where pipelines are marked with the `Legacy` tag in the left nav.
 
 ## A simple pipeline
 
