@@ -1,12 +1,17 @@
-from airflow_ingest.repo import airflow_complex_dag, airflow_simple_dag
-from dagster import execute_pipeline
+from airflow_ingest.repo import (
+    airflow_complex_dag,
+    airflow_simple_dag,
+    airflow_simple_dag_with_execution_date,
+)
 
 
 def test_airflow_simple_dag():
-    result = execute_pipeline(airflow_simple_dag)
-    assert result.success
+    assert airflow_simple_dag.execute_in_process()
 
 
 def test_airflow_complex_dag():
-    result = execute_pipeline(airflow_complex_dag)
-    assert result.success
+    assert airflow_complex_dag.execute_in_process()
+
+
+def test_airflow_simple_dag_with_execution_date():
+    assert airflow_simple_dag_with_execution_date.execute_in_process()
