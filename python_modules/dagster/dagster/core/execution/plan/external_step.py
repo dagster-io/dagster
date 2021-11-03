@@ -135,6 +135,8 @@ def step_context_to_step_run_ref(
                         ),
                         recon_pipeline.repository.pointer.fn_name,
                     ),
+                    container_image=recon_pipeline.repository.container_image,
+                    executable_path=recon_pipeline.repository.executable_path,
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
                 solids_to_execute=recon_pipeline.solids_to_execute,

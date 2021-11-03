@@ -298,6 +298,7 @@ class DagsterApiServer(DagsterApiServicer):
                 external_repository_origin.repository_name
             ],
             self._get_current_image(),
+            sys.executable,
         )
 
     def _recon_pipeline_from_origin(self, external_pipeline_origin):
