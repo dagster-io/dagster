@@ -153,13 +153,13 @@ This query returns the names and location names of all the repositories currentl
       }
     }
 
-### Get a list of pipelines within a repository:
+### Get a list of jobs within a repository:
 
-Given a repository, this query returns the names of all the pipelines in the repository.
+Given a repository, this query returns the names of all the jobs in the repository.
 
 This query takes a `selector`, which is of type `RepositorySelector`. A repository selector consists of both the repository location name and repository name.
 
-    query PipelinesQuery(
+    query JobsQuery(
       $repositoryLocationName: String!
       $repositoryName: String!
     ) {
@@ -170,7 +170,7 @@ This query takes a `selector`, which is of type `RepositorySelector`. A reposito
         }
       ) {
         ... on Repository {
-          pipelines {
+          jobs {
             name
           }
         }
@@ -189,8 +189,8 @@ For this query, the required arguments are:
 
 `runConfigData`:
 
-- This is where you define the run config to execute the pipeline with
-- Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system but must conform to the constraints of the config schema for this pipeline. If it does not, the mutation returns a `RunConfigValidationInvalid` response
+- This is where you define the run config for the job execution.
+- Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system but must conform to the constraints of the config schema for this job. If it does not, the mutation returns a `RunConfigValidationInvalid` response
 
 <!---->
 
