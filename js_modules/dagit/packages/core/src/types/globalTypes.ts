@@ -161,7 +161,7 @@ export interface ExecutionMetadata {
 }
 
 export interface ExecutionParams {
-  selector: PipelineSelector;
+  selector: JobOrPipelineSelector;
   runConfigData?: any | null;
   mode?: string | null;
   executionMetadata?: ExecutionMetadata | null;
@@ -178,6 +178,14 @@ export interface InstigationSelector {
   repositoryName: string;
   repositoryLocationName: string;
   name: string;
+}
+
+export interface JobOrPipelineSelector {
+  pipelineName?: string | null;
+  jobName?: string | null;
+  repositoryName: string;
+  repositoryLocationName: string;
+  solidSelection?: string[] | null;
 }
 
 export interface LaunchBackfillParams {

@@ -712,7 +712,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes {
 }
 
 export interface SidebarTabbedContainerPipelineFragment {
-  __typename: "Pipeline" | "PipelineSnapshot";
+  __typename: "Pipeline" | "Job" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: SidebarTabbedContainerPipelineFragment_modes[];
