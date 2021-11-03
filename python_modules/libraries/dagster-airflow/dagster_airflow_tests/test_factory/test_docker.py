@@ -135,7 +135,7 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
     )
     environments_path = get_test_project_environments_path()
     environment_yaml = [
-        os.path.join(environments_path, "env_s3_intermediate_storage.yaml"),
+        os.path.join(environments_path, "env_s3.yaml"),
     ]
     run_config = load_yaml_from_glob_list(environment_yaml)
 

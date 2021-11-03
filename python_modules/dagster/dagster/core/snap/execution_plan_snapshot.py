@@ -62,11 +62,7 @@ class ExecutionPlanSnapshot(
         step_keys_to_execute: Optional[List[str]] = None,
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
-<<<<<<< HEAD
-        step_output_versions: Optional[List["StepOutputVersionData"]] = None,
         executor_name: Optional[str] = None,
-=======
->>>>>>> [Memoization 12/13] Fix bug with out-of-process memoization
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -82,13 +78,7 @@ class ExecutionPlanSnapshot(
                 KnownExecutionState,
             ),
             snapshot_version=check.opt_int_param(snapshot_version, "snapshot_version"),
-<<<<<<< HEAD
-            step_output_versions=check.opt_list_param(
-                step_output_versions, "step_output_versions", of_type=StepOutputVersionData
-            ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
-=======
->>>>>>> [Memoization 12/13] Fix bug with out-of-process memoization
         )
 
     @property
@@ -273,9 +263,5 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
         step_keys_to_execute=execution_plan.step_keys_to_execute,
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
-<<<<<<< HEAD
-        step_output_versions=step_output_versions_list,
         executor_name=execution_plan.executor_name,
-=======
->>>>>>> [Memoization 12/13] Fix bug with out-of-process memoization
     )
