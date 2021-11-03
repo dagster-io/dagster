@@ -38,7 +38,7 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSoli
 }
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations {
-  __typename: "SolidInvocationSite";
+  __typename: "NodeInvocationSite";
   pipeline: RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline;
   solidHandle: RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations_solidHandle;
 }

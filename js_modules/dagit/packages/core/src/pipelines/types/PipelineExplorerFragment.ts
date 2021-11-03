@@ -712,7 +712,7 @@ export interface PipelineExplorerFragment_modes {
 }
 
 export interface PipelineExplorerFragment {
-  __typename: "Pipeline" | "PipelineSnapshot";
+  __typename: "Pipeline" | "Job" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: PipelineExplorerFragment_modes[];

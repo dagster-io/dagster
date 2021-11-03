@@ -55,7 +55,7 @@ export interface SolidsRootQuery_repositoryOrError_Repository_usedSolids_invocat
 }
 
 export interface SolidsRootQuery_repositoryOrError_Repository_usedSolids_invocations {
-  __typename: "SolidInvocationSite";
+  __typename: "NodeInvocationSite";
   pipeline: SolidsRootQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline;
 }
 
