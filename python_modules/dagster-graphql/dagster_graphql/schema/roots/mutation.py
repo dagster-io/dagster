@@ -41,11 +41,7 @@ from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import GrapheneLaunchRunReexecutionResult, GrapheneLaunchRunResult
-from ..schedules import (
-    GrapheneReconcileSchedulerStateMutation,
-    GrapheneStartScheduleMutation,
-    GrapheneStopRunningScheduleMutation,
-)
+from ..schedules import GrapheneStartScheduleMutation, GrapheneStopRunningScheduleMutation
 from ..sensors import GrapheneStartSensorMutation, GrapheneStopSensorMutation
 from ..util import non_null_list
 
@@ -482,7 +478,6 @@ class GrapheneMutation(graphene.ObjectType):
     launch_run = GrapheneLaunchRunMutation.Field()
     launch_pipeline_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
     launch_run_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
-    reconcile_scheduler_state = GrapheneReconcileSchedulerStateMutation.Field()
     start_schedule = GrapheneStartScheduleMutation.Field()
     stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()
     start_sensor = GrapheneStartSensorMutation.Field()

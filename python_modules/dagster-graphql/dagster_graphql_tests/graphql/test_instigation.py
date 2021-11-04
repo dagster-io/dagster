@@ -48,7 +48,6 @@ class TestNextTickRepository(
         external_repository = graphql_context.get_repository_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
-        graphql_context.instance.reconcile_scheduler_state(external_repository)
 
         schedule_name = "no_config_pipeline_hourly_schedule"
         external_schedule = external_repository.get_external_schedule(schedule_name)
@@ -70,7 +69,6 @@ class TestNextTickRepository(
         external_repository = graphql_context.get_repository_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
-        graphql_context.instance.reconcile_scheduler_state(external_repository)
 
         sensor_name = "always_no_config_sensor"
         external_sensor = external_repository.get_external_sensor(sensor_name)

@@ -229,7 +229,6 @@ def test_sensor_next_ticks(graphql_context):
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
-    graphql_context.instance.reconcile_scheduler_state(external_repository)
 
     sensor_name = "always_no_config_sensor"
     external_sensor = external_repository.get_external_sensor(sensor_name)
@@ -282,7 +281,6 @@ def test_sensor_tick_range(graphql_context):
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
-    graphql_context.instance.reconcile_scheduler_state(external_repository)
 
     sensor_name = "always_no_config_sensor"
     external_sensor = external_repository.get_external_sensor(sensor_name)

@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 class Permissions(str, Enum):
     LAUNCH_PIPELINE_EXECUTION = "launch_pipeline_execution"
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
-    RECONCILE_SCHEDULER_STATE = "reconcile_scheduler_state"
     START_SCHEDULE = "start_schedule"
     STOP_RUNNING_SCHEDULE = "stop_running_schedule"
     START_SENSOR = "start_sensor"
@@ -29,7 +28,6 @@ class Permissions(str, Enum):
 VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: False,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
-    Permissions.RECONCILE_SCHEDULER_STATE: False,
     Permissions.START_SCHEDULE: False,
     Permissions.STOP_RUNNING_SCHEDULE: False,
     Permissions.START_SENSOR: False,
@@ -46,7 +44,6 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
 EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: True,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
-    Permissions.RECONCILE_SCHEDULER_STATE: True,
     Permissions.START_SCHEDULE: True,
     Permissions.STOP_RUNNING_SCHEDULE: True,
     Permissions.START_SENSOR: True,
