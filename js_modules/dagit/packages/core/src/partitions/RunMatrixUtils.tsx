@@ -220,10 +220,10 @@ export const TopLabel = styled.div`
   display: flex;
 `;
 
-const TITLE_HEIGHT = 55;
+export const TITLE_HEIGHT = 55;
 const ROTATION_DEGREES = 41;
 
-export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
+export const TopLabelTilted: React.FC<{label: string}> = React.memo(({label}) => {
   const node = React.useRef<HTMLDivElement>(null);
   const [tooltip, showTooltip] = React.useState(false);
 
@@ -254,7 +254,7 @@ export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
   ) : (
     content
   );
-};
+});
 
 const TopLabelTiltedInner = styled.div`
   position: relative;
