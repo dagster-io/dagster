@@ -100,9 +100,6 @@ def main(quiet):
     # image build!
     cmd = ["pip", "install"] + install_targets
 
-    # Second, install with dependencies. Now, pip will see that the editable installs already
-    # exist and will use them instead of trying to find the projects on pypi.
-    cmd += ["&&", "pip", "install"] + install_targets
     if quiet:
         cmd.append(quiet)
 
