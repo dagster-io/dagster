@@ -463,7 +463,7 @@ def make_airflow_dag_containerized(
         list of its constituent tasks.
     """
     check.str_param(module_name, "module_name")
-    check.str_param(pipeline_name, "pipeline_name")
+    check.str_param(job_name, "job_name")
     check.str_param(image, "image")
     check.opt_dict_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -471,11 +471,6 @@ def make_airflow_dag_containerized(
     check.opt_str_param(dag_description, "dag_description")
     check.opt_dict_param(dag_kwargs, "dag_kwargs")
     check.opt_dict_param(op_kwargs, "op_kwargs")
-
-    recon_repo = ReconstructableRepository.for_module(module_name, pipeline_name)
-
-    op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
-    op_kwargs["image"] = image
 
     job_name = canonicalize_backcompat_args(
         new_val=job_name,
@@ -485,6 +480,11 @@ def make_airflow_dag_containerized(
         breaking_version="future versions",
         coerce_old_to_new=lambda val: val,
     )
+    recon_repo = ReconstructableRepository.for_module(module_name, job_name)
+
+    op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
+    op_kwargs["image"] = image
+
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
