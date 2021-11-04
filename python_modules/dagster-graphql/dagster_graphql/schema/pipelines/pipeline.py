@@ -30,6 +30,7 @@ from ..logs.events import (
 )
 from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
+from ..runs import GrapheneRunConfigData
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -153,6 +154,7 @@ class GraphenePipelineRun(graphene.Interface):
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
     mode = graphene.NonNull(graphene.String)
     tags = non_null_list(GraphenePipelineTag)
     rootRunId = graphene.Field(graphene.String)
@@ -191,6 +193,7 @@ class GrapheneRun(graphene.ObjectType):
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
     mode = graphene.NonNull(graphene.String)
     tags = non_null_list(GraphenePipelineTag)
     rootRunId = graphene.Field(graphene.String)
@@ -282,6 +285,9 @@ class GrapheneRun(graphene.ObjectType):
         return yaml.dump(
             self._pipeline_run.run_config, default_flow_style=False, allow_unicode=True
         )
+
+    def resolve_runConfig(self, _graphene_info):
+        return self._pipeline_run.run_config
 
     def resolve_tags(self, _graphene_info):
         return [

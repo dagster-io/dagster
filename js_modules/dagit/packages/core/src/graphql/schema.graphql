@@ -287,6 +287,7 @@ type Run implements PipelineRun {
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
+  runConfig: RunConfigData!
   mode: String!
   tags: [PipelineTag!]!
   rootRunId: String
@@ -312,6 +313,7 @@ interface PipelineRun {
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
+  runConfig: RunConfigData!
   mode: String!
   tags: [PipelineTag!]!
   rootRunId: String
@@ -485,6 +487,8 @@ enum StepKind {
   UNRESOLVED_MAPPED
   UNRESOLVED_COLLECT
 }
+
+scalar RunConfigData
 
 type Asset {
   id: String!
@@ -1431,8 +1435,6 @@ enum EvaluationErrorReason {
   FIELDS_NOT_DEFINED
   SELECTOR_FIELD_ERROR
 }
-
-scalar RunConfigData
 
 union ExecutionPlanOrError = ExecutionPlan | RunConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
