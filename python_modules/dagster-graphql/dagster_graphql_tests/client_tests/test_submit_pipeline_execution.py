@@ -31,9 +31,7 @@ def test_success(mock_client: MockClient):
 def test_job_success(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
-        "bar",
-        repository_location_name="baz",
-        repository_name="quux",
+        "bar", repository_location_name="baz", repository_name="quux",
     )
     assert actual_run_id == EXPECTED_RUN_ID
 
@@ -279,10 +277,7 @@ def test_no_location_or_repo_provided_no_job_failure(mock_client: MockClient):
 def test_failure_with_invalid_step_error(mock_client: MockClient):
     error_type, invalid_step_key = "InvalidStepError", "1234"
     response = {
-        "launchPipelineExecution": {
-            "__typename": error_type,
-            "invalidStepKey": invalid_step_key,
-        }
+        "launchPipelineExecution": {"__typename": error_type, "invalidStepKey": invalid_step_key,}
     }
     mock_client.mock_gql_client.execute.return_value = response
 
@@ -358,12 +353,7 @@ def test_failure_with_pipeline_config_invalid(mock_client: MockClient):
 @python_client_test_suite
 def test_failure_with_python_error(mock_client: MockClient):
     error_type, message = "PythonError", "some catastrophic error"
-    response = {
-        "launchPipelineExecution": {
-            "__typename": error_type,
-            "message": message,
-        }
-    }
+    response = {"launchPipelineExecution": {"__typename": error_type, "message": message,}}
     mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
@@ -381,10 +371,7 @@ def test_failure_with_python_error(mock_client: MockClient):
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_job_execution(
-            "bar",
-            repository_location_name="baz",
-            repository_name="quux",
-            run_config={},
+            "bar", repository_location_name="baz", repository_name="quux", run_config={},
         )
     exc_args = exc_info.value.args
 
@@ -394,12 +381,7 @@ def test_failure_with_python_error(mock_client: MockClient):
 
 def failure_with_pipeline_run_conflict_mock_config(mock_client: MockClient):
     error_type, message = "RunConflict", "some conflict"
-    response = {
-        "launchPipelineExecution": {
-            "__typename": error_type,
-            "message": message,
-        }
-    }
+    response = {"launchPipelineExecution": {"__typename": error_type, "message": message,}}
     mock_client.mock_gql_client.execute.return_value = response
 
 
@@ -427,10 +409,7 @@ def test_failure_with_job_run_conflict(mock_client: MockClient):
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_job_execution(
-            "bar",
-            repository_location_name="baz",
-            repository_name="quux",
-            run_config={},
+            "bar", repository_location_name="baz", repository_name="quux", run_config={},
         )
     exc_args = exc_info.value.args
 

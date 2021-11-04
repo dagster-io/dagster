@@ -65,10 +65,7 @@ def test_load_via_env_var():
     with environ(
         {"DAGSTER_CLI_API_GRPC_HOST": "localhost", "DAGSTER_CLI_API_GRPC_PORT": str(port)}
     ):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
         try:
             wait_for_grpc_server(
@@ -95,10 +92,7 @@ def test_load_with_invalid_param(capfd):
         "bar_value",
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
     try:
         with pytest.raises(
@@ -130,10 +124,7 @@ def test_load_with_error(capfd):
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
     try:
         with pytest.raises(Exception):
@@ -183,10 +174,7 @@ def test_load_with_empty_working_directory(capfd):
     ]
 
     with new_cwd(os.path.dirname(__file__)):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
         try:
             wait_for_grpc_server(
@@ -210,10 +198,7 @@ def test_load_with_empty_working_directory(capfd):
             "--empty-working-directory",
         ]
 
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
         try:
             with pytest.raises(Exception):
                 wait_for_grpc_server(
@@ -244,10 +229,7 @@ def test_crash_during_load():
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
     try:
 
         with pytest.raises(
@@ -347,10 +329,7 @@ def test_lazy_load_via_env_var():
             python_file,
         ]
 
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
         try:
             wait_for_grpc_server(
@@ -379,10 +358,7 @@ def test_streaming():
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
     try:
         wait_for_grpc_server(
@@ -412,10 +388,7 @@ def test_sensor_timeout():
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE,)
 
     try:
         wait_for_grpc_server(

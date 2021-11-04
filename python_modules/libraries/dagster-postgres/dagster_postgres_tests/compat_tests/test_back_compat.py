@@ -328,8 +328,7 @@ def _reconstruct_from_file(hostname, conn_string, path, username="test", passwor
     env = os.environ.copy()
     env["PGPASSWORD"] = password
     subprocess.check_call(
-        ["psql", "-h", hostname, "-p", "5432", "-U", username, "-f", path],
-        env=env,
+        ["psql", "-h", hostname, "-p", "5432", "-U", username, "-f", path], env=env,
     )
 
 

@@ -27,8 +27,7 @@ def other_foo_pipeline():
 
 
 @schedule(
-    pipeline_name="foo_pipeline",
-    cron_schedule="*/1 * * * *",
+    pipeline_name="foo_pipeline", cron_schedule="*/1 * * * *",
 )
 def always_run_schedule(_context):
     return {}
@@ -47,8 +46,7 @@ def example_repo():
 @contextmanager
 def get_example_repository_location():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
+        executable_path=sys.executable, python_file=__file__,
     )
     location_name = "example_repo_location"
 
@@ -74,9 +72,7 @@ def test_no_memory_leaks():
             "run_launcher": {
                 "class": "DefaultRunLauncher",
                 "module": "dagster.core.launcher.default_run_launcher",
-                "config": {
-                    "wait_for_processes": False,
-                },
+                "config": {"wait_for_processes": False,},
             },
         }
     ) as instance, get_example_repo() as repo:

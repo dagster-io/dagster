@@ -159,16 +159,13 @@ class _PlanBuilder:
         """Builds the execution plan"""
 
         _check_persistent_storage_requirement(
-            self.pipeline,
-            self.mode_definition,
-            self.resolved_run_config,
+            self.pipeline, self.mode_definition, self.resolved_run_config,
         )
 
         pipeline_def = self.pipeline.get_definition()
         # Recursively build the execution plan starting at the root pipeline
         self._build_from_sorted_solids(
-            pipeline_def.solids_in_topological_order,
-            pipeline_def.dependency_structure,
+            pipeline_def.solids_in_topological_order, pipeline_def.dependency_structure,
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
@@ -176,10 +173,7 @@ class _PlanBuilder:
         step_handles_to_execute = [step.handle for step in self._steps.values()]
 
         executable_map, resolvable_map = _compute_step_maps(
-            step_dict,
-            step_dict_by_key,
-            step_handles_to_execute,
-            self.known_state,
+            step_dict, step_dict_by_key, step_handles_to_execute, self.known_state,
         )
 
         plan = ExecutionPlan(
@@ -250,8 +244,7 @@ class _PlanBuilder:
                     continue
 
                 if isinstance(
-                    step_input_source,
-                    (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
+                    step_input_source, (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
                 ):
                     has_unresolved_input = True
                     step_inputs.append(
@@ -414,9 +407,7 @@ def get_step_input_source(
 
         if solid_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
-                step_output_handle=step_output_handle,
-                solid_handle=handle,
-                input_name=input_name,
+                step_output_handle=step_output_handle, solid_handle=handle, input_name=input_name,
             )
 
         return FromStepOutput(
@@ -609,9 +600,7 @@ class ExecutionPlan(
         return _get_step_output(self.step_dict_by_key, step_output_handle)
 
     def get_manager_key(
-        self,
-        step_output_handle: StepOutputHandle,
-        pipeline_def: PipelineDefinition,
+        self, step_output_handle: StepOutputHandle, pipeline_def: PipelineDefinition,
     ) -> str:
         return _get_manager_key(self.step_dict_by_key, step_output_handle, pipeline_def)
 
@@ -667,10 +656,7 @@ class ExecutionPlan(
             self.step_dict, self.step_handles_to_execute, self.executable_map
         )
 
-    def resolve(
-        self,
-        mappings: Dict[str, Dict[str, List[str]]],
-    ) -> Dict[str, Set[str]]:
+    def resolve(self, mappings: Dict[str, Dict[str, List[str]]],) -> Dict[str, Set[str]]:
         """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
 
         previous = self.get_executable_step_deps()
@@ -710,10 +696,7 @@ class ExecutionPlan(
             )
 
         executable_map, resolvable_map = _compute_step_maps(
-            self.step_dict,
-            self.step_dict_by_key,
-            step_handles_to_execute,
-            self.known_state,
+            self.step_dict, self.step_dict_by_key, step_handles_to_execute, self.known_state,
         )
 
         return ExecutionPlan(
@@ -835,9 +818,7 @@ class ExecutionPlan(
         )
 
     def start(
-        self,
-        retry_mode: RetryMode,
-        sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        self, retry_mode: RetryMode, sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -859,8 +840,7 @@ class ExecutionPlan(
         if len(self.step_handles_to_execute) == 1:
             only_step = self.step_dict[self.step_handles_to_execute[0]]
             check.invariant(
-                isinstance(only_step, ExecutionStep),
-                "Unexpected unresolved single step plan",
+                isinstance(only_step, ExecutionStep), "Unexpected unresolved single step plan",
             )
             return cast(ExecutionStep, only_step).handle
 
@@ -909,27 +889,18 @@ class ExecutionPlan(
 
         step_input_source = step_input_snap.source
 
-        if isinstance(
-            step_input_source,
-            (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
-        ):
+        if isinstance(step_input_source, (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),):
             return UnresolvedMappedStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_snap.name, step_input_snap.dagster_type_key, step_input_snap.source,
             )
         elif isinstance(step_input_source, FromDynamicCollect):
             return UnresolvedCollectStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_snap.name, step_input_snap.dagster_type_key, step_input_snap.source,
             )
         else:
             check.inst_param(step_input_source, "step_input_source", StepInputSource)
             return StepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_snap.name, step_input_snap.dagster_type_key, step_input_snap.source,
             )
 
     @staticmethod
@@ -963,27 +934,15 @@ class ExecutionPlan(
 
             if step_snap.kind == StepKind.COMPUTE:
                 step = ExecutionStep(
-                    step_snap.step_handle,
-                    pipeline_name,
-                    step_inputs,
-                    step_outputs,
-                    step_snap.tags,
+                    step_snap.step_handle, pipeline_name, step_inputs, step_outputs, step_snap.tags,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
-                    step_snap.step_handle,
-                    pipeline_name,
-                    step_inputs,
-                    step_outputs,
-                    step_snap.tags,
+                    step_snap.step_handle, pipeline_name, step_inputs, step_outputs, step_snap.tags,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
-                    step_snap.step_handle,
-                    pipeline_name,
-                    step_inputs,
-                    step_outputs,
-                    step_snap.tags,
+                    step_snap.step_handle, pipeline_name, step_inputs, step_outputs, step_snap.tags,
                 )
             else:
                 raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
@@ -1080,9 +1039,7 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
 
 
 def _check_persistent_storage_requirement(
-    pipeline: IPipeline,
-    mode_def: ModeDefinition,
-    resolved_run_config: ResolvedRunConfig,
+    pipeline: IPipeline, mode_def: ModeDefinition, resolved_run_config: ResolvedRunConfig,
 ) -> None:
     from dagster.core.execution.context_creation_pipeline import executor_def_from_config
 

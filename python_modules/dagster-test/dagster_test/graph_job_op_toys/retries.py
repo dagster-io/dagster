@@ -27,14 +27,6 @@ def retry():
 
 retry_job = retry.to_job(
     config={
-        "ops": {
-            "retry_op": {
-                "config": {
-                    "delay": 0.2,
-                    "work_on_attempt": 2,
-                    "max_retries": 1,
-                }
-            }
-        }
+        "ops": {"retry_op": {"config": {"delay": 0.2, "work_on_attempt": 2, "max_retries": 1,}}}
     }
 )

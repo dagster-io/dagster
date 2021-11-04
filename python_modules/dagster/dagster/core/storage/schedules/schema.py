@@ -31,9 +31,6 @@ JobTickTable = db.Table(
 )
 
 db.Index(
-    "idx_job_tick_status",
-    JobTickTable.c.job_origin_id,
-    JobTickTable.c.status,
-    mysql_length=32,
+    "idx_job_tick_status", JobTickTable.c.job_origin_id, JobTickTable.c.status, mysql_length=32,
 )
 db.Index("idx_job_tick_timestamp", JobTickTable.c.job_origin_id, JobTickTable.c.timestamp)

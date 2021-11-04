@@ -319,8 +319,7 @@ class UnresolvedMappedExecutionStep(
 
 
 def _resolved_input(
-    step_input: Union[StepInput, UnresolvedMappedStepInput],
-    map_key: str,
+    step_input: Union[StepInput, UnresolvedMappedStepInput], map_key: str,
 ):
     if isinstance(step_input, StepInput):
         return step_input

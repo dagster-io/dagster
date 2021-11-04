@@ -256,13 +256,7 @@ def test_logging_capture_level_defined_inside(log_level, expected_msgs):
 
 @pytest.mark.parametrize(
     "log_level,expected_msgs",
-    [
-        ("DEBUG", 5),
-        ("INFO", 4),
-        ("WARNING", 3),
-        ("ERROR", 2),
-        ("CRITICAL", 1),
-    ],
+    [("DEBUG", 5), ("INFO", 4), ("WARNING", 3), ("ERROR", 2), ("CRITICAL", 1),],
 )
 def test_logging_capture_builtin_outside(log_level, expected_msgs):
 
@@ -279,13 +273,7 @@ def test_logging_capture_builtin_outside(log_level, expected_msgs):
 
 @pytest.mark.parametrize(
     "log_level,expected_msgs",
-    [
-        ("DEBUG", 5),
-        ("INFO", 4),
-        ("WARNING", 3),
-        ("ERROR", 2),
-        ("CRITICAL", 1),
-    ],
+    [("DEBUG", 5), ("INFO", 4), ("WARNING", 3), ("ERROR", 2), ("CRITICAL", 1),],
 )
 def test_logging_capture_builtin_inside(log_level, expected_msgs):
 
@@ -331,9 +319,7 @@ def test_multiprocess_logging(managed_loggers):
         reconstructable(define_logging_pipeline),
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
-        run_config={
-            "execution": {"multiprocess": {}},
-        },
+        run_config={"execution": {"multiprocess": {}},},
     )
 
     logA_records = [lr for lr in log_records if lr.user_message == "loggerA"]

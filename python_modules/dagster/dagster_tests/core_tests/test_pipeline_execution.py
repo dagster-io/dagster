@@ -171,9 +171,7 @@ def test_diamond_toposort():
 
 def test_external_diamond_toposort():
     with location_origin_from_python_file(
-        python_file=__file__,
-        attribute="create_diamond_pipeline",
-        working_directory=None,
+        python_file=__file__, attribute="create_diamond_pipeline", working_directory=None,
     ).create_test_location() as repo_location:
         external_repo = next(iter(repo_location.get_repositories().values()))
         external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
@@ -589,8 +587,7 @@ def test_pipeline_wrapping_types():
     ).success
 
     assert execute_pipeline(
-        wrapping_test,
-        run_config={"solids": {"double_string_for_all": {"inputs": {"value": []}}}},
+        wrapping_test, run_config={"solids": {"double_string_for_all": {"inputs": {"value": []}}}},
     ).success
 
     assert execute_pipeline(
@@ -733,9 +730,7 @@ def test_reexecution_fs_storage():
     assert pipeline_result.result_for_solid("add_one").output_value() == 2
 
     reexecution_result = reexecute_pipeline(
-        pipeline_def,
-        pipeline_result.run_id,
-        instance=instance,
+        pipeline_def, pipeline_result.run_id, instance=instance,
     )
 
     assert reexecution_result.success
@@ -747,9 +742,7 @@ def test_reexecution_fs_storage():
     assert reexecution_run.root_run_id == pipeline_result.run_id
 
     grandchild_result = reexecute_pipeline(
-        pipeline_def,
-        reexecution_result.run_id,
-        instance=instance,
+        pipeline_def, reexecution_result.run_id, instance=instance,
     )
 
     assert grandchild_result.success
@@ -762,11 +755,7 @@ def test_reexecution_fs_storage():
 
 
 def retry_pipeline():
-    @solid(
-        config_schema={
-            "fail": Field(bool, is_required=False, default_value=False),
-        },
-    )
+    @solid(config_schema={"fail": Field(bool, is_required=False, default_value=False),},)
     def return_one(context):
         if context.solid_config["fail"]:
             raise Exception("FAILURE")
@@ -864,9 +853,7 @@ def test_reexecution_fs_storage_with_solid_selection():
 
     # Case 2: re-execute a pipeline when the original pipeline has solid selection
     pipeline_result_solid_selection = execute_pipeline(
-        pipeline_def,
-        instance=instance,
-        solid_selection=["return_one"],
+        pipeline_def, instance=instance, solid_selection=["return_one"],
     )
     assert pipeline_result_solid_selection.success
     assert len(pipeline_result_solid_selection.solid_result_list) == 1
@@ -875,9 +862,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert pipeline_result_solid_selection.result_for_solid("return_one").output_value() == 1
 
     reexecution_result_solid_selection = reexecute_pipeline(
-        pipeline_def,
-        parent_run_id=pipeline_result_solid_selection.run_id,
-        instance=instance,
+        pipeline_def, parent_run_id=pipeline_result_solid_selection.run_id, instance=instance,
     )
 
     assert reexecution_result_solid_selection.success
@@ -889,8 +874,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
     #   re-exeucte a step which hasn't been included in the original pipeline
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match="Step selection refers to unknown step: add_one",
+        DagsterExecutionStepNotFoundError, match="Step selection refers to unknown step: add_one",
     ):
         reexecute_pipeline(
             pipeline_def,

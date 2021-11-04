@@ -97,8 +97,7 @@ def test_using_file_system_for_subplan():
 
     assert get_step_output(add_one_step_events, "add_one")
     with open(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 2
 
@@ -107,13 +106,8 @@ def test_using_file_system_for_subplan_multiprocessing():
     with instance_for_test() as instance:
         pipeline = reconstructable(define_reconstructable_inty_pipeline)
 
-        resolved_run_config = ResolvedRunConfig.build(
-            pipeline.get_definition(),
-        )
-        execution_plan = ExecutionPlan.build(
-            pipeline,
-            resolved_run_config,
-        )
+        resolved_run_config = ResolvedRunConfig.build(pipeline.get_definition(),)
+        execution_plan = ExecutionPlan.build(pipeline, resolved_run_config,)
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
         )
@@ -163,13 +157,8 @@ def test_execute_step_wrong_step_key():
     pipeline = define_inty_pipeline()
     instance = DagsterInstance.ephemeral()
 
-    resolved_run_config = ResolvedRunConfig.build(
-        pipeline,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryPipeline(pipeline),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(pipeline,)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline), resolved_run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -208,13 +197,8 @@ def test_using_file_system_for_subplan_missing_input():
     pipeline = define_inty_pipeline(using_file_system=True)
 
     instance = DagsterInstance.ephemeral()
-    resolved_run_config = ResolvedRunConfig.build(
-        pipeline,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryPipeline(pipeline),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(pipeline,)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline), resolved_run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -236,13 +220,8 @@ def test_using_file_system_for_subplan_invalid_step():
 
     instance = DagsterInstance.ephemeral()
 
-    resolved_run_config = ResolvedRunConfig.build(
-        pipeline,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryPipeline(pipeline),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(pipeline,)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline), resolved_run_config,)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan

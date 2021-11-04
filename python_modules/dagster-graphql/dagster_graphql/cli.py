@@ -202,10 +202,7 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
             instance, version=__version__, read_only=False, kwargs=kwargs
         ) as workspace_process_context:
             execute_query_from_cli(
-                workspace_process_context,
-                query,
-                variables,
-                output,
+                workspace_process_context, query, variables, output,
             )
 
 

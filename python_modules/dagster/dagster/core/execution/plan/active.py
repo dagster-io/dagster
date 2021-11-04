@@ -40,11 +40,7 @@ class ActiveExecution:
         self._retry_state = check.inst_param(retry_state, "retry_state", RetryState)
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
-            check.opt_callable_param(
-                sort_key_fn,
-                "sort_key_fn",
-            )
-            or _default_sort_key
+            check.opt_callable_param(sort_key_fn, "sort_key_fn",) or _default_sort_key
         )
 
         self._context_guard: bool = False  # Prevent accidental direct use
@@ -242,15 +238,13 @@ class ActiveExecution:
 
     def get_steps_to_execute(self, limit: int = None) -> List[ExecutionStep]:
         check.invariant(
-            self._context_guard,
-            "ActiveExecution must be used as a context manager",
+            self._context_guard, "ActiveExecution must be used as a context manager",
         )
         check.opt_int_param(limit, "limit")
         self._update()
 
         steps = sorted(
-            [self.get_step_by_key(key) for key in self._executable],
-            key=self._sort_key_fn,
+            [self.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn,
         )
 
         if limit:

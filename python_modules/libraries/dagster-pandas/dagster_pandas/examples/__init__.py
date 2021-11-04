@@ -60,8 +60,7 @@ papermill_pandas_hello_world_test = papermill_pandas_hello_world_graph.to_job(
     config=config_from_files(
         [
             file_relative_path(
-                __file__,
-                "pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml",
+                __file__, "pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml",
             )
         ]
     ),
@@ -72,8 +71,7 @@ papermill_pandas_hello_world_prod = papermill_pandas_hello_world_graph.to_job(
     config=config_from_files(
         [
             file_relative_path(
-                __file__,
-                "pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml",
+                __file__, "pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml",
             )
         ]
     ),

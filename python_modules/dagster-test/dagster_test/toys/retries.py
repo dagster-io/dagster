@@ -27,11 +27,7 @@ def retry_solid(context):
             run_config={
                 "solids": {
                     "retry_solid": {
-                        "config": {
-                            "delay": 0.2,
-                            "work_on_attempt": 2,
-                            "max_retries": 1,
-                        }
+                        "config": {"delay": 0.2, "work_on_attempt": 2, "max_retries": 1,}
                     }
                 }
             },

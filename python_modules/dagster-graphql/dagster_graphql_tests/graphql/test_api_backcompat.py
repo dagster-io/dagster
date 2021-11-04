@@ -235,9 +235,7 @@ def test_paginated_runs_query():
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(
-                context,
-                PAGINATED_RUNS_QUERY,
-                variables={"cursor": run_id_3, "limit": 1},
+                context, PAGINATED_RUNS_QUERY, variables={"cursor": run_id_3, "limit": 1},
             )
             assert result.data
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
@@ -282,10 +280,7 @@ def test_pipelines_query():
             result = execute_dagster_graphql(
                 context,
                 PIPELINES_QUERY,
-                variables={
-                    "repositoryLocationName": "test_location",
-                    "repositoryName": "my_repo",
-                },
+                variables={"repositoryLocationName": "test_location", "repositoryName": "my_repo",},
             )
             assert not result.errors
             assert result.data

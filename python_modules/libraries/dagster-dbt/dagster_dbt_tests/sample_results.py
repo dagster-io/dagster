@@ -225,10 +225,7 @@ DBT_RPC_RESPONSE_SAMPLE = {
                         "macro.dbt_bigquery.make_date_partitioned_table",
                         "macro.dbt.persist_docs",
                     ],
-                    "nodes": [
-                        "model.my_schema.table_2",
-                        "model.my_schema.table_1",
-                    ],
+                    "nodes": ["model.my_schema.table_2", "model.my_schema.table_1",],
                 },
                 "description": "HackerNews users with enriched data about activity",
                 "columns": {},
@@ -451,10 +448,7 @@ DBT_18_RUN_RESULTS_SAMPLE = {
                         "macro.dbt_bigquery.make_date_partitioned_table",
                         "macro.dbt.persist_docs",
                     ],
-                    "nodes": [
-                        "model.my_schema.table_3",
-                        "model.my_schema.table_1",
-                    ],
+                    "nodes": ["model.my_schema.table_3", "model.my_schema.table_1",],
                 },
                 "description": "",
                 "columns": {},

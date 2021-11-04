@@ -76,11 +76,7 @@ download_pipeline_properties = {
     "the corresponding stories or comments Snowflake table",
     "tags": {
         "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "500m", "memory": "2Gi"},
-                }
-            },
+            "container_config": {"resources": {"requests": {"cpu": "500m", "memory": "2Gi"},}},
         }
     },
 }
@@ -113,11 +109,7 @@ download_comments_and_stories_prod = build_assets_job(
     ),
     tags={
         "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "500m", "memory": "2Gi"},
-                }
-            },
+            "container_config": {"resources": {"requests": {"cpu": "500m", "memory": "2Gi"},}},
         }
     },
 )

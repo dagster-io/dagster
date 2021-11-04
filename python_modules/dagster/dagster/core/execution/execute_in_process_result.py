@@ -90,8 +90,7 @@ class ExecuteInProcessResult:
         output_mapping = graph_def.get_output_mapping(output_name)
         mapped_node = graph_def.solid_named(output_mapping.maps_from.solid_name)
         origin_output_def, origin_handle = mapped_node.definition.resolve_output_to_origin(
-            output_mapping.maps_from.output_name,
-            NodeHandle(mapped_node.name, None),
+            output_mapping.maps_from.output_name, NodeHandle(mapped_node.name, None),
         )
 
         # Get output from origin node
@@ -141,9 +140,7 @@ def _filter_events_by_handle(
 
 
 def _filter_outputs_by_handle(
-    output_dict: Dict[StepOutputHandle, Any],
-    node_handle: NodeHandle,
-    output_name: str,
+    output_dict: Dict[StepOutputHandle, Any], node_handle: NodeHandle, output_name: str,
 ) -> Any:
     mapped_outputs = {}
     step_key = str(node_handle)

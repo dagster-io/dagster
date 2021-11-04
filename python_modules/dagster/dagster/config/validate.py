@@ -124,8 +124,7 @@ def _validate_scalar_union_config(context, config_value):
         )
     else:
         return _validate_config(
-            context.for_new_config_type_key(context.config_type_snap.scalar_type_key),
-            config_value,
+            context.for_new_config_type_key(context.config_type_snap.scalar_type_key), config_value,
         )
 
 
@@ -223,11 +222,7 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
     if check_for_extra_incoming_fields:
         _append_if_error(
             errors,
-            _check_for_extra_incoming_fields(
-                context,
-                defined_field_names,
-                incoming_field_names,
-            ),
+            _check_for_extra_incoming_fields(context, defined_field_names, incoming_field_names,),
         )
 
     _append_if_error(

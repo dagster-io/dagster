@@ -16,9 +16,7 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     @repository_target_argument
     def command(**kwargs):
         with get_external_repository_from_kwargs(
-            DagsterInstance.get(),
-            version="",
-            kwargs=kwargs,
+            DagsterInstance.get(), version="", kwargs=kwargs,
         ) as external_repo:
             if repo_assert_fn:
                 repo_assert_fn(external_repo)

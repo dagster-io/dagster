@@ -143,8 +143,7 @@ class DagsterDockerOperator(DockerOperator):
 
                 raise AirflowException(
                     "docker container failed with result: {result} and logs: {logs}".format(
-                        result=repr(result),
-                        logs=full_logs,
+                        result=repr(result), logs=full_logs,
                     )
                 )
 

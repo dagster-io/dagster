@@ -31,9 +31,7 @@ def generate_new_project(path: str):
 
             src_relative_dir_path = os.path.relpath(src_dir_path, NEW_PROJECT_PATH)
             dst_relative_dir_path = src_relative_dir_path.replace(
-                NEW_PROJECT_PLACEHOLDER,
-                repo_name,
-                1,
+                NEW_PROJECT_PLACEHOLDER, repo_name, 1,
             )
             dst_dir_path = os.path.join(normalized_path, dst_relative_dir_path)
 
@@ -47,9 +45,7 @@ def generate_new_project(path: str):
 
             src_relative_file_path = os.path.relpath(src_file_path, NEW_PROJECT_PATH)
             dst_relative_file_path = src_relative_file_path.replace(
-                NEW_PROJECT_PLACEHOLDER,
-                repo_name,
-                1,
+                NEW_PROJECT_PLACEHOLDER, repo_name, 1,
             )
             dst_file_path = os.path.join(normalized_path, dst_relative_file_path)
 
@@ -60,12 +56,7 @@ def generate_new_project(path: str):
                 # Jinja template names must use the POSIX path separator "/".
                 template_name = src_relative_file_path.replace(os.sep, posixpath.sep)
                 template = env.get_template(name=template_name)
-                f.write(
-                    template.render(
-                        repo_name=repo_name,
-                        dagster_version=dagster_version,
-                    )
-                )
+                f.write(template.render(repo_name=repo_name, dagster_version=dagster_version,))
                 f.write("\n")
 
 

@@ -55,8 +55,5 @@ def resource_pipeline():
 
 if __name__ == "__main__":
     result = execute_pipeline(
-        reconstructable(resource_pipeline),
-        run_config={
-            "execution": {"multiprocessing": {}},
-        },
+        reconstructable(resource_pipeline), run_config={"execution": {"multiprocessing": {}},},
     )

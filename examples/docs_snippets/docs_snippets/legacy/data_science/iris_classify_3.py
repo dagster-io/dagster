@@ -15,9 +15,7 @@ k_means_iris = dm.define_dagstermill_op(
 
 
 @job(
-    resource_defs={
-        "output_notebook_io_manager": dm.local_output_notebook_io_manager,
-    }
+    resource_defs={"output_notebook_io_manager": dm.local_output_notebook_io_manager,}
 )
 def iris_classify():
     k_means_iris(download_file())

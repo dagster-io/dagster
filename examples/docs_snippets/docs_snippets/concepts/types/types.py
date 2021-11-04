@@ -13,8 +13,7 @@ EvenDagsterType = DagsterType(
 
 # start_basic_even_type_no_annotations
 @op(
-    ins={"num": In(EvenDagsterType)},
-    out=Out(EvenDagsterType),
+    ins={"num": In(EvenDagsterType)}, out=Out(EvenDagsterType),
 )
 def double_even(num):
     return num
@@ -24,8 +23,7 @@ def double_even(num):
 
 # start_basic_even_type_with_annotations
 @op(
-    ins={"num": In(EvenDagsterType)},
-    out=Out(EvenDagsterType),
+    ins={"num": In(EvenDagsterType)}, out=Out(EvenDagsterType),
 )
 def double_even_with_annotations(num: int) -> int:
     return num

@@ -97,10 +97,7 @@ def repo():
 
 # start_repo_main
 if __name__ == "__main__":
-    with open(
-        file_relative_path(__file__, "prod_op_hooks.yaml"),
-        "r",
-    ) as fd:
+    with open(file_relative_path(__file__, "prod_op_hooks.yaml"), "r",) as fd:
         run_config = yaml.safe_load(fd.read())
     result = notif_all_dev.execute_in_process(run_config=run_config, raise_on_error=False)
 # end_repo_main

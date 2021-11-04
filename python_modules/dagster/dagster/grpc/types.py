@@ -56,9 +56,7 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
         return super(ExecuteRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+                pipeline_origin, "pipeline_origin", PipelinePythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -81,9 +79,7 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
         return super(ResumeRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+                pipeline_origin, "pipeline_origin", PipelinePythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -108,9 +104,7 @@ class ExecuteExternalPipelineArgs(
         return super(ExecuteExternalPipelineArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                ExternalPipelineOrigin,
+                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -183,10 +177,7 @@ class ListRepositoriesResponse(
     )
 ):
     def __new__(
-        cls,
-        repository_symbols,
-        executable_path=None,
-        repository_code_pointer_dict=None,
+        cls, repository_symbols, executable_path=None, repository_code_pointer_dict=None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
@@ -229,9 +220,7 @@ class PartitionArgs(
         return super(PartitionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin,
-                "repository_origin",
-                ExternalRepositoryOrigin,
+                repository_origin, "repository_origin", ExternalRepositoryOrigin,
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
@@ -253,8 +242,7 @@ class PartitionNamesArgs(namedtuple("_PartitionNamesArgs", "repository_origin pa
 @whitelist_for_serdes
 class PartitionSetExecutionParamArgs(
     namedtuple(
-        "_PartitionSetExecutionParamArgs",
-        "repository_origin partition_set_name partition_names",
+        "_PartitionSetExecutionParamArgs", "repository_origin partition_set_name partition_names",
     )
 ):
     def __new__(cls, repository_origin, partition_set_name, partition_names):
@@ -323,8 +311,7 @@ class ExternalScheduleExecutionArgs(
                 scheduled_execution_timestamp, "scheduled_execution_timestamp"
             ),
             scheduled_execution_timezone=check.opt_str_param(
-                scheduled_execution_timezone,
-                "scheduled_execution_timezone",
+                scheduled_execution_timezone, "scheduled_execution_timezone",
             ),
         )
 
@@ -361,12 +348,7 @@ class SensorExecutionArgs(
 
 
 @whitelist_for_serdes
-class ExternalJobArgs(
-    namedtuple(
-        "_ExternalJobArgs",
-        "repository_origin instance_ref name",
-    )
-):
+class ExternalJobArgs(namedtuple("_ExternalJobArgs", "repository_origin instance_ref name",)):
     def __new__(cls, repository_origin, instance_ref, name):
         return super(ExternalJobArgs, cls).__new__(
             cls,
@@ -394,8 +376,7 @@ class ShutdownServerResult(namedtuple("_ShutdownServerResult", "success serializ
 class CancelExecutionRequest(namedtuple("_CancelExecutionRequest", "run_id")):
     def __new__(cls, run_id):
         return super(CancelExecutionRequest, cls).__new__(
-            cls,
-            run_id=check.str_param(run_id, "run_id"),
+            cls, run_id=check.str_param(run_id, "run_id"),
         )
 
 
@@ -418,8 +399,7 @@ class CancelExecutionResult(
 class CanCancelExecutionRequest(namedtuple("_CanCancelExecutionRequest", "run_id")):
     def __new__(cls, run_id):
         return super(CanCancelExecutionRequest, cls).__new__(
-            cls,
-            run_id=check.str_param(run_id, "run_id"),
+            cls, run_id=check.str_param(run_id, "run_id"),
         )
 
 
@@ -427,8 +407,7 @@ class CanCancelExecutionRequest(namedtuple("_CanCancelExecutionRequest", "run_id
 class CanCancelExecutionResult(namedtuple("_CancelExecutionResult", "can_cancel")):
     def __new__(cls, can_cancel):
         return super(CanCancelExecutionResult, cls).__new__(
-            cls,
-            can_cancel=check.bool_param(can_cancel, "can_cancel"),
+            cls, can_cancel=check.bool_param(can_cancel, "can_cancel"),
         )
 
 

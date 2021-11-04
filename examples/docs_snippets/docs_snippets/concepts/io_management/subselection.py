@@ -41,10 +41,7 @@ def op2(dataframe):
 
 
 @job(
-    resource_defs={
-        "my_io_manager": my_io_manager,
-        "my_root_input_manager": my_root_input_manager,
-    }
+    resource_defs={"my_io_manager": my_io_manager, "my_root_input_manager": my_root_input_manager,}
 )
 def my_job():
     op2(op1())

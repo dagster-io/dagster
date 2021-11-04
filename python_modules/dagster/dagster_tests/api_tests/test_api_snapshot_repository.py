@@ -42,9 +42,7 @@ def giant_pipeline():
 @repository
 def giant_repo():
     return {
-        "pipelines": {
-            "giant": giant_pipeline,
-        },
+        "pipelines": {"giant": giant_pipeline,},
     }
 
 

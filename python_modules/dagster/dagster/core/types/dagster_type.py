@@ -91,16 +91,12 @@ class DagsterType:
 
         if name is None:
             check.param_invariant(
-                bool(key),
-                "key",
-                "If name is not provided, must provide key.",
+                bool(key), "key", "If name is not provided, must provide key.",
             )
             self.key, self._name = key, None
         elif key is None:
             check.param_invariant(
-                bool(name),
-                "name",
-                "If key is not provided, must provide name.",
+                bool(name), "name", "If key is not provided, must provide name.",
             )
             self.key, self._name = name, name
         else:
@@ -114,8 +110,7 @@ class DagsterType:
         )
 
         self.required_resource_keys = check.opt_set_param(
-            required_resource_keys,
-            "required_resource_keys",
+            required_resource_keys, "required_resource_keys",
         )
 
         self._type_check_fn = check.callable_param(type_check_fn, "type_check_fn")
@@ -229,9 +224,7 @@ def _validate_type_check_fn(fn, name):
         if args[0] not in possible_names:
             DagsterInvalidDefinitionError(
                 'type_check function on type "{name}" must have first '
-                'argument named "context" (or _, _context, context_).'.format(
-                    name=name,
-                )
+                'argument named "context" (or _, _context, context_).'.format(name=name,)
             )
         return True
 
@@ -334,13 +327,7 @@ class _Bool(BuiltinScalarDagsterType):
 
 class Anyish(DagsterType):
     def __init__(
-        self,
-        key,
-        name,
-        loader=None,
-        materializer=None,
-        is_builtin=False,
-        description=None,
+        self, key, name, loader=None, materializer=None, is_builtin=False, description=None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -378,17 +365,10 @@ class _Any(Anyish):
 
 
 def create_any_type(
-    name,
-    loader=None,
-    materializer=None,
-    description=None,
+    name, loader=None, materializer=None, description=None,
 ):
     return Anyish(
-        key=name,
-        name=name,
-        description=description,
-        loader=loader,
-        materializer=materializer,
+        key=name, name=name, description=description, loader=loader, materializer=materializer,
     )
 
 

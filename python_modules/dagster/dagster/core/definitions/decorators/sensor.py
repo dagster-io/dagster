@@ -108,10 +108,7 @@ def asset_sensor(
 ) -> Callable[
     [
         Callable[
-            [
-                "SensorEvaluationContext",
-                "EventLogEntry",
-            ],
+            ["SensorEvaluationContext", "EventLogEntry",],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ]
     ],
@@ -153,10 +150,7 @@ def asset_sensor(
 
     def inner(
         fn: Callable[
-            [
-                "SensorEvaluationContext",
-                "EventLogEntry",
-            ],
+            ["SensorEvaluationContext", "EventLogEntry",],
             Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
         ]
     ) -> AssetSensorDefinition:

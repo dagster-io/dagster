@@ -114,8 +114,7 @@ def extract_sensor_name(sensor_name):
 
 
 @sensor_cli.command(
-    name="list",
-    help="List all sensors that correspond to a repository.",
+    name="list", help="List all sensors that correspond to a repository.",
 )
 @repository_target_argument
 @click.option("--running", help="Filter for running sensors", is_flag=True, default=False)
@@ -243,14 +242,10 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
     default=None,
 )
 @click.option(
-    "--last_run_key",
-    help="Set the last_run_key value for the sensor context",
-    default=None,
+    "--last_run_key", help="Set the last_run_key value for the sensor context", default=None,
 )
 @click.option(
-    "--cursor",
-    help="Set the cursor value for the sensor context",
-    default=None,
+    "--cursor", help="Set the cursor value for the sensor context", default=None,
 )
 @repository_target_argument
 def sensor_preview_command(sensor_name, since, last_run_key, cursor, **kwargs):
@@ -265,9 +260,7 @@ def execute_preview_command(
 ):
     with DagsterInstance.get() as instance:
         with get_repository_location_from_kwargs(
-            instance,
-            version=dagster_version,
-            kwargs=cli_args,
+            instance, version=dagster_version, kwargs=cli_args,
         ) as repo_location:
             try:
                 external_repo = get_external_repository_from_repo_location(
@@ -288,8 +281,7 @@ def execute_preview_command(
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     print_fn(
                         "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                            sensor_name=external_sensor.name,
-                            error_info=error_info.to_string(),
+                            sensor_name=external_sensor.name, error_info=error_info.to_string(),
                         )
                     )
                     return
@@ -326,9 +318,7 @@ def execute_preview_command(
 @sensor_cli.command(name="cursor", help="Set the cursor value for an existing sensor.")
 @click.argument("sensor_name", nargs=-1)
 @click.option(
-    "--set",
-    help="Set the cursor value for the sensor context",
-    default=None,
+    "--set", help="Set the cursor value for the sensor context", default=None,
 )
 @click.option(
     "--delete", help="Delete the existing cursor value for the sensor context", is_flag=True

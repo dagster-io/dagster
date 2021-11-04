@@ -97,13 +97,9 @@ def test_job_logger():
         called["basic_logger"] = context.logger_config
         return logging.Logger("test", level=coerce_valid_log_level("INFO"))
 
-    @job(
-        logger_defs={"basic_logger": basic_logger},
-    )
+    @job(logger_defs={"basic_logger": basic_logger},)
     def basic_job():
         basic()
 
-    basic_job.execute_in_process(
-        run_config={"loggers": {"basic_logger": {"config": "hullo"}}},
-    )
+    basic_job.execute_in_process(run_config={"loggers": {"basic_logger": {"config": "hullo"}}},)
     assert called["basic_logger"] == "hullo"

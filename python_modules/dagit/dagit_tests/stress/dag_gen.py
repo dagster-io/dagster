@@ -49,10 +49,7 @@ def generate_pipeline(name, size, connect_factor=1.0):
         num_cfg = random.randint(0, 5)
         solid_id = "{}_solid_{}".format(name, i)
         solids[solid_id] = generate_solid(
-            solid_id=solid_id,
-            num_inputs=num_inputs,
-            num_outputs=num_outputs,
-            num_cfg=num_cfg,
+            solid_id=solid_id, num_inputs=num_inputs, num_outputs=num_outputs, num_cfg=num_cfg,
         )
 
     solid_ids = list(solids.keys())

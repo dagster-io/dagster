@@ -45,13 +45,8 @@ def test_file_logger(init_context):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            logger_defs={
-                "test": test_file_logger,
-                "critical": test_file_logger,
-            },
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            },
+            logger_defs={"test": test_file_logger, "critical": test_file_logger,},
+            resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager,},
         )
     ]
 )

@@ -120,25 +120,15 @@ def test_extra_config_ignored_no_default_input():
     # run config is invalid since there is no input for solid2
     with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(
-            my_pipeline,
-            run_config=run_config,
-            solid_selection=["solid2"],
+            my_pipeline, run_config=run_config, solid_selection=["solid2"],
         )
 
     # works if input added, don't need to remove other stuff
     run_config["solids"]["solid2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}
-    assert execute_pipeline(
-        my_pipeline,
-        run_config=run_config,
-        solid_selection=["solid2"],
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["solid2"],).success
 
     # input for solid2 ignored if select solid1
-    assert execute_pipeline(
-        my_pipeline,
-        run_config=run_config,
-        solid_selection=["solid1"],
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["solid1"],).success
 
 
 def test_extra_config_ignored_composites():
@@ -198,17 +188,10 @@ def test_extra_config_input_bug():
 
     # Test against a bug where we generated required input config
     # for takes_input even though it was not being executed.
-    assert execute_pipeline(
-        my_pipeline,
-        run_config=run_config,
-        solid_selection=["root"],
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["root"],).success
 
     # subselected pipeline shouldn't require the unselected solid's config
-    assert execute_pipeline(
-        my_pipeline,
-        solid_selection=["root"],
-    ).success
+    assert execute_pipeline(my_pipeline, solid_selection=["root"],).success
 
 
 def test_extra_config_unsatisfied_input():
@@ -255,19 +238,14 @@ def test_extra_config_unsatisfied_input_io_man():
         end(start())
 
     assert execute_pipeline(
-        testing_io,
-        run_config={
-            "solids": {"start": {"inputs": {"x": 3}}},
-        },
+        testing_io, run_config={"solids": {"start": {"inputs": {"x": 3}}},},
     ).success
 
     # test to ensure that if start is not being executed its
     # input config is still allowed (and ignored)
     assert execute_pipeline(
         testing_io,
-        run_config={
-            "solids": {"start": {"inputs": {"x": 3}}},
-        },
+        run_config={"solids": {"start": {"inputs": {"x": 3}}},},
         solid_selection=["end"],
     ).success
 

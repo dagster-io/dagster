@@ -45,16 +45,7 @@ def get_resource_init_pipeline(resources_initted):
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "a": resource_a,
-                    "b": resource_b,
-                }
-            )
-        ],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline():
         consumes_resource_a()
         consumes_resource_b()
@@ -141,10 +132,7 @@ def test_execution_plan_subset_strict_resources():
         pipeline_def, step_keys_to_execute=["consumes_resource_b"]
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def,
-        execution_plan=execution_plan,
-    )
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def, execution_plan=execution_plan,)
 
     result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
 
@@ -187,16 +175,7 @@ def test_solid_selection_with_aliases_strict_resources():
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "a": resource_a,
-                    "b": resource_b,
-                }
-            )
-        ],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline():
         consumes_resource_a.alias("alias_for_a")()
         consumes_resource_b()
@@ -243,16 +222,7 @@ def create_composite_solid_pipeline(resources_initted):
         consumes_resource_b()
         consumes_resource_b_error()
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "a": resource_a,
-                    "b": resource_b,
-                }
-            )
-        ],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_composite_test_pipeline():
         wraps_a()
         wraps_b()
@@ -283,10 +253,7 @@ def test_execution_plan_subset_strict_resources_within_composite():
         pipeline_def, step_keys_to_execute=["wraps_b.consumes_resource_b"]
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def,
-        execution_plan=execution_plan,
-    )
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def, execution_plan=execution_plan,)
 
     result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
 
@@ -327,16 +294,7 @@ def test_execution_plan_subset_with_aliases():
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "a": resource_a,
-                    "b": resource_b,
-                }
-            )
-        ],
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline_with_alias():
         consumes_resource_a()
         consumes_resource_b.alias("b_alias")()
@@ -348,8 +306,7 @@ def test_execution_plan_subset_with_aliases():
     )
 
     pipeline_run = instance.create_run_for_pipeline(
-        selective_init_test_pipeline_with_alias,
-        execution_plan=execution_plan,
+        selective_init_test_pipeline_with_alias, execution_plan=execution_plan,
     )
 
     result = execute_run(
@@ -536,8 +493,7 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     )
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
-            under_required_pipeline,
-            {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
+            under_required_pipeline, {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
         )
 
     sufficiently_required_pipeline = define_composite_materialization_pipeline(
@@ -630,9 +586,7 @@ def test_type_missing_resource_fails():
         return context.resources.a == value
 
     CustomType = DagsterType(
-        name="NeedsA",
-        type_check_fn=resource_based_type_check,
-        required_resource_keys={"a"},
+        name="NeedsA", type_check_fn=resource_based_type_check, required_resource_keys={"a"},
     )
 
     @solid(output_defs=[OutputDefinition(CustomType, "custom_type")])
@@ -705,13 +659,7 @@ def test_extra_resources():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "A": resource_a,
-                    "B": resource_b,
-                    "BB": resource_b,
-                }
-            )
+            ModeDefinition(resource_defs={"A": resource_a, "B": resource_b, "BB": resource_b,})
         ]
     )
     def extra():
@@ -739,16 +687,7 @@ def test_extra_configured_resources():
     def echo(context):
         return context.resources.A
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "A": resource_a,
-                    "B": resource_b2,
-                }
-            )
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"A": resource_a, "B": resource_b2,})])
     def extra():
         echo()
 

@@ -10,9 +10,7 @@ def test_basic_resource():
     def basic_resource(_):
         return "foo"
 
-    with build_resources(
-        resources={"basic_resource": basic_resource},
-    ) as resources:
+    with build_resources(resources={"basic_resource": basic_resource},) as resources:
         assert not isinstance(resources, IContainsGenerator)
         assert resources.basic_resource == "foo"
 

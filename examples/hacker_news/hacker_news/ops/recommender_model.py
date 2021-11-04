@@ -40,10 +40,7 @@ model_perf_notebook = define_dagstermill_solid(
     ins={
         "story_titles": In(
             root_manager_key="warehouse_loader",
-            metadata={
-                "table": "hackernews.stories",
-                "columns": ["id", "title"],
-            },
+            metadata={"table": "hackernews.stories", "columns": ["id", "title"],},
         ),
     },
     out=Out(

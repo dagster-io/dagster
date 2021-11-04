@@ -67,8 +67,7 @@ def test_unknown_metadata_value():
     @solid(output_defs=[])
     def the_solid(context):
         yield AssetMaterialization(
-            asset_key="foo",
-            metadata={"bad": context.instance},
+            asset_key="foo", metadata={"bad": context.instance},
         )
 
     @pipeline
@@ -89,8 +88,7 @@ def test_bad_json_metadata_value():
     @solid(output_defs=[])
     def the_solid(context):
         yield AssetMaterialization(
-            asset_key="foo",
-            metadata={"bad": {"nested": context.instance}},
+            asset_key="foo", metadata={"bad": {"nested": context.instance}},
         )
 
     @pipeline

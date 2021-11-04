@@ -168,10 +168,7 @@ def test_fs_io_manager_reexecution():
         assert result.success
 
         re_result = reexecute_pipeline(
-            pipeline_def,
-            result.run_id,
-            instance=instance,
-            step_selection=["solid_b"],
+            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b"],
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
@@ -406,9 +403,7 @@ def test_multi_materialization():
 
 
 def test_different_io_managers():
-    @solid(
-        output_defs=[OutputDefinition(io_manager_key="my_io_manager")],
-    )
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")],)
     def solid_a(_context):
         return 1
 

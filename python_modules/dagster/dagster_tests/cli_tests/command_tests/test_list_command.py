@@ -116,12 +116,10 @@ def test_list_command_grpc_socket():
 
         with server_process.create_ephemeral_client() as api_client:
             execute_list_command(
-                {"grpc_socket": api_client.socket},
-                no_print,
+                {"grpc_socket": api_client.socket}, no_print,
             )
             execute_list_command(
-                {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
-                no_print,
+                {"grpc_socket": api_client.socket, "grpc_host": api_client.host}, no_print,
             )
 
             result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
@@ -169,15 +167,13 @@ def test_list_command_deployed_grpc():
             assert result.exit_code != 0
 
             execute_list_command(
-                {"grpc_port": api_client.port},
-                no_print,
+                {"grpc_port": api_client.port}, no_print,
             )
 
             # Can't supply both port and socket
             with pytest.raises(UsageError):
                 execute_list_command(
-                    {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"},
-                    no_print,
+                    {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"}, no_print,
                 )
 
         server_process.wait()
@@ -303,8 +299,7 @@ def test_list_command_cli():
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
-            job_list_command,
-            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
+            job_list_command, ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
         )
         assert_correct_job_list_bar_repository_output(result)
 

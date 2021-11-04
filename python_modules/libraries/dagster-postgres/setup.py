@@ -31,11 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        package_data={
-            "dagster-postgres": [
-                "dagster_postgres/alembic/*",
-            ]
-        },
+        package_data={"dagster-postgres": ["dagster_postgres/alembic/*",]},
         include_package_data=True,
         install_requires=[f"dagster{pin}", "psycopg2-binary"],
         zip_safe=False,

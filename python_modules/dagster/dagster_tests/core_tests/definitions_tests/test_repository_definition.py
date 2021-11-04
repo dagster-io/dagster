@@ -154,8 +154,7 @@ def test_non_pipeline_in_pipelines():
 
 def test_schedule_partitions():
     @daily_schedule(
-        pipeline_name="foo",
-        start_date=datetime.datetime(2020, 1, 1),
+        pipeline_name="foo", start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_foo(_date):
         return {}
@@ -174,8 +173,7 @@ def test_schedule_partitions():
 
 def test_bad_schedule():
     @daily_schedule(
-        pipeline_name="foo",
-        start_date=datetime.datetime(2020, 1, 1),
+        pipeline_name="foo", start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_foo(_date):
         return {}
@@ -191,9 +189,7 @@ def test_bad_schedule():
 
 
 def test_bad_sensor():
-    @sensor(
-        pipeline_name="foo",
-    )
+    @sensor(pipeline_name="foo",)
     def foo_sensor(_):
         return {}
 
@@ -396,12 +392,7 @@ def test_dict_jobs():
 
     @repository
     def jobs():
-        return {
-            "jobs": {
-                "my_graph": my_graph,
-                "other_graph": my_graph.to_job(name="other_graph"),
-            }
-        }
+        return {"jobs": {"my_graph": my_graph, "other_graph": my_graph.to_job(name="other_graph"),}}
 
     assert jobs.get_pipeline("my_graph")
     assert jobs.get_pipeline("other_graph")

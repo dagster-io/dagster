@@ -68,9 +68,7 @@ def test_k8s_run_launcher_default(
         },
     )
     _launch_executor_run(
-        run_config,
-        dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        run_config, dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher,
     )
 
 
@@ -111,14 +109,10 @@ def test_k8s_executor_get_config_from_run_launcher(
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
-        {
-            "execution": {"k8s": {"config": {"job_image": dagster_docker_image}}},
-        },
+        {"execution": {"k8s": {"config": {"job_image": dagster_docker_image}}},},
     )
     _launch_executor_run(
-        run_config,
-        dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        run_config, dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher,
     )
 
 
@@ -149,9 +143,7 @@ def test_k8s_executor_combine_configs(
         },
     )
     run_id = _launch_executor_run(
-        run_config,
-        dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        run_config, dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher,
     )
 
     step_job_key = get_k8s_job_name(run_id, "count_letters")

@@ -117,9 +117,7 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
     assert len(pipeline_result_full.solid_result_list) == 5
 
     reexecution_result_full = reexecute_pipeline(
-        foo_pipeline,
-        parent_run_id=pipeline_result_full.run_id,
-        instance=instance,
+        foo_pipeline, parent_run_id=pipeline_result_full.run_id, instance=instance,
     )
 
     assert reexecution_result_full.success
@@ -172,8 +170,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
     assert result_multi_overlap.result_for_solid("multiply_two").output_value() == 6
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match="Step selection refers to unknown step: a",
+        DagsterExecutionStepNotFoundError, match="Step selection refers to unknown step: a",
     ):
         reexecute_pipeline(
             foo_pipeline,
@@ -183,8 +180,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
         )
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match="Step selection refers to unknown steps: a, b",
+        DagsterExecutionStepNotFoundError, match="Step selection refers to unknown steps: a, b",
     ):
         reexecute_pipeline(
             foo_pipeline,
@@ -203,9 +199,7 @@ def test_reexecute_pipeline_iterator():
 
     output_event_iterator_full = step_output_event_filter(
         reexecute_pipeline_iterator(
-            foo_pipeline,
-            parent_run_id=pipeline_result_full.run_id,
-            instance=instance,
+            foo_pipeline, parent_run_id=pipeline_result_full.run_id, instance=instance,
         )
     )
     events_full = list(output_event_iterator_full)

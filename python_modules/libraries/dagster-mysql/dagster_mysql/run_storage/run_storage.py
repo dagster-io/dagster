@@ -43,9 +43,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.mysql_url,
-            isolation_level="AUTOCOMMIT",
-            poolclass=db.pool.NullPool,
+            self.mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
         )
 
         self._index_migration_cache = {}

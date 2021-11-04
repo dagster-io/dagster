@@ -124,10 +124,7 @@ def test_only_used_for_root():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "my_io_manager": my_io_manager,
-                    "my_root_manager": root_manager,
-                }
+                resource_defs={"my_io_manager": my_io_manager, "my_root_manager": root_manager,}
             )
         ]
     )

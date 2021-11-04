@@ -65,8 +65,7 @@ class StepDelegatingExecutor(Executor):
         # (they shouldn't be)
         for event in events:
             log_step_event(
-                plan_context.for_step(running_steps[event.step_key]),
-                event,
+                plan_context.for_step(running_steps[event.step_key]), event,
             )
         return events
 
@@ -87,15 +86,10 @@ class StepDelegatingExecutor(Executor):
 
             if plan_context.resume_from_failure:
                 yield DagsterEvent.engine_event(
-                    plan_context,
-                    "Resuming execution from failure",
-                    EngineEventData(),
+                    plan_context, "Resuming execution from failure", EngineEventData(),
                 )
 
-                events = self._pop_events(
-                    plan_context.instance,
-                    plan_context.run_id,
-                )
+                events = self._pop_events(plan_context.instance, plan_context.run_id,)
                 for dagster_event in events:
                     yield dagster_event
 
@@ -171,12 +165,7 @@ class StepDelegatingExecutor(Executor):
 
                     return
 
-                events.extend(
-                    self._pop_events(
-                        plan_context.instance,
-                        plan_context.run_id,
-                    )
-                )
+                events.extend(self._pop_events(plan_context.instance, plan_context.run_id,))
 
                 curr_time = pendulum.now("UTC")
                 if (

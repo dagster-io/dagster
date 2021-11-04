@@ -48,9 +48,7 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
             "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
             network_buildkite_container("dagit_service_network"),
             connect_sibling_docker_container(
-                "dagit_service_network",
-                "dagit",
-                "BACKCOMPAT_TESTS_DAGIT_HOST",
+                "dagit_service_network", "dagit", "BACKCOMPAT_TESTS_DAGIT_HOST",
             ),
             "popd",
         ]
@@ -129,9 +127,7 @@ def daemon_extra_cmds_fn(version):
         "docker-compose up -d --remove-orphans",
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-docker",
-            "POSTGRES_TEST_DB_HOST",
+            "postgres", "test-postgres-db-docker", "POSTGRES_TEST_DB_HOST",
         ),
         "popd",
     ]

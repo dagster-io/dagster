@@ -144,9 +144,7 @@ class StubbedEcs:
         tasks = [task for task in self.tasks[cluster] if task["taskArn"] in arns]
 
         self.stubber.add_response(
-            method="describe_tasks",
-            service_response={"tasks": tasks},
-            expected_params={**kwargs},
+            method="describe_tasks", service_response={"tasks": tasks}, expected_params={**kwargs},
         )
         return self.client.describe_tasks(**kwargs)
 
@@ -204,9 +202,7 @@ class StubbedEcs:
         arns = [task["taskArn"] for task in tasks]
 
         self.stubber.add_response(
-            method="list_tasks",
-            service_response={"taskArns": arns},
-            expected_params={**kwargs},
+            method="list_tasks", service_response={"taskArns": arns}, expected_params={**kwargs},
         )
 
         return self.client.list_tasks(**kwargs)
@@ -304,9 +300,7 @@ class StubbedEcs:
                 tasks.append(task)
 
             self.stubber.add_response(
-                method="run_task",
-                service_response={"tasks": tasks},
-                expected_params={**kwargs},
+                method="run_task", service_response={"tasks": tasks}, expected_params={**kwargs},
             )
 
             self.tasks[cluster] += tasks
@@ -346,9 +340,7 @@ class StubbedEcs:
 
         if self._task_exists(arn):
             self.stubber.add_response(
-                method="tag_resource",
-                service_response={},
-                expected_params={**kwargs},
+                method="tag_resource", service_response={}, expected_params={**kwargs},
             )
             self.tags[arn] = tags
         else:

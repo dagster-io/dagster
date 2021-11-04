@@ -346,10 +346,7 @@ class SensorDefinition:
         self.check_valid_run_requests(run_requests)
 
         return SensorExecutionData(
-            run_requests,
-            skip_message,
-            context.cursor,
-            pipeline_run_reactions,
+            run_requests, skip_message, context.cursor, pipeline_run_reactions,
         )
 
     def has_loadable_targets(self) -> bool:

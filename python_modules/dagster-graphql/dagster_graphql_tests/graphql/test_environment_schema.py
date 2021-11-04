@@ -110,10 +110,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={
-                "selector": selector,
-                "mode": "add_mode",
-            },
+            variables={"selector": selector, "mode": "add_mode",},
         )
         assert result.data["runConfigSchemaOrError"]["__typename"] == "RunConfigSchema"
 
@@ -133,10 +130,7 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={
-                "selector": selector,
-                "mode": "add_mode",
-            },
+            variables={"selector": selector, "mode": "add_mode",},
         )
         assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
 

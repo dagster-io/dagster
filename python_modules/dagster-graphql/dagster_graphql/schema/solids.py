@@ -32,8 +32,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
         solid_def_snap = self._represented_pipeline.get_node_def_snap(solid_def_name)
         self._input_def_snap = solid_def_snap.get_input_snap(input_def_name)
         super().__init__(
-            name=self._input_def_snap.name,
-            description=self._input_def_snap.description,
+            name=self._input_def_snap.name, description=self._input_def_snap.description,
         )
 
     def resolve_type(self, _graphene_info):
@@ -75,8 +74,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info):
         return to_dagster_type(
-            self._represented_pipeline.pipeline_snapshot,
-            self._output_def_snap.dagster_type_key,
+            self._represented_pipeline.pipeline_snapshot, self._output_def_snap.dagster_type_key,
         )
 
     def resolve_solid_definition(self, _graphene_info):
@@ -116,9 +114,7 @@ class GrapheneInput(graphene.ObjectType):
 
     def resolve_definition(self, _graphene_info):
         return GrapheneInputDefinition(
-            self._represented_pipeline,
-            self._solid_def_snap.name,
-            self._input_def_snap.name,
+            self._represented_pipeline, self._solid_def_snap.name, self._input_def_snap.name,
         )
 
     def resolve_depends_on(self, _graphene_info):
@@ -197,11 +193,7 @@ class GrapheneInputMapping(graphene.ObjectType):
         name = "InputMapping"
 
     def __init__(
-        self,
-        represented_pipeline,
-        current_dep_index,
-        solid_def_name,
-        input_name,
+        self, represented_pipeline, current_dep_index, solid_def_name, input_name,
     ):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedPipeline
@@ -237,11 +229,7 @@ class GrapheneOutputMapping(graphene.ObjectType):
         name = "OutputMapping"
 
     def __init__(
-        self,
-        represented_pipeline,
-        current_dep_index,
-        solid_def_name,
-        output_name,
+        self, represented_pipeline, current_dep_index, solid_def_name, output_name,
     ):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedPipeline

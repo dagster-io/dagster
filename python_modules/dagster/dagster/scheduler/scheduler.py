@@ -251,8 +251,7 @@ def _schedule_runs_at_time(
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
     external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
+        subset_pipeline_result.external_pipeline_data, external_repo.handle,
     )
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
@@ -326,9 +325,7 @@ def _schedule_runs_at_time(
 def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):
     tags = merge_dicts(
         PipelineRun.tags_for_schedule(external_schedule),
-        {
-            SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
-        },
+        {SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),},
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
@@ -402,9 +399,7 @@ def _create_scheduler_run(
     if len(execution_plan_errors) > 0:
         for error in execution_plan_errors:
             instance.report_engine_event(
-                error.message,
-                possibly_invalid_pipeline_run,
-                EngineEventData.engine_error(error),
+                error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
             )
         instance.report_run_failed(possibly_invalid_pipeline_run)
         error_string = "\n".join([error.to_string() for error in execution_plan_errors])

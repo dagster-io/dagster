@@ -57,8 +57,7 @@ def test_successful_type_eval():
     @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
-            DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 11]}),
-            output_name="basic_dataframe",
+            DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 11]}), output_name="basic_dataframe",
         )
 
     @graph
@@ -80,8 +79,7 @@ def test_failing_type_eval_column():
     @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
-            DataFrame({"foo": [1, "a", 7], "bar": [9, 10, 11]}),
-            output_name="basic_dataframe",
+            DataFrame({"foo": [1, "a", 7], "bar": [9, 10, 11]}), output_name="basic_dataframe",
         )
 
     @graph
@@ -124,8 +122,7 @@ def test_failing_type_eval_aggregate():
     @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
-            DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 10]}),
-            output_name="basic_dataframe",
+            DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 10]}), output_name="basic_dataframe",
         )
 
     @graph
@@ -158,8 +155,7 @@ def test_failing_type_eval_dataframe():
     @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
-            DataFrame({"foo": [1, 2, 3], "baz": [9, 10, 10]}),
-            output_name="basic_dataframe",
+            DataFrame({"foo": [1, 2, 3], "baz": [9, 10, 10]}), output_name="basic_dataframe",
         )
 
     @graph

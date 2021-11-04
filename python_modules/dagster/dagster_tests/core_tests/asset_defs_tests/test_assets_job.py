@@ -129,10 +129,7 @@ def test_source_op_asset():
         return MyIOManager()
 
     job = build_assets_job(
-        "a",
-        [asset1],
-        source_assets=[source1],
-        resource_defs={"special_io_manager": my_io_manager},
+        "a", [asset1], source_assets=[source1], resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1]
     assert job.execute_in_process().success

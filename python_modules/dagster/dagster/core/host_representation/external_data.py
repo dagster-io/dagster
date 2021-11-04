@@ -57,14 +57,10 @@ class ExternalRepositoryData(
                 of_type=ExternalPartitionSetData,
             ),
             external_sensor_datas=check.opt_list_param(
-                external_sensor_datas,
-                "external_sensor_datas",
-                of_type=ExternalSensorData,
+                external_sensor_datas, "external_sensor_datas", of_type=ExternalSensorData,
             ),
             external_asset_graph_data=check.opt_list_param(
-                external_asset_graph_data,
-                "external_asset_graph_dats",
-                of_type=ExternalAssetNode,
+                external_asset_graph_data, "external_asset_graph_dats", of_type=ExternalAssetNode,
             ),
         )
 
@@ -211,23 +207,14 @@ class ExternalScheduleExecutionErrorData(
 ):
     def __new__(cls, error):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
 @whitelist_for_serdes
-class ExternalTargetData(
-    namedtuple(
-        "_ExternalTargetData",
-        "pipeline_name mode solid_selection",
-    )
-):
+class ExternalTargetData(namedtuple("_ExternalTargetData", "pipeline_name mode solid_selection",)):
     def __new__(
-        cls,
-        pipeline_name,
-        mode,
-        solid_selection,
+        cls, pipeline_name, mode, solid_selection,
     ):
         return super(ExternalTargetData, cls).__new__(
             cls,
@@ -287,8 +274,7 @@ class ExternalSensorData(
 class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionErrorData", "error")):
     def __new__(cls, error):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -306,8 +292,7 @@ class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "ru
 class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsErrorData", "error")):
     def __new__(cls, error):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -329,8 +314,7 @@ class ExternalPartitionSetData(
 class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "partition_names")):
     def __new__(cls, partition_names=None):
         return super(ExternalPartitionNamesData, cls).__new__(
-            cls,
-            partition_names=check.opt_list_param(partition_names, "partition_names", str),
+            cls, partition_names=check.opt_list_param(partition_names, "partition_names", str),
         )
 
 
@@ -348,9 +332,7 @@ class ExternalPartitionConfigData(namedtuple("_ExternalPartitionConfigData", "na
 class ExternalPartitionTagsData(namedtuple("_ExternalPartitionTagsData", "name tags")):
     def __new__(cls, name, tags=None):
         return super(ExternalPartitionTagsData, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            tags=check.opt_dict_param(tags, "tags"),
+            cls, name=check.str_param(name, "name"), tags=check.opt_dict_param(tags, "tags"),
         )
 
 
@@ -386,8 +368,7 @@ class ExternalPartitionExecutionErrorData(
 ):
     def __new__(cls, error):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -403,9 +384,7 @@ class ExternalAssetDependency(
 
     def __new__(cls, upstream_asset_key: AssetKey, input_name: str):
         return super(ExternalAssetDependency, cls).__new__(
-            cls,
-            upstream_asset_key=upstream_asset_key,
-            input_name=input_name,
+            cls, upstream_asset_key=upstream_asset_key, input_name=input_name,
         )
 
 
@@ -443,8 +422,7 @@ def external_repository_data_from_def(repository_def):
     return ExternalRepositoryData(
         name=repository_def.name,
         external_pipeline_datas=sorted(
-            list(map(external_pipeline_data_from_def, pipelines)),
-            key=lambda pd: pd.name,
+            list(map(external_pipeline_data_from_def, pipelines)), key=lambda pd: pd.name,
         ),
         external_schedule_datas=sorted(
             list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
@@ -487,8 +465,7 @@ def external_asset_graph_from_defs(
                 if upstream_asset_key:
                     for node_asset_key in node_asset_keys:
                         deps[node_asset_key][input_def.name] = ExternalAssetDependency(
-                            upstream_asset_key=upstream_asset_key,
-                            input_name=input_def.name,
+                            upstream_asset_key=upstream_asset_key, input_name=input_def.name,
                         )
                         all_upstream_asset_keys.add(upstream_asset_key)
 

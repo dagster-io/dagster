@@ -59,12 +59,7 @@ class IntentionalRandomFailure(Exception):
 
 
 def make_solid(
-    name,
-    asset_key=None,
-    error_rate=None,
-    data_size_fn=None,
-    sleep_factor=None,
-    has_input=False,
+    name, asset_key=None, error_rate=None, data_size_fn=None, sleep_factor=None, has_input=False,
 ):
     @solid(
         name=name,

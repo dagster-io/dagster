@@ -13,16 +13,14 @@ def one():
 
 
 @solid(
-    input_defs=[InputDefinition("arg1", int)],
-    output_defs=[OutputDefinition(int)],
+    input_defs=[InputDefinition("arg1", int)], output_defs=[OutputDefinition(int)],
 )
 def do_something_else(arg1):
     return arg1
 
 
 @composite_solid(
-    input_defs=[InputDefinition("arg1", int)],
-    output_defs=[OutputDefinition(int)],
+    input_defs=[InputDefinition("arg1", int)], output_defs=[OutputDefinition(int)],
 )
 def do_two_things(arg1):
     do_something()

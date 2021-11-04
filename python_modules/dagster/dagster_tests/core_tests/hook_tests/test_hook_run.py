@@ -113,10 +113,7 @@ def test_hook_accumulation():
             "composite_2.solid_3",
         },
         "solid_1_hook": {"composite_2.composite_1.solid_1"},
-        "composite_1_hook": {
-            "composite_2.composite_1.solid_1",
-            "composite_2.composite_1.solid_2",
-        },
+        "composite_1_hook": {"composite_2.composite_1.solid_1", "composite_2.composite_1.solid_2",},
     }
 
 
@@ -323,10 +320,7 @@ def test_solid_outputs_access():
         yield Output(3, "three")
 
     @solid(
-        output_defs=[
-            OutputDefinition(name="one"),
-            OutputDefinition(name="two"),
-        ]
+        output_defs=[OutputDefinition(name="one"), OutputDefinition(name="two"),]
     )
     def failed_solid(_):
         yield Output(1, "one")

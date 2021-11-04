@@ -105,11 +105,7 @@ class SnowflakeIOManager(IOManager):
         with connect_snowflake(config=config) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
-                table,
-                con=con,
-                if_exists="replace",
-                index=False,
-                method=pd_writer,
+                table, con=con, if_exists="replace", index=False, method=pd_writer,
             )
 
     def _handle_spark_output(self, config: Dict, df: SparkDataFrame, schema: str, table: str):
@@ -173,10 +169,7 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
         """
 
     def _get_select_statement(
-        self,
-        resources,
-        asset_key: AssetKey,
-        columns: Optional[Sequence[str]],
+        self, resources, asset_key: AssetKey, columns: Optional[Sequence[str]],
     ):
         check.invariant(columns is None)
         return f"""

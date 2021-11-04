@@ -281,8 +281,7 @@ class JobTickData(
         check.str_param(origin_run_id, "origin_run_id")
         return JobTickData(
             **merge_dicts(
-                self._asdict(),
-                {"origin_run_ids": [*self.origin_run_ids, origin_run_id]},
+                self._asdict(), {"origin_run_ids": [*self.origin_run_ids, origin_run_id]},
             )
         )
 
@@ -308,16 +307,11 @@ def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_rea
 
 class JobTickStatsSnapshot(
     namedtuple(
-        "JobTickStatsSnapshot",
-        ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
+        "JobTickStatsSnapshot", ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
     )
 ):
     def __new__(
-        cls,
-        ticks_started,
-        ticks_succeeded,
-        ticks_skipped,
-        ticks_failed,
+        cls, ticks_started, ticks_succeeded, ticks_skipped, ticks_failed,
     ):
         return super(JobTickStatsSnapshot, cls).__new__(
             cls,

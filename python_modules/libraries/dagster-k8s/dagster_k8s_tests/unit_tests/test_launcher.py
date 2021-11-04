@@ -48,13 +48,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         with in_process_test_workspace(instance, recon_repo) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
-                repository_name=repo_def.name,
-                repository_location=location,
+                repository_name=repo_def.name, repository_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
-                recon_pipeline,
-                solid_selection=None,
-                repository_handle=repo_handle,
+                recon_pipeline, solid_selection=None, repository_handle=repo_handle,
             )
 
             # Launch the run in a fake Dagster instance.
@@ -106,13 +103,10 @@ def test_no_postgres(kubeconfig_file):
         with in_process_test_workspace(instance, recon_repo) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
-                repository_name=repo_def.name,
-                repository_location=location,
+                repository_name=repo_def.name, repository_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
-                recon_pipeline,
-                solid_selection=None,
-                repository_handle=repo_handle,
+                recon_pipeline, solid_selection=None, repository_handle=repo_handle,
             )
 
             # Launch the run in a fake Dagster instance.

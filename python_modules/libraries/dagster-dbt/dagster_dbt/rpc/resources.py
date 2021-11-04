@@ -353,11 +353,7 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def generate_docs(
-        self,
-        compile_project: bool = False,
-        **kwargs,
-    ) -> DbtRpcOutput:
+    def generate_docs(self, compile_project: bool = False, **kwargs,) -> DbtRpcOutput:
         """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for the RPC method `docs.generate
         <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
@@ -482,11 +478,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         current_state = None
 
         while True:
-            out = self.poll(
-                request_token=request_token,
-                logs=False,
-                logs_start=logs_start,
-            )
+            out = self.poll(request_token=request_token, logs=False, logs_start=logs_start,)
 
             current_state = out.result.get("state")
             # Stop polling if request's state is no longer "running".
@@ -549,9 +541,7 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
         "poll_interval": Field(IntSource, is_required=False, default_value=1),
     },
 )
-def dbt_rpc_sync_resource(
-    context,
-) -> DbtRpcSyncResource:
+def dbt_rpc_sync_resource(context,) -> DbtRpcSyncResource:
     """This resource defines a synchronous dbt RPC client, which sends requests to a dbt RPC server,
     and waits for the request to complete before returning.
 

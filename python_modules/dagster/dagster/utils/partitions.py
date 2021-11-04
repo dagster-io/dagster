@@ -16,12 +16,7 @@ DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "
 
 
 def date_partition_range(
-    start,
-    end=None,
-    delta_range="days",
-    fmt=None,
-    inclusive=False,
-    timezone=None,
+    start, end=None, delta_range="days", fmt=None, inclusive=False, timezone=None,
 ):
     """Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
@@ -56,8 +51,7 @@ def date_partition_range(
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
+                start=start.strftime(fmt), end=end.strftime(fmt),
             )
         )
 

@@ -14,8 +14,7 @@ BUILDKITE = bool(os.getenv("BUILDKITE"))
 def mysql_instance_for_test(dunder_file, container_name, overrides=None):
     with TemporaryDirectory() as temp_dir:
         with TestMySQLInstance.docker_service_up_or_skip(
-            file_relative_path(dunder_file, "docker-compose.yml"),
-            container_name,
+            file_relative_path(dunder_file, "docker-compose.yml"), container_name,
         ) as mysql_conn_string:
             TestMySQLInstance.clean_run_storage(mysql_conn_string)
             TestMySQLInstance.clean_event_log_storage(mysql_conn_string)
@@ -160,8 +159,7 @@ class TestMySQLInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode()
             raise MySQLDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
-                ex,
+                "Failed to launch docker container(s) via docker-compose: {}".format(err_text), ex,
             )
 
         conn_str = TestMySQLInstance.conn_string(**conn_args)

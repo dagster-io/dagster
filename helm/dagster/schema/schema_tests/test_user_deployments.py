@@ -32,8 +32,7 @@ def helm_template() -> HelmTemplate:
 @pytest.fixture(name="full_template")
 def full_helm_template() -> HelmTemplate:
     return HelmTemplate(
-        helm_dir_path="helm/dagster",
-        subchart_paths=["charts/dagster-user-deployments"],
+        helm_dir_path="helm/dagster", subchart_paths=["charts/dagster-user-deployments"],
     )
 
 
@@ -258,9 +257,7 @@ def test_chart_does_not_render(full_template: HelmTemplate, capsys):
             dagsterUserDeployments=UserDeployments(
                 enabled=True,
                 enableSubchart=False,
-                deployments=[
-                    create_simple_user_deployment("simple-deployment-one"),
-                ],
+                deployments=[create_simple_user_deployment("simple-deployment-one"),],
             )
         ),
         DagsterHelmValues.construct(
@@ -293,9 +290,7 @@ def test_chart_does_render(helm_values: DagsterHelmValues, full_template: HelmTe
             dagsterUserDeployments=UserDeployments(
                 enabled=True,
                 enableSubchart=True,
-                deployments=[
-                    create_simple_user_deployment("simple-deployment-one"),
-                ],
+                deployments=[create_simple_user_deployment("simple-deployment-one"),],
             )
         ),
         DagsterHelmValues.construct(
@@ -310,10 +305,7 @@ def test_chart_does_render(helm_values: DagsterHelmValues, full_template: HelmTe
             )
         ),
     ],
-    ids=[
-        "single user deployment enabled",
-        "multiple user deployments enabled",
-    ],
+    ids=["single user deployment enabled", "multiple user deployments enabled",],
 )
 def test_user_deployment_checksum_unchanged(helm_values: DagsterHelmValues, template: HelmTemplate):
     pre_upgrade_templates = template.render(helm_values)
@@ -455,9 +447,7 @@ def test_user_deployment_image(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[deployment],
+            enabled=True, enableSubchart=True, deployments=[deployment],
         )
     )
 
@@ -502,9 +492,7 @@ def test_user_deployment_volumes(template: HelmTemplate):
 
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[deployment],
+            enabled=True, enableSubchart=True, deployments=[deployment],
         )
     )
 
@@ -549,9 +537,7 @@ def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
 def test_subchart_postgres_password_global_override(subchart_template: HelmTemplate):
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
         postgresqlSecretName="postgresql-secret",
-        global_=Global.construct(
-            postgresqlSecretName="global-postgresql-secret",
-        ),
+        global_=Global.construct(postgresqlSecretName="global-postgresql-secret",),
     )
 
     deployment_templates = subchart_template.render(deployment_values)

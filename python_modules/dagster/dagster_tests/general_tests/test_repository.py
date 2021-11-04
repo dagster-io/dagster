@@ -90,10 +90,7 @@ def define_multi_mode_with_resources_pipeline():
             PresetDefinition(
                 "multiproc",
                 mode="add_mode",
-                run_config={
-                    "resources": {"op": {"config": 2}},
-                    "execution": {"multiprocess": {}},
-                },
+                run_config={"resources": {"op": {"config": 2}}, "execution": {"multiprocess": {}},},
             ),
         ],
     )

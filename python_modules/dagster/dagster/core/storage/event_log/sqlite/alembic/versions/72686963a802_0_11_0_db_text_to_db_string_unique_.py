@@ -23,9 +23,7 @@ def upgrade():
     if has_table("secondary_indexes"):
         with op.batch_alter_table("secondary_indexes") as batch_op:
             batch_op.alter_column(
-                "name",
-                type_=MySQLCompatabilityTypes.UniqueText,
-                existing_type=sa.Text,
+                "name", type_=MySQLCompatabilityTypes.UniqueText, existing_type=sa.Text,
             )
     if has_table("asset_keys"):
         with op.batch_alter_table("asset_keys") as batch_op:
@@ -38,14 +36,10 @@ def downgrade():
     if has_table("secondary_indexes"):
         with op.batch_alter_table("secondary_indexes") as batch_op:
             batch_op.alter_column(
-                "name",
-                type_=sa.Text,
-                existing_type=MySQLCompatabilityTypes.UniqueText,
+                "name", type_=sa.Text, existing_type=MySQLCompatabilityTypes.UniqueText,
             )
     if has_table("asset_keys"):
         with op.batch_alter_table("asset_keys") as batch_op:
             batch_op.alter_column(
-                "asset_key",
-                type_=sa.Text,
-                existing_type=MySQLCompatabilityTypes.UniqueText,
+                "asset_key", type_=sa.Text, existing_type=MySQLCompatabilityTypes.UniqueText,
             )

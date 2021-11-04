@@ -116,16 +116,14 @@ def test_schedule_decorators_sanity():
         return {}
 
     @daily_schedule(
-        pipeline_name="foo_pipeline",
-        start_date=datetime(year=2019, month=1, day=1),
+        pipeline_name="foo_pipeline", start_date=datetime(year=2019, month=1, day=1),
     )
     def daily_foo_schedule():
         """Fake doc block"""
         return {}
 
     @hourly_schedule(
-        pipeline_name="foo_pipeline",
-        start_date=datetime(year=2019, month=1, day=1),
+        pipeline_name="foo_pipeline", start_date=datetime(year=2019, month=1, day=1),
     )
     def hourly_foo_schedule():
         """Fake doc block"""
@@ -145,9 +143,7 @@ def test_schedule_decorators_sanity():
     assert not daily_foo_schedule.execution_timezone
 
     @schedule(
-        cron_schedule="* * * * *",
-        pipeline_name="foo_pipeline",
-        execution_timezone="US/Central",
+        cron_schedule="* * * * *", pipeline_name="foo_pipeline", execution_timezone="US/Central",
     )
     def foo_schedule_timezone():
         return {}
@@ -697,8 +693,7 @@ def test_schedule_decorators_bad():
     ):
 
         @daily_schedule(
-            pipeline_name="foo_pipeline",
-            start_date=datetime(year=2019, month=1, day=1, hour=2),
+            pipeline_name="foo_pipeline", start_date=datetime(year=2019, month=1, day=1, hour=2),
         )
         def daily_foo_schedule_start_later_in_day():
             return {}

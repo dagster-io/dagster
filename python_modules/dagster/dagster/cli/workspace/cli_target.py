@@ -88,12 +88,7 @@ def created_workspace_load_target(kwargs):
         return WorkspaceFileTarget(paths=list(kwargs["workspace"]))
     if kwargs.get("python_file"):
         _check_cli_arguments_none(
-            kwargs,
-            "module_name",
-            "package_name",
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
+            kwargs, "module_name", "package_name", "grpc_host", "grpc_port", "grpc_socket",
         )
         working_directory = get_working_directory_from_kwargs(kwargs)
         return PythonFileTarget(
@@ -133,11 +128,7 @@ def created_workspace_load_target(kwargs):
         )
     if kwargs.get("grpc_port"):
         _check_cli_arguments_none(
-            kwargs,
-            "attribute",
-            "working_directory",
-            "empty_working_directory",
-            "grpc_socket",
+            kwargs, "attribute", "working_directory", "empty_working_directory", "grpc_socket",
         )
         return GrpcServerTarget(
             port=kwargs.get("grpc_port"),
@@ -147,10 +138,7 @@ def created_workspace_load_target(kwargs):
         )
     elif kwargs.get("grpc_socket"):
         _check_cli_arguments_none(
-            kwargs,
-            "attribute",
-            "working_directory",
-            "empty_working_directory",
+            kwargs, "attribute", "working_directory", "empty_working_directory",
         )
         return GrpcServerTarget(
             port=None,
@@ -540,14 +528,12 @@ def get_repository_python_origin_from_kwargs(kwargs):
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "working_directory", "package_name")
             code_pointer = CodePointer.from_module(
-                kwargs.get("module_name"),
-                kwargs.get("attribute"),
+                kwargs.get("module_name"), kwargs.get("attribute"),
             )
         elif kwargs.get("package_name"):
             _check_cli_arguments_none(kwargs, "python_file", "working_directory", "module_name")
             code_pointer = CodePointer.from_python_package(
-                kwargs.get("package_name"),
-                kwargs.get("attribute"),
+                kwargs.get("package_name"), kwargs.get("attribute"),
             )
         else:
             check.failed("Must specify a Python file or module name")

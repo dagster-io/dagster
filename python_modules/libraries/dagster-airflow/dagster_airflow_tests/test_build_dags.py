@@ -21,12 +21,7 @@ from dagster_airflow_tests.marks import requires_airflow_db
             "--pipeline-name",
             "error_monster",
         ],
-        [
-            "--module-name",
-            "dagster_test.toys.resources",
-            "--pipeline-name",
-            "resource_pipeline",
-        ],
+        ["--module-name", "dagster_test.toys.resources", "--pipeline-name", "resource_pipeline",],
         ["--module-name", "dagster_test.graph_job_op_toys.log_spew", "--job-name", "log_spew"],
         [
             "--module-name",

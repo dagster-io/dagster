@@ -171,8 +171,7 @@ def my_asset_op(context):
     df = get_some_data()
     store_to_s3(df)
     yield AssetMaterialization(
-        asset_key="s3.my_asset",
-        description="A df I stored in s3",
+        asset_key="s3.my_asset", description="A df I stored in s3",
     )
 
     result = do_some_transform(df)

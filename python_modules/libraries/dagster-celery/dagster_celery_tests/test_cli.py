@@ -45,8 +45,7 @@ def start_worker(name, args=None, exit_code=0, exception_str=""):
     args = check.opt_list_param(args, "args")
     runner = CliRunner()
     result = runner.invoke(
-        main,
-        ["worker", "start", "-A", "dagster_celery.app", "-d", "--name", name] + args,
+        main, ["worker", "start", "-A", "dagster_celery.app", "-d", "--name", name] + args,
     )
     assert result.exit_code == exit_code, str(result.exception)
     if exception_str:
@@ -131,8 +130,7 @@ def test_start_worker_addargs(rabbitmq):
     # Omitting check that uid is actually 42 to avoid a heavy test dependency on psutil
     with cleanup_worker("dagster_test_worker"):
         start_worker(
-            "dagster_test_worker",
-            args=args,
+            "dagster_test_worker", args=args,
         )
 
 

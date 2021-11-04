@@ -211,12 +211,6 @@ def test_datetime_column_with_min_max_constraints_ok():
 def test_datetime_column_with_tz_validation_fails_when_incorrect_tz():
     with pytest.raises(ConstraintViolationException):
         validate_constraints(
-            DataFrame(
-                {
-                    "datetime_utc": [Timestamp("2021-03-14T12:34:56")],
-                }
-            ),
-            pandas_columns=[
-                PandasColumn.datetime_column("datetime_utc", tz="UTC"),
-            ],
+            DataFrame({"datetime_utc": [Timestamp("2021-03-14T12:34:56")],}),
+            pandas_columns=[PandasColumn.datetime_column("datetime_utc", tz="UTC"),],
         )

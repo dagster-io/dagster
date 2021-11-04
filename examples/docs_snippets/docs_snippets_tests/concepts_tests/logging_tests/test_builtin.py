@@ -11,8 +11,7 @@ def test_demo_job():
 
 def test_demo_job_config():
     with open(
-        file_relative_path(__file__, "../../../docs_snippets/concepts/logging/config.yaml"),
-        "r",
+        file_relative_path(__file__, "../../../docs_snippets/concepts/logging/config.yaml"), "r",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
     assert demo_job.execute_in_process(run_config=run_config).success

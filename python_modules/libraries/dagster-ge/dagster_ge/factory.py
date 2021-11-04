@@ -94,17 +94,14 @@ def core_ge_validation_factory(
         )
         res = convert_to_json_serializable(results.list_validation_results())[0]
         validation_results_page_renderer = ValidationResultsPageRenderer(run_info_at_end=True)
-        rendered_document_content_list = (
-            validation_results_page_renderer.render_validation_operator_result(results)
+        rendered_document_content_list = validation_results_page_renderer.render_validation_operator_result(
+            results
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
-            success=res["success"],
-            metadata_entries=[
-                meta_stats,
-            ],
+            success=res["success"], metadata_entries=[meta_stats,],
         )
         yield Output(res)
 
@@ -254,8 +251,7 @@ def core_ge_validation_factory_v3(
 
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
-            success=bool(results["success"]),
-            metadata_entries=[meta_stats],
+            success=bool(results["success"]), metadata_entries=[meta_stats],
         )
         yield Output(results.to_json_dict())
 

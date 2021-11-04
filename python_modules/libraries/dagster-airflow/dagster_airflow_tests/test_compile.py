@@ -7,8 +7,7 @@ from dagster_test.toys.composition import composition
 
 def test_compile():
     resolved_run_config = ResolvedRunConfig.build(
-        composition,
-        {"solids": {"add_four": {"inputs": {"num": {"value": 1}}}}},
+        composition, {"solids": {"add_four": {"inputs": {"num": {"value": 1}}}}},
     )
 
     plan = ExecutionPlan.build(InMemoryPipeline(composition), resolved_run_config)

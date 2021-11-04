@@ -75,22 +75,13 @@ def assert_assets_match_project(assets):
     )
     assert job.dependencies == {
         "least_caloric": {
-            "sort_by_calories": DependencyDefinition(
-                solid="sort_by_calories",
-                output="result",
-            )
+            "sort_by_calories": DependencyDefinition(solid="sort_by_calories", output="result",)
         },
         "sort_by_calories": {},
         "sort_cold_cereals_by_calories": {
-            "sort_by_calories": DependencyDefinition(
-                solid="sort_by_calories",
-                output="result",
-            )
+            "sort_by_calories": DependencyDefinition(solid="sort_by_calories", output="result",)
         },
         "sort_hot_cereals_by_calories": {
-            "sort_by_calories": DependencyDefinition(
-                solid="sort_by_calories",
-                output="result",
-            )
+            "sort_by_calories": DependencyDefinition(solid="sort_by_calories", output="result",)
         },
     }

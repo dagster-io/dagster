@@ -93,9 +93,7 @@ def test_compute_log_to_disk_multiprocess():
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
         result = execute_pipeline(
-            spew_pipeline,
-            run_config={"execution": {"multiprocess": {}}},
-            instance=instance,
+            spew_pipeline, run_config={"execution": {"multiprocess": {}}}, instance=instance,
         )
         assert result.success
 

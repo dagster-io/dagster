@@ -439,9 +439,7 @@ def _check_execute_external_pipeline_args(
                     "You have attempted to execute pipeline {name} with mode {mode}. "
                     "Available modes: {modes}"
                 ).format(
-                    name=external_pipeline.name,
-                    mode=mode,
-                    modes=external_pipeline.available_modes,
+                    name=external_pipeline.name, mode=mode, modes=external_pipeline.available_modes,
                 )
             )
     else:
@@ -490,12 +488,7 @@ def _create_external_pipeline_run(
     check.opt_str_param(run_id, "run_id")
 
     run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
-        external_pipeline,
-        run_config,
-        mode,
-        preset,
-        tags,
-        solid_selection,
+        external_pipeline, run_config, mode, preset, tags, solid_selection,
     )
 
     pipeline_name = external_pipeline.name
@@ -509,8 +502,7 @@ def _create_external_pipeline_run(
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
 
     external_pipeline_subset = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
+        subset_pipeline_result.external_pipeline_data, external_repo.handle,
     )
 
     pipeline_mode = mode or external_pipeline_subset.get_default_mode_name()
@@ -545,13 +537,7 @@ def _create_external_pipeline_run(
 
 
 def do_execute_command(
-    pipeline,
-    instance,
-    config,
-    mode=None,
-    tags=None,
-    solid_selection=None,
-    preset=None,
+    pipeline, instance, config, mode=None, tags=None, solid_selection=None, preset=None,
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -742,8 +728,7 @@ def get_config_from_args(kwargs):
         except JSONDecodeError:
             raise click.UsageError(
                 "Invalid JSON-string given for `--config-json`: {}\n\n{}".format(
-                    config_json,
-                    serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
+                    config_json, serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
                 )
             )
 
@@ -821,9 +806,7 @@ def validate_partition_slice(partition_names, name, value):
     help="The name of the partition set over which we want to backfill.",
 )
 @click.option(
-    "--all",
-    type=click.STRING,
-    help="Specify to select all partitions to backfill.",
+    "--all", type=click.STRING, help="Specify to select all partitions to backfill.",
 )
 @click.option(
     "--from",
@@ -904,14 +887,12 @@ def _execute_backfill_command_at_location(
     run_tags = get_tags_from_args(cli_args)
 
     repo_handle = RepositoryHandle(
-        repository_name=external_repo.name,
-        repository_location=repo_location,
+        repository_name=external_repo.name, repository_location=repo_location,
     )
 
     try:
         partition_names_or_error = repo_location.get_external_partition_names(
-            repo_handle,
-            partition_set_name,
+            repo_handle, partition_set_name,
         )
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -951,12 +932,10 @@ def _execute_backfill_command_at_location(
             backfill_timestamp=pendulum.now("UTC").timestamp(),
         )
         try:
-            partition_execution_data = (
-                repo_location.get_external_partition_set_execution_param_data(
-                    repository_handle=repo_handle,
-                    partition_set_name=partition_set_name,
-                    partition_names=partition_names,
-                )
+            partition_execution_data = repo_location.get_external_partition_set_execution_param_data(
+                repository_handle=repo_handle,
+                partition_set_name=partition_set_name,
+                partition_names=partition_names,
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())

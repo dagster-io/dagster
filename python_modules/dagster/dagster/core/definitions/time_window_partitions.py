@@ -75,8 +75,7 @@ class TimeWindowPartitionsDefinition(
             ):
                 partitions.append(
                     Partition(
-                        value=TimeWindow(prev_time, next_time),
-                        name=prev_time.strftime(self.fmt),
+                        value=TimeWindow(prev_time, next_time), name=prev_time.strftime(self.fmt),
                     )
                 )
 

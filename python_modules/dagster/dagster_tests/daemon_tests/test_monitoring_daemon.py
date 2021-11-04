@@ -89,8 +89,7 @@ def logger():
 
 def report_starting_event(instance, run, timestamp):
     launch_started_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-        pipeline_name=run.pipeline_name,
+        event_type_value=DagsterEventType.PIPELINE_STARTING.value, pipeline_name=run.pipeline_name,
     )
 
     event_record = EventLogEntry(
@@ -108,15 +107,10 @@ def report_starting_event(instance, run, timestamp):
 
 
 def test_monitor_starting(instance, logger):
-    run = create_run_for_test(
-        instance,
-        pipeline_name="foo",
-    )
+    run = create_run_for_test(instance, pipeline_name="foo",)
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
-        instance,
-        instance.get_run_by_id(run.run_id),
-        logger,
+        instance, instance.get_run_by_id(run.run_id), logger,
     )
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTING
 
@@ -124,9 +118,7 @@ def test_monitor_starting(instance, logger):
     report_starting_event(instance, run, timestamp=time.time() - 1000)
 
     monitor_starting_run(
-        instance,
-        instance.get_run_by_id(run.run_id),
-        logger,
+        instance, instance.get_run_by_id(run.run_id), logger,
     )
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE
 

@@ -29,9 +29,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=[
-            f"dagster{pin}",
-            "slack_sdk",
-        ],
+        install_requires=[f"dagster{pin}", "slack_sdk",],
         zip_safe=False,
     )

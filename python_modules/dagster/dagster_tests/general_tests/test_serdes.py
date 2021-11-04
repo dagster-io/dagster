@@ -442,10 +442,7 @@ def test_from_unpacked():
         def legacy_load(cls, storage_dict):
             # instead of the DeprecatedAlphabet, directly invoke the namedtuple constructor
             return super().__new__(
-                cls,
-                storage_dict.get("a"),
-                storage_dict.get("b"),
-                storage_dict.get("c"),
+                cls, storage_dict.get("a"), storage_dict.get("b"), storage_dict.get("c"),
             )
 
     serialized = '{"__class__": "DeprecatedAlphabet", "a": "A", "b": "B", "c": "C"}'
@@ -519,9 +516,7 @@ def test_to_storage_value():
         @classmethod
         def value_to_storage_dict(cls, value, whitelist_map, descent_path):
             return DefaultNamedTupleSerializer.value_to_storage_dict(
-                SubstituteAlphabet(value.a, value.b, value.c),
-                test_map,
-                descent_path,
+                SubstituteAlphabet(value.a, value.b, value.c), test_map, descent_path,
             )
 
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=MySerializer)

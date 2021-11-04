@@ -46,9 +46,7 @@ class LocalExternalStepLauncher(StepLauncher):
         self.scratch_dir = check.str_param(scratch_dir, "scratch_dir")
 
     def launch_step(
-        self,
-        step_context: StepExecutionContext,
-        prior_attempts_count: int,
+        self, step_context: StepExecutionContext, prior_attempts_count: int,
     ) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
         run_id = step_context.pipeline_run.run_id
@@ -87,8 +85,7 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     check.invariant(
         os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
         "File {abs_path} is not underneath package dir {abs_package_dir}".format(
-            abs_path=abs_path,
-            abs_package_dir=abs_package_dir,
+            abs_path=abs_path, abs_package_dir=abs_package_dir,
         ),
     )
 

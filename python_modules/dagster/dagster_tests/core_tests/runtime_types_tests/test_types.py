@@ -259,10 +259,7 @@ def _always_fails(_, _value):
     raise AlwaysFailsException("kdjfkjd")
 
 
-ThrowsExceptionType = DagsterType(
-    name="ThrowsExceptionType",
-    type_check_fn=_always_fails,
-)
+ThrowsExceptionType = DagsterType(name="ThrowsExceptionType", type_check_fn=_always_fails,)
 
 
 def _return_bad_value(_, _value):
@@ -634,14 +631,8 @@ def test_make_usable_as_dagster_type_called_twice():
     class AType:
         pass
 
-    ADagsterType = PythonObjectDagsterType(
-        AType,
-        name="ADagsterType",
-    )
-    BDagsterType = PythonObjectDagsterType(
-        AType,
-        name="BDagsterType",
-    )
+    ADagsterType = PythonObjectDagsterType(AType, name="ADagsterType",)
+    BDagsterType = PythonObjectDagsterType(AType, name="BDagsterType",)
 
     make_python_type_usable_as_dagster_type(AType, ADagsterType)
     make_python_type_usable_as_dagster_type(AType, ADagsterType)  # should not raise an error

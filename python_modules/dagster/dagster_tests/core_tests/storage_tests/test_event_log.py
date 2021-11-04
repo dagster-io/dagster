@@ -56,10 +56,8 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
         SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("foo")))
         with storage.run_connection("foo") as conn:
-            event_insert = (
-                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
-                )
+            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+                run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
 
@@ -69,10 +67,8 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("bar")))
 
         with storage.run_connection("bar") as conn:
-            event_insert = (
-                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    run_id="bar", event="3", dagster_event_type=None, timestamp=None
-                )
+            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+                run_id="bar", event="3", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
         with pytest.raises(DagsterEventLogInvalidForRun):

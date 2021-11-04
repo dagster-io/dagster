@@ -32,9 +32,7 @@ def test_fs_storage_no_explicit_base_dir(
         recon_repo=ReconstructableRepository.for_module(
             "dagster_test.test_project.test_pipelines.repo", pipeline_name
         ),
-        environment_yaml=[
-            os.path.join(environments_path, "env.yaml"),
-        ],
+        environment_yaml=[os.path.join(environments_path, "env.yaml"),],
     )
     validate_pipeline_execution(results)
 

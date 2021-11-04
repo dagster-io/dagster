@@ -26,9 +26,7 @@ def _get_mapped_resource_config(
     config_evr = process_config(resource_config_schema, resource_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for resources ",
-            config_evr.errors,
-            resource_config,
+            "Error in config for resources ", config_evr.errors, resource_config,
         )
     config_value = config_evr.value
     return config_map_resources(resource_defs, config_value)

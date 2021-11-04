@@ -34,10 +34,7 @@ def _get_asset_lineage_from_fns(
     asset_key = asset_key_fn(context)
     if not asset_key:
         return None
-    return AssetLineageInfo(
-        asset_key=asset_key,
-        partitions=asset_partitions_fn(context),
-    )
+    return AssetLineageInfo(asset_key=asset_key, partitions=asset_partitions_fn(context),)
 
 
 @whitelist_for_serdes
@@ -56,8 +53,7 @@ class StepInputData(
 
 class StepInput(
     NamedTuple(
-        "_StepInput",
-        [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
+        "_StepInput", [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
     )
 ):
     """Holds information for how to prepare an input for an ExecutionStep"""
@@ -133,10 +129,7 @@ class StepInputSource(ABC):
 
 @whitelist_for_serdes
 class FromRootInputManager(
-    NamedTuple(
-        "_FromRootInputManager",
-        [("solid_handle", NodeHandle), ("input_name", str)],
-    ),
+    NamedTuple("_FromRootInputManager", [("solid_handle", NodeHandle), ("input_name", str)],),
     StepInputSource,
 ):
     def load_input_object(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
@@ -160,9 +153,7 @@ class FromRootInputManager(
         )
         yield _load_input_with_input_manager(loader, load_input_context)
         yield DagsterEvent.loaded_input(
-            step_context,
-            input_name=input_def.name,
-            manager_key=input_def.root_manager_key,
+            step_context, input_name=input_def.name, manager_key=input_def.root_manager_key,
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
@@ -344,16 +335,13 @@ class FromStepOutput(
 
 @whitelist_for_serdes
 class FromConfig(
-    NamedTuple("_FromConfig", [("solid_handle", NodeHandle), ("input_name", str)]),
-    StepInputSource,
+    NamedTuple("_FromConfig", [("solid_handle", NodeHandle), ("input_name", str)]), StepInputSource,
 ):
     """This step input source is configuration to be passed to a type loader"""
 
     def __new__(cls, solid_handle: NodeHandle, input_name: str):
         return super(FromConfig, cls).__new__(
-            cls,
-            solid_handle=solid_handle,
-            input_name=input_name,
+            cls, solid_handle=solid_handle, input_name=input_name,
         )
 
     def load_input_object(self, step_context: "StepExecutionContext") -> Any:
@@ -396,10 +384,7 @@ class FromConfig(
 
 @whitelist_for_serdes
 class FromDefaultValue(
-    NamedTuple(
-        "_FromDefaultValue",
-        [("solid_handle", NodeHandle), ("input_name", str)],
-    ),
+    NamedTuple("_FromDefaultValue", [("solid_handle", NodeHandle), ("input_name", str)],),
     StepInputSource,
 ):
     """This step input source is the default value declared on the InputDefinition"""
@@ -428,11 +413,7 @@ class FromDefaultValue(
 class FromMultipleSources(
     NamedTuple(
         "_FromMultipleSources",
-        [
-            ("solid_handle", NodeHandle),
-            ("input_name", str),
-            ("sources", List[StepInputSource]),
-        ],
+        [("solid_handle", NodeHandle), ("input_name", str), ("sources", List[StepInputSource]),],
     ),
     StepInputSource,
 ):
@@ -547,10 +528,7 @@ class FromPendingDynamicStepOutput(
     """
 
     def __new__(
-        cls,
-        step_output_handle: StepOutputHandle,
-        solid_handle: NodeHandle,
-        input_name: str,
+        cls, step_output_handle: StepOutputHandle, solid_handle: NodeHandle, input_name: str,
     ):
         # Model the unknown mapping key from known execution step
         # using a StepOutputHandle with None mapping_key.

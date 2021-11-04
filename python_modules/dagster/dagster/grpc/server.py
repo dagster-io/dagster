@@ -140,15 +140,13 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             repository_code_pointer_dict[
                 loadable_repository_symbol.repository_name
             ] = CodePointer.from_python_package(
-                loadable_target_origin.package_name,
-                loadable_repository_symbol.attribute,
+                loadable_target_origin.package_name, loadable_repository_symbol.attribute,
             )
         else:
             repository_code_pointer_dict[
                 loadable_repository_symbol.repository_name
             ] = CodePointer.from_module(
-                loadable_target_origin.module_name,
-                loadable_repository_symbol.attribute,
+                loadable_target_origin.module_name, loadable_repository_symbol.attribute,
             )
 
     return repository_code_pointer_dict
@@ -288,9 +286,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _recon_repository_from_origin(self, external_repository_origin):
         check.inst_param(
-            external_repository_origin,
-            "external_repository_origin",
-            ExternalRepositoryOrigin,
+            external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
         )
 
         return ReconstructableRepository(
@@ -377,10 +373,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         return api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                get_partition_names(
-                    recon_repo,
-                    partition_names_args.partition_set_name,
-                )
+                get_partition_names(recon_repo, partition_names_args.partition_set_name,)
             )
         )
 
@@ -395,9 +388,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         check.inst_param(
-            args,
-            "args",
-            PartitionSetExecutionParamArgs,
+            args, "args", PartitionSetExecutionParamArgs,
         )
 
         recon_repo = self._recon_repository_from_origin(args.repository_origin)
@@ -486,8 +477,7 @@ class DagsterApiServer(DagsterApiServicer):
         for i in range(num_chunks):
             start_index = i * STREAMING_CHUNK_SIZE
             end_index = min(
-                (i + 1) * STREAMING_CHUNK_SIZE,
-                len(serialized_external_repository_data),
+                (i + 1) * STREAMING_CHUNK_SIZE, len(serialized_external_repository_data),
             )
 
             yield api_pb2.StreamingExternalRepositoryEvent(
@@ -501,14 +491,10 @@ class DagsterApiServer(DagsterApiServicer):
         num_chunks = int(math.ceil(float(len(serialized_data)) / STREAMING_CHUNK_SIZE))
         for i in range(num_chunks):
             start_index = i * STREAMING_CHUNK_SIZE
-            end_index = min(
-                (i + 1) * STREAMING_CHUNK_SIZE,
-                len(serialized_data),
-            )
+            end_index = min((i + 1) * STREAMING_CHUNK_SIZE, len(serialized_data),)
 
             yield api_pb2.StreamingChunkEvent(
-                sequence_number=i,
-                serialized_chunk=serialized_data[start_index:end_index],
+                sequence_number=i, serialized_chunk=serialized_data[start_index:end_index],
             )
 
     def ExternalScheduleExecution(self, request, _context):
@@ -517,9 +503,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         check.inst_param(
-            args,
-            "args",
-            ExternalScheduleExecutionArgs,
+            args, "args", ExternalScheduleExecutionArgs,
         )
 
         recon_repo = self._recon_repository_from_origin(args.repository_origin)
@@ -691,8 +675,7 @@ class DagsterApiServer(DagsterApiServicer):
                     message = (
                         "GRPC server: Subprocess for {run_id} terminated unexpectedly with "
                         "exit code {exit_code}".format(
-                            run_id=run_id,
-                            exit_code=execution_process.exitcode,
+                            run_id=run_id, exit_code=execution_process.exitcode,
                         )
                     )
                     serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -755,8 +738,7 @@ class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
 class GrpcServerLoadErrorEvent(namedtuple("GrpcServerLoadErrorEvent", "error_info")):
     def __new__(cls, error_info):
         return super(GrpcServerLoadErrorEvent, cls).__new__(
-            cls,
-            check.inst_param(error_info, "error_info", SerializableErrorInfo),
+            cls, check.inst_param(error_info, "error_info", SerializableErrorInfo),
         )
 
 
@@ -794,8 +776,7 @@ class DagsterGrpcServer:
             "You must pass one and only one of `port` or `socket`.",
         )
         check.invariant(
-            host is not None if port else True,
-            "Must provide a host when serving on a port",
+            host is not None if port else True, "Must provide a host when serving on a port",
         )
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
@@ -810,8 +791,7 @@ class DagsterGrpcServer:
         )
 
         self.server = grpc.server(
-            ThreadPoolExecutor(max_workers=max_workers),
-            compression=grpc.Compression.Gzip,
+            ThreadPoolExecutor(max_workers=max_workers), compression=grpc.Compression.Gzip,
         )
         self._server_termination_event = threading.Event()
 
@@ -991,11 +971,7 @@ def open_server_process(
 
     from dagster.grpc.client import DagsterGrpcClient
 
-    client = DagsterGrpcClient(
-        port=port,
-        socket=socket,
-        host="localhost",
-    )
+    client = DagsterGrpcClient(port=port, socket=socket, host="localhost",)
 
     try:
         wait_for_grpc_server(server_process, client, subprocess_args, timeout=startup_timeout)

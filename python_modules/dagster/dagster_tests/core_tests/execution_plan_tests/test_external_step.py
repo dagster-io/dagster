@@ -247,9 +247,7 @@ def test_interrupt_step_launcher(mode):
         with safe_tempfile_path() as success_tempfile:
             sleepy_run_config = {
                 "resources": {
-                    "first_step_launcher": {
-                        "config": {"scratch_dir": tmpdir},
-                    },
+                    "first_step_launcher": {"config": {"scratch_dir": tmpdir},},
                     "io_manager": {"config": {"base_dir": tmpdir}},
                 },
                 "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},

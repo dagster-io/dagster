@@ -51,10 +51,7 @@ def test_step_handler(kubeconfig_file):
     )
 
     with instance_for_test() as instance:
-        run = create_run_for_test(
-            instance,
-            pipeline_name="bar",
-        )
+        run = create_run_for_test(instance, pipeline_name="bar",)
         handler.launch_step(
             StepHandlerContext(
                 instance,
@@ -96,10 +93,7 @@ def test_step_handler_user_defined_config(kubeconfig_file):
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
     with instance_for_test() as instance:
-        run = create_run_for_test(
-            instance,
-            pipeline_name="bar",
-        )
+        run = create_run_for_test(instance, pipeline_name="bar",)
         handler.launch_step(
             StepHandlerContext(
                 instance,
@@ -132,17 +126,12 @@ def test_step_handler_image_override(kubeconfig_file):
     )
 
     # Construct Dagster solid tags with user defined k8s config.
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"image": "new-image"},
-    )
+    user_defined_k8s_config = UserDefinedDagsterK8sConfig(container_config={"image": "new-image"},)
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
     with instance_for_test() as instance:
-        run = create_run_for_test(
-            instance,
-            pipeline_name="bar",
-        )
+        run = create_run_for_test(instance, pipeline_name="bar",)
         handler.launch_step(
             StepHandlerContext(
                 instance,

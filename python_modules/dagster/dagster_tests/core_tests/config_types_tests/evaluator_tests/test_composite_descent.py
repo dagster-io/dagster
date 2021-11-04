@@ -81,9 +81,7 @@ def test_single_layer_pipeline_composite_descent():
 
     result = execute_pipeline(
         return_int_pipeline_passthrough,
-        {
-            "solids": {"return_int_passthrough": {"solids": {"return_int": {"config": 34}}}},
-        },
+        {"solids": {"return_int_passthrough": {"solids": {"return_int": {"config": 34}}}},},
     )
 
     assert result.success

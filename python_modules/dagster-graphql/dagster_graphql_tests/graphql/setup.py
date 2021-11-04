@@ -694,9 +694,7 @@ def eventually_successful():
     def spawn() -> int:
         return 0
 
-    @solid(
-        required_resource_keys={"retry_count"},
-    )
+    @solid(required_resource_keys={"retry_count"},)
     def fail(context: SolidExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
@@ -731,9 +729,7 @@ def hard_failer():
             segfault()
         return 0
 
-    @solid(
-        input_defs=[InputDefinition("n", Int)],
-    )
+    @solid(input_defs=[InputDefinition("n", Int)],)
     def increment(_, n):
         return n + 1
 
@@ -897,11 +893,7 @@ def dynamic_pipeline():
     # pylint: disable=no-member
     multiply_by_two.alias("double_total")(
         sum_numbers(
-            emit()
-            .map(
-                lambda n: multiply_by_two(multiply_inputs(n, emit_ten())),
-            )
-            .collect(),
+            emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())),).collect(),
         )
     )
 
@@ -911,9 +903,7 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
     return {
         "mode": "default",
         "selector": selector,
-        "runConfigData": {
-            "solids": {"can_fail": {"config": {"fail": should_fail}}},
-        },
+        "runConfigData": {"solids": {"can_fail": {"config": {"fail": should_fail}}},},
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
@@ -969,9 +959,7 @@ def define_schedules():
     )
 
     dynamic_config = ScheduleDefinition(
-        name="dynamic_config",
-        cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
+        name="dynamic_config", cron_schedule="0 0 * * *", pipeline_name="no_config_pipeline",
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
@@ -1051,8 +1039,7 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
+        pipeline_name="no_config_pipeline", start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
@@ -1066,9 +1053,7 @@ def define_schedules():
         return {}
 
     tagged_pipeline_schedule = ScheduleDefinition(
-        name="tagged_pipeline_schedule",
-        cron_schedule="0 0 * * *",
-        pipeline_name="tagged_pipeline",
+        name="tagged_pipeline_schedule", cron_schedule="0 0 * * *", pipeline_name="tagged_pipeline",
     )
 
     tagged_pipeline_override_schedule = ScheduleDefinition(
@@ -1142,17 +1127,11 @@ def define_partitions():
 def define_sensors():
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def always_no_config_sensor(_):
-        return RunRequest(
-            run_key=None,
-            tags={"test": "1234"},
-        )
+        return RunRequest(run_key=None, tags={"test": "1234"},)
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def once_no_config_sensor(_):
-        return RunRequest(
-            run_key="once",
-            tags={"test": "1234"},
-        )
+        return RunRequest(run_key="once", tags={"test": "1234"},)
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def never_no_config_sensor(_):
@@ -1165,10 +1144,7 @@ def define_sensors():
 
     @sensor(pipeline_name="no_config_pipeline", mode="default", minimum_interval_seconds=60)
     def custom_interval_sensor(_):
-        return RunRequest(
-            run_key=None,
-            tags={"test": "1234"},
-        )
+        return RunRequest(run_key=None, tags={"test": "1234"},)
 
     return [
         always_no_config_sensor,

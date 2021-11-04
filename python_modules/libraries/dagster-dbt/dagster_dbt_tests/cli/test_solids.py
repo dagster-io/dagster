@@ -112,10 +112,7 @@ class TestDbtCliSolids:
         assert result.success
 
     def test_dbt_cli_snapshot_with_extra_config(
-        self,
-        dbt_seed,
-        test_project_dir,
-        dbt_config_dir,
+        self, dbt_seed, test_project_dir, dbt_config_dir,
     ):  # pylint: disable=unused-argument
         test_solid = configured(dbt_cli_snapshot, name="test_solid")(
             {

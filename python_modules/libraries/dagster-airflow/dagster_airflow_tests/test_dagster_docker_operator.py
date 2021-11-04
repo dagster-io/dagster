@@ -35,8 +35,7 @@ nonce_execution_plan_snapshot = snapshot_from_execution_plan(
 )
 
 recon_repo_for_tests = ReconstructableRepository.for_file(
-    file_relative_path(__file__, "test_dagster_docker_operator.py"),
-    "my_repository",
+    file_relative_path(__file__, "test_dagster_docker_operator.py"), "my_repository",
 )
 
 
@@ -46,10 +45,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
             task_id="nonce",
             pipeline_name="nonce_pipeline",
             mode="default",
-            op_kwargs={
-                "image": dagster_docker_image,
-                "api_version": "auto",
-            },
+            op_kwargs={"image": dagster_docker_image, "api_version": "auto",},
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),

@@ -128,9 +128,7 @@ def get_k8s_resource_requirements(tags):
 
     if not result.success:
         raise DagsterInvalidConfigError(
-            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY),
-            result.errors,
-            result,
+            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY), result.errors, result,
         )
 
     return result.value
@@ -150,9 +148,7 @@ def get_user_defined_k8s_config(tags):
 
         if not result.success:
             raise DagsterInvalidConfigError(
-                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY),
-                result.errors,
-                result,
+                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY), result.errors, result,
             )
 
         user_defined_k8s_config = result.value
@@ -375,13 +371,7 @@ class DagsterK8sJobConfig(
                 "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core",
             ),
             "volumes": Field(
-                Array(
-                    Permissive(
-                        {
-                            "name": str,
-                        }
-                    )
-                ),
+                Array(Permissive({"name": str,})),
                 is_required=False,
                 default_value=[],
                 description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
@@ -582,10 +572,7 @@ def construct_dagster_k8s_job(
     ]
 
     for volume in job_config.volumes + user_defined_volumes:
-        new_volume = k8s_model_from_dict(
-            kubernetes.client.models.V1Volume,
-            volume,
-        )
+        new_volume = k8s_model_from_dict(kubernetes.client.models.V1Volume, volume,)
         volumes.append(new_volume)
 
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
@@ -617,10 +604,7 @@ def construct_dagster_k8s_job(
         ),
     )
 
-    job_spec_config = merge_dicts(
-        DEFAULT_JOB_SPEC_CONFIG,
-        user_defined_k8s_config.job_spec_config,
-    )
+    job_spec_config = merge_dicts(DEFAULT_JOB_SPEC_CONFIG, user_defined_k8s_config.job_spec_config,)
 
     job = kubernetes.client.V1Job(
         api_version="batch/v1",
@@ -628,10 +612,7 @@ def construct_dagster_k8s_job(
         metadata=kubernetes.client.V1ObjectMeta(
             name=job_name, labels=dagster_labels, **user_defined_k8s_config.job_metadata
         ),
-        spec=kubernetes.client.V1JobSpec(
-            template=template,
-            **job_spec_config,
-        ),
+        spec=kubernetes.client.V1JobSpec(template=template, **job_spec_config,),
         **user_defined_k8s_config.job_config,
     )
     return job

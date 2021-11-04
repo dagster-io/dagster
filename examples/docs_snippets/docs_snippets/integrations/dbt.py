@@ -23,10 +23,7 @@ def scope_dbt_cli_resource_config():
     from dagster_dbt import dbt_cli_resource
 
     my_dbt_resource = dbt_cli_resource.configured(
-        {
-            "project_dir": "path/to/dbt/project",
-            "profiles_dir": "path/to/dbt/profiles",
-        }
+        {"project_dir": "path/to/dbt/project", "profiles_dir": "path/to/dbt/profiles",}
     )
     # end_marker_dbt_cli_resource_config
 

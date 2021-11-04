@@ -113,14 +113,12 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            insert_statement = (
-                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    last_run_id=event.run_id,
-                    tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
-                )
+            insert_statement = AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                asset_key=event.dagster_event.asset_key.to_string(),
+                last_materialization=serialize_dagster_namedtuple(event),
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                last_run_id=event.run_id,
+                tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
             )
             update_statement = (
                 AssetKeyTable.update()
@@ -130,17 +128,13 @@ class SqlEventLogStorage(EventLogStorage):
                     last_run_id=event.run_id,
                     tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
                 )
-                .where(
-                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
-                )
+                .where(AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),)
             )
         else:
-            insert_statement = (
-                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_run_id=event.run_id,
-                )
+            insert_statement = AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                asset_key=event.dagster_event.asset_key.to_string(),
+                last_materialization=serialize_dagster_namedtuple(event),
+                last_run_id=event.run_id,
             )
             update_statement = (
                 AssetKeyTable.update()
@@ -148,9 +142,7 @@ class SqlEventLogStorage(EventLogStorage):
                     last_materialization=serialize_dagster_namedtuple(event),
                     last_run_id=event.run_id,
                 )
-                .where(
-                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
-                )
+                .where(AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),)
             )
 
         with self.index_connection() as conn:
@@ -176,11 +168,7 @@ class SqlEventLogStorage(EventLogStorage):
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(
-        self,
-        run_id,
-        cursor=-1,
-        dagster_event_type=None,
-        limit=None,
+        self, run_id, cursor=-1, dagster_event_type=None, limit=None,
     ):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
@@ -211,10 +199,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         events = {}
         try:
-            for (
-                record_id,
-                json_str,
-            ) in results:
+            for (record_id, json_str,) in results:
                 events[record_id] = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
                 )
@@ -224,11 +209,7 @@ class SqlEventLogStorage(EventLogStorage):
         return events
 
     def get_logs_for_run(
-        self,
-        run_id,
-        cursor=-1,
-        of_type=None,
-        limit=None,
+        self, run_id, cursor=-1, of_type=None, limit=None,
     ):
         """Get all of the logs corresponding to a run.
 
@@ -403,10 +384,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events_for_run(self, conn, run_id):
         check.str_param(run_id, "run_id")
 
-        delete_statement = (
-            SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                SqlEventLogStorageTable.c.run_id == run_id
-            )
+        delete_statement = SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
+            SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
@@ -504,11 +483,8 @@ class SqlEventLogStorage(EventLogStorage):
         """This method marks an event_log data migration as complete, to indicate that a summary
         data migration is complete.
         """
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+            name=name, migration_completed=datetime.now(),
         )
         with self.index_connection() as conn:
             try:
@@ -521,11 +497,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
     def _apply_filter_to_query(
-        self,
-        query,
-        event_records_filter=None,
-        asset_details=None,
-        apply_cursor_filters=True,
+        self, query, event_records_filter=None, asset_details=None, apply_cursor_filters=True,
     ):
         if not event_records_filter:
             return query
@@ -612,9 +584,7 @@ class SqlEventLogStorage(EventLogStorage):
             asset_details = None
 
         query = self._apply_filter_to_query(
-            query=query,
-            event_records_filter=event_records_filter,
-            asset_details=asset_details,
+            query=query, event_records_filter=event_records_filter, asset_details=asset_details,
         )
         if limit:
             query = query.limit(limit)
@@ -888,9 +858,7 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
                 )
             )
-            .group_by(
-                SqlEventLogStorageTable.c.run_id,
-            )
+            .group_by(SqlEventLogStorageTable.c.run_id,)
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 

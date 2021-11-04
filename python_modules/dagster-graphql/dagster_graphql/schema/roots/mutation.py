@@ -297,8 +297,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
     def mutate(self, graphene_info, **kwargs):
         return create_execution_params_and_launch_pipeline_reexec(
-            graphene_info,
-            execution_params_dict=kwargs["executionParams"],
+            graphene_info, execution_params_dict=kwargs["executionParams"],
         )
 
 

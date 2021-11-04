@@ -39,8 +39,7 @@ def get_main_recon_repo():
 def graphql_postgres_instance(overrides):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
-            file_relative_path(__file__, "docker-compose.yml"),
-            "test-postgres-db-graphql",
+            file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-graphql",
         ) as pg_conn_string:
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)
@@ -131,8 +130,7 @@ class InstanceManagers:
                 )
 
         return MarkedManager(
-            _non_launchable_in_memory_instance,
-            [Marks.in_memory_instance, Marks.non_launchable],
+            _non_launchable_in_memory_instance, [Marks.in_memory_instance, Marks.non_launchable],
         )
 
     @staticmethod
@@ -175,8 +173,7 @@ class InstanceManagers:
                 yield instance
 
         return MarkedManager(
-            _non_launchable_postgres_instance,
-            [Marks.postgres_instance, Marks.non_launchable],
+            _non_launchable_postgres_instance, [Marks.postgres_instance, Marks.non_launchable],
         )
 
     @staticmethod
@@ -245,9 +242,7 @@ class InstanceManagers:
                         "run_launcher": {
                             "module": "dagster",
                             "class": "DefaultRunLauncher",
-                            "config": {
-                                "wait_for_processes": True,
-                            },
+                            "config": {"wait_for_processes": True,},
                         },
                     },
                 ) as instance:
@@ -273,8 +268,7 @@ class InstanceManagers:
                 yield instance
 
         return MarkedManager(
-            _postgres_instance,
-            [Marks.postgres_instance, Marks.sync_run_launcher],
+            _postgres_instance, [Marks.postgres_instance, Marks.sync_run_launcher],
         )
 
     @staticmethod
@@ -286,9 +280,7 @@ class InstanceManagers:
                     "run_launcher": {
                         "module": "dagster",
                         "class": "DefaultRunLauncher",
-                        "config": {
-                            "wait_for_processes": True,
-                        },
+                        "config": {"wait_for_processes": True,},
                     },
                 }
             ) as instance:
@@ -839,9 +831,7 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
             class MockedGraphQLClient:
                 def execute(self, gql_query, variable_values=None):
                     return execute_dagster_graphql(
-                        graphql_context,
-                        gql_query,
-                        variable_values,
+                        graphql_context, gql_query, variable_values,
                     ).data
 
             with patch("dagster_graphql.client.client.Client") as mock_client:

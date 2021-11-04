@@ -60,8 +60,7 @@ def infer_output_props(fn: Callable) -> InferredOutputProps:
         annotation = _coerce_annotation(signature.return_annotation)
 
     return InferredOutputProps(
-        annotation=annotation,
-        description=_infer_output_description_from_docstring(fn),
+        annotation=annotation, description=_infer_output_description_from_docstring(fn),
     )
 
 
@@ -77,8 +76,7 @@ def _coerce_annotation(type_annotation: Type) -> Optional[Type]:
 
 
 def _infer_inputs_from_params(
-    params: List[funcsigs.Parameter],
-    descriptions: Optional[Dict[str, Optional[str]]] = None,
+    params: List[funcsigs.Parameter], descriptions: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[InferredInputProps]:
     descriptions: Dict[str, Optional[str]] = descriptions or {}
     input_defs = []

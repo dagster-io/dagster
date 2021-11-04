@@ -26,8 +26,7 @@ def math():
 
 
 @daily_schedule(
-    pipeline_name="math",
-    start_date=today_at_midnight(),
+    pipeline_name="math", start_date=today_at_midnight(),
 )
 def my_schedule(_):
     return {"solids": {"mult_two": {"inputs": {"num": {"value": 2}}}}}

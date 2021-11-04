@@ -27,21 +27,11 @@ def service_helm_template() -> HelmTemplate:
 
 
 @pytest.mark.parametrize(
-    "service_port",
-    [
-        80,
-        3000,
-        8080,
-    ],
+    "service_port", [80, 3000, 8080,],
 )
 def test_dagit_port(deployment_template: HelmTemplate, service_port: int):
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(
-            service=kubernetes.Service(
-                type="ClusterIP",
-                port=service_port,
-            ),
-        )
+        dagit=Dagit.construct(service=kubernetes.Service(type="ClusterIP", port=service_port,),)
     )
 
     dagit_template = deployment_template.render(helm_values)

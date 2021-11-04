@@ -28,10 +28,7 @@ def test_docker_executor():
             "docker": {
                 "config": {
                     "networks": ["container:test-postgres-db-docker"],
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
+                    "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
                 }
             }
         }
@@ -68,14 +65,7 @@ def test_docker_executor_check_step_health():
 
     executor_config = {
         "execution": {
-            "docker": {
-                "config": {
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
-                }
-            }
+            "docker": {"config": {"env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],}}
         }
     }
 

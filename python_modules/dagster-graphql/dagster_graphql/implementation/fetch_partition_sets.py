@@ -30,8 +30,7 @@ def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_nam
     return GraphenePartitionSets(
         results=[
             GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                external_repository_handle=repository.handle, external_partition_set=partition_set,
             )
             for partition_set in sorted(
                 partition_sets,
@@ -58,8 +57,7 @@ def get_partition_set(graphene_info, repository_selector, partition_set_name):
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                external_repository_handle=repository.handle, external_partition_set=partition_set,
             )
 
     return GraphenePartitionSetNotFoundError(partition_set_name)
@@ -89,9 +87,7 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_external_partition_config(
-        repository_handle,
-        partition_set_name,
-        partition_name,
+        repository_handle, partition_set_name, partition_name,
     )
 
     return GraphenePartitionRunConfig(

@@ -91,9 +91,7 @@ def test_execute_run_iterator():
             ],
         )
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         )
 
         iterator = execute_run_iterator(
@@ -115,9 +113,7 @@ def test_execute_run_iterator():
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.SUCCESS)
 
         with pytest.raises(
@@ -130,9 +126,7 @@ def test_execute_run_iterator():
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.CANCELED)
 
         events = list(
@@ -162,16 +156,12 @@ def test_execute_canceled_state():
             ],
         )
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.CANCELED)
 
         with pytest.raises(DagsterInvariantViolationError):
             execute_run(
-                InMemoryPipeline(pipeline_def),
-                pipeline_run,
-                instance=instance,
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance,
             )
 
         logs = instance.all_logs(pipeline_run.run_id)
@@ -183,9 +173,7 @@ def test_execute_canceled_state():
         )
 
         iter_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.CANCELED)
 
         iter_events = list(
@@ -218,9 +206,7 @@ def test_execute_run_bad_state():
             ],
         )
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            run_config={"loggers": {"callback": {}}},
-            mode="default",
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.SUCCESS)
 
         with pytest.raises(

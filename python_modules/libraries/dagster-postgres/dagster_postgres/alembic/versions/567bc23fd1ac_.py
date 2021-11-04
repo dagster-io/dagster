@@ -41,8 +41,7 @@ def upgrade():
 
     if "event_log" in has_tables:
         op.drop_column(
-            table_name="event_log",
-            column_name="id",
+            table_name="event_log", column_name="id",
         )
         op.alter_column(
             table_name="event_log",

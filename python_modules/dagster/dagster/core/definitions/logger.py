@@ -124,9 +124,7 @@ def logger(
 
     def _wrap(logger_fn: "InitLoggerFunction") -> "LoggerDefinition":
         return LoggerDefinition(
-            logger_fn=logger_fn,
-            config_schema=config_schema,
-            description=description,
+            logger_fn=logger_fn, config_schema=config_schema, description=description,
         )
 
     return _wrap

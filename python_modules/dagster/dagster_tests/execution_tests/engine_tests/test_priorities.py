@@ -29,9 +29,7 @@ def priority_test():
 
 def test_priorities():
 
-    result = execute_pipeline(
-        priority_test,
-    )
+    result = execute_pipeline(priority_test,)
     assert result.success
     assert [
         str(event.solid_handle) for event in result.step_event_list if event.is_step_success
@@ -43,9 +41,7 @@ def test_priorities_mp():
         pipe = reconstructable(priority_test)
         result = execute_pipeline(
             pipe,
-            {
-                "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
-            },
+            {"execution": {"multiprocess": {"config": {"max_concurrent": 1}}},},
             instance=instance,
         )
         assert result.success

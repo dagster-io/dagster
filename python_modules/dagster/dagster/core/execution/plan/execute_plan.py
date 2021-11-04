@@ -229,8 +229,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
                 yield DagsterEvent.step_retry_event(
                     step_context,
                     StepRetryData(
-                        error=retry_err_info,
-                        seconds_to_wait=retry_request.seconds_to_wait,
+                        error=retry_err_info, seconds_to_wait=retry_request.seconds_to_wait,
                     ),
                 )
 
@@ -253,9 +252,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
     except DagsterUserCodeExecutionError as dagster_user_error:
         step_context.capture_step_exception(dagster_user_error.user_exception)
         yield step_failure_event_from_exc_info(
-            step_context,
-            sys.exc_info(),
-            error_source=ErrorSource.USER_CODE_ERROR,
+            step_context, sys.exc_info(), error_source=ErrorSource.USER_CODE_ERROR,
         )
 
         if step_context.raise_on_error:
@@ -265,9 +262,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
     except (KeyboardInterrupt, DagsterExecutionInterruptedError) as interrupt_error:
         step_context.capture_step_exception(interrupt_error)
         yield step_failure_event_from_exc_info(
-            step_context,
-            sys.exc_info(),
-            error_source=ErrorSource.INTERRUPT,
+            step_context, sys.exc_info(), error_source=ErrorSource.INTERRUPT,
         )
         raise interrupt_error
 
@@ -275,9 +270,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
     except DagsterError as dagster_error:
         step_context.capture_step_exception(dagster_error)
         yield step_failure_event_from_exc_info(
-            step_context,
-            sys.exc_info(),
-            error_source=ErrorSource.FRAMEWORK_ERROR,
+            step_context, sys.exc_info(), error_source=ErrorSource.FRAMEWORK_ERROR,
         )
 
         if step_context.raise_on_error:
@@ -287,8 +280,6 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
     except BaseException as unexpected_exception:
         step_context.capture_step_exception(unexpected_exception)
         yield step_failure_event_from_exc_info(
-            step_context,
-            sys.exc_info(),
-            error_source=ErrorSource.UNEXPECTED_ERROR,
+            step_context, sys.exc_info(), error_source=ErrorSource.UNEXPECTED_ERROR,
         )
         raise unexpected_exception

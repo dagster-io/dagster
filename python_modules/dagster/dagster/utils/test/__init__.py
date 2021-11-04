@@ -77,8 +77,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     return PlanExecutionContext(
         plan_data=create_plan_data(creation_data, True, executor.retries),
         execution_data=create_execution_data(
-            context_creation_data=creation_data,
-            scoped_resources_builder=scoped_resources_builder,
+            context_creation_data=creation_data, scoped_resources_builder=scoped_resources_builder,
         ),
         log_manager=log_manager,
         output_capture=None,
@@ -261,12 +260,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
 
 def execute_solid(
-    solid_def,
-    mode_def=None,
-    input_values=None,
-    tags=None,
-    run_config=None,
-    raise_on_error=True,
+    solid_def, mode_def=None, input_values=None, tags=None, run_config=None, raise_on_error=True,
 ):
     """Execute a single solid in an ephemeral pipeline.
 

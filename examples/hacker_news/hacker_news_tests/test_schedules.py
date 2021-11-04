@@ -8,9 +8,7 @@ from hacker_news.jobs.hacker_news_api_download import download_prod_job, downloa
 
 
 def assert_partitioned_schedule_builds(
-    job_def: JobDefinition,
-    start: datetime,
-    end: datetime,
+    job_def: JobDefinition, start: datetime, end: datetime,
 ):
     partition_set = job_def.get_partition_set_def()
     run_config = partition_set.run_config_for_partition(Partition((start, end)))
@@ -23,12 +21,8 @@ def test_daily_download_schedule():
     end = start + timedelta(hours=1)
 
     assert_partitioned_schedule_builds(
-        download_prod_job,
-        start,
-        end,
+        download_prod_job, start, end,
     )
     assert_partitioned_schedule_builds(
-        download_staging_job,
-        start,
-        end,
+        download_staging_job, start, end,
     )

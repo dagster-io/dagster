@@ -18,9 +18,5 @@ setup(
     packages=find_packages(exclude=["schema_tests"]),
     install_requires=["click", "pydantic"],
     extras_require={"test": ["kubernetes"]},
-    entry_points={
-        "console_scripts": [
-            "dagster-helm = schema.cli:main",
-        ]
-    },
+    entry_points={"console_scripts": ["dagster-helm = schema.cli:main",]},
 )

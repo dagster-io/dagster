@@ -40,8 +40,7 @@ class RunConfigSchema(NamedTuple):
 
 
 def create_run_config_schema(
-    pipeline_def: PipelineDefinition,
-    mode: Optional[str] = None,
+    pipeline_def: PipelineDefinition, mode: Optional[str] = None,
 ) -> RunConfigSchema:
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
 

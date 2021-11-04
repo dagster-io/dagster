@@ -67,8 +67,7 @@ def schedule_partition_range(
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
+                start=start.strftime(fmt), end=end.strftime(fmt),
             )
         )
 
@@ -208,10 +207,7 @@ class ScheduleTimeBasedPartitionsDefinition(
             check.inst_param(schedule_type, "schedule_type", ScheduleType),
             check.inst_param(start, "start", datetime),
             check.opt_inst_param(execution_time, "execution_time", time, time(0, 0)),
-            check.opt_int_param(
-                execution_day,
-                "execution_day",
-            ),
+            check.opt_int_param(execution_day, "execution_day",),
             check.opt_inst_param(end, "end", datetime),
             cast(str, check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)),
             check.opt_str_param(timezone, "timezone", default="UTC"),
@@ -344,10 +340,9 @@ class PartitionSetDefinition(Generic[T]):
                 check.callable_param(partition_fn, "partition_fn")
 
                 if partition_fn_param_count == 1:
-                    obj_list = cast(
-                        Callable[..., List[Union[Partition[T], str]]],
-                        partition_fn,
-                    )(current_time)
+                    obj_list = cast(Callable[..., List[Union[Partition[T], str]]], partition_fn,)(
+                        current_time
+                    )
                 else:
                     obj_list = partition_fn()  # type: ignore
 
@@ -753,9 +748,7 @@ def dynamic_partitioned_config(
 
 
 def get_cron_schedule(
-    schedule_type: ScheduleType,
-    time_of_day: time = time(0, 0),
-    day_of_week: Optional[int] = 0,
+    schedule_type: ScheduleType, time_of_day: time = time(0, 0), day_of_week: Optional[int] = 0,
 ) -> str:
     minute = time_of_day.minute
     hour = time_of_day.hour

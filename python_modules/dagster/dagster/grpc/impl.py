@@ -89,8 +89,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         yield instance.report_engine_event(
-            message="Run execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            message="Run execution terminated by interrupt", pipeline_run=pipeline_run,
         )
     except Exception:
         yield instance.report_engine_event(
@@ -165,8 +164,7 @@ def _run_in_subprocess(
         if not closed:
             run_event_handler(
                 instance.report_engine_event(
-                    "Process for run exited (pid: {pid}).".format(pid=pid),
-                    pipeline_run,
+                    "Process for run exited (pid: {pid}).".format(pid=pid), pipeline_run,
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())
@@ -212,17 +210,12 @@ def get_external_schedule_execution(
     scheduled_execution_timezone,
 ):
     check.inst_param(
-        recon_repo,
-        "recon_repo",
-        ReconstructableRepository,
+        recon_repo, "recon_repo", ReconstructableRepository,
     )
     definition = recon_repo.get_definition()
     schedule_def = definition.get_schedule_def(schedule_name)
     scheduled_execution_time = (
-        pendulum.from_timestamp(
-            scheduled_execution_timestamp,
-            tz=scheduled_execution_timezone,
-        )
+        pendulum.from_timestamp(scheduled_execution_timestamp, tz=scheduled_execution_timezone,)
         if scheduled_execution_timestamp
         else None
     )
@@ -245,9 +238,7 @@ def get_external_sensor_execution(
     recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key, cursor
 ):
     check.inst_param(
-        recon_repo,
-        "recon_repo",
-        ReconstructableRepository,
+        recon_repo, "recon_repo", ReconstructableRepository,
     )
 
     definition = recon_repo.get_definition()
@@ -394,9 +385,7 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
 
             partition_data.append(
                 ExternalPartitionExecutionParamData(
-                    name=partition.name,
-                    tags=tags,
-                    run_config=run_config,
+                    name=partition.name, tags=tags, run_config=run_config,
                 )
             )
 

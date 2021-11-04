@@ -76,15 +76,8 @@ def sleepy():
 
 def _config(cfg):
     return {
-        "solids": {
-            "giver": {"config": cfg["sleeps"]},
-            "total": {"config": {"fail": cfg["fail"]}},
-        },
+        "solids": {"giver": {"config": cfg["sleeps"]}, "total": {"config": {"fail": cfg["fail"]}},},
     }
 
 
-sleepy_pipeline = sleepy.to_job(
-    config={
-        "solids": {"giver": {"config": [2, 2, 2, 2]}},
-    },
-)
+sleepy_pipeline = sleepy.to_job(config={"solids": {"giver": {"config": [2, 2, 2, 2]}},},)

@@ -197,15 +197,7 @@ def test_failure_after_run_created_before_run_launched(
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_launched(external_repo_context, crash_location, crash_signal, capfd):
     frozen_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=28,
-            hour=0,
-            minute=0,
-            second=0,
-            tz="UTC",
-        ),
+        create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0, tz="UTC",),
         "US/Central",
     )
     with instance_with_sensors(external_repo_context) as (

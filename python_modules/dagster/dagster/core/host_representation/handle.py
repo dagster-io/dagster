@@ -28,10 +28,7 @@ class RepositoryHandle(
         return self.repository_location_origin.location_name
 
     def get_external_origin(self):
-        return ExternalRepositoryOrigin(
-            self.repository_location_origin,
-            self.repository_name,
-        )
+        return ExternalRepositoryOrigin(self.repository_location_origin, self.repository_name,)
 
     def get_python_origin(self):
         return self.repository_python_origin

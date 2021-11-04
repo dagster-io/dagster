@@ -119,8 +119,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return [
             GrapheneRun(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=filters,
-                limit=kwargs.get("limit"),
+                filters=filters, limit=kwargs.get("limit"),
             )
         ]
 
@@ -162,8 +161,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         partition_set = external_partition_sets[0]
         return GraphenePartitionSet(
-            external_repository_handle=repository.handle,
-            external_partition_set=partition_set,
+            external_repository_handle=repository.handle, external_partition_set=partition_set,
         )
 
     def resolve_error(self, _):

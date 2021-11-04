@@ -52,10 +52,7 @@ def do_input(x):
 
 
 @pipeline(
-    name="foo",
-    preset_defs=[
-        PresetDefinition(name="test", tags={"foo": "bar"}),
-    ],
+    name="foo", preset_defs=[PresetDefinition(name="test", tags={"foo": "bar"}),],
 )
 def foo_pipeline():
     do_input(do_something())
@@ -118,10 +115,7 @@ def define_bar_schedules():
     )
     return {
         "foo_schedule": ScheduleDefinition(
-            "foo_schedule",
-            cron_schedule="* * * * *",
-            pipeline_name="foo",
-            run_config={},
+            "foo_schedule", cron_schedule="* * * * *", pipeline_name="foo", run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
             schedule_name="partitioned_schedule",
@@ -148,14 +142,10 @@ def define_bar_partitions():
             },
         ),
         "error_name_partitions": PartitionSetDefinition(
-            name="error_name_partitions",
-            pipeline_name="baz",
-            partition_fn=error_name,
+            name="error_name_partitions", pipeline_name="baz", partition_fn=error_name,
         ),
         "error_config_partitions": PartitionSetDefinition(
-            name="error_config_partitions",
-            pipeline_name="baz",
-            partition_fn=error_config,
+            name="error_config_partitions", pipeline_name="baz", partition_fn=error_config,
         ),
     }
 
@@ -266,10 +256,7 @@ multiproc_job = multiproc.to_job()
 @contextmanager
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
-        "run_launcher": {
-            "module": "dagster.core.test_utils",
-            "class": "MockedRunLauncher",
-        }
+        "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
     }
     with instance_for_test(
         temp_dir=temp_dir,
@@ -419,8 +406,7 @@ def schedule_command_contexts():
 def sensor_command_contexts():
     return [
         args_with_instance(
-            scheduler_instance(),
-            ["-w", file_relative_path(__file__, "workspace.yaml")],
+            scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")],
         ),
         grpc_server_scheduler_cli_args(),
     ]
@@ -572,12 +558,7 @@ def valid_pipeline_python_origin_target_cli_args():
             "foo",
         ],
         ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "foo_pipeline"],
-        [
-            "-f",
-            file_relative_path(__file__, "test_cli_commands.py"),
-            "-a",
-            "define_foo_pipeline",
-        ],
+        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "define_foo_pipeline",],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
@@ -611,12 +592,7 @@ def valid_job_python_origin_target_cli_args():
             "qux",
         ],
         ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-j", "qux"],
-        [
-            "-f",
-            file_relative_path(__file__, "test_cli_commands.py"),
-            "-a",
-            "define_qux_job",
-        ],
+        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "define_qux_job",],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),

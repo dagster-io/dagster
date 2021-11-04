@@ -46,25 +46,18 @@ def test_static_resources(empty_app):
 
 def test_graphql_get(empty_app):
     client = TestClient(empty_app)
-    response = client.get(
-        "/graphql?query={__typename}",
-    )
+    response = client.get("/graphql?query={__typename}",)
     assert response.status_code == 200, response.text
     assert response.json() == {"data": {"__typename": "Query"}}
 
 
 def test_graphql_post(empty_app):
     client = TestClient(empty_app)
-    response = client.post(
-        "/graphql?query={__typename}",
-    )
+    response = client.post("/graphql?query={__typename}",)
     assert response.status_code == 200, response.text
     assert response.json() == {"data": {"__typename": "Query"}}
 
-    response = client.post(
-        "/graphql",
-        json={"query": "{__typename}"},
-    )
+    response = client.post("/graphql", json={"query": "{__typename}"},)
     assert response.status_code == 200, response.text
     assert response.json() == {"data": {"__typename": "Query"}}
 
@@ -75,11 +68,7 @@ def test_graphql_ws_error(empty_app):
     with TestClient(empty_app).websocket_connect("/graphql", str(GraphQLWS.PROTOCOL)) as ws:
         ws.send_json({"type": GraphQLWS.CONNECTION_INIT})
         ws.send_json(
-            {
-                "type": GraphQLWS.START,
-                "id": "1",
-                "payload": {"query": "subscription { oops }"},
-            }
+            {"type": GraphQLWS.START, "id": "1", "payload": {"query": "subscription { oops }"},}
         )
 
         response = ws.receive_json()

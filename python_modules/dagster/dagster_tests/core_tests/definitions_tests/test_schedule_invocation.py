@@ -60,16 +60,14 @@ def test_incorrect_cron_schedule_invocation():
         basic_schedule()  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match="Schedule invocation expected argument '_'.",
+        DagsterInvalidInvocationError, match="Schedule invocation expected argument '_'.",
     ):
         basic_schedule(foo=None)  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
 
 
 def partition_schedule_factory():
     @daily_schedule(
-        pipeline_name="test_pipeline",
-        start_date=datetime.datetime(2020, 1, 1),
+        pipeline_name="test_pipeline", start_date=datetime.datetime(2020, 1, 1),
     )
     def my_partition_schedule(date):
         assert isinstance(date, datetime.datetime)
@@ -94,8 +92,7 @@ def test_incorrect_partition_schedule_invocation():
         my_partition_schedule()  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match="Schedule invocation expected argument 'date'.",
+        DagsterInvalidInvocationError, match="Schedule invocation expected argument 'date'.",
     ):
         my_partition_schedule(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
             foo=None

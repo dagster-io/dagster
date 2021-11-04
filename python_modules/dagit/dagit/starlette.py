@@ -87,9 +87,7 @@ class DagitWebserver(GraphQLServer):
         context = self.make_request_context(request)
 
         file = context.instance.compute_log_manager.get_local_path(
-            run_id,
-            step_key,
-            ComputeIOType(file_type),
+            run_id, step_key, ComputeIOType(file_type),
         )
 
         if not path.exists(file):
@@ -97,9 +95,7 @@ class DagitWebserver(GraphQLServer):
 
         return FileResponse(
             context.instance.compute_log_manager.get_local_path(
-                run_id,
-                step_key,
-                ComputeIOType(file_type),
+                run_id, step_key, ComputeIOType(file_type),
             ),
             filename=f"{run_id}_{step_key}.{file_type}",
         )
@@ -143,19 +139,13 @@ class DagitWebserver(GraphQLServer):
             # static resources addressed at /static/
             Mount(
                 "/static",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build/static"),
-                    check_dir=False,
-                ),
+                StaticFiles(directory=self.relative_path("webapp/build/static"), check_dir=False,),
                 name="static",
             ),
             # static resources addressed at /vendor/
             Mount(
                 "/vendor",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build/vendor"),
-                    check_dir=False,
-                ),
+                StaticFiles(directory=self.relative_path("webapp/build/vendor"), check_dir=False,),
                 name="vendor",
             ),
             # specific static resources addressed at /
@@ -172,11 +162,7 @@ class DagitWebserver(GraphQLServer):
                     name="graphql-http",
                     methods=["GET", "POST"],
                 ),
-                WebSocketRoute(
-                    "/graphql",
-                    self.graphql_ws_endpoint,
-                    name="graphql-ws",
-                ),
+                WebSocketRoute("/graphql", self.graphql_ws_endpoint, name="graphql-ws",),
             ]
             + self.build_static_routes()
             + [
@@ -185,10 +171,7 @@ class DagitWebserver(GraphQLServer):
                     "/download/{run_id:str}/{step_key:str}/{file_type:str}",
                     self.download_compute_logs_endpoint,
                 ),
-                Route(
-                    "/download_debug/{run_id:str}",
-                    self.download_debug_file_endpoint,
-                ),
+                Route("/download_debug/{run_id:str}", self.download_debug_file_endpoint,),
                 Route("/{path:path}", self.index_html_endpoint),
                 Route("/", self.index_html_endpoint),
             ]
@@ -198,15 +181,10 @@ class DagitWebserver(GraphQLServer):
 def default_app(debug=False):
     instance = DagsterInstance.get()
     process_context = get_workspace_process_context_from_kwargs(
-        instance=instance,
-        version=__version__,
-        read_only=False,
-        kwargs={},
+        instance=instance, version=__version__, read_only=False, kwargs={},
     )
 
-    return DagitWebserver(
-        process_context,
-    ).create_asgi_app(debug=debug)
+    return DagitWebserver(process_context,).create_asgi_app(debug=debug)
 
 
 def debug_app():

@@ -51,12 +51,7 @@ class TestBasicLaunch(
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                }
-            },
+            variables={"executionParams": {"selector": selector, "mode": "default",}},
         )
 
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"

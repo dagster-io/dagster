@@ -19,8 +19,7 @@ def _get_asset_materialization(
 def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[EventMetadataEntry]:
     return [
         EventMetadataEntry.text(
-            text=node_result["config"]["materialized"],
-            label="Materialization Strategy",
+            text=node_result["config"]["materialized"], label="Materialization Strategy",
         ),
         EventMetadataEntry.text(text=node_result["database"], label="Database"),
         EventMetadataEntry.text(text=node_result["schema"], label="Schema"),

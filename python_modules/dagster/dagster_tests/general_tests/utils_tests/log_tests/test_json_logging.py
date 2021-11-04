@@ -10,10 +10,7 @@ from dagster.utils.test import create_test_pipeline_execution_context, get_temp_
 def setup_json_file_logger(tf_name, name="foo", level=logging.DEBUG):
     logger_def = define_json_file_logger(name, tf_name, level)
     init_logger_context = InitLoggerContext(
-        {},
-        logger_def,
-        pipeline_def=PipelineDefinition([], "test"),
-        run_id="",
+        {}, logger_def, pipeline_def=PipelineDefinition([], "test"), run_id="",
     )
 
     return logger_def.logger_fn(init_logger_context)

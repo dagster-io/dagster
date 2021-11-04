@@ -66,11 +66,7 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     with instance_for_test() as instance:
         try:
             result = execute_pipeline(
-                recon_pipeline,
-                env,
-                instance=instance,
-                raise_on_error=raise_on_error,
-                **kwargs,
+                recon_pipeline, env, instance=instance, raise_on_error=raise_on_error, **kwargs,
             )
             yield result
         finally:
@@ -262,8 +258,7 @@ def test_fan_in_notebook_pipeline_in_mem():
 @pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
-        "notebook_dag_pipeline",
-        {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
+        "notebook_dag_pipeline", {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
         assert result.result_for_solid("add_two_numbers").output_value() == 3
@@ -339,9 +334,7 @@ def test_hello_world_reexecution():
 def test_resources_notebook():
     with safe_tempfile_path() as path:
         with exec_for_test(
-            "resource_pipeline",
-            {"resources": {"list": {"config": path}}},
-            mode="prod",
+            "resource_pipeline", {"resources": {"list": {"config": path}}}, mode="prod",
         ) as result:
             assert result.success
 
@@ -544,10 +537,7 @@ def test_hello_world_graph():
     with instance_for_test() as instance:
         result = None
         try:
-            result = execute_pipeline(
-                reconstructable(build_hello_world_job),
-                instance=instance,
-            )
+            result = execute_pipeline(reconstructable(build_hello_world_job), instance=instance,)
             assert result.success
         finally:
             if result:

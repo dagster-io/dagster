@@ -229,11 +229,7 @@ class ComputeLogSubscription:
         should_fetch = True
         while should_fetch:
             update = self.manager.read_logs_file(
-                self.run_id,
-                self.key,
-                self.io_type,
-                self.cursor,
-                max_bytes=MAX_BYTES_CHUNK_READ,
+                self.run_id, self.key, self.io_type, self.cursor, max_bytes=MAX_BYTES_CHUNK_READ,
             )
             if not self.cursor or update.cursor != self.cursor:
                 self.observer.on_next(update)

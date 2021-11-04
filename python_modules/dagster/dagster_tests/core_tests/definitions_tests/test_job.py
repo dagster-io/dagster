@@ -53,8 +53,7 @@ def define_in_process_job():
 
 def test_switch_to_in_process_execution():
     result = execute_pipeline(
-        define_in_process_job(),
-        run_config={"execution": {"config": {"in_process": {}}}},
+        define_in_process_job(), run_config={"execution": {"config": {"in_process": {}}}},
     )
     assert result.success
     assert len(results_lst) == 10

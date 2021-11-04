@@ -74,8 +74,7 @@ def get_subset_external_pipeline(context, selector):
         )
 
     return ExternalPipeline(
-        subset_result.external_pipeline_data,
-        repository_handle=external_repository.handle,
+        subset_result.external_pipeline_data, repository_handle=external_repository.handle,
     )
 
 
@@ -104,12 +103,7 @@ def ensure_valid_config(external_pipeline, mode, run_config):
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info,
-    external_pipeline,
-    mode,
-    run_config,
-    step_keys_to_execute,
-    known_state,
+    graphene_info, external_pipeline, mode, run_config, step_keys_to_execute, known_state,
 ):
 
     return graphene_info.context.get_external_execution_plan(

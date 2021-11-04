@@ -68,10 +68,7 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
 
             # Otherwise wrap the user exception with context
             raise error_cls(
-                msg_fn(),
-                user_exception=e,
-                original_exc_info=sys.exc_info(),
-                **kwargs,
+                msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs,
             ) from e
         finally:
             step_context.log.end_python_log_capture()

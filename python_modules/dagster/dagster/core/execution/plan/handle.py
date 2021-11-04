@@ -44,8 +44,7 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle",
 
     def __new__(cls, solid_handle: NodeHandle):
         return super(UnresolvedStepHandle, cls).__new__(
-            cls,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
+            cls, solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
         )
 
     def to_key(self):

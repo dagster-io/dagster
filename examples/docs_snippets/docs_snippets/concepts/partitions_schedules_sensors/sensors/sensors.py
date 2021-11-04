@@ -48,8 +48,7 @@ from dagster import validate_run_config
 @sensor(job=log_file_job)
 def sensor_to_test():
     yield RunRequest(
-        run_key="foo",
-        run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
+        run_key="foo", run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
     )
 
 
@@ -67,8 +66,7 @@ def isolated_run_request():
     # start_run_request_marker
 
     yield RunRequest(
-        run_key=filename,
-        run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+        run_key=filename, run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
     )
 
     # end_run_request_marker
@@ -162,9 +160,7 @@ def my_asset_sensor(context, asset_event):
         run_config={
             "ops": {
                 "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
+                    "config": {"asset_key": asset_event.dagster_event.asset_key.path,}
                 }
             }
         },
@@ -213,12 +209,7 @@ def multi_asset_sensor(context):
     # update the sensor cursor by combining the individual event cursors from the two separate
     # asset event streams
     context.update_cursor(
-        json.dumps(
-            {
-                "a": a_event_records[0].storage_id,
-                "b": b_event_records[0].storage_id,
-            }
-        )
+        json.dumps({"a": a_event_records[0].storage_id, "b": b_event_records[0].storage_id,})
     )
 
 

@@ -160,8 +160,7 @@ class GraphenePipelineRun(graphene.Interface):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GrapheneDagsterRunEvent),
-        after=graphene.Argument(GrapheneCursor),
+        non_null_list(GrapheneDagsterRunEvent), after=graphene.Argument(GrapheneCursor),
     )
 
     class Meta:
@@ -198,8 +197,7 @@ class GrapheneRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GrapheneDagsterRunEvent),
-        after=graphene.Argument(GrapheneCursor),
+        non_null_list(GrapheneDagsterRunEvent), after=graphene.Argument(GrapheneCursor),
     )
 
     class Meta:
@@ -337,14 +335,11 @@ class GrapheneIPipelineSnapshotMixin:
         non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
     )
     solid_handle = graphene.Field(
-        GrapheneSolidHandle,
-        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+        GrapheneSolidHandle, handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GrapheneRun),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
+        non_null_list(GrapheneRun), cursor=graphene.String(), limit=graphene.Int(),
     )
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
@@ -399,10 +394,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_solids(self, _graphene_info):
         represented_pipeline = self.get_represented_pipeline()
-        return build_solids(
-            represented_pipeline,
-            represented_pipeline.dep_structure_index,
-        )
+        return build_solids(represented_pipeline, represented_pipeline.dep_structure_index,)
 
     def resolve_modes(self, _graphene_info):
         represented_pipeline = self.get_represented_pipeline()
@@ -497,14 +489,11 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
     )
     solid_handle = graphene.Field(
-        GrapheneSolidHandle,
-        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+        GrapheneSolidHandle, handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GrapheneRun),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
+        non_null_list(GrapheneRun), cursor=graphene.String(), limit=graphene.Int(),
     )
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)

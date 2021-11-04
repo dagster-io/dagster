@@ -22,10 +22,7 @@ def test_image_on_pipeline():
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,
@@ -93,10 +90,7 @@ def test_recovery():
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,

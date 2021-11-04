@@ -132,11 +132,7 @@ def _stats_records(run_id):
             StepMaterializationData(AssetMaterialization(asset_key="mat_3")),
         ),
         _event_record(
-            run_id,
-            "D",
-            now,
-            DagsterEventType.STEP_SUCCESS,
-            StepSuccessData(duration_ms=150000.0),
+            run_id, "D", now, DagsterEventType.STEP_SUCCESS, StepSuccessData(duration_ms=150000.0),
         ),
     ]
 
@@ -405,10 +401,7 @@ class TestEventLogStorage:
                 "",
                 DEFAULT_RUN_ID,
                 enqueued_time,
-                dagster_event=DagsterEvent(
-                    DagsterEventType.PIPELINE_ENQUEUED.value,
-                    "nonce",
-                ),
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_ENQUEUED.value, "nonce",),
             )
         )
         storage.store_event(
@@ -419,10 +412,7 @@ class TestEventLogStorage:
                 "",
                 DEFAULT_RUN_ID,
                 launched_time,
-                dagster_event=DagsterEvent(
-                    DagsterEventType.PIPELINE_STARTING.value,
-                    "nonce",
-                ),
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_STARTING.value, "nonce",),
             )
         )
         storage.store_event(
@@ -433,10 +423,7 @@ class TestEventLogStorage:
                 "",
                 DEFAULT_RUN_ID,
                 start_time,
-                dagster_event=DagsterEvent(
-                    DagsterEventType.PIPELINE_START.value,
-                    "nonce",
-                ),
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_START.value, "nonce",),
             )
         )
         assert math.isclose(storage.get_stats_for_run(DEFAULT_RUN_ID).enqueued_time, enqueued_time)

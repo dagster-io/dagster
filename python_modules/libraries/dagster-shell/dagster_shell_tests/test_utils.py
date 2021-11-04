@@ -36,10 +36,7 @@ def test_env(tmp_file):
 
     with tmp_file(cmd) as (_, tmp_file):
         res, retcode = execute_script_file(
-            tmp_file,
-            output_logging="BUFFER",
-            log=logging,
-            env={"TEST_VAR": "some_env_value"},
+            tmp_file, output_logging="BUFFER", log=logging, env={"TEST_VAR": "some_env_value"},
         )
         assert res.strip() == "some_env_value"
         assert retcode == 0
@@ -71,9 +68,7 @@ def test_output_logging_stream(caplog):
     caplog.clear()
 
     _, retcode = execute(
-        'for i in 1 2 3; do echo "iter $i"; done;',
-        output_logging="STREAM",
-        log=logging,
+        'for i in 1 2 3; do echo "iter $i"; done;', output_logging="STREAM", log=logging,
     )
     log_messages = [r.message for r in caplog.records]
     assert retcode == 0
@@ -82,9 +77,7 @@ def test_output_logging_stream(caplog):
     caplog.clear()
 
     _, retcode = execute(
-        'for i in 1 2 3; do echo "iter $i"; done;',
-        output_logging="BUFFER",
-        log=logging,
+        'for i in 1 2 3; do echo "iter $i"; done;', output_logging="BUFFER", log=logging,
     )
     log_messages = [r.message for r in caplog.records]
     assert retcode == 0

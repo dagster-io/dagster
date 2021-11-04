@@ -43,8 +43,7 @@ def sum_sq_table(sum_df):
 
 
 @op(
-    ins={"sum_table_renamed": In(DataFrame)},
-    out=Out(DataFrame),
+    ins={"sum_table_renamed": In(DataFrame)}, out=Out(DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed["sum_squared"] = sum_table_renamed["sum"] * sum_table_renamed["sum"]

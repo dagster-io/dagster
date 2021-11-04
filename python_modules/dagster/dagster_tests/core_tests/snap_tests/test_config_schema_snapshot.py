@@ -33,14 +33,7 @@ def snap_from_dagster_type(dagster_type):
 
 def test_enum_snap():
     enum_snap = snap_from_dagster_type(
-        Enum(
-            "CowboyType",
-            [
-                EnumValue("good"),
-                EnumValue("bad"),
-                EnumValue("ugly"),
-            ],
-        )
+        Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly"),],)
     )
     assert enum_snap.given_name == "CowboyType"
     assert enum_snap.key == "CowboyType"

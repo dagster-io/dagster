@@ -415,8 +415,7 @@ class DagsterGraphQLClient:
             query_result_type == "RepositoryLocationNotFound" or query_result_type == "PythonError"
         ):
             return ShutdownRepositoryLocationInfo(
-                status=ShutdownRepositoryLocationStatus.FAILURE,
-                message=query_result["message"],
+                status=ShutdownRepositoryLocationStatus.FAILURE, message=query_result["message"],
             )
         else:
             raise Exception(f"Unexpected query result type {query_result_type}")

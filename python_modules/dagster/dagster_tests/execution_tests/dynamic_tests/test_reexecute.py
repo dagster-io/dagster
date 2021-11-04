@@ -44,9 +44,7 @@ def dynamic_pipeline():
 
 
 def test_map():
-    result = execute_pipeline(
-        dynamic_pipeline,
-    )
+    result = execute_pipeline(dynamic_pipeline,)
     assert result.success
 
 

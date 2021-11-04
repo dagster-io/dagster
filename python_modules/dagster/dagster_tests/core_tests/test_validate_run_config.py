@@ -34,8 +34,7 @@ def test_validate_run_config():
     }
 
     result_with_storage = validate_run_config(
-        pipeline_requires_config,
-        {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
+        pipeline_requires_config, {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result_with_storage == {

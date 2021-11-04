@@ -368,9 +368,7 @@ class TestReloadRepositoriesOutOfProcess(
 
         # can be reloaded again successfully
         result = execute_dagster_graphql(
-            graphql_context,
-            RELOAD_REPOSITORY_LOCATION_QUERY,
-            {"repositoryLocationName": "test"},
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"},
         )
 
         assert result

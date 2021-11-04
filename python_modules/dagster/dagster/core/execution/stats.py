@@ -181,16 +181,9 @@ def build_run_step_stats_from_events(
 
 
 @whitelist_for_serdes
-class RunStepMarker(
-    namedtuple(
-        "_RunStepMarker",
-        ("start_time end_time"),
-    )
-):
+class RunStepMarker(namedtuple("_RunStepMarker", ("start_time end_time"),)):
     def __new__(
-        cls,
-        start_time=None,
-        end_time=None,
+        cls, start_time=None, end_time=None,
     ):
         return super(RunStepMarker, cls).__new__(
             cls,

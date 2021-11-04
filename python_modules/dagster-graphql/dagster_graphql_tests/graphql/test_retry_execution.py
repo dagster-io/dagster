@@ -176,12 +176,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql_and_finish_runs(
             context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "mode": "default",
-                    "selector": selector,
-                }
-            },
+            variables={"executionParams": {"mode": "default", "selector": selector,}},
         )
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]

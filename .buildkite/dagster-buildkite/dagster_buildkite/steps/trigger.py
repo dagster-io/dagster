@@ -28,10 +28,7 @@ def trigger_step(
         "trigger": pipeline,
         "label": f":link: {pipeline} from dagster@{dagster_commit_hash}",
         "async": async_step,
-        "build": {
-            "env": env or {},
-            "branch": trigger_branch,
-        },
+        "build": {"env": env or {}, "branch": trigger_branch,},
     }
 
     if branches:

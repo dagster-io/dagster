@@ -15,8 +15,7 @@ from dagster.utils import file_relative_path
 
 def test_multi_location_workspace_foo():
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
-        [file_relative_path(__file__, "multi_location.yaml")],
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "multi_location.yaml")],
     ) as grpc_workspace:
         assert isinstance(grpc_workspace, WorkspaceProcessContext)
         assert grpc_workspace.repository_locations_count == 3
@@ -132,8 +131,7 @@ load_from:
 
 
 @pytest.mark.parametrize(
-    "config_source",
-    [_get_multi_location_workspace_yaml],
+    "config_source", [_get_multi_location_workspace_yaml],
 )
 def test_multi_location_origins(config_source):
     fake_executable = "/var/fake/executable"

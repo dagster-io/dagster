@@ -148,8 +148,7 @@ def _core_resource_initialization_event_generator(
                     pipeline_run=pipeline_run,
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
-                        resource_name=resource_name,
-                        resource_fn_name=str(resource_fn.__name__),
+                        resource_name=resource_name, resource_fn_name=str(resource_fn.__name__),
                     ),
                     resources=resources,
                     instance=instance,

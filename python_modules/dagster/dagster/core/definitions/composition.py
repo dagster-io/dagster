@@ -63,9 +63,7 @@ class MappedInputPlaceholder:
 
 
 def _not_invoked_warning(
-    solid: "PendingNodeInvocation",
-    context_source: str,
-    context_name: str,
+    solid: "PendingNodeInvocation", context_source: str, context_name: str,
 ) -> None:
     warning_message = (
         "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
@@ -267,11 +265,7 @@ class CompleteCompositionContext(NamedTuple):
             ] = deps
 
         return CompleteCompositionContext(
-            name,
-            list(node_def_dict.values()),
-            dep_dict,
-            input_mappings,
-            output_mapping_dict,
+            name, list(node_def_dict.values()), dep_dict, input_mappings, output_mapping_dict,
         )
 
 
@@ -381,11 +375,7 @@ class PendingNodeInvocation:
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                node_name,
-                output_node,
-                input_name,
-                input_bindings,
-                "(passed by keyword)",
+                node_name, output_node, input_name, input_bindings, "(passed by keyword)",
             )
 
         # the node name is potentially reassigned for aliasing
@@ -822,10 +812,7 @@ class InputMappingNode(NamedTuple):
 
 
 def composite_mapping_from_output(
-    output: Any,
-    output_defs: List[OutputDefinition],
-    solid_name: str,
-    decorator_name: str,
+    output: Any, output_defs: List[OutputDefinition], solid_name: str, decorator_name: str,
 ) -> Optional[Dict[str, OutputMapping]]:
     # output can be different types
     check.list_param(output_defs, "output_defs", OutputDefinition)
@@ -1073,10 +1060,7 @@ def do_composition(
 
 
 def get_validated_config_mapping(
-    name: str,
-    config_schema: Any,
-    config_fn: Optional[Callable[[Any], Any]],
-    decorator_name: str,
+    name: str, config_schema: Any, config_fn: Optional[Callable[[Any], Any]], decorator_name: str,
 ) -> Optional[ConfigMapping]:
     if config_fn is None and config_schema is None:
         return None

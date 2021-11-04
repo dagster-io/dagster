@@ -166,10 +166,7 @@ def test_ins_dict():
         return "6"
 
     @op(
-        ins={
-            "a": In(metadata={"x": 1}),
-            "b": In(metadata={"y": 2}),
-        }
+        ins={"a": In(metadata={"x": 1}), "b": In(metadata={"y": 2}),}
     )
     def my_op(a: int, b: str) -> int:
         return a + int(b)

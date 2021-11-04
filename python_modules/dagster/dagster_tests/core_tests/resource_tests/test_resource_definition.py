@@ -957,9 +957,7 @@ def test_multiprocessing_resource_teardown_failure():
         recon_pipeline = reconstructable(define_resource_teardown_failure_pipeline)
         result = execute_pipeline(
             recon_pipeline,
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
             raise_on_error=False,
         )
@@ -1142,9 +1140,7 @@ def test_resource_needs_resource():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="is required by resource"):
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"foo_resource": foo_resource})],
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"foo_resource": foo_resource})],)
         def _fail():
             pass
 

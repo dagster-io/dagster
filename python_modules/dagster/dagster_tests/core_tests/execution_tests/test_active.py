@@ -88,9 +88,7 @@ def test_recover_in_between_steps():
 
     events = [
         DagsterEvent(
-            DagsterEventType.STEP_START.value,
-            pipeline_name=two_op_job.name,
-            step_key="foo_op",
+            DagsterEventType.STEP_START.value, pipeline_name=two_op_job.name, step_key="foo_op",
         ),
         DagsterEvent(
             DagsterEventType.STEP_OUTPUT.value,
@@ -134,9 +132,7 @@ def test_recover_in_between_steps():
 
         active_execution.handle_event(
             DagsterEvent(
-                DagsterEventType.STEP_START.value,
-                pipeline_name=two_op_job.name,
-                step_key="bar_op",
+                DagsterEventType.STEP_START.value, pipeline_name=two_op_job.name, step_key="bar_op",
             )
         )
         active_execution.handle_event(

@@ -138,10 +138,7 @@ def test_dynamic_full_reexecution(graphql_context):
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                     "execution": {"multiprocess": {}},
                 },
-                "executionMetadata": {
-                    "rootRunId": parent_run_id,
-                    "parentRunId": parent_run_id,
-                },
+                "executionMetadata": {"rootRunId": parent_run_id, "parentRunId": parent_run_id,},
                 "stepKeys": None,
             }
         },
@@ -214,10 +211,7 @@ def test_dynamic_subset(graphql_context):
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                     "execution": {"multiprocess": {}},
                 },
-                "executionMetadata": {
-                    "rootRunId": parent_run_id,
-                    "parentRunId": parent_run_id,
-                },
+                "executionMetadata": {"rootRunId": parent_run_id, "parentRunId": parent_run_id,},
                 # manual version of from-failure above
                 "stepKeys": [
                     "multiply_inputs[2]",

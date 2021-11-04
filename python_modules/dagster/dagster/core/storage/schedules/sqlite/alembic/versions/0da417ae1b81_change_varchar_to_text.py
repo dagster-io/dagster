@@ -26,9 +26,7 @@ def upgrade():
     if has_table("job_ticks"):
         with op.batch_alter_table("job_ticks") as batch_op:
             batch_op.alter_column(
-                "tick_body",
-                type_=sa.Text,
-                existing_type=sa.String,
+                "tick_body", type_=sa.Text, existing_type=sa.String,
             )
 
 
@@ -40,7 +38,5 @@ def downgrade():
     if has_table("job_ticks"):
         with op.batch_alter_table("job_ticks") as batch_op:
             batch_op.alter_column(
-                "tick_body",
-                type_=sa.String,
-                existing_type=sa.Text,
+                "tick_body", type_=sa.String, existing_type=sa.Text,
             )

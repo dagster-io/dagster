@@ -81,11 +81,7 @@ def test_composite_solid_output():
     # manager of my_solid_takes_input, not my_composite.
     assert storage_dict[(result.run_id, "my_composite.my_solid_takes_input", "result")][
         "value"
-    ] == {
-        "value": 5,
-        "output_manager_name": "inner",
-        "input_manager_name": "inner",
-    }
+    ] == {"value": 5, "output_manager_name": "inner", "input_manager_name": "inner",}
 
 
 def test_composite_solid_upstream_output():

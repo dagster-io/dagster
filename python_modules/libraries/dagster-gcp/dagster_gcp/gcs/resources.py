@@ -10,8 +10,7 @@ GCS_CLIENT_CONFIG = {
 
 
 @resource(
-    GCS_CLIENT_CONFIG,
-    description="This resource provides a GCS client",
+    GCS_CLIENT_CONFIG, description="This resource provides a GCS client",
 )
 def gcs_resource(init_context):
     return _gcs_client_from_config(init_context.resource_config)

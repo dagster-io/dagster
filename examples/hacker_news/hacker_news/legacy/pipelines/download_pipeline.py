@@ -10,8 +10,7 @@ MODE_TEST = ModeDefinition(
     name="test_local_data",
     description="This mode queries snapshotted HN data and does all writes locally.",
     resource_defs=dict(
-        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
-        **RESOURCES_LOCAL,
+        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client}, **RESOURCES_LOCAL,
     ),
 )
 
@@ -66,18 +65,10 @@ PRESET_TEST = PresetDefinition(
 
 
 @pipeline(
-    mode_defs=[
-        MODE_TEST,
-        MODE_STAGING,
-        MODE_PROD,
-    ],
+    mode_defs=[MODE_TEST, MODE_STAGING, MODE_PROD,],
     tags={
         "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "500m", "memory": "2Gi"},
-                }
-            },
+            "container_config": {"resources": {"requests": {"cpu": "500m", "memory": "2Gi"},}},
         }
     },
     preset_defs=[PRESET_TEST],

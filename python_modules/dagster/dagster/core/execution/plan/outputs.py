@@ -26,11 +26,7 @@ class StepOutputProperties(
     )
 ):
     def __new__(
-        cls,
-        is_required: bool,
-        is_dynamic: bool,
-        is_asset: bool,
-        should_materialize: bool,
+        cls, is_required: bool, is_dynamic: bool, is_asset: bool, should_materialize: bool,
     ):
         return super(StepOutputProperties, cls).__new__(
             cls,

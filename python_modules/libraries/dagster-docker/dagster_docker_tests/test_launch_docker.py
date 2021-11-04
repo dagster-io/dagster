@@ -27,10 +27,7 @@ from . import IS_BUILDKITE, docker_postgres_instance
 def test_launch_docker_no_network():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
     }
 
     if IS_BUILDKITE:
@@ -53,9 +50,7 @@ def test_launch_docker_no_network():
             }
         },
         # Ensure the container will time out and fail quickly
-        conn_args={
-            "params": {"connect_timeout": 2},
-        },
+        conn_args={"params": {"connect_timeout": 2},},
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3", docker_image)
         with get_test_project_workspace_and_external_pipeline(
@@ -63,8 +58,7 @@ def test_launch_docker_no_network():
         ) as (workspace, orig_pipeline):
 
             external_pipeline = ReOriginatedExternalPipelineForTest(
-                orig_pipeline,
-                container_image=docker_image,
+                orig_pipeline, container_image=docker_image,
             )
             run = instance.create_run_for_pipeline(
                 pipeline_def=recon_pipeline.get_definition(),
@@ -112,15 +106,9 @@ def test_launch_docker_image_on_pipeline_config():
 
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "DOCKER_LAUNCHER_NETWORK",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "DOCKER_LAUNCHER_NETWORK",],
         "network": {"env": "DOCKER_LAUNCHER_NETWORK"},
-        "container_kwargs": {
-            "auto_remove": True,
-        },
+        "container_kwargs": {"auto_remove": True,},
     }
 
     if IS_BUILDKITE:
@@ -151,8 +139,7 @@ def test_launch_docker_image_on_pipeline_config():
             ) as (workspace, orig_pipeline):
 
                 external_pipeline = ReOriginatedExternalPipelineForTest(
-                    orig_pipeline,
-                    container_image=docker_image,
+                    orig_pipeline, container_image=docker_image,
                 )
                 run = instance.create_run_for_pipeline(
                     pipeline_def=recon_pipeline.get_definition(),
@@ -186,10 +173,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 def test_terminate_launched_docker_run():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
     }
 
@@ -198,11 +182,7 @@ def test_terminate_launched_docker_run():
     else:
         find_local_test_image(docker_image)
 
-    run_config = merge_yamls(
-        [
-            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-        ]
-    )
+    run_config = merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),])
 
     with docker_postgres_instance(
         overrides={
@@ -218,8 +198,7 @@ def test_terminate_launched_docker_run():
             instance, "hanging_pipeline", container_image=docker_image
         ) as (workspace, orig_pipeline):
             external_pipeline = ReOriginatedExternalPipelineForTest(
-                orig_pipeline,
-                container_image=docker_image,
+                orig_pipeline, container_image=docker_image,
             )
 
             run = instance.create_run_for_pipeline(
@@ -258,10 +237,7 @@ def test_terminate_launched_docker_run():
 def test_launch_docker_invalid_image():
     docker_image = "_invalid_format_image"
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }
@@ -311,10 +287,7 @@ def test_launch_docker_invalid_image():
 def test_launch_docker_image_on_instance_config():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }
@@ -325,14 +298,8 @@ def test_launch_docker_image_on_instance_config():
 def test_launch_docker_image_multiple_networks():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
-        "networks": [
-            "container:test-postgres-db-docker",
-            "postgres",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "networks": ["container:test-postgres-db-docker", "postgres",],
         "image": docker_image,
     }
     _test_launch(docker_image, launcher_config)
@@ -341,14 +308,9 @@ def test_launch_docker_image_multiple_networks():
 def test_cant_combine_network_and_networks():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
-        "networks": [
-            "postgres",
-        ],
+        "networks": ["postgres",],
         "image": docker_image,
     }
     with pytest.raises(Exception, match="cannot set both `network` and `networks`"):
@@ -367,10 +329,7 @@ def test_cant_combine_network_and_networks():
 def test_terminate():
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }
@@ -424,10 +383,7 @@ def _test_launch(docker_image, launcher_config, terminate=False):
                 start_time = time.time()
 
                 filters = PipelineRunsFilter(
-                    run_ids=[run.run_id],
-                    statuses=[
-                        PipelineRunStatus.STARTED,
-                    ],
+                    run_ids=[run.run_id], statuses=[PipelineRunStatus.STARTED,],
                 )
 
                 while True:

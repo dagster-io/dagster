@@ -15,8 +15,7 @@ from dagster.utils import file_relative_path
 
 def test_create_app_with_workspace():
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
-        [file_relative_path(__file__, "./workspace.yaml")],
+        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")],
     ) as workspace_process_context:
         assert create_app_from_workspace_process_context(workspace_process_context)
 
@@ -271,17 +270,13 @@ def test_valid_path_prefix():
 
 @mock.patch("gevent.pywsgi.WSGIServer.serve_forever")
 def test_dagit_logs(
-    server_mock,
-    caplog,
+    server_mock, caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
-            result = runner.invoke(
-                ui,
-                ["-w", workspace_path],
-            )
+            result = runner.invoke(ui, ["-w", workspace_path],)
             assert result.exit_code == 0, str(result.exception)
 
             expected_repo_stats = {

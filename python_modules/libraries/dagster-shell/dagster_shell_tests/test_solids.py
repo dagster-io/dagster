@@ -17,8 +17,7 @@ def test_shell_command(factory):
     solid = factory('echo "this is a test message: $MY_ENV_VAR"', name="foobar")
 
     result = execute_solid(
-        solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        solid, run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
@@ -66,8 +65,7 @@ def test_shell_script_solid(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
     result = execute_solid(
-        solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        solid, run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
@@ -104,7 +102,6 @@ def test_shell_command_solid_overrides(factory):
     )
 
     result = execute_solid(
-        solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        solid, run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}

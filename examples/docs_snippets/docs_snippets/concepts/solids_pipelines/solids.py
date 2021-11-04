@@ -92,10 +92,7 @@ def context_op(context):
 
 # start_op_factory_pattern_marker
 def x_op(
-    arg,
-    name="default_name",
-    ins=None,
-    **kwargs,
+    arg, name="default_name", ins=None, **kwargs,
 ):
     """
     Args:

@@ -93,12 +93,7 @@ class PipelineRunStatsSnapshot(
 class PipelineRunSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
+        cls, storage_dict, klass, args_for_class, whitelist_map, descent_path,
     ):
         # unpack all stored fields
         unpacked_dict = {

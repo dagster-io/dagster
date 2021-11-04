@@ -127,9 +127,7 @@ def test_terminate_pipeline_on_celery(rabbitmq):
                 interrupt_thread = None
 
                 for result in execute_pipeline_iterator(
-                    pipeline=pipeline_def,
-                    run_config=run_config,
-                    instance=instance,
+                    pipeline=pipeline_def, run_config=run_config, instance=instance,
                 ):
                     # Interrupt once the first step starts
                     if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
@@ -288,8 +286,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 def test_engine_error():
     with mock.patch(
-        "dagster.core.execution.context.system.PlanData.raise_on_error",
-        return_value=True,
+        "dagster.core.execution.context.system.PlanData.raise_on_error", return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):
             with tempfile.TemporaryDirectory() as tempdir:

@@ -153,12 +153,10 @@ def test_job_execute_command_no_env(gen_execute_args):
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
-            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
-            cli_args,
+            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)}, cli_args,
         )
         execute_execute_command(
-            kwargs=kwargs,
-            instance=instance,
+            kwargs=kwargs, instance=instance,
         )
 
 
@@ -166,8 +164,7 @@ def test_execute_command_env(gen_execute_args):
 def test_job_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
-            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
-            cli_args,
+            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)}, cli_args,
         )
         execute_execute_command(kwargs=kwargs, instance=instance, using_job_op_graph_apis=True)
 
@@ -330,8 +327,7 @@ def test_invalid_parameters(args):
             match=re.escape("Invalid set of CLI arguments for loading repository/pipeline"),
         ):
             execute_execute_command(
-                kwargs=args,
-                instance=instance,
+                kwargs=args, instance=instance,
             )
 
 
@@ -448,12 +444,7 @@ def test_multiproc():
 
         add_result = runner_pipeline_or_job_execute(
             runner,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "multiproc",
-            ],
+            ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "multiproc",],
             True,
         )
         assert add_result.exit_code == 0
@@ -657,12 +648,7 @@ def test_empty_working_directory():
         with new_cwd(os.path.dirname(__file__)):
             result = runner.invoke(
                 job_execute_command,
-                [
-                    "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
-                    "-a",
-                    "qux_job",
-                ],
+                ["-f", file_relative_path(__file__, "file_with_local_import.py"), "-a", "qux_job",],
             )
             assert result.exit_code == 0
             runs = instance.get_runs()

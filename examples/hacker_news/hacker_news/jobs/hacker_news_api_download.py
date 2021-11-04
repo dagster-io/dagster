@@ -9,11 +9,7 @@ from hacker_news.resources.partition_bounds import partition_bounds
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {
-        "container_config": {
-            "resources": {
-                "requests": {"cpu": "500m", "memory": "2Gi"},
-            }
-        },
+        "container_config": {"resources": {"requests": {"cpu": "500m", "memory": "2Gi"},}},
     }
 }
 
@@ -75,16 +71,12 @@ download_staging_job = hacker_news_api_download.to_job(
 
 download_local_job = hacker_news_api_download.to_job(
     resource_defs=dict(
-        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
-        **RESOURCES_LOCAL,
+        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client}, **RESOURCES_LOCAL,
     ),
     config={
         "resources": {
             "partition_bounds": {
-                "config": {
-                    "start": "2020-12-30 00:00:00",
-                    "end": "2020-12-30 01:00:00",
-                }
+                "config": {"start": "2020-12-30 00:00:00", "end": "2020-12-30 01:00:00",}
             },
         }
     },

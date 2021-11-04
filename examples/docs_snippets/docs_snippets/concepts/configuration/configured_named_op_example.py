@@ -3,9 +3,7 @@ from dagster import Field, In, Int, List, configured, job, op
 
 # start_configured_named
 @op(
-    config_schema={
-        "is_sample": Field(bool, is_required=False, default_value=False),
-    },
+    config_schema={"is_sample": Field(bool, is_required=False, default_value=False),},
     ins={"xs": In(List[Int])},
 )
 def get_dataset(context, xs):

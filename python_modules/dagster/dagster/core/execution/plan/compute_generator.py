@@ -75,8 +75,7 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                 "Error in {described_op}: If you are returning an AssetMaterialization "
                 "or an ExpectationResult from {node_type} you must yield them to avoid "
                 "ambiguity with an implied result from returning a value.".format(
-                    described_op=context.describe_op(),
-                    node_type=context.solid_def.node_type_str,
+                    described_op=context.describe_op(), node_type=context.solid_def.node_type_str,
                 )
             )
         )
@@ -140,8 +139,7 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                 expected_results=", ".join(
                     [
                         "'{result_name}': {dagster_type}".format(
-                            result_name=output_def.name,
-                            dagster_type=output_def.dagster_type,
+                            result_name=output_def.name, dagster_type=output_def.dagster_type,
                         )
                         for output_def in output_defs
                     ]

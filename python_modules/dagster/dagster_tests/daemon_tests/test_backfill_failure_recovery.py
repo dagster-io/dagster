@@ -17,12 +17,7 @@ from .test_backfill import instance_for_context, repos
 
 def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     execution_datetime = to_timezone(
-        create_pendulum_time(
-            year=2021,
-            month=2,
-            day=17,
-        ),
-        "US/Central",
+        create_pendulum_time(year=2021, month=2, day=17,), "US/Central",
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
@@ -63,8 +58,7 @@ def test_simple(external_repo_context, capfd):
             )
         )
         launch_process = multiprocessing.Process(
-            target=_test_backfill_in_subprocess,
-            args=[instance.get_ref(), None],
+            target=_test_backfill_in_subprocess, args=[instance.get_ref(), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)
@@ -123,8 +117,7 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
 
         # resume backfill
         launch_process = multiprocessing.Process(
-            target=_test_backfill_in_subprocess,
-            args=[instance.get_ref(), None],
+            target=_test_backfill_in_subprocess, args=[instance.get_ref(), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)
@@ -185,8 +178,7 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
 
         # resume backfill
         launch_process = multiprocessing.Process(
-            target=_test_backfill_in_subprocess,
-            args=[instance.get_ref(), None],
+            target=_test_backfill_in_subprocess, args=[instance.get_ref(), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)

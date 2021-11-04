@@ -44,8 +44,7 @@ def build_and_tag_test_image(tag):
 def get_test_project_external_pipeline(pipeline_name):
     with InProcessRepositoryLocationOrigin(
         ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_pipelines/repo.py"),
-            "define_demo_execution_repo",
+            file_relative_path(__file__, "test_pipelines/repo.py"), "define_demo_execution_repo",
         )
     ).create_location() as location:
         yield location.get_repository("demo_execution_repo").get_full_external_pipeline(

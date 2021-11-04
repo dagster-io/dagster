@@ -101,14 +101,12 @@ def test_resource_invocation_with_config():
     # Ensure that error is raised when context does not have the required config.
     context = build_init_resource_context()
     with pytest.raises(
-        DagsterInvalidConfigError,
-        match="Error in config for resource",
+        DagsterInvalidConfigError, match="Error in config for resource",
     ):
         resource_reqs_config(context)
 
     with pytest.raises(
-        DagsterInvalidConfigError,
-        match="Error when applying config mapping for resource",
+        DagsterInvalidConfigError, match="Error when applying config mapping for resource",
     ):
         resource_reqs_config.configured({"foobar": "bar"})(None)
 
@@ -163,10 +161,7 @@ def test_resource_invocation_default_config():
     assert resource_requires_config_val(None) == "bar"
 
     @resource(
-        config_schema={
-            "foo": Field(str, is_required=False, default_value="bar"),
-            "baz": str,
-        }
+        config_schema={"foo": Field(str, is_required=False, default_value="bar"), "baz": str,}
     )
     def resource_requires_config_partial(context):
         assert context.resource_config["foo"] == "bar"

@@ -29,9 +29,7 @@ def _resolve_bound_config(logger_config: Any, logger_def: "LoggerDefinition") ->
     )
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for logger ",
-            config_evr.errors,
-            logger_config,
+            "Error in config for logger ", config_evr.errors, logger_config,
         )
     validated_config = config_evr.value.get("config")
     mapped_config_evr = logger_def.apply_config_mapping({"config": validated_config})

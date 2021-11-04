@@ -114,31 +114,21 @@ def hanging_solid(_):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
+        ModeDefinition(resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},)
     ]
 )
 def hanging_pipeline():
     hanging_solid()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager},)])
 def demo_pipeline():
     count_letters(multiply_the_word())
 
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
+        ModeDefinition(resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},)
     ]
 )
 def demo_pipeline_s3():
@@ -188,22 +178,14 @@ def define_docker_celery_pipeline():
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},
-        )
+        ModeDefinition(resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},)
     ]
 )
 def demo_pipeline_gcs():
     count_letters(multiply_the_word())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager},)])
 def demo_error_pipeline():
     error_solid()
 
@@ -214,9 +196,7 @@ def emit_airflow_execution_date_op(context):
     airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
-        metadata={
-            "airflow_execution_date": airflow_execution_date,
-        },
+        metadata={"airflow_execution_date": airflow_execution_date,},
     )
     yield Output(airflow_execution_date)
 
@@ -238,9 +218,7 @@ def demo_airflow_execution_date_job():
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
+        ModeDefinition(resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},)
     ]
 )
 def demo_error_pipeline_s3():
@@ -411,8 +389,7 @@ def define_schedules():
         return cfg
 
     @schedule(
-        pipeline_name="demo_pipeline_celery",
-        cron_schedule="* * * * *",
+        pipeline_name="demo_pipeline_celery", cron_schedule="* * * * *",
     )
     def frequent_celery():
         from dagster_celery_k8s.config import get_celery_engine_config
@@ -537,29 +514,19 @@ def emit_airflow_execution_date(context):
     airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
-        metadata={
-            "airflow_execution_date": airflow_execution_date,
-        },
+        metadata={"airflow_execution_date": airflow_execution_date,},
     )
     yield Output(airflow_execution_date)
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager},)])
 def demo_airflow_execution_date_pipeline():
     emit_airflow_execution_date()
 
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
+        ModeDefinition(resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},)
     ]
 )
 def demo_airflow_execution_date_pipeline_s3():
@@ -578,9 +545,7 @@ def define_hard_failer():
                 segfault()
             return 0
 
-        @solid(
-            input_defs=[InputDefinition("n", Int)],
-        )
+        @solid(input_defs=[InputDefinition("n", Int)],)
         def increment(_, n):
             return n + 1
 
@@ -590,9 +555,7 @@ def define_hard_failer():
 
 
 def define_demo_k8s_executor_pipeline():
-    @pipeline(
-        mode_defs=k8s_mode_defs(),
-    )
+    @pipeline(mode_defs=k8s_mode_defs(),)
     def demo_k8s_executor_pipeline():
         count_letters(multiply_the_word())
 
@@ -608,9 +571,7 @@ def check_volume_mount(context):
 
 
 def define_volume_mount_pipeline():
-    @pipeline(
-        mode_defs=k8s_mode_defs(),
-    )
+    @pipeline(mode_defs=k8s_mode_defs(),)
     def volume_mount_pipeline():
         check_volume_mount()
 

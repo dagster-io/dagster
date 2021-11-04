@@ -64,10 +64,7 @@ def bar_pipeline():
 def define_bar_schedules():
     return {
         "foo_schedule": ScheduleDefinition(
-            "foo_schedule",
-            cron_schedule="* * * * *",
-            pipeline_name="foo",
-            run_config={},
+            "foo_schedule", cron_schedule="* * * * *", pipeline_name="foo", run_config={},
         )
     }
 
@@ -132,8 +129,6 @@ def bar_repo():
             "baz": lambda: baz_pipeline,
         },
         "schedules": define_bar_schedules(),
-        "sensors": {
-            "slow_sensor": lambda: slow_sensor,
-        },
+        "sensors": {"slow_sensor": lambda: slow_sensor,},
         "partition_sets": define_baz_partitions(),
     }

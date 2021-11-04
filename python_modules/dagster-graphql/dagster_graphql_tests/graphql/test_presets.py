@@ -18,11 +18,7 @@ class TestPresets(NonLaunchableGraphQLContextTestMatrix):
 
         assert [
             preset_data["name"] for preset_data in result.data["pipelineOrError"]["presets"]
-        ] == [
-            "prod",
-            "test",
-            "test_inline",
-        ]
+        ] == ["prod", "test", "test_inline",]
 
         # Remove local filepath from snapshot
         result.data["pipelineOrError"]["presets"][2]["runConfigYaml"] = re.sub(

@@ -27,10 +27,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             mock_has_request_context.return_value = False
 
             run = self.create_run(
-                instance,
-                external_pipeline,
-                run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
+                instance, external_pipeline, run_id=run_id, status=PipelineRunStatus.NOT_STARTED,
             )
             returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
@@ -53,18 +50,12 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             "run_attribution_example.custom_run_coordinator.has_request_context"
         ) as mock_has_request_context, patch(
             "run_attribution_example.custom_run_coordinator.request",
-            headers={
-                "X-Amzn-Trace-Id": "some_info",
-                "X-Amzn-Oidc-Data": jwt_header,
-            },
+            headers={"X-Amzn-Trace-Id": "some_info", "X-Amzn-Oidc-Data": jwt_header,},
         ):
             mock_has_request_context.return_value = True
 
             run = self.create_run(
-                instance,
-                external_pipeline,
-                run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
+                instance, external_pipeline, run_id=run_id, status=PipelineRunStatus.NOT_STARTED,
             )
             returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 

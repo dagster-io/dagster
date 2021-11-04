@@ -26,9 +26,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=[
-            "dagster",
-            "requests>=2,<3",
-        ],
+        install_requires=["dagster", "requests>=2,<3",],
         zip_safe=False,
     )

@@ -205,8 +205,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_IMAGE_TAG: job_config.job_image},
+            run.run_id, {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
@@ -216,9 +215,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         # depends on DagsterInstance.get() returning the same instance
         # https://github.com/dagster-io/dagster/issues/2757
         run_args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
-            instance_ref=None,
+            pipeline_origin=pipeline_origin, pipeline_run_id=run.run_id, instance_ref=None,
         )
 
         job = construct_dagster_k8s_job(

@@ -144,9 +144,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
     def __init__(self, job_state, timestamp):
         self._job_state = check.inst_param(job_state, "job_state", JobState)
         self._timestamp = timestamp
-        super().__init__(
-            timestamp=check.float_param(timestamp, "timestamp"),
-        )
+        super().__init__(timestamp=check.float_param(timestamp, "timestamp"),)
 
     def resolve_evaluationResult(self, graphene_info):
         if self._job_state.status != JobStatus.RUNNING:
@@ -198,9 +196,7 @@ class GrapheneTickEvaluation(graphene.ObjectType):
 
     def __init__(self, schedule_data):
         check.inst_param(
-            schedule_data,
-            "schedule_data",
-            (ScheduleExecutionData, SerializableErrorInfo),
+            schedule_data, "schedule_data", (ScheduleExecutionData, SerializableErrorInfo),
         )
         error = schedule_data if isinstance(schedule_data, SerializableErrorInfo) else None
         skip_reason = (
@@ -308,8 +304,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         return [
             GrapheneRun(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=filters,
-                limit=kwargs.get("limit"),
+                filters=filters, limit=kwargs.get("limit"),
             )
         ]
 

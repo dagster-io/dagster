@@ -9,12 +9,7 @@ if TYPE_CHECKING:
     from .resource import ResourceDefinition
 
 
-class SolidVersionContext(
-    namedtuple(
-        "SolidVersionContext",
-        "solid_def solid_config",
-    )
-):
+class SolidVersionContext(namedtuple("SolidVersionContext", "solid_def solid_config",)):
     """Version-specific solid context.
     Attributes:
         solid_def (SolidDefinition): The definition of the versioned solid
@@ -22,9 +17,7 @@ class SolidVersionContext(
     """
 
     def __new__(
-        cls,
-        solid_def,
-        solid_config,
+        cls, solid_def, solid_config,
     ):
         if TYPE_CHECKING:
             solid_def = check.inst_param(
@@ -35,12 +28,7 @@ class SolidVersionContext(
         )
 
 
-class ResourceVersionContext(
-    namedtuple(
-        "SolidVersionContext",
-        "solid_def solid_config",
-    )
-):
+class ResourceVersionContext(namedtuple("SolidVersionContext", "solid_def solid_config",)):
     """Version-specific solid context.
     Attributes:
         resource_def (ResourceDefinition): The definition of the versioned resource
@@ -48,9 +36,7 @@ class ResourceVersionContext(
     """
 
     def __new__(
-        cls,
-        resource_def,
-        resource_config,
+        cls, resource_def, resource_config,
     ):
         if TYPE_CHECKING:
             resource_def = check.inst_param(

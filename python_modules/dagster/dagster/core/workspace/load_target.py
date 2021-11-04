@@ -43,9 +43,7 @@ class ModuleTarget(
     def create_origins(self):
         return [
             location_origin_from_module_name(
-                self.module_name,
-                self.attribute,
-                location_name=self.location_name,
+                self.module_name, self.attribute, location_name=self.location_name,
             )
         ]
 
@@ -56,9 +54,7 @@ class PackageTarget(
     def create_origins(self):
         return [
             location_origin_from_package_name(
-                self.package_name,
-                self.attribute,
-                location_name=self.location_name,
+                self.package_name, self.attribute, location_name=self.location_name,
             )
         ]
 

@@ -37,10 +37,7 @@ class DirectTarget(NamedTuple("_DirectTarget", [("pipeline", PipelineDefinition)
             "execution target.",
         )
 
-        return super().__new__(
-            cls,
-            pipeline,
-        )
+        return super().__new__(cls, pipeline,)
 
     @property
     def pipeline_name(self) -> str:

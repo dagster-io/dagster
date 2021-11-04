@@ -17,12 +17,7 @@ class DaemonType(Enum):
 class DaemonBackcompat(DefaultNamedTupleSerializer):
     @classmethod
     def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
+        cls, storage_dict, klass, args_for_class, whitelist_map, descent_path,
     ):
         # Handle case where daemon_type used to be an enum (e.g. DaemonType.SCHEDULER)
         daemon_type = unpack_inner_value(
@@ -36,24 +31,18 @@ class DaemonBackcompat(DefaultNamedTupleSerializer):
             daemon_id=storage_dict.get("daemon_id"),
             errors=[
                 unpack_inner_value(
-                    storage_dict.get("error"),
-                    whitelist_map,
-                    descent_path=f"{descent_path}.error",
+                    storage_dict.get("error"), whitelist_map, descent_path=f"{descent_path}.error",
                 )
             ]  # error was replaced with errors
             if storage_dict.get("error")
             else unpack_inner_value(
-                storage_dict.get("errors"),
-                whitelist_map,
-                descent_path=f"{descent_path}.errors",
+                storage_dict.get("errors"), whitelist_map, descent_path=f"{descent_path}.errors",
             ),
         )
 
 
 @whitelist_for_serdes(serializer=DaemonBackcompat)
-class DaemonHeartbeat(
-    namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors"),
-):
+class DaemonHeartbeat(namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors"),):
     def __new__(cls, timestamp, daemon_type, daemon_id, errors=None):
         errors = check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
 

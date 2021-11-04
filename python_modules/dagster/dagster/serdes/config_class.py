@@ -12,11 +12,7 @@ from .serdes import whitelist_for_serdes
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",
-        [
-            ("module_name", str),
-            ("class_name", str),
-            ("config_yaml", str),
-        ],
+        [("module_name", str), ("class_name", str), ("config_yaml", str),],
     )
 ):
     """Serializable tuple describing where to find a class and the config fragment that should
@@ -69,9 +65,7 @@ class ConfigurableClassData(
 
         if not issubclass(klass, ConfigurableClass):
             raise check.CheckError(
-                klass,
-                f"class {self.class_name} in module {self.module_name}",
-                ConfigurableClass,
+                klass, f"class {self.class_name} in module {self.module_name}", ConfigurableClass,
             )
 
         config_dict = self.config_dict
@@ -164,18 +158,12 @@ def class_from_code_pointer(module_name, class_name):
     except ModuleNotFoundError:
         check.failed(
             "Couldn't import module {module_name} when attempting to load the "
-            "class {klass}".format(
-                module_name=module_name,
-                klass=module_name + "." + class_name,
-            )
+            "class {klass}".format(module_name=module_name, klass=module_name + "." + class_name,)
         )
     try:
         return getattr(module, class_name)
     except AttributeError:
         check.failed(
             "Couldn't find class {class_name} in module when attempting to load the "
-            "class {klass}".format(
-                class_name=class_name,
-                klass=module_name + "." + class_name,
-            )
+            "class {klass}".format(class_name=class_name, klass=module_name + "." + class_name,)
         )

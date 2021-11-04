@@ -72,11 +72,7 @@ def stub_ecs_metadata(task, monkeypatch, requests_mock):
 
     task_uri = container_uri + "/task"
     requests_mock.get(
-        task_uri,
-        json={
-            "Cluster": task["clusterArn"],
-            "TaskARN": task["taskArn"],
-        },
+        task_uri, json={"Cluster": task["clusterArn"], "TaskARN": task["taskArn"],},
     )
 
 

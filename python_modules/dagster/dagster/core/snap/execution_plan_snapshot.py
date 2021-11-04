@@ -72,9 +72,7 @@ class ExecutionPlanSnapshot(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             initial_known_state=check.opt_inst_param(
-                initial_known_state,
-                "initial_known_state",
-                KnownExecutionState,
+                initial_known_state, "initial_known_state", KnownExecutionState,
             ),
             snapshot_version=check.opt_int_param(snapshot_version, "snapshot_version"),
             step_output_versions=check.opt_list_param(
@@ -103,8 +101,7 @@ class ExecutionPlanSnapshot(
 class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
     def __new__(cls, error):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -169,17 +166,10 @@ class ExecutionStepInputSnap(
 
 @whitelist_for_serdes
 class ExecutionStepOutputSnap(
-    namedtuple(
-        "_ExecutionStepOutputSnap",
-        "name dagster_type_key solid_handle properties",
-    )
+    namedtuple("_ExecutionStepOutputSnap", "name dagster_type_key solid_handle properties",)
 ):
     def __new__(
-        cls,
-        name,
-        dagster_type_key,
-        solid_handle=None,
-        properties=None,
+        cls, name, dagster_type_key, solid_handle=None, properties=None,
     ):
         return super(ExecutionStepOutputSnap, cls).__new__(
             cls,
@@ -194,9 +184,7 @@ class ExecutionStepOutputSnap(
 class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
     def __new__(cls, key, value):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
-            cls,
-            check.str_param(key, "key"),
-            check.str_param(value, "value"),
+            cls, check.str_param(key, "key"), check.str_param(value, "value"),
         )
 
 

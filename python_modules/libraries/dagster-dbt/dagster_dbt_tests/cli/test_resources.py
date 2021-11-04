@@ -7,11 +7,7 @@ from dagster_dbt import dbt_cli_resource
 def get_dbt_resource(project_dir, profiles_dir, **kwargs):
     kwargs = kwargs or {}
     return dbt_cli_resource.configured(
-        {
-            "project_dir": project_dir,
-            "profiles_dir": profiles_dir,
-            **kwargs,
-        }
+        {"project_dir": project_dir, "profiles_dir": profiles_dir, **kwargs,}
     )
 
 

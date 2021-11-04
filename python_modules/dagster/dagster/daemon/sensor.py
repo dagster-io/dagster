@@ -241,8 +241,7 @@ def execute_sensor_iteration(
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name,
-                    error_info=error_info.to_string(),
+                    sensor_name=job_state.job_name, error_info=error_info.to_string(),
                 )
             )
         yield error_info
@@ -333,8 +332,7 @@ def _evaluate_sensor(
             pipeline_selector
         )
         external_pipeline = ExternalPipeline(
-            subset_pipeline_result.external_pipeline_data,
-            external_repo.handle,
+            subset_pipeline_result.external_pipeline_data, external_repo.handle,
         )
         run = _get_or_create_sensor_run(
             context,
@@ -419,8 +417,7 @@ def _get_or_create_sensor_run(
     existing_runs = instance.get_runs(
         PipelineRunsFilter(
             tags=merge_dicts(
-                PipelineRun.tags_for_sensor(external_sensor),
-                {RUN_KEY_TAG: run_request.run_key},
+                PipelineRun.tags_for_sensor(external_sensor), {RUN_KEY_TAG: run_request.run_key},
             )
         )
     )
@@ -462,8 +459,7 @@ def _create_sensor_run(
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags),
-        PipelineRun.tags_for_sensor(external_sensor),
+        merge_dicts(pipeline_tags, run_request.tags), PipelineRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key

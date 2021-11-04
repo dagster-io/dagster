@@ -115,7 +115,9 @@ def event_list_hook(
 def success_hook(
     name: Union[Optional[str], Callable[..., Any]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[Union[HookDefinition, _Hook], Callable[..., Union[HookDefinition, _Hook]],]:
+) -> Union[
+    Union[HookDefinition, _Hook], Callable[..., Union[HookDefinition, _Hook]],
+]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:

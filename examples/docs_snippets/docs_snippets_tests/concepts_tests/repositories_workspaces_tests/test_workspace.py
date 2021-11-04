@@ -22,8 +22,7 @@ def test_workspace_yamls():
         DagsterInstance.ephemeral(),
         [
             file_relative_path(
-                __file__,
-                "../../../docs_snippets/concepts/repositories_workspaces/workspace.yaml",
+                __file__, "../../../docs_snippets/concepts/repositories_workspaces/workspace.yaml",
             )
         ],
     ) as workspace_process_context:

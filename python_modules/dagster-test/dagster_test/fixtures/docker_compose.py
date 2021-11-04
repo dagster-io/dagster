@@ -13,10 +13,7 @@ from .utils import BUILDKITE
 def docker_compose_cm(test_directory):
     @contextmanager
     def docker_compose(
-        docker_compose_yml=None,
-        network_name=None,
-        docker_context=None,
-        service=None,
+        docker_compose_yml=None, network_name=None, docker_context=None, service=None,
     ):
         if not docker_compose_yml:
             docker_compose_yml = default_docker_compose_yml(test_directory)

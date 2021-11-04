@@ -71,10 +71,7 @@ def total(_, in_1, in_2, in_3, in_4):
     preset_defs=[
         PresetDefinition(
             "multi",
-            {
-                "execution": {"multiprocess": {}},
-                "solids": {"giver": {"config": [2, 2, 2, 2]}},
-            },
+            {"execution": {"multiprocess": {}}, "solids": {"giver": {"config": [2, 2, 2, 2]}},},
         )
     ],
     mode_defs=[default_mode_def_for_test],

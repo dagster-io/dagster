@@ -44,14 +44,10 @@ AssetKeyTable = db.Table(
 
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
 db.Index(
-    "idx_step_key",
-    SqlEventLogStorageTable.c.step_key,
-    mysql_length=32,
+    "idx_step_key", SqlEventLogStorageTable.c.step_key, mysql_length=32,
 )
 db.Index(
-    "idx_asset_key",
-    SqlEventLogStorageTable.c.asset_key,
-    mysql_length=32,
+    "idx_asset_key", SqlEventLogStorageTable.c.asset_key, mysql_length=32,
 )
 db.Index(
     "idx_asset_partition",

@@ -12,16 +12,7 @@ def generate_config(path, **df_opts):
     return {
         "solids": {
             "passthrough": {
-                "inputs": {
-                    "input_df": {
-                        "read": {
-                            "csv": {
-                                "path": path,
-                            },
-                        },
-                        **df_opts,
-                    },
-                },
+                "inputs": {"input_df": {"read": {"csv": {"path": path,},}, **df_opts,},},
             },
         },
     }

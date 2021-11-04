@@ -154,11 +154,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    required_resource_keys={
-        "pyspark_step_launcher",
-        "pyspark",
-        "file_manager",
-    },
+    required_resource_keys={"pyspark_step_launcher", "pyspark", "file_manager",},
     description=(
         "Take a file handle that contains a csv with headers and load it"
         "into a Spark DataFrame. It infers header names but does *not* infer schema.\n\n"
@@ -259,8 +255,7 @@ def load_data_to_database_from_spark(context, data_frame):
     description="Subsample a spark dataset via the configuration option.",
     config_schema={
         "subsample_pct": Field(
-            Int,
-            description="The integer percentage of rows to sample from the input dataset.",
+            Int, description="The integer percentage of rows to sample from the input dataset.",
         )
     },
     input_defs=[InputDefinition(name="data_frame", dagster_type=DataFrame)],
@@ -553,11 +548,7 @@ sfo_delays_by_destination = notebook_solid(
     output_defs=[OutputDefinition(DataFrame, io_manager_key="pyspark_io_manager")],
 )
 def join_q2_data(
-    context,
-    april_data,
-    may_data,
-    june_data,
-    master_cord_data,
+    context, april_data, may_data, june_data, master_cord_data,
 ):
 
     dfs = {"april": april_data, "may": may_data, "june": june_data}

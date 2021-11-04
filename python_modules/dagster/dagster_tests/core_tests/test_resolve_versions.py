@@ -228,9 +228,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(manager),
-                },
+                resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(manager),},
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -243,9 +241,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
 
     with instance_for_test() as instance:
         unmemoized_plan = create_execution_plan(
-            my_pipeline,
-            run_config=run_config,
-            instance=instance,
+            my_pipeline, run_config=run_config, instance=instance,
         )
 
         assert len(unmemoized_plan.step_keys_to_execute) == 2
@@ -256,18 +252,14 @@ def run_test_with_builtin_type(type_to_test, type_values):
         manager.values[step_output_handle.step_key, step_output_handle.output_name, version] = 5
 
         memoized_plan = create_execution_plan(
-            my_pipeline,
-            run_config=run_config,
-            instance=instance,
+            my_pipeline, run_config=run_config, instance=instance,
         )
         assert memoized_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
 
         input_config["_builtin_type"] = second_type_val
 
         unmemoized_plan = create_execution_plan(
-            my_pipeline,
-            run_config=run_config,
-            instance=instance,
+            my_pipeline, run_config=run_config, instance=instance,
         )
 
         assert len(unmemoized_plan.step_keys_to_execute) == 2
@@ -275,8 +267,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
 
 def test_memoized_plan_default_input_val():
     @solid(
-        version="42",
-        input_defs=[InputDefinition("_my_input", String, default_value="DEFAULTVAL")],
+        version="42", input_defs=[InputDefinition("_my_input", String, default_value="DEFAULTVAL")],
     )
     def solid_default_input(_my_input):
         pass
@@ -364,13 +355,7 @@ def test_memoized_plan_custom_io_manager_key():
         return Output(5)
 
     @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "my_key": mgr_def,
-                },
-            ),
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"my_key": mgr_def,},),],
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def io_mgr_pipeline():
@@ -440,9 +425,7 @@ def test_memoized_inner_solid():
         mode_defs=[
             ModeDefinition(
                 name="fakemode",
-                resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(mgr),
-                },
+                resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(mgr),},
             ),
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -553,9 +536,7 @@ def test_memoized_plan_disable_memoization():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(mgr),
-                },
+                resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(mgr),},
             ),
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -641,11 +622,7 @@ def test_memoized_plan_root_input_manager_input_config():
     input_config = {"my_str": "foo"}
     run_config = {"solids": {"my_solid_takes_input": {"inputs": {"x": input_config}}}}
     with instance_for_test() as instance:
-        plan = create_execution_plan(
-            my_pipeline,
-            instance=instance,
-            run_config=run_config,
-        )
+        plan = create_execution_plan(my_pipeline, instance=instance, run_config=run_config,)
         output_version = plan.get_version_for_step_output_handle(
             StepOutputHandle("my_solid_takes_input", "result")
         )
@@ -654,11 +631,7 @@ def test_memoized_plan_root_input_manager_input_config():
 
         input_config["my_str"] = "bar"
 
-        plan = create_execution_plan(
-            my_pipeline,
-            instance=instance,
-            run_config=run_config,
-        )
+        plan = create_execution_plan(my_pipeline, instance=instance, run_config=run_config,)
 
         new_output_version = plan.get_version_for_step_output_handle(
             StepOutputHandle("my_solid_takes_input", "result")
@@ -696,11 +669,7 @@ def test_memoized_plan_root_input_manager_resource_config():
     resource_config = {"my_str": "foo"}
     run_config = {"resources": {"my_input_manager": {"config": resource_config}}}
     with instance_for_test() as instance:
-        plan = create_execution_plan(
-            my_pipeline,
-            instance=instance,
-            run_config=run_config,
-        )
+        plan = create_execution_plan(my_pipeline, instance=instance, run_config=run_config,)
         output_version = plan.get_version_for_step_output_handle(
             StepOutputHandle("my_solid_takes_input", "result")
         )
@@ -709,11 +678,7 @@ def test_memoized_plan_root_input_manager_resource_config():
 
         resource_config["my_str"] = "bar"
 
-        plan = create_execution_plan(
-            my_pipeline,
-            instance=instance,
-            run_config=run_config,
-        )
+        plan = create_execution_plan(my_pipeline, instance=instance, run_config=run_config,)
 
         new_output_version = plan.get_version_for_step_output_handle(
             StepOutputHandle("my_solid_takes_input", "result")

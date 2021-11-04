@@ -6,8 +6,7 @@ from ...data_frame import DataFrame
 
 
 @op(
-    ins={"num": In(dagster_pd.DataFrame)},
-    out=Out(dagster_pd.DataFrame),
+    ins={"num": In(dagster_pd.DataFrame)}, out=Out(dagster_pd.DataFrame),
 )
 def sum_op(num):
     sum_df = num.copy()
@@ -16,8 +15,7 @@ def sum_op(num):
 
 
 @op(
-    ins={"sum_df": In(dagster_pd.DataFrame)},
-    out=Out(dagster_pd.DataFrame),
+    ins={"sum_df": In(dagster_pd.DataFrame)}, out=Out(dagster_pd.DataFrame),
 )
 def sum_sq_op(sum_df):
     sum_sq_df = sum_df.copy()
@@ -26,8 +24,7 @@ def sum_sq_op(sum_df):
 
 
 @op(
-    ins={"sum_sq_op": In(dagster_pd.DataFrame)},
-    out=Out(dagster_pd.DataFrame),
+    ins={"sum_sq_op": In(dagster_pd.DataFrame)}, out=Out(dagster_pd.DataFrame),
 )
 def always_fails_op(**_kwargs):
     raise Exception("I am a programmer and I make error")

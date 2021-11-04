@@ -30,10 +30,7 @@ def test_failure_with_repo_location_load_failure(mock_client: MockClient):
     response = {
         "reloadRepositoryLocation": {
             "__typename": "WorkspaceLocationEntry",
-            "locationOrLoadError": {
-                "__typename": error_type,
-                "message": error_msg,
-            },
+            "locationOrLoadError": {"__typename": error_type, "message": error_msg,},
         }
     }
     mock_client.mock_gql_client.execute.return_value = response
@@ -47,12 +44,7 @@ def test_failure_with_repo_location_load_failure(mock_client: MockClient):
 @python_client_test_suite
 def test_failure_with_reload_not_supported(mock_client: MockClient):
     error_type, error_msg = "ReloadNotSupported", "some reason"
-    response = {
-        "reloadRepositoryLocation": {
-            "__typename": error_type,
-            "message": error_msg,
-        }
-    }
+    response = {"reloadRepositoryLocation": {"__typename": error_type, "message": error_msg,}}
     mock_client.mock_gql_client.execute.return_value = response
 
     result = mock_client.python_client.reload_repository_location("foo")
@@ -64,12 +56,7 @@ def test_failure_with_reload_not_supported(mock_client: MockClient):
 @python_client_test_suite
 def test_failure_with_repo_location_not_found(mock_client: MockClient):
     error_type, error_msg = "RepositoryLocationNotFound", "some reason"
-    response = {
-        "reloadRepositoryLocation": {
-            "__typename": error_type,
-            "message": error_msg,
-        }
-    }
+    response = {"reloadRepositoryLocation": {"__typename": error_type, "message": error_msg,}}
     mock_client.mock_gql_client.execute.return_value = response
 
     result = mock_client.python_client.reload_repository_location("foo")

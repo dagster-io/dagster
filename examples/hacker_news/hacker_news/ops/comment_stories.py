@@ -13,10 +13,7 @@ logger = get_dagster_logger()
         ),
         "comments": In(
             root_manager_key="warehouse_loader",
-            metadata={
-                "table": "hackernews.comments",
-                "columns": ["id", "user_id", "parent"],
-            },
+            metadata={"table": "hackernews.comments", "columns": ["id", "user_id", "parent"],},
         ),
     },
     out=Out(

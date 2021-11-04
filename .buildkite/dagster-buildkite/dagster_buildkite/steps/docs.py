@@ -18,20 +18,11 @@ def docs_steps() -> List[dict]:
         .build(),
         # Make sure the docs site can build end-to-end.
         StepBuilder("docs next")
-        .run(
-            "pushd docs/next",
-            "yarn",
-            "yarn test",
-            "yarn build-master",
-        )
+        .run("pushd docs/next", "yarn", "yarn test", "yarn build-master",)
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs sphinx json build")
-        .run(
-            "pip install -U virtualenv",
-            "cd docs",
-            "tox -vv -e py38-sphinx",
-        )
+        .run("pip install -U virtualenv", "cd docs", "tox -vv -e py38-sphinx",)
         .on_integration_image(SupportedPython.V3_8)
         .build(),
     ]

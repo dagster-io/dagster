@@ -42,9 +42,7 @@ def echo(_, x: int) -> int:
 
 
 @solid(
-    config_schema={
-        "range": Field(int, is_required=False, default_value=3),
-    }
+    config_schema={"range": Field(int, is_required=False, default_value=3),}
 )
 def num_range(context) -> int:
     return context.solid_config["range"]
@@ -52,9 +50,7 @@ def num_range(context) -> int:
 
 @solid(
     output_defs=[DynamicOutputDefinition()],
-    config_schema={
-        "fail": Field(bool, is_required=False, default_value=False),
-    },
+    config_schema={"fail": Field(bool, is_required=False, default_value=False),},
     tags={"first": "1"},
 )
 def emit(context, num: int = 3):
@@ -98,15 +94,12 @@ def _run_configs():
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_map(run_config):
     with instance_for_test() as instance:
         result = execute_pipeline(
-            reconstructable(dynamic_pipeline),
-            instance=instance,
-            run_config=run_config,
+            reconstructable(dynamic_pipeline), instance=instance, run_config=run_config,
         )
         assert result.success
         keys = result.events_by_step_key.keys()
@@ -129,8 +122,7 @@ def test_map(run_config):
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_map_empty(run_config):
     with instance_for_test() as instance:
@@ -144,8 +136,7 @@ def test_map_empty(run_config):
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_map_selection(run_config):
     with instance_for_test() as instance:
@@ -197,12 +188,7 @@ def test_composite_wrapping():
 
 
 def test_tags():
-    known_state = KnownExecutionState(
-        {},
-        {
-            emit.name: {"result": ["0", "1", "2"]},
-        },
-    )
+    known_state = KnownExecutionState({}, {emit.name: {"result": ["0", "1", "2"]},},)
     plan = create_execution_plan(dynamic_pipeline, known_state=known_state)
 
     assert plan.get_step_by_key(emit.name).tags == {"first": "1"}
@@ -226,15 +212,12 @@ def test_full_reexecute():
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_partial_reexecute(run_config):
     with instance_for_test() as instance:
         result_1 = execute_pipeline(
-            reconstructable(dynamic_pipeline),
-            instance=instance,
-            run_config=run_config,
+            reconstructable(dynamic_pipeline), instance=instance, run_config=run_config,
         )
         assert result_1.success
 
@@ -258,15 +241,12 @@ def test_partial_reexecute(run_config):
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_fan_out_in_out_in(run_config):
     with instance_for_test() as instance:
         result = execute_pipeline(
-            reconstructable(fan_repeat),
-            instance=instance,
-            run_config=run_config,
+            reconstructable(fan_repeat), instance=instance, run_config=run_config,
         )
         assert result.success
         assert (
@@ -299,8 +279,7 @@ def test_bad_step_selection():
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_map_fail(run_config):
     with instance_for_test() as instance:
@@ -314,18 +293,14 @@ def test_map_fail(run_config):
 
 
 @pytest.mark.parametrize(
-    "run_config",
-    _run_configs(),
+    "run_config", _run_configs(),
 )
 def test_map_reexecute_after_fail(run_config):
     with instance_for_test() as instance:
         result_1 = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config=merge_dicts(
-                run_config,
-                {"solids": {"emit": {"config": {"fail": True}}}},
-            ),
+            run_config=merge_dicts(run_config, {"solids": {"emit": {"config": {"fail": True}}}},),
             raise_on_error=False,
         )
         assert not result_1.success

@@ -17,10 +17,7 @@ if TYPE_CHECKING:
 class OpSelectionData(
     NamedTuple(
         "_OpSelectionData",
-        [
-            ("resolved_op_selection", Optional[AbstractSet[str]]),
-            ("ignored_solids", List[Node]),
-        ],
+        [("resolved_op_selection", Optional[AbstractSet[str]]), ("ignored_solids", List[Node]),],
     )
 ):
     """The data about op selection.

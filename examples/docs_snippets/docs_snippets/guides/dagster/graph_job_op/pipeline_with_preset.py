@@ -9,8 +9,7 @@ def do_something(_):
 @pipeline(
     preset_defs=[
         PresetDefinition(
-            "my_preset",
-            run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}},
+            "my_preset", run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}},
         )
     ]
 )

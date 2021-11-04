@@ -50,8 +50,7 @@ def define_inty_job():
         return 1
 
     @op(
-        input_defs=[InputDefinition("num", Int)],
-        output_defs=[DynamicOutputDefinition(Int)],
+        input_defs=[InputDefinition("num", Int)], output_defs=[DynamicOutputDefinition(Int)],
     )
     def add_one(num):
         yield DynamicOutput(num + 1, "foo")
@@ -105,11 +104,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     assert get_step_output(return_one_step_events, "return_one")
     context = build_input_context(
-        upstream_output=build_output_context(
-            step_key="return_one",
-            name="result",
-            run_id=run_id,
-        )
+        upstream_output=build_output_context(step_key="return_one", name="result", run_id=run_id,)
     )
 
     io_manager = PickledObjectADLS2IOManager(
@@ -131,10 +126,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     context = build_input_context(
         upstream_output=build_output_context(
-            step_key="add_one",
-            name="result",
-            run_id=run_id,
-            mapping_key="foo",
+            step_key="add_one", name="result", run_id=run_id, mapping_key="foo",
         )
     )
 

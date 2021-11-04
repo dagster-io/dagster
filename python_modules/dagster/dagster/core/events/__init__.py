@@ -690,8 +690,7 @@ class DagsterEvent(
             step_context=step_context,
             event_specific_data=success,
             message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key,
-                duration=format_duration(success.duration_ms),
+                step_key=step_context.step.key, duration=format_duration(success.duration_ms),
             ),
         )
 
@@ -776,8 +775,7 @@ class DagsterEvent(
                 DagsterEventType.RUN_FAILURE,
                 pipeline_context_or_name,
                 message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
-                    pipeline_name=pipeline_context_or_name.pipeline_name,
-                    context_msg=context_msg,
+                    pipeline_name=pipeline_context_or_name.pipeline_name, context_msg=context_msg,
                 ),
                 event_specific_data=PipelineFailureData(error_info),
             )
@@ -790,8 +788,7 @@ class DagsterEvent(
                 pipeline_name=pipeline_context_or_name,
                 event_specific_data=PipelineFailureData(error_info),
                 message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
-                    pipeline_name=pipeline_context_or_name,
-                    context_msg=context_msg,
+                    pipeline_name=pipeline_context_or_name, context_msg=context_msg,
                 ),
                 pid=os.getpid(),
             )
@@ -857,8 +854,7 @@ class DagsterEvent(
                 ", ".join(sorted(resource_init_times.keys()))
             ),
             event_specific_data=EngineEventData(
-                metadata_entries=metadata_entries,
-                marker_end="resources",
+                metadata_entries=metadata_entries, marker_end="resources",
             ),
         )
 
@@ -877,9 +873,7 @@ class DagsterEvent(
             log_manager=log_manager,
             message="Initialization of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[],
-                marker_end="resources",
-                error=error,
+                metadata_entries=[], marker_end="resources", error=error,
             ),
         )
 
@@ -898,10 +892,7 @@ class DagsterEvent(
             log_manager=log_manager,
             message="Teardown of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[],
-                marker_start=None,
-                marker_end=None,
-                error=error,
+                metadata_entries=[], marker_start=None, marker_end=None, error=error,
             ),
         )
 
@@ -1130,20 +1121,14 @@ class DagsterEvent(
                 DagsterEventType.LOGS_CAPTURED,
                 pipeline_context,
                 message=message,
-                event_specific_data=ComputeLogsCaptureData(
-                    step_keys=step_keys,
-                    log_key=log_key,
-                ),
+                event_specific_data=ComputeLogsCaptureData(step_keys=step_keys, log_key=log_key,),
             )
 
         return DagsterEvent.from_pipeline(
             DagsterEventType.LOGS_CAPTURED,
             pipeline_context,
             message=message,
-            event_specific_data=ComputeLogsCaptureData(
-                step_keys=step_keys,
-                log_key=log_key,
-            ),
+            event_specific_data=ComputeLogsCaptureData(step_keys=step_keys, log_key=log_key,),
         )
 
 
@@ -1191,12 +1176,7 @@ class StepMaterializationData(
 
 @whitelist_for_serdes
 class StepExpectationResultData(
-    NamedTuple(
-        "_StepExpectationResultData",
-        [
-            ("expectation_result", ExpectationResult),
-        ],
-    )
+    NamedTuple("_StepExpectationResultData", [("expectation_result", ExpectationResult),],)
 ):
     def __new__(cls, expectation_result: ExpectationResult):
         return super(StepExpectationResultData, cls).__new__(
@@ -1316,12 +1296,7 @@ class EngineEventData(
 
 @whitelist_for_serdes
 class PipelineFailureData(
-    NamedTuple(
-        "_PipelineFailureData",
-        [
-            ("error", Optional[SerializableErrorInfo]),
-        ],
-    )
+    NamedTuple("_PipelineFailureData", [("error", Optional[SerializableErrorInfo]),],)
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(PipelineFailureData, cls).__new__(
@@ -1331,12 +1306,7 @@ class PipelineFailureData(
 
 @whitelist_for_serdes
 class PipelineCanceledData(
-    NamedTuple(
-        "_PipelineCanceledData",
-        [
-            ("error", Optional[SerializableErrorInfo]),
-        ],
-    )
+    NamedTuple("_PipelineCanceledData", [("error", Optional[SerializableErrorInfo]),],)
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(PipelineCanceledData, cls).__new__(
@@ -1345,14 +1315,7 @@ class PipelineCanceledData(
 
 
 @whitelist_for_serdes
-class HookErroredData(
-    NamedTuple(
-        "_HookErroredData",
-        [
-            ("error", SerializableErrorInfo),
-        ],
-    )
-):
+class HookErroredData(NamedTuple("_HookErroredData", [("error", SerializableErrorInfo),],)):
     def __new__(cls, error: SerializableErrorInfo):
         return super(HookErroredData, cls).__new__(
             cls, error=check.inst_param(error, "error", SerializableErrorInfo)
@@ -1416,13 +1379,7 @@ class LoadedInputData(
 
 @whitelist_for_serdes
 class ComputeLogsCaptureData(
-    NamedTuple(
-        "_ComputeLogsCaptureData",
-        [
-            ("log_key", str),
-            ("step_keys", List[str]),
-        ],
-    )
+    NamedTuple("_ComputeLogsCaptureData", [("log_key", str), ("step_keys", List[str]),],)
 ):
     def __new__(cls, log_key, step_keys):
         return super(ComputeLogsCaptureData, cls).__new__(
@@ -1499,8 +1456,9 @@ def _handle_back_compat(event_type_value, event_specific_data):
 
     # transform PIPELINE_INIT_FAILURE to PIPELINE_FAILURE
     if event_type_value == "PIPELINE_INIT_FAILURE":
-        return DagsterEventType.PIPELINE_FAILURE.value, PipelineFailureData(
-            event_specific_data.error
+        return (
+            DagsterEventType.PIPELINE_FAILURE.value,
+            PipelineFailureData(event_specific_data.error),
         )
 
     return event_type_value, event_specific_data

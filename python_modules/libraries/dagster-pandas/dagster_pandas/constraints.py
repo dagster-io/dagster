@@ -41,11 +41,7 @@ class ConstraintWithMetadataException(Exception):
         self.actual = check.opt_inst_param(actual, "actual", (dict, list, str, set))
         super(ConstraintWithMetadataException, self).__init__(
             "Violated {} - {}, {} was/were expected, but we received {} which was/were {}".format(
-                constraint_name,
-                constraint_description,
-                expectation,
-                offending,
-                actual,
+                constraint_name, constraint_description, expectation, offending, actual,
             )
         )
 
@@ -793,8 +789,8 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
             return True, {}
         return (x in categories), {}
 
-    categorical_validation_fn.__doc__ = (
-        "checks whether values are within this set of values: {}".format(categories)
+    categorical_validation_fn.__doc__ = "checks whether values are within this set of values: {}".format(
+        categories
     )
     if ignore_missing_vals:
         categorical_validation_fn.__doc__ += ", ignoring nulls"

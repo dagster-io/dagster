@@ -26,10 +26,7 @@ def test_daily_partitions():
         for partition in my_partitioned_config.partitions_def.get_partitions(
             datetime.strptime("2021-05-07", DATE_FORMAT)
         )
-    ] == [
-        time_window("2021-05-05", "2021-05-06"),
-        time_window("2021-05-06", "2021-05-07"),
-    ]
+    ] == [time_window("2021-05-05", "2021-05-06"), time_window("2021-05-06", "2021-05-07"),]
 
 
 def test_daily_partitions_with_end_offset():
@@ -60,10 +57,7 @@ def test_monthly_partitions():
         for partition in my_partitioned_config.partitions_def.get_partitions(
             datetime.strptime("2021-07-03", DATE_FORMAT)
         )
-    ] == [
-        time_window("2021-05-01", "2021-06-01"),
-        time_window("2021-06-01", "2021-07-01"),
-    ]
+    ] == [time_window("2021-05-01", "2021-06-01"), time_window("2021-06-01", "2021-07-01"),]
 
 
 def test_monthly_partitions_with_end_offset():

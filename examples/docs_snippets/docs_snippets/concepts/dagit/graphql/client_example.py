@@ -48,8 +48,7 @@ from dagster_graphql import DagsterGraphQLClientError
 
 try:
     new_run_id: str = client.submit_job_execution(
-        JOB_NAME,
-        run_config={},
+        JOB_NAME, run_config={},
     )
     do_something_on_success(new_run_id)
 except DagsterGraphQLClientError as exc:

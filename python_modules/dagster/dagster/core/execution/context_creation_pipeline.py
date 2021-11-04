@@ -155,8 +155,7 @@ def create_plan_data(
 
 
 def create_execution_data(
-    context_creation_data: "ContextCreationData",
-    scoped_resources_builder: ScopedResourcesBuilder,
+    context_creation_data: "ContextCreationData", scoped_resources_builder: ScopedResourcesBuilder,
 ) -> ExecutionData:
     return ExecutionData(
         scoped_resources_builder=scoped_resources_builder,
@@ -230,11 +229,7 @@ def execution_context_event_generator(
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
 
     context_creation_data = create_context_creation_data(
-        pipeline,
-        execution_plan,
-        run_config,
-        pipeline_run,
-        instance,
+        pipeline, execution_plan, run_config, pipeline_run, instance,
     )
 
     log_manager = create_log_manager(context_creation_data)
@@ -316,11 +311,7 @@ def orchestration_context_event_generator(
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
-        pipeline,
-        execution_plan,
-        run_config,
-        pipeline_run,
-        instance,
+        pipeline, execution_plan, run_config, pipeline_run, instance,
     )
 
     log_manager = create_log_manager(context_creation_data)
@@ -466,9 +457,7 @@ def scoped_pipeline_context(
             pass
 
 
-def create_log_manager(
-    context_creation_data: ContextCreationData,
-) -> DagsterLogManager:
+def create_log_manager(context_creation_data: ContextCreationData,) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     pipeline_def, mode_def, resolved_run_config, pipeline_run = (

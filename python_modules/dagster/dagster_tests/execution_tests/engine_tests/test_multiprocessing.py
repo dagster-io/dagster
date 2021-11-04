@@ -40,11 +40,7 @@ def test_diamond_multi_execution():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
         result = execute_pipeline(
-            pipe,
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
-            instance=instance,
+            pipe, run_config={"execution": {"multiprocess": {}},}, instance=instance,
         )
         assert result.success
 
@@ -138,9 +134,7 @@ def test_error_pipeline_multiprocess():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(define_error_pipeline),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
         )
         assert not result.success
@@ -215,8 +209,7 @@ def define_subdag_pipeline():
                 return
 
     @solid(
-        input_defs=[InputDefinition("after", Nothing)],
-        config_schema=Field(String),
+        input_defs=[InputDefinition("after", Nothing)], config_schema=Field(String),
     )
     def writer(context):
         with open(context.solid_config, "w") as fd:
@@ -224,8 +217,7 @@ def define_subdag_pipeline():
         return
 
     @lambda_solid(
-        input_defs=[InputDefinition("after", Nothing)],
-        output_def=OutputDefinition(Nothing),
+        input_defs=[InputDefinition("after", Nothing)], output_def=OutputDefinition(Nothing),
     )
     def noop():
         pass
@@ -250,10 +242,7 @@ def test_separate_sub_dags():
                 pipe,
                 run_config={
                     "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
-                    "solids": {
-                        "waiter": {"config": filename},
-                        "writer": {"config": filename},
-                    },
+                    "solids": {"waiter": {"config": filename}, "writer": {"config": filename},},
                 },
                 instance=instance,
             )
@@ -282,11 +271,7 @@ def test_ephemeral_event_log():
         # override event log to in memory
 
         result = execute_pipeline(
-            pipe,
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
-            instance=instance,
+            pipe, run_config={"execution": {"multiprocess": {}},}, instance=instance,
         )
         assert result.success
 
@@ -324,9 +309,7 @@ def test_optional_outputs():
 
         multi_result = execute_pipeline(
             reconstructable(optional_stuff),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
         )
         assert multi_result.success
@@ -353,9 +336,7 @@ def test_failure_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(failure),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
             raise_on_error=False,
         )
@@ -391,9 +372,7 @@ def test_crash_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(sys_exit_pipeline),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
             raise_on_error=False,
         )
@@ -441,9 +420,7 @@ def test_crash_hard_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(segfault_pipeline),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
+            run_config={"execution": {"multiprocess": {}},},
             instance=instance,
             raise_on_error=False,
         )

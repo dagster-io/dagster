@@ -32,8 +32,7 @@ def get_used_solid_map(repo):
                 definitions.append(definition)
             inv_by_def_name[definition.name].append(
                 GrapheneNodeInvocationSite(
-                    pipeline=GraphenePipeline(external_pipeline),
-                    solidHandle=handle,
+                    pipeline=GraphenePipeline(external_pipeline), solidHandle=handle,
                 )
             )
 

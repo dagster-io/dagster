@@ -26,10 +26,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 @contextmanager
 def docker_postgres_instance(overrides=None, conn_args=None):
     with postgres_instance_for_test(
-        __file__,
-        "test-postgres-db-docker",
-        overrides=overrides,
-        conn_args=conn_args,
+        __file__, "test-postgres-db-docker", overrides=overrides, conn_args=conn_args,
     ) as instance:
         yield instance
 
@@ -74,10 +71,7 @@ def test_docker_monitoring():
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             # "auto_remove": True,
@@ -159,10 +153,7 @@ def test_docker_monitoring_run_out_of_attempts():
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             # "auto_remove": True,

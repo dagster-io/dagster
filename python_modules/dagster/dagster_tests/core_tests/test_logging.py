@@ -256,9 +256,7 @@ def test_colored_console_logger_with_integer_log_level():
 
     colored_console_logger.logger_fn(
         InitLoggerContext(
-            {"name": "dagster", "log_level": 4},
-            colored_console_logger,
-            pipeline_def=pipe,
+            {"name": "dagster", "log_level": 4}, colored_console_logger, pipeline_def=pipe,
         )
     )
 
@@ -334,8 +332,7 @@ def test_resource_logging(capsys):
         context.resources.bar()
 
     execute_solid(
-        process,
-        mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
+        process, mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
     )
 
     captured = capsys.readouterr()
@@ -439,9 +436,7 @@ def test_error_when_logger_defined_yaml():
     config_settings = {
         "python_logs": {
             "dagster_handler_config": {
-                "loggers": {
-                    "my_logger": {"level": "WARNING", "propagate": False},
-                },
+                "loggers": {"my_logger": {"level": "WARNING", "propagate": False},},
             },
         }
     }

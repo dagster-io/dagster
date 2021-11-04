@@ -119,9 +119,7 @@ class Node:
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)
         self.graph_definition = check.inst_param(
-            graph_definition,
-            "graph_definition",
-            GraphDefinition,
+            graph_definition, "graph_definition", GraphDefinition,
         )
         self._additional_tags = validate_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
@@ -244,16 +242,9 @@ class Node:
 class NodeHandleSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
+        cls, value: NamedTuple, whitelist_map: WhitelistMap, descent_path: str,
     ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
+        storage = super().value_to_storage_dict(value, whitelist_map, descent_path,)
         # persist using legacy name SolidHandle
         storage["__class__"] = "SolidHandle"
         return storage
@@ -270,9 +261,7 @@ class NodeHandle(
 
     def __new__(cls, name: str, parent: Optional["NodeHandle"]):
         return super(NodeHandle, cls).__new__(
-            cls,
-            check.str_param(name, "name"),
-            check.opt_inst_param(parent, "parent", NodeHandle),
+            cls, check.str_param(name, "name"), check.opt_inst_param(parent, "parent", NodeHandle),
         )
 
     def __str__(self):
@@ -406,10 +395,7 @@ class NodeHandle(
 
         if isinstance(dict_repr["parent"], (list, tuple)):
             dict_repr["parent"] = NodeHandle.from_dict(
-                {
-                    "name": dict_repr["parent"][0],
-                    "parent": dict_repr["parent"][1],
-                }
+                {"name": dict_repr["parent"][0], "parent": dict_repr["parent"][1],}
             )
 
         return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
@@ -431,9 +417,7 @@ class SolidInputHandle(
 
     def _inner_str(self) -> str:
         return struct_to_string(
-            "SolidInputHandle",
-            solid_name=self.solid.name,
-            input_name=self.input_def.name,
+            "SolidInputHandle", solid_name=self.solid.name, input_name=self.input_def.name,
         )
 
     def __str__(self):
@@ -469,9 +453,7 @@ class SolidOutputHandle(
 
     def _inner_str(self) -> str:
         return struct_to_string(
-            "SolidOutputHandle",
-            solid_name=self.solid.name,
-            output_name=self.output_def.name,
+            "SolidOutputHandle", solid_name=self.solid.name, output_name=self.output_def.name,
         )
 
     def __str__(self):
@@ -647,8 +629,7 @@ class MultiDependencyDefinition(
     """
 
     def __new__(
-        cls,
-        dependencies: List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
+        cls, dependencies: List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
     ):
         from .composition import MappedInputPlaceholder
 
@@ -703,8 +684,7 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Node],
-    dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
+    solid_dict: Dict[str, Node], dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
@@ -814,8 +794,7 @@ class DependencyStructure:
 
                 elif self._dynamic_fan_out_index.get(output_handle.solid_name):
                     self._validate_and_set_collect(
-                        input_handle,
-                        self._dynamic_fan_out_index[output_handle.solid_name],
+                        input_handle, self._dynamic_fan_out_index[output_handle.solid_name],
                     )
                 else:
                     check.failed(
@@ -866,9 +845,7 @@ class DependencyStructure:
             )
 
     def _validate_and_set_collect(
-        self,
-        input_handle: SolidInputHandle,
-        output_handle: SolidOutputHandle,
+        self, input_handle: SolidInputHandle, output_handle: SolidOutputHandle,
     ) -> None:
         if self._dynamic_fan_out_index.get(input_handle.solid_name):
             raise DagsterInvalidDefinitionError(

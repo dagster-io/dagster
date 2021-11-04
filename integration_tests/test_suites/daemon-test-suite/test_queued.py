@@ -39,9 +39,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
             poll_for_finished_run(instance, run.run_id),
             poll_for_finished_run(instance, run_tags=PipelineRun.tags_for_sensor(external_sensor)),
             poll_for_finished_run(
-                instance,
-                run_tags=PipelineRun.tags_for_schedule(external_schedule),
-                timeout=90,
+                instance, run_tags=PipelineRun.tags_for_schedule(external_schedule), timeout=90,
             ),
         ]
 

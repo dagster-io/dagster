@@ -76,9 +76,7 @@ def test_notif_all_prod():
 def test_hook_resource():
     slack_mock = mock.MagicMock()
 
-    @job(
-        resource_defs={"slack": ResourceDefinition.hardcoded_resource(slack_mock)},
-    )
+    @job(resource_defs={"slack": ResourceDefinition.hardcoded_resource(slack_mock)},)
     def foo():
         a.with_hooks({slack_message_on_success, slack_message_on_failure})()
 

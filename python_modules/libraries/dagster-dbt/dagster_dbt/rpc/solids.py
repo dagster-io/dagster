@@ -954,8 +954,7 @@ def dbt_rpc_seed(context: SolidExecutionContext) -> String:
     poll the progress of the running dbt process.
     """
     out = context.resources.dbt_rpc.seed(
-        show=context.solid_config["show"],
-        **context.solid_config["task_tags"],
+        show=context.solid_config["show"], **context.solid_config["task_tags"],
     )
     context.log.debug(out.response.text)
     raise_for_rpc_error(context, out.response)
@@ -1010,8 +1009,7 @@ def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     process is completed.
     """
     out = context.resources.dbt_rpc.seed(
-        show=context.solid_config["show"],
-        task_tags=context.solid_config["task_tags"],
+        show=context.solid_config["show"], task_tags=context.solid_config["task_tags"],
     )
     context.log.debug(out.response.text)
     raise_for_rpc_error(context, out.response)

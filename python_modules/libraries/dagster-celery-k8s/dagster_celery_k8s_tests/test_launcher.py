@@ -192,13 +192,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
             repo_def = recon_repo.get_definition()
             repo_handle = RepositoryHandle(
-                repository_name=repo_def.name,
-                repository_location=location,
+                repository_name=repo_def.name, repository_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
-                recon_pipeline,
-                solid_selection=None,
-                repository_handle=repo_handle,
+                recon_pipeline, solid_selection=None, repository_handle=repo_handle,
             )
 
             celery_k8s_run_launcher.register_instance(instance)

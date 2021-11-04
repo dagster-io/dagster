@@ -42,10 +42,7 @@ def run_config_for_date_partition(partition):
         "solids": {
             "download_data": {"outputs": {"result": {"partitions": [date]}}},
             "split_action_types": {
-                "outputs": {
-                    "comments": {"partitions": [date]},
-                    "reviews": {"partitions": [date]},
-                }
+                "outputs": {"comments": {"partitions": [date]}, "reviews": {"partitions": [date]},}
             },
             "top_10_comments": {"outputs": {"result": {"partitions": [date]}}},
             "top_10_reviews": {"outputs": {"result": {"partitions": [date]}}},
@@ -84,12 +81,7 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
         )
 
     def get_output_asset_key(self, context):
-        return AssetKey(
-            [
-                "my_database",
-                context.metadata["table_name"],
-            ]
-        )
+        return AssetKey(["my_database", context.metadata["table_name"],])
 
     def get_output_asset_partitions(self, context):
         return set(context.config.get("partitions", []))
@@ -138,9 +130,7 @@ def split_action_types(_, df):
     reviews_df = df[df["action_type"] == "story"]
     comments_df = df[df["action_type"] == "comment"]
     yield Output(
-        reviews_df,
-        "reviews",
-        metadata=metadata_for_actions(reviews_df),
+        reviews_df, "reviews", metadata=metadata_for_actions(reviews_df),
     )
     yield Output(comments_df, "comments", metadata=metadata_for_actions(comments_df))
 
@@ -150,17 +140,13 @@ def best_n_actions(n, action_type):
         name=f"top_{n}_{action_type}",
         output_defs=[
             OutputDefinition(
-                io_manager_key="my_db_io_manager",
-                metadata={"table_name": f"best_{action_type}"},
+                io_manager_key="my_db_io_manager", metadata={"table_name": f"best_{action_type}"},
             )
         ],
     )
     def _best_n_actions(_, df):
         df = df.nlargest(n, "score")
-        return Output(
-            df,
-            metadata={"data": EventMetadata.md(df.to_markdown())},
-        )
+        return Output(df, metadata={"data": EventMetadata.md(df.to_markdown())},)
 
     return _best_n_actions
 
@@ -172,8 +158,7 @@ top_10_comments = best_n_actions(10, "comments")
 @solid(
     output_defs=[
         OutputDefinition(
-            io_manager_key="my_db_io_manager",
-            metadata={"table_name": "daily_best_action"},
+            io_manager_key="my_db_io_manager", metadata={"table_name": "daily_best_action"},
         )
     ]
 )

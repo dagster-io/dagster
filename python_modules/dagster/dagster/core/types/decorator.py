@@ -4,10 +4,7 @@ from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_da
 
 
 def usable_as_dagster_type(
-    name=None,
-    description=None,
-    loader=None,
-    materializer=None,
+    name=None, description=None, loader=None, materializer=None,
 ):
     """Decorate a Python class to make it usable as a Dagster Type.
 

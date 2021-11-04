@@ -71,27 +71,18 @@ class ConfigMapping(
             self.receive_processed_config_values, "receive_processed_config_values", default=True
         )
         if receive_processed_config_values:
-            outer_evr = process_config(
-                self.config_schema.config_type,
-                config,
-            )
+            outer_evr = process_config(self.config_schema.config_type, config,)
         else:
-            outer_evr = validate_config(
-                self.config_schema.config_type,
-                config,
-            )
+            outer_evr = validate_config(self.config_schema.config_type, config,)
         if not outer_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config mapping ",
-                outer_evr.errors,
-                config,
+                "Error in config mapping ", outer_evr.errors, config,
             )
 
         outer_config = outer_evr.value
         if not receive_processed_config_values:
             outer_config = resolve_defaults(
-                cast(ConfigType, self.config_schema.config_type),
-                outer_config,
+                cast(ConfigType, self.config_schema.config_type), outer_config,
             ).value
 
         return self.config_fn(outer_config)

@@ -124,14 +124,7 @@ def parse_metadata(
 
 
 @whitelist_for_serdes
-class TextMetadataEntryData(
-    NamedTuple(
-        "_TextMetadataEntryData",
-        [
-            ("text", Optional[str]),
-        ],
-    )
-):
+class TextMetadataEntryData(NamedTuple("_TextMetadataEntryData", [("text", Optional[str]),],)):
     """Container class for text metadata entry data.
 
     Args:
@@ -145,14 +138,7 @@ class TextMetadataEntryData(
 
 
 @whitelist_for_serdes
-class UrlMetadataEntryData(
-    NamedTuple(
-        "_UrlMetadataEntryData",
-        [
-            ("url", Optional[str]),
-        ],
-    )
-):
+class UrlMetadataEntryData(NamedTuple("_UrlMetadataEntryData", [("url", Optional[str]),],)):
     """Container class for URL metadata entry data.
 
     Args:
@@ -166,14 +152,7 @@ class UrlMetadataEntryData(
 
 
 @whitelist_for_serdes
-class PathMetadataEntryData(
-    NamedTuple(
-        "_PathMetadataEntryData",
-        [
-            ("path", Optional[str]),
-        ],
-    )
-):
+class PathMetadataEntryData(NamedTuple("_PathMetadataEntryData", [("path", Optional[str]),],)):
     """Container class for path metadata entry data.
 
     Args:
@@ -187,14 +166,7 @@ class PathMetadataEntryData(
 
 
 @whitelist_for_serdes
-class JsonMetadataEntryData(
-    NamedTuple(
-        "_JsonMetadataEntryData",
-        [
-            ("data", Dict[str, Any]),
-        ],
-    )
-):
+class JsonMetadataEntryData(NamedTuple("_JsonMetadataEntryData", [("data", Dict[str, Any]),],)):
     """Container class for JSON metadata entry data.
 
     Args:
@@ -209,12 +181,7 @@ class JsonMetadataEntryData(
 
 @whitelist_for_serdes
 class MarkdownMetadataEntryData(
-    NamedTuple(
-        "_MarkdownMetadataEntryData",
-        [
-            ("md_str", Optional[str]),
-        ],
-    )
+    NamedTuple("_MarkdownMetadataEntryData", [("md_str", Optional[str]),],)
 ):
     """Container class for markdown metadata entry data.
 
@@ -230,13 +197,7 @@ class MarkdownMetadataEntryData(
 
 @whitelist_for_serdes
 class PythonArtifactMetadataEntryData(
-    NamedTuple(
-        "_PythonArtifactMetadataEntryData",
-        [
-            ("module", str),
-            ("name", str),
-        ],
-    )
+    NamedTuple("_PythonArtifactMetadataEntryData", [("module", str), ("name", str),],)
 ):
     """Container class for python artifact metadata entry data.
 
@@ -252,14 +213,7 @@ class PythonArtifactMetadataEntryData(
 
 
 @whitelist_for_serdes
-class FloatMetadataEntryData(
-    NamedTuple(
-        "_FloatMetadataEntryData",
-        [
-            ("value", Optional[float]),
-        ],
-    )
-):
+class FloatMetadataEntryData(NamedTuple("_FloatMetadataEntryData", [("value", Optional[float]),],)):
     """Container class for float metadata entry data.
 
     Args:
@@ -273,14 +227,7 @@ class FloatMetadataEntryData(
 
 
 @whitelist_for_serdes
-class IntMetadataEntryData(
-    NamedTuple(
-        "_IntMetadataEntryData",
-        [
-            ("value", Optional[int]),
-        ],
-    )
-):
+class IntMetadataEntryData(NamedTuple("_IntMetadataEntryData", [("value", Optional[int]),],)):
     """Container class for int metadata entry data.
 
     Args:
@@ -293,12 +240,7 @@ class IntMetadataEntryData(
 
 @whitelist_for_serdes
 class DagsterPipelineRunMetadataEntryData(
-    NamedTuple(
-        "_DagsterPipelineRunMetadataEntryData",
-        [
-            ("run_id", str),
-        ],
-    )
+    NamedTuple("_DagsterPipelineRunMetadataEntryData", [("run_id", str),],)
 ):
     """Representation of a dagster pipeline run.
 
@@ -586,11 +528,7 @@ class EventMetadata:
 class EventMetadataEntry(
     NamedTuple(
         "_EventMetadataEntry",
-        [
-            ("label", str),
-            ("description", Optional[str]),
-            ("entry_data", "EventMetadataEntryData"),
-        ],
+        [("label", str), ("description", Optional[str]), ("entry_data", "EventMetadataEntryData"),],
     )
 ):
     """The standard structure for describing metadata for Dagster events.
@@ -722,9 +660,7 @@ class EventMetadataEntry(
 
     @staticmethod
     def json(
-        data: Optional[Dict[str, Any]],
-        label: str,
-        description: Optional[str] = None,
+        data: Optional[Dict[str, Any]], label: str, description: Optional[str] = None,
     ) -> "EventMetadataEntry":
         """Static constructor for a metadata entry containing JSON data as
         :py:class:`JsonMetadataEntryData`. For example:
@@ -871,13 +807,7 @@ class EventMetadataEntry(
 
 
 class PartitionMetadataEntry(
-    NamedTuple(
-        "_PartitionMetadataEntry",
-        [
-            ("partition", str),
-            ("entry", "EventMetadataEntry"),
-        ],
-    )
+    NamedTuple("_PartitionMetadataEntry", [("partition", str), ("entry", "EventMetadataEntry"),],)
 ):
     """Event containing an :py:class:`EventMetdataEntry` and the name of a partition that the entry
     applies to.

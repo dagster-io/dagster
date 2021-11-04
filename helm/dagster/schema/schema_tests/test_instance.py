@@ -175,9 +175,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
             type=RunLauncherType.CELERY,
             config=RunLauncherConfig.construct(
                 celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
-                    image=image,
-                    configSource=configSource,
-                    workerQueues=workerQueues,
+                    image=image, configSource=configSource, workerQueues=workerQueues,
                 )
             ),
         )
@@ -248,9 +246,7 @@ def test_custom_run_coordinator_config(template: HelmTemplate):
                 type=RunCoordinatorType.CUSTOM,
                 config=RunCoordinatorConfig.construct(
                     customRunCoordinator=ConfigurableClass.construct(
-                        module=module,
-                        class_=class_,
-                        config=config,
+                        module=module, class_=class_, config=config,
                     )
                 ),
             )
@@ -420,9 +416,7 @@ def test_custom_compute_log_manager_config(template: HelmTemplate):
             type=ComputeLogManagerType.CUSTOM,
             config=ComputeLogManagerConfig.construct(
                 customComputeLogManager=ConfigurableClass.construct(
-                    module=module,
-                    class_=class_,
-                    config=config,
+                    module=module, class_=class_, config=config,
                 )
             ),
         )
@@ -456,9 +450,7 @@ def test_compute_log_manager_has_schema(json_schema_model, compute_log_manager_c
 
 @pytest.mark.parametrize(
     argnames=["json_schema_model", "run_coordinator_class"],
-    argvalues=[
-        (QueuedRunCoordinatorConfig, QueuedRunCoordinator),
-    ],
+    argvalues=[(QueuedRunCoordinatorConfig, QueuedRunCoordinator),],
 )
 def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     json_schema_fields = json_schema_model.schema()["properties"].keys()

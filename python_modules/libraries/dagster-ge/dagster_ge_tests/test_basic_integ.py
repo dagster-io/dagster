@@ -41,9 +41,7 @@ def reyielder(_context, res):
     yield Output((res["statistics"], res["results"]))
 
 
-@pipeline(
-    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
-)
+@pipeline(mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],)
 def hello_world_pandas_pipeline_v2():
     return reyielder(
         ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
@@ -52,9 +50,7 @@ def hello_world_pandas_pipeline_v2():
     )
 
 
-@pipeline(
-    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
-)
+@pipeline(mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],)
 def hello_world_pandas_pipeline_v3():
     return reyielder(
         ge_validation_solid_factory_v3(
@@ -100,10 +96,7 @@ def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
     }
     with instance_for_test() as instance:
         result = execute_pipeline(
-            reconstructable(pipe),
-            run_config=run_config,
-            mode="basic",
-            instance=instance,
+            reconstructable(pipe), run_config=run_config, mode="basic", instance=instance,
         )
         assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
         expectations = result.result_for_solid(

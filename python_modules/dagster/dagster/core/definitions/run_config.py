@@ -28,8 +28,7 @@ from .solid import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
-    resource_defs: Dict[str, ResourceDefinition],
-    required_resources: Set[str],
+    resource_defs: Dict[str, ResourceDefinition], required_resources: Set[str],
 ) -> Shape:
     fields = {}
     for resource_name, resource_def in resource_defs.items():
@@ -40,10 +39,7 @@ def define_resource_dictionary_cls(
                 # for the current mode
                 is_required = False
 
-            fields[resource_name] = def_config_field(
-                resource_def,
-                is_required=is_required,
-            )
+            fields[resource_name] = def_config_field(resource_def, is_required=is_required,)
 
     return Shape(fields=fields)
 
@@ -120,8 +116,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
         "resources": Field(
             define_resource_dictionary_cls(
-                creation_data.mode_definition.resource_defs,
-                creation_data.required_resources,
+                creation_data.mode_definition.resource_defs, creation_data.required_resources,
             )
         ),
     }
@@ -147,10 +142,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         fields["solids"] = nodes_field
         field_aliases = {"solids": "ops"}
 
-    return Shape(
-        fields=remove_none_entries(fields),
-        field_aliases=field_aliases,
-    )
+    return Shape(fields=remove_none_entries(fields), field_aliases=field_aliases,)
 
 
 # Common pattern for a set of named definitions (e.g. executors)
@@ -202,9 +194,7 @@ def input_has_upstream(
 
 
 def get_input_manager_input_field(
-    solid: Node,
-    input_def: InputDefinition,
-    resource_defs: Dict[str, ResourceDefinition],
+    solid: Node, input_def: InputDefinition, resource_defs: Dict[str, ResourceDefinition],
 ) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
@@ -238,8 +228,7 @@ def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDe
 
 
 def get_outputs_field(
-    solid: Node,
-    resource_defs: Dict[str, ResourceDefinition],
+    solid: Node, resource_defs: Dict[str, ResourceDefinition],
 ) -> Optional[Field]:
 
     # if any outputs have configurable output managers, use those for the schema and ignore all type
@@ -330,12 +319,7 @@ def construct_leaf_solid_config(
 ) -> Optional[Field]:
     return solid_config_field(
         {
-            "inputs": get_inputs_field(
-                solid,
-                dependency_structure,
-                resource_defs,
-                ignored,
-            ),
+            "inputs": get_inputs_field(solid, dependency_structure, resource_defs, ignored,),
             "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
@@ -391,12 +375,7 @@ def define_isolid_field(
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
     else:
         fields = {
-            "inputs": get_inputs_field(
-                solid,
-                dependency_structure,
-                resource_defs,
-                ignored,
-            ),
+            "inputs": get_inputs_field(solid, dependency_structure, resource_defs, ignored,),
             "outputs": get_outputs_field(solid, resource_defs),
         }
         nodes_field = Field(
@@ -490,8 +469,7 @@ def _gather_all_config_types(
 
 
 def construct_config_type_dictionary(
-    node_defs: List[NodeDefinition],
-    run_config_schema_type: ConfigType,
+    node_defs: List[NodeDefinition], run_config_schema_type: ConfigType,
 ) -> Tuple[Dict[str, ConfigType], Dict[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}

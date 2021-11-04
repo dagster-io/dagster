@@ -74,9 +74,7 @@ class WhitelistMap(NamedTuple):
         return self.tuples[name]
 
     def register_enum(
-        self,
-        enum: Type[Enum],
-        serializer: Optional[Type["EnumSerializer"]],
+        self, enum: Type[Enum], serializer: Optional[Type["EnumSerializer"]],
     ):
         self.enums[enum.__name__] = (enum, serializer or DefaultEnumSerializer)
 
@@ -172,10 +170,7 @@ class NamedTupleSerializer(Serializer):
     @classmethod
     @abstractmethod
     def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
+        cls, value: NamedTuple, whitelist_map: WhitelistMap, descent_path: str,
     ) -> Dict[str, Any]:
         """
         Transform the object in to a form that can be json serialized.
@@ -221,18 +216,13 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
 
     @classmethod
     def value_from_unpacked(
-        cls,
-        unpacked_dict: Dict[str, Any],
-        klass: Type,
+        cls, unpacked_dict: Dict[str, Any], klass: Type,
     ):
         return klass(**unpacked_dict)
 
     @classmethod
     def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
+        cls, value: NamedTuple, whitelist_map: WhitelistMap, descent_path: str,
     ) -> Dict[str, Any]:
         skip_when_empty_fields = cls.skip_when_empty()
 
@@ -331,9 +321,7 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
 ###################################################################################################
 
 
-def deserialize_json_to_dagster_namedtuple(
-    json_str: str,
-) -> tuple:
+def deserialize_json_to_dagster_namedtuple(json_str: str,) -> tuple:
     """Deserialize a json encoded string in to a whitelisted named tuple"""
     dagster_namedtuple = _deserialize_json(
         check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
@@ -373,11 +361,7 @@ def deserialize_value(val: str) -> Any:
 
 def unpack_value(val: Any) -> Any:
     """Convert a packed value in to its original form"""
-    return unpack_inner_value(
-        val,
-        whitelist_map=_WHITELIST_MAP,
-        descent_path="",
-    )
+    return unpack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path="",)
 
 
 def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
@@ -437,8 +421,7 @@ def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str)
 
 
 def register_serdes_tuple_fallbacks(
-    fallback_map: Dict[str, Optional[Type]],
-    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    fallback_map: Dict[str, Optional[Type]], whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ):
     """
     Manually provide remappings for named tuples.
@@ -447,10 +430,7 @@ def register_serdes_tuple_fallbacks(
 
     for class_name, klass in fallback_map.items():
         whitelist_map.register_tuple(
-            class_name,
-            klass,
-            DefaultNamedTupleSerializer,
-            signature(klass.__new__).parameters,
+            class_name, klass, DefaultNamedTupleSerializer, signature(klass.__new__).parameters,
         )
 
 

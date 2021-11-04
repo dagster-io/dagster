@@ -54,10 +54,7 @@ def execute_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             _execute_run_command_body(
-                recon_pipeline,
-                args.pipeline_run_id,
-                instance,
-                send_to_buffer,
+                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer,
             )
 
             for line in buffer:
@@ -80,8 +77,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
             write_stream_fn(event)
     finally:
         instance.report_engine_event(
-            "Process for run exited (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            "Process for run exited (pid: {pid}).".format(pid=pid), pipeline_run,
         )
 
 
@@ -109,10 +105,7 @@ def resume_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             _resume_run_command_body(
-                recon_pipeline,
-                args.pipeline_run_id,
-                instance,
-                send_to_buffer,
+                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer,
             )
 
             for line in buffer:
@@ -137,8 +130,7 @@ def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_st
             write_stream_fn(event)
     finally:
         instance.report_engine_event(
-            "Process for pipeline exited (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            "Process for pipeline exited (pid: {pid}).".format(pid=pid), pipeline_run,
         )
 
 

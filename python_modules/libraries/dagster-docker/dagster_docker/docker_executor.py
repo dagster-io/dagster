@@ -19,12 +19,7 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
 
 @executor(
     name="docker",
-    config_schema=merge_dicts(
-        DOCKER_CONFIG_SCHEMA,
-        {
-            "retries": get_retries_config(),
-        },
-    ),
+    config_schema=merge_dicts(DOCKER_CONFIG_SCHEMA, {"retries": get_retries_config(),},),
     requirements=multiple_process_executor_requirements(),
 )
 @experimental
@@ -49,14 +44,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     validate_docker_config(network, networks, container_kwargs)
 
     return StepDelegatingExecutor(
-        DockerStepHandler(
-            image,
-            registry,
-            env_vars,
-            network,
-            networks,
-            container_kwargs,
-        ),
+        DockerStepHandler(image, registry, env_vars, network, networks, container_kwargs,),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
@@ -182,8 +170,7 @@ class DockerStepHandler(StepHandler):
         client = self._get_client()
 
         container_name = self._get_container_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
+            step_handler_context.execute_step_args.pipeline_run_id, step_key,
         )
 
         try:
@@ -196,10 +183,7 @@ class DockerStepHandler(StepHandler):
                     pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                     step_key=step_key,
                     message=f"Error when checking on step container health: {e}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
+                    event_specific_data=StepFailureData(error=None, user_failure_data=None,),
                 )
             ]
 
@@ -215,10 +199,7 @@ class DockerStepHandler(StepHandler):
                     pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                     step_key=step_key,
                     message=f"Container status is {container.status}. Hit exception attempting to get its return code: {e}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
+                    event_specific_data=StepFailureData(error=None, user_failure_data=None,),
                 )
             ]
 
@@ -232,10 +213,7 @@ class DockerStepHandler(StepHandler):
                 pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                 step_key=step_key,
                 message=f"Container status is {container.status}. Return code is {str(ret_code)}.",
-                event_specific_data=StepFailureData(
-                    error=None,
-                    user_failure_data=None,
-                ),
+                event_specific_data=StepFailureData(error=None, user_failure_data=None,),
             )
         ]
 

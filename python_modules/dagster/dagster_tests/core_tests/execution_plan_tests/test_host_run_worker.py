@@ -59,18 +59,10 @@ _explode_pid = {"pid": None}
 # workers) can access the definition
 class ExplodingTestPipeline(ReconstructablePipeline):
     def __new__(
-        cls,
-        repository,
-        pipeline_name,
-        solid_selection_str=None,
-        solids_to_execute=None,
+        cls, repository, pipeline_name, solid_selection_str=None, solids_to_execute=None,
     ):  # pylint: disable=signature-differs
         return super(ExplodingTestPipeline, cls).__new__(
-            cls,
-            repository,
-            pipeline_name,
-            solid_selection_str,
-            solids_to_execute,
+            cls, repository, pipeline_name, solid_selection_str, solids_to_execute,
         )
 
     def get_definition(self):
@@ -87,15 +79,10 @@ def test_host_run_worker():
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
             "execution": {"multiprocess": None},
         }
-        execution_plan = create_execution_plan(
-            pipeline_with_mode,
-            run_config,
-        )
+        execution_plan = create_execution_plan(pipeline_with_mode, run_config,)
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_with_mode,
-            execution_plan=execution_plan,
-            run_config=run_config,
+            pipeline_def=pipeline_with_mode, execution_plan=execution_plan, run_config=run_config,
         )
 
         recon_pipeline = reconstructable(pipeline_with_mode)
@@ -117,8 +104,7 @@ def test_host_run_worker():
 
 
 @executor(
-    name="custom_test_executor",
-    config_schema={},
+    name="custom_test_executor", config_schema={},
 )
 def test_executor(_init_context):
     return MultiprocessExecutor(max_concurrent=4, retries=RetryMode.DISABLED)
@@ -131,15 +117,10 @@ def test_custom_executor_fn():
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
         }
-        execution_plan = create_execution_plan(
-            pipeline_with_mode,
-            run_config,
-        )
+        execution_plan = create_execution_plan(pipeline_with_mode, run_config,)
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_with_mode,
-            execution_plan=execution_plan,
-            run_config=run_config,
+            pipeline_def=pipeline_with_mode, execution_plan=execution_plan, run_config=run_config,
         )
 
         recon_pipeline = reconstructable(pipeline_with_mode)

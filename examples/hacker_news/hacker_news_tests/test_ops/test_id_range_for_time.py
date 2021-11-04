@@ -42,10 +42,7 @@ def test_hello():
     with build_op_context(
         resources={
             "partition_bounds": partition_bounds.configured(
-                {
-                    "start": "2020-12-30 00:00:00",
-                    "end": "2020-12-30 01:00:00",
-                }
+                {"start": "2020-12-30 00:00:00", "end": "2020-12-30 01:00:00",}
             ),
             "hn_client": hn_snapshot_client,
         }

@@ -75,10 +75,7 @@ class KnownExecutionState(
             if event.is_step_success and step_key in dynamic_outputs:
                 successful_dynamic_mappings[step_key] = dict(dynamic_outputs[step_key])
 
-        return KnownExecutionState(
-            dict(previous_retry_attempts),
-            successful_dynamic_mappings,
-        )
+        return KnownExecutionState(dict(previous_retry_attempts), successful_dynamic_mappings,)
 
     @staticmethod
     def for_reexecution(

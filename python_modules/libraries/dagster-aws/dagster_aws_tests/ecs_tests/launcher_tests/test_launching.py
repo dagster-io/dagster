@@ -6,14 +6,7 @@ from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
 
 def test_default_launcher(
-    ecs,
-    instance,
-    workspace,
-    run,
-    subnet,
-    network_interface,
-    image,
-    environment,
+    ecs, instance, workspace, run, subnet, network_interface, image, environment,
 ):
     assert not run.tags
 

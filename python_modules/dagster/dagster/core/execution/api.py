@@ -173,8 +173,7 @@ def execute_run(
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
-            message,
-            pipeline_run,
+            message, pipeline_run,
         )
         raise DagsterInvariantViolationError(message)
 
@@ -230,11 +229,7 @@ def execute_run(
         pipeline_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(
-            execution_plan,
-            pipeline,
-            pipeline_run.run_config,
-            pipeline_run,
-            instance,
+            execution_plan, pipeline, pipeline_run.run_config, pipeline_run, instance,
         ),
         output_capture=output_capture,
     )
@@ -421,12 +416,7 @@ def _logged_execute_pipeline(
         tags=tags,
     )
 
-    return execute_run(
-        pipeline,
-        pipeline_run,
-        instance,
-        raise_on_error=raise_on_error,
-    )
+    return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error,)
 
 
 def reexecute_pipeline(
@@ -484,11 +474,7 @@ def reexecute_pipeline(
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
-            pipeline=pipeline,
-            run_config=run_config,
-            mode=mode,
-            preset=preset,
-            tags=tags,
+            pipeline=pipeline, run_config=run_config, mode=mode, preset=preset, tags=tags,
         )
 
         parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
@@ -503,12 +489,7 @@ def reexecute_pipeline(
         # resolve step selection DSL queries using parent execution information
         if step_selection:
             execution_plan = _resolve_reexecute_step_selection(
-                execute_instance,
-                pipeline,
-                mode,
-                run_config,
-                parent_pipeline_run,
-                step_selection,
+                execute_instance, pipeline, mode, run_config, parent_pipeline_run, step_selection,
             )
 
         pipeline_run = execute_instance.create_run_for_pipeline(
@@ -523,12 +504,7 @@ def reexecute_pipeline(
             parent_run_id=parent_pipeline_run.run_id,
         )
 
-        return execute_run(
-            pipeline,
-            pipeline_run,
-            execute_instance,
-            raise_on_error=raise_on_error,
-        )
+        return execute_run(pipeline, pipeline_run, execute_instance, raise_on_error=raise_on_error,)
 
 
 def reexecute_pipeline_iterator(
@@ -604,12 +580,7 @@ def reexecute_pipeline_iterator(
         # resolve step selection DSL queries using parent execution information
         if step_selection:
             execution_plan = _resolve_reexecute_step_selection(
-                execute_instance,
-                pipeline,
-                mode,
-                run_config,
-                parent_pipeline_run,
-                step_selection,
+                execute_instance, pipeline, mode, run_config, parent_pipeline_run, step_selection,
             )
 
         pipeline_run = execute_instance.create_run_for_pipeline(
@@ -710,8 +681,7 @@ def _get_execution_plan_from_run(
         )
         if execution_plan_snapshot.can_reconstruct_plan:
             return ExecutionPlan.rebuild_from_snapshot(
-                pipeline_run.pipeline_name,
-                execution_plan_snapshot,
+                pipeline_run.pipeline_name, execution_plan_snapshot,
             )
     return create_execution_plan(
         pipeline,
@@ -819,8 +789,7 @@ def pipeline_execution_iterator(
             )
         elif failed_steps:
             event = DagsterEvent.pipeline_failure(
-                pipeline_context,
-                "Steps failed: {}.".format(failed_steps),
+                pipeline_context, "Steps failed: {}.".format(failed_steps),
             )
         else:
             event = DagsterEvent.pipeline_success(pipeline_context)
@@ -859,8 +828,7 @@ class ExecuteRunWithPlanIterable:
             try:
                 if self.pipeline_context:  # False if we had a pipeline init failure
                     yield from self.iterator(
-                        execution_plan=self.execution_plan,
-                        pipeline_context=self.pipeline_context,
+                        execution_plan=self.execution_plan, pipeline_context=self.pipeline_context,
                     )
             except GeneratorExit:
                 # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
@@ -881,12 +849,7 @@ def _check_execute_pipeline_args(
     tags: Optional[Dict[str, Any]],
     solid_selection: Optional[List[str]] = None,
 ) -> Tuple[
-    IPipeline,
-    Optional[dict],
-    Optional[str],
-    Dict[str, Any],
-    FrozenSet[str],
-    Optional[List[str]],
+    IPipeline, Optional[dict], Optional[str], Dict[str, Any], FrozenSet[str], Optional[List[str]],
 ]:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
@@ -947,9 +910,7 @@ def _check_execute_pipeline_args(
                     "You have attempted to execute pipeline {name} with mode {mode}. "
                     "Available modes: {modes}"
                 ).format(
-                    name=pipeline_def.name,
-                    mode=mode,
-                    modes=pipeline_def.available_modes,
+                    name=pipeline_def.name, mode=mode, modes=pipeline_def.available_modes,
                 )
             )
     else:

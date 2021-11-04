@@ -72,9 +72,7 @@ if TYPE_CHECKING:
     )
     from dagster.core.definitions.schedule import ScheduleExecutionData
     from dagster.core.definitions.sensor import SensorExecutionData
-    from dagster.core.host_representation.external_data import (
-        ExternalSensorExecutionErrorData,
-    )
+    from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 
 
 class RepositoryLocation(AbstractContextManager):
@@ -249,8 +247,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         def_name = repo_def.name
 
         self._external_repo = external_repo_from_def(
-            repo_def,
-            RepositoryHandle(repository_name=def_name, repository_location=self),
+            repo_def, RepositoryHandle(repository_name=def_name, repository_location=self),
         )
         self._repositories = {self._external_repo.name: self._external_repo}
 
@@ -371,8 +368,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_set_name, "partition_set_name")
 
         return get_partition_names(
-            recon_repo=self._recon_repo,
-            partition_set_name=partition_set_name,
+            recon_repo=self._recon_repo, partition_set_name=partition_set_name,
         )
 
     def get_external_schedule_execution_data(
@@ -482,10 +478,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         try:
             self.client = DagsterGrpcClient(
-                port=self._port,
-                socket=self._socket,
-                host=self._host,
-                use_ssl=self._use_ssl,
+                port=self._port, socket=self._socket, host=self._host, use_ssl=self._use_ssl,
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
@@ -499,10 +492,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
                 self._heartbeat_thread = threading.Thread(
                     target=client_heartbeat_thread,
-                    args=(
-                        self.client,
-                        self._heartbeat_shutdown_event,
-                    ),
+                    args=(self.client, self._heartbeat_shutdown_event,),
                     name="grpc-client-heartbeat",
                 )
                 self._heartbeat_thread.daemon = True
@@ -516,17 +506,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._container_image = self._reload_current_image()
 
             self._external_repositories_data = sync_get_streaming_external_repositories_data_grpc(
-                self.client,
-                self,
+                self.client, self,
             )
 
             self.external_repositories = {
                 repo_name: ExternalRepository(
                     repo_data,
-                    RepositoryHandle(
-                        repository_name=repo_name,
-                        repository_location=self,
-                    ),
+                    RepositoryHandle(repository_name=repo_name, repository_location=self,),
                 )
                 for repo_name, repo_data in self._external_repositories_data.items()
             }
@@ -567,10 +553,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return self._use_ssl
 
     def _reload_current_image(self) -> str:
-        return deserialize_as(
-            self.client.get_current_image(),
-            GetCurrentImageResult,
-        ).current_image
+        return deserialize_as(self.client.get_current_image(), GetCurrentImageResult,).current_image
 
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
@@ -695,11 +678,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
         return sync_get_external_schedule_execution_data_grpc(
-            self.client,
-            instance,
-            repository_handle,
-            schedule_name,
-            scheduled_execution_time,
+            self.client, instance, repository_handle, schedule_name, scheduled_execution_time,
         )
 
     def get_external_sensor_execution_data(

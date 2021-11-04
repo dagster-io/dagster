@@ -23,15 +23,7 @@ class PickledObjectADLS2IOManager(IOManager):
         keys = context.get_output_identifier()
         run_id = keys[0]
         output_identifiers = keys[1:]  # variable length because of mapping key
-        return "/".join(
-            [
-                self.prefix,
-                "storage",
-                run_id,
-                "files",
-                *output_identifiers,
-            ]
-        )
+        return "/".join([self.prefix, "storage", run_id, "files", *output_identifiers,])
 
     def _rm_object(self, key):
         check.str_param(key, "key")

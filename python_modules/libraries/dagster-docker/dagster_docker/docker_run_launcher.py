@@ -150,16 +150,14 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.report_engine_event(
             message="Launching run in a new container {container_id} with image {docker_image}".format(
-                container_id=container.id,
-                docker_image=docker_image,
+                container_id=container.id, docker_image=docker_image,
             ),
             pipeline_run=run,
             cls=self.__class__,
         )
 
         self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
+            run.run_id, {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
         )
 
         container.start()

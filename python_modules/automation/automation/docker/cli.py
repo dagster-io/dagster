@@ -28,9 +28,7 @@ def list():  # pylint: disable=redefined-builtin
 @cli.command()
 @click.option("--name", required=True, help="Name of image to build")
 @click.option(
-    "--dagster-version",
-    required=True,
-    help="Version of image to build",
+    "--dagster-version", required=True, help="Version of image to build",
 )
 @click.option(
     "-t",
@@ -104,9 +102,7 @@ def push_to_registry(name: str, tags: List[str]):
 @cli.command()
 @click.option("--name", required=True, help="Name of image to push")
 @click.option(
-    "--dagster-version",
-    required=True,
-    help="Version of image to push",
+    "--dagster-version", required=True, help="Version of image to push",
 )
 def push_dockerhub(name, dagster_version):
     """Used for pushing k8s images to Docker Hub. Must be logged in to Docker Hub for this to
@@ -121,9 +117,7 @@ def push_dockerhub(name, dagster_version):
 @cli.command()
 @click.option("--name", required=True, help="Name of image to push")
 @click.option(
-    "--dagster-version",
-    required=True,
-    help="Version of image to push",
+    "--dagster-version", required=True, help="Version of image to push",
 )
 def push_ecr(name, dagster_version):
     """Used for pushing k8s images to our public ECR.

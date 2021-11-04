@@ -99,9 +99,7 @@ def test_construct_dagster_k8s_job_with_mounts():
         env_config_maps=None,
         env_secrets=None,
         volume_mounts=[{"name": "foo", "mountPath": "biz/buz", "subPath": "file.txt"}],
-        volumes=[
-            {"name": "foo", "configMap": {"name": "settings-cm"}},
-        ],
+        volumes=[{"name": "foo", "configMap": {"name": "settings-cm"}},],
     )
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
 
@@ -131,9 +129,7 @@ def test_construct_dagster_k8s_job_with_mounts():
         env_config_maps=None,
         env_secrets=None,
         volume_mounts=[{"name": "foo", "mountPath": "biz/buz", "subPath": "file.txt"}],
-        volumes=[
-            {"name": "foo", "secret": {"secretName": "settings-secret"}},
-        ],
+        volumes=[{"name": "foo", "secret": {"secretName": "settings-secret"}},],
     )
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
     assert len(job["spec"]["template"]["spec"]["volumes"]) == 2
@@ -154,9 +150,7 @@ def test_construct_dagster_k8s_job_with_mounts():
         env_config_maps=None,
         env_secrets=None,
         volume_mounts=[{"name": "foo", "mountPath": "biz/buz", "subPath": "file.txt"}],
-        volumes=[
-            {"name": "foo", "invalidKey": "settings-secret"},
-        ],
+        volumes=[{"name": "foo", "invalidKey": "settings-secret"},],
     )
     with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'invalidKey'}"):
         construct_dagster_k8s_job(cfg_with_invalid_volume_key, ["foo", "bar"], "job123").to_dict()
@@ -247,10 +241,7 @@ def test_construct_dagster_k8s_job_with_user_defined_env_from():
                             },
                             {"secret_ref": {"name": "user_secret_ref_one", "optional": "True"}},
                             {
-                                "secret_ref": {
-                                    "name": "user_secret_ref_two",
-                                    "optional": "False",
-                                },
+                                "secret_ref": {"name": "user_secret_ref_two", "optional": "False",},
                                 "prefix": "with_prefix",
                             },
                         ]
@@ -346,9 +337,7 @@ def test_construct_dagster_k8s_job_with_user_defined_service_account_name():
         user_defined_k8s_service_account_name_tags_graph.to_job(
             tags={
                 USER_DEFINED_K8S_CONFIG_KEY: {
-                    "pod_spec_config": {
-                        "service_account_name": "this-should-take-precedence",
-                    },
+                    "pod_spec_config": {"service_account_name": "this-should-take-precedence",},
                 },
             },
         ).tags

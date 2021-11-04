@@ -206,14 +206,11 @@ def the_repo():
 @contextmanager
 def default_repo():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
-        working_directory=os.getcwd(),
+        executable_path=sys.executable, python_file=__file__, working_directory=os.getcwd(),
     )
 
     with ManagedGrpcPythonEnvRepositoryLocationOrigin(
-        loadable_target_origin=loadable_target_origin,
-        location_name="test_location",
+        loadable_target_origin=loadable_target_origin, location_name="test_location",
     ).create_test_location() as location:
         yield location.get_repository("the_repo")
 

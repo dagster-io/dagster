@@ -142,9 +142,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
 
         pipe = reconstructable(define_multi_out)
         result = execute_pipeline(
-            pipe,
-            run_config={"execution": {"multiprocess": {}}},
-            instance=instance,
+            pipe, run_config={"execution": {"multiprocess": {}}}, instance=instance,
         )
         assert result.success
 

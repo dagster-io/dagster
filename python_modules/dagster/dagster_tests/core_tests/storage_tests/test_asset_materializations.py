@@ -40,9 +40,7 @@ def test_output_definition_single_partition_materialization():
     @solid(output_defs=[OutputDefinition(name="output2", asset_key=lambda _: AssetKey("table2"))])
     def solid2(_, _input1):
         yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
+            7, "output2", metadata_entries=[entry2],
         )
 
     @pipeline
@@ -95,9 +93,7 @@ def test_output_definition_multiple_partition_materialization():
     @solid(output_defs=[OutputDefinition(name="output2", asset_key=AssetKey("table2"))])
     def solid2(_, _input1):
         yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
+            7, "output2", metadata_entries=[entry2],
         )
 
     @pipeline
@@ -158,9 +154,7 @@ def test_io_manager_single_partition_materialization():
     @solid(output_defs=[OutputDefinition(name="output2")])
     def solid2(_, _input1):
         yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
+            7, "output2", metadata_entries=[entry2],
         )
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
@@ -189,8 +183,7 @@ def test_partition_specific_fails_on_na_partitions():
     )
     def fail_solid(_):
         yield Output(
-            None,
-            metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
+            None, metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
         )
 
     @pipeline
@@ -205,8 +198,7 @@ def test_partition_specific_fails_on_zero_partitions():
     @solid(output_defs=[OutputDefinition(asset_key=AssetKey("key"))])
     def fail_solid(_):
         yield Output(
-            None,
-            metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
+            None, metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
         )
 
     @pipeline
@@ -221,8 +213,7 @@ def test_fail_fast_with_nonesense_metadata():
     @solid(output_defs=[OutputDefinition(asset_key=AssetKey("key"))])
     def fail_solid(_):
         yield Output(
-            None,
-            metadata_entries=["some_string_I_think_is_metadata"],
+            None, metadata_entries=["some_string_I_think_is_metadata"],
         )
 
     @pipeline

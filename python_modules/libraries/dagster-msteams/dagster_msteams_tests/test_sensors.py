@@ -11,8 +11,7 @@ def test_teams_pipeline_failure_sensor_def():
         sensor_name = "my_failure_sensor"
 
         my_sensor = make_teams_on_pipeline_failure_sensor(
-            hook_url=os.getenv("TEAMS_WEBHOOK_URL"),
-            name=sensor_name,
+            hook_url=os.getenv("TEAMS_WEBHOOK_URL"), name=sensor_name,
         )
         assert my_sensor.name == sensor_name
 

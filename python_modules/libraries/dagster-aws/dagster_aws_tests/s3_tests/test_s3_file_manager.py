@@ -44,8 +44,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
         return context.resources.file_manager.write_data(bar_bytes)
 
     @op(
-        ins={"file_handle": In(S3FileHandle)},
-        required_resource_keys={"file_manager"},
+        ins={"file_handle": In(S3FileHandle)}, required_resource_keys={"file_manager"},
     )
     def accept_file(context, file_handle):
         local_path = context.resources.file_manager.copy_handle_to_local_temp(file_handle)

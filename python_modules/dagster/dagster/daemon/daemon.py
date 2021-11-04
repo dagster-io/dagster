@@ -191,9 +191,7 @@ class DagsterDaemon(AbstractContextManager):
                 "message reoccurs, you may have multiple daemons running which is not supported. "
                 "Last heartbeat daemon id: {}, "
                 "Current daemon_id: {}".format(
-                    daemon_type,
-                    last_stored_heartbeat.daemon_id,
-                    daemon_uuid,
+                    daemon_type, last_stored_heartbeat.daemon_id, daemon_uuid,
                 )
             )
 

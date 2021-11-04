@@ -249,13 +249,7 @@ def test_time_partitions_daily_partitions(
 
 
 @pytest.mark.parametrize(
-    argnames=[
-        "start",
-        "end",
-        "partition_months_offset",
-        "current_time",
-        "expected_partitions",
-    ],
+    argnames=["start", "end", "partition_months_offset", "current_time", "expected_partitions",],
     ids=[
         "partition months offset == 0",
         "partition months offset == 1",
@@ -354,13 +348,7 @@ def test_time_partitions_monthly_partitions(
 
 
 @pytest.mark.parametrize(
-    argnames=[
-        "start",
-        "end",
-        "partition_weeks_offset",
-        "current_time",
-        "expected_partitions",
-    ],
+    argnames=["start", "end", "partition_weeks_offset", "current_time", "expected_partitions",],
     ids=[
         "partition weeks offset == 0",
         "partition weeks offset == 1",

@@ -30,13 +30,7 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
         "execution": {
             "celery-k8s": {
                 "config": merge_dicts(
-                    (
-                        {
-                            "job_image": dagster_docker_image,
-                        }
-                        if dagster_docker_image
-                        else {}
-                    ),
+                    ({"job_image": dagster_docker_image,} if dagster_docker_image else {}),
                     {
                         "job_namespace": job_namespace,
                         "image_pull_policy": image_pull_policy(),
@@ -243,11 +237,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
     dagster_docker_image, dagster_instance, helm_namespace
 ):
     run_config = merge_dicts(
-        merge_yamls(
-            [
-                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-            ]
-        ),
+        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
@@ -396,11 +386,7 @@ def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-ou
     dagster_docker_image, dagster_instance, helm_namespace
 ):
     run_config = merge_dicts(
-        merge_yamls(
-            [
-                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-            ]
-        ),
+        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
@@ -424,11 +410,7 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
 ):
     run_config = merge_dicts(
-        merge_yamls(
-            [
-                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-            ]
-        ),
+        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image,
             job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
@@ -443,11 +425,7 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
 ):
     run_config = merge_dicts(
         merge_dicts(
-            merge_yamls(
-                [
-                    os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-                ]
-            ),
+            merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
             get_celery_engine_config(
                 dagster_docker_image=dagster_docker_image,
                 job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},

@@ -6,10 +6,7 @@ from dagster.core.instance import DagsterInstance
 
 
 class InitExecutorContext(
-    namedtuple(
-        "InitExecutorContext",
-        "pipeline executor_def executor_config instance",
-    )
+    namedtuple("InitExecutorContext", "pipeline executor_def executor_config instance",)
 ):
     """Executor-specific initialization context.
 
@@ -22,11 +19,7 @@ class InitExecutorContext(
     """
 
     def __new__(
-        cls,
-        pipeline,
-        executor_def,
-        executor_config,
-        instance,
+        cls, pipeline, executor_def, executor_config, instance,
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,

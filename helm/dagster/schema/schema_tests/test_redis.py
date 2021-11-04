@@ -75,11 +75,7 @@ def test_celery_backend_override_connection_string(template: HelmTemplate):
     broker_url = "host:6380,password=password,ssl=True"
     backend_url = "host:6381,password=password,ssl=True"
     helm_values = DagsterHelmValues.construct(
-        redis=Redis.construct(
-            enabled=True,
-            brokerUrl=broker_url,
-            backendUrl=backend_url,
-        ),
+        redis=Redis.construct(enabled=True, brokerUrl=broker_url, backendUrl=backend_url,),
     )
 
     [configmap] = template.render(helm_values)

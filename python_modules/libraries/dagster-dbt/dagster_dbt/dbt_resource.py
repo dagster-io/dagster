@@ -8,8 +8,7 @@ class DbtResource:
     """Base class for a resource allowing users to interface with dbt"""
 
     def __init__(
-        self,
-        logger: Optional[Any] = None,
+        self, logger: Optional[Any] = None,
     ):
         """Constructor
 

@@ -292,9 +292,7 @@ class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), Code
 
     def get_loadable_target_origin(self, executable_path):
         return LoadableTargetOrigin(
-            executable_path=executable_path,
-            module_name=self.module,
-            attribute=self.fn_name,
+            executable_path=executable_path, module_name=self.module, attribute=self.fn_name,
         )
 
 
@@ -324,9 +322,7 @@ class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), 
 
     def get_loadable_target_origin(self, executable_path):
         return LoadableTargetOrigin(
-            executable_path=executable_path,
-            module_name=self.module,
-            attribute=self.attribute,
+            executable_path=executable_path, module_name=self.module, attribute=self.attribute,
         )
 
 
@@ -371,10 +367,7 @@ class CustomPointer(
         )
 
         return super(CustomPointer, cls).__new__(
-            cls,
-            reconstructor_pointer,
-            reconstructable_args,
-            reconstructable_kwargs,
+            cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs,
         )
 
     def load_target(self):

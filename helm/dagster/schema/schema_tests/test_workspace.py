@@ -24,11 +24,7 @@ def helm_template() -> HelmTemplate:
 
 def test_workspace_renders_fail(template: HelmTemplate, capsys):
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=False,
-            enableSubchart=True,
-            deployments=[],
-        )
+        dagsterUserDeployments=UserDeployments(enabled=False, enableSubchart=True, deployments=[],)
     )
 
     with pytest.raises(subprocess.CalledProcessError):
@@ -64,9 +60,7 @@ def test_workspace_renders_from_helm_user_deployments(template: HelmTemplate):
     ]
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=deployments,
+            enabled=True, enableSubchart=True, deployments=deployments,
         )
     )
 
@@ -126,11 +120,7 @@ def test_workspace_renders_empty(template: HelmTemplate):
     servers: List[Server] = []
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[],
-        ),
+        dagsterUserDeployments=UserDeployments(enabled=True, enableSubchart=True, deployments=[],),
     )
 
     workspace_templates = template.render(helm_values)

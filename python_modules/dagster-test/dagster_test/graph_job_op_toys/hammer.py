@@ -47,8 +47,7 @@ def chase_giver(context):
 
 
 @op(
-    ins={"in_1": In(int), "in_2": In(int), "in_3": In(int), "in_4": In(int)},
-    out=Out(int),
+    ins={"in_1": In(int), "in_2": In(int), "in_3": In(int), "in_4": In(int)}, out=Out(int),
 )
 def reducer(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4

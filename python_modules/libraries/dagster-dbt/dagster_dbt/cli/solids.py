@@ -117,8 +117,7 @@ def dbt_cli_run(context):
 
     if context.solid_config["yield_materializations"]:
         for materialization in generate_materializations(
-            cli_output,
-            asset_key_prefix=context.solid_config["asset_key_prefix"],
+            cli_output, asset_key_prefix=context.solid_config["asset_key_prefix"],
         ):
             yield materialization
 
@@ -343,11 +342,7 @@ def dbt_cli_snapshot_freshness(context):
     output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
-        "parse-only": Field(
-            config=bool,
-            is_required=False,
-            default_value=False,
-        ),
+        "parse-only": Field(config=bool, is_required=False, default_value=False,),
         "threads": Field(
             config=Noneable(int),
             default_value=None,
@@ -495,14 +490,7 @@ def dbt_cli_docs_generate(context):
         command="docs generate",
         flags_dict=passthrough_flags_only(
             context.solid_config,
-            (
-                "threads",
-                "no-version-check",
-                "models",
-                "exclude",
-                "selector",
-                "state",
-            ),
+            ("threads", "no-version-check", "models", "exclude", "selector", "state",),
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],

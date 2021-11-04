@@ -125,9 +125,7 @@ def test_error_on_invalid_resource_key():
 
     with pytest.raises(CheckError, match="test-resource"):
         test_graph.to_job(
-            resource_defs={
-                "test-resource": test_resource,
-            }
+            resource_defs={"test-resource": test_resource,}
         )
 
 
@@ -137,8 +135,7 @@ def test_config_mapping_fn():
         return context.resource_config
 
     @op(
-        required_resource_keys={"date"},
-        config_schema={"msg": str},
+        required_resource_keys={"date"}, config_schema={"msg": str},
     )
     def do_stuff(context):
         return f"{context.op_config['msg'] } on {context.resources.date}"
@@ -156,8 +153,7 @@ def test_config_mapping_fn():
     job = needs_config.to_job(
         resource_defs={"date": date},
         config=ConfigMapping(
-            config_schema={"date": str},  # top level has to be dict
-            config_fn=_mapped,
+            config_schema={"date": str}, config_fn=_mapped,  # top level has to be dict
         ),
     )
 
@@ -172,8 +168,7 @@ def test_default_config():
         return context.resource_config
 
     @op(
-        required_resource_keys={"date"},
-        config_schema={"msg": str},
+        required_resource_keys={"date"}, config_schema={"msg": str},
     )
     def do_stuff(context):
         return f"{context.op_config['msg'] } on {context.resources.date}"
@@ -461,8 +456,7 @@ def test_to_job_incomplete_default_config():
     # Ensure that errors nested into the config tree are caught
     for invalid_config, error_msg in invalid_configs:
         with pytest.raises(
-            DagsterInvalidConfigError,
-            match=error_msg,
+            DagsterInvalidConfigError, match=error_msg,
         ):
             my_graph.to_job(name="my_job", config=invalid_config)
 

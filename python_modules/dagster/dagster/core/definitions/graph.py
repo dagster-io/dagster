@@ -93,8 +93,7 @@ def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinitio
 
 
 def _create_adjacency_lists(
-    solids: List[Node],
-    dep_structure: DependencyStructure,
+    solids: List[Node], dep_structure: DependencyStructure,
 ) -> Tuple[Dict[str, Set[Node]], Dict[str, Set[Node]]]:
     visit_dict = {s.name: False for s in solids}
     forward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
@@ -307,8 +306,7 @@ class GraphDefinition(NodeDefinition):
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
-            mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),
+            mapping.maps_from.output_name, NodeHandle(mapped_solid.name, handle),
         )
 
     def default_value_for_input(self, input_name: str) -> Any:
@@ -365,11 +363,7 @@ class GraphDefinition(NodeDefinition):
         )
 
     def copy_for_configured(
-        self,
-        name: str,
-        description: Optional[str],
-        config_schema: Any,
-        config_or_config_fn: Any,
+        self, name: str, description: Optional[str], config_schema: Any, config_or_config_fn: Any,
     ):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
@@ -727,10 +721,8 @@ def _validate_in_mappings(
         if dependency_structure.has_fan_in_deps(input_handle):
             for idx, dep in enumerate(dependency_structure.get_fan_in_deps(input_handle)):
                 if dep is MappedInputPlaceholder:
-                    mapping_str = (
-                        "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(
-                            input_handle=input_handle, idx=idx
-                        )
+                    mapping_str = "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(
+                        input_handle=input_handle, idx=idx
                     )
                     if mapping_str not in mapping_keys:
                         raise DagsterInvalidDefinitionError(
@@ -826,10 +818,7 @@ def _validate_out_mappings(
 
 
 def _config_mapping_with_default_value(
-    inner_schema: ConfigType,
-    default_config: Dict[str, Any],
-    job_name: str,
-    graph_name: str,
+    inner_schema: ConfigType, default_config: Dict[str, Any], job_name: str, graph_name: str,
 ) -> ConfigMapping:
     if not isinstance(inner_schema, Shape):
         check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")

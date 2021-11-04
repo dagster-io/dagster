@@ -52,11 +52,7 @@ def test_k8s_run_monitoring(
 
 
 def _launch_run_and_wait_for_resume(
-    run_config,
-    instance,
-    namespace,
-    pipeline_name="slow_pipeline",
-    dagster_docker_image=None,
+    run_config, instance, namespace, pipeline_name="slow_pipeline", dagster_docker_image=None,
 ):
     tags = {"key": "value"}
 

@@ -37,13 +37,7 @@ def test_backcompat_resource_tags():
 
 
 def test_bad_deprecated_resource_tags():
-    @pipeline(
-        tags={
-            K8S_RESOURCE_REQUIREMENTS_KEY: {
-                "other": {"cpu": "250m", "memory": "64Mi"},
-            }
-        }
-    )
+    @pipeline(tags={K8S_RESOURCE_REQUIREMENTS_KEY: {"other": {"cpu": "250m", "memory": "64Mi"},}})
     def resource_tags_pipeline():
         pass
 
@@ -156,12 +150,7 @@ def test_tags_to_dynamic_plan():
     def k8s_ready():
         return emit().map(multiply_inputs)
 
-    known_state = KnownExecutionState(
-        {},
-        {
-            emit.name: {"result": ["0", "1", "2"]},
-        },
-    )
+    known_state = KnownExecutionState({}, {emit.name: {"result": ["0", "1", "2"]},},)
     plan = create_execution_plan(k8s_ready, known_state=known_state)
 
     emit_step = plan.get_step_by_key(emit.name)

@@ -14,16 +14,12 @@ def test_solid_instance_tags():
         solid_defs=[metadata_solid],
         dependencies={
             NodeInvocation(
-                "metadata_solid",
-                alias="aliased_metadata_solid",
-                tags={"foo": "oof", "bip": "bop"},
+                "metadata_solid", alias="aliased_metadata_solid", tags={"foo": "oof", "bip": "bop"},
             ): {}
         },
     )
 
-    result = execute_pipeline(
-        pipeline,
-    )
+    result = execute_pipeline(pipeline,)
 
     assert result.success
     assert called["yup"]

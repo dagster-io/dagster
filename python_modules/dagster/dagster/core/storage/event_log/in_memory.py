@@ -50,11 +50,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         return cls(inst_data)
 
     def get_logs_for_run(
-        self,
-        run_id,
-        cursor=-1,
-        of_type=None,
-        limit=None,
+        self, run_id, cursor=-1, of_type=None, limit=None,
     ):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")

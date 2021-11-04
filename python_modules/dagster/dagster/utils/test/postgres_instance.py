@@ -150,8 +150,7 @@ class TestPostgresInstance:
 
         if BUILDKITE:
             yield TestPostgresInstance.conn_string(
-                **conn_args,
-                env_name=env_name,
+                **conn_args, env_name=env_name,
             )  # buildkite docker is handled in pipeline setup
             return
 
@@ -173,8 +172,7 @@ class TestPostgresInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode("utf-8")
             raise PostgresDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
-                ex,
+                "Failed to launch docker container(s) via docker-compose: {}".format(err_text), ex,
             )
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)

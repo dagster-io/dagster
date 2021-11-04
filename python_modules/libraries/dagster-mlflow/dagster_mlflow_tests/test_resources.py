@@ -375,10 +375,7 @@ def test_execute_solid_with_mlflow_resource():
         run_config={
             "resources": {
                 "mlflow": {
-                    "config": {
-                        "experiment_name": "my_experiment",
-                        "extra_tags": extra_tags,
-                    }
+                    "config": {"experiment_name": "my_experiment", "extra_tags": extra_tags,}
                 }
             }
         },

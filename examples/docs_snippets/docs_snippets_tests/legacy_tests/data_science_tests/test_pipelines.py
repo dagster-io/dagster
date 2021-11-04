@@ -11,18 +11,9 @@ from dagster.utils.yaml_utils import load_yaml_from_path
 @pytest.mark.parametrize(
     "file_path,run_config_path",
     [
-        [
-            "iris_classify.py",
-            None,
-        ],
-        [
-            "iris_classify_2.py",
-            "iris_classify_dev.yaml",
-        ],
-        [
-            "iris_classify_3.py",
-            "iris_classify_dev.yaml",
-        ],
+        ["iris_classify.py", None,],
+        ["iris_classify_2.py", "iris_classify_dev.yaml",],
+        ["iris_classify_3.py", "iris_classify_dev.yaml",],
     ],
 )
 def test_pipelines_success(file_path, run_config_path):

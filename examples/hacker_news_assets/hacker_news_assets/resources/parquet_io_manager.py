@@ -77,8 +77,7 @@ class PartitionedParquetIOManager(ParquetIOManager):
 
 
 @io_manager(
-    config_schema={"base_path": str},
-    required_resource_keys={"pyspark"},
+    config_schema={"base_path": str}, required_resource_keys={"pyspark"},
 )
 def parquet_io_manager(_):
     return ParquetIOManager()

@@ -141,8 +141,7 @@ class K8sStepHandler(StepHandler):
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
+            step_handler_context.execute_step_args.pipeline_run_id, step_key,
         )
 
         if step_handler_context.execute_step_args.known_state:
@@ -222,10 +221,7 @@ class K8sStepHandler(StepHandler):
                     pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                     step_key=step_key,
                     message=f"Discovered failed Kubernetes job {job_name} for step {step_key}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
+                    event_specific_data=StepFailureData(error=None, user_failure_data=None,),
                 )
             ]
         return []

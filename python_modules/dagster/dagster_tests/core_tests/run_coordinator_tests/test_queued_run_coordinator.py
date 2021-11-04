@@ -72,16 +72,12 @@ class TestQueuedRunCoordinator:
                         "module": "dagster.core.run_coordinator",
                         "class": "QueuedRunCoordinator",
                         "config": {
-                            "max_concurrent_runs": {
-                                "env": "MAX_RUNS",
-                            },
+                            "max_concurrent_runs": {"env": "MAX_RUNS",},
                             "tag_concurrency_limits": [
                                 {"key": "foo", "value": "bar", "limit": 3},
                                 {"key": "backfill", "limit": 2},
                             ],
-                            "dequeue_interval_seconds": {
-                                "env": "DEQUEUE_INTERVAL",
-                            },
+                            "dequeue_interval_seconds": {"env": "DEQUEUE_INTERVAL",},
                         },
                     }
                 }
@@ -94,11 +90,7 @@ class TestQueuedRunCoordinator:
                     "run_coordinator": {
                         "module": "dagster.core.run_coordinator",
                         "class": "QueuedRunCoordinator",
-                        "config": {
-                            "tag_concurrency_limits": [
-                                {"key": "backfill"},
-                            ],
-                        },
+                        "config": {"tag_concurrency_limits": [{"key": "backfill"},],},
                     }
                 }
             ) as _:
@@ -112,9 +104,7 @@ class TestQueuedRunCoordinator:
                         "module": "dagster.core.run_coordinator",
                         "class": "QueuedRunCoordinator",
                         "config": {
-                            "max_concurrent_runs": {
-                                "env": "MAX_RUNS",
-                            },
+                            "max_concurrent_runs": {"env": "MAX_RUNS",},
                             "tag_concurrency_limits": [
                                 {
                                     "key": "foo",
@@ -123,9 +113,7 @@ class TestQueuedRunCoordinator:
                                 },
                                 {"key": "backfill", "limit": 2},
                             ],
-                            "dequeue_interval_seconds": {
-                                "env": "DEQUEUE_INTERVAL",
-                            },
+                            "dequeue_interval_seconds": {"env": "DEQUEUE_INTERVAL",},
                         },
                     }
                 }

@@ -142,11 +142,7 @@ class GithubResource:
                 }
                 }
             """,
-            variables={
-                "id": res["data"]["repository"]["id"],
-                "title": title,
-                "body": body,
-            },
+            variables={"id": res["data"]["repository"]["id"], "title": title, "body": body,},
             installation_id=installation_id,
         )
 

@@ -166,9 +166,7 @@ class TestAssetAwareEventLog(
         graphql_context.instance.run_launcher.join()
 
         result = execute_dagster_graphql(
-            graphql_context,
-            GET_ASSET_MATERIALIZATION,
-            variables={"assetKey": {"path": ["b"]}},
+            graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["b"]}},
         )
         assert result.data
         snapshot.assert_match(result.data)
@@ -185,9 +183,7 @@ class TestAssetAwareEventLog(
         graphql_context.instance.run_launcher.join()
 
         result = execute_dagster_graphql(
-            graphql_context,
-            GET_ASSET_MATERIALIZATION,
-            variables={"assetKey": {"path": ["b"]}},
+            graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["b"]}},
         )
         assert result.data
         snapshot.assert_match(result.data)

@@ -23,18 +23,11 @@ from .dep_snapshot import (
 class InputDefSnap(
     NamedTuple(
         "_InputDefSnap",
-        [
-            ("name", str),
-            ("dagster_type_key", str),
-            ("description", Optional[str]),
-        ],
+        [("name", str), ("dagster_type_key", str), ("description", Optional[str]),],
     )
 ):
     def __new__(
-        cls,
-        name: str,
-        dagster_type_key: str,
-        description: Optional[str],
+        cls, name: str, dagster_type_key: str, description: Optional[str],
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
@@ -79,18 +72,11 @@ class OutputDefSnap(
 class OutputMappingSnap(
     NamedTuple(
         "_OutputMappingSnap",
-        [
-            ("mapped_solid_name", str),
-            ("mapped_output_name", str),
-            ("external_output_name", str),
-        ],
+        [("mapped_solid_name", str), ("mapped_output_name", str), ("external_output_name", str),],
     )
 ):
     def __new__(
-        cls,
-        mapped_solid_name: str,
-        mapped_output_name: str,
-        external_output_name: str,
+        cls, mapped_solid_name: str, mapped_output_name: str, external_output_name: str,
     ):
         return super(OutputMappingSnap, cls).__new__(
             cls,
@@ -112,11 +98,7 @@ def build_output_mapping_snap(output_mapping: OutputMapping) -> OutputMappingSna
 class InputMappingSnap(
     NamedTuple(
         "_InputMappingSnap",
-        [
-            ("mapped_solid_name", str),
-            ("mapped_input_name", str),
-            ("external_input_name", str),
-        ],
+        [("mapped_solid_name", str), ("mapped_input_name", str), ("external_input_name", str),],
     )
 ):
     def __new__(cls, mapped_solid_name: str, mapped_input_name: str, external_input_name: str):
@@ -220,12 +202,7 @@ class CompositeSolidDefSnap(
                 output_mapping_snaps, "output_mapping_snaps", of_type=OutputMappingSnap
             ),
             **_check_solid_def_header_args(
-                name,
-                input_def_snaps,
-                output_def_snaps,
-                description,
-                tags,
-                config_field_snap,
+                name, input_def_snaps, output_def_snaps, description, tags, config_field_snap,
             ),
         )
 
@@ -281,12 +258,7 @@ class SolidDefSnap(
                 required_resource_keys, "required_resource_keys", str
             ),
             **_check_solid_def_header_args(
-                name,
-                input_def_snaps,
-                output_def_snaps,
-                description,
-                tags,
-                config_field_snap,
+                name, input_def_snaps, output_def_snaps, description, tags, config_field_snap,
             ),
         )
 

@@ -109,11 +109,7 @@ class SnowflakeIOManager(IOManager):
         with connect_snowflake(config=self._config, schema=schema) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
-                table,
-                con=con,
-                if_exists="replace",
-                index=False,
-                method=pd_writer,
+                table, con=con, if_exists="replace", index=False, method=pd_writer,
             )
 
     def _handle_spark_output(self, df: SparkDataFrame, schema: str, table: str):
@@ -154,10 +150,7 @@ class SnowflakeIOManager(IOManager):
             # loading as a root input
             metadata = context.metadata
         with connect_snowflake(config=self._config) as con:
-            result = read_sql(
-                sql=self._get_select_statement(resources, metadata),
-                con=con,
-            )
+            result = read_sql(sql=self._get_select_statement(resources, metadata), con=con,)
             result.columns = map(str.lower, result.columns)
             return result
 

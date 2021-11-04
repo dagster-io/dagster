@@ -15,8 +15,7 @@ def sync_get_streaming_external_repositories_data_grpc(api_client, repository_lo
         external_repository_chunks = list(
             api_client.streaming_external_repository(
                 external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location.origin,
-                    repository_name,
+                    repository_location.origin, repository_name,
                 )
             )
         )

@@ -9,10 +9,7 @@ def json_message():
         "attachments": [
             {
                 "contentType": "application/vnd.microsoft.card.hero",
-                "content": {
-                    "title": "Dagster Pipeline Alert",
-                    "subtitle": "Hello there !",
-                },
+                "content": {"title": "Dagster Pipeline Alert", "subtitle": "Hello there !",},
             }
         ],
     }

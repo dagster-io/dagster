@@ -173,9 +173,7 @@ def job_scaffold_command(**kwargs):
     help="Comma-separated list of partition names that we want to backfill",
 )
 @click.option(
-    "--all",
-    type=click.STRING,
-    help="Specify to select all partitions to backfill.",
+    "--all", type=click.STRING, help="Specify to select all partitions to backfill.",
 )
 @click.option(
     "--from",

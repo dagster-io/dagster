@@ -150,9 +150,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
 
 def executor(
-    name=None,
-    config_schema=None,
-    requirements=None,
+    name=None, config_schema=None, requirements=None,
 ):
     """Define an executor.
 
@@ -249,18 +247,14 @@ def execute_in_process_executor(_):
     """
     from dagster.core.executor.in_process import InProcessExecutor
 
-    return InProcessExecutor(
-        retries=RetryMode.ENABLED,
-        marker_to_close=None,
-    )
+    return InProcessExecutor(retries=RetryMode.ENABLED, marker_to_close=None,)
 
 
 def _core_multiprocess_executor_creation(max_concurrent, retries_config):
     from dagster.core.executor.multiprocess import MultiprocessExecutor
 
     return MultiprocessExecutor(
-        max_concurrent=max_concurrent,
-        retries=RetryMode.from_config(retries_config),
+        max_concurrent=max_concurrent, retries=RetryMode.from_config(retries_config),
     )
 
 

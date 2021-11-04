@@ -103,9 +103,7 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                 "run_launcher": {
                     "class": "DefaultRunLauncher",
                     "module": "dagster.core.launcher.default_run_launcher",
-                    "config": {
-                        "wait_for_processes": True,
-                    },
+                    "config": {"wait_for_processes": True,},
                 }
             },
             (overrides if overrides else {}),
@@ -370,9 +368,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
-        return cls(
-            inst_data=inst_data,
-        )
+        return cls(inst_data=inst_data,)
 
     @property
     def inst_data(self):

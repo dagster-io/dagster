@@ -132,11 +132,7 @@ class ModuleBuildSpec(
         # buildkite build step for the pylint testenv.
         tests.append(
             StepBuilder(f":lint-roller: {package}")
-            .run(
-                "pip install -U virtualenv",
-                f"cd {self.directory}",
-                "tox -vv -e pylint",
-            )
+            .run("pip install -U virtualenv", f"cd {self.directory}", "tox -vv -e pylint",)
             .on_integration_image(SupportedPython.V3_8)
             .build()
         )

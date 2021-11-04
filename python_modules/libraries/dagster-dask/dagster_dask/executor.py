@@ -32,8 +32,7 @@ DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
             Selector(
                 {
                     "existing": Field(
-                        {"address": StringSource},
-                        description="Connect to an existing scheduler.",
+                        {"address": StringSource}, description="Connect to an existing scheduler.",
                     ),
                     "local": Field(
                         Permissive(), is_required=False, description="Local cluster configuration."
@@ -113,13 +112,7 @@ def dask_executor(init_context):
 
 
 def query_on_dask_worker(
-    dependencies,
-    recon_pipeline,
-    pipeline_run,
-    run_config,
-    step_keys,
-    mode,
-    instance_ref,
+    dependencies, recon_pipeline, pipeline_run, run_config, step_keys, mode, instance_ref,
 ):  # pylint: disable=unused-argument
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
@@ -131,10 +124,7 @@ def query_on_dask_worker(
         )
 
         execution_plan = create_execution_plan(
-            subset_pipeline,
-            run_config=run_config,
-            step_keys_to_execute=step_keys,
-            mode=mode,
+            subset_pipeline, run_config=run_config, step_keys_to_execute=step_keys, mode=mode,
         )
 
         return execute_plan(

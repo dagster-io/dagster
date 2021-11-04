@@ -40,8 +40,7 @@ def define_inty_job():
         return 1
 
     @op(
-        ins={"num": In(Int)},
-        out=Out(Int, io_manager_key="io_manager"),
+        ins={"num": In(Int)}, out=Out(Int, io_manager_key="io_manager"),
     )
     def add_one(num):
         return num + 1
@@ -56,15 +55,7 @@ def define_inty_job():
 def test_gcs_pickle_io_manager_execution(gcs_bucket):
     inty_job = define_inty_job()
 
-    run_config = {
-        "resources": {
-            "io_manager": {
-                "config": {
-                    "gcs_bucket": gcs_bucket,
-                }
-            }
-        }
-    }
+    run_config = {"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket,}}}}
 
     run_id = make_new_run_id()
 

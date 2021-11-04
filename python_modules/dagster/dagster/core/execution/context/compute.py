@@ -85,9 +85,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     def __init__(self, step_execution_context: StepExecutionContext):
         self._step_execution_context = check.inst_param(
-            step_execution_context,
-            "step_execution_context",
-            StepExecutionContext,
+            step_execution_context, "step_execution_context", StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
 

@@ -413,8 +413,7 @@ class GrapheneStepMaterializationEvent(graphene.ObjectType):
     def resolve_assetLineage(self, _graphene_info):
         return [
             GrapheneAssetLineageInfo(
-                assetKey=lineage_info.asset_key,
-                partitions=lineage_info.partitions,
+                assetKey=lineage_info.asset_key, partitions=lineage_info.partitions,
             )
             for lineage_info in self._asset_lineage
         ]

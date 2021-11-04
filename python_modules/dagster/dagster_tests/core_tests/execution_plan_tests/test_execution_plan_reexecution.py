@@ -55,36 +55,24 @@ def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline(using_file_system=True)
     instance = DagsterInstance.ephemeral()
     run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
-    result = execute_pipeline(
-        pipeline_def,
-        run_config=run_config,
-        instance=instance,
-    )
+    result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance,)
 
     assert result.success
 
     with open(
-        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 4
 
     with open(
-        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
     ## re-execute add_two
 
-    resolved_run_config = ResolvedRunConfig.build(
-        pipeline_def,
-        run_config=run_config,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryPipeline(pipeline_def),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config,)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config,)
 
     subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
     pipeline_run = instance.create_run_for_pipeline(
@@ -106,8 +94,7 @@ def test_execution_plan_reexecution():
         os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result")
     )
     with open(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
@@ -188,14 +175,12 @@ def test_pipeline_step_key_subset_execution():
 
     assert result.success
     with open(
-        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 4
 
     with open(
-        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
-        "rb",
+        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"), "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
@@ -230,8 +215,7 @@ def test_pipeline_step_key_subset_execution():
     assert get_step_output_event(step_events, "add_two")
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match="Step selection refers to unknown step: nope",
+        DagsterExecutionStepNotFoundError, match="Step selection refers to unknown step: nope",
     ):
         reexecute_pipeline(
             pipeline_def,

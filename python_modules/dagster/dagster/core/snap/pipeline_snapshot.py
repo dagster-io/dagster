@@ -51,12 +51,7 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
+        cls, storage_dict, klass, args_for_class, whitelist_map, descent_path,
     ):
         # unpack all stored fields
         unpacked_dict = {
@@ -212,8 +207,7 @@ class PipelineSnapshot(
         return False
 
     def get_config_type_from_solid_def_snap(
-        self,
-        solid_def_snap: Union[SolidDefSnap, CompositeSolidDefSnap],
+        self, solid_def_snap: Union[SolidDefSnap, CompositeSolidDefSnap],
     ) -> Optional[ConfigType]:
         check.inst_param(solid_def_snap, "solid_def_snap", (SolidDefSnap, CompositeSolidDefSnap))
         if solid_def_snap.config_field_snap:
@@ -257,8 +251,7 @@ def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):
 
 
 def _construct_fields(
-    config_type_snap: ConfigTypeSnap,
-    config_snap_map: Dict[str, ConfigTypeSnap],
+    config_type_snap: ConfigTypeSnap, config_snap_map: Dict[str, ConfigTypeSnap],
 ) -> Dict[str, Field]:
     return {
         field.name: Field(

@@ -9,10 +9,7 @@ from ..step_builder import StepBuilder
 def helm_lint_steps() -> List[dict]:
     return [
         StepBuilder(":helm: :yaml: :lint-roller:")
-        .run(
-            "pip install yamllint",
-            "make yamllint",
-        )
+        .run("pip install yamllint", "make yamllint",)
         .on_integration_image(SupportedPython.V3_8)
         .build(),
         StepBuilder(":helm: dagster-json-schema")
@@ -24,9 +21,7 @@ def helm_lint_steps() -> List[dict]:
         .on_integration_image(SupportedPython.V3_8)
         .build(),
         StepBuilder(":helm: dagster :lint-roller:")
-        .run(
-            "helm lint helm/dagster --with-subcharts --strict",
-        )
+        .run("helm lint helm/dagster --with-subcharts --strict",)
         .on_integration_image(SupportedPython.V3_8)
         .with_retry(2)
         .build(),

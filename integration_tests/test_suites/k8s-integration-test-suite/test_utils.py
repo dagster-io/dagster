@@ -19,8 +19,7 @@ def construct_pod_spec(name, cmd):
 
 def construct_pod_manifest(name, cmd):
     return kubernetes.client.V1Pod(
-        metadata=kubernetes.client.V1ObjectMeta(name=name),
-        spec=construct_pod_spec(name, cmd),
+        metadata=kubernetes.client.V1ObjectMeta(name=name), spec=construct_pod_spec(name, cmd),
     )
 
 
@@ -70,8 +69,7 @@ def test_wait_for_pod(cluster_provider, namespace):  # pylint: disable=unused-ar
 
         with pytest.raises(DagsterK8sError) as exc_info:
             api.create_namespaced_pod(
-                body=construct_pod_manifest("fail", 'echo "whoops!"; exit 1'),
-                namespace=namespace,
+                body=construct_pod_manifest("fail", 'echo "whoops!"; exit 1'), namespace=namespace,
             )
             wait_for_pod("fail", namespace=namespace, wait_for_state=WaitForPodState.Terminated)
 
@@ -114,12 +112,10 @@ def test_wait_for_job(cluster_provider, namespace):  # pylint: disable=unused-ar
             wait_for_job_success("sayhi2", namespace=namespace, wait_timeout=1)
 
         with pytest.raises(
-            DagsterK8sError,
-            match="Encountered failed job pods for job fail with status:",
+            DagsterK8sError, match="Encountered failed job pods for job fail with status:",
         ):
             api.create_namespaced_job(
-                body=construct_job_manifest("fail", 'echo "whoops!"; exit 1'),
-                namespace=namespace,
+                body=construct_job_manifest("fail", 'echo "whoops!"; exit 1'), namespace=namespace,
             )
             wait_for_job_success("fail", namespace=namespace)
 

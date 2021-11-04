@@ -142,9 +142,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         else None,
                         tags=None,
                     )
-                    .where(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                    )
+                    .where(AssetKeyTable.c.asset_key == asset_key.to_string(),)
                 )
             else:
                 tags = event.dagster_event.step_materialization_data.materialization.tags
@@ -158,9 +156,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         else None,
                         tags=seven.json.dumps(tags) if tags else None,
                     )
-                    .where(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                    )
+                    .where(AssetKeyTable.c.asset_key == asset_key.to_string(),)
                 )
 
 

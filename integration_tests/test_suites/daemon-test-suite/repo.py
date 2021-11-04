@@ -17,8 +17,7 @@ def other_foo_pipeline():
 
 
 @schedule(
-    pipeline_name="foo_pipeline",
-    cron_schedule="*/1 * * * *",
+    pipeline_name="foo_pipeline", cron_schedule="*/1 * * * *",
 )
 def always_run_schedule():
     return {}

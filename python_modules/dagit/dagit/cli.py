@@ -92,9 +92,7 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     is_flag=True,
 )
 @click.option(
-    "--suppress-warnings",
-    help="Filter all warnings when hosting Dagit.",
-    is_flag=True,
+    "--suppress-warnings", help="Filter all warnings when hosting Dagit.", is_flag=True,
 )
 @click.version_option(version=__version__, prog_name="dagit")
 def ui(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
@@ -137,10 +135,7 @@ def host_dagit_ui(
         instance.optimize_for_dagit(db_statement_timeout)
 
         with get_workspace_process_context_from_kwargs(
-            instance,
-            version=__version__,
-            read_only=read_only,
-            kwargs=kwargs,
+            instance, version=__version__, read_only=read_only, kwargs=kwargs,
         ) as workspace_process_context:
             host_dagit_ui_with_workspace_process_context(
                 workspace_process_context, host, port, path_prefix, port_lookup

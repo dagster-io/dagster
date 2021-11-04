@@ -455,11 +455,7 @@ class CachingRepositoryData(RepositoryData):
             load_partition_sets_from_pipelines,
         )
         self._sensors = _CacheingDefinitionIndex(
-            SensorDefinition,
-            "SensorDefinition",
-            "sensor",
-            sensors,
-            self._validate_sensor,
+            SensorDefinition, "SensorDefinition", "sensor", sensors, self._validate_sensor,
         )
         # load all sensors to force validation
         self._sensors.get_all_definitions()
@@ -824,10 +820,7 @@ class RepositoryDefinition:
     """
 
     def __init__(
-        self,
-        name,
-        repository_data,
-        description=None,
+        self, name, repository_data, description=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")

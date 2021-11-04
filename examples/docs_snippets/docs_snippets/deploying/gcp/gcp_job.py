@@ -4,17 +4,11 @@ from dagster_gcp.gcs.resources import gcs_resource
 
 
 @job(
-    resource_defs={
-        "gcs": gcs_resource,
-        "io_manager": gcs_pickle_io_manager,
-    },
+    resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager,},
     config={
         "resources": {
             "io_manager": {
-                "config": {
-                    "gcs_bucket": "my-cool-bucket",
-                    "gcs_prefix": "good/prefix-for-files-",
-                }
+                "config": {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "good/prefix-for-files-",}
             }
         }
     },

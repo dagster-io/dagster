@@ -58,8 +58,7 @@ def create_step_outputs(
 
 def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
     if not isinstance(
-        event,
-        (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
+        event, (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
     ):
         raise DagsterInvariantViolationError(
             (

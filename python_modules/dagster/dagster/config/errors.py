@@ -66,9 +66,7 @@ class RuntimeMismatchErrorData(
     def __new__(cls, config_type_snap, value_rep):
         check.inst_param(config_type_snap, "config_type", ConfigTypeSnap)
         return super(RuntimeMismatchErrorData, cls).__new__(
-            cls,
-            config_type_snap,
-            check.str_param(value_rep, "value_rep"),
+            cls, config_type_snap, check.str_param(value_rep, "value_rep"),
         )
 
 

@@ -14,8 +14,7 @@ def test_describe_task_definition(ecs):
         networkMode="bridge",
     )
     dagster2 = ecs.register_task_definition(
-        family="dagster",
-        containerDefinitions=[{"image": "hello_world:latest"}],
+        family="dagster", containerDefinitions=[{"image": "hello_world:latest"}],
     )
 
     # It gets the latest revision

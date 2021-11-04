@@ -72,8 +72,4 @@ def sleepy():
     )
 
 
-sleepy_job = sleepy.to_job(
-    config={
-        "ops": {"giver": {"config": [2, 2, 2, 2]}},
-    },
-)
+sleepy_job = sleepy.to_job(config={"ops": {"giver": {"config": [2, 2, 2, 2]}},},)

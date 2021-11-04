@@ -23,11 +23,7 @@ def asset(fn):
         ins[input_param_name] = In(asset_key=asset_key)
 
     out = Out(asset_key=AssetKey(asset_name))
-    return _Op(
-        name=asset_name,
-        ins=ins,
-        out=out,
-    )(fn)
+    return _Op(name=asset_name, ins=ins, out=out,)(fn)
 
 
 def test_single_asset_pipeline():

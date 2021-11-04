@@ -56,10 +56,7 @@ def test_presets():
             PresetDefinition.from_files(
                 "failing_2", config_files=[file_relative_path(__file__, "pass_env.yaml")]
             ),
-            PresetDefinition(
-                "subset",
-                solid_selection=["can_fail"],
-            ),
+            PresetDefinition("subset", solid_selection=["can_fail"],),
         ],
     )
 
@@ -90,9 +87,7 @@ def test_presets():
     )
 
     assert execute_pipeline(
-        pipe,
-        preset="passing",
-        run_config={"solids": {"can_fail": {"config": {"error": False}}}},
+        pipe, preset="passing", run_config={"solids": {"can_fail": {"config": {"error": False}}}},
     ).success
 
     with pytest.raises(
@@ -109,9 +104,7 @@ def test_presets():
         )
 
     assert execute_pipeline(
-        pipe,
-        preset="subset",
-        run_config={"solids": {"can_fail": {"config": {"error": False}}}},
+        pipe, preset="subset", run_config={"solids": {"can_fail": {"config": {"error": False}}}},
     ).success
 
 
@@ -193,8 +186,7 @@ def test_from_pkg_resources():
 
     for bad_def in bad_defs:
         with pytest.raises(
-            DagsterInvariantViolationError,
-            match="Encountered error attempting to parse yaml",
+            DagsterInvariantViolationError, match="Encountered error attempting to parse yaml",
         ):
             PresetDefinition.from_pkg_resources("bad_def", [bad_def])
 

@@ -21,7 +21,7 @@ def test_define_scheduler_repo():
     assert repo.name == "hello_cereal_repository"
     assert repo.has_job("hello_cereal_job")
     with pushd(script_relative_path("../../../docs_snippets/intro_tutorial/advanced/scheduling/")):
-        result = repo.get_job(
-            "hello_cereal_job",
-        ).execute_in_process({"ops": {"hello_cereal": {"config": {"date": "date"}}}})
+        result = repo.get_job("hello_cereal_job",).execute_in_process(
+            {"ops": {"hello_cereal": {"config": {"date": "date"}}}}
+        )
     assert result.success

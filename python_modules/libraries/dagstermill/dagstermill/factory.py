@@ -229,8 +229,7 @@ def _dm_compute(
 
             step_execution_context.log.debug(
                 "Notebook execution complete for {name} at {executed_notebook_path}.".format(
-                    name=name,
-                    executed_notebook_path=executed_notebook_path,
+                    name=name, executed_notebook_path=executed_notebook_path,
                 )
             )
             if output_notebook_name is not None:

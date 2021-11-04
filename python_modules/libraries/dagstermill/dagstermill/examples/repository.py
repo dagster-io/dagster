@@ -101,18 +101,12 @@ def hello_world_pipeline():
     hello_world()
 
 
-hello_world_op = test_nb_op(
-    "hello_world_op",
-    nb_test_path("hello_world"),
-    output_defs=[],
-)
+hello_world_op = test_nb_op("hello_world_op", nb_test_path("hello_world"), output_defs=[],)
 
 
 def build_hello_world_job():
     @job(
-        resource_defs={
-            "output_notebook_io_manager": local_output_notebook_io_manager,
-        }
+        resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager,}
     )
     def hello_world_job():
         hello_world_op()
@@ -183,8 +177,7 @@ def hello_world_no_output_notebook_no_file_manager_pipeline():
 
 
 hello_world_no_output_notebook = dagstermill.define_dagstermill_solid(
-    name="hello_world_no_output_notebook",
-    notebook_path=nb_test_path("hello_world"),
+    name="hello_world_no_output_notebook", notebook_path=nb_test_path("hello_world"),
 )
 
 
@@ -297,13 +290,11 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
     # FIXME add an output to this
     tutorial_LR = test_nb_solid(
-        "tutorial_LR",
-        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_LR", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     tutorial_RF = test_nb_solid(
-        "tutorial_RF",
-        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_RF", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     @pipeline(mode_defs=default_mode_defs)
@@ -321,9 +312,7 @@ def resource_solid(context):
 
 
 hello_world_resource = test_nb_solid(
-    "hello_world_resource",
-    input_defs=[InputDefinition("nonce")],
-    required_resource_keys={"list"},
+    "hello_world_resource", input_defs=[InputDefinition("nonce")], required_resource_keys={"list"},
 )
 
 hello_world_resource_with_exception = test_nb_solid(
@@ -498,9 +487,7 @@ def fan_in_notebook_pipeline():
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
+            resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager,}
         )
     ]
 )
@@ -548,10 +535,7 @@ def load_notebook_legacy(notebook):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
+            resource_defs={"io_manager": fs_io_manager, "file_manager": local_file_manager,}
         )
     ]
 )

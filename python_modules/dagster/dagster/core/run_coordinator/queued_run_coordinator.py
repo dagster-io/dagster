@@ -31,8 +31,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             max_concurrent_runs, "max_concurrent_runs", 10
         )
         self.tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits,
-            "tag_concurrency_limits",
+            tag_concurrency_limits, "tag_concurrency_limits",
         )
         self.dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
@@ -122,8 +121,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         # https://github.com/dagster-io/dagster/issues/3323
         if run.status == PipelineRunStatus.QUEUED:
             self._instance.report_run_canceling(
-                run,
-                message="Canceling run from the queue.",
+                run, message="Canceling run from the queue.",
             )
             self._instance.report_run_canceled(run)
             return True

@@ -46,9 +46,7 @@ class HookContext:
     """
 
     def __init__(
-        self,
-        step_execution_context: StepExecutionContext,
-        hook_def: HookDefinition,
+        self, step_execution_context: StepExecutionContext, hook_def: HookDefinition,
     ):
         self._step_execution_context = step_execution_context
         self._hook_def = check.inst_param(hook_def, "hook_def", HookDefinition)

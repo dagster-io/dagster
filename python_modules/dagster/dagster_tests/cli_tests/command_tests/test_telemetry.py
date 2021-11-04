@@ -45,12 +45,7 @@ def test_dagster_telemetry_enabled(caplog):
             pipeline_name = "foo"
             result = runner.invoke(
                 pipeline_execute_command,
-                [
-                    "-f",
-                    path_to_file("test_cli_commands.py"),
-                    "-a",
-                    pipeline_attribute,
-                ],
+                ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute,],
             )
 
             for record in caplog.records:
@@ -73,12 +68,7 @@ def test_dagster_telemetry_disabled(caplog):
             pipeline_name = "foo_pipeline"
             result = runner.invoke(
                 pipeline_execute_command,
-                [
-                    "-f",
-                    path_to_file("test_cli_commands.py"),
-                    "-a",
-                    pipeline_name,
-                ],
+                ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_name,],
             )
 
         assert not os.path.exists(os.path.join(get_dir_from_dagster_home("logs"), "event.log"))

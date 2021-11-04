@@ -243,8 +243,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_repositoryOrError(self, graphene_info, **kwargs):
         return fetch_repository(
-            graphene_info,
-            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
     def resolve_workspaceOrError(self, graphene_info):
@@ -283,8 +282,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_schedulesOrError(self, graphene_info, **kwargs):
         return get_schedules_or_error(
-            graphene_info,
-            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
     def resolve_sensorOrError(self, graphene_info, sensorSelector):
@@ -292,8 +290,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_sensorsOrError(self, graphene_info, **kwargs):
         return get_sensors_or_error(
-            graphene_info,
-            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
     def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
@@ -307,8 +304,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(kwargs["params"]),
+            graphene_info, pipeline_selector_from_graphql(kwargs["params"]),
         )
 
     def resolve_pipelineRunsOrError(self, _graphene_info, **kwargs):
@@ -317,9 +313,7 @@ class GrapheneQuery(graphene.ObjectType):
             filters = filters.to_selector()
 
         return GrapheneRuns(
-            filters=filters,
-            cursor=kwargs.get("cursor"),
-            limit=kwargs.get("limit"),
+            filters=filters, cursor=kwargs.get("cursor"), limit=kwargs.get("limit"),
         )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
@@ -331,9 +325,7 @@ class GrapheneQuery(graphene.ObjectType):
             filters = filters.to_selector()
 
         return GrapheneRuns(
-            filters=filters,
-            cursor=kwargs.get("cursor"),
-            limit=kwargs.get("limit"),
+            filters=filters, cursor=kwargs.get("cursor"), limit=kwargs.get("limit"),
         )
 
     def resolve_runOrError(self, graphene_info, runId):
@@ -388,9 +380,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_runConfigSchemaOrError(self, graphene_info, **kwargs):
         return resolve_run_config_schema_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(kwargs["selector"]),
-            kwargs.get("mode"),
+            graphene_info, pipeline_selector_from_graphql(kwargs["selector"]), kwargs.get("mode"),
         )
 
     def resolve_instance(self, graphene_info):
@@ -417,11 +407,7 @@ class GrapheneQuery(graphene.ObjectType):
         return get_backfill(graphene_info, backfillId)
 
     def resolve_partitionBackfillsOrError(self, graphene_info, **kwargs):
-        return get_backfills(
-            graphene_info,
-            cursor=kwargs.get("cursor"),
-            limit=kwargs.get("limit"),
-        )
+        return get_backfills(graphene_info, cursor=kwargs.get("cursor"), limit=kwargs.get("limit"),)
 
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions

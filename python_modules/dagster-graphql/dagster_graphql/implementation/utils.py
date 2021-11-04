@@ -60,10 +60,7 @@ def pipeline_selector_from_graphql(data):
 
 
 class ExecutionParams(
-    namedtuple(
-        "_ExecutionParams",
-        "selector run_config mode execution_metadata step_keys",
-    )
+    namedtuple("_ExecutionParams", "selector run_config mode execution_metadata step_keys",)
 ):
     def __new__(cls, selector, run_config, mode, execution_metadata, step_keys):
         check.dict_param(run_config, "run_config", key_type=str)

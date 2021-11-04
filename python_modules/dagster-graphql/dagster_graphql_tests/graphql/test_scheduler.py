@@ -187,9 +187,7 @@ def _get_unloadable_schedule_origin(name):
 def test_get_schedule_definitions_for_repository(graphql_context):
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
-        graphql_context,
-        GET_SCHEDULES_QUERY,
-        variables={"repositorySelector": selector},
+        graphql_context, GET_SCHEDULES_QUERY, variables={"repositorySelector": selector},
     )
 
     assert result.data
@@ -220,9 +218,7 @@ def test_start_and_stop_schedule(graphql_context):
 
     # Start a single schedule
     start_result = execute_dagster_graphql(
-        graphql_context,
-        START_SCHEDULES_QUERY,
-        variables={"scheduleSelector": schedule_selector},
+        graphql_context, START_SCHEDULES_QUERY, variables={"scheduleSelector": schedule_selector},
     )
     assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
 
@@ -230,9 +226,7 @@ def test_start_and_stop_schedule(graphql_context):
 
     # Stop a single schedule
     stop_result = execute_dagster_graphql(
-        graphql_context,
-        STOP_SCHEDULES_QUERY,
-        variables={"scheduleOriginId": schedule_origin_id},
+        graphql_context, STOP_SCHEDULES_QUERY, variables={"scheduleOriginId": schedule_origin_id},
     )
     assert (
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
@@ -336,9 +330,7 @@ def test_next_tick(graphql_context):
 
     # Start a single schedule, future tick run requests only available for running schedules
     start_result = execute_dagster_graphql(
-        graphql_context,
-        START_SCHEDULES_QUERY,
-        variables={"scheduleSelector": schedule_selector},
+        graphql_context, START_SCHEDULES_QUERY, variables={"scheduleSelector": schedule_selector},
     )
     assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
 
@@ -367,9 +359,7 @@ def test_next_tick_bad_schedule(graphql_context):
 
     # Start a single schedule, future tick run requests only available for running schedules
     start_result = execute_dagster_graphql(
-        graphql_context,
-        START_SCHEDULES_QUERY,
-        variables={"scheduleSelector": schedule_selector},
+        graphql_context, START_SCHEDULES_QUERY, variables={"scheduleSelector": schedule_selector},
     )
     assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
 
@@ -392,12 +382,7 @@ def test_next_tick_bad_schedule(graphql_context):
 def test_get_unloadable_job(graphql_context):
     instance = graphql_context.instance
     initial_datetime = create_pendulum_time(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
+        year=2019, month=2, day=27, hour=23, minute=59, second=59,
     )
     with pendulum.test(initial_datetime):
         instance.add_job_state(

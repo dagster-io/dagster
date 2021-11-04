@@ -26,8 +26,7 @@ class SkipReason(namedtuple("_SkipReason", "skip_message")):
 
     def __new__(cls, skip_message=None):
         return super(SkipReason, cls).__new__(
-            cls,
-            skip_message=check.opt_str_param(skip_message, "skip_message"),
+            cls, skip_message=check.opt_str_param(skip_message, "skip_message"),
         )
 
 

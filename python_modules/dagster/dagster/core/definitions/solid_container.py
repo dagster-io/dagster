@@ -122,10 +122,7 @@ def create_execution_structure(
 
     check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(
-        dependencies_dict,
-        "dependencies_dict",
-        key_type=(str, NodeInvocation),
-        value_type=dict,
+        dependencies_dict, "dependencies_dict", key_type=(str, NodeInvocation), value_type=dict,
     )
     # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)

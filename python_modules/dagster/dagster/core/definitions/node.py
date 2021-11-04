@@ -17,13 +17,7 @@ if TYPE_CHECKING:
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
     def __init__(
-        self,
-        name,
-        input_defs,
-        output_defs,
-        description=None,
-        tags=None,
-        positional_inputs=None,
+        self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -156,11 +150,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=None,
-            hook_defs=None,
-            retry_policy=None,
+            node_def=self, given_alias=None, tags=None, hook_defs=None, retry_policy=None,
         )(*args, **kwargs)
 
     def alias(self, name):
@@ -169,11 +159,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         check.str_param(name, "name")
 
         return PendingNodeInvocation(
-            node_def=self,
-            given_alias=name,
-            tags=None,
-            hook_defs=None,
-            retry_policy=None,
+            node_def=self, given_alias=name, tags=None, hook_defs=None, retry_policy=None,
         )
 
     def tag(self, tags):
@@ -193,22 +179,14 @@ class NodeDefinition(NamedConfigurableDefinition):
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
 
         return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=None,
-            hook_defs=hook_defs,
-            retry_policy=None,
+            node_def=self, given_alias=None, tags=None, hook_defs=hook_defs, retry_policy=None,
         )
 
     def with_retry_policy(self, retry_policy: RetryPolicy):
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=None,
-            hook_defs=None,
-            retry_policy=retry_policy,
+            node_def=self, given_alias=None, tags=None, hook_defs=None, retry_policy=retry_policy,
         )
 
     def ensure_graph_def(self) -> "GraphDefinition":

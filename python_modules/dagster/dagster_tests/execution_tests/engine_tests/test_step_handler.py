@@ -22,10 +22,7 @@ def test_step_handler_context():
             instance_ref=None,
         )
         ctx = StepHandlerContext(
-            instance=instance,
-            execute_step_args=args,
-            step_tags={},
-            pipeline_run=run,
+            instance=instance, execute_step_args=args, step_tags={}, pipeline_run=run,
         )
 
         assert ctx.execute_step_args == args

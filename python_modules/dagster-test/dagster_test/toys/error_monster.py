@@ -92,10 +92,7 @@ def _act_on_config(solid_config):
             raise ExampleException("sample cause exception")
         except ExampleException as e:
             raise Failure(
-                description="I'm a Failure",
-                metadata={
-                    "metadata_label": "I am metadata text",
-                },
+                description="I'm a Failure", metadata={"metadata_label": "I am metadata text",},
             ) from e
     elif solid_config["throw_in_solid"]:
         raise ExampleException("I threw up")

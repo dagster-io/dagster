@@ -317,9 +317,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
         self._step = step
         self._required_resource_keys = get_required_resource_keys_for_step(
-            plan_data.pipeline.get_definition(),
-            step,
-            plan_data.execution_plan,
+            plan_data.pipeline.get_definition(), step, plan_data.execution_plan,
         )
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys

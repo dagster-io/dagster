@@ -81,9 +81,7 @@ def test_io_manager_diamond_lineage():
     check_materialization(materializations[1], AssetKey(["solid_produce", "outputB"]))
     check_materialization(
         materializations[-1],
-        AssetKey(
-            ["solid_combine", "outputC"],
-        ),
+        AssetKey(["solid_combine", "outputC"],),
         parent_assets=[
             AssetLineageInfo(AssetKey(["a_transform", "outputT"])),
             AssetLineageInfo(AssetKey(["b_transform", "outputT"])),
@@ -108,9 +106,7 @@ def test_multiple_definition_fails():
         return MyIOManager()
 
     @solid(
-        output_defs=[
-            OutputDefinition(asset_key=AssetKey("x"), io_manager_key="asset_io_manager"),
-        ]
+        output_defs=[OutputDefinition(asset_key=AssetKey("x"), io_manager_key="asset_io_manager"),]
     )
     def fail_solid(_):
         return 1
@@ -163,9 +159,7 @@ def test_input_definition_multiple_partition_lineage():
     )
     def solid2(_, _input1):
         yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
+            7, "output2", metadata_entries=[entry2],
         )
 
     @pipeline
@@ -287,10 +281,7 @@ def test_dynamic_output_definition_single_partition_materialization():
     def solid2(_, _input1):
         for i in range(4):
             yield DynamicOutput(
-                7,
-                mapping_key=str(i),
-                output_name="output2",
-                metadata_entries=[entry2],
+                7, mapping_key=str(i), output_name="output2", metadata_entries=[entry2],
             )
 
     @solid

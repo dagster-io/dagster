@@ -139,22 +139,19 @@ def construct_log_string(
         if message_props.event_type_value in EVENT_TYPE_VALUE_TO_DISPLAY_STRING
         else message_props.event_type_value
     )
-    return (
-        " - ".join(
-            filter(
-                None,
-                (
-                    logging_metadata.log_source,
-                    logging_metadata.run_id,
-                    message_props.pid,
-                    logging_metadata.step_key,
-                    event_type_str,
-                    message_props.orig_message,
-                ),
-            )
+    return " - ".join(
+        filter(
+            None,
+            (
+                logging_metadata.log_source,
+                logging_metadata.run_id,
+                message_props.pid,
+                logging_metadata.step_key,
+                event_type_str,
+                message_props.orig_message,
+            ),
         )
-        + (message_props.error_str or "")
-    )
+    ) + (message_props.error_str or "")
 
 
 def get_dagster_meta_dict(
@@ -335,9 +332,7 @@ class DagsterLogManager(logging.Logger):
 
         return cls(
             dagster_handler=DagsterLogHandler(
-                logging_metadata=logging_metadata,
-                loggers=loggers,
-                handlers=handlers,
+                logging_metadata=logging_metadata, loggers=loggers, handlers=handlers,
             ),
             level=python_log_level,
             managed_loggers=managed_loggers,

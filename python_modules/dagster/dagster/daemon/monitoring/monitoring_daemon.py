@@ -52,9 +52,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
             instance.report_engine_event(msg, run)
             attempt_number = num_prev_attempts + 1
             instance.resume_run(
-                run.run_id,
-                workspace,
-                attempt_number,
+                run.run_id, workspace, attempt_number,
             )
         else:
             msg = (

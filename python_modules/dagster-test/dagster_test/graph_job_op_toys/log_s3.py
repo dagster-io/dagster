@@ -2,10 +2,7 @@ from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output
 
 
 @op(
-    config_schema={
-        "bucket": Field(str, is_required=True),
-        "s3_key": Field(str, is_required=True),
-    }
+    config_schema={"bucket": Field(str, is_required=True), "s3_key": Field(str, is_required=True),}
 )
 def read_s3_key(context):
     s3_key = context.op_config["s3_key"]
@@ -13,8 +10,7 @@ def read_s3_key(context):
     path = f"s3://{bucket}/{s3_key}"
     context.log.info(f"Found file {path}")
     yield AssetMaterialization(
-        asset_key=AssetKey(["log_s3", path]),
-        metadata={"S3 path": EventMetadata.url(path)},
+        asset_key=AssetKey(["log_s3", path]), metadata={"S3 path": EventMetadata.url(path)},
     )
     yield Output(path)
 

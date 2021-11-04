@@ -96,10 +96,7 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(
                 JobTable.update()  # pylint: disable=no-value-for-parameter
                 .where(JobTable.c.job_origin_id == job.job_origin_id)
-                .values(
-                    status=job.status.value,
-                    job_body=serialize_dagster_namedtuple(job),
-                )
+                .values(status=job.status.value, job_body=serialize_dagster_namedtuple(job),)
             )
 
     def delete_job_state(self, job_origin_id):
@@ -173,14 +170,12 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             try:
-                tick_insert = (
-                    JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=job_tick_data.job_origin_id,
-                        status=job_tick_data.status.value,
-                        type=job_tick_data.job_type.value,
-                        timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
-                        tick_body=serialize_dagster_namedtuple(job_tick_data),
-                    )
+                tick_insert = JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    job_origin_id=job_tick_data.job_origin_id,
+                    status=job_tick_data.status.value,
+                    type=job_tick_data.job_type.value,
+                    timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
+                    tick_body=serialize_dagster_namedtuple(job_tick_data),
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]

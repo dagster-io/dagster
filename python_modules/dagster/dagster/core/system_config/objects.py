@@ -13,11 +13,7 @@ from dagster.utils import ensure_single_item
 class SolidConfig(
     NamedTuple(
         "_SolidConfig",
-        [
-            ("config", Any),
-            ("inputs", Dict[str, Any]),
-            ("outputs", "OutputsConfig"),
-        ],
+        [("config", Any), ("inputs", Dict[str, Any]), ("outputs", "OutputsConfig"),],
     )
 ):
     def __new__(cls, config, inputs, outputs):
@@ -232,8 +228,7 @@ class ResolvedRunConfig(
 
 
 def config_map_executor(
-    executor_config: Dict[str, Any],
-    executor_def: ExecutorDefinition,
+    executor_config: Dict[str, Any], executor_def: ExecutorDefinition,
 ) -> Dict[str, Any]:
     executor_config_evr = executor_def.apply_config_mapping(executor_config)
     if not executor_config_evr.success:
@@ -247,8 +242,7 @@ def config_map_executor(
 
 
 def config_map_resources(
-    resource_defs: Dict[str, ResourceDefinition],
-    resource_configs: Dict[str, Any],
+    resource_defs: Dict[str, ResourceDefinition], resource_configs: Dict[str, Any],
 ) -> Dict[str, ResourceConfig]:
     """This function executes the config mappings for resources with respect to ConfigurableDefinition.
     It iterates over resource_defs and looks up the corresponding config because resources need to
@@ -273,9 +267,7 @@ def config_map_resources(
 
 
 def config_map_loggers(
-    pipeline_def: PipelineDefinition,
-    config_value: Dict[str, Any],
-    mode: str,
+    pipeline_def: PipelineDefinition, config_value: Dict[str, Any], mode: str,
 ) -> Dict[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
     It uses the `loggers` key on the run_config to determine which loggers will be initialized (and
@@ -366,18 +358,14 @@ def config_map_objects(
 class ExecutionConfig(
     NamedTuple(
         "_ExecutionConfig",
-        [
-            ("execution_engine_name", Optional[str]),
-            ("execution_engine_config", Dict[str, Any]),
-        ],
+        [("execution_engine_name", Optional[str]), ("execution_engine_config", Dict[str, Any]),],
     )
 ):
     def __new__(cls, execution_engine_name, execution_engine_config):
         return super(ExecutionConfig, cls).__new__(
             cls,
             execution_engine_name=check.opt_str_param(
-                execution_engine_name,
-                "execution_engine_name",  # "in_process"
+                execution_engine_name, "execution_engine_name",  # "in_process"
             ),
             execution_engine_config=check.opt_dict_param(
                 execution_engine_config, "execution_engine_config", key_type=str

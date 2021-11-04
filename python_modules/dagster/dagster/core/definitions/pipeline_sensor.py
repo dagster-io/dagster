@@ -27,10 +27,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 @whitelist_for_serdes
 class RunStatusSensorCursor(
-    NamedTuple(
-        "_RunStatusSensorCursor",
-        [("record_id", int), ("update_timestamp", str)],
-    )
+    NamedTuple("_RunStatusSensorCursor", [("record_id", int), ("update_timestamp", str)],)
 ):
     def __new__(cls, record_id, update_timestamp):
 
@@ -196,8 +193,7 @@ def run_failure_sensor(
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
 ) -> Callable[
-    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
-    SensorDefinition,
+    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]], SensorDefinition,
 ]:
     """
     Creates a sensor that reacts to job failure events, where the decorated function will be
@@ -418,8 +414,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # * report back to the original run if success
                 # * update cursor and job state
                 yield PipelineRunReaction(
-                    pipeline_run=pipeline_run,
-                    error=serializable_error,
+                    pipeline_run=pipeline_run, error=serializable_error,
                 )
 
         super(RunStatusSensorDefinition, self).__init__(

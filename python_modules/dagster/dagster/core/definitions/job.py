@@ -157,8 +157,7 @@ class JobDefinition(PipelineDefinition):
         return self._op_selection_data
 
     def get_job_def_for_op_selection(
-        self,
-        op_selection: Optional[List[str]] = None,
+        self, op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":
         if not op_selection:
             return self
@@ -175,8 +174,7 @@ class JobDefinition(PipelineDefinition):
         )
         if op_selection:
             solids_to_execute = parse_solid_selection(
-                super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute),
-                op_selection,
+                super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute), op_selection,
             )
         subset_pipeline_def = super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
         ignored_solids = [

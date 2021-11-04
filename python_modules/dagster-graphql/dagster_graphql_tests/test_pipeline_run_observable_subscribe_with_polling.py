@@ -108,9 +108,4 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         flattened_events_list = [int(message) for lst in events_list for message in lst]
         # PipelineRunObservableSubscribe requests ids > after_cursor + 1
         beginning_cursor = before_watch_config.after_cursor + 2
-        assert flattened_events_list == list(
-            range(
-                beginning_cursor,
-                total_num_events + 1,
-            )
-        )
+        assert flattened_events_list == list(range(beginning_cursor, total_num_events + 1,))

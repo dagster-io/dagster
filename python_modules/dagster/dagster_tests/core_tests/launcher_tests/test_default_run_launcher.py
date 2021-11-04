@@ -187,15 +187,10 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 def test_successful_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
@@ -228,11 +223,7 @@ def test_successful_run(get_workspace, run_config):  # pylint: disable=redefined
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 def test_invalid_instance_run(get_workspace):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -279,15 +270,10 @@ def test_invalid_instance_run(get_workspace):
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 @pytest.mark.skipif(
     seven.IS_WINDOWS,
@@ -385,15 +371,10 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
@@ -427,10 +408,7 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
             assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
             poll_for_event(
-                instance,
-                run_id,
-                event_type="ENGINE_EVENT",
-                message="Process for run exited",
+                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited",
             )
 
             run_logs = instance.all_logs(run_id)
@@ -449,10 +427,7 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                             "Multiprocess executor: interrupted all active child processes",
                         ),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
-                        (
-                            "PIPELINE_CANCELED",
-                            'Execution of run for "sleepy_pipeline" canceled.',
-                        ),
+                        ("PIPELINE_CANCELED", 'Execution of run for "sleepy_pipeline" canceled.',),
                         ("ENGINE_EVENT", "Process for run exited"),
                     ],
                 )
@@ -462,10 +437,7 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                     [
                         ("PIPELINE_CANCELING", "Sending run termination request."),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
-                        (
-                            "PIPELINE_CANCELED",
-                            'Execution of run for "sleepy_pipeline" canceled.',
-                        ),
+                        ("PIPELINE_CANCELED", 'Execution of run for "sleepy_pipeline" canceled.',),
                         ("ENGINE_EVENT", "Process for run exited"),
                     ],
                 )
@@ -495,19 +467,13 @@ def _message_exists(event_records, message_text):
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 def test_single_solid_selection_execution(
-    get_workspace,
-    run_config,
+    get_workspace, run_config,
 ):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         with get_workspace(instance) as workspace:
@@ -540,19 +506,13 @@ def test_single_solid_selection_execution(
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 def test_multi_solid_selection_execution(
-    get_workspace,
-    run_config,
+    get_workspace, run_config,
 ):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         with get_workspace(instance) as workspace:
@@ -589,15 +549,10 @@ def test_multi_solid_selection_execution(
 
 
 @pytest.mark.parametrize(
-    "get_workspace",
-    [
-        get_deployed_grpc_server_workspace,
-        get_managed_grpc_server_workspace,
-    ],
+    "get_workspace", [get_deployed_grpc_server_workspace, get_managed_grpc_server_workspace,],
 )
 @pytest.mark.parametrize(
-    "run_config",
-    run_configs(),
+    "run_config", run_configs(),
 )
 def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:

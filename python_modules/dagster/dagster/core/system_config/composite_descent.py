@@ -169,10 +169,7 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
 
 
 def _apply_top_level_config_mapping(
-    pipeline_def,
-    outer_config,
-    resource_defs,
-    is_using_graph_job_op_apis,
+    pipeline_def, outer_config, resource_defs, is_using_graph_job_op_apis,
 ):
     graph_def = pipeline_def.graph
 
@@ -308,8 +305,7 @@ def raise_composite_descent_config_error(descent_stack, failed_config_value, evr
 
     solid = descent_stack.current_solid
     message = "In pipeline {pipeline_name} at stack {stack}: \n".format(
-        pipeline_name=descent_stack.pipeline_def.name,
-        stack=":".join(descent_stack.handle.path),
+        pipeline_name=descent_stack.pipeline_def.name, stack=":".join(descent_stack.handle.path),
     )
     message += (
         'Solid "{solid_name}" with definition "{solid_def_name}" has a '
@@ -320,9 +316,6 @@ def raise_composite_descent_config_error(descent_stack, failed_config_value, evr
         "produce correct config for its constiuent solids in all cases. The correct "
         "resolution is to fix the mapping function. Details on the error (and the paths "
         'on this error are relative to config mapping function "root", not the entire document): '
-    ).format(
-        solid_name=solid.name,
-        solid_def_name=solid.definition.name,
-    )
+    ).format(solid_name=solid.name, solid_def_name=solid.definition.name,)
 
     raise DagsterInvalidConfigError(message, evr.errors, failed_config_value)

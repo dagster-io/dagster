@@ -27,9 +27,7 @@ S3_SESSION_CONFIG = {
         default_value=5,
     ),
     "profile_name": Field(
-        str,
-        description="Specifies a profile to connect that session",
-        is_required=False,
+        str, description="Specifies a profile to connect that session", is_required=False,
     ),
 }
 

@@ -300,9 +300,7 @@ class PipelineDefinition:
             return self._cached_run_config_schemas[mode_def.name]
 
         self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(
-            self,
-            mode_def,
-            self._resource_requirements[mode_def.name],
+            self, mode_def, self._resource_requirements[mode_def.name],
         )
         return self._cached_run_config_schemas[mode_def.name]
 
@@ -439,9 +437,7 @@ class PipelineDefinition:
                     'Could not find preset for "{name}". Available presets '
                     'for pipeline "{pipeline_name}" are {preset_names}.'
                 ).format(
-                    name=name,
-                    preset_names=list(self._preset_dict.keys()),
-                    pipeline_name=self.name,
+                    name=name, preset_names=list(self._preset_dict.keys()), pipeline_name=self.name,
                 )
             )
 
@@ -609,8 +605,7 @@ def _dep_key_of(solid: Node) -> NodeInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def: PipelineDefinition,
-    solids_to_execute: AbstractSet[str],
+    pipeline_def: PipelineDefinition, solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
@@ -636,10 +631,9 @@ def _get_pipeline_subset_def(
         filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
     )
 
-    deps: Dict[
-        Union[str, NodeInvocation],
-        Dict[str, IDependencyDefinition],
-    ] = {_dep_key_of(solid): {} for solid in solids}
+    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition],] = {
+        _dep_key_of(solid): {} for solid in solids
+    }
 
     for solid in solids:
         for input_handle in solid.input_handles():
@@ -741,12 +735,7 @@ def _checked_resource_reqs_for_mode(
                     )
                     raise DagsterInvalidDefinitionError(error_msg)
 
-    resource_reqs.update(
-        _checked_type_resource_reqs_for_mode(
-            mode_def,
-            dagster_type_dict,
-        )
-    )
+    resource_reqs.update(_checked_type_resource_reqs_for_mode(mode_def, dagster_type_dict,))
 
     # Validate unsatisfied inputs can be materialized from config
     resource_reqs.update(
@@ -797,8 +786,7 @@ def _checked_resource_reqs_for_mode(
 
 
 def _checked_type_resource_reqs_for_mode(
-    mode_def: ModeDefinition,
-    dagster_type_dict: Dict[str, DagsterType],
+    mode_def: ModeDefinition, dagster_type_dict: Dict[str, DagsterType],
 ) -> Set[str]:
     """
     Calculate all the resource requirements related to DagsterTypes for this mode and ensure the
@@ -1001,9 +989,7 @@ def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefin
 
 
 def _create_run_config_schema(
-    pipeline_def: PipelineDefinition,
-    mode_definition: ModeDefinition,
-    required_resources: Set[str],
+    pipeline_def: PipelineDefinition, mode_definition: ModeDefinition, required_resources: Set[str],
 ) -> "RunConfigSchema":
     from .run_config import (
         RunConfigSchemaCreationData,
@@ -1054,8 +1040,7 @@ def _create_run_config_schema(
         check.failed("Unexpected outer_config_type value of None")
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_node_defs,
-        outer_config_type,
+        pipeline_def.all_node_defs, outer_config_type,
     )
 
     return RunConfigSchema(

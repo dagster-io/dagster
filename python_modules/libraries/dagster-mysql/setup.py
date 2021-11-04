@@ -29,11 +29,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        package_data={
-            "dagster-mysql": [
-                "dagster_mysql/alembic/*",
-            ]
-        },
+        package_data={"dagster-mysql": ["dagster_mysql/alembic/*",]},
         include_package_data=True,
         install_requires=[f"dagster{pin}", "mysql-connector-python"],
         zip_safe=False,

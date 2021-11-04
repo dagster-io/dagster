@@ -368,12 +368,7 @@ def check_export_runs(instance):
             continue
 
         p = subprocess.Popen(
-            [
-                "buildkite-agent",
-                "artifact",
-                "upload",
-                output_file,
-            ],
+            ["buildkite-agent", "artifact", "upload", output_file,],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

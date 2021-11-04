@@ -177,9 +177,7 @@ class Manager:
                 pipeline_def=pipeline_def,
                 solid_config=run_config.get("solids", {}).get(solid.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan,
-                    pipeline_def,
-                    resolved_run_config,
+                    execution_plan, pipeline_def, resolved_run_config,
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
@@ -269,9 +267,7 @@ class Manager:
                 pipeline_def=pipeline_def,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan,
-                    pipeline_def,
-                    resolved_run_config,
+                    execution_plan, pipeline_def, resolved_run_config,
                 ),
                 solid_name=solid_def.name,
                 solid_handle=NodeHandle(solid_def.name, parent=None),

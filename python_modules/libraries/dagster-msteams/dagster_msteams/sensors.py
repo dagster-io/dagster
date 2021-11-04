@@ -87,8 +87,7 @@ def make_teams_on_pipeline_failure_sensor(
         text = message_fn(context)
         if dagit_base_url:
             text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(
-                base_url=dagit_base_url,
-                run_id=context.pipeline_run.run_id,
+                base_url=dagit_base_url, run_id=context.pipeline_run.run_id,
             )
         card = Card()
         card.add_attachment(text_message=text)

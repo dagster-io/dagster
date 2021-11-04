@@ -391,9 +391,7 @@ class DagsterRepositoryLocationLoadError(DagsterError):
         from dagster.utils.error import SerializableErrorInfo
 
         self.load_error_infos = check.list_param(
-            kwargs.pop("load_error_infos"),
-            "load_error_infos",
-            SerializableErrorInfo,
+            kwargs.pop("load_error_infos"), "load_error_infos", SerializableErrorInfo,
         )
         super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
 

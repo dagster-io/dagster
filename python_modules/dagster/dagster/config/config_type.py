@@ -51,12 +51,7 @@ class ConfigType:
     """
 
     def __init__(
-        self,
-        key,
-        kind,
-        given_name=None,
-        description=None,
-        type_params=None,
+        self, key, kind, given_name=None, description=None, type_params=None,
     ):
 
         self.key = check.str_param(key, "key")
@@ -144,9 +139,7 @@ class Float(BuiltinConfigScalar):
 class Any(ConfigType):
     def __init__(self):
         super(Any, self).__init__(
-            key="Any",
-            given_name="Any",
-            kind=ConfigTypeKind.ANY,
+            key="Any", given_name="Any", kind=ConfigTypeKind.ANY,
         )
 
 
@@ -355,10 +348,7 @@ class ScalarUnion(ConfigType):
     """
 
     def __init__(
-        self,
-        scalar_type,
-        non_scalar_schema,
-        _key=None,
+        self, scalar_type, non_scalar_schema, _key=None,
     ):
         from .field import resolve_to_config_type
 

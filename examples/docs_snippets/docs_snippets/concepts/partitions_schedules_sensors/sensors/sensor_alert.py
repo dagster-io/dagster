@@ -50,8 +50,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
     slack_client.chat_postMessage(
-        channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
+        channel="#alert-channel", message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
     )
 
 

@@ -141,13 +141,7 @@ def celery_docker_executor(init_context):
 
 class CeleryDockerExecutor(Executor):
     def __init__(
-        self,
-        retries,
-        docker_config,
-        broker=None,
-        backend=None,
-        include=None,
-        config_source=None,
+        self, retries, docker_config, broker=None, backend=None, include=None, config_source=None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         self.broker = check.opt_str_param(broker, "broker", default=broker_url)
@@ -203,16 +197,11 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
 def create_docker_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_step_docker", **task_kwargs)
     def _execute_step_docker(
-        self,
-        execute_step_args_packed,
-        docker_config,
+        self, execute_step_args_packed, docker_config,
     ):
         """Run step execution in a Docker container."""
         execute_step_args = unpack_value(
-            check.dict_param(
-                execute_step_args_packed,
-                "execute_step_args_packed",
-            )
+            check.dict_param(execute_step_args_packed, "execute_step_args_packed",)
         )
         check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
 

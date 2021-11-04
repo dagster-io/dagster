@@ -185,8 +185,7 @@ def test_config_mapper_throws():
         'execution. The definition is instantiated at stack "do_stuff"',
     ):
         execute_pipeline(
-            wrap_pipeline,
-            {"solids": {"do_stuff": {"config": {"does_not_matter": "blah"}}}},
+            wrap_pipeline, {"solids": {"do_stuff": {"config": {"does_not_matter": "blah"}}}},
         )
 
     @graph
@@ -773,8 +772,7 @@ def test_nested_empty_config_input():
         double_wrap()
 
     res = execute_pipeline(
-        wrap_pipeline,
-        run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},
+        wrap_pipeline, run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},
     )
     assert res.result_for_handle("double_wrap.number").output_value() == 2
     assert res.result_for_solid("double_wrap").output_values == {"result": 4}
@@ -804,8 +802,7 @@ def test_default_config_schema():
         config_fn_only()
 
     result = execute_pipeline(
-        wrap_pipeline,
-        {"solids": {"config_fn_only": {"config": {"override_str": "override"}}}},
+        wrap_pipeline, {"solids": {"config_fn_only": {"config": {"override_str": "override"}}}},
     )
 
     assert result.success

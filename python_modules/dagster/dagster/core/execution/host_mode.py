@@ -171,8 +171,7 @@ def execute_run_host_mode(
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
-            message,
-            pipeline_run,
+            message, pipeline_run,
         )
         raise DagsterInvariantViolationError(message)
 
@@ -193,8 +192,7 @@ def execute_run_host_mode(
         pipeline_run.execution_plan_snapshot_id
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
-        pipeline_run.pipeline_name,
-        execution_plan_snapshot,
+        pipeline_run.pipeline_name, execution_plan_snapshot,
     )
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(

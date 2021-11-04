@@ -111,27 +111,13 @@ def test_pyspark_assets_job():
         run_config = {
             "solids": {
                 "get_max_temp_per_station": {
-                    "config": {
-                        "temperature_file": "temperature.csv",
-                        "version_salt": "foo",
-                    }
+                    "config": {"temperature_file": "temperature.csv", "version_salt": "foo",}
                 },
                 "get_consolidated_location": {
-                    "config": {
-                        "station_file": "stations.csv",
-                        "version_salt": "foo",
-                    }
+                    "config": {"station_file": "stations.csv", "version_salt": "foo",}
                 },
-                "combine_dfs": {
-                    "config": {
-                        "version_salt": "foo",
-                    }
-                },
-                "pretty_output": {
-                    "config": {
-                        "version_salt": "foo",
-                    }
-                },
+                "combine_dfs": {"config": {"version_salt": "foo",}},
+                "pretty_output": {"config": {"version_salt": "foo",}},
             },
             "resources": {
                 "source_data_dir": {

@@ -23,18 +23,14 @@ def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake")
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
-            InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
-            "foo_repo",
+            InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)), "foo_repo",
         ),
         "foo",
     )
 
     fake_code_origin = PipelinePythonOrigin(
         pipeline_name="foo",
-        repository_origin=RepositoryPythonOrigin(
-            sys.executable,
-            code_pointer,
-        ),
+        repository_origin=RepositoryPythonOrigin(sys.executable, code_pointer,),
     )
 
     PipelineRun(

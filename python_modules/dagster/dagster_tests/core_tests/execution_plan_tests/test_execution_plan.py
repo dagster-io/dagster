@@ -65,8 +65,7 @@ def test_topological_sort():
 def test_create_execution_plan_with_bad_inputs():
     with pytest.raises(DagsterInvalidConfigError):
         create_execution_plan(
-            define_diamond_pipeline(),
-            run_config={"solids": {"add_three": {"inputs": {"num": 3}}}},
+            define_diamond_pipeline(), run_config={"solids": {"add_three": {"inputs": {"num": 3}}}},
         )
 
 
@@ -491,8 +490,7 @@ def test_fan_in_should_skip_step():
     # skip when all the step's sources weren't yield
     assert should_skip_step(
         create_execution_plan(
-            optional_outputs_composite,
-            step_keys_to_execute=["composite_all_upstream_skip.fan_in"],
+            optional_outputs_composite, step_keys_to_execute=["composite_all_upstream_skip.fan_in"],
         ),
         instance,
         pipeline_run.run_id,
@@ -513,8 +511,7 @@ def test_fan_in_should_skip_step():
     # do not skip when some of the sources exist
     assert not should_skip_step(
         create_execution_plan(
-            optional_outputs_composite,
-            step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
+            optional_outputs_composite, step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
         ),
         instance,
         pipeline_run.run_id,
@@ -544,11 +541,7 @@ def test_configured_input_should_skip_step():
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
     execute_plan(
-        create_execution_plan(
-            my_pipeline,
-            step_keys_to_execute=["one"],
-            run_config=run_config,
-        ),
+        create_execution_plan(my_pipeline, step_keys_to_execute=["one"], run_config=run_config,),
         InMemoryPipeline(my_pipeline),
         instance,
         pipeline_run,
@@ -556,9 +549,7 @@ def test_configured_input_should_skip_step():
     )
     assert not should_skip_step(
         create_execution_plan(
-            my_pipeline,
-            step_keys_to_execute=["solid_should_not_skip"],
-            run_config=run_config,
+            my_pipeline, step_keys_to_execute=["solid_should_not_skip"], run_config=run_config,
         ),
         instance,
         pipeline_run.run_id,

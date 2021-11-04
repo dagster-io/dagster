@@ -232,8 +232,7 @@ def test_solid_invocation_with_config():
     # Ensure that error is raised when context does not have the required config.
     context = build_solid_context()
     with pytest.raises(
-        DagsterInvalidConfigError,
-        match="Error in config for solid",
+        DagsterInvalidConfigError, match="Error in config for solid",
     ):
         solid_requires_config(context)
 
@@ -270,10 +269,7 @@ def test_solid_invocation_default_config():
     assert solid_requires_config_val(None) == "bar"
 
     @solid(
-        config_schema={
-            "foo": Field(str, is_required=False, default_value="bar"),
-            "baz": str,
-        }
+        config_schema={"foo": Field(str, is_required=False, default_value="bar"), "baz": str,}
     )
     def solid_requires_config_partial(context):
         assert context.solid_config["foo"] == "bar"
@@ -376,8 +372,7 @@ def test_failing_solid():
         raise Exception("Oh no!")
 
     with pytest.raises(
-        Exception,
-        match="Oh no!",
+        Exception, match="Oh no!",
     ):
         solid_fails()
 
@@ -392,8 +387,7 @@ def test_attempted_invocation_in_composition():
         "function as inputs when invoking nodes during composition."
     )
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=msg,
+        DagsterInvalidDefinitionError, match=msg,
     ):
 
         @pipeline
@@ -401,8 +395,7 @@ def test_attempted_invocation_in_composition():
             basic_solid(5)
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=msg,
+        DagsterInvalidDefinitionError, match=msg,
     ):
 
         @pipeline
@@ -911,8 +904,7 @@ def test_build_context_with_resources_config(context_builder):
         assert context.run_config["resources"]["my_resource"] == {"config": "foo"}
 
     context = context_builder(
-        resources={"my_resource": my_resource},
-        resources_config={"my_resource": {"config": "foo"}},
+        resources={"my_resource": my_resource}, resources_config={"my_resource": {"config": "foo"}},
     )
 
     my_solid(context)

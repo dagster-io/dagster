@@ -169,9 +169,7 @@ def test_get_required_daemon_types():
 def test_run_monitoring():
     with pytest.raises(CheckError):
         with instance_for_test(
-            overrides={
-                "run_monitoring": {"enabled": True},
-            }
+            overrides={"run_monitoring": {"enabled": True},}
         ):
             pass
 
@@ -207,8 +205,7 @@ def test_run_monitoring():
 def test_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         with pytest.raises(
-            DagsterHomeNotSetError,
-            match=r"The environment variable \$DAGSTER_HOME is not set\.",
+            DagsterHomeNotSetError, match=r"The environment variable \$DAGSTER_HOME is not set\.",
         ):
             DagsterInstance.get()
 
@@ -358,8 +355,7 @@ class InvalidRunLauncher(RunLauncher, ConfigurableClass):
 
 def test_configurable_class_missing_methods():
     with pytest.raises(
-        NotImplementedError,
-        match="InvalidRunLauncher must implement the config_type classmethod",
+        NotImplementedError, match="InvalidRunLauncher must implement the config_type classmethod",
     ):
         with instance_for_test(
             overrides={

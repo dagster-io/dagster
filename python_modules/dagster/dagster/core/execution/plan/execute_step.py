@@ -247,8 +247,7 @@ def _type_check_output(
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
             description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
-                output_name=output.output_name,
-                dagster_type=dagster_type.display_name,
+                output_name=output.output_name, dagster_type=dagster_type.display_name,
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -309,13 +308,7 @@ def core_dagster_event_sequence_for_step(
         core_gen = step_context.solid_def.compute_fn
 
     with time_execution_scope() as timer_result:
-        user_event_sequence = check.generator(
-            execute_core_compute(
-                step_context,
-                inputs,
-                core_gen,
-            )
-        )
+        user_event_sequence = check.generator(execute_core_compute(step_context, inputs, core_gen,))
 
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
@@ -386,9 +379,7 @@ def _type_check_and_store_output(
 
 
 def _asset_key_and_partitions_for_output(
-    output_context: OutputContext,
-    output_def: OutputDefinition,
-    output_manager: IOManager,
+    output_context: OutputContext, output_def: OutputDefinition, output_manager: IOManager,
 ) -> Tuple[Optional[AssetKey], Set[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
@@ -529,11 +520,7 @@ def _store_output(
     )
     if asset_key:
         for materialization in _get_output_asset_materializations(
-            asset_key,
-            partitions,
-            output,
-            output_def,
-            manager_metadata_entries,
+            asset_key, partitions, output, output_def, manager_metadata_entries,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 

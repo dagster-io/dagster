@@ -99,10 +99,7 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path"
             tag = custom_tag
 
         return ecr_image(
-            self.image,
-            tag,
-            aws_account_id=get_aws_account_id(),
-            aws_region=get_aws_region(),
+            self.image, tag, aws_account_id=get_aws_account_id(), aws_region=get_aws_region(),
         )
 
     def _get_docker_args(self, dagster_version, python_version):

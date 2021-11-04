@@ -8,8 +8,7 @@ from docs_snippets.legacy.dagster_pandas_guide.summary_stats import summary_stat
 
 
 @pytest.mark.parametrize(
-    "job",
-    [custom_column_constraint_trip, shape_constrained_trip, summary_stats_trip, core_trip],
+    "job", [custom_column_constraint_trip, shape_constrained_trip, summary_stats_trip, core_trip],
 )
 def test_guide_pipelines_success(job):
     result = job.execute_in_process()

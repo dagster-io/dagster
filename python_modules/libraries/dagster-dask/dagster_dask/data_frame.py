@@ -25,21 +25,11 @@ from dagster import (
 from .utils import DataFrameUtilities, apply_utilities_to_df
 
 WriteCompressionTextOptions = Enum(
-    "WriteCompressionText",
-    [
-        EnumValue("gzip"),
-        EnumValue("bz2"),
-        EnumValue("xz"),
-    ],
+    "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
 )
 
 EngineParquetOptions = Enum(
-    "EngineParquet",
-    [
-        EnumValue("auto"),
-        EnumValue("fastparquet"),
-        EnumValue("pyarrow"),
-    ],
+    "EngineParquet", [EnumValue("auto"), EnumValue("fastparquet"), EnumValue("pyarrow"),],
 )
 
 
@@ -363,9 +353,7 @@ def _dataframe_loader_config():
 
     return Shape(
         {
-            "read": Field(
-                Selector(read_fields),
-            ),
+            "read": Field(Selector(read_fields),),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
@@ -419,9 +407,7 @@ def _dataframe_materializer_config():
 
     return Shape(
         {
-            "to": Field(
-                Selector(to_fields),
-            ),
+            "to": Field(Selector(to_fields),),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()

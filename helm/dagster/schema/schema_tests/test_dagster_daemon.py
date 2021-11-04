@@ -148,9 +148,7 @@ def test_queued_run_coordinator_unique_values(
     ]
 
 
-def test_run_monitoring(
-    instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+def test_run_monitoring(instance_template: HelmTemplate,):  # pylint: disable=redefined-outer-name
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True})
     )

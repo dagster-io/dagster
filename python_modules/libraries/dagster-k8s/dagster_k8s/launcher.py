@@ -286,21 +286,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_IMAGE_TAG: job_config.job_image},
+            run.run_id, {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
         if not context.resume_from_failure:
             run_args = ExecuteRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
+                pipeline_origin=pipeline_origin, pipeline_run_id=run.run_id, instance_ref=None,
             ).get_command_args()
         else:
             run_args = ResumeRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
+                pipeline_origin=pipeline_origin, pipeline_run_id=run.run_id, instance_ref=None,
             ).get_command_args()
 
         job = construct_dagster_k8s_job(

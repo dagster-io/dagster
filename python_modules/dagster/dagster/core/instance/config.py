@@ -17,9 +17,7 @@ def is_dagster_home_set():
 
 
 def dagster_instance_config(
-    base_dir,
-    config_filename=DAGSTER_CONFIG_YAML_FILENAME,
-    overrides=None,
+    base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None,
 ):
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
@@ -40,8 +38,7 @@ def dagster_instance_config(
         custom_instance_class_data = dagster_config_dict["instance_class"]
 
         validate_custom_config = validate_config(
-            configurable_class_schema(),
-            custom_instance_class_data,
+            configurable_class_schema(), custom_instance_class_data,
         )
         if not validate_custom_config.success:
             raise DagsterInvalidConfigError(
@@ -112,10 +109,7 @@ def dagster_instance_config_schema():
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(
             {
-                "enabled": Field(
-                    Bool,
-                    is_required=False,
-                ),
+                "enabled": Field(Bool, is_required=False,),
                 "start_timeout_seconds": Field(int, is_required=False),
                 "max_resume_run_attempts": Field(int, is_required=False),
                 "poll_interval_seconds": Field(int, is_required=False),

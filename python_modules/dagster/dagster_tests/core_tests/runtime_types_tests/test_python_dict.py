@@ -177,8 +177,7 @@ def test_dict_type_loader():
         return dict_input
 
     result = execute_solid(
-        emit_dict,
-        run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+        emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
     )
     assert result.success
     assert result.output_value() == test_input
@@ -204,8 +203,7 @@ def test_dict_type_loader_typing_fail():
         "from configuration, making it impossible to execute. Possible solutions are:",
     ):
         execute_solid(
-            emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )
 
 
@@ -221,6 +219,5 @@ def test_dict_type_loader_inner_type_mismatch():
     # https://github.com/dagster-io/dagster/issues/3180
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(
-            emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )

@@ -13,17 +13,13 @@ def define_inty_job():
         return 1
 
     @op(
-        ins={"num": In(Int)},
-        out=Out(Int),
+        ins={"num": In(Int)}, out=Out(Int),
     )
     def add_one(num):
         return num + 1
 
     @job(
-        resource_defs={
-            "io_manager": s3_pickle_io_manager,
-            "s3": test_s3_resource,
-        }
+        resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource,}
     )
     def basic_external_plan_execution():
         add_one(return_one())
@@ -51,10 +47,7 @@ def define_multiple_output_job():
         return construct_s3_client(max_attempts=5)
 
     @op(
-        out={
-            "foo": Out(Int),
-            "foobar": Out(Int),
-        }
+        out={"foo": Out(Int), "foobar": Out(Int),}
     )
     def return_two_outputs():
         yield Output(10, "foobar")

@@ -6,9 +6,7 @@ from dagster_k8s.models import k8s_model_from_dict
 def test_deserialize_volume():
     volume_dict = {
         "name": "my_volume",
-        "configMap": {
-            "name": "my_config_map",
-        },
+        "configMap": {"name": "my_config_map",},
     }
 
     model = k8s_model_from_dict(kubernetes.client.V1Volume, volume_dict)
@@ -29,9 +27,7 @@ def test_bad_source_structure():
 def test_extra_key():
     volume_dict = {
         "name": "my_volume",
-        "configMap": {
-            "name": "my_config_map",
-        },
+        "configMap": {"name": "my_config_map",},
         "extraKey": "extra_val",
     }
     with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'extraKey'}"):

@@ -90,10 +90,7 @@ def _act_on_config(op_config):
             raise ExampleException("sample cause exception")
         except ExampleException as e:
             raise Failure(
-                description="I'm a Failure",
-                metadata={
-                    "metadata_label": "I am metadata text",
-                },
+                description="I'm a Failure", metadata={"metadata_label": "I am metadata text",},
             ) from e
     elif op_config["throw_in_op"]:
         raise ExampleException("I threw up")
@@ -102,9 +99,7 @@ def _act_on_config(op_config):
 
 
 @op(
-    out=Out(Int),
-    config_schema=op_throw_config,
-    required_resource_keys={"errorable_resource"},
+    out=Out(Int), config_schema=op_throw_config, required_resource_keys={"errorable_resource"},
 )
 def emit_num(context):
     _act_on_config(context.op_config)

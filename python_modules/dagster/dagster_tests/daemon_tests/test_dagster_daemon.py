@@ -13,10 +13,7 @@ from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedR
 def test_scheduler_instance():
     with instance_for_test(
         overrides={
-            "scheduler": {
-                "module": "dagster.core.scheduler",
-                "class": "DagsterDaemonScheduler",
-            },
+            "scheduler": {"module": "dagster.core.scheduler", "class": "DagsterDaemonScheduler",},
         }
     ) as instance:
         with daemon_controller_from_instance(instance) as controller:
@@ -91,10 +88,7 @@ def test_ephemeral_instance():
 def test_different_intervals(caplog):
     with instance_for_test(
         overrides={
-            "scheduler": {
-                "module": "dagster.core.scheduler",
-                "class": "DagsterDaemonScheduler",
-            },
+            "scheduler": {"module": "dagster.core.scheduler", "class": "DagsterDaemonScheduler",},
             "run_coordinator": {
                 "module": "dagster.core.run_coordinator.queued_run_coordinator",
                 "class": "QueuedRunCoordinator",

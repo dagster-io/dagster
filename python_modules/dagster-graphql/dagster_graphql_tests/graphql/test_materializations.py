@@ -23,12 +23,7 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "materialization_pipeline")
         logs = sync_execute_get_events(
             context=graphql_context,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                }
-            },
+            variables={"executionParams": {"selector": selector, "mode": "default",}},
         )
 
         materializations = [log for log in logs if log["__typename"] == "StepMaterializationEvent"]
@@ -97,12 +92,7 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "backcompat_materialization_pipeline")
         sync_execute_get_events(
             context=graphql_context,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                }
-            },
+            variables={"executionParams": {"selector": selector, "mode": "default",}},
         )
         result = execute_dagster_graphql(
             graphql_context, ASSET_TAGS_QUERY, variables={"assetKey": {"path": ["all_types"]}}

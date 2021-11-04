@@ -161,11 +161,7 @@ def test_compute_log_subscription(mock_watch_completed):
                 server,
                 context,
                 COMPUTE_LOG_SUBSCRIPTION,
-                {
-                    "runId": run.run_id,
-                    "stepKey": "example_solid",
-                    "ioType": "STDERR",
-                },
+                {"runId": run.run_id, "stepKey": "example_solid", "ioType": "STDERR",},
             )
             gc.collect()
             assert len(objgraph.by_type("SubscriptionObserver")) == 1

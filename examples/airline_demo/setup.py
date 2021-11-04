@@ -44,10 +44,7 @@ setup(
             "sqlalchemy-redshift>=0.7.2",
             "SQLAlchemy-Utils==0.33.8",
         ],
-        "airflow": [
-            "dagster_airflow",
-            "docker-compose",
-        ],
+        "airflow": ["dagster_airflow", "docker-compose",],
     },
     include_package_data=True,
 )

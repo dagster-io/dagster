@@ -29,9 +29,7 @@ from .version import __version__
     default=DEFAULT_DAGIT_PORT,
 )
 @click.option(
-    "--asgi",
-    is_flag=True,
-    help="Launch asgi webserver with uvicorn",
+    "--asgi", is_flag=True, help="Launch asgi webserver with uvicorn",
 )
 def dagit_debug_command(input_files, port, asgi):
     debug_payloads = []

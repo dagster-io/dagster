@@ -28,13 +28,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
-executors = pytest.mark.parametrize(
-    "environment",
-    [
-        {},
-        {"execution": {"multiprocess": {}}},
-    ],
-)
+executors = pytest.mark.parametrize("environment", [{}, {"execution": {"multiprocess": {}}},],)
 
 
 def define_run_retry_pipeline():
@@ -79,12 +73,7 @@ def test_retries(environment):
         fails = dict(environment)
         fails["solids"] = {"can_fail": {"config": {"fail": True}}}
 
-        result = execute_pipeline(
-            pipe,
-            run_config=fails,
-            instance=instance,
-            raise_on_error=False,
-        )
+        result = execute_pipeline(pipe, run_config=fails, instance=instance, raise_on_error=False,)
 
         assert not result.success
 
@@ -92,10 +81,7 @@ def test_retries(environment):
         passes["solids"] = {"can_fail": {"config": {"fail": False}}}
 
         second_result = reexecute_pipeline(
-            pipe,
-            parent_run_id=result.run_id,
-            run_config=passes,
-            instance=instance,
+            pipe, parent_run_id=result.run_id, run_config=passes, instance=instance,
         )
         assert second_result.success
         downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
@@ -132,9 +118,7 @@ def test_step_retry(environment):
             env = dict(environment)
             env["solids"] = {"fail_first_time": {"config": tempdir}}
             result = execute_pipeline(
-                reconstructable(define_step_retry_pipeline),
-                run_config=env,
-                instance=instance,
+                reconstructable(define_step_retry_pipeline), run_config=env, instance=instance,
             )
         assert result.success
         events = defaultdict(list)

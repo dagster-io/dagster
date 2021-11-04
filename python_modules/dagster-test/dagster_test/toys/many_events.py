@@ -117,9 +117,7 @@ def many_materializations_and_passing_expectations(_context):
     for table in tables:
         yield AssetMaterialization(
             asset_key="table_info",
-            metadata={
-                "table_path": EventMetadata.path(f"/path/to/{table}.raw"),
-            },
+            metadata={"table_path": EventMetadata.path(f"/path/to/{table}.raw"),},
         )
         yield ExpectationResult(
             success=True,

@@ -74,8 +74,7 @@ class DagsterGrpcClient:
             "You must pass one and only one of `port` or `socket`.",
         )
         check.invariant(
-            host is not None if port else True,
-            "Must provide a hostname",
+            host is not None if port else True, "Must provide a hostname",
         )
 
         if port:
@@ -97,9 +96,7 @@ class DagsterGrpcClient:
             )
             if self._use_ssl
             else grpc.insecure_channel(
-                self._server_address,
-                options=options,
-                compression=grpc.Compression.Gzip,
+                self._server_address, options=options, compression=grpc.Compression.Gzip,
             )
         ) as channel:
             yield channel
@@ -234,9 +231,7 @@ class DagsterGrpcClient:
 
     def external_repository(self, external_repository_origin):
         check.inst_param(
-            external_repository_origin,
-            "external_repository_origin",
-            ExternalRepositoryOrigin,
+            external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
         )
 
         res = self._query(
@@ -285,9 +280,7 @@ class DagsterGrpcClient:
 
     def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
         check.inst_param(
-            sensor_execution_args,
-            "sensor_execution_args",
-            SensorExecutionArgs,
+            sensor_execution_args, "sensor_execution_args", SensorExecutionArgs,
         )
 
         chunks = list(
@@ -318,9 +311,7 @@ class DagsterGrpcClient:
 
     def cancel_execution(self, cancel_execution_request):
         check.inst_param(
-            cancel_execution_request,
-            "cancel_execution_request",
-            CancelExecutionRequest,
+            cancel_execution_request, "cancel_execution_request", CancelExecutionRequest,
         )
 
         res = self._query(
@@ -335,9 +326,7 @@ class DagsterGrpcClient:
 
     def can_cancel_execution(self, can_cancel_execution_request, timeout=None):
         check.inst_param(
-            can_cancel_execution_request,
-            "can_cancel_execution_request",
-            CanCancelExecutionRequest,
+            can_cancel_execution_request, "can_cancel_execution_request", CanCancelExecutionRequest,
         )
 
         res = self._query(

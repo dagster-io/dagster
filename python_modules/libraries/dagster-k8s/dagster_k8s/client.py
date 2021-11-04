@@ -35,9 +35,7 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
 
         check.invariant(original_exc_info[0] is not None)
         super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
-            f"Retry limit of {max_retries} exceeded: " + args[0],
-            *args[1:],
-            **kwargs,
+            f"Retry limit of {max_retries} exceeded: " + args[0], *args[1:], **kwargs,
         )
 
         self.k8s_api_exception = check.opt_inst_param(
@@ -108,9 +106,7 @@ def k8s_api_retry(
                 ) from e
             else:
                 raise DagsterK8sUnrecoverableAPIError(
-                    msg_fn(),
-                    k8s_api_exception=e,
-                    original_exc_info=sys.exc_info(),
+                    msg_fn(), k8s_api_exception=e, original_exc_info=sys.exc_info(),
                 ) from e
 
 
@@ -292,9 +288,7 @@ class DagsterKubernetesClient:
             self.sleeper(wait_time_between_attempts)
 
     def delete_job(
-        self,
-        job_name,
-        namespace,
+        self, job_name, namespace,
     ):
         """Delete Kubernetes Job. We also need to delete corresponding pods due to:
         https://github.com/kubernetes-client/python/issues/234

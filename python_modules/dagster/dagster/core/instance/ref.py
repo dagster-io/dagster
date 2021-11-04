@@ -95,9 +95,7 @@ class InstanceRef(
             ),
             settings=check.opt_dict_param(settings, "settings"),
             custom_instance_class_data=check.opt_inst_param(
-                custom_instance_class_data,
-                "instance_class",
-                ConfigurableClassData,
+                custom_instance_class_data, "instance_class", ConfigurableClassData,
             ),
         )
 
@@ -130,18 +128,12 @@ class InstanceRef(
                 yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
             ),
             "scheduler": ConfigurableClassData(
-                "dagster.core.scheduler",
-                "DagsterDaemonScheduler",
-                yaml.dump({}),
+                "dagster.core.scheduler", "DagsterDaemonScheduler", yaml.dump({}),
             ),
             "run_coordinator": ConfigurableClassData(
                 "dagster.core.run_coordinator", "DefaultRunCoordinator", yaml.dump({})
             ),
-            "run_launcher": ConfigurableClassData(
-                "dagster",
-                "DefaultRunLauncher",
-                yaml.dump({}),
-            ),
+            "run_launcher": ConfigurableClassData("dagster", "DefaultRunLauncher", yaml.dump({}),),
         }
 
     @staticmethod
@@ -179,9 +171,7 @@ class InstanceRef(
         )
 
         compute_logs_data = configurable_class_data_or_default(
-            config_value,
-            "compute_logs",
-            defaults["compute_logs"],
+            config_value, "compute_logs", defaults["compute_logs"],
         )
 
         schedule_storage_data = configurable_class_data_or_default(
@@ -193,15 +183,11 @@ class InstanceRef(
         )
 
         run_coordinator_data = configurable_class_data_or_default(
-            config_value,
-            "run_coordinator",
-            defaults["run_coordinator"],
+            config_value, "run_coordinator", defaults["run_coordinator"],
         )
 
         run_launcher_data = configurable_class_data_or_default(
-            config_value,
-            "run_launcher",
-            defaults["run_launcher"],
+            config_value, "run_launcher", defaults["run_launcher"],
         )
 
         settings_keys = {"telemetry", "python_logs", "run_monitoring"}

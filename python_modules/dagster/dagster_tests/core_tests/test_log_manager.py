@@ -35,8 +35,7 @@ def test_construct_log_string_for_event():
         run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
     )
     dagster_message_props = DagsterMessageProps(
-        orig_message=step_output_event.message,
-        dagster_event=step_output_event,
+        orig_message=step_output_event.message, dagster_event=step_output_event,
     )
 
     assert (
@@ -75,8 +74,7 @@ def make_log_string(error, error_source=None):
         run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
     )
     dagster_message_props = DagsterMessageProps(
-        orig_message=step_failure_event.message,
-        dagster_event=step_failure_event,
+        orig_message=step_failure_event.message, dagster_event=step_failure_event,
     )
     return construct_log_string(logging_metadata, dagster_message_props)
 

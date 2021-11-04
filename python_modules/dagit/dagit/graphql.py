@@ -92,8 +92,7 @@ class GraphQLServer(ABC):
                 data = request.query_params
             else:
                 return PlainTextResponse(
-                    "Unsupported Media Type",
-                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    "Unsupported Media Type", status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 )
 
         else:
@@ -103,8 +102,7 @@ class GraphQLServer(ABC):
 
         if "query" not in data:
             return PlainTextResponse(
-                "No GraphQL query found in the request",
-                status_code=status.HTTP_400_BAD_REQUEST,
+                "No GraphQL query found in the request", status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         query = data["query"]
@@ -207,15 +205,8 @@ class GraphQLServer(ABC):
                 observables[operation_id].dispose()
                 tasks[operation_id].cancel()
 
-    def create_asgi_app(
-        self,
-        **kwargs,
-    ) -> Starlette:
-        return Starlette(
-            routes=self.build_routes(),
-            middleware=self.build_middleware(),
-            **kwargs,
-        )
+    def create_asgi_app(self, **kwargs,) -> Starlette:
+        return Starlette(routes=self.build_routes(), middleware=self.build_middleware(), **kwargs,)
 
 
 async def _handle_async_results(results: AsyncGenerator, operation_id: str, websocket: WebSocket):
@@ -246,10 +237,7 @@ async def _handle_async_results(results: AsyncGenerator, operation_id: str, webs
 
 
 async def _send_message(
-    websocket: WebSocket,
-    type_: GraphQLWS,
-    payload: Any,
-    operation_id: str,
+    websocket: WebSocket, type_: GraphQLWS, payload: Any, operation_id: str,
 ) -> None:
     data = {"type": type_, "id": operation_id}
 

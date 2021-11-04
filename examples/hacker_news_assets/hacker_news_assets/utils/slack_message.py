@@ -25,10 +25,7 @@ def build_slack_message_blocks(
         {
             "type": "context",
             "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"Pipeline: {pipeline_name}",
-                },
+                {"type": "mrkdwn", "text": f"Pipeline: {pipeline_name}",},
                 {"type": "mrkdwn", "text": f"Run ID: {run_id}"},
                 {"type": "mrkdwn", "text": f"Mode: {mode}"},
             ],

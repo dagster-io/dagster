@@ -33,10 +33,7 @@ def simple(_):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            name="default",
-            executor_defs=default_executors + [dask_executor],
-        ),
+        ModeDefinition(name="default", executor_defs=default_executors + [dask_executor],),
         ModeDefinition(
             name="filesystem",
             resource_defs={"io_manager": fs_io_manager},

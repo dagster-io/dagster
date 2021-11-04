@@ -9,9 +9,7 @@ job_execution_result = execute_pipeline(unreliable_job, instance=instance)
 if not job_execution_result.success:
     # re-execute the entire job
     reexecute_pipeline(
-        unreliable_job,
-        parent_run_id=job_execution_result.run_id,
-        instance=instance,
+        unreliable_job, parent_run_id=job_execution_result.run_id, instance=instance,
     )
 
 

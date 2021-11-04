@@ -67,11 +67,7 @@ load_from:
 
 def test_grpc_server_env_vars():
     with environ(
-        {
-            "FOO_PORT": "1234",
-            "FOO_SOCKET": "barsocket",
-            "FOO_HOST": "barhost",
-        }
+        {"FOO_PORT": "1234", "FOO_SOCKET": "barsocket", "FOO_HOST": "barhost",}
     ):
         valid_yaml = """
     load_from:
@@ -90,8 +86,7 @@ def test_grpc_server_env_vars():
     """
 
         origins = location_origins_from_config(
-            yaml.safe_load(valid_yaml),
-            file_relative_path(__file__, "not_a_real.yaml"),
+            yaml.safe_load(valid_yaml), file_relative_path(__file__, "not_a_real.yaml"),
         )
 
         assert len(origins) == 2

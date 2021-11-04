@@ -87,11 +87,7 @@ shell_op = core_shell(op, "op")
 
 
 def create_shell_command_op(
-    shell_command,
-    name,
-    description=None,
-    required_resource_keys=None,
-    tags=None,
+    shell_command, name, description=None, required_resource_keys=None, tags=None,
 ):
     """This function is a factory that constructs ops to execute a shell command.
 
@@ -134,11 +130,7 @@ def create_shell_command_op(
 
 
 def create_shell_command_solid(
-    shell_command,
-    name,
-    description=None,
-    required_resource_keys=None,
-    tags=None,
+    shell_command, name, description=None, required_resource_keys=None, tags=None,
 ):
     """This function is a factory that constructs solids to execute a shell command.
 

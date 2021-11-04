@@ -117,10 +117,7 @@ def invoke_steps_within_python_operator(
             ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
             execution_plan = create_execution_plan(
-                recon_pipeline,
-                run_config=run_config,
-                step_keys_to_execute=step_keys,
-                mode=mode,
+                recon_pipeline, run_config=run_config, step_keys_to_execute=step_keys, mode=mode,
             )
             if should_skip_step(execution_plan, instance, pipeline_run.run_id):
                 raise AirflowSkipException(
