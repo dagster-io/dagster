@@ -36,6 +36,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
@@ -817,7 +818,7 @@ class DagsterInstance:
             else None
         )
 
-        return PipelineRun(
+        return DagsterRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             run_config=run_config,

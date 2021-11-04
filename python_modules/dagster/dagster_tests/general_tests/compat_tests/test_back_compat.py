@@ -24,6 +24,7 @@ from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
@@ -527,3 +528,30 @@ def test_solid_handle_node_handle():
     result = _deserialize_json(test_str, legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
+
+
+def test_pipeline_run_dagster_run():
+    # serialize in current code
+    test_run = DagsterRun(pipeline_name="test")
+    test_str = serialize_dagster_namedtuple(test_run)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineRun(
+        namedtuple(
+            "_PipelineRun",
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
+        )
+    ):
+        pass
+
+    _whitelist_for_serdes(legacy_env)(PipelineRunStatus)
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, PipelineRun)
+    assert result.pipeline_name == test_run.pipeline_name
