@@ -704,8 +704,11 @@ const GanttChartContainer = styled.div`
   .box {
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
+    padding-right: 1px;
     border: 1px solid transparent;
     border-radius: 2px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;

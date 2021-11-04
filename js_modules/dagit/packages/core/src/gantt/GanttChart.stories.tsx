@@ -1,6 +1,7 @@
 import {Meta} from '@storybook/react/types-6-0';
 import React, {useState} from 'react';
 
+import {CustomTooltipProvider} from '../app/CustomTooltipProvider';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';
@@ -58,20 +59,20 @@ const APOLLO_MOCKS = {
 };
 
 const GRAPH: IGanttNode[] = [
-  {name: 'A', inputs: [], outputs: [{dependedBy: [{solid: {name: 'B'}}]}]},
+  {name: 'A', inputs: [], outputs: [{dependedBy: [{solid: {name: 'B_very_long_step_name'}}]}]},
   {
-    name: 'B',
+    name: 'B_very_long_step_name',
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'C'}}, {solid: {name: 'D'}}]}],
   },
   {
     name: 'C',
-    inputs: [{dependsOn: [{solid: {name: 'B'}}]}],
+    inputs: [{dependsOn: [{solid: {name: 'B_very_long_step_name'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'E'}}]}],
   },
   {
     name: 'D',
-    inputs: [{dependsOn: [{solid: {name: 'B'}}]}],
+    inputs: [{dependsOn: [{solid: {name: 'B_very_long_step_name'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'E'}}]}],
   },
   {
@@ -153,43 +154,43 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
   {
     message: 'Started execution of step "B".',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepStartEvent',
   },
   {
     message: 'Got input "numbers" of type "[Int]". (Type check passed).',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepInputEvent',
   },
   {
     message: 'Execution of step "B" failed and has requested a retry in 2 seconds.',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepUpForRetryEvent',
   },
   {
     message: 'Started re-execution (attempt # 2) of step "retry_solid".',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepRestartEvent',
   },
   {
     message: 'Yielded output "result" of type "Any". (Type check passed).',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepOutputEvent',
   },
   {
     message: 'Handled output "result" using IO manager "io_manager"',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'HandledOutputEvent',
   },
   {
     message: 'Finished execution of step "B" in 33ms.',
     timestamp: '0',
-    stepKey: 'B',
+    stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepSuccessEvent',
   },
   {
@@ -378,6 +379,7 @@ export default {
 export const EmptyStateCase = () => {
   return (
     <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
+      <CustomTooltipProvider />
       <div style={{width: '100%', height: 400}}>
         <GanttChartLoadingState runId={'r2'} />
       </div>
@@ -392,6 +394,7 @@ export const InteractiveCase = (argValues: any) => {
   const metadata = extractMetadataFromLogs(LOGS.slice(0, argValues.progress));
   return (
     <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
+      <CustomTooltipProvider />
       <div style={{width: '100%', height: 400}}>
         <GanttChart
           key={metadata.mostRecentLogAt}
