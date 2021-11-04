@@ -617,7 +617,7 @@ const PartitionStepSquare: React.FC<{
     <Popover
       interactionKind="click"
       placement="bottom-start"
-      onOpened={() => setOpened(true)}
+      onOpening={() => setOpened(true)}
       onClosed={() => setOpened(false)}
       content={
         <MenuWIP>
