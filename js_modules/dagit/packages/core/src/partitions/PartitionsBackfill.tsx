@@ -37,7 +37,7 @@ import {
   GridFloatingContainer,
   GridScrollContainer,
   LeftLabel,
-  TITLE_HEIGHT,
+  topLabelHeightForLabels,
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
@@ -419,6 +419,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     visibleRangeStart + visibleCount,
   );
 
+  const topLabelHeight = topLabelHeightForLabels(partitionNames);
+
   return (
     <>
       <DialogBody>
@@ -544,7 +546,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>
-                <TopLabel></TopLabel>
+                <TopLabel style={{height: topLabelHeight}} />
                 {stepRows.map((step) => (
                   <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
                     {step.name}
@@ -559,8 +561,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                 width: partitionNames.length * BOX_SIZE,
                 position: 'relative',
                 height: query
-                  ? stepRows.length * BOX_SIZE + TITLE_HEIGHT
-                  : BOX_SIZE + TITLE_HEIGHT + 25,
+                  ? stepRows.length * BOX_SIZE + topLabelHeight
+                  : BOX_SIZE + topLabelHeight + 25,
               }}
             >
               {visiblePartitionNames.map((partitionName, idx) => (
@@ -580,7 +582,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   onMouseUp={() => onPartitionMouseUp(partitionName)}
                   onMouseOver={() => onPartitionMouseOver(partitionName)}
                 >
-                  <TopLabelTilted label={partitionName} />
+                  <TopLabelTilted $height={topLabelHeight} label={partitionName} />
                   {!options.reexecute ? (
                     <div
                       className={`square ${
