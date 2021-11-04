@@ -75,7 +75,7 @@ export const PartitionGraph = ({
           },
           x: {
             id: 'x',
-            title: {display: true, text: 'Partition'},
+            title: {display: true, text: title},
           },
         }
       : undefined;
