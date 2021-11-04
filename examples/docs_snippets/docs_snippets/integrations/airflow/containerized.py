@@ -1,6 +1,4 @@
-"""
-The containerized airflow DAG for hello_cereal_pipeline
-"""
+# pylint: disable=unused-variable
 
 import datetime
 
@@ -17,7 +15,7 @@ DEFAULT_ARGS = {
 
 dag, steps = make_airflow_dag_containerized(
     module_name="docs_snippets.integrations.airflow.hello_cereal",
-    pipeline_name="hello_cereal_pipeline",
+    job_name="hello_cereal_job",
     image="dagster-airflow-demo-repository",
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
 )
