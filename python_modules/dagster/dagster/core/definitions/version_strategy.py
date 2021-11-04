@@ -1,3 +1,5 @@
+import hashlib
+import inspect
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import TYPE_CHECKING, Optional
@@ -38,7 +40,7 @@ class SolidVersionContext(
 class ResourceVersionContext(
     namedtuple(
         "SolidVersionContext",
-        "solid_def solid_config",
+        "resource_def resource_config",
     )
 ):
     """Version-specific solid context.
@@ -57,7 +59,7 @@ class ResourceVersionContext(
                 resource_def, "resource_def", ResourceDefinition  # pylint: disable=E0601
             )
         return super(ResourceVersionContext, cls).__new__(
-            cls, solid_def=resource_def, solid_config=resource_config
+            cls, resource_def=resource_def, resource_config=resource_config
         )
 
 
@@ -82,3 +84,17 @@ class VersionStrategy(ABC):
         self, context: ResourceVersionContext  # pylint: disable=unused-argument
     ) -> Optional[str]:
         return None
+
+
+class CodeVersionStrategy(VersionStrategy):
+    def _get_source_hash(self, fn):
+        code_as_str = inspect.getsource(fn)
+        return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
+
+    def get_solid_version(self, context: SolidVersionContext) -> str:
+        return self._get_source_hash(context.solid_def.compute_fn.decorated_fn)
+
+    def get_resource_version(
+        self, context: ResourceVersionContext  # pylint: disable=unused-argument
+    ) -> Optional[str]:
+        return self._get_source_hash(context.resource_def.resource_fn)

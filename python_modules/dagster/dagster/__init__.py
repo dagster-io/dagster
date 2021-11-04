@@ -118,7 +118,7 @@ from dagster.core.definitions.utils import (
     config_from_pkg_resources,
     config_from_yaml_strings,
 )
-from dagster.core.definitions.version_strategy import VersionStrategy
+from dagster.core.definitions.version_strategy import CodeVersionStrategy, VersionStrategy
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -463,4 +463,5 @@ __all__ = [
     "VersionStrategy",
     "MEMOIZED_RUN_TAG",
     "MemoizableIOManager",
+    "CodeVersionStrategy",
 ]
