@@ -57,6 +57,17 @@ def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
 
 def format_docstring_for_description(fn: Callable) -> Optional[str]:
     if fn.__doc__ is not None:
-        return textwrap.dedent(fn.__doc__).strip()
+        docstring = fn.__doc__
+        if docstring[0].isspace():
+            return textwrap.dedent(docstring).strip()
+        else:
+            first_newline_pos = docstring.find("\n")
+            if first_newline_pos == -1:
+                return docstring
+            else:
+                return (
+                    docstring[: first_newline_pos + 1]
+                    + textwrap.dedent(docstring[first_newline_pos + 1 :]).strip()
+                )
     else:
         return None
