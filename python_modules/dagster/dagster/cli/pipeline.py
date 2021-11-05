@@ -613,7 +613,7 @@ def do_execute_command(
 )
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline/job run")
 def pipeline_launch_command(**kwargs):
-    with get_instance_for_service("``dagster pipeline launch``") as instance:
+    with DagsterInstance.get() as instance:
         return execute_launch_command(instance, kwargs)
 
 
