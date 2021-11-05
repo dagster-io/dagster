@@ -154,44 +154,6 @@ def execute_preview_command(cli_args, print_fn):
             print_changes(external_repo, instance, print_fn, preview=True)
 
 
-@schedule_cli.command(name="up")
-@click.option("--preview", help="Preview changes", is_flag=True, default=False)
-@repository_target_argument
-def schedule_up_command(preview, **kwargs):
-    """
-    Update the Dagster instance's representation of schedules.
-
-    After running this command, the internal representation will match the list of
-    ScheduleDefinitions defined in the repository.
-
-    \b
-    To preview what changes will be applied, one of the following commands can be used:
-        dagster schedule up --preview
-        dagster schedule preview
-
-    Note by default, new ScheduleDefinitions in the Dagster instance will not start running until
-    they are explicitly started.
-    """
-    return execute_up_command(preview, kwargs, click.echo)
-
-
-def execute_up_command(preview, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(
-            instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
-
-            print_changes(external_repo, instance, print_fn, preview=preview)
-            if preview:
-                return
-
-            try:
-                instance.reconcile_scheduler_state(external_repo)
-            except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
-
-
 @schedule_cli.command(
     name="list",
     help="List all schedules that correspond to a repository.",

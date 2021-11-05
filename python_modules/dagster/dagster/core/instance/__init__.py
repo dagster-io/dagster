@@ -1572,9 +1572,6 @@ records = instance.get_event_records(
 
     # Scheduler
 
-    def reconcile_scheduler_state(self, external_repository):
-        return self._scheduler.reconcile_scheduler_state(self, external_repository)
-
     def start_schedule_and_update_storage_state(self, external_schedule):
         return self._scheduler.start_schedule_and_update_storage_state(self, external_schedule)
 

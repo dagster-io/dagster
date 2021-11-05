@@ -1533,7 +1533,6 @@ type Mutation {
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
-  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
@@ -1612,12 +1611,6 @@ input ExecutionMetadata {
 }
 
 union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
-
-type ReconcileSchedulerStateSuccess {
-  message: String!
-}
 
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
@@ -1916,10 +1909,6 @@ type ShutdownRepositoryLocationMutation {
 
 type TerminateRunMutation {
   Output: TerminateRunResult!
-}
-
-type ReconcileSchedulerStateMutation {
-  Output: ReconcileSchedulerStateMutationResult!
 }
 
 enum ScheduleStatus {

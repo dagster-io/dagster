@@ -104,24 +104,6 @@ query getUnloadableSchedules {
 }
 """
 
-RECONCILE_SCHEDULER_STATE_QUERY = """
-mutation(
-  $repositorySelector: RepositorySelector!
-) {
-  reconcileSchedulerState(
-    repositorySelector: $repositorySelector,
-  ) {
-      ... on PythonError {
-        message
-        stack
-      }
-      ... on ReconcileSchedulerStateSuccess {
-        message
-      }
-    }
-}
-"""
-
 
 START_SCHEDULES_QUERY = """
 mutation(
@@ -209,11 +191,6 @@ def test_get_schedule_definitions_for_repository(graphql_context):
 
 
 def test_start_and_stop_schedule(graphql_context):
-    external_repository = graphql_context.get_repository_location(
-        main_repo_location_name()
-    ).get_repository(main_repo_name())
-    graphql_context.instance.reconcile_scheduler_state(external_repository)
-
     schedule_selector = infer_schedule_selector(
         graphql_context, "no_config_pipeline_hourly_schedule"
     )
@@ -242,7 +219,6 @@ def test_start_and_stop_schedule(graphql_context):
 
 def test_get_single_schedule_definition(graphql_context):
     context = graphql_context
-    instance = context.instance
 
     schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
 
@@ -253,12 +229,6 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["scheduleState"]
-
-    instance.reconcile_scheduler_state(
-        external_repository=context.get_repository_location(
-            main_repo_location_name()
-        ).get_repository(main_repo_name()),
-    )
 
     result = execute_dagster_graphql(
         context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
@@ -325,11 +295,6 @@ def test_get_single_schedule_definition(graphql_context):
 
 
 def test_next_tick(graphql_context):
-    external_repository = graphql_context.get_repository_location(
-        main_repo_location_name()
-    ).get_repository(main_repo_name())
-    graphql_context.instance.reconcile_scheduler_state(external_repository)
-
     schedule_selector = infer_schedule_selector(
         graphql_context, "no_config_pipeline_hourly_schedule"
     )
@@ -358,11 +323,6 @@ def test_next_tick(graphql_context):
 
 
 def test_next_tick_bad_schedule(graphql_context):
-    external_repository = graphql_context.get_repository_location(
-        main_repo_location_name()
-    ).get_repository(main_repo_name())
-    graphql_context.instance.reconcile_scheduler_state(external_repository)
-
     schedule_selector = infer_schedule_selector(graphql_context, "run_config_error_schedule")
 
     # Start a single schedule, future tick run requests only available for running schedules

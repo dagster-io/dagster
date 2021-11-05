@@ -8,21 +8,6 @@ from .utils import UserFacingGraphQLError, capture_error
 
 
 @capture_error
-def reconcile_scheduler_state(graphene_info, repository_selector):
-    from ..schema.schedules import GrapheneReconcileSchedulerStateSuccess
-
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(repository_selector, "repository_selector", RepositorySelector)
-
-    location = graphene_info.context.get_repository_location(repository_selector.location_name)
-    repository = location.get_repository(repository_selector.repository_name)
-    instance = graphene_info.context.instance
-
-    instance.reconcile_scheduler_state(repository)
-    return GrapheneReconcileSchedulerStateSuccess(message="Success")
-
-
-@capture_error
 def start_schedule(graphene_info, schedule_selector):
     from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
