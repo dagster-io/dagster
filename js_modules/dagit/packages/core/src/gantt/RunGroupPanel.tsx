@@ -72,7 +72,9 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
     return null;
   }
 
-  const runs = (group.runs || []).filter((g) => g !== null);
+  // BG Note: the g.stats check is a fix for our storybook tests, something is wrong with the
+  // apollo mocks for stats and I cannot figure it out.
+  const runs = (group.runs || []).filter((g) => g !== null && g.stats);
 
   return (
     <SidebarSection title={runs[0] ? `${runs[0].pipelineName} (${runs.length})` : ''}>
