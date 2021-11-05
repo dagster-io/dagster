@@ -25,22 +25,22 @@ def story_recommender():
 
 
 story_recommender_prod_job = story_recommender.to_job(
-    resource_defs=dict(
+    resource_defs={
         **RESOURCES_PROD,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    )
+    }
 )
 
 story_recommender_staging_job = story_recommender.to_job(
-    resource_defs=dict(
+    resource_defs={
         **RESOURCES_STAGING,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    )
+    }
 )
 
 story_recommender_local_job = story_recommender.to_job(
-    resource_defs=dict(
+    resource_defs={
         **RESOURCES_LOCAL,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    )
+    }
 )

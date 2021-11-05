@@ -9,10 +9,10 @@ from hacker_news.resources.partition_bounds import partition_bounds
 MODE_TEST = ModeDefinition(
     name="test_local_data",
     description="This mode queries snapshotted HN data and does all writes locally.",
-    resource_defs=dict(
-        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
+    resource_defs={
+        **{"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
         **RESOURCES_LOCAL,
-    ),
+    },
 )
 
 
@@ -22,13 +22,13 @@ MODE_STAGING = ModeDefinition(
         "This mode queries live HN data and writes to a staging S3 bucket. "
         "Intended for use in the staging environment."
     ),
-    resource_defs=dict(
+    resource_defs={
         **{
             "partition_bounds": partition_bounds,
             "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         },
         **RESOURCES_STAGING,
-    ),
+    },
 )
 
 
@@ -38,13 +38,13 @@ MODE_PROD = ModeDefinition(
         "This mode queries live HN data and writes to a prod S3 bucket."
         "Intended for use in production."
     ),
-    resource_defs=dict(
+    resource_defs={
         **{
             "partition_bounds": partition_bounds,
             "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         },
         **RESOURCES_PROD,
-    ),
+    },
 )
 
 
@@ -55,11 +55,11 @@ DEFAULT_PARTITION_RESOURCE_CONFIG = {
 PRESET_TEST = PresetDefinition(
     name="test_local_data",
     run_config={
-        "resources": dict(
-            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
-            warehouse_io_manager={"config": {"base_path": get_system_temp_directory()}},
+        "resources": {
+            "parquet_io_manager": {"config": {"base_path": get_system_temp_directory()}},
+            "warehouse_io_manager": {"config": {"base_path": get_system_temp_directory()}},
             **DEFAULT_PARTITION_RESOURCE_CONFIG,
-        ),
+        },
     },
     mode="test_local_data",
 )
