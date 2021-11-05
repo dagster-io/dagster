@@ -2,6 +2,9 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 0.13.0
+Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets ans the stable core of the
+system. [Here](https://docs.dagster.io/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs.
 ## Migrating to 0.12.0
 
 The new experimental core API experience in Dagit uses some features that require a data migration. Before enabling the experimental core API flag in Dagit, you will first need to run this command:
