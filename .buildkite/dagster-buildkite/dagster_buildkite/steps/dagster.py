@@ -487,9 +487,10 @@ def pipenv_smoke_tests():
     if is_release:
         return []
 
+    # tempoarily pinned due to issue with 2021.11.5, see https://github.com/dagster-io/dagster/issues/5565
     smoke_test_steps = [
         "pushd /workdir/python_modules",
-        "pip install pipenv",
+        "pip install pipenv==2021.5.29",
         "pipenv install",
     ]
 
