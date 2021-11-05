@@ -182,6 +182,8 @@ class _PlanBuilder:
             self.known_state,
         )
 
+        executor_name = self.resolved_run_config.execution.execution_engine_name
+
         plan = ExecutionPlan(
             step_dict,
             executable_map,
@@ -196,6 +198,7 @@ class _PlanBuilder:
                 self.resolved_run_config,
                 executable_map,
             ),
+            executor_name=executor_name,
         )
 
         if self.step_keys_to_execute is not None:
@@ -541,6 +544,7 @@ class ExecutionPlan(
             ("artifacts_persisted", bool),
             ("step_output_versions", Dict[StepOutputHandle, str]),
             ("step_dict_by_key", Dict[str, IExecutionStep]),
+            ("executor_name", Optional[str]),
         ],
     )
 ):
@@ -554,6 +558,7 @@ class ExecutionPlan(
         artifacts_persisted=False,
         step_output_versions=None,
         step_dict_by_key=None,
+        executor_name=None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -594,6 +599,7 @@ class ExecutionPlan(
                     UnresolvedCollectExecutionStep,
                 ),
             ),
+            executor_name=check.opt_str_param(executor_name, "executor_name"),
         )
 
     @property
@@ -731,6 +737,7 @@ class ExecutionPlan(
                 executable_map,
             ),
             step_output_versions=step_output_versions,
+            executor_name=self.executor_name,
         )
 
     def get_version_for_step_output_handle(
@@ -1015,6 +1022,7 @@ class ExecutionPlan(
             execution_plan_snapshot.initial_known_state,
             execution_plan_snapshot.artifacts_persisted,
             step_output_versions,
+            executor_name=execution_plan_snapshot.executor_name,
         )
 
 

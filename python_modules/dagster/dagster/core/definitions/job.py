@@ -5,6 +5,7 @@ from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
+from .executor import ExecutorDefinition
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
@@ -61,6 +62,10 @@ class JobDefinition(PipelineDefinition):
 
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
+
+    @property
+    def executor_def(self) -> ExecutorDefinition:
+        return self.mode_definitions[0].executor_defs[0]
 
     def execute_in_process(
         self,
