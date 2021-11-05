@@ -12,6 +12,8 @@ ENV DAGSTER_DISABLE_TELEMETRY=true
 # This makes sure that logs show up immediately instead of being buffered
 ENV PYTHONUNBUFFERED=1
 
+RUN pip install --upgrade pip
+
 # dagster-celery specified twice to deal with pip resolution in pip 20.3.3 when only
 # extras are specified
 RUN pip install \

@@ -12,6 +12,7 @@ from dagster import (
     AssetMaterialization,
     Bool,
     Field,
+    In,
     InputDefinition,
     Int,
     List,
@@ -101,6 +102,22 @@ def count_letters(word):
     return dict(counts)
 
 
+@op(
+    ins={"word": In(String)},
+    config_schema={"factor": Int},
+)
+def multiply_the_word_op(context, word):
+    return word * context.solid_config["factor"]
+
+
+@op(ins={"word": In()})
+def count_letters_op(word):
+    counts = defaultdict(int)
+    for letter in word:
+        counts[letter] += 1
+    return dict(counts)
+
+
 @lambda_solid()
 def error_solid():
     raise Exception("Unusual error")
@@ -167,6 +184,19 @@ def define_demo_pipeline_celery():
         count_letters(multiply_the_word())
 
     return demo_pipeline_celery
+
+
+def define_demo_job_celery():
+    from dagster_celery_k8s import celery_k8s_job_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=celery_k8s_job_executor,
+    )
+    def demo_job_celery():
+        count_letters_op.alias("count_letters")(multiply_the_word_op.alias("multiply_the_word")())
+
+    return demo_job_celery
 
 
 def define_docker_celery_pipeline():
@@ -623,6 +653,7 @@ def define_demo_execution_repo():
         return {
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
+                "demo_job_celery": define_demo_job_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,
                 "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
