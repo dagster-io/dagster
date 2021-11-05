@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
