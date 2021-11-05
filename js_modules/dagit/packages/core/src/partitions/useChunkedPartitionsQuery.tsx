@@ -300,16 +300,22 @@ function assemblePartitions(data: DataState) {
   // extensively in our display layer as React keys. To create unique empty partitions
   // we use different numbers of zero-width space characters
   const results: PartitionRuns[] = [];
+  const byName: {[name: string]: PartitionRuns} = {};
 
-  data.partitionNames.forEach((name, idx) =>
-    results.push({
+  data.partitionNames.forEach((name, idx) => {
+    byName[name] = {
       name,
       runsLoaded: idx >= data.loadingCursorIdx,
-      runs: data.runs.filter((r) =>
-        r.tags.some((t) => t.key === DagsterTag.Partition && t.value === name),
-      ),
-    }),
-  );
+      runs: [],
+    };
+    results.push(byName[name]);
+  });
+
+  data.runs.forEach((r) => {
+    const partitionName = r.tags.find((t) => t.key === DagsterTag.Partition)?.value || '';
+    byName[partitionName]?.runs.push(r);
+  });
+
   return results;
 }
 

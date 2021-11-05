@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
-import {Tooltip} from '../ui/Tooltip';
 
 export const BOX_SIZE = 32;
 
@@ -220,49 +219,29 @@ export const TopLabel = styled.div`
   display: flex;
 `;
 
-const TITLE_HEIGHT = 55;
+const TITLE_MARGIN_BOTTOM = 15;
 const ROTATION_DEGREES = 41;
 
-export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
-  const node = React.useRef<HTMLDivElement>(null);
-  const [tooltip, showTooltip] = React.useState(false);
+export function topLabelHeightForLabels(labels: string[]) {
+  const maxlength = Math.max(...labels.map((p) => p.length));
+  return (maxlength > 10 ? maxlength * 4.9 : 55) + TITLE_MARGIN_BOTTOM;
+}
 
-  // On mount, measure whether the height of the rotated text is greater than the container.
-  // If so, we'll display a tooltip so that the text can be made visible on hover.
-  React.useEffect(() => {
-    if (node.current) {
-      const nodeWidth = node.current.offsetWidth;
-      const rotatedHeight = Math.sin(ROTATION_DEGREES * (Math.PI / 180)) * nodeWidth;
-      if (rotatedHeight > TITLE_HEIGHT) {
-        showTooltip(true);
-      }
-    }
-  }, []);
-
-  const content = (
-    <TopLabelTiltedInner>
-      <div className="tilted" ref={node}>
-        {label}
-      </div>
+export const TopLabelTilted: React.FC<{label: string; $height: number}> = ({label, $height}) => {
+  return (
+    <TopLabelTiltedInner style={{height: $height - TITLE_MARGIN_BOTTOM}}>
+      <div className="tilted">{label}</div>
     </TopLabelTiltedInner>
-  );
-
-  return tooltip ? (
-    <Tooltip placement="bottom" content={label}>
-      {content}
-    </Tooltip>
-  ) : (
-    content
   );
 };
 
 const TopLabelTiltedInner = styled.div`
   position: relative;
-  height: ${TITLE_HEIGHT}px;
+  height: unset; /* provide via style tag */
   padding: 4px;
   padding-bottom: 0;
   min-width: 15px;
-  margin-bottom: 15px;
+  margin-bottom: ${TITLE_MARGIN_BOTTOM}px;
   align-items: end;
   display: flex;
   line-height: normal;
