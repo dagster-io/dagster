@@ -1,3 +1,4 @@
+import copy
 import inspect
 from abc import ABC, abstractmethod
 from datetime import datetime, time
@@ -396,10 +397,10 @@ class PartitionSetDefinition(Generic[T]):
         return self._mode
 
     def run_config_for_partition(self, partition: Partition[T]) -> Dict[str, Any]:
-        return self._user_defined_run_config_fn_for_partition(partition)
+        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
-        user_tags = self._user_defined_tags_fn_for_partition(partition)
+        user_tags = copy.deepcopy(self._user_defined_tags_fn_for_partition(partition))
         check_tags(user_tags, "user_tags")
 
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))

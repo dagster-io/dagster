@@ -236,6 +236,39 @@ def test_partitions():
     assert partition_set.run_config_for_partition(partitions[0]) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
+    assert partition_set.run_config_for_partition(partitions[1]) == {
+        "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
+    }
+
+    # Verify that even if the partition set config function mutates shared state
+    # when returning run config, the result partitions have different config
+    SHARED_CONFIG = {}
+
+    def shared_config_fn(partition: Partition):
+        my_config = SHARED_CONFIG
+        my_config["ops"] = {"my_op": {"config": {"date": partition.value}}}
+        return my_config
+
+    job = my_graph.to_job(
+        config=PartitionedConfig(
+            run_config_for_partition_fn=shared_config_fn,
+            partitions_def=StaticPartitionsDefinition(
+                [Partition("2020-02-25"), Partition("2020-02-26")]
+            ),
+        ),
+    )
+    partition_set = job.get_partition_set_def()
+    partitions = partition_set.get_partitions()
+    assert len(partitions) == 2
+    assert partitions[0].value == "2020-02-25"
+    assert partitions[0].name == "2020-02-25"
+
+    first_config = partition_set.run_config_for_partition(partitions[0])
+    second_config = partition_set.run_config_for_partition(partitions[1])
+    assert first_config != second_config
+
+    assert first_config == {"ops": {"my_op": {"config": {"date": "2020-02-25"}}}}
+    assert second_config == {"ops": {"my_op": {"config": {"date": "2020-02-26"}}}}
 
 
 def test_tags_on_job():
