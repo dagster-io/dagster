@@ -119,6 +119,20 @@ def test_execute():
     assert TestStepHandler.saw_baz_solid
 
 
+def test_skip_execute():
+    from .dynamic_job import define_dynamic_skipping_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_dynamic_skipping_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+
+
 def test_execute_intervals():
     TestStepHandler.reset()
     with instance_for_test() as instance:
