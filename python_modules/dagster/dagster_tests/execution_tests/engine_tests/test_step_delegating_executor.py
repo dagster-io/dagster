@@ -98,6 +98,24 @@ def foo_pipline():
     bar_solid()
 
 
+def test_dynamic_execute():
+    from .dynamic import get_dynamic_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(get_dynamic_job),
+            instance=instance,
+            run_config={
+                "ops": {"determine_test_ids_to_process": {"config": {"test_ids": ["10010"]}}}
+            },
+        )
+        TestStepHandler.wait_for_processes()
+
+    print(result)
+    assert result.success
+
+
 def test_execute():
     TestStepHandler.reset()
     with instance_for_test() as instance:

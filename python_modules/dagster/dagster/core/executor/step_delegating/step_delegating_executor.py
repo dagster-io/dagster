@@ -210,6 +210,10 @@ class StepDelegatingExecutor(Executor):
                         )
                     )
 
+                # process skips from failures or uncovered inputs
+                for event in active_execution.plan_events_iterator(plan_context):
+                    yield event
+
                 for dagster_event in events:  # type: ignore
                     yield dagster_event
                     active_execution.handle_event(dagster_event)
@@ -222,9 +226,5 @@ class StepDelegatingExecutor(Executor):
                         assert isinstance(dagster_event.step_key, str)
                         del running_steps[dagster_event.step_key]
                         active_execution.verify_complete(plan_context, dagster_event.step_key)
-
-                # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(plan_context):
-                    yield event
 
                 time.sleep(self._sleep_seconds)
