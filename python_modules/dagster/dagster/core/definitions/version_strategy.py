@@ -13,14 +13,14 @@ if TYPE_CHECKING:
 
 class SolidVersionContext(
     namedtuple(
-        "SolidVersionContext",
+        "_SolidVersionContext",
         "solid_def solid_config",
     )
 ):
     """Version-specific solid context.
     Attributes:
-        solid_def (SolidDefinition): The definition of the versioned solid
-        solid_config (Any): The parsed config received by the versioned solid
+        solid_def (SolidDefinition): The definition of the solid to compute a version for.
+        solid_config (Any): The parsed config to be passed to the solid during execution.
     """
 
     def __new__(
@@ -39,14 +39,15 @@ class SolidVersionContext(
 
 class ResourceVersionContext(
     namedtuple(
-        "SolidVersionContext",
+        "_ResourceVersionContext",
         "resource_def resource_config",
     )
 ):
-    """Version-specific solid context.
+    """Version-specific resource context.
+
     Attributes:
-        resource_def (ResourceDefinition): The definition of the versioned resource
-        resource_config (Any): The parsed config received by the versioned resource
+        resource_def (ResourceDefinition): The definition of the resource whose version will be computed.
+        resource_config (Any): The parsed config to be passed to the resource during execution.
     """
 
     def __new__(
@@ -86,7 +87,7 @@ class VersionStrategy(ABC):
         return None
 
 
-class CodeVersionStrategy(VersionStrategy):
+class SourceHashVersionStrategy(VersionStrategy):
     def _get_source_hash(self, fn):
         code_as_str = inspect.getsource(fn)
         return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
@@ -94,7 +95,5 @@ class CodeVersionStrategy(VersionStrategy):
     def get_solid_version(self, context: SolidVersionContext) -> str:
         return self._get_source_hash(context.solid_def.compute_fn.decorated_fn)
 
-    def get_resource_version(
-        self, context: ResourceVersionContext  # pylint: disable=unused-argument
-    ) -> Optional[str]:
+    def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
         return self._get_source_hash(context.resource_def.resource_fn)

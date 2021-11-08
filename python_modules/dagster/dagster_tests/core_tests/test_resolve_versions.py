@@ -3,7 +3,7 @@ import hashlib
 import pytest
 from dagster import (
     Bool,
-    CodeVersionStrategy,
+    SourceHashVersionStrategy,
     DagsterInvariantViolationError,
     Float,
     IOManagerDefinition,
@@ -887,7 +887,7 @@ def test_code_versioning_strategy():
     def my_op():
         return 5
 
-    @job(version_strategy=CodeVersionStrategy())
+    @job(version_strategy=SourceHashVersionStrategy())
     def call_the_op():
         my_op()
 
