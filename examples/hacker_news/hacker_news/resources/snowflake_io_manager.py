@@ -1,10 +1,9 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Any, Dict, Union
+from typing import Mapping, Optional, Sequence, Union
 
-from dagster import AssetKey, EventMetadataEntry, InputContext, OutputContext, io_manager
-from dagster.core.storage.io_manager import IOManager
+from dagster import AssetKey, EventMetadataEntry, IOManager, InputContext, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -77,14 +76,13 @@ class SnowflakeIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.metadata["table"].split(".")
 
+        partition_bounds = (
+            context.resources.partition_bounds
+            if context.metadata.get("partitioned") is True
+            else None
+        )
         with connect_snowflake(config=self._config, schema=schema) as con:
-            con.execute(
-                self._get_cleanup_statement(
-                    table,
-                    context.resources,
-                    is_partitioned=context.metadata.get("partitioned") is True,
-                )
-            )
+            con.execute(self._get_cleanup_statement(table, schema, partition_bounds))
 
         if isinstance(obj, SparkDataFrame):
             yield from self._handle_spark_output(obj, schema, table)
@@ -96,7 +94,10 @@ class SnowflakeIOManager(IOManager):
             )
 
         yield EventMetadataEntry.text(
-            self._get_select_statement(context.resources, context.metadata), "Query"
+            self._get_select_statement(
+                table, schema, context.metadata.get("columns"), partition_bounds
+            ),
+            "Query",
         )
 
     def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
@@ -111,7 +112,7 @@ class SnowflakeIOManager(IOManager):
             with_uppercase_cols.to_sql(
                 table,
                 con=con,
-                if_exists="replace",
+                if_exists="append",
                 index=False,
                 method=pd_writer,
             )
@@ -130,52 +131,62 @@ class SnowflakeIOManager(IOManager):
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
-    def _get_cleanup_statement(self, table: str, resources, is_partitioned: bool):
+    def _get_cleanup_statement(
+        self, table: str, schema: str, partition_bounds: Mapping[str, str]
+    ) -> str:
         """
         Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
         """
-        if is_partitioned:
-            return f"""
-            DELETE FROM {table}
-            {self._partition_where_clause(resources.partition_bounds)}
-            """
+        if partition_bounds:
+            return f"DELETE FROM {schema}.{table} {self._partition_where_clause(partition_bounds)}"
         else:
-            return f"""
-            DELETE FROM {table} WHERE true;
-            """
+            return f"DELETE FROM {schema}.{table}"
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
-        resources = context.resources
         if context.upstream_output is not None:
             # loading from an upstream output
             metadata = context.upstream_output.metadata
         else:
             # loading as a root input
             metadata = context.metadata
+
+        schema, table = metadata["table"].split(".")
         with connect_snowflake(config=self._config) as con:
             result = read_sql(
-                sql=self._get_select_statement(resources, metadata),
+                sql=self._get_select_statement(
+                    table,
+                    schema,
+                    metadata.get("columns"),
+                    context.resources.partition_bounds
+                    if metadata.get("partitioned") is True
+                    else None,
+                ),
                 con=con,
             )
             result.columns = map(str.lower, result.columns)
             return result
 
-    def _get_select_statement(self, resources, metadata: Dict[str, Any]):
-        col_str = ", ".join(f"{c}" for c in metadata["columns"]) if "columns" in metadata else "*"
-        is_partitioned = metadata.get("partitioned") is True
-        if is_partitioned:
+    def _get_select_statement(
+        self,
+        table: str,
+        schema: str,
+        columns: Optional[Sequence[str]],
+        partition_bounds: Optional[Mapping[str, str]],
+    ):
+        col_str = ", ".join(columns) if columns else "*"
+        if partition_bounds:
             return (
-                f"""SELECT * FROM {self._config["database"]}.{metadata["table"]}\n"""
-                + self._partition_where_clause(resources.partition_bounds)
+                f"""SELECT * FROM {self._config["database"]}.{schema}.{table}\n"""
+                + self._partition_where_clause(partition_bounds)
             )
         else:
-            return f"""SELECT {col_str} FROM {metadata["table"]}"""
+            return f"""SELECT {col_str} FROM {schema}.{table}"""
 
-    def _partition_where_clause(self, partition_bounds):
+    def _partition_where_clause(self, partition_bounds: Mapping[str, str]) -> str:
         return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{partition_bounds["start"]}' AND '{partition_bounds["end"]}'"""
 
-    def get_output_asset_key(self, context: OutputContext):
+    def get_output_asset_key(self, context: OutputContext) -> AssetKey:
         return AssetKey(["snowflake", *context.metadata["table"].split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):

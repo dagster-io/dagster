@@ -314,7 +314,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                     cls=self.__class__,
                 )
             return termination_result
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._instance.report_engine_event(
                 message="Dagster Job was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
@@ -337,22 +337,27 @@ def _get_validated_celery_k8s_executor_config(run_config):
     check.dict_param(run_config, "run_config")
 
     executor_config = run_config.get("execution", {})
+    execution_config_schema = resolve_to_config_type(celery_k8s_config())
+
+    # In run config on jobs, we don't have an executor key
     if not CELERY_K8S_CONFIG_KEY in executor_config:
-        raise DagsterInvariantViolationError(
-            "{config_key} execution configuration must be present in the run config to use the CeleryK8sRunLauncher. "
-            "Note: You may also be seeing this error because you are using the configured API. "
-            "Using configured with the {config_key} executor is not supported at this time, "
-            "and all executor config must be directly in the run config without using configured.".format(
-                config_key=CELERY_K8S_CONFIG_KEY,
-            ),
+
+        execution_run_config = executor_config.get("config", {})
+    else:
+        execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get(
+            "config", {}
         )
 
-    execution_config_schema = resolve_to_config_type(celery_k8s_config())
-    execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get("config", {})
     res = process_config(execution_config_schema, execution_run_config)
 
     check.invariant(
-        res.success, "Incorrect {} execution schema provided".format(CELERY_K8S_CONFIG_KEY)
+        res.success,
+        "Incorrect execution schema provided. Note: You may also be seeing this error "
+        "because you are using the configured API. "
+        "Using configured with the {config_key} executor is not supported at this time, "
+        "and all executor config must be directly in the run config without using configured.".format(
+            config_key=CELERY_K8S_CONFIG_KEY,
+        ),
     )
 
     return res.value

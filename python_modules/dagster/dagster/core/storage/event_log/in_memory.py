@@ -96,7 +96,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         for handler in handlers:
             try:
                 handler(event)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", run_id)
 
     def delete_events(self, run_id):

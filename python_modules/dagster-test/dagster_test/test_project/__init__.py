@@ -76,7 +76,7 @@ def find_local_test_image(docker_image):
 def build_and_tag_test_image(tag):
     check.str_param(tag, "tag")
 
-    base_python = "3.7.8"
+    base_python = "3.8.8"
 
     # Build and tag local dagster test image
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
@@ -175,6 +175,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                             fn_name="define_demo_execution_repo",
                         ),
                         container_image=self._container_image,
+                        executable_path="python",
                     )
                 ),
                 repository_name="demo_execution_repo",
@@ -210,7 +211,9 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
                         pointer=FileCodePointer(
                             python_file="/dagster_test/test_project/test_pipelines/repo.py",
                             fn_name="define_demo_execution_repo",
-                        )
+                        ),
+                        container_image=self._container_image,
+                        executable_path="python",
                     )
                 ),
                 repository_name="demo_execution_repo",

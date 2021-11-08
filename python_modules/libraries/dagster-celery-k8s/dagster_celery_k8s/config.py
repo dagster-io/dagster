@@ -78,6 +78,24 @@ def get_celery_engine_config(additional_env_config_maps=None):
     }
 
 
+def get_celery_engine_job_config(additional_env_config_maps=None):
+    return {
+        "execution": {
+            "config": {
+                "job_image": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE"},
+                "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
+                "image_pull_policy": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY"},
+                "env_config_maps": (
+                    [
+                        {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
+                    ]
+                    + (additional_env_config_maps if additional_env_config_maps else [])
+                ),
+            }
+        }
+    }
+
+
 def get_celery_engine_grpc_config():
     return {
         "execution": {

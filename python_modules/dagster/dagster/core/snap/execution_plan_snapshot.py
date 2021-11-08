@@ -44,10 +44,12 @@ class ExecutionPlanSnapshot(
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
             ("step_output_versions", List[str]),
+            ("executor_name", Optional[str]),
         ],
     )
 ):
     # serdes log
+    # added executor_name
     # added step_keys_to_execute
     # added initial_known_state
     # added snapshot_version (if >=1, can be used to fully reconstruct the ExecutionPlan -
@@ -62,6 +64,7 @@ class ExecutionPlanSnapshot(
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
         step_output_versions: Optional[List["StepOutputVersionData"]] = None,
+        executor_name: Optional[str] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -80,6 +83,7 @@ class ExecutionPlanSnapshot(
             step_output_versions=check.opt_list_param(
                 step_output_versions, "step_output_versions", of_type=StepOutputVersionData
             ),
+            executor_name=check.opt_str_param(executor_name, "executor_name"),
         )
 
     @property
@@ -283,4 +287,5 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
         step_output_versions=step_output_versions_list,
+        executor_name=execution_plan.executor_name,
     )

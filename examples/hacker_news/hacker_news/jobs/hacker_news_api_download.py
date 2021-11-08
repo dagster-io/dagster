@@ -49,35 +49,35 @@ def hourly_download_config(start: datetime, end: datetime):
 
 
 download_prod_job = hacker_news_api_download.to_job(
-    resource_defs=dict(
+    resource_defs={
         **{
             "partition_bounds": partition_bounds,
             "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         },
         **RESOURCES_PROD,
-    ),
+    },
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
 )
 
 
 download_staging_job = hacker_news_api_download.to_job(
-    resource_defs=dict(
+    resource_defs={
         **{
             "partition_bounds": partition_bounds,
             "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         },
         **RESOURCES_STAGING,
-    ),
+    },
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
 )
 
 download_local_job = hacker_news_api_download.to_job(
-    resource_defs=dict(
-        {"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
+    resource_defs={
+        **{"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
         **RESOURCES_LOCAL,
-    ),
+    },
     config={
         "resources": {
             "partition_bounds": {

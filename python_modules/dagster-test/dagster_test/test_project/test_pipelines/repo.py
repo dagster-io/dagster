@@ -12,6 +12,7 @@ from dagster import (
     AssetMaterialization,
     Bool,
     Field,
+    In,
     InputDefinition,
     Int,
     List,
@@ -23,7 +24,9 @@ from dagster import (
     default_executors,
     file_relative_path,
     fs_io_manager,
+    job,
     lambda_solid,
+    op,
     pipeline,
     repository,
     resource,
@@ -99,6 +102,22 @@ def count_letters(word):
     return dict(counts)
 
 
+@op(
+    ins={"word": In(String)},
+    config_schema={"factor": Int},
+)
+def multiply_the_word_op(context, word):
+    return word * context.solid_config["factor"]
+
+
+@op(ins={"word": In()})
+def count_letters_op(word):
+    counts = defaultdict(int)
+    for letter in word:
+        counts[letter] += 1
+    return dict(counts)
+
+
 @lambda_solid()
 def error_solid():
     raise Exception("Unusual error")
@@ -167,6 +186,19 @@ def define_demo_pipeline_celery():
     return demo_pipeline_celery
 
 
+def define_demo_job_celery():
+    from dagster_celery_k8s import celery_k8s_job_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=celery_k8s_job_executor,
+    )
+    def demo_job_celery():
+        count_letters_op.alias("count_letters")(multiply_the_word_op.alias("multiply_the_word")())
+
+    return demo_job_celery
+
+
 def define_docker_celery_pipeline():
     from dagster_celery_docker import celery_docker_executor
 
@@ -204,6 +236,34 @@ def demo_pipeline_gcs():
 )
 def demo_error_pipeline():
     error_solid()
+
+
+# TODO: migrate test_project to crag
+@op
+def emit_airflow_execution_date_op(context):
+    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
+    yield AssetMaterialization(
+        asset_key="airflow_execution_date",
+        metadata={
+            "airflow_execution_date": airflow_execution_date,
+        },
+    )
+    yield Output(airflow_execution_date)
+
+
+@op()
+def error_op():
+    raise Exception("Unusual error")
+
+
+@job
+def demo_error_job():
+    error_solid()
+
+
+@job
+def demo_airflow_execution_date_job():
+    emit_airflow_execution_date_op()
 
 
 @pipeline(
@@ -593,6 +653,7 @@ def define_demo_execution_repo():
         return {
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
+                "demo_job_celery": define_demo_job_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,
                 "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
@@ -615,6 +676,10 @@ def define_demo_execution_repo():
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
                 "volume_mount_pipeline": define_volume_mount_pipeline,
+            },
+            "jobs": {
+                "demo_error_job": demo_error_job,
+                "demo_airflow_execution_date_job": demo_airflow_execution_date_job,
             },
             "schedules": define_schedules(),
         }

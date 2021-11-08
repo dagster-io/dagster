@@ -27,7 +27,7 @@ from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -136,7 +136,7 @@ class Manager:
         try:
             instance_ref = unpack_value(instance_ref_dict)
             instance = DagsterInstance.from_ref(instance_ref)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
@@ -236,7 +236,7 @@ class Manager:
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
-        pipeline_run = PipelineRun(
+        pipeline_run = DagsterRun(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,

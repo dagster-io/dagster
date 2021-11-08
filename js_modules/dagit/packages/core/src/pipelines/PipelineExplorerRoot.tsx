@@ -141,7 +141,7 @@ export const PipelineExplorerContainer: React.FC<{
 
         const repositoryAssets =
           repositoryOrError.__typename === 'Repository' ? repositoryOrError.assetNodes : [];
-        const isAssetGraph = result.solidHandles.every((handle) =>
+        const isAssetGraph = result.solidHandles.some((handle) =>
           repositoryAssets.some(
             (asset) =>
               asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
@@ -149,6 +149,20 @@ export const PipelineExplorerContainer: React.FC<{
         );
 
         if (flagAssetGraph && isAssetGraph) {
+          const unrepresentedSolids = result.solidHandles.filter(
+            (handle) =>
+              !repositoryAssets.some(
+                (asset) =>
+                  asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
+              ),
+          );
+          if (unrepresentedSolids.length) {
+            console.error(
+              `The following ops are not represented in the ${
+                explorerPath.pipelineName
+              } asset graph: ${unrepresentedSolids.map((h) => h.solid.name).join(', ')}`,
+            );
+          }
           return (
             <AssetGraphExplorer
               repoAddress={repoAddress!}

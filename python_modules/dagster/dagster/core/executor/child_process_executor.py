@@ -66,7 +66,6 @@ def _execute_command_in_child_process(event_queue, command):
                 event_queue.put(step_event)
             event_queue.put(ChildProcessDoneEvent(pid=pid))
 
-        # pylint: disable=broad-except
         except (
             Exception,
             KeyboardInterrupt,

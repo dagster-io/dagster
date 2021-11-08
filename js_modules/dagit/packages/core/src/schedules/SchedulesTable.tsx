@@ -13,13 +13,11 @@ import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
-import {Code} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ReconcileButton} from './ReconcileButton';
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
@@ -87,11 +85,7 @@ export const SchedulesTable: React.FC<{
   );
 };
 
-const errorDisplay = (
-  status: InstigationStatus,
-  runningScheduleCount: number,
-  repoAddress: RepoAddress,
-) => {
+const errorDisplay = (status: InstigationStatus, runningScheduleCount: number) => {
   if (status === InstigationStatus.STOPPED && runningScheduleCount === 0) {
     return null;
   } else if (status === InstigationStatus.RUNNING && runningScheduleCount === 1) {
@@ -125,10 +119,6 @@ const errorDisplay = (
               <li key={index}>{error}</li>
             ))}
           </ul>
-          <div>
-            To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
-            <Code>dagster schedule up</Code>
-          </div>
         </Box>
       }
     >
@@ -164,7 +154,7 @@ const ScheduleRow: React.FC<{
       <td>
         <Box flex={{direction: 'column', gap: 4}}>
           <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-          {errorDisplay(status, runningScheduleCount, repoAddress)}
+          {errorDisplay(status, runningScheduleCount)}
         </Box>
       </td>
       <td>

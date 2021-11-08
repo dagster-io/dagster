@@ -324,7 +324,7 @@ def _set_telemetry_instance_id():
         with open(telemetry_id_path, "w") as telemetry_id_file:
             yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
         return instance_id
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return "<<unable_to_write_instance_id>>"
 
 

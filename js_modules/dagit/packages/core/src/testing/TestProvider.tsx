@@ -15,7 +15,6 @@ const typeDefs = loader('../graphql/schema.graphql');
 export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   launch_pipeline_execution: true,
   launch_pipeline_reexecution: true,
-  reconcile_scheduler_state: true,
   start_schedule: true,
   stop_running_schedule: true,
   start_sensor: true,

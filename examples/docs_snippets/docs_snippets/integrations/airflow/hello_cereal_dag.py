@@ -1,6 +1,5 @@
-"""
-The airflow DAG for hello_cereal_pipeline
-"""
+# pylint: disable=unused-variable
+
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag
@@ -16,6 +15,6 @@ DEFAULT_ARGS = {
 
 dag, tasks = make_airflow_dag(
     module_name="docs_snippets.integrations.airflow.hello_cereal",
-    pipeline_name="hello_cereal_pipeline",
+    job_name="hello_cereal_job",
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
 )

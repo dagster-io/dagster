@@ -151,3 +151,6 @@ test_results.xml
 
 # GitHub Codespaces
 pythonenv*/
+
+# Vim project-local settings
+.vim

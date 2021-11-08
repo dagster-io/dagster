@@ -519,7 +519,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_in
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_invocations {
-  __typename: "SolidInvocationSite";
+  __typename: "NodeInvocationSite";
   pipeline: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_invocations_pipeline;
   solidHandle: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_invocations_solidHandle;
 }

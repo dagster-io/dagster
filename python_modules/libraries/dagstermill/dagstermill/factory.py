@@ -209,7 +209,7 @@ def _dm_compute(
                         log_output=True,
                     )
 
-                except Exception as ex:  # pylint: disable=broad-except
+                except Exception as ex:
                     step_execution_context.log.warn(
                         "Error when attempting to materialize executed notebook: {exc}".format(
                             exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
@@ -260,7 +260,7 @@ def _dm_compute(
                         ],
                     )
 
-                except Exception:  # pylint: disable=broad-except
+                except Exception:
                     # if file manager writing errors, e.g. file manager is not provided, we throw a warning
                     # and fall back to the previously stored temp executed notebook.
                     step_context.log.warning(

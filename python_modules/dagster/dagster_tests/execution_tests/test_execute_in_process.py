@@ -4,6 +4,7 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     Out,
+    job,
     op,
     resource,
     solid,
@@ -190,7 +191,9 @@ def test_output_for_node_not_found():
     with pytest.raises(KeyError, match="name_doesnt_exist"):
         result.output_for_node("op_exists", "name_doesnt_exist")
 
-    with pytest.raises(CheckError, match="Could not find output mapping name_doesnt_exist"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Could not find top-level output 'name_doesnt_exist'"
+    ):
         result.output_value("name_doesnt_exist")
 
     with pytest.raises(CheckError, match="basic has no solid named op_doesnt_exist"):
@@ -223,3 +226,17 @@ def test_step_events_for_node():
 
     op_events = result.events_for_node("basic.op_exists")
     assert len(_get_step_successes(op_events)) == 1
+
+
+def test_output_value_error():
+    @job
+    def my_job():
+        pass
+
+    result = my_job.execute_in_process()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
+    ):
+        result.output_value()

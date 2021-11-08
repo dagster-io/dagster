@@ -1,5 +1,38 @@
 # Changelog
 
+# 0.13.4
+
+### New
+
+- [dagster-k8s] The [`k8s_job_executor`](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor) is no longer experimental, and is recommended for production workloads. This executor runs each op in a separate Kubernetes job. We recommend this executor for Dagster jobs that require greater isolation than the `multiprocess` executor can provide within a single Kubernetes pod. The `celery_k8s_job_executor` will still be supported, but is recommended only for use cases where Celery is required (The most common example is to offer step concurrency limits using multiple Celery queues). Otherwise, the `k8s_job_executor` is the best way to get Kubernetes job isolation.
+- [dagster-airflow] Updated dagster-airflow to better support job/op/graph changes by adding a `make_dagster_job_from_airflow_dag` factory function. Deprecated `pipeline_name` argument in favor of `job_name` in all the APIs.
+- Removed a version pin of the `chardet` library that was required due to an incompatibility with an old version of the `aiohttp` library, which has since been fixed.
+- We now raise a more informative error if the wrong type is passed to the `ins` argument of the `op` decorator.
+- In the Dagit Launchpad, the button for launching a run now says “Launch Run” instead of “Launch Execution”
+
+### Bugfixes
+
+- Fixed an issue where job entries from Dagit search navigation were not linking to the correct job pages.
+- Fixed an issue where jobs / pipelines were showing up instead of the underlying graph in the list of repository graph definitions.
+- Fixed a bug with using custom loggers with default config on a job.
+- [dagster-slack] The `slack_on_run_failure_sensor` now says “Job” instead of “Pipeline” in its default message.
+
+
+### Community Contributions
+
+- Fixed a bug that was incorrectly causing a `DagsterTypeCheckDidNotPass` error when a Dagster Type contained a List inside a Tuple (thanks [@jan-eat](https://github.com/jan-eat)!)
+- Added information for setting DAGSTER_HOME in Powershell and batch for windows users. (thanks [@slamer59](https://github.com/slamer59)!)
+
+### Experimental
+
+- Changed the job explorer view in Dagit to show asset-based graphs when the experimental Asset API flag is turned on for any job that has at least one software-defined asset.
+
+### Documentation
+
+- Updated API docs and integration guides to reference job/op/graph for various libraries (`dagstermill`, `dagster-pandas`, `dagster-airflow`, etc)
+- Improved documentation when attempting to retrieve output value from `execute_in_process`, when job does not have a top-level output.
+
+
 # 0.13.3
 
 ### Bugfixes

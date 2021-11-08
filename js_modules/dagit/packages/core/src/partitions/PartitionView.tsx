@@ -73,15 +73,6 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     }
   }, [error]);
 
-  const allStepKeys = new Set<string>();
-  partitions.forEach((partition) => {
-    partition.runs.forEach((run) => {
-      run.stepStats.forEach((stat) => {
-        allStepKeys.add(stat.stepKey);
-      });
-    });
-  });
-
   const launchButton = () => {
     if (!canLaunchPartitionBackfill) {
       return (
@@ -170,11 +161,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
         <OptionsContainer>
           <strong>Run steps</strong>
         </OptionsContainer>
-        <PartitionGraphSet
-          isJob={isJob}
-          partitions={partitions}
-          allStepKeys={Array.from(allStepKeys).sort()}
-        />
+        <PartitionGraphSet isJob={isJob} partitions={partitions} />
       </div>
     </div>
   );

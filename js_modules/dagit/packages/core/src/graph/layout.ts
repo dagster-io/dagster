@@ -104,6 +104,8 @@ const PARENT_DEFINITION_PADDING = 70;
 const PARENT_INVOCATION_PADDING = 70;
 const EXTERNAL_DEPENDENCY_PADDING = 50;
 
+const MARGIN_BASE = 100;
+
 type SolidLinkInfo = {
   solid: {name: string};
   definition: {name: string};
@@ -125,9 +127,8 @@ export function layoutPipeline(
   // parent solid AROUND it. We pass this padding in to dagre, and then we have enough
   // room to add our parent layout around the result.
   let parentIOPadding = 0;
-  const marginBase = 100;
-  let marginy = marginBase;
-  let marginx = marginBase;
+  let marginy = MARGIN_BASE;
+  let marginx = MARGIN_BASE;
   if (parentSolid) {
     parentIOPadding = Math.max(parentSolid.inputs.length, parentSolid.outputs.length) * IO_HEIGHT;
     marginx = PARENT_DEFINITION_PADDING + PARENT_INVOCATION_PADDING;
@@ -280,12 +281,11 @@ export function layoutPipeline(
       return;
     }
 
-    solids[solidName] = layoutSolid(solid, {
-      x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
-      y: node.y - node.height / 2,
-    });
-    maxWidth = Math.max(maxWidth, node.x + node.width);
-    maxHeight = Math.max(maxHeight, node.y + node.height);
+    const x = node.x - node.width / 2; // Dagre's x/y is the center, we want top left
+    const y = node.y - node.height / 2;
+    solids[solidName] = layoutSolid(solid, {x, y});
+    maxWidth = Math.max(maxWidth, x + node.width);
+    maxHeight = Math.max(maxHeight, y + node.height);
   });
 
   // Read the Dagre layout and map "edges" back to our data model. We don't
@@ -302,10 +302,11 @@ export function layoutPipeline(
   const result: IFullPipelineLayout = {
     solids,
     connections,
-    width: maxWidth,
-    height: maxHeight + marginBase,
+    width: maxWidth + marginx,
+    height: maxHeight + marginy,
     parent: null,
   };
+  console.log(result);
 
   if (parentSolid) {
     // Now that we've computed the pipeline layout fully, lay out the

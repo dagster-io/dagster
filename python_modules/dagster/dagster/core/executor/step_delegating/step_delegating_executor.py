@@ -10,12 +10,10 @@ from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster.grpc.types import ExecuteStepArgs
-from dagster.utils.backcompat import experimental
 
 from ..base import Executor
 
 
-@experimental
 class StepDelegatingExecutor(Executor):
     def __init__(
         self,

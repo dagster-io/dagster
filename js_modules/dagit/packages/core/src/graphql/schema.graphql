@@ -45,6 +45,7 @@ type Repository {
   name: String!
   location: RepositoryLocation!
   pipelines: [Pipeline!]!
+  jobs: [Job!]!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
@@ -278,6 +279,7 @@ type Run implements PipelineRun {
   status: RunStatus!
   pipeline: PipelineReference!
   pipelineName: String!
+  jobName: String!
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
@@ -302,6 +304,7 @@ interface PipelineRun {
   status: RunStatus!
   pipeline: PipelineReference!
   pipelineName: String!
+  jobName: String!
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
@@ -1160,12 +1163,33 @@ type PipelinePreset {
   tags: [PipelineTag!]!
 }
 
-type UsedSolid {
-  definition: ISolidDefinition!
-  invocations: [SolidInvocationSite!]!
+type Job implements SolidContainer & IPipelineSnapshot {
+  solids: [Solid!]!
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+  id: ID!
+  presets: [PipelinePreset!]!
+  isJob: Boolean!
 }
 
-type SolidInvocationSite {
+type UsedSolid {
+  definition: ISolidDefinition!
+  invocations: [NodeInvocationSite!]!
+}
+
+type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
 }
@@ -1509,7 +1533,6 @@ type Mutation {
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
-  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
@@ -1564,12 +1587,20 @@ type ConflictingExecutionParamsError implements Error {
 }
 
 input ExecutionParams {
-  selector: PipelineSelector!
+  selector: JobOrPipelineSelector!
   runConfigData: RunConfigData
   mode: String
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
   preset: String
+}
+
+input JobOrPipelineSelector {
+  pipelineName: String
+  jobName: String
+  repositoryName: String!
+  repositoryLocationName: String!
+  solidSelection: [String!]
 }
 
 input ExecutionMetadata {
@@ -1580,12 +1611,6 @@ input ExecutionMetadata {
 }
 
 union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
-
-type ReconcileSchedulerStateSuccess {
-  message: String!
-}
 
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
@@ -1884,10 +1909,6 @@ type ShutdownRepositoryLocationMutation {
 
 type TerminateRunMutation {
   Output: TerminateRunResult!
-}
-
-type ReconcileSchedulerStateMutation {
-  Output: ReconcileSchedulerStateMutationResult!
 }
 
 enum ScheduleStatus {

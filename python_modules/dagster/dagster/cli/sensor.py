@@ -284,7 +284,7 @@ def execute_preview_command(
                         last_run_key,
                         cursor,
                     )
-                except Exception:  # pylint: disable=broad-except
+                except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     print_fn(
                         "Failed to resolve sensor for {sensor_name} : {error_info}".format(

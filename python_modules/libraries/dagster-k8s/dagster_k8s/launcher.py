@@ -389,7 +389,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     cls=self.__class__,
                 )
             return termination_result
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._instance.report_engine_event(
                 message="Run was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
@@ -409,7 +409,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         try:
             job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )

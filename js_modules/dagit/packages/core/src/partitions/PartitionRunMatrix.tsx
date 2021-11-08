@@ -29,6 +29,7 @@ import {
   GridScrollContainer,
   LeftLabel,
   TopLabel,
+  topLabelHeightForLabels,
   TopLabelTilted,
 } from './RunMatrixUtils';
 import {RunTagsTokenizingField} from './RunTagsTokenizingField';
@@ -173,6 +174,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
     visibleRangeStart + visibleCount,
   );
   const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
+  const topLabelHeight = topLabelHeightForLabels(partitionColumns.map((p) => p.name));
 
   return (
     <PartitionRunMatrixContainer>
@@ -245,7 +247,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
       >
         <GridFloatingContainer floating={viewport.left > 0}>
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
-            <TopLabel></TopLabel>
+            <TopLabel style={{height: topLabelHeight}} />
             <LeftLabel style={{paddingLeft: 24}}>Number of Runs</LeftLabel>
             <Divider />
             {stepRows.map((step) => (
@@ -261,7 +263,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
           </GridColumn>
           {options.showPrevious && (
             <GridColumn disabled>
-              <TopLabel />
+              <TopLabel style={{height: topLabelHeight}} />
               <LeftLabel
                 style={{width: 42}}
                 onClick={() =>
@@ -291,7 +293,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             </GridColumn>
           )}
           <GridColumn disabled>
-            <TopLabel />
+            <TopLabel style={{height: topLabelHeight}} />
             <LeftLabel
               style={{width: 42, paddingRight: 8}}
               onClick={() =>
@@ -341,7 +343,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                   left: (idx + visibleRangeStart) * BOX_SIZE,
                 }}
               >
-                <TopLabelTilted label={p.name} />
+                <TopLabelTilted $height={topLabelHeight} label={p.name} />
                 {p.runsLoaded ? (
                   <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
                 ) : (
@@ -617,7 +619,7 @@ const PartitionStepSquare: React.FC<{
     <Popover
       interactionKind="click"
       placement="bottom-start"
-      onOpened={() => setOpened(true)}
+      onOpening={() => setOpened(true)}
       onClosed={() => setOpened(false)}
       content={
         <MenuWIP>

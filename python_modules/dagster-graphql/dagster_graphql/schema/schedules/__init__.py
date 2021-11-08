@@ -5,11 +5,7 @@ from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.scheduler.job import JobTickStatsSnapshot
 from dagster.core.workspace.permissions import Permissions
 
-from ...implementation.fetch_schedules import (
-    reconcile_scheduler_state,
-    start_schedule,
-    stop_schedule,
-)
+from ...implementation.fetch_schedules import start_schedule, stop_schedule
 from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
@@ -70,40 +66,6 @@ class GrapheneScheduleTickStatsSnapshot(graphene.ObjectType):
         self._stats = check.inst_param(stats, "stats", JobTickStatsSnapshot)
 
 
-class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
-    message = graphene.NonNull(graphene.String)
-
-    class Meta:
-        name = "ReconcileSchedulerStateSuccess"
-
-
-class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
-    class Meta:
-        types = (
-            GrapheneUnauthorizedError,
-            GraphenePythonError,
-            GrapheneReconcileSchedulerStateSuccess,
-        )
-        name = "ReconcileSchedulerStateMutationResult"
-
-
-class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
-    Output = graphene.NonNull(GrapheneReconcileSchedulerStateMutationResult)
-
-    class Arguments:
-        repository_selector = graphene.NonNull(GrapheneRepositorySelector)
-
-    class Meta:
-        name = "ReconcileSchedulerStateMutation"
-
-    @capture_error
-    @check_permission(Permissions.START_SCHEDULE)
-    def mutate(self, graphene_info, repository_selector):
-        return reconcile_scheduler_state(
-            graphene_info, RepositorySelector.from_graphql_input(repository_selector)
-        )
-
-
 class GrapheneScheduleStateResult(graphene.ObjectType):
     scheduleState = graphene.NonNull(GrapheneInstigationState)
 
@@ -154,9 +116,6 @@ def types():
     # Double check mutations don't appear twice
     return [
         GrapheneInstigationTickStatus,
-        GrapheneReconcileSchedulerStateMutation,
-        GrapheneReconcileSchedulerStateMutationResult,
-        GrapheneReconcileSchedulerStateSuccess,
         GrapheneSchedule,
         GrapheneScheduleMutationResult,
         GrapheneScheduleOrError,

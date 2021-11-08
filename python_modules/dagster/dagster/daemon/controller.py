@@ -186,7 +186,7 @@ class DagsterDaemonController:
             if is_healthy:
                 self._last_healthy_heartbeat_times[daemon_type] = now
             return is_healthy
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._logger.warning(
                 "Error attempting to check {daemon_type} heartbeat:".format(
                     daemon_type=daemon_type,

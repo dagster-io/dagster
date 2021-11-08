@@ -36,6 +36,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
@@ -817,7 +818,7 @@ class DagsterInstance:
             else None
         )
 
-        return PipelineRun(
+        return DagsterRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             run_config=run_config,
@@ -1570,9 +1571,6 @@ records = instance.get_event_records(
         return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
 
     # Scheduler
-
-    def reconcile_scheduler_state(self, external_repository):
-        return self._scheduler.reconcile_scheduler_state(self, external_repository)
 
     def start_schedule_and_update_storage_state(self, external_schedule):
         return self._scheduler.start_schedule_and_update_storage_state(self, external_schedule)

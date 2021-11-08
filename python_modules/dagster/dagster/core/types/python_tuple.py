@@ -74,7 +74,7 @@ class _TypedPythonTuple(DagsterType):
 
     @property
     def inner_types(self):
-        inner_types = self.dagster_types
+        inner_types = self.dagster_types.copy()
         for t in self.dagster_types:
             inner_types += t.inner_types
         return inner_types

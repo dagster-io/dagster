@@ -913,7 +913,7 @@ def _execute_backfill_command_at_location(
             repo_handle,
             partition_set_name,
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
             "Failure fetching partition names: {error_message}".format(
@@ -958,7 +958,7 @@ def _execute_backfill_command_at_location(
                     partition_names=partition_names,
                 )
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             instance.add_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)

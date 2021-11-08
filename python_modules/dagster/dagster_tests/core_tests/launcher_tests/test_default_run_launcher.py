@@ -54,6 +54,16 @@ def crashy_pipeline():
 
 
 @solid
+def exity_solid(_):
+    sys.exit(1)  # pylint: disable=W0212
+
+
+@pipeline(mode_defs=[default_mode_def])
+def exity_pipeline():
+    exity_solid()
+
+
+@solid
 def sleepy_solid(_):
     while True:
         time.sleep(0.1)
@@ -102,7 +112,14 @@ def math_diamond():
 
 @repository
 def nope():
-    return [noop_pipeline, crashy_pipeline, sleepy_pipeline, slow_pipeline, math_diamond]
+    return [
+        noop_pipeline,
+        crashy_pipeline,
+        exity_pipeline,
+        sleepy_pipeline,
+        slow_pipeline,
+        math_diamond,
+    ]
 
 
 @contextmanager
@@ -320,6 +337,51 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
                 )
 
             assert _message_exists(event_records, message)
+
+
+@pytest.mark.parametrize("run_config", run_configs())
+@pytest.mark.skipif(
+    seven.IS_WINDOWS,
+    reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
+)
+def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
+    with instance_for_test() as instance:
+        with get_managed_grpc_server_workspace(instance) as workspace:
+
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("exity_pipeline")
+            )
+
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=exity_pipeline,
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+
+            run_id = pipeline_run.run_id
+
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+            instance.launch_run(pipeline_run.run_id, workspace)
+
+            failed_pipeline_run = instance.get_run_by_id(run_id)
+
+            assert failed_pipeline_run
+            assert failed_pipeline_run.run_id == run_id
+
+            failed_pipeline_run = poll_for_finished_run(instance, run_id, timeout=5)
+            assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
+
+            event_records = instance.all_logs(run_id)
+
+            assert _message_exists(event_records, 'Execution of step "exity_solid" failed.')
+            assert _message_exists(
+                event_records,
+                'Execution of run for "exity_pipeline" failed. An exception was thrown during execution.',
+            )
 
 
 @pytest.mark.parametrize(

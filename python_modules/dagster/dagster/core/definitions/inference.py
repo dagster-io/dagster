@@ -32,7 +32,7 @@ def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[
     try:
         docstring = parse(doc_str)
         return {p.arg_name: p.description for p in docstring.params}
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return {}
 
 
@@ -48,7 +48,7 @@ def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
             return None
 
         return docstring.returns.description
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return None
 
 

@@ -7,7 +7,6 @@ import {PermissionsQuery} from './types/PermissionsQuery';
 export type PermissionsFromJSON = {
   launch_pipeline_execution?: boolean;
   launch_pipeline_reexecution?: boolean;
-  reconcile_scheduler_state?: boolean;
   start_schedule?: boolean;
   stop_running_schedule?: boolean;
   start_sensor?: boolean;
@@ -30,7 +29,6 @@ const extractPermissions = (permissions: PermissionFragment[]) => {
   return {
     canLaunchPipelineExecution: !!permsMap.launch_pipeline_execution,
     canLaunchPipelineReexecution: !!permsMap.launch_pipeline_reexecution,
-    canReconcileSchedulerState: !!permsMap.reconcile_scheduler_state,
     canStartSchedule: !!permsMap.start_schedule,
     canStopRunningSchedule: !!permsMap.stop_running_schedule,
     canStartSensor: !!permsMap.start_sensor,
