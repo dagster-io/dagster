@@ -417,7 +417,7 @@ def test_job_pipeline_collision():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Duplicate job definition found for job 'foo'",
+        match="Duplicate definition found for 'foo'",
     ):
 
         @repository
@@ -476,10 +476,7 @@ def test_job_cannot_select_pipeline():
 
     assert my_repo.get_pipeline("my_pipeline")
 
-    assert not my_repo.has_job("my_pipeline")
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="my_pipeline is not an instance of JobDefinition."
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."):
         my_repo.get_job("my_pipeline")
 
 
