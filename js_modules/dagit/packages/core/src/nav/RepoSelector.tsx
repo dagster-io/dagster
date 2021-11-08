@@ -155,7 +155,8 @@ const ReloadButtonInner = styled.button`
   background: transparent;
   border: 0;
   cursor: pointer;
-  padding: 2px;
+  padding: 8px;
+  margin: -6px;
   outline: none;
 
   ${IconWrapper} {
