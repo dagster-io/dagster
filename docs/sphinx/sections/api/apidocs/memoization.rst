@@ -12,6 +12,8 @@ Versioning
 
 .. autoclass:: VersionStrategy
 
+.. autoclass:: SourceHashVersionStrategy
+
 Memoization
 -----------
 .. currentmodule:: dagster
