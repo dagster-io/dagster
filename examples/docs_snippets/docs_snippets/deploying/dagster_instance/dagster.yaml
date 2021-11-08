@@ -400,7 +400,7 @@ run_launcher:
 # start_marker_run_launcher_docker
 
 run_launcher:
-  module: dagster_docker.launcher
+  module: dagster_docker
   class: DockerRunLauncher
 
 # end_marker_run_launcher_docker
