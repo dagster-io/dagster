@@ -1,12 +1,10 @@
-from typing import List, Optional
-from dagster import check, op, Any, In, Nothing, OpDefinition, Out
 import logging
 import os
 from contextlib import contextmanager
+from typing import List, Optional
 
 from airflow.models import Connection
-from airflow import settings
-from airflow.utils.db import initdb
+from dagster import check, op, Any, In, Nothing, OpDefinition, Out
 
 
 @contextmanager
@@ -23,13 +21,12 @@ def operator_to_op(
     airflow_op,
     connections: Optional[List[Connection]] = None,
     capture_python_logs=True,
-    accept_input=False,
     return_output=False,
 ) -> OpDefinition:
     connections = check.opt_list_param(connections, "connections", Connection)
 
     for connection in connections:
-        os.environ[f'AIRFLOW_CONN_{connection.conn_id}'.upper()] = connection.get_uri()
+        os.environ[f"AIRFLOW_CONN_{connection.conn_id}".upper()] = connection.get_uri()
 
     @op(
         name=airflow_op.task_id,
@@ -40,10 +37,12 @@ def operator_to_op(
         if capture_python_logs:
             # Airflow has local logging configuration that may set logging.Logger.propagate
             # to be false. We override the logger object and replace it with DagsterLogManager.
-            airflow_op._log = context.log
+            airflow_op._log = context.log  # pylint: disable=protected-access
             # Airflow operators and hooks use separate logger objects. We add a handler to
             # receive logs from hooks.
-            with replace_airflow_logger_handlers(context.log._dagster_handler):
+            with replace_airflow_logger_handlers(
+                context.log._dagster_handler  # pylint: disable=protected-access
+            ):
                 output = airflow_op.execute({})
         else:
             output = airflow_op.execute({})

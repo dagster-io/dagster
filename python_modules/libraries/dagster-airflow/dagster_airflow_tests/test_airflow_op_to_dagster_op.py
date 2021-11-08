@@ -1,23 +1,17 @@
 import os
 import pytest
 import responses
-import json
 
+from airflow.models import Connection
 from airflow.operators.bash_operator import BashOperator
-
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.sqlite_operator import SqliteOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
-from airflow.models import Connection
-from dagster import build_op_context, job
+from airflow.operators.sqlite_operator import SqliteOperator
+
+from dagster import job, op
+from dagster.core.test_utils import instance_for_test
 from dagster_airflow import operator_to_op
 from tempfile import TemporaryDirectory
-
-from dagster_gcp_tests.gcs_tests.conftest import gcs_bucket  # pylint: disable=unused-import
-from dagster.core.test_utils import instance_for_test
-
-from dagster_tests.core_tests.test_python_logging import get_log_records
 
 
 def test_simple_bash_task():
@@ -32,12 +26,12 @@ def test_simple_bash_task():
         def my_job():
             dagster_op()
 
-        run_result = my_job.execute_in_process()
+        my_job.execute_in_process()
 
         assert "my_file.txt" in os.listdir(tmpdir)
 
 
-def test_env_bash_task(capsys):
+def test_env_bash_task():
     with TemporaryDirectory() as tmpdir:
         env_bash_task = BashOperator(
             task_id="env_bash_task",
@@ -51,7 +45,7 @@ def test_env_bash_task(capsys):
         def my_job():
             dagster_op()
 
-        run_result = my_job.execute_in_process()
+        my_job.execute_in_process()
 
         assert "bar.txt" in os.listdir(tmpdir)
 
@@ -74,7 +68,7 @@ def test_failure_bash_task():
 def test_http_task():
     http_task = SimpleHttpOperator(task_id="http_task", endpoint="foo")
 
-    connections = [Connection(conn_id=f'http_default', host="https://mycoolwebsite.com")]
+    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
 
     dagster_op = operator_to_op(http_task, connections=connections)
 
@@ -95,7 +89,7 @@ def test_capture_op_logs():
 
     env_bash_task = BashOperator(
         task_id="capture_logs_task",
-        bash_command=f"echo $foo",
+        bash_command="echo $foo",
         env={"foo": "quux"},
     )
 
@@ -120,7 +114,7 @@ def test_capture_op_logs():
 def test_capture_hook_logs():
     http_task = SimpleHttpOperator(task_id="capture_logs_http_task", endpoint="foo")
 
-    connections = [Connection(conn_id=f'http_default', host="https://mycoolwebsite.com")]
+    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
 
     dagster_op = operator_to_op(http_task, connections=connections)
 
@@ -185,7 +179,7 @@ def test_sqlite_operator(capsys):
     with TemporaryDirectory() as tmpdir:
         connections = [
             Connection(
-                conn_id=f'sql_alchemy_conn',
+                conn_id="sql_alchemy_conn",
                 host=f"{tmpdir}/example.db",
                 login="",
                 password="",
