@@ -32,6 +32,7 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_external_pipeline_hierarchy,
 )
+from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 
 @pytest.mark.integration
@@ -558,7 +559,9 @@ def test_memoization_k8s_executor(
     )
 
     # Clean up any residual outputs that may have been left by failed runs.
-    cleanup_memoized_results("k8s", dagster_instance_for_k8s_run_launcher, run_config)
+    cleanup_memoized_results(
+        define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+    )
 
     # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
     try:
@@ -611,9 +614,7 @@ def test_memoization_k8s_executor(
             memoized_run = runs[1]
             events = dagster_instance_for_k8s_run_launcher.all_logs(memoized_run.run_id)
             assert len(_get_step_execution_events(events)) == 0
-
-    except Exception as e:
-        cleanup_memoized_results("k8s", dagster_instance_for_k8s_run_launcher, run_config)
-        raise e
     finally:
-        cleanup_memoized_results("k8s", dagster_instance_for_k8s_run_launcher, run_config)
+        cleanup_memoized_results(
+            define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+        )

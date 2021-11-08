@@ -33,15 +33,12 @@ from dagster.utils import file_relative_path, git_repository_root
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-def cleanup_memoized_results(mode_str, instance, run_config):
+def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
     # Clean up any memoized outputs from the s3 bucket
-    from .test_pipelines.repo import define_memoization_pipeline
     from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
 
-    memoization_pipeline = define_memoization_pipeline()
-
     execution_plan = create_execution_plan(
-        memoization_pipeline, run_config=run_config, instance=instance, mode=mode_str
+        pipeline_def, run_config=run_config, instance=instance, mode=mode_str
     )
 
     with build_resources(
