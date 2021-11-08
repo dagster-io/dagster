@@ -22,6 +22,7 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_workspace_and_external_pipeline,
 )
+from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -589,7 +590,7 @@ def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
     )
 
     # Clean up any residual outputs that may have been left by failed runs.
-    cleanup_memoized_results("celery", dagster_instance, run_config)
+    cleanup_memoized_results(define_memoization_pipeline(), "celery", dagster_instance, run_config)
 
     try:
         pipeline_name = "memoization_pipeline"
@@ -628,8 +629,7 @@ def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
             step_events = _get_step_events(dagster_instance.all_logs(memoized_run.run_id))
             assert len(step_events) == 0
 
-    except Exception as e:
-        cleanup_memoized_results("celery", dagster_instance, run_config)
-        raise e
     finally:
-        cleanup_memoized_results("celery", dagster_instance, run_config)
+        cleanup_memoized_results(
+            define_memoization_pipeline(), "celery", dagster_instance, run_config
+        )
