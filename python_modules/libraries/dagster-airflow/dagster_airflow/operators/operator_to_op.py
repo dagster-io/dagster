@@ -38,7 +38,11 @@ def operator_to_op(
     )
     def converted_op(context):
         if capture_python_logs:
+            # Airflow has local logging configuration that may set logging.Logger.propagate
+            # to be false. We override the logger object and replace it with DagsterLogManager.
             airflow_op._log = context.log
+            # Airflow operators and hooks use separate logger objects. We add a handler to
+            # receive logs from hooks.
             with replace_airflow_logger_handlers(context.log._dagster_handler):
                 output = airflow_op.execute({})
         else:
