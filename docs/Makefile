@@ -5,7 +5,7 @@ dev:
 	cd next; yarn dev;
 
 build:
-	cd sphinx; make clean; make json SPHINXOPTS="-W --keep-going"; cd ..; python pack_json.py
+	cd sphinx && make clean && make json SPHINXOPTS="-W --keep-going" && cd .. && python pack_json.py
 
 snapshot:
 	cd next; yarn snapshot; cd ..;
