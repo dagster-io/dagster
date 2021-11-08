@@ -629,8 +629,8 @@ class CachingRepositoryData(RepositoryData):
                 coerced = definition.coerce_to_job()
                 if coerced.name in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for {target}".format(
-                            target_type=definition.target_type, target=definition.describe_target()
+                        "Duplicate {target_type} definition found for graph '{name}'".format(
+                            target_type=coerced.target_type, name=coerced.name
                         )
                     )
                 pipelines_or_jobs[coerced.name] = coerced

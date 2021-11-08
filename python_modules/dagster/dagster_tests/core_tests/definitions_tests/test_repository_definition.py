@@ -465,6 +465,20 @@ def test_dict_jobs():
     assert jobs.get_job("other_graph")
 
 
+def test_list_dupe_graph():
+    @graph
+    def foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Duplicate job definition found for graph 'foo'"
+    ):
+
+        @repository
+        def jobs():
+            return [foo.to_job(name="foo"), foo]
+
+
 def test_job_cannot_select_pipeline():
     @pipeline
     def my_pipeline():
