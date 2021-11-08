@@ -4,7 +4,6 @@ from unittest import mock
 import pytest
 from dagster import pipeline, reconstructable
 from dagster.check import CheckError
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
