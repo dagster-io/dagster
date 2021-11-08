@@ -52,6 +52,8 @@ if __name__ == "__main__":
                 "marshmallow-sqlalchemy<0.26.0",
                 "boto3==1.9.*",
                 "kubernetes==10.0.1",
+                # New WTForms release breaks the version of airflow used by tests
+                "WTForms<3.0.0",
             ],
         },
         entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},
