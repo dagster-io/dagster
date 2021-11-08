@@ -26,13 +26,12 @@ def docs_steps() -> List[dict]:
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        # Temporarily disabled to sort out pip issues
-        # StepBuilder("docs sphinx json build")
-        # .run(
-        #     "pip install -U virtualenv",
-        #     "cd docs",
-        #     "tox -vv -e py38-sphinx",
-        # )
-        # .on_integration_image(SupportedPython.V3_8)
-        # .build(),
+        StepBuilder("docs sphinx json build")
+        .run(
+            "pip install -U virtualenv",
+            "cd docs",
+            "tox -vv -e py38-sphinx",
+        )
+        .on_integration_image(SupportedPython.V3_8)
+        .build(),
     ]

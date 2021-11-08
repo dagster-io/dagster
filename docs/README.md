@@ -42,26 +42,27 @@ The API documentation is authored separately in the `dagster/docs/sphinx` folder
 
 If you update the API documentation in the `dagster/docs/sphinx` folder, you need to rebuild the output from Sphinx in order to see your changes reflected in the documentation site.
 
-First, you'll need a separate virtual environment from the one you usually use to develop Dagster.
+To rebuild the docs site, run in the docs dir:
 
 ```
-pyenv virtualenv 3.8.1 dagster-docs
-pyenv activate dagster-docs
+tox -vv -e py38-sphinx
 ```
 
-Then, with the virtual environment activated, run the following from the `dagster/` root directory:
-
-```
-pip install -r docs-requirements.txt
-```
-
-Finally, in the `dagster/docs` directory, run:
-
-```
-make build
-```
+Sphinx requires all the modules for which it is building API docs to be installed, but doesn't
+require their dependencies to be installed, as long as the Dagster modules can be imported. We create the
+docs environment for Sphinx by first installing from `docs-dagster-requirements.txt` with no
+dependencies, then installing any required dependecies from `docs-build-requirements.txt`. Most
+dependencies imported by dagster can go in the list of mocked imports in `autodoc_mock_imports`
+in `docs/sphinx/conf.py`, since they're not actually needed to build the docs, but the relatively
+small number of dependencies that are actually needed to import the dagster packages and build the
+docs can be found in `docs-build-requirements.txt`.
 
 If you don't build the API documentation and include the changes in your diff, you will see a build error reminding you to do so.
+
+If the test that checks whether the sphinx build passes is failing due to an import-related error,
+it likely indicates that a dependency needs to be added to `autodoc_mock_imports` in `conf.py` if it isn't
+actually needed to import the Dagster library (most common), or added to `docs-build-requirements.txt` if
+it actually needs to be included just for the library to be able to be imported (less common)
 
 <br />
 
