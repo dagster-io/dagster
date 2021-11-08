@@ -417,7 +417,7 @@ def test_job_pipeline_collision():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Duplicate definition found for 'foo'",
+        match="Duplicate job definition found for job 'foo'",
     ):
 
         @repository
