@@ -23,10 +23,10 @@ def scope_logged_job():
 
     # end_python_logger
     @graph
-    def thing():
+    def thing_one():
         ambitious_op()
 
-    return thing
+    return thing_one
 
 
 def scope_logged_job2():
@@ -50,10 +50,10 @@ def scope_logged_job2():
 
     # end_get_logger
     @graph
-    def thing():
+    def thing_two():
         ambitious_op()
 
-    return thing
+    return thing_two
 
 
 @repository

@@ -263,25 +263,6 @@ class RepositoryData(ABC):
             )
         return pipelines_with_name[0]
 
-    def get_job_names(self):
-        """Get the names of all jobs in the repository.
-
-        Returns:
-            List[str]
-        """
-        return self.get_job_names()
-
-    def has_job(self, job_name):
-        """Check if a job with a given name is present in the repository.
-
-        Args:
-            job_name (str): The name of the job.
-
-        Returns:
-            bool
-        """
-        return self.has_job(job_name)
-
     def get_job(self, job_name):
         """Get a job by name.
 
@@ -558,7 +539,7 @@ class CachingRepositoryData(RepositoryData):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
             elif not isinstance(job, JobDefinition):
                 raise DagsterInvalidDefinitionError(
-                    f'Object mapped to {key} is not an instance of JobDefinition or GraphDefinition.'
+                    f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
 
         return CachingRepositoryData(**repository_definitions)
