@@ -3,7 +3,6 @@ import hashlib
 import pytest
 from dagster import (
     Bool,
-    SourceHashVersionStrategy,
     DagsterInvariantViolationError,
     Float,
     IOManagerDefinition,
@@ -12,6 +11,7 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    SourceHashVersionStrategy,
     String,
     composite_solid,
     dagster_type_loader,
