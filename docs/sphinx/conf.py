@@ -51,10 +51,39 @@ autosectionlabel_prefix_document = True
 
 autodoc_typehints = "none"
 
-# airflow and mlflow initialize loggers on import that break sphinx logging
 autodoc_mock_imports = [
     "airflow",
+    "azure",
+    "celery",
+    "coloredlogs",
+    "croniter",
+    "dask",
+    "databricks_api",
+    "datadog",
+    "docker",
+    "docker_image",
+    "gevent",
+    "great_expectations",
+    "graphql",
+    "grpc_health",
+    "gql",
+    "jwt",
+    "kombu",
+    "kubernetes",
+    "lazy_object_proxy",
     "mlflow",
+    "mysql",
+    "oauth2client",
+    "prometheus_client",
+    "psycopg2",
+    "pypd",
+    "slack_sdk",
+    "snowflake",
+    "sshtunnel",
+    "toposort",
+    "twilio",
+    "typing_compat",
+    "yaml",
 ]
 
 # To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
