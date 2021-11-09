@@ -514,7 +514,7 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             hook_defs=hooks,
             version_strategy=version_strategy,
-            solid_retry_policy=retry_policy,
+            retry_policy=retry_policy,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
