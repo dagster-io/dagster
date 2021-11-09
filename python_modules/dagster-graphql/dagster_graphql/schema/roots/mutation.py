@@ -13,6 +13,7 @@ from ...implementation.execution import (
     wipe_assets,
 )
 from ...implementation.external import fetch_workspace, get_full_external_pipeline_or_raise
+from ...implementation.telemetry import log_dagit_telemetry_event
 from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -473,6 +474,45 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         )
 
 
+class GrapheneLogTelemetrySuccess(graphene.ObjectType):
+    action = graphene.NonNull(graphene.String)
+    metadata = graphene.NonNull(graphene.String)
+    clientTime = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "LogTelemetrySuccess"
+
+
+class GrapheneLogTelemetryMutationResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneLogTelemetrySuccess,
+            GraphenePythonError,
+        )
+        name = "LogTelemetryMutationResult"
+
+
+class GrapheneLogTelemetryMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneLogTelemetryMutationResult)
+
+    class Arguments:
+        action = graphene.Argument(graphene.NonNull(graphene.String))
+        clientTime = graphene.Argument(graphene.NonNull(graphene.String))
+        metadata = graphene.Argument(graphene.NonNull(graphene.String))
+
+    class Meta:
+        name = "LogTelemetryMutation"
+
+    @capture_error
+    def mutate(self, graphene_info, **kwargs):
+        log_dagit_telemetry_event(
+            graphene_info,
+            action=kwargs["action"],
+            client_time=kwargs["clientTime"],
+            metadata=kwargs["metadata"],
+        )
+
+
 class GrapheneMutation(graphene.ObjectType):
     launch_pipeline_execution = GrapheneLaunchRunMutation.Field()
     launch_run = GrapheneLaunchRunMutation.Field()
@@ -493,6 +533,7 @@ class GrapheneMutation(graphene.ObjectType):
     launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
+    log_telemetry = GrapheneLogTelemetryMutation.Field()
 
     class Meta:
         name = "Mutation"

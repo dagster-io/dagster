@@ -9,6 +9,7 @@ import {MenuWIP, MenuItemWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {Tooltip} from '../ui/Tooltip';
+import {useTelemetryAction} from '../app/Telemetry'
 
 export interface LaunchButtonConfiguration {
   title: string;
@@ -63,7 +64,9 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     runCount,
     disabled: config.disabled,
   });
+  const [telemetryRequest] = useTelemetryAction("Clicked LaunchPad Button");
   const onClick = () => {
+    telemetryRequest()
     status === LaunchButtonStatus.Ready && onConfigSelected(config);
   };
   return (

@@ -1584,6 +1584,7 @@ type Mutation {
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
 union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
@@ -1751,6 +1752,14 @@ union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonE
 
 type CancelBackfillSuccess {
   backfillId: String!
+}
+
+union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
+
+type LogTelemetrySuccess {
+  action: String!
+  metadata: String!
+  clientTime: String!
 }
 
 type Subscription {
