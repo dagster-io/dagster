@@ -197,6 +197,29 @@ def test_job_execute_command_runner(cli_args):
         )
 
 
+def test_job_command_only_selects_job():
+    with instance_for_test() as instance:
+        job_kwargs = {
+            "workspace": None,
+            "pipeline_or_job": "my_job",
+            "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
+            "module_name": None,
+            "attribute": "my_repo",
+        }
+        pipeline_kwargs = job_kwargs.copy()
+        pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
+
+        result = execute_execute_command(
+            kwargs=job_kwargs, instance=instance, using_job_op_graph_apis=True
+        )
+        assert result.success
+
+        with pytest.raises(Exception, match="not found in repository"):
+            result = execute_execute_command(
+                kwargs=pipeline_kwargs, instance=instance, using_job_op_graph_apis=True
+            )
+
+
 def test_output_execute_log_stdout(capfd):
     with instance_for_test(
         overrides={

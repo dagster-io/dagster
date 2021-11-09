@@ -362,3 +362,15 @@ def test_list_command():
                 },
                 no_print,
             )
+
+
+def test_job_command_only_selects_job(capsys):
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(
+            job_list_command,
+            ["-f", file_relative_path(__file__, "repo_pipeline_and_job.py"), "-a", "my_repo"],
+        )
+
+        assert "my_job" in result.output
+        assert not "my_pipeline" in result.output

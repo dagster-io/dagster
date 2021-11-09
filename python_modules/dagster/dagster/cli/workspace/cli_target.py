@@ -439,10 +439,12 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
 
-    pipeline_names = set(repo_definition.pipeline_names)
+    pipeline_or_job_names = set(
+        repo_definition.job_names if using_job_op_graph_apis else repo_definition.pipeline_names
+    )
 
-    if provided_pipeline_name is None and len(pipeline_names) == 1:
-        pipeline_name = next(iter(pipeline_names))
+    if provided_pipeline_name is None and len(pipeline_or_job_names) == 1:
+        pipeline_name = next(iter(pipeline_or_job_names))
     elif provided_pipeline_name is None:
         raise click.UsageError(
             (
@@ -451,10 +453,10 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
             ).format(
                 flag="--job" if using_job_op_graph_apis else "--pipeline",
                 repository=repo_definition.name,
-                pipelines=_sorted_quoted(pipeline_names),
+                pipelines=_sorted_quoted(pipeline_or_job_names),
             )
         )
-    elif not provided_pipeline_name in pipeline_names:
+    elif not provided_pipeline_name in pipeline_or_job_names:
         raise click.UsageError(
             (
                 'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
@@ -462,7 +464,7 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
             ).format(
                 provided_pipeline_name=provided_pipeline_name,
                 repository_name=repo_definition.name,
-                found_names=_sorted_quoted(pipeline_names),
+                found_names=_sorted_quoted(pipeline_or_job_names),
             )
         )
     else:
@@ -671,7 +673,14 @@ def get_external_pipeline_or_job_from_external_repo(
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 
-    external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
+    external_pipelines = {
+        ep.name: ep
+        for ep in (
+            external_repo.get_external_jobs()
+            if using_job_op_graph_apis
+            else external_repo.get_all_external_pipelines()
+        )
+    }
 
     check.invariant(external_pipelines)
 
