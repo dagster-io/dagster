@@ -357,6 +357,11 @@ def deserialize_as(json_str: str, cls: Type[T]) -> T:
     check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
 
 
+def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
+    """Optionally deserialize a json encoded string to a specific namedtuple class."""
+    return deserialize_as(json_str, cls) if json_str else None
+
+
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
     value = seven.json.loads(json_str)
     return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
