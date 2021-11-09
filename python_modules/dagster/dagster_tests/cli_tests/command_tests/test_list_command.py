@@ -118,7 +118,6 @@ def test_list_command_grpc_socket():
             )
 
             result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
-            print(result.output)
             assert_correct_bar_repository_output(result)
 
             result = runner.invoke(
