@@ -36,8 +36,14 @@ interface Props {
 
 export const WebSocketProvider: React.FC<Props> = (props) => {
   const {children, websocketClient} = props;
-  const [status, setStatus] = React.useState(WebSocket.CONNECTING);
-  const [availability, setAvailability] = React.useState<Availability>('attempting-to-connect');
+  const [status, setStatus] = React.useState(websocketClient.status);
+  const [availability, setAvailability] = React.useState<Availability>(
+    websocketClient.status === WebSocket.OPEN
+      ? 'available'
+      : websocketClient.status === WebSocket.CLOSED
+      ? 'unavailable'
+      : 'attempting-to-connect',
+  );
 
   const value = React.useMemo(
     () => ({
@@ -52,19 +58,20 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
 
   React.useEffect(() => {
     const availabilityListeners = [
-      websocketClient.onConnected(() => setAndUnlisten('available')),
-      websocketClient.onError(() => setAndUnlisten('unavailable')),
+      websocketClient.onConnected(() => setFinalAvailability('available')),
+      websocketClient.onReconnected(() => setFinalAvailability('available')),
+      websocketClient.onError(() => setAvailability('unavailable')),
     ];
 
-    const unlisten = () => availabilityListeners.forEach((u) => u());
-    const setAndUnlisten = (value: Availability) => {
+    const unlisten = () => {
+      availabilityListeners.forEach((u) => u());
+    };
+    const setFinalAvailability = (value: Availability) => {
       unlisten();
       setAvailability(value);
     };
 
-    return () => {
-      unlisten();
-    };
+    return unlisten;
   }, [websocketClient]);
 
   React.useEffect(() => {
