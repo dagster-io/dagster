@@ -20,7 +20,7 @@ import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
-import {PipelineExplorerPath} from './PipelinePathUtils';
+import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
@@ -33,11 +33,11 @@ export interface GraphExplorerOptions {
 }
 
 interface GraphExplorerProps {
-  explorerPath: PipelineExplorerPath;
-  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   options: GraphExplorerOptions;
   setOptions: (options: GraphExplorerOptions) => void;
-  pipeline: GraphExplorerFragment;
+  pipelineOrGraph: GraphExplorerFragment;
   repoAddress?: RepoAddress;
   handles: GraphExplorerSolidHandleFragment[];
   selectedHandle?: GraphExplorerSolidHandleFragment;
@@ -51,7 +51,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     getInvocations,
     handles,
     options,
-    pipeline,
+    pipelineOrGraph,
     explorerPath,
     onChangeExplorerPath,
     parentHandle,
@@ -213,7 +213,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             queryResultSolids.all.length === 0 &&
             !explorerPath.solidsQuery.length && <LargeDAGNotice />}
           <PipelineGraphContainer
-            pipelineName={pipeline.name}
+            pipelineName={pipelineOrGraph.name}
             backgroundColor={backgroundColor}
             solids={queryResultSolids.all}
             focusSolids={queryResultSolids.focus}
@@ -233,7 +233,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             // eslint-disable-next-line react/no-children-prop
             children={({location}: {location: any}) => (
               <SidebarTabbedContainer
-                pipeline={pipeline}
+                pipeline={pipelineOrGraph}
                 explorerPath={explorerPath}
                 solidHandleID={selectedHandle && selectedHandle.handleID}
                 parentSolidHandleID={parentHandle && parentHandle.handleID}

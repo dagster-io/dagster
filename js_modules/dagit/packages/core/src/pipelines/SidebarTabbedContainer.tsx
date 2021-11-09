@@ -10,7 +10,7 @@ import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
-import {PipelineExplorerPath} from './PipelinePathUtils';
+import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarSolidContainerInfo,
   SIDEBAR_SOLID_CONTAINER_INFO_FRAGMENT,
@@ -30,7 +30,7 @@ interface ISidebarTabbedContainerProps {
   tab?: TabKey;
   typeName?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
   solidHandleID?: string;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];

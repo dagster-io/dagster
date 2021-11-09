@@ -6,7 +6,7 @@ import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissio
 import {
   explorerPathFromString,
   explorerPathToString,
-  PipelineExplorerPath,
+  ExplorerPath,
 } from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
@@ -61,7 +61,7 @@ function tabForPipelinePathComponent(component?: string): TabConfig {
 const tabForKey = (
   repoAddress: RepoAddress,
   isJob: boolean,
-  explorerPath: PipelineExplorerPath,
+  explorerPath: ExplorerPath,
 ) => {
   const explorerPathForTab = explorerPathToString({
     ...explorerPath,

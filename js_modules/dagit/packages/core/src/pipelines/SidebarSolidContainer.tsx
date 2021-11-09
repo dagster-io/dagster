@@ -8,7 +8,7 @@ import {LoadingSpinner} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {RepoAddress} from '../workspace/types';
 
-import {PipelineExplorerPath} from './PipelinePathUtils';
+import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarSolidDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarSolidDefinition';
 import {SidebarSolidInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarSolidInvocation';
 import {
@@ -23,7 +23,7 @@ import {SidebarSolidContainerFragment} from './types/SidebarSolidContainerFragme
 
 interface SidebarSolidContainerProps {
   handleID: string;
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
   showingSubsolids: boolean;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];

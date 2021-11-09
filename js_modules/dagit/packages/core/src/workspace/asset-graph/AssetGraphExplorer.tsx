@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {PipelineExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
@@ -37,10 +37,10 @@ type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
 
 interface Props {
   repoAddress: RepoAddress;
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
   handles: GraphExplorerSolidHandleFragment[];
   selectedHandle?: GraphExplorerSolidHandleFragment;
-  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {

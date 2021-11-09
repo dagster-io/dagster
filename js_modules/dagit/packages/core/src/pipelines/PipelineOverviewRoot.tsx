@@ -10,7 +10,7 @@ import {PipelineExplorerContainer} from './PipelineExplorerRoot';
 import {
   explorerPathFromString,
   explorerPathToString,
-  PipelineExplorerPath,
+  ExplorerPath,
   useStripSnapshotFromPath,
 } from './PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from './SidebarPipelineOrJobOverview';
@@ -31,7 +31,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   useStripSnapshotFromPath({pipelinePath: explorerPathToString(explorerPath)});
 
   const onChangeExplorerPath = React.useCallback(
-    (path: PipelineExplorerPath, action: 'push' | 'replace') => {
+    (path: ExplorerPath, action: 'push' | 'replace') => {
       history[action]({
         search: location.search,
         pathname: workspacePathFromAddress(
