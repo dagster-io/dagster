@@ -25,15 +25,18 @@ def operator_to_op(
 ) -> OpDefinition:
     connections = check.opt_list_param(connections, "connections", Connection)
 
-    for connection in connections:
-        os.environ[f"AIRFLOW_CONN_{connection.conn_id}".upper()] = connection.get_uri()
-
     @op(
         name=airflow_op.task_id,
         ins={"start_after": In(Nothing)},
         out=Out(Any) if return_output else Out(Nothing),
     )
     def converted_op(context):
+        conn_names = []
+        for connection in connections:
+            conn_name = f"AIRFLOW_CONN_{connection.conn_id}".upper()
+            os.environ[conn_name] = connection.get_uri()
+            conn_names.append(conn_name)
+
         if capture_python_logs:
             # Airflow has local logging configuration that may set logging.Logger.propagate
             # to be false. We override the logger object and replace it with DagsterLogManager.
@@ -46,6 +49,9 @@ def operator_to_op(
                 output = airflow_op.execute({})
         else:
             output = airflow_op.execute({})
+
+        for conn_name in conn_names:
+            os.environ.pop(conn_name)
 
         if return_output:
             return output
