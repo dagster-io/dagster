@@ -88,7 +88,7 @@ from .partition import (
 from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_from_partitions
 from .pipeline_definition import PipelineDefinition
 from .pipeline_base import IPipeline
-from .pipeline_sensor import (
+from .run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
     RunStatusSensorContext,

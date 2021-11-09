@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Union
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.pipeline_definition_sensor import (
+    from dagster.core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         RunFailureSensorContext,
     )
@@ -142,7 +142,7 @@ def make_email_on_pipeline_failure_sensor(
 
     """
 
-    from dagster.core.definitions.pipeline_definition_sensor import (
+    from dagster.core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         pipeline_failure_sensor,
     )
@@ -245,7 +245,7 @@ def make_email_on_run_failure_sensor(
 
     """
 
-    from dagster.core.definitions.pipeline_definition_sensor import (
+    from dagster.core.definitions.run_status_sensor_definition import (
         RunFailureSensorContext,
         run_failure_sensor,
     )
