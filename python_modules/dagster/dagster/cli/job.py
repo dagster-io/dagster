@@ -145,7 +145,7 @@ def job_execute_command(**kwargs):
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
 def job_launch_command(**kwargs):
     with get_instance_for_service("``dagster job launch``") as instance:
-        return execute_launch_command(instance, kwargs)
+        return execute_launch_command(instance, kwargs, using_job_op_graph_apis=True)
 
 
 @job_cli.command(
@@ -157,7 +157,7 @@ def job_launch_command(**kwargs):
 @python_job_target_argument
 @click.option("--print-only-required", default=False, is_flag=True)
 def job_scaffold_command(**kwargs):
-    execute_scaffold_command(kwargs, click.echo)
+    execute_scaffold_command(kwargs, click.echo, using_job_op_graph_apis=True)
 
 
 @job_cli.command(
