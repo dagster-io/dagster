@@ -55,7 +55,7 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
     executor_def = executor_defs_by_name[executor_name]
 
     init_context = InitExecutorContext(
-        pipeline=recon_pipeline,
+        job=recon_pipeline,
         executor_def=executor_def,
         executor_config=executor_config["config"],
         instance=instance,
