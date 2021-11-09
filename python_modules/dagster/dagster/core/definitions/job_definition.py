@@ -135,6 +135,7 @@ class JobDefinition(PipelineDefinition):
             mode_def=in_proc_mode,
             hook_defs=self.hook_defs,
             tags=self.tags,
+            solid_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 

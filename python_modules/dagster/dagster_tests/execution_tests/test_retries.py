@@ -2,6 +2,7 @@ import os
 import tempfile
 import time
 from collections import defaultdict
+from typing import List
 
 import pytest
 from dagster import (
@@ -16,7 +17,9 @@ from dagster import (
     RetryRequested,
     execute_pipeline,
     execute_pipeline_iterator,
+    job,
     lambda_solid,
+    op,
     pipeline,
     reconstructable,
     reexecute_pipeline,
@@ -24,6 +27,7 @@ from dagster import (
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
@@ -424,3 +428,60 @@ def test_expo_backoff():
     assert (logged_times[1] - logged_times[0]) > delay
     assert (logged_times[2] - logged_times[1]) > (delay * 3)
     assert (logged_times[3] - logged_times[2]) > (delay * 7)
+
+
+def _get_retry_events(events: List[DagsterEvent]):
+    return list(
+        filter(
+            lambda evt: evt.event_type == DagsterEventType.STEP_UP_FOR_RETRY,
+            events,
+        )
+    )
+
+
+def test_basic_op_retry_policy():
+    @op(retry_policy=RetryPolicy())
+    def throws(_):
+        raise Exception("I fail")
+
+    @job
+    def policy_test():
+        throws()
+
+    result = policy_test.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("throws"))) == 1
+
+
+def test_retry_policy_rules_job():
+    @op(retry_policy=RetryPolicy(max_retries=2))
+    def throw_with_policy():
+        raise Exception("I throw")
+
+    @op
+    def throw_no_policy():
+        raise Exception("I throw")
+
+    @op
+    def fail_no_policy():
+        raise Failure("I fail")
+
+    @job(retry_policy=RetryPolicy(max_retries=3))
+    def policy_test():
+        throw_with_policy()
+        throw_no_policy()
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
+        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+
+    result = policy_test.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("throw_no_policy"))) == 3
+    assert len(_get_retry_events(result.events_for_node("throw_with_policy"))) == 2
+    assert len(_get_retry_events(result.events_for_node("override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_with"))) == 1
+    assert len(_get_retry_events(result.events_for_node("config_override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_fail"))) == 1
