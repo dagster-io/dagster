@@ -90,7 +90,7 @@ def test_print_command_baz():
                 "-a",
                 "bar",
                 "-j",
-                "baz",
+                "quux_job",
             ],
         )
         assert res.exit_code == 0, res.stdout

@@ -19,6 +19,7 @@ from dagster import (
     String,
     execute_pipeline,
     graph,
+    job,
     lambda_solid,
     op,
     pipeline,
@@ -87,6 +88,11 @@ qux_job = qux.to_job(
     ),
     tags={"foo": "bar"},
 )
+
+
+@job
+def quux_job():
+    do_something_op()
 
 
 def define_qux_job():
@@ -191,10 +197,10 @@ def bar():
         "pipelines": {
             "foo": foo_pipeline,
             "baz": baz_pipeline,
-            "qux": qux_job,
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
+        "jobs": {"qux": qux_job, "quux": quux_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
