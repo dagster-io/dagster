@@ -94,15 +94,9 @@ data:
 
     {{- if .Values.pythonLogs }}
     python_logs:
-      {{- if .Values.pythonLogs.pythonLogLevel }}
       python_log_level: {{ .Values.pythonLogs.pythonLogLevel }}
-      {{- end }}
-      {{- if .Values.pythonLogs.dagsterHandlerConfig }}
       dagster_handler_config: {{ .Values.pythonLogs.dagsterHandlerConfig | toYaml | nindent 8 }}
-      {{- end }}
-      {{- if .Values.pythonLogs.managedPythonLoggers }}
       managed_python_loggers: {{ .Values.pythonLogs.managedPythonLoggers | toYaml | nindent 8 }}
-      {{- end }}
     {{- end }}
 
 
