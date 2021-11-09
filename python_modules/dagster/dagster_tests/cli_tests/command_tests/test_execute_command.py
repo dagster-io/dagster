@@ -215,7 +215,7 @@ def test_job_command_only_selects_job():
         assert result.success
 
         with pytest.raises(Exception, match="not found in repository"):
-            result = execute_execute_command(
+            execute_execute_command(
                 kwargs=pipeline_kwargs, instance=instance, using_job_op_graph_apis=True
             )
 
