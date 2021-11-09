@@ -1,5 +1,5 @@
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
-from .utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
 REPOSITORY_QUERY = """
 query {
@@ -38,6 +38,27 @@ query {
 }
 """
 
+GRAPH_QUERY = """
+query GraphQuery($selector: GraphSelector!) {
+  graphOrError(selector: $selector) {
+    __typename
+    ... on Graph {
+      name
+      solidHandles {
+        handleID
+        solid {
+          name
+        }
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
 
 class TestGraphs(NonLaunchableGraphQLContextTestMatrix):
     def test_basic_jobs(self, graphql_context):
@@ -63,3 +84,15 @@ class TestGraphs(NonLaunchableGraphQLContextTestMatrix):
         assert jobs["simple_job_a"]["graphName"] == "simple_graph"
         assert "simple_job_b" in jobs
         assert jobs["simple_job_b"]["graphName"] == "simple_graph"
+
+    def test_basic_graphs(self, graphql_context, snapshot):
+        selector = infer_repository_selector(graphql_context)
+        selector.update({"graphName": "simple_graph"})
+
+        result = execute_dagster_graphql(graphql_context, GRAPH_QUERY, {"selector": selector})
+        assert result
+        assert result.data
+        print(result.data)
+        assert result.data["graphOrError"]["__typename"] == "Graph"
+
+        snapshot.assert_match(result.data)

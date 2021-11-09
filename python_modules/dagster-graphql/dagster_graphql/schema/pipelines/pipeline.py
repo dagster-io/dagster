@@ -592,6 +592,66 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
 
+class GrapheneGraph(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
+        name = "Graph"
+
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+    solid_handle = graphene.Field(
+        GrapheneSolidHandle,
+        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+    solid_handles = graphene.Field(
+        non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
+    )
+    modes = non_null_list(GrapheneMode)
+
+    def __init__(self, external_pipeline, solid_handle_id=None):
+        self._external_pipeline = check.inst_param(
+            external_pipeline, "external_pipeline", ExternalPipeline
+        )
+        self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
+        super().__init__()
+
+    def resolve_id(self, _graphene_info):
+        if self._solid_handle_id:
+            return (
+                f"{self._external_pipeline.get_external_origin_id()}:solid:{self._solid_handle_id}"
+            )
+        return f"graph:{self._external_pipeline.get_external_origin_id()}"
+
+    def resolve_name(self, _graphene_info):
+        return self._external_pipeline.get_graph_name()
+
+    def resolve_description(self, _graphene_info):
+        return self._external_pipeline.description
+
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        return _get_solid_handles(self._external_pipeline).get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        handles = _get_solid_handles(self._external_pipeline)
+        parentHandleID = kwargs.get("parentHandleID")
+
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            }
+
+        return [handles[key] for key in sorted(handles)]
+
+    def resolve_modes(self, _graphene_info):
+        # returns empty list... graphs don't have modes
+        return []
+
+
 @lru_cache(maxsize=32)
 def _get_solid_handles(represented_pipeline):
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)

@@ -7,13 +7,14 @@ from ..errors import (
     GraphenePipelineSnapshotNotFoundError,
     GraphenePythonError,
 )
+from ..solids import GrapheneSolidContainer
 from .pipeline import GrapheneIPipelineSnapshot, GrapheneIPipelineSnapshotMixin
 from .pipeline_ref import GraphenePipelineReference
 
 
 class GraphenePipelineSnapshot(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneIPipelineSnapshot, GraphenePipelineReference)
+        interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot, GraphenePipelineReference)
         name = "PipelineSnapshot"
 
     def __init__(self, represented_pipeline):
