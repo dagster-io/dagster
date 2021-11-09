@@ -76,7 +76,6 @@
         "computeLogManager",
         "scheduler",
         "runLauncher",
-        "pythonLogs",
         "dagsterDaemon",
         "busybox",
         "migrate",
@@ -1820,12 +1819,7 @@
                     "title": "Dagsterhandlerconfig",
                     "type": "object"
                 }
-            },
-            "required": [
-                "pythonLogLevel",
-                "managedPythonLoggers",
-                "dagsterHandlerConfig"
-            ]
+            }
         },
         "RunCoordinatorType": {
             "title": "RunCoordinatorType",

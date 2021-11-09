@@ -465,18 +465,17 @@ def test_custom_python_logs_config(template: HelmTemplate):
 
 
 def test_custom_python_logs_missing_config(template: HelmTemplate):
-    managed_python_loggers = ["foo", "bar", "baz"]
     helm_values = DagsterHelmValues.construct(
-        pythonLogs=PythonLogs.construct(
-            managedPythonLoggers=managed_python_loggers,
-        )
+        pythonLogs=PythonLogs.construct(pythonLogLevel="INFO")
     )
 
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     python_logs_config = instance["python_logs"]
 
-    assert python_logs_config["managed_python_loggers"] == managed_python_loggers
+    assert python_logs_config["python_log_level"] == "INFO"
+    assert "managed_python_loggers" not in python_logs_config
+    assert "dagster_handler_config" not in python_logs_config
 
 
 @pytest.mark.parametrize(
