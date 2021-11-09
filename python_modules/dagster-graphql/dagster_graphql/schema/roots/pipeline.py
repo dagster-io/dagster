@@ -1,7 +1,7 @@
 import graphene
 
-from ..errors import GraphenePipelineNotFoundError, GraphenePythonError
-from ..pipelines.pipeline import GraphenePipeline
+from ..errors import GrapheneGraphNotFoundError, GraphenePipelineNotFoundError, GraphenePythonError
+from ..pipelines.pipeline import GrapheneGraph, GraphenePipeline
 from ..pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
 
@@ -14,3 +14,13 @@ class GraphenePipelineOrError(graphene.Union):
             GraphenePythonError,
         )
         name = "PipelineOrError"
+
+
+class GrapheneGraphOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneGraph,
+            GrapheneGraphNotFoundError,
+            GraphenePythonError,
+        )
+        name = "GraphOrError"

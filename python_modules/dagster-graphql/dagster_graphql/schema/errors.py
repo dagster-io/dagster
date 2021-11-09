@@ -97,6 +97,29 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         )
 
 
+class GrapheneGraphNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "GraphNotFoundError"
+
+    graph_name = graphene.NonNull(graphene.String)
+    repository_name = graphene.NonNull(graphene.String)
+    repository_location_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, selector):
+        from ..implementation.utils import GraphSelector
+
+        super().__init__()
+        check.inst_param(selector, "selector", GraphSelector)
+        self.graph_name = selector.graph_name
+        self.repository_name = selector.repository_name
+        self.repository_location_name = selector.location_name
+        self.message = (
+            "Could not find Graph "
+            f"{selector.location_name}.{selector.repository_name}.{selector.graph_name}"
+        )
+
+
 class GraphenePipelineRunNotFoundError(graphene.Interface):
     class Meta:
         interfaces = (GrapheneError,)

@@ -457,8 +457,35 @@ class GrapheneSolid(graphene.ObjectType):
         return self._solid_invocation_snap.is_dynamic_mapped
 
 
+class GrapheneSolidHandle(graphene.ObjectType):
+    handleID = graphene.NonNull(graphene.String)
+    solid = graphene.NonNull(GrapheneSolid)
+    parent = graphene.Field(lambda: GrapheneSolidHandle)
+
+    class Meta:
+        name = "SolidHandle"
+
+    def __init__(self, handle, solid, parent=None):
+        super().__init__(
+            handleID=check.inst_param(handle, "handle", NodeHandle),
+            solid=check.inst_param(solid, "solid", GrapheneSolid),
+            parent=check.opt_inst_param(parent, "parent", GrapheneSolidHandle),
+        )
+
+
 class GrapheneSolidContainer(graphene.Interface):
     solids = non_null_list(GrapheneSolid)
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+    solid_handle = graphene.Field(
+        GrapheneSolidHandle,
+        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+    solid_handles = graphene.Field(
+        non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
+    )
+    modes = non_null_list("dagster_graphql.schema.pipelines.mode.GrapheneMode")
 
     class Meta:
         name = "SolidContainer"
@@ -506,22 +533,6 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
             )
             for input_def_snap in self._solid_def_snap.input_def_snaps
         ]
-
-
-class GrapheneSolidHandle(graphene.ObjectType):
-    handleID = graphene.NonNull(graphene.String)
-    solid = graphene.NonNull(GrapheneSolid)
-    parent = graphene.Field(lambda: GrapheneSolidHandle)
-
-    class Meta:
-        name = "SolidHandle"
-
-    def __init__(self, handle, solid, parent):
-        super().__init__()
-        # FIXME this really seems wrong
-        self.handleID = check.inst_param(handle, "handle", NodeHandle)
-        self.solid = check.inst_param(solid, "solid", GrapheneSolid)
-        self.parent = check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
 
 
 def build_solid_definition(represented_pipeline, solid_def_name):

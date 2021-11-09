@@ -199,6 +199,7 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       }
     }
     ... on CompositeSolidDefinition {
+      id
       inputMappings {
         definition {
           name

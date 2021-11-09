@@ -54,6 +54,7 @@ from .repository_location import (
 )
 from .represented import RepresentedPipeline
 from .selector import (
+    GraphSelector,
     InstigationSelector,
     PipelineSelector,
     RepositorySelector,
