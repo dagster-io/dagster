@@ -174,6 +174,12 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface GraphSelector {
+  graphName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface InstigationSelector {
   repositoryName: string;
   repositoryLocationName: string;

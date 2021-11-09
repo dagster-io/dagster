@@ -7,12 +7,12 @@ import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 
-import {PipelineExplorerSolidHandleFragment_solid} from './types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment_solid} from './types/GraphExplorerSolidHandleFragment';
 
 interface SolidJumpBarProps {
-  solids: Array<PipelineExplorerSolidHandleFragment_solid>;
-  selectedSolid: PipelineExplorerSolidHandleFragment_solid | undefined;
-  onChange: (solid: PipelineExplorerSolidHandleFragment_solid) => void;
+  solids: Array<GraphExplorerSolidHandleFragment_solid>;
+  selectedSolid: GraphExplorerSolidHandleFragment_solid | undefined;
+  onChange: (solid: GraphExplorerSolidHandleFragment_solid) => void;
 }
 
 export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {

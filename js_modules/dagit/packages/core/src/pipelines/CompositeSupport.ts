@@ -1,8 +1,8 @@
-import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
 function explodeComposite(
-  handles: PipelineExplorerSolidHandleFragment[],
-  handle: PipelineExplorerSolidHandleFragment,
+  handles: GraphExplorerSolidHandleFragment[],
+  handle: GraphExplorerSolidHandleFragment,
 ) {
   if (handle.solid.definition.__typename !== 'CompositeSolidDefinition') {
     throw new Error('explodeComposite takes a composite handle.');
@@ -116,7 +116,7 @@ function explodeComposite(
  *
  * @param handles All the SolidHandles in the pipeline (NOT just current layer)
  */
-export function explodeCompositesInHandleGraph(handles: PipelineExplorerSolidHandleFragment[]) {
+export function explodeCompositesInHandleGraph(handles: GraphExplorerSolidHandleFragment[]) {
   // Clone the entire graph so we can modify solid names in-place
   handles = JSON.parse(JSON.stringify(handles));
 

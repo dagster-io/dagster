@@ -3,14 +3,14 @@ import {Link, useHistory} from 'react-router-dom';
 
 import {Mono} from '../ui/Text';
 
-export interface PipelineExplorerPath {
+export interface ExplorerPath {
   pipelineName: string;
   snapshotId?: string;
   solidsQuery: string;
   pathSolids: string[];
 }
 
-export function explorerPathToString(path: PipelineExplorerPath) {
+export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
@@ -20,7 +20,7 @@ export function explorerPathToString(path: PipelineExplorerPath) {
   return `${root}/${path.pathSolids.join('/')}`;
 }
 
-export function explorerPathFromString(path: string): PipelineExplorerPath {
+export function explorerPathFromString(path: string): ExplorerPath {
   const rootAndSolids = path.split('/');
   const root = rootAndSolids[0];
   const pathSolids = rootAndSolids.length === 1 ? [''] : rootAndSolids.slice(1);
