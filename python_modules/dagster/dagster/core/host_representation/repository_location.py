@@ -264,7 +264,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     @property
     def executable_path(self) -> Optional[str]:
-        return sys.executable
+        return (
+            self._recon_repo.executable_path if self._recon_repo.executable_path else sys.executable
+        )
 
     @property
     def container_image(self) -> str:
