@@ -28,15 +28,15 @@ import {
 import {GraphExplorerFragment} from './types/GraphExplorerFragment';
 import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
-export interface PipelineExplorerOptions {
+export interface GraphExplorerOptions {
   explodeComposites: boolean;
 }
 
-interface PipelineExplorerProps {
+interface GraphExplorerProps {
   explorerPath: PipelineExplorerPath;
   onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
-  options: PipelineExplorerOptions;
-  setOptions: (options: PipelineExplorerOptions) => void;
+  options: GraphExplorerOptions;
+  setOptions: (options: GraphExplorerOptions) => void;
   pipeline: GraphExplorerFragment;
   repoAddress?: RepoAddress;
   handles: GraphExplorerSolidHandleFragment[];
@@ -46,7 +46,7 @@ interface PipelineExplorerProps {
   isGraph: boolean;
 }
 
-export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
+export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   const {
     getInvocations,
     handles,

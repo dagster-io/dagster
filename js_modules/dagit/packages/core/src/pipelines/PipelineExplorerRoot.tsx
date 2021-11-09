@@ -14,11 +14,11 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {
-  PipelineExplorer,
-  PipelineExplorerOptions,
+  GraphExplorer,
+  GraphExplorerOptions,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from './PipelineExplorer';
+} from './GraphExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,
@@ -39,7 +39,7 @@ export const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: Rep
   const explorerPath = explorerPathFromString(props.match.params['0']);
   const {repoAddress} = props;
   const history = useHistory();
-  const [options, setOptions] = React.useState<PipelineExplorerOptions>({
+  const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
   });
 
@@ -82,7 +82,7 @@ export const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: Rep
 
         const selectedHandle = displayedHandles.find((h) => h.solid.name === selectedName);
         return (
-          <PipelineExplorer
+          <GraphExplorer
             options={options}
             setOptions={setOptions}
             explorerPath={explorerPath}
@@ -138,7 +138,7 @@ export const PipelineExplorerContainer: React.FC<{
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
-  const [options, setOptions] = React.useState<PipelineExplorerOptions>({
+  const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
   });
 
@@ -233,7 +233,7 @@ export const PipelineExplorerContainer: React.FC<{
           );
         }
         return (
-          <PipelineExplorer
+          <GraphExplorer
             options={options}
             setOptions={setOptions}
             explorerPath={explorerPath}
