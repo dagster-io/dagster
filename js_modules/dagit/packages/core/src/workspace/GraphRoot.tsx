@@ -2,7 +2,7 @@ import React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {PipelineExplorerRegexRoot} from '../pipelines/PipelineExplorerRoot';
+import {GraphExplorerRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
@@ -37,7 +37,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
       />
       <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
         <div style={{minHeight: 0, flex: 1, display: 'flex'}}>
-          <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
+          <GraphExplorerRoot {...props} repoAddress={repoAddress} />
         </div>
       </Box>
     </div>

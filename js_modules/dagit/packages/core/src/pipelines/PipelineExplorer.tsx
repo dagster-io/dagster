@@ -25,8 +25,8 @@ import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
 } from './SidebarTabbedContainer';
-import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
-import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerFragment} from './types/GraphExplorerFragment';
+import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -37,11 +37,11 @@ interface PipelineExplorerProps {
   onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
   options: PipelineExplorerOptions;
   setOptions: (options: PipelineExplorerOptions) => void;
-  pipeline: PipelineExplorerFragment;
+  pipeline: GraphExplorerFragment;
   repoAddress?: RepoAddress;
-  handles: PipelineExplorerSolidHandleFragment[];
-  selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerSolidHandleFragment;
+  handles: GraphExplorerSolidHandleFragment[];
+  selectedHandle?: GraphExplorerSolidHandleFragment;
+  parentHandle?: GraphExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   isGraph: boolean;
 }
@@ -241,6 +241,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
                 onEnterCompositeSolid={handleEnterCompositeSolid}
                 onClickSolid={handleClickSolid}
                 repoAddress={repoAddress}
+                isGraph={isGraph}
                 {...querystring.parse(location.search || '')}
               />
             )}
@@ -251,8 +252,9 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
   );
 };
 
-export const PIPELINE_EXPLORER_FRAGMENT = gql`
-  fragment PipelineExplorerFragment on IPipelineSnapshot {
+export const GRAPH_EXPLORER_FRAGMENT = gql`
+  fragment GraphExplorerFragment on SolidContainer {
+    id
     name
     description
     ...SidebarTabbedContainerPipelineFragment
@@ -260,8 +262,8 @@ export const PIPELINE_EXPLORER_FRAGMENT = gql`
   ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
 `;
 
-export const PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
-  fragment PipelineExplorerSolidHandleFragment on SolidHandle {
+export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
+  fragment GraphExplorerSolidHandleFragment on SolidHandle {
     handleID
     solid {
       name

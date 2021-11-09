@@ -7,7 +7,7 @@ import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {PipelineExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
-import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {ColorsWIP} from '../../ui/Colors';
 import {Loading} from '../../ui/Loading';
@@ -38,8 +38,8 @@ type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
 interface Props {
   repoAddress: RepoAddress;
   explorerPath: PipelineExplorerPath;
-  handles: PipelineExplorerSolidHandleFragment[];
-  selectedHandle?: PipelineExplorerSolidHandleFragment;
+  handles: GraphExplorerSolidHandleFragment[];
+  selectedHandle?: GraphExplorerSolidHandleFragment;
   onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
 }
 
