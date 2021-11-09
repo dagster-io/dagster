@@ -13,6 +13,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManagerConfig,
     ComputeLogManagerType,
 )
+from schema.charts.dagster.subschema.python_logs import PythonLogs
 from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
 )
@@ -429,12 +430,42 @@ def test_custom_compute_log_manager_config(template: HelmTemplate):
     )
 
     configmaps = template.render(helm_values)
+    print(configmaps)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    print(instance)
     compute_logs_config = instance["compute_logs"]
 
     assert compute_logs_config["module"] == module
     assert compute_logs_config["class"] == class_
     assert compute_logs_config["config"] == config
+
+
+def test_custom_python_logs_config(template: HelmTemplate):
+    log_level = "INFO"
+    managed_python_loggers = ["foo", "bar", "baz"]
+    handler_config = {
+        "handlers": {
+            "myHandler": {"class": "logging.StreamHandler", "level": "INFO", "stream": "foo"}
+        },
+        "formatters": {"myFormatter": {"format": "%(message)s"}},
+    }
+    helm_values = DagsterHelmValues.construct(
+        pythonLogs=PythonLogs.construct(
+            pythonLogLevel=log_level,
+            managedPythonLoggers=managed_python_loggers,
+            dagsterHandlerConfig=handler_config,
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    print(instance)
+    python_logs_config = instance["python_logs"]
+
+    assert python_logs_config["python_log_level"] == log_level
+    assert python_logs_config["managed_python_loggers"] == managed_python_loggers
+    assert python_logs_config["dagster_handler_config"] == handler_config
+    assert False
 
 
 @pytest.mark.parametrize(
