@@ -14,7 +14,7 @@ from dagster_test.toys.longitudinal import longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.retries import retry_pipeline
-from dagster_test.toys.sleepy import sleepy_pipeline
+from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.unreliable import unreliable_pipeline
 
 from .schedules import get_toys_schedules
@@ -46,7 +46,18 @@ def toys_repository():
             log_spew,
             longitudinal_pipeline,
             many_events,
-            sleepy_pipeline,
+            sleepy.to_job(
+                name="sleepy_one",
+                config={
+                    "solids": {"giver": {"config": [1, 1, 1, 1]}},
+                },
+            ),
+            sleepy.to_job(
+                name="sleepy_two",
+                config={
+                    "solids": {"giver": {"config": [2, 2, 2, 2]}},
+                },
+            ),
             retry_pipeline,
             branch_pipeline,
             unreliable_pipeline,
