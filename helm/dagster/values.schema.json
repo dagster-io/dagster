@@ -44,6 +44,9 @@
         "runLauncher": {
             "$ref": "#/definitions/RunLauncher"
         },
+        "pythonLogs": {
+            "$ref": "#/definitions/PythonLogs"
+        },
         "dagsterDaemon": {
             "$ref": "#/definitions/Daemon"
         },
@@ -73,6 +76,7 @@
         "computeLogManager",
         "scheduler",
         "runLauncher",
+        "pythonLogs",
         "dagsterDaemon",
         "busybox",
         "migrate",
@@ -1795,6 +1799,32 @@
                         }
                     }
                 }
+            ]
+        },
+        "PythonLogs": {
+            "title": "PythonLogs",
+            "type": "object",
+            "properties": {
+                "pythonLogLevel": {
+                    "title": "Pythonloglevel",
+                    "type": "string"
+                },
+                "managedPythonLoggers": {
+                    "title": "Managedpythonloggers",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dagsterHandlerConfig": {
+                    "title": "Dagsterhandlerconfig",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "pythonLogLevel",
+                "managedPythonLoggers",
+                "dagsterHandlerConfig"
             ]
         },
         "RunCoordinatorType": {
