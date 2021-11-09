@@ -13,7 +13,6 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManagerConfig,
     ComputeLogManagerType,
 )
-from schema.charts.dagster.subschema.python_logs import PythonLogs
 from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
 )
@@ -30,6 +29,7 @@ from schema.charts.dagster.subschema.daemon import (
     TagConcurrencyLimit,
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
+from schema.charts.dagster.subschema.python_logs import PythonLogs
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
