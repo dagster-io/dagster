@@ -82,7 +82,7 @@ class InitResourceContext:
 
     @property
     def pipeline_run(self) -> Optional[PipelineRun]:
-        return self.pipeline_run
+        return self.dagster_run
 
     @property
     def log(self) -> Optional[DagsterLogManager]:
