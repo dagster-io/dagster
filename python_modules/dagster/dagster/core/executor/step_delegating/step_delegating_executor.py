@@ -68,7 +68,6 @@ class StepDelegatingExecutor(Executor):
                 plan_context.for_step(running_steps[event.step_key]),
                 event,
             )
-        return events
 
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
@@ -92,14 +91,14 @@ class StepDelegatingExecutor(Executor):
                     EngineEventData(),
                 )
 
-                events = self._pop_events(
+                prior_events = self._pop_events(
                     plan_context.instance,
                     plan_context.run_id,
                 )
-                for dagster_event in events:
+                for dagster_event in prior_events:
                     yield dagster_event
 
-                possibly_in_flight_steps = active_execution.rebuild_from_events(events)
+                possibly_in_flight_steps = active_execution.rebuild_from_events(prior_events)
                 for step in possibly_in_flight_steps:
 
                     yield DagsterEvent.engine_event(
@@ -115,7 +114,7 @@ class StepDelegatingExecutor(Executor):
                         self._get_step_handler_context(plan_context, [step], active_execution)
                     ):
                         # health check failed, launch the step
-                        launch_events = self._log_new_events(
+                        self._log_new_events(
                             self._step_handler.launch_step(
                                 self._get_step_handler_context(
                                     plan_context, [step], active_execution
@@ -124,15 +123,11 @@ class StepDelegatingExecutor(Executor):
                             plan_context,
                             {step.key: step for step in possibly_in_flight_steps},
                         )
-                        for dagster_event in launch_events:
-                            yield dagster_event
-                            active_execution.handle_event(dagster_event)
 
                     running_steps[step.key] = step
 
             last_check_step_health_time = pendulum.now("UTC")
             while not active_execution.is_complete:
-                events = []
 
                 if active_execution.check_for_interrupts():
                     if not plan_context.instance.run_will_resume(plan_context.run_id):
@@ -143,17 +138,16 @@ class StepDelegatingExecutor(Executor):
                         )
                         active_execution.mark_interrupted()
                         for _, step in running_steps.items():
-                            events.extend(
-                                self._log_new_events(
-                                    self._step_handler.terminate_step(
-                                        self._get_step_handler_context(
-                                            plan_context, [step], active_execution
-                                        )
-                                    ),
-                                    plan_context,
-                                    running_steps,
-                                )
+                            self._log_new_events(
+                                self._step_handler.terminate_step(
+                                    self._get_step_handler_context(
+                                        plan_context, [step], active_execution
+                                    )
+                                ),
+                                plan_context,
+                                running_steps,
                             )
+
                     else:
                         yield DagsterEvent.engine_event(
                             plan_context,
@@ -171,36 +165,14 @@ class StepDelegatingExecutor(Executor):
 
                     return
 
-                events.extend(
-                    self._pop_events(
-                        plan_context.instance,
-                        plan_context.run_id,
-                    )
-                )
-
                 curr_time = pendulum.now("UTC")
                 if (
                     curr_time - last_check_step_health_time
                 ).total_seconds() >= self._check_step_health_interval_seconds:
                     last_check_step_health_time = curr_time
                     for _, step in running_steps.items():
-                        events.extend(
-                            self._log_new_events(
-                                self._step_handler.check_step_health(
-                                    self._get_step_handler_context(
-                                        plan_context, [step], active_execution
-                                    )
-                                ),
-                                plan_context,
-                                running_steps,
-                            )
-                        )
-
-                for step in active_execution.get_steps_to_execute():
-                    running_steps[step.key] = step
-                    events.extend(
                         self._log_new_events(
-                            self._step_handler.launch_step(
+                            self._step_handler.check_step_health(
                                 self._get_step_handler_context(
                                     plan_context, [step], active_execution
                                 )
@@ -208,9 +180,25 @@ class StepDelegatingExecutor(Executor):
                             plan_context,
                             running_steps,
                         )
+
+                for step in active_execution.get_steps_to_execute():
+                    running_steps[step.key] = step
+                    self._log_new_events(
+                        self._step_handler.launch_step(
+                            self._get_step_handler_context(plan_context, [step], active_execution)
+                        ),
+                        plan_context,
+                        running_steps,
                     )
 
-                for dagster_event in events:  # type: ignore
+                # process skips from failures or uncovered inputs
+                for event in active_execution.plan_events_iterator(plan_context):
+                    yield event
+
+                for dagster_event in self._pop_events(
+                    plan_context.instance,
+                    plan_context.run_id,
+                ):  # type: ignore
                     yield dagster_event
                     active_execution.handle_event(dagster_event)
 
@@ -222,9 +210,5 @@ class StepDelegatingExecutor(Executor):
                         assert isinstance(dagster_event.step_key, str)
                         del running_steps[dagster_event.step_key]
                         active_execution.verify_complete(plan_context, dagster_event.step_key)
-
-                # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(plan_context):
-                    yield event
 
                 time.sleep(self._sleep_seconds)
