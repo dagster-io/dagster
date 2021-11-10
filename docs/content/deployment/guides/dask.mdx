@@ -44,10 +44,9 @@ Now you can run this job with a config block such as the following:
 
 ```python file=/deploying/dask_hello_world.yaml
 execution:
-  dask:
-    config:
-      cluster:
-        local:
+  config:
+    cluster:
+      local:
 ```
 
 Executing this job will spin up local Dask execution, run the job, and exit.
@@ -86,11 +85,10 @@ resources:
     config:
       s3_bucket: your_bucket_name
 execution:
-  dask:
-    config:
-      cluster:
-        existing:
-          address: "dask_scheduler.dns_name:8787"
+  config:
+    cluster:
+      existing:
+        address: "dask_scheduler.dns_name:8787"
 ```
 
 Since Dask will invoke your job code on the cluster workers, you must ensure that the latest version of your Python code is available to all of the Dask workers. Ideally, you'll package this as a Python module, and target your `workspace.yaml` at this module.
