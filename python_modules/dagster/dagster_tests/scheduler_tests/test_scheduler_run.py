@@ -40,7 +40,11 @@ from dagster.core.scheduler.job import (
     JobType,
     ScheduleJobData,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+)
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
     create_test_daemon_workspace,
@@ -962,7 +966,7 @@ def test_wrong_config(external_repo_context, capfd):
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
-def test_schedule_run_default_config(external_repo_context, capfd):
+def test_schedule_run_default_config(external_repo_context):
     with instance_with_schedules(external_repo_context) as (
         instance,
         workspace,
@@ -1003,7 +1007,7 @@ def test_schedule_run_default_config(external_repo_context, capfd):
             # wait for run to complete
             run = instance.get_run_by_id(run.run_id)
 
-            while run.status == PipelineRunStatus.STARTED:
+            while run.status in IN_PROGRESS_RUN_STATUSES:
                 time.sleep(1)
                 run = instance.get_run_by_id(run.run_id)
 
