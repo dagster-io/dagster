@@ -36,8 +36,14 @@ interface Props {
 
 export const WebSocketProvider: React.FC<Props> = (props) => {
   const {children, websocketClient} = props;
-  const [status, setStatus] = React.useState(WebSocket.CONNECTING);
-  const [availability, setAvailability] = React.useState<Availability>('attempting-to-connect');
+  const [status, setStatus] = React.useState(websocketClient.status);
+  const [availability, setAvailability] = React.useState<Availability>(
+    websocketClient.status === WebSocket.OPEN
+      ? 'available'
+      : websocketClient.status === WebSocket.CLOSED
+      ? 'unavailable'
+      : 'attempting-to-connect',
+  );
 
   const value = React.useMemo(
     () => ({
@@ -51,20 +57,25 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
 
   React.useEffect(() => {
+    // Note: In Firefox, we sometimes see websockets closed with the error message
+    // "The connection to wss://... was interrupted while the page was loading"
+    // The client reconnects, but we need to continue listening for state changes
+    // after "onError" below to realize that websockets are in fact supported.
     const availabilityListeners = [
-      websocketClient.onConnected(() => setAndUnlisten('available')),
-      websocketClient.onError(() => setAndUnlisten('unavailable')),
+      websocketClient.onConnected(() => setFinalAvailability('available')),
+      websocketClient.onReconnected(() => setFinalAvailability('available')),
+      websocketClient.onError(() => setAvailability('unavailable')),
     ];
 
-    const unlisten = () => availabilityListeners.forEach((u) => u());
-    const setAndUnlisten = (value: Availability) => {
+    const unlisten = () => {
+      availabilityListeners.forEach((u) => u());
+    };
+    const setFinalAvailability = (value: Availability) => {
       unlisten();
       setAvailability(value);
     };
 
-    return () => {
-      unlisten();
-    };
+    return unlisten;
   }, [websocketClient]);
 
   React.useEffect(() => {
