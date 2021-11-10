@@ -288,7 +288,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
 
         selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
 
-        payload_one = sync_execute_get_run_log_data(
+        sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
                 "executionParams": {
