@@ -67,10 +67,10 @@ type RepositoryLocation {
 }
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
-  solids: [Solid!]!
   id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
@@ -88,10 +88,10 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
 }
 
 interface SolidContainer {
-  solids: [Solid!]!
   id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
@@ -1171,10 +1171,10 @@ type PipelinePreset {
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
-  solids: [Solid!]!
   id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
@@ -1253,10 +1253,10 @@ input PipelineSelector {
 union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
 type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineReference {
-  solids: [Solid!]!
   id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
@@ -1280,10 +1280,10 @@ type PipelineSnapshotNotFoundError implements Error {
 union GraphOrError = Graph | GraphNotFoundError | PythonError
 
 type Graph implements SolidContainer {
-  solids: [Solid!]!
   id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
@@ -2119,8 +2119,8 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  solids: [Solid!]!
   id: ID!
+  solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
