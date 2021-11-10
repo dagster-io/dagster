@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import graphene
 from dagster import check
 from dagster.core.definitions import NodeHandle
@@ -294,7 +296,7 @@ def build_solids(represented_pipeline, current_dep_index):
     )
 
 
-def build_solid_handles(represented_pipeline, current_dep_index, parent=None):
+def _build_solid_handles(represented_pipeline, current_dep_index, parent=None):
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
     all_handle = []
@@ -307,7 +309,7 @@ def build_solid_handles(represented_pipeline, current_dep_index, parent=None):
         )
         solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         if isinstance(solid_def_snap, CompositeSolidDefSnap):
-            all_handle += build_solid_handles(
+            all_handle += _build_solid_handles(
                 represented_pipeline,
                 represented_pipeline.get_dep_structure_index(solid_def_name),
                 handle,
@@ -316,6 +318,17 @@ def build_solid_handles(represented_pipeline, current_dep_index, parent=None):
         all_handle.append(handle)
 
     return all_handle
+
+
+@lru_cache(maxsize=32)
+def build_solid_handles(represented_pipeline):
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    return {
+        str(item.handleID): item
+        for item in _build_solid_handles(
+            represented_pipeline, represented_pipeline.dep_structure_index
+        )
+    }
 
 
 class GrapheneISolidDefinition(graphene.Interface):
@@ -474,10 +487,10 @@ class GrapheneSolidHandle(graphene.ObjectType):
 
 
 class GrapheneSolidContainer(graphene.Interface):
-    solids = non_null_list(GrapheneSolid)
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    solids = non_null_list(GrapheneSolid)
     solid_handle = graphene.Field(
         GrapheneSolidHandle,
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -526,28 +539,6 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
     def resolve_solids(self, _graphene_info):
         return build_solids(self._represented_pipeline, self._comp_solid_dep_index)
 
-    def resolve_solid_handle(self, _graphene_info, handleID):
-        from .pipelines.pipeline import get_solid_handles_from_pipeline
-
-        return get_solid_handles_from_pipeline(self._represented_pipeline).get(handleID)
-
-    def resolve_solid_handles(self, _graphene_info, **kwargs):
-        from .pipelines.pipeline import get_solid_handles_from_pipeline
-
-        handles = get_solid_handles_from_pipeline(self._represented_pipeline)
-        parentHandleID = kwargs.get("parentHandleID")
-
-        if parentHandleID == "":
-            handles = {key: handle for key, handle in handles.items() if not handle.parent}
-        elif parentHandleID is not None:
-            handles = {
-                key: handle
-                for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
-            }
-
-        return [handles[key] for key in sorted(handles)]
-
     def resolve_output_mappings(self, _graphene_info):
         return [
             GrapheneOutputMapping(
@@ -569,6 +560,24 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
             )
             for input_def_snap in self._solid_def_snap.input_def_snaps
         ]
+
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        return build_solid_handles(self._represented_pipeline).get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        handles = build_solid_handles(self._represented_pipeline)
+        parentHandleID = kwargs.get("parentHandleID")
+
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            }
+
+        return [handles[key] for key in sorted(handles)]
 
     def resolve_modes(self, _graphene_info):
         # returns empty list... composite solids don't have modes, this is a vestige of the old

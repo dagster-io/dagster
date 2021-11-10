@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 import graphene
 import yaml
 from dagster import check
@@ -418,10 +416,10 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return get_solid_handles_from_pipeline(self.get_represented_pipeline()).get(handleID)
+        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = get_solid_handles_from_pipeline(self.get_represented_pipeline())
+        handles = build_solid_handles(self.get_represented_pipeline())
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -630,10 +628,10 @@ class GrapheneGraph(graphene.ObjectType):
         return self._external_pipeline.description
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return get_solid_handles_from_pipeline(self._external_pipeline).get(handleID)
+        return build_solid_handles(self._external_pipeline).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = get_solid_handles_from_pipeline(self._external_pipeline)
+        handles = build_solid_handles(self._external_pipeline)
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -651,17 +649,6 @@ class GrapheneGraph(graphene.ObjectType):
         # returns empty list... graphs don't have modes, this is a vestige of the old
         # pipeline explorer, which expected all solid containers to be pipelines
         return []
-
-
-@lru_cache(maxsize=32)
-def get_solid_handles_from_pipeline(represented_pipeline):
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
-    return {
-        str(item.handleID): item
-        for item in build_solid_handles(
-            represented_pipeline, represented_pipeline.dep_structure_index
-        )
-    }
 
 
 class GrapheneRunOrError(graphene.Union):
