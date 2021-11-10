@@ -9,7 +9,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
-import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
+import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarSolidContainerInfo,
@@ -55,7 +55,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     isGraph,
   } = props;
 
-  const jobContext = React.useContext(PipelineExplorerJobContext);
+  const jobContext = React.useContext(GraphExplorerJobContext);
 
   const activeTab = tab || 'info';
 
