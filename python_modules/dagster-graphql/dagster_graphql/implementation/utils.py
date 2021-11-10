@@ -81,7 +81,7 @@ class ExecutionParams(
             cls,
             selector=check.inst_param(selector, "selector", PipelineSelector),
             run_config=run_config,
-            mode=check.str_param(mode, "mode"),
+            mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(
                 execution_metadata, "execution_metadata", ExecutionMetadata
             ),

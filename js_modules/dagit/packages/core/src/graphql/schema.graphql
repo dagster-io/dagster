@@ -1584,7 +1584,7 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 type LaunchRunSuccess implements LaunchPipelineRunSuccess {
   run: Run!
@@ -1620,6 +1620,11 @@ type ConflictingExecutionParamsError implements Error {
   message: String!
 }
 
+type NoModeProvidedError implements Error {
+  message: String!
+  pipelineName: String!
+}
+
 input ExecutionParams {
   selector: JobOrPipelineSelector!
   runConfigData: RunConfigData
@@ -1644,7 +1649,7 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
@@ -1713,7 +1718,7 @@ type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 type LaunchBackfillSuccess {
   backfillId: String!

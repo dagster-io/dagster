@@ -17,6 +17,8 @@ from dagster import (
     ScheduleDefinition,
     daily_schedule,
     hourly_schedule,
+    job,
+    op,
     pipeline,
     repository,
     schedule,
@@ -338,6 +340,23 @@ manual_partition_schedule = manual_partition.create_schedule_definition(
 )
 
 
+def define_default_config_job():
+    @op(config_schema=str)
+    def my_op(context):
+        assert context.op_config == "foo"
+
+    @job(config={"ops": {"my_op": {"config": "foo"}}})
+    def default_config_job():
+        my_op()
+
+    return default_config_job
+
+
+default_config_schedule = ScheduleDefinition(
+    name="default_config_schedule", cron_schedule="* * * * *", job=define_default_config_job()
+)
+
+
 @repository
 def the_repo():
     return [
@@ -364,6 +383,7 @@ def the_repo():
         large_schedule,
         two_step_pipeline,
         manual_partition_schedule,
+        default_config_schedule,
     ]
 
 
@@ -939,6 +959,55 @@ def test_wrong_config(external_repo_context, capfd):
             assert "Failed to fetch execution plan for wrong_config_schedule" in captured.out
             assert "Error in config for pipeline" in captured.out
             assert 'Missing required config entry "solids" at the root.' in captured.out
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_schedule_run_default_config(external_repo_context, capfd):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_schedule = external_repo.get_external_schedule("default_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(initial_datetime):
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+
+            assert instance.get_runs_count() == 1
+
+            wait_for_all_runs_to_start(instance)
+
+            run = instance.get_runs()[0]
+
+            validate_run_started(
+                run,
+                execution_time=initial_datetime,
+                expected_success=True,
+            )
+
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
+            )
+
+            # wait for run to complete
+            run = instance.get_run_by_id(run.run_id)
+
+            while run.status == PipelineRunStatus.STARTED:
+                time.sleep(1)
+                run = instance.get_run_by_id(run.run_id)
+
+            assert run.status == PipelineRunStatus.SUCCESS
 
 
 def _get_unloadable_schedule_origin():

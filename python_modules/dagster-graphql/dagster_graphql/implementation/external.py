@@ -83,7 +83,7 @@ def ensure_valid_config(external_pipeline, mode, run_config):
     from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.str_param(mode, "mode")
+    check.opt_str_param(mode, "mode")
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(

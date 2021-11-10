@@ -10,6 +10,7 @@ from dagster import (
     pipeline,
     schedule,
     solid,
+    validate_run_config,
 )
 from dagster.core.definitions.decorators import (
     daily_schedule,
@@ -751,4 +752,5 @@ def test_scheduled_jobs():
     execution_data = my_schedule.evaluate_tick(context_without_time)
     assert execution_data.run_requests
     assert len(execution_data.run_requests) == 1
-    assert execution_data.run_requests[0].run_config == DEFAULT_FOO_CONFIG
+
+    validate_run_config(foo_job, execution_data.run_requests[0].run_config)
