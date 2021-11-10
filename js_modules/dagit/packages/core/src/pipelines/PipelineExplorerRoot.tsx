@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {BaseQueryOptions, DocumentNode, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {RouteComponentProps, useHistory} from 'react-router-dom';
 
@@ -45,7 +45,16 @@ export const PipelineExplorerContainer: React.FC<{
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
-}> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
+  graphqlQuery?: DocumentNode;
+  graphqlVariables?: BaseQueryOptions<unknown>;
+}> = ({
+  explorerPath,
+  repoAddress,
+  onChangeExplorerPath,
+  isGraph = false,
+  graphqlQuery,
+  graphqlVariables,
+}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
   });
@@ -56,9 +65,9 @@ export const PipelineExplorerContainer: React.FC<{
   const {flagAssetGraph} = useFeatureFlags();
 
   const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
-    PIPELINE_EXPLORER_ROOT_QUERY,
+    graphqlQuery || PIPELINE_EXPLORER_ROOT_QUERY,
     {
-      variables: {
+      variables: (graphqlVariables as PipelineExplorerRootQueryVariables) || {
         pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
         snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
         rootHandleID: parentNames.join('.'),

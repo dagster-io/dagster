@@ -20,7 +20,6 @@ interface Props {
 }
 
 export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
-  const history = useHistory();
   const {nav} = React.useContext(LayoutContext);
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 
@@ -70,50 +69,54 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
         </LogoContainer>
         <SearchDialog searchPlaceholder={searchPlaceholder} />
       </Box>
-      <Box flex={{direction: 'row', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance/runs')}
-            shortcutLabel={`⌥1`}
-            shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
-          >
-            <NavLink to="/instance/runs">Runs</NavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance/assets')}
-            shortcutLabel={`⌥2`}
-            shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
-          >
-            <NavLink to="/instance/assets">Assets</NavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance')}
-            shortcutLabel={`⌥3`}
-            shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
-          >
-            <NavLink to="/instance">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Status
-                <InstanceWarningIcon />
-              </Box>
-            </NavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/workspace')}
-            shortcutLabel={`⌥4`}
-            shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
-          >
-            <NavLink to="/workspace">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Workspace
-                <WorkspaceWarningIcon />
-              </Box>
-            </NavLink>
-          </ShortcutHandler>
-        </Box>
-        {children}
-      </Box>
+      <Box flex={{direction: 'row', alignItems: 'center'}}>{children}</Box>
     </AppTopNavContainer>
+  );
+};
+
+export const AppTopNavTabs = () => {
+  const history = useHistory();
+  return (
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+      <ShortcutHandler
+        onShortcut={() => history.push('/instance/runs')}
+        shortcutLabel={`⌥1`}
+        shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+      >
+        <NavLink to="/instance/runs">Runs</NavLink>
+      </ShortcutHandler>
+      <ShortcutHandler
+        onShortcut={() => history.push('/instance/assets')}
+        shortcutLabel={`⌥2`}
+        shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
+      >
+        <NavLink to="/instance/assets">Assets</NavLink>
+      </ShortcutHandler>
+      <ShortcutHandler
+        onShortcut={() => history.push('/instance')}
+        shortcutLabel={`⌥3`}
+        shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
+      >
+        <NavLink to="/instance">
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+            Status
+            <InstanceWarningIcon />
+          </Box>
+        </NavLink>
+      </ShortcutHandler>
+      <ShortcutHandler
+        onShortcut={() => history.push('/workspace')}
+        shortcutLabel={`⌥4`}
+        shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
+      >
+        <NavLink to="/workspace">
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+            Workspace
+            <WorkspaceWarningIcon />
+          </Box>
+        </NavLink>
+      </ShortcutHandler>
+    </Box>
   );
 };
 

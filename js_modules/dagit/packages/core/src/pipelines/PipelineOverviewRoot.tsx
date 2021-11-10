@@ -1,3 +1,4 @@
+import {BaseQueryOptions, DocumentNode} from '@apollo/client';
 import * as React from 'react';
 import {RouteComponentProps, useHistory, useLocation} from 'react-router-dom';
 
@@ -16,10 +17,15 @@ import {
 import {SidebarPipelineOrJobOverview} from './SidebarPipelineOrJobOverview';
 import {useJobTitle} from './useJobTitle';
 
-type Props = RouteComponentProps<{0: string}> & {repoAddress: RepoAddress};
+type Props = RouteComponentProps<{0: string}> & {
+  repoAddress: RepoAddress;
+  graphqlQuery?: DocumentNode;
+  graphqlVariables?: BaseQueryOptions<unknown>;
+};
 
 export const PipelineOverviewRoot: React.FC<Props> = (props) => {
-  const {match, repoAddress} = props;
+  const {match, repoAddress, graphqlQuery, graphqlVariables} = props;
+
   const history = useHistory();
   const location = useLocation();
   const explorerPath = explorerPathFromString(match.params['0']);
@@ -55,6 +61,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         repoAddress={repoAddress}
         explorerPath={explorerPath}
         onChangeExplorerPath={onChangeExplorerPath}
+        graphqlQuery={graphqlQuery}
+        graphqlVariables={graphqlVariables}
       />
     </GraphExplorerJobContext.Provider>
   );
