@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
+import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -116,6 +117,7 @@ export const RunDetails: React.FC<{
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
+  const runConfigYaml = yaml.stringify(run.runConfig) || '';
   return (
     <div>
       <Group direction="row" spacing={8}>
@@ -147,7 +149,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
             </Group>
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Config</div>
-              <HighlightedCodeBlock value={run?.runConfigYaml || ''} language="yaml" />
+              <HighlightedCodeBlock value={runConfigYaml} language="yaml" />
             </Group>
           </Group>
         </DialogBody>
