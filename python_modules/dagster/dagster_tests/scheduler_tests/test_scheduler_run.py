@@ -30,7 +30,14 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
+from dagster.core.scheduler.job import (
+    JobState,
+    JobStatus,
+    JobTickData,
+    JobTickStatus,
+    JobType,
+    ScheduleJobData,
+)
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
@@ -620,6 +627,53 @@ def test_simple_schedule(external_repo_context, capfd):
             assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_old_tick_schedule(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+
+            # Create an old tick from several days ago
+            instance.create_job_tick(
+                JobTickData(
+                    job_origin_id=external_schedule.get_external_origin_id(),
+                    job_name="simple_schedule",
+                    job_type=JobType.SCHEDULE,
+                    status=JobTickStatus.STARTED,
+                    timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
+                )
+            )
+
+            schedule_origin = external_schedule.get_external_origin()
+
+            # the start time is what determines the number of runs, not the last tick
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            list(
+                launch_scheduled_runs(
+                    instance,
+                    workspace,
+                    logger(),
+                    pendulum.now("UTC"),
+                )
+            )
+
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 2
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
