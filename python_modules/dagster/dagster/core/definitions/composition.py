@@ -51,7 +51,7 @@ from .version_strategy import VersionStrategy
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from .partition import PartitionedConfig
-    from .executor import ExecutorDefinition
+    from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
 
 

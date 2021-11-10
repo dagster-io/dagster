@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from dagster import check
 
 if TYPE_CHECKING:
-    from .solid import SolidDefinition
+    from .solid_definition import SolidDefinition
     from .resource_definition import ResourceDefinition
 
 

@@ -21,7 +21,7 @@ from dagster import (
 )
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.pipeline_definition_definition_base import InMemoryPipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,

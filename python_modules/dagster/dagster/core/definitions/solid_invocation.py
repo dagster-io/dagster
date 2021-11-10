@@ -12,7 +12,7 @@ from .events import AssetMaterialization, DynamicOutput, ExpectationResult, Mate
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from .solid import SolidDefinition
+    from .solid_definition import SolidDefinition
     from .decorators.solid import DecoratedSolidFunction
     from .output import OutputDefinition
     from .composition import PendingNodeInvocation

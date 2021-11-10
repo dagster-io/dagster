@@ -11,7 +11,7 @@ from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
-    from .solid import SolidDefinition
+    from .solid_definition import SolidDefinition
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
