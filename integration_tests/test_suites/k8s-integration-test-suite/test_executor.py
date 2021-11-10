@@ -27,10 +27,12 @@ from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     IS_BUILDKITE,
     ReOriginatedExternalPipelineForTest,
+    cleanup_memoized_results,
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_external_pipeline_hierarchy,
 )
+from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 
 @pytest.mark.integration
@@ -186,6 +188,14 @@ def test_k8s_executor_combine_configs(
     assert TEST_OTHER_IMAGE_PULL_SECRET_NAME in image_pull_secrets_names
 
 
+def _get_step_execution_events(events):
+    return [
+        event
+        for event in events
+        if ("Executing step" in event.message and "in Kubernetes job" in event.message)
+    ]
+
+
 def _launch_executor_run(
     run_config,
     dagster_instance_for_k8s_run_launcher,
@@ -229,16 +239,7 @@ def _launch_executor_run(
         assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
 
         events = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
-        assert (
-            len(
-                [
-                    event
-                    for event in events
-                    if ("Executing step" in event.message and "in Kubernetes job" in event.message)
-                ]
-            )
-            == num_steps
-        )
+        assert len(_get_step_execution_events(events)) == num_steps
 
         return run.run_id
 
@@ -461,6 +462,7 @@ def test_k8s_executor_resource_requirements(
         assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
 
 
+@pytest.mark.integration
 def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
 ):
@@ -533,3 +535,86 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
         assert DagsterEventType.STEP_SUCCESS in [
             event.dagster_event.event_type for event in all_logs if event.is_dagster_event
         ]
+
+
+@pytest.mark.integration
+def test_memoization_k8s_executor(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_image": dagster_docker_image,
+                        "image_pull_policy": image_pull_policy(),
+                        "env_config_maps": ["dagster-pipeline-env"]
+                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
+                    }
+                }
+            },
+        },
+    )
+
+    # Clean up any residual outputs that may have been left by failed runs.
+    cleanup_memoized_results(
+        define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+    )
+
+    # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
+    try:
+        pipeline_name = "memoization_pipeline"
+
+        with get_test_project_external_pipeline_hierarchy(
+            dagster_instance_for_k8s_run_launcher, pipeline_name
+        ) as (workspace, location, _repo, external_pipeline):
+
+            reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+
+            runs = []
+            for _ in range(2):
+                run = create_run_for_test(
+                    dagster_instance_for_k8s_run_launcher,
+                    pipeline_name=pipeline_name,
+                    run_config=run_config,
+                    tags=None,
+                    mode="k8s",
+                    pipeline_snapshot=external_pipeline.pipeline_snapshot,
+                    execution_plan_snapshot=location.get_external_execution_plan(
+                        external_pipeline,
+                        run_config,
+                        "k8s",
+                        None,
+                        None,
+                        instance=dagster_instance_for_k8s_run_launcher,
+                    ).execution_plan_snapshot,
+                    external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+                    pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+                )
+                dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
+
+                result = wait_for_job_and_get_raw_logs(
+                    job_name="dagster-run-%s" % run.run_id,
+                    namespace=helm_namespace_for_k8s_run_launcher,
+                )
+
+                assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+                runs.append(run)
+
+            # We expect that first run should have to run the step, since it has not yet been
+            # memoized.
+            unmemoized_run = runs[0]
+            events = dagster_instance_for_k8s_run_launcher.all_logs(unmemoized_run.run_id)
+            assert len(_get_step_execution_events(events)) == 1
+
+            # We expect that second run should not have to run the step, since it has been memoized.
+            memoized_run = runs[1]
+            events = dagster_instance_for_k8s_run_launcher.all_logs(memoized_run.run_id)
+            assert len(_get_step_execution_events(events)) == 0
+    finally:
+        cleanup_memoized_results(
+            define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+        )

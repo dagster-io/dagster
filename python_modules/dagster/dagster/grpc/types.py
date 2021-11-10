@@ -21,7 +21,7 @@ class ExecutionPlanSnapshotArgs(
     namedtuple(
         "_ExecutionPlanSnapshotArgs",
         "pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id "
-        "known_state",
+        "known_state instance_ref",
     )
 ):
     def __new__(
@@ -33,6 +33,7 @@ class ExecutionPlanSnapshotArgs(
         step_keys_to_execute,
         pipeline_snapshot_id,
         known_state=None,
+        instance_ref=None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -47,6 +48,7 @@ class ExecutionPlanSnapshotArgs(
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
