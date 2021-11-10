@@ -25,6 +25,7 @@ const REPOSITORY_GRAPHS_LIST_QUERY = gql`
           definition {
             __typename
             ... on CompositeSolidDefinition {
+              id
               name
               description
             }
