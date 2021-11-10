@@ -120,13 +120,14 @@ def launch_scheduled_runs_for_schedule(
 
     latest_tick = instance.get_latest_job_tick(schedule_state.job_origin_id)
 
-    if not latest_tick:
-        start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
-    elif latest_tick.status == JobTickStatus.STARTED:
-        # Scheduler was interrupted while performing this tick, re-do it
-        start_timestamp_utc = latest_tick.timestamp
-    else:
-        start_timestamp_utc = latest_tick.timestamp + 1
+    start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
+
+    if latest_tick:
+        if latest_tick.status == JobTickStatus.STARTED:
+            # Scheduler was interrupted while performing this tick, re-do it
+            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
+        else:
+            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp + 1)
 
     schedule_name = schedule_state.job_name
     repo_name = schedule_state.origin.external_repository_origin.repository_name
