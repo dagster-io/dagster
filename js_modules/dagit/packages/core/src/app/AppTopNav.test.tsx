@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {AppTopNav} from './AppTopNav';
+import {AppTopNav, AppTopNavTabs} from './AppTopNav';
 
 describe('AppTopNav', () => {
   const defaultMocks = {
@@ -16,7 +16,9 @@ describe('AppTopNav', () => {
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
-        <AppTopNav searchPlaceholder="Test..." />
+        <AppTopNav searchPlaceholder="Test...">
+          <AppTopNavTabs />
+        </AppTopNav>
       </TestProvider>
     );
   };

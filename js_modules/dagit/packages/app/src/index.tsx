@@ -5,7 +5,7 @@ import {App} from '@dagit/core/app/App';
 import {createAppCache} from '@dagit/core/app/AppCache';
 import {errorLink} from '@dagit/core/app/AppError';
 import {AppProvider} from '@dagit/core/app/AppProvider';
-import {AppTopNav} from '@dagit/core/app/AppTopNav';
+import {AppTopNav, AppTopNavTabs} from '@dagit/core/app/AppTopNav';
 import {ContentRoot} from '@dagit/core/app/ContentRoot';
 import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
 import {ColorsWIP} from '@dagit/core/ui/Colors';
@@ -48,6 +48,7 @@ const SettingsLink = styled(Link)`
 ReactDOM.render(
   <AppProvider appCache={appCache} config={config}>
     <AppTopNav searchPlaceholder="Search…">
+      <AppTopNavTabs />
       <SettingsLink to="/settings" title="User settings">
         <IconWIP name="settings" color={ColorsWIP.Gray200} />
       </SettingsLink>

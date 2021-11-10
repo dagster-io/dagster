@@ -2,6 +2,7 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {NAV_SCHEDULE_FRAGMENT, NAV_SENSOR_FRAGMENT} from '../nav/FlatContentList';
 import {PipelineSelector} from '../types/globalTypes';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
@@ -31,67 +32,85 @@ type WorkspaceState = {
   loading: boolean;
   locationEntries: RepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
-  refetch: () => Promise<ApolloQueryResult<RootRepositoriesQuery>>;
+  refetch: () => Promise<ApolloQueryResult<unknown>>;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
 
+export const ROOT_WORKSPACE_FRAGMENT = gql`
+  fragment RootWorkspaceFragment on Workspace {
+    locationEntries {
+      __typename
+      id
+      name
+      loadStatus
+      displayMetadata {
+        key
+        value
+      }
+      updatedTimestamp
+      locationOrLoadError {
+        ... on RepositoryLocation {
+          id
+          isReloadSupported
+          serverId
+          name
+          repositories {
+            id
+            name
+            pipelines {
+              id
+              name
+              isJob
+              graphName
+              pipelineSnapshotId
+              modes {
+                id
+                name
+              }
+              schedules {
+                id
+                ...NavScheduleFragment
+              }
+              sensors {
+                id
+                ...NavSensorFragment
+              }
+            }
+            partitionSets {
+              id
+              mode
+              pipelineName
+            }
+            ...RepositoryInfoFragment
+          }
+        }
+        ... on PythonError {
+          ...PythonErrorFragment
+        }
+      }
+    }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${NAV_SCHEDULE_FRAGMENT}
+  ${NAV_SENSOR_FRAGMENT}
+`;
+
 const ROOT_REPOSITORIES_QUERY = gql`
   query RootRepositoriesQuery {
     workspaceOrError {
       __typename
       ... on Workspace {
-        locationEntries {
-          __typename
-          id
-          name
-          loadStatus
-          displayMetadata {
-            key
-            value
-          }
-          updatedTimestamp
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              isReloadSupported
-              serverId
-              name
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  name
-                  isJob
-                  graphName
-                  pipelineSnapshotId
-                  modes {
-                    id
-                    name
-                  }
-                }
-                partitionSets {
-                  id
-                  mode
-                  pipelineName
-                }
-                ...RepositoryInfoFragment
-              }
-            }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
-          }
-        }
+        ...RootWorkspaceFragment
       }
       ...PythonErrorFragment
     }
   }
+  ${ROOT_WORKSPACE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
-  ${REPOSITORY_INFO_FRAGMENT}
 `;
 
 export const REPOSITORY_LOCATIONS_FRAGMENT = gql`

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+import { RepositoryLocationLoadStatus, InstigationStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RootRepositoriesQuery
@@ -22,6 +22,40 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
   name: string;
 }
 
+export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules {
+  __typename: "Schedule";
+  id: string;
+  mode: string;
+  name: string;
+  scheduleState: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState;
+}
+
+export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets {
+  __typename: "Target";
+  mode: string;
+  pipelineName: string;
+}
+
+export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  targets: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets[] | null;
+  sensorState: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState;
+}
+
 export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
@@ -30,6 +64,8 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
   graphName: string;
   pipelineSnapshotId: string;
   modes: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
+  schedules: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules[];
+  sensors: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors[];
 }
 
 export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets {
