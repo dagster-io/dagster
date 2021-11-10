@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from dagster import (
     DagsterInstance,
@@ -85,3 +87,8 @@ def test_instance_access_built_sensor():
 
     with instance_for_test() as instance:
         assert isinstance(build_sensor_context(instance).instance, DagsterInstance)
+
+
+def test_instance_access_with_mock():
+    mock_instance = mock.MagicMock(spec=DagsterInstance)
+    assert build_sensor_context(instance=mock_instance).instance == mock_instance
