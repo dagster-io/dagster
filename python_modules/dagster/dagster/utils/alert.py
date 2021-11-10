@@ -10,7 +10,7 @@ if TYPE_CHECKING:
         PipelineFailureSensorContext,
         RunFailureSensorContext,
     )
-    from dagster.core.definitions.graph import GraphDefinition
+    from dagster.core.definitions.graph_definition import GraphDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
 
 

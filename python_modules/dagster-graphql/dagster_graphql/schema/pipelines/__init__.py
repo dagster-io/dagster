@@ -36,7 +36,7 @@ def types():
         GrapheneRunOrError,
         GrapheneRun,
     )
-    from .resource_definition import GrapheneResource
+    from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
     from .status import GrapheneRunStatus
     from .subscription import (
