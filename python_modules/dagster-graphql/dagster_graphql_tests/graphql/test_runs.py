@@ -1,5 +1,6 @@
 import copy
 
+import yaml
 from dagster import execute_pipeline, lambda_solid, pipeline, repository
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
@@ -47,6 +48,7 @@ fragment RunHistoryRunFragment on PipelineRun {
       key
     }
   }
+  runConfig
   runConfigYaml
   mode
   canTerminate
@@ -278,6 +280,35 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
             read_context, DELETE_RUN_MUTATION, variables={"runId": run_id_two}
         )
         assert result.data["deletePipelineRun"]["__typename"] == "RunNotFoundError"
+
+    def test_run_config(self, graphql_context):
+        # This include needs to be here because its inclusion screws up
+        # other code in this file which reads itself to load a repo
+        from .utils import sync_execute_get_run_log_data
+
+        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
+
+        sync_execute_get_run_log_data(
+            context=graphql_context,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "add_mode",
+                    "runConfigData": {"resources": {"op": {"config": 2}}},
+                }
+            },
+        )
+        result = execute_dagster_graphql(
+            graphql_context, RUNS_QUERY, variables={"selector": selector}
+        )
+
+        runs = result.data["pipelineOrError"]["runs"]
+        assert len(runs) == 1
+        run = runs[0]
+        assert run["runConfig"] == {"resources": {"op": {"config": 2}}}
+        assert run["runConfigYaml"] == yaml.safe_dump(
+            run["runConfig"], default_flow_style=False, allow_unicode=True
+        )
 
 
 def get_repo_at_time_1():

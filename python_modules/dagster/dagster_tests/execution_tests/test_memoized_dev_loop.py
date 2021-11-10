@@ -121,14 +121,14 @@ def test_memoization_with_default_strategy():
             unmemoized_plan = create_execution_plan(my_job, instance=instance)
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
-            result = my_job.execute_in_process()
+            result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
             execution_plan = create_execution_plan(my_job, instance=instance)
             assert len(execution_plan.step_keys_to_execute) == 0
 
-            result = my_job.execute_in_process()
+            result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
@@ -207,7 +207,7 @@ def test_version_strategy_depends_from_context():
     run_config = {"solids": {"my_op": {"config": {"arg": "foo"}}}}
 
     @op
-    def my_op(context):
+    def my_op():
         graph_executed.append("executed")
 
     @graph

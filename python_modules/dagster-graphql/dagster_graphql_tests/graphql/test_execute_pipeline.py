@@ -568,6 +568,39 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             assert len(step_mat_event["materialization"]["metadataEntries"]) == 1
             assert step_mat_event["materialization"]["metadataEntries"][0]["path"] == out_csv_path
 
+    def test_start_job_execution_with_default_config(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "job_with_default_config")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                }
+            },
+        )
+        # should succeed for this job, even when not providing config because it should
+        # pick up the job default run_config
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+    def test_pipeline_execution_fails_no_mode(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "NoModeProvidedError"
+
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
     for message_data in pipeline_run_logs["messages"]:

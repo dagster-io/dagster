@@ -87,7 +87,11 @@ def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for pipeline in external_repository.get_all_external_pipelines():
+            for pipeline in (
+                external_repository.get_external_jobs()
+                if using_job_op_graph_apis
+                else external_repository.get_all_external_pipelines()
+            ):
                 pipeline_title = "{pipeline_or_job}: {name}".format(
                     pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                     name=pipeline.name,
@@ -521,6 +525,7 @@ def _create_external_pipeline_run(
         pipeline_mode,
         step_keys_to_execute=None,
         known_state=None,
+        instance=instance,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
@@ -614,7 +619,7 @@ def pipeline_launch_command(**kwargs):
 
 
 @telemetry_wrapper
-def execute_launch_command(instance, kwargs):
+def execute_launch_command(instance, kwargs, using_job_op_graph_apis=False):
     preset = kwargs.get("preset")
     mode = kwargs.get("mode")
     check.inst_param(instance, "instance", DagsterInstance)
@@ -626,7 +631,7 @@ def execute_launch_command(instance, kwargs):
             repo_location, kwargs.get("repository")
         )
         external_pipeline = get_external_pipeline_or_job_from_external_repo(
-            external_repo, kwargs.get("pipeline_or_job")
+            external_repo, kwargs.get("pipeline_or_job"), using_job_op_graph_apis
         )
 
         log_external_repo_stats(
@@ -671,8 +676,10 @@ def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 
-def execute_scaffold_command(cli_args, print_fn):
-    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(cli_args)
+def execute_scaffold_command(cli_args, print_fn, using_job_op_graph_apis=False):
+    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(
+        cli_args, using_job_op_graph_apis
+    )
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     skip_non_required = cli_args["print_only_required"]
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)

@@ -287,8 +287,8 @@ const Experimental = () => {
 
 export default {
   a: ({ children, ...props }) => {
-    // Skip if in-page links
-    if (props.href.startsWith("#")) {
+    // Skip in-page links and external links
+    if (!props.href.startsWith("/")) {
       return <a {...props}>{children}</a>;
     }
     // Hydrate the links in raw MDX to include versions

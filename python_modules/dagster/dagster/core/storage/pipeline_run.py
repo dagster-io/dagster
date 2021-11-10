@@ -96,7 +96,7 @@ class PipelineRunStatsSnapshot(
         )
 
 
-class PipelineRunSerializer(DefaultNamedTupleSerializer):
+class DagsterRunSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_from_storage_dict(
         cls,
@@ -396,7 +396,7 @@ class PipelineRun(
         return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
 
 
-@whitelist_for_serdes(serializer=PipelineRunSerializer)
+@whitelist_for_serdes(serializer=DagsterRunSerializer)
 class DagsterRun(PipelineRun):
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.

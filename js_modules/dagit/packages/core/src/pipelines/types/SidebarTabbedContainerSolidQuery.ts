@@ -575,6 +575,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   name: string;
   description: string | null;
   metadata: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
+  id: string;
   inputMappings: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputMappings[];
 }

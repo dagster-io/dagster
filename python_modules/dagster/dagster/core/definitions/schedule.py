@@ -1,3 +1,4 @@
+import copy
 from contextlib import ExitStack
 from datetime import datetime
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
@@ -228,27 +229,17 @@ class ScheduleDefinition:
             self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
             self._run_config_fn = None
         else:
-            from .job import JobDefinition
 
             if run_config_fn and run_config:
                 raise DagsterInvalidDefinitionError(
                     "Attempted to provide both run_config_fn and run_config as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            elif (
-                job
-                and isinstance(job, JobDefinition)
-                and job.has_preset("default")
-                and run_config_fn is None
-                and run_config is None
-            ):
-                self._run_config_fn = lambda _context: job.get_preset("default").run_config
-            else:
-                self._run_config_fn = check.opt_callable_param(
-                    run_config_fn,
-                    "run_config_fn",
-                    default=lambda _context: check.opt_dict_param(run_config, "run_config"),
-                )
+            self._run_config_fn = check.opt_callable_param(
+                run_config_fn,
+                "run_config_fn",
+                default=lambda _context: check.opt_dict_param(run_config, "run_config"),
+            )
 
             if tags_fn and tags:
                 raise DagsterInvalidDefinitionError(
@@ -282,7 +273,7 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
                 ):
-                    evaluated_run_config = (
+                    evaluated_run_config = copy.deepcopy(
                         self._run_config_fn(context)
                         if is_context_provided(get_function_params(self._run_config_fn))
                         else self._run_config_fn()
@@ -348,13 +339,13 @@ class ScheduleDefinition:
 
             context = context if context else build_schedule_context()
 
-            return self._run_config_fn(context)
+            return copy.deepcopy(self._run_config_fn(context))
         else:
             if len(args) + len(kwargs) > 0:
                 raise DagsterInvalidInvocationError(
                     "Decorated schedule function takes no arguments, but arguments were provided."
                 )
-            return self._run_config_fn()
+            return copy.deepcopy(self._run_config_fn())
 
     @property
     def name(self) -> str:

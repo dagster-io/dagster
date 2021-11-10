@@ -148,6 +148,7 @@ export interface SolidNodeDefinitionFragment_CompositeSolidDefinition {
   metadata: SolidNodeDefinitionFragment_CompositeSolidDefinition_metadata[];
   inputDefinitions: SolidNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidNodeDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];
+  id: string;
   inputMappings: SolidNodeDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SolidNodeDefinitionFragment_CompositeSolidDefinition_outputMappings[];
 }

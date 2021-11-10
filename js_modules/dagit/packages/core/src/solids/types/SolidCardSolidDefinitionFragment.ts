@@ -148,6 +148,7 @@ export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition {
   metadata: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_metadata[];
   inputDefinitions: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];
+  id: string;
   inputMappings: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputMappings[];
 }

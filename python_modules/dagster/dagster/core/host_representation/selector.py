@@ -142,3 +142,29 @@ class InstigationSelector(namedtuple("_InstigationSelector", "location_name repo
             repository_name=graphql_data["repositoryName"],
             name=graphql_data["name"],
         )
+
+
+class GraphSelector(namedtuple("_GraphSelector", "location_name repository_name graph_name")):
+    """
+    The information needed to resolve a graph within a host process.
+    """
+
+    def __new__(
+        cls,
+        location_name,
+        repository_name,
+        graph_name,
+    ):
+        return super(GraphSelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            graph_name=check.str_param(graph_name, "graph_name"),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "graphName": self.graph_name,
+        }

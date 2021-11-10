@@ -11,14 +11,18 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    SourceHashVersionStrategy,
     String,
     composite_solid,
     dagster_type_loader,
     execute_pipeline,
+    fs_io_manager,
     graph,
     io_manager,
+    job,
     op,
     pipeline,
+    reconstructable,
     resource,
     root_input_manager,
     solid,
@@ -727,18 +731,18 @@ bad_str = "'well this doesn't work !'"
 
 
 class BadSolidStrategy(VersionStrategy):
-    def get_solid_version(self, solid_def):
+    def get_solid_version(self, _):
         return bad_str
 
-    def get_resource_version(self, resource_def):
+    def get_resource_version(self, _):
         return "foo"
 
 
 class BadResourceStrategy(VersionStrategy):
-    def get_solid_version(self, solid_def):
+    def get_solid_version(self, _):
         return "foo"
 
-    def get_resource_version(self, resource_def):
+    def get_resource_version(self, _):
         return bad_str
 
 
@@ -813,7 +817,7 @@ def test_bad_version_str(graph_for_test, strategy):
             create_execution_plan(my_job, instance=instance)
 
 
-def test_version_strategy_on_pipeline():
+def get_version_strategy_pipeline():
     @solid
     def my_solid():
         return 5
@@ -824,21 +828,21 @@ def test_version_strategy_on_pipeline():
 
     @pipeline(
         version_strategy=MyVersionStrategy(),
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
-                        VersionedInMemoryIOManager()
-                    )
-                }
-            )
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
     )
     def ten_pipeline():
         my_solid()
 
+    return ten_pipeline
+
+
+def test_version_strategy_on_pipeline():
+
+    ten_pipeline = get_version_strategy_pipeline()
+
     with instance_for_test() as instance:
-        execute_pipeline(ten_pipeline, instance=instance)
+        result = execute_pipeline(ten_pipeline, instance=instance)
+        assert result.success
 
         memoized_plan = create_execution_plan(ten_pipeline, instance=instance)
         assert len(memoized_plan.step_keys_to_execute) == 0
@@ -877,4 +881,34 @@ def test_version_strategy_no_resource_version():
         execute_pipeline(my_pipeline, instance=instance)
 
         memoized_plan = create_execution_plan(my_pipeline, instance=instance)
+        assert len(memoized_plan.step_keys_to_execute) == 0
+
+
+def test_code_versioning_strategy():
+    @op
+    def my_op():
+        return 5
+
+    @job(version_strategy=SourceHashVersionStrategy())
+    def call_the_op():
+        my_op()
+
+    with instance_for_test() as instance:
+        result = call_the_op.execute_in_process(instance=instance)
+        assert result.success
+        memoized_plan = create_execution_plan(call_the_op, instance=instance)
+
+
+def test_memoization_multiprocess_execution():
+
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(get_version_strategy_pipeline),
+            instance=instance,
+            run_config={"execution": {"multiprocess": {}}},
+        )
+
+        assert result.success
+
+        memoized_plan = create_execution_plan(get_version_strategy_pipeline(), instance=instance)
         assert len(memoized_plan.step_keys_to_execute) == 0
