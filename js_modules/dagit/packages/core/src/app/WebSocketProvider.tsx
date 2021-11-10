@@ -57,6 +57,10 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
 
   React.useEffect(() => {
+    // Note: In Firefox, we sometimes see websockets closed with the error message
+    // "The connection to wss://... was interrupted while the page was loading"
+    // The client reconnects, but we need to continue listening for state changes
+    // after "onError" below to realize that websockets are in fact supported.
     const availabilityListeners = [
       websocketClient.onConnected(() => setFinalAvailability('available')),
       websocketClient.onReconnected(() => setFinalAvailability('available')),
