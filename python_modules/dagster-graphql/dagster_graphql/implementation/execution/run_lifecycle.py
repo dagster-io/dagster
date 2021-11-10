@@ -1,5 +1,4 @@
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -8,9 +7,9 @@ from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 from graphql.execution.base import ResolveInfo
 
+from ...schema.errors import GrapheneNoModeProvidedError
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams, UserFacingGraphQLError
-from ...schema.errors import GrapheneNoModeProvidedError
 
 
 def compute_step_keys_to_execute(graphene_info, execution_params):

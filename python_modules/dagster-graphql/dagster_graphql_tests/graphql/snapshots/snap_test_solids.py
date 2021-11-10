@@ -12,6 +12,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'a_solid_with_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'job_with_default_config'
+                        },
+                        'solidHandle': {
+                            'handleID': 'a_solid_with_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'a_solid_with_multilayered_config'
                 },
                 'invocations': [
