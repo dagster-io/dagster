@@ -1,17 +1,16 @@
 import os
+from tempfile import TemporaryDirectory
+
 import pytest
 import responses
-
 from airflow.models import Connection
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.sqlite_operator import SqliteOperator
-
 from dagster import job, op
 from dagster.core.test_utils import instance_for_test
-from dagster_airflow import operator_to_op
-from tempfile import TemporaryDirectory
+from dagster_airflow import airflow_operator_to_op
 
 
 def test_simple_bash_task():
@@ -20,7 +19,7 @@ def test_simple_bash_task():
             task_id="bash_task", bash_command=f"cd {tmpdir}; touch my_file.txt"
         )
 
-        dagster_op = operator_to_op(simple_bash_task)
+        dagster_op = airflow_operator_to_op(simple_bash_task)
 
         @job
         def my_job():
@@ -39,7 +38,7 @@ def test_env_bash_task():
             env={"foo": "bar.txt"},
         )
 
-        dagster_op = operator_to_op(env_bash_task)
+        dagster_op = airflow_operator_to_op(env_bash_task)
 
         @job
         def my_job():
@@ -55,7 +54,7 @@ def test_failure_bash_task():
         task_id="failure_bash_task",
         bash_command="aslkdjalskd",
     )
-    dagster_op = operator_to_op(failure_bash_task)
+    dagster_op = airflow_operator_to_op(failure_bash_task)
 
     @job
     def my_job():
@@ -70,7 +69,7 @@ def test_http_task():
 
     connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
 
-    dagster_op = operator_to_op(http_task, connections=connections)
+    dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
     @job
     def my_job():
@@ -93,7 +92,7 @@ def test_capture_op_logs():
         env={"foo": "quux"},
     )
 
-    dagster_op = operator_to_op(env_bash_task)
+    dagster_op = airflow_operator_to_op(env_bash_task)
 
     @job
     def my_job():
@@ -116,7 +115,7 @@ def test_capture_hook_logs():
 
     connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
 
-    dagster_op = operator_to_op(http_task, connections=connections)
+    dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
     @job
     def my_job():
@@ -144,7 +143,7 @@ def test_return_output_xcom():
         task_id="python_task", python_callable=my_python_func, xcom_push=True
     )
 
-    dagster_op = operator_to_op(simple_python_task, return_output=True)
+    dagster_op = airflow_operator_to_op(simple_python_task, return_output=True)
 
     @job
     def my_job():
@@ -161,7 +160,7 @@ def chain_converted_op_output():
     simple_python_task = PythonOperator(
         task_id="python_task", python_callable=my_python_func, xcom_push=True
     )
-    dagster_op = operator_to_op(simple_python_task, return_output=True)
+    dagster_op = airflow_operator_to_op(simple_python_task, return_output=True)
 
     @op
     def mult_by_two(num):
@@ -186,7 +185,7 @@ def test_sqlite_operator(capsys):
             )
         ]
 
-        sqlite_task = operator_to_op(
+        sqlite_task = airflow_operator_to_op(
             SqliteOperator(
                 task_id="sqlite_task",
                 sql="DROP TABLE IF EXISTS normalized_cereals",
