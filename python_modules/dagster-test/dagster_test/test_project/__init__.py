@@ -11,9 +11,6 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.build_resources import build_resources
-from dagster.core.execution.context.output import build_output_context
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
@@ -31,30 +28,6 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
-    # Clean up any memoized outputs from the s3 bucket
-    from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
-
-    execution_plan = create_execution_plan(
-        pipeline_def, run_config=run_config, instance=instance, mode=mode_str
-    )
-
-    with build_resources(
-        {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        resource_config=run_config["resources"],
-    ) as resources:
-        io_manager = resources.io_manager
-        for step_output_handle, version in execution_plan.step_output_versions.items():
-            output_context = build_output_context(
-                step_key=step_output_handle.step_key,
-                name=step_output_handle.output_name,
-                version=version,
-            )
-            # pylint: disable=protected-access
-            key = io_manager._get_path(output_context)
-            io_manager._rm_object(key)
 
 
 def get_test_repo_path():

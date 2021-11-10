@@ -9,7 +9,6 @@ from dagster import (
     DagsterUnmetExecutorRequirementsError,
     InputDefinition,
     ModeDefinition,
-    VersionStrategy,
     execute_pipeline,
     execute_pipeline_iterator,
     file_relative_path,
@@ -266,45 +265,3 @@ def test_existing_scheduler():
                     assert result.result_for_solid("simple").output_value() == 1
 
     asyncio.get_event_loop().run_until_complete(_run_test())
-
-
-@solid
-def foo_solid():
-    return "foo"
-
-
-class BasicVersionStrategy(VersionStrategy):
-    def get_solid_version(self, _):
-        return "foo"
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
-        )
-    ],
-    version_strategy=BasicVersionStrategy(),
-)
-def foo_pipeline():
-    foo_solid()
-
-
-def test_dask_executor_memoization():
-    with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_pipeline),
-            instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
-        )
-        assert result.success
-        assert result.output_for_solid("foo_solid") == "foo"
-
-        result = execute_pipeline(
-            reconstructable(foo_pipeline),
-            instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
-        )
-        assert result.success
-        assert len(result.step_event_list) == 0

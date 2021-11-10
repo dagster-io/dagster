@@ -3,30 +3,8 @@ from typing import Dict, List, NamedTuple, cast
 
 from dagster import check
 from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.retries import RetryState
 from dagster.serdes import whitelist_for_serdes
-
-
-@whitelist_for_serdes
-class StepOutputVersionData(NamedTuple):
-    step_output_handle: StepOutputHandle
-    version: str
-
-    @staticmethod
-    def get_version_list_from_dict(
-        step_output_versions: Dict[StepOutputHandle, str]
-    ) -> List["StepOutputVersionData"]:
-        return [
-            StepOutputVersionData(step_output_handle=step_output_handle, version=version)
-            for step_output_handle, version in step_output_versions.items()
-        ]
-
-    @staticmethod
-    def get_version_dict_from_list(
-        step_output_versions: List["StepOutputVersionData"],
-    ) -> Dict[StepOutputHandle, str]:
-        return {data.step_output_handle: data.version for data in step_output_versions}
 
 
 @whitelist_for_serdes
@@ -38,8 +16,6 @@ class KnownExecutionState(
             ("previous_retry_attempts", Dict[str, int]),
             # step_key -> output_name -> mapping_keys
             ("dynamic_mappings", Dict[str, Dict[str, List[str]]]),
-            # step_output_handle -> version
-            ("step_output_versions", List[StepOutputVersionData]),
         ],
     )
 ):
@@ -49,7 +25,7 @@ class KnownExecutionState(
     resolved dynamic outputs.
     """
 
-    def __new__(cls, previous_retry_attempts, dynamic_mappings, step_output_versions=None):
+    def __new__(cls, previous_retry_attempts, dynamic_mappings):
 
         return super(KnownExecutionState, cls).__new__(
             cls,
@@ -57,9 +33,6 @@ class KnownExecutionState(
                 previous_retry_attempts, "previous_retry_attempts", key_type=str, value_type=int
             ),
             check.dict_param(dynamic_mappings, "dynamic_mappings", key_type=str, value_type=dict),
-            check.opt_list_param(
-                step_output_versions, "step_output_versions", of_type=StepOutputVersionData
-            ),
         )
 
     def get_retry_state(self):

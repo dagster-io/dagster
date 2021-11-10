@@ -456,7 +456,6 @@ def _create_sensor_run(
         target_data.mode,
         step_keys_to_execute=None,
         known_state=None,
-        instance=instance,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 

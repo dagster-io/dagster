@@ -80,7 +80,7 @@ def test_fs_io_manager_memoization():
         my_op()
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_solid_version(self, solid_def):
             return "foo"
 
     with tempfile.TemporaryDirectory() as temp_dir:
