@@ -16,9 +16,6 @@ from typing import (
 )
 
 from dagster import check
-from .graph_definition import GraphDefinition
-from .input import InputDefinition, InputMapping
-from .policy import RetryPolicy
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -39,10 +36,13 @@ from .dependency import (
     MultiDependencyDefinition,
     NodeInvocation,
 )
+from .graph_definition import GraphDefinition
 from .hook_definition import HookDefinition
 from .inference import infer_output_props
+from .input import InputDefinition, InputMapping
 from .logger_definition import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
+from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 from .solid_definition import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags

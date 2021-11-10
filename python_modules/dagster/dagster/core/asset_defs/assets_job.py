@@ -12,7 +12,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor import ExecutorDefinition
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.job import JobDefinition
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition

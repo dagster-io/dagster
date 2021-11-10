@@ -35,8 +35,8 @@ from .dependency import (
 from .graph_definition import GraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
-from .preset import PresetDefinition
 from .node_definition import NodeDefinition
+from .preset import PresetDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 

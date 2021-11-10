@@ -17,7 +17,7 @@ def types():
         GrapheneRuntimeMismatchConfigError,
         GrapheneSelectorTypeConfigError,
     )
-    from .logger_definition import GrapheneLogger
+    from .logger import GrapheneLogger
     from .mode import GrapheneMode
     from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
     from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline

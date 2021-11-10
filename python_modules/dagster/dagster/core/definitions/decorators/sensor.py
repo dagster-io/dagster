@@ -14,8 +14,8 @@ from ..sensor_definition import (
     AssetSensorDefinition,
     RunRequest,
     SensorDefinition,
-    SkipReason,
     SensorEvaluationContext,
+    SkipReason,
 )
 
 if TYPE_CHECKING:
