@@ -5,7 +5,6 @@ from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
