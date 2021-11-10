@@ -134,8 +134,9 @@ class FivetranResource:
                 "Setup" tab of a given connector in the Fivetran UI.
 
         Returns:
-            Tuple[datetime.datetime, bool, str]: Tuple representing the timestamp of the last
-                completeded sync, if it succeeded, and currently reported sync status.
+            Tuple[datetime.datetime, bool, str]:
+                Tuple representing the timestamp of the last completeded sync, if it succeeded, and
+                the currently reported sync status.
         """
         connector_data = self.get_connector_details(connector_id)
 
@@ -328,11 +329,51 @@ class FivetranResource:
 )
 def fivetran_resource(context) -> FivetranResource:
     """
-    This resource allows users to programatically interface with the Fivetran API. This only
-    implements a subset of the functionality exposed by the Fivetran API, and focuses on managing
-    [Fivetran connectors](https://fivetran.com/docs/rest-api/connectors).
+    This resource allows users to programatically interface with the Fivetran REST API to launch
+    syncs and monitor their progress. This currently implements only a subset of the functionality
+    exposed by the API.
 
-    It requires
+    For a complete set of documentation on the Fivetran REST API, including expected response JSON
+    schemae, see the `Fivetran API Docs <https://fivetran.com/docs/rest-api/connectors>`_.
+
+    To configure this resource, we recommend using the `configured
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+
+    **Config Options:**
+
+    api_key (StringSource)
+        Fivetran API Key. You can find this value on the Fivetran settings page:
+        https://fivetran.com/account/settings.
+    api_secret (StringSource)
+        Fivetran API Key. You can find this value on the Fivetran settings page:
+        https://fivetran.com/account/settings.
+    disable_schedule_on_trigger (bool)
+        Specifies if you would like any connector that is sync'd using this resource to be
+        automatically taken off its Fivetran schedule. Defaults to ``True``.
+    request_max_retries (int)
+        The maximum number of times requests to the Fivetran API should be retried before
+        failing. Defaults to ``3``.
+    request_retry_delay (float)
+        Time (in seconds) to wait between each request retry.  Defaults to ``0.25``.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_fivetran import fivetran_resource
+
+        my_fivetran_resource = fivetran_resource.configured(
+            {
+                "api_key": {"env": "FIVETRAN_API_KEY"},
+                "api_secret": {"env": "FIVETRAN_API_SECRET"},
+            }
+        )
+
+        @job(resource_defs={"fivetran":my_fivetran_resource})
+        def my_fivetran_job():
+            ...
+
     """
     return FivetranResource(
         api_key=context.resource_config["api_key"],
