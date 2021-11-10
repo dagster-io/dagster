@@ -1,6 +1,6 @@
 import copy
-import yaml
 
+import yaml
 from dagster import execute_pipeline, lambda_solid, pipeline, repository
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
