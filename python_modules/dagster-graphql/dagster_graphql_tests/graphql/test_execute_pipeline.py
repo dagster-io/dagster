@@ -585,6 +585,22 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
+    def test_pipeline_execution_fails_no_mode(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "NoModeProvidedError"
+
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
     for message_data in pipeline_run_logs["messages"]:

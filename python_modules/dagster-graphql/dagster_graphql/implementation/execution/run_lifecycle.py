@@ -9,7 +9,8 @@ from dagster.utils import merge_dicts
 from graphql.execution.base import ResolveInfo
 
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
-from ..utils import ExecutionParams
+from ..utils import ExecutionParams, UserFacingGraphQLError
+from ...schema.errors import GrapheneNoModeProvidedError
 
 
 def compute_step_keys_to_execute(graphene_info, execution_params):
@@ -41,11 +42,8 @@ def is_resume_retry(execution_params):
 
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
     if execution_params.mode is None and len(external_pipeline.available_modes) > 1:
-        raise DagsterInvariantViolationError(
-            f"Pipeline {external_pipeline.name} has multiple modes (Available modes: "
-            f"{external_pipeline.avaliable_modes}) and you have "
-            "attempted to execute it without specifying a mode. Set a "
-            "mode as a parameter to the graphql query."
+        raise UserFacingGraphQLError(
+            GrapheneNoModeProvidedError(external_pipeline.name, external_pipeline.available_modes)
         )
     elif execution_params.mode is None and len(external_pipeline.available_modes) == 1:
         mode = external_pipeline.available_modes[0]
