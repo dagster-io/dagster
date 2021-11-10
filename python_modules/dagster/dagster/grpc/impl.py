@@ -43,7 +43,6 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
-from dagster.seven import nullcontext
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.interrupts import capture_interrupts
@@ -116,22 +115,18 @@ def _run_in_subprocess(
         execute_run_args = deserialize_json_to_dagster_namedtuple(serialized_execute_run_args)
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
-        with (
-            DagsterInstance.from_ref(execute_run_args.instance_ref)
-            if execute_run_args.instance_ref
-            else nullcontext()
-        ) as instance:
-            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+        instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
+        pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
 
-            if not pipeline_run:
-                raise DagsterRunNotFoundError(
-                    "gRPC server could not load run {run_id} in order to execute it. Make sure that the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.pipeline_run_id
-                    ),
-                    invalid_run_id=execute_run_args.pipeline_run_id,
-                )
+        if not pipeline_run:
+            raise DagsterRunNotFoundError(
+                "gRPC server could not load run {run_id} in order to execute it. Make sure that the gRPC server has access to your run storage.".format(
+                    run_id=execute_run_args.pipeline_run_id
+                ),
+                invalid_run_id=execute_run_args.pipeline_run_id,
+            )
 
-            pid = os.getpid()
+        pid = os.getpid()
 
     except:
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -352,8 +347,6 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
             else recon_pipeline
         )
 
-        instance = DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else None
-
         return snapshot_from_execution_plan(
             create_execution_plan(
                 pipeline=pipeline,
@@ -361,7 +354,6 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
                 mode=args.mode,
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
-                instance=instance,
             ),
             args.pipeline_snapshot_id,
         )

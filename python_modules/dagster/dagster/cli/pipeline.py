@@ -525,7 +525,6 @@ def _create_external_pipeline_run(
         pipeline_mode,
         step_keys_to_execute=None,
         known_state=None,
-        instance=instance,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 

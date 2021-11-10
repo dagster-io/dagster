@@ -7,7 +7,6 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
-    VersionStrategy,
     default_executors,
     fs_io_manager,
     lambda_solid,
@@ -324,26 +323,3 @@ def fooqueue(context):
 @pipeline(mode_defs=celery_mode_defs)
 def multiqueue_pipeline():
     fooqueue()
-
-
-@solid
-def bar_solid():
-    return "bar"
-
-
-class BasicVersionStrategy(VersionStrategy):
-    def get_solid_version(self, _):
-        return "bar"
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [celery_executor],
-        )
-    ],
-    version_strategy=BasicVersionStrategy(),
-)
-def bar_pipeline():
-    bar_solid()

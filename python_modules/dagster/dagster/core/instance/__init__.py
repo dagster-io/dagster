@@ -707,7 +707,6 @@ class DagsterInstance:
         pipeline_code_origin=None,
     ):
         from dagster.core.execution.plan.plan import ExecutionPlan
-        from dagster.core.execution.api import create_execution_plan
         from dagster.core.snap import snapshot_from_execution_plan
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -744,11 +743,10 @@ class DagsterInstance:
             step_keys_to_execute = execution_plan.step_keys_to_execute
 
         else:
-            execution_plan = create_execution_plan(
-                pipeline=InMemoryPipeline(pipeline_def),
-                run_config=run_config,
-                mode=mode,
-                instance=self,
+            resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
+            execution_plan = ExecutionPlan.build(
+                InMemoryPipeline(pipeline_def),
+                resolved_run_config,
                 tags=tags,
             )
 
