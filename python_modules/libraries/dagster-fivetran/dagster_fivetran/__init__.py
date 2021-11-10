@@ -1,7 +1,7 @@
 from dagster.core.utils import check_dagster_package_version
 
 from .ops import fivetran_sync_op
-from .resources import fivetran_resource, FivetranResource
+from .resources import FivetranResource, fivetran_resource
 from .version import __version__
 
 check_dagster_package_version("dagster-fivetran", __version__)

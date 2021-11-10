@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from dagster import Field, In, Out, Noneable, Nothing, op
+from dagster import Field, In, Noneable, Nothing, Out, op
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 
 
