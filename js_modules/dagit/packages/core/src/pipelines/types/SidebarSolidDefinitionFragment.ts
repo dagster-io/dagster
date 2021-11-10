@@ -495,6 +495,7 @@ export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarSolidDefinitionFragment_CompositeSolidDefinition_metadata[];
+  id: string;
   inputMappings: SidebarSolidDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarSolidDefinitionFragment_CompositeSolidDefinition_outputMappings[];
 }

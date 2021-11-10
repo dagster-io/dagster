@@ -186,6 +186,7 @@ export const Composite = () => {
   composite.definition = {
     ...composite.definition,
     __typename: 'CompositeSolidDefinition',
+    id: 'composite-solid-id',
     inputMappings: [
       {
         __typename: 'InputMapping',

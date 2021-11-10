@@ -215,6 +215,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeS
   metadata: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions[];
+  id: string;
   inputMappings: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputMappings[];
 }

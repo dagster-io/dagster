@@ -215,6 +215,7 @@ export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition 
   metadata: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions[];
+  id: string;
   inputMappings: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings[];
 }

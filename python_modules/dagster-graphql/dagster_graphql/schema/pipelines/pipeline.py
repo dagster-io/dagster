@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 import graphene
 import yaml
 from dagster import check
@@ -7,7 +5,6 @@ from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
@@ -424,10 +421,10 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(self.get_represented_pipeline()).get(handleID)
+        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(self.get_represented_pipeline())
+        handles = build_solid_handles(self.get_represented_pipeline())
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -598,15 +595,65 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
 
-@lru_cache(maxsize=32)
-def _get_solid_handles(represented_pipeline):
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
-    return {
-        str(item.handleID): item
-        for item in build_solid_handles(
-            represented_pipeline, represented_pipeline.dep_structure_index
+class GrapheneGraph(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneSolidContainer,)
+        name = "Graph"
+
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+    solid_handle = graphene.Field(
+        GrapheneSolidHandle,
+        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+    solid_handles = graphene.Field(
+        non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
+    )
+    modes = non_null_list(GrapheneMode)
+
+    def __init__(self, external_pipeline, solid_handle_id=None):
+        self._external_pipeline = check.inst_param(
+            external_pipeline, "external_pipeline", ExternalPipeline
         )
-    }
+        self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
+        super().__init__()
+
+    def resolve_id(self, _graphene_info):
+        if self._solid_handle_id:
+            return (
+                f"{self._external_pipeline.get_external_origin_id()}:solid:{self._solid_handle_id}"
+            )
+        return f"graph:{self._external_pipeline.get_external_origin_id()}"
+
+    def resolve_name(self, _graphene_info):
+        return self._external_pipeline.get_graph_name()
+
+    def resolve_description(self, _graphene_info):
+        return self._external_pipeline.description
+
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        return build_solid_handles(self._external_pipeline).get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        handles = build_solid_handles(self._external_pipeline)
+        parentHandleID = kwargs.get("parentHandleID")
+
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            }
+
+        return [handles[key] for key in sorted(handles)]
+
+    def resolve_modes(self, _graphene_info):
+        # returns empty list... graphs don't have modes, this is a vestige of the old
+        # pipeline explorer, which expected all solid containers to be pipelines
+        return []
 
 
 class GrapheneRunOrError(graphene.Union):

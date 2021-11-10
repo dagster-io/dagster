@@ -2,7 +2,7 @@ import sys
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.host_representation import PipelineSelector
+from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 
@@ -56,6 +56,14 @@ def pipeline_selector_from_graphql(data):
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),
         solid_selection=data.get("solidSelection"),
+    )
+
+
+def graph_selector_from_graphql(data):
+    return GraphSelector(
+        location_name=data["repositoryLocationName"],
+        repository_name=data["repositoryName"],
+        graph_name=data["graphName"],
     )
 
 
