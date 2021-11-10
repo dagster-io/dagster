@@ -492,9 +492,20 @@ class GrapheneSolidContainer(graphene.Interface):
 
 
 class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
     solids = non_null_list(GrapheneSolid)
     input_mappings = non_null_list(GrapheneInputMapping)
     output_mappings = non_null_list(GrapheneOutputMapping)
+    solid_handle = graphene.Field(
+        GrapheneSolidHandle,
+        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+    solid_handles = graphene.Field(
+        non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
+    )
+    modes = non_null_list("dagster_graphql.schema.pipelines.mode.GrapheneMode")
 
     class Meta:
         interfaces = (GrapheneISolidDefinition, GrapheneSolidContainer)
@@ -509,8 +520,33 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
+    def resolve_id(self, _graphene_info):
+        return f"{self._represented_pipeline.get_external_origin_id()}:{self._solid_def_snap.name}"
+
     def resolve_solids(self, _graphene_info):
         return build_solids(self._represented_pipeline, self._comp_solid_dep_index)
+
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        from .pipelines.pipeline import get_solid_handles_from_pipeline
+
+        return get_solid_handles_from_pipeline(self._represented_pipeline).get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        from .pipelines.pipeline import get_solid_handles_from_pipeline
+
+        handles = get_solid_handles_from_pipeline(self._represented_pipeline)
+        parentHandleID = kwargs.get("parentHandleID")
+
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            }
+
+        return [handles[key] for key in sorted(handles)]
 
     def resolve_output_mappings(self, _graphene_info):
         return [
@@ -533,6 +569,11 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
             )
             for input_def_snap in self._solid_def_snap.input_def_snaps
         ]
+
+    def resolve_modes(self, _graphene_info):
+        # returns empty list... composite solids don't have modes, this is a vestige of the old
+        # pipeline explorer, which expected all solid containers to be pipelines
+        return []
 
 
 def build_solid_definition(represented_pipeline, solid_def_name):

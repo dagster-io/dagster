@@ -418,10 +418,10 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(self.get_represented_pipeline()).get(handleID)
+        return get_solid_handles_from_pipeline(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(self.get_represented_pipeline())
+        handles = get_solid_handles_from_pipeline(self.get_represented_pipeline())
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -630,10 +630,10 @@ class GrapheneGraph(graphene.ObjectType):
         return self._external_pipeline.description
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(self._external_pipeline).get(handleID)
+        return get_solid_handles_from_pipeline(self._external_pipeline).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(self._external_pipeline)
+        handles = get_solid_handles_from_pipeline(self._external_pipeline)
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -648,12 +648,13 @@ class GrapheneGraph(graphene.ObjectType):
         return [handles[key] for key in sorted(handles)]
 
     def resolve_modes(self, _graphene_info):
-        # returns empty list... graphs don't have modes
+        # returns empty list... graphs don't have modes, this is a vestige of the old
+        # pipeline explorer, which expected all solid containers to be pipelines
         return []
 
 
 @lru_cache(maxsize=32)
-def _get_solid_handles(represented_pipeline):
+def get_solid_handles_from_pipeline(represented_pipeline):
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     return {
         str(item.handleID): item
