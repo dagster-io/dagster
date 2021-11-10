@@ -563,6 +563,10 @@
             "path": "/_apidocs/libraries/dagster-docker"
           },
           {
+            "title": "Fivetran (dagster-fivetran)",
+            "path": "/_apidocs/libraries/dagster-fivetran"
+          },
+          {
             "title": "GCP (dagster-gcp)",
             "path": "/_apidocs/libraries/dagster-gcp"
           },

@@ -327,6 +327,13 @@ class FivetranResource:
     description="This resource helps manage Fivetran connectors",
 )
 def fivetran_resource(context) -> FivetranResource:
+    """
+    This resource allows users to programatically interface with the Fivetran API. This only
+    implements a subset of the functionality exposed by the Fivetran API, and focuses on managing
+    [Fivetran connectors](https://fivetran.com/docs/rest-api/connectors).
+
+    It requires
+    """
     return FivetranResource(
         api_key=context.resource_config["api_key"],
         api_secret=context.resource_config["api_secret"],
