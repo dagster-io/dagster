@@ -16,6 +16,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
+        self.secrets_manager = boto3.client("secretsmanager")
 
         self.task_definition = task_definition
         self.container_name = container_name
@@ -165,7 +166,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _task_definition(self, metadata, image):
         """
-        Return the launcher's default task definition if it's configured.
+        Return the launcher's task definition if it's configured.
 
         Otherwise, a new task definition revision is registered for every run.
         First, the process that calls this method finds its own task
@@ -176,7 +177,40 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
-        return default_ecs_task_definition(self.ecs, metadata, image, self.container_name)
+        return default_ecs_task_definition(
+            self.ecs,
+            metadata,
+            image,
+            self.container_name,
+            secrets=self._dagster_secrets(),
+        )
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
+
+    def _dagster_secrets(self):
+        """
+        Return a dictionary of AWS Secrets Manager names to arns
+        for any secret tagged with "dagster"
+
+        These will be passed to the task definition and loaded into
+        each container's environment at startup.
+        """
+
+        secrets = {}
+        paginator = self.secrets_manager.get_paginator("list_secrets")
+        for page in paginator.paginate(
+            Filters=[
+                {
+                    "Key": "tag-key",
+                    "Values": [
+                        "dagster",
+                    ],
+                },
+            ],
+        ):
+
+            for secret in page["SecretList"]:
+                secrets[secret["Name"]] = secret["ARN"]
+
+        return secrets

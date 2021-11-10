@@ -33,7 +33,13 @@ class EcsNoTasksFound(Exception):
 
 
 def default_ecs_task_definition(
-    ecs, metadata, image, container_name, command=None, environment=None
+    ecs,
+    metadata,
+    image,
+    container_name,
+    command=None,
+    environment=None,
+    secrets=None,
 ):
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -46,6 +52,12 @@ def default_ecs_task_definition(
         for key in expected_keys
         if key in metadata.task_definition.keys()
     )
+
+    if not environment:
+        environment = {}
+
+    if not secrets:
+        secrets = {}
 
     # The current process might not be running in a container that has the
     # pipeline's code installed. Inherit most of the process's container
@@ -66,9 +78,8 @@ def default_ecs_task_definition(
                 "entryPoint": [],
                 "command": command if command else [],
             },
-            {"environment": [{"key": key, "value": value} for key, value in environment.items()]}
-            if environment
-            else {},
+            {"environment": [{"key": key, "value": value} for key, value in environment.items()]},
+            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]},
         )
     )
     task_definition = {
