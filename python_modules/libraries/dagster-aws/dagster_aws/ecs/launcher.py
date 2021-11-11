@@ -17,6 +17,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         inst_data=None,
         task_definition=None,
         container_name="run",
+        secrets=None,
         secrets_tag="dagster",
     ):
         self._inst_data = inst_data
@@ -26,6 +27,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.task_definition = task_definition
         self.container_name = container_name
+        self.secrets = secrets or []
         self.secrets_tag = secrets_tag
 
         if self.task_definition:
@@ -63,6 +65,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 default_value="run",
                 description=(
                     "The container name to use when launching new tasks. Defaults to 'run'."
+                ),
+            ),
+            "secrets": Field(
+                dagster.Array(dagster.String),
+                is_required=False,
+                description=(
+                    "An array of AWS Secrets Manager secrets arns. These secrets will "
+                    "be mounted as environment variabls in the container."
                 ),
             ),
             "secrets_tag": Field(
@@ -198,16 +208,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
-            secrets=self._dagster_secrets(),
+            secrets={**self._tagged_secrets(), **self._configured_secrets()},
         )
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
 
-    def _dagster_secrets(self):
+    def _tagged_secrets(self):
         """
         Return a dictionary of AWS Secrets Manager names to arns
-        for any secret tagged with "dagster"
+        for any secret tagged with `self.secrets_tag`.
 
         These will be passed to the task definition and loaded into
         each container's environment at startup.
@@ -226,5 +236,21 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
             for secret in page["SecretList"]:
                 secrets[secret["Name"]] = secret["ARN"]
+
+        return secrets
+
+    def _configured_secrets(self):
+        """
+        Return a dictionary of AWS Secrets Manager names to arns
+        for any secret configured with `self.secrets`.
+
+        These will be passed to the task definition and loaded into
+        each container's environment at startup.
+        """
+
+        secrets = {}
+        for arn in self.secrets:
+            name = self.secrets_manager.describe_secret(SecretId=arn)["Name"]
+            secrets[name] = arn
 
         return secrets

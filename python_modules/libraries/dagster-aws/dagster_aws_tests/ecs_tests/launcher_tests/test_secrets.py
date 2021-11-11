@@ -33,7 +33,28 @@ def other_secret(secrets_manager):
     yield Secret(name, arn)
 
 
-def test_secrets(ecs, secrets_manager, instance, workspace, run, tagged_secret, other_secret):
+@pytest.fixture
+def configured_secret(secrets_manager):
+    # A secret explicilty included in the launcher config
+    name = "configured_secret"
+    arn = secrets_manager.create_secret(
+        Name=name,
+        SecretString="hello",
+    )["ARN"]
+
+    yield Secret(name, arn)
+
+
+@pytest.fixture
+def instance(instance_cm, configured_secret):
+    config = {"secrets": [configured_secret.arn]}
+    with instance_cm(config) as dagster_instance:
+        yield dagster_instance
+
+
+def test_secrets(
+    ecs, secrets_manager, instance, workspace, run, tagged_secret, other_secret, configured_secret
+):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
     instance.launch_run(run.run_id, workspace)
@@ -47,5 +68,10 @@ def test_secrets(ecs, secrets_manager, instance, workspace, run, tagged_secret, 
 
     # It includes tagged secrets
     secrets = task_definition["containerDefinitions"][0]["secrets"]
-    assert len(secrets) == 1
     assert {"name": tagged_secret.name, "valueFrom": tagged_secret.arn} in secrets
+
+    # And configured secrets
+    assert {"name": configured_secret.name, "valueFrom": configured_secret.arn} in secrets
+
+    # But no other secrets
+    assert len(secrets) == 2
