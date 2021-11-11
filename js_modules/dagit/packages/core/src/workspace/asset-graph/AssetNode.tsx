@@ -8,7 +8,7 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../execute/showLaunchError';
 import {SolidTags} from '../../graph/SolidTags';
-import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
   handleLaunchResult,
@@ -31,7 +31,7 @@ import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/A
 
 export const AssetNode: React.FC<{
   definition: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-  handle: PipelineExplorerSolidHandleFragment;
+  handle: GraphExplorerSolidHandleFragment;
   selected: boolean;
   computeStatus: Status;
   repoAddress: RepoAddress;

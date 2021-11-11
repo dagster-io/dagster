@@ -7,7 +7,7 @@ import {AppContext} from '../app/AppContext';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
@@ -445,12 +445,12 @@ const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
               }
             }
           }
-          ...PipelineExplorerSolidHandleFragment
+          ...GraphExplorerSolidHandleFragment
         }
       }
     }
   }
-  ${PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
 
 const RunMatrixSettings: React.FC<{

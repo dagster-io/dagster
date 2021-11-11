@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PipelineExplorerSolidHandleFragment} from '../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
@@ -19,8 +19,8 @@ interface Props {
   solids: PipelineGraphSolidFragment[];
   focusSolids: PipelineGraphSolidFragment[];
   highlightedSolids: PipelineGraphSolidFragment[];
-  selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerSolidHandleFragment;
+  selectedHandle?: GraphExplorerSolidHandleFragment;
+  parentHandle?: GraphExplorerSolidHandleFragment;
   onClickSolid?: (arg: SolidNameOrPath) => void;
   onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
