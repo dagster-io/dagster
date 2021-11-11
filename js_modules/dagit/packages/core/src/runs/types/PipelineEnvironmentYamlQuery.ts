@@ -12,11 +12,6 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_RunNotFoundErro
   __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -27,7 +22,7 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryO
 export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  pipeline: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_pipeline;
+  pipelineName: string;
   pipelineSnapshotId: string | null;
   runConfigYaml: string;
   repositoryOrigin: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin | null;

@@ -10,9 +10,7 @@ import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on Run {
     id
-    pipeline {
-      name
-    }
+    pipelineName
     pipelineSnapshotId
     repositoryOrigin {
       id

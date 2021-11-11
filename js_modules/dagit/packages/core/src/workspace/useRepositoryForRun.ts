@@ -23,7 +23,7 @@ export const useRepositoryForRun = (
       return null;
     }
 
-    const pipelineName = run.pipeline.name;
+    const pipelineName = run.pipelineName;
     // Try to match the pipeline name within the specified origin, if possible.
     const origin = run.repositoryOrigin;
 
@@ -47,7 +47,7 @@ export const useRepositoryForRun = (
       return null;
     }
 
-    const pipelineName = run.pipeline.name;
+    const pipelineName = run.pipelineName;
     const snapshotId = run.pipelineSnapshotId;
 
     // Find the repository that contains the specified pipeline name and snapshot ID, if any.
@@ -66,7 +66,7 @@ export const useRepositoryForRun = (
       return null;
     }
 
-    const pipelineName = run.pipeline.name;
+    const pipelineName = run.pipelineName;
 
     // There is no origin repo. Find any repos that might contain a matching pipeline name.
     const possibleMatches = findRepoContainingPipeline(options, pipelineName);
