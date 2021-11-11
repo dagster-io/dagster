@@ -17,6 +17,7 @@ def my_job():
 ```
 
 - [dagit] Improved performance on the initial page load of the Run page, as well as the partitions UI / launch backfill modal
+- [dagit] Fixed a bug where top-level graphs in the repo could not be viewed in the `Workspace` > `Graph` view.
 
 ### Bugfixes
 
