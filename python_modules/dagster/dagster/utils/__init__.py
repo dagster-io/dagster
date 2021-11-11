@@ -1,4 +1,3 @@
-import collections
 import contextlib
 import datetime
 import errno
@@ -12,16 +11,13 @@ import subprocess
 import sys
 import tempfile
 import threading
-import weakref
 from collections import OrderedDict, namedtuple
 from datetime import timezone
 from enum import Enum
-from functools import lru_cache, wraps
 from typing import (
     TYPE_CHECKING,
     Callable,
     ContextManager,
-    Dict,
     Generator,
     Generic,
     Iterator,
@@ -566,7 +562,7 @@ def dict_without_keys(ddict, *keys):
 
 
 class LRUCache(Generic[T]):
-    def __init__(self, capacity: int = 64):
+    def __init__(self, capacity: Optional[int] = None):
         self._cache: OrderedDict = OrderedDict()
         self._capacity = capacity
 
@@ -580,7 +576,7 @@ class LRUCache(Generic[T]):
     def put(self, key: str, value: T):
         self._cache[key] = value
         self._cache.move_to_end(key)
-        if len(self._cache) > self._capacity:
+        if self._capacity and len(self._cache) > self._capacity:
             self._cache.popitem(last=False)
 
     def has(self, key: str) -> bool:
@@ -592,3 +588,57 @@ class LRUCache(Generic[T]):
 
     def clear_all(self):
         self._cache: OrderedDict = OrderedDict()
+
+
+class MockCache(LRUCache[T]):
+    def get(self, key: str) -> Optional[T]:
+        return None
+
+    def put(self, key: str, value: T):
+        pass
+
+    def has(self, key: str) -> bool:
+        return False
+
+    def clear(self, key: str):
+        pass
+
+    def clear_all(self):
+        pass
+
+
+__MOCK_CACHE = None
+
+
+DAGIT_CACHE_PREFIX = "__DAGIT_CACHE__"
+
+
+def mock_cache():
+    global __MOCK_CACHE  # pylint: disable=global-statement
+    if not __MOCK_CACHE:
+        __MOCK_CACHE = MockCache()
+    return __MOCK_CACHE
+
+
+def get_request_cache(namespace):
+    if namespace is None:
+        return mock_cache()
+
+    try:
+        from flask import g, has_request_context  # pylint: disable=import-error
+
+        if not has_request_context():
+            return mock_cache()
+        else:
+            request_key = f"{DAGIT_CACHE_PREFIX}{namespace}"
+            cache_or_none = g.get(request_key)
+            if not cache_or_none:
+                cache = LRUCache()
+                setattr(g, request_key, cache)
+            else:
+                check.inst(cache_or_none, LRUCache)
+                cache = cache_or_none
+
+            return cache
+    except:
+        return mock_cache()

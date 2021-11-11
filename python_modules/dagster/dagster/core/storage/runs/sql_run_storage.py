@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import LRUCache, merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import get_request_cache, merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -45,8 +45,6 @@ from .schema import (
     SnapshotsTable,
 )
 
-DEFAULT_CACHE_SIZE = 1
-
 
 class SnapshotType(Enum):
     PIPELINE = "PIPELINE"
@@ -55,10 +53,6 @@ class SnapshotType(Enum):
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     """Base class for SQL based run storages"""
-
-    def __init__(self, cache_size=None):
-        self._cache_dict = {}
-        self._cache_size = check.opt_int_param(cache_size, "cache_size", DEFAULT_CACHE_SIZE)
 
     @abstractmethod
     def connect(self):
@@ -69,14 +63,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         """This method should perform any schema or data migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
-
-    def initialize_cache(self, namespace) -> LRUCache:  # pylint: disable=unused-argument
-        return LRUCache(capacity=self._cache_size)
-
-    def get_cache(self, namespace) -> LRUCache:
-        if namespace not in self._cache_dict:
-            self._cache_dict[namespace] = self.initialize_cache(namespace)
-        return self._cache_dict[namespace]
 
     def fetchall(self, query):
         with self.connect() as conn:
@@ -652,11 +638,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
             conn.execute(snapshot_insert)
-            self.get_cache("snapshot").put(snapshot_id, snapshot_obj)
+            get_request_cache("snapshot").put(snapshot_id, snapshot_obj)
             return snapshot_id
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
-        if self.get_cache("snapshot").has(snapshot_id):
+        if get_request_cache("snapshot").has(snapshot_id):
             return True
         query = db.select([SnapshotsTable.c.snapshot_id]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
@@ -667,8 +653,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return bool(row)
 
     def _get_snapshot(self, snapshot_id: str):
-        if self.get_cache("snapshot").has(snapshot_id):
-            return self.get_cache("snapshot").get(snapshot_id)
+        if get_request_cache("snapshot").has(snapshot_id):
+            return get_request_cache("snapshot").get(snapshot_id)
 
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
@@ -678,7 +664,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         snapshot = defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
         if snapshot:
-            self.get_cache("snapshot").put(snapshot_id, snapshot)
+            get_request_cache("snapshot").put(snapshot_id, snapshot)
+
         return snapshot
 
     def _get_partition_runs(
@@ -790,7 +777,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
-            self.get_cache("snapshot").clear_all()
+            get_request_cache("snapshot").clear_all()
 
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:
