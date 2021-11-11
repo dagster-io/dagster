@@ -2,7 +2,13 @@ import os
 
 import pytest
 from dagster.check import CheckError, ParameterCheckError
-from dagster.utils import EventGenerationManager, ensure_dir, ensure_gen, ensure_single_item
+from dagster.utils import (
+    EventGenerationManager,
+    LRUCache,
+    ensure_dir,
+    ensure_gen,
+    ensure_single_item,
+)
 
 
 def test_ensure_single_item():
@@ -56,3 +62,45 @@ def test_event_generation_manager():
     assert result == 2
     teardown_events = list(basic_manager.generate_teardown_events())
     assert teardown_events == ["C"]
+
+
+def test_lru_cache():
+    cache = LRUCache(capacity=2)
+
+    assert not cache.has("one")
+    assert not cache.has("two")
+    assert not cache.has("three")
+
+    cache.put("one", 1)
+    assert cache.has("one")
+    assert cache.get("one") == 1
+    assert not cache.has("two")
+    assert not cache.has("three")
+
+    cache.put("two", 2)
+    assert cache.has("one")
+    assert cache.get("one") == 1
+    assert cache.has("two")
+    assert cache.get("two") == 2
+    assert not cache.has("three")
+
+    # test rotation
+    cache.put("three", 3)
+    assert not cache.has("one")
+    assert cache.get("one") == None
+    assert cache.has("two")
+    assert cache.get("two") == 2
+    assert cache.has("three")
+    assert cache.get("three") == 3
+
+    # test clear
+    cache.clear("three")
+    assert not cache.has("one")
+    assert cache.has("two")
+    assert not cache.has("three")
+
+    # test clear all
+    cache.clear_all()
+    assert not cache.has("one")
+    assert not cache.has("two")
+    assert not cache.has("three")
