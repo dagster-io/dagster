@@ -187,33 +187,3 @@ def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_
     attributes = eni.association_attribute or {}
 
     assert bool(attributes.get("PublicIp")) == assign_public_ip
-
-
-def test_secrets(ecs, secrets_manager, instance, workspace, run):
-    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-
-    # Add a secret tagged with "dagster"
-    included_secret_id = secrets_manager.create_secret(
-        Name="included_secret",
-        SecretString="hello",
-        Tags=[{"Key": "dagster", "Value": "true"}],
-    )["ARN"]
-    # And an unrelated secret
-    excluded_secret_id = secrets_manager.create_secret(
-        Name="excluded_secret",
-        SecretString="hello",
-    )["ARN"]
-
-    instance.launch_run(run.run_id, workspace)
-
-    # A new task definition is created
-    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
-    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
-    task_definition = task_definition["taskDefinition"]
-
-    # It includes secrets tagged with "dagster"
-    secrets = task_definition["containerDefinitions"][0]["secrets"]
-    assert len(secrets) == 1
-    assert {"name": "included_secret", "valueFrom": included_secret_id} in secrets
