@@ -123,7 +123,11 @@ export const WorkspaceOverviewRoot = () => {
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Group direction="row" spacing={12} alignItems="center">
           <Subheading id="repository-locations">Locations</Subheading>
-          <ReloadAllButton />
+          <ReloadAllButton
+            hasReloadableLocation={options.some(
+              (option) => option.repositoryLocation.isReloadSupported,
+            )}
+          />
         </Group>
       </Box>
       <Box padding={{bottom: 24}}>

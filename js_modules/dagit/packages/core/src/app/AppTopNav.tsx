@@ -20,6 +20,60 @@ interface Props {
 }
 
 export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
+  const history = useHistory();
+
+  return (
+    <AppTopNavWrapper>
+      <Box style={{flex: 1}} flex={{direction: 'row', alignItems: 'center'}}>
+        <SearchDialog searchPlaceholder={searchPlaceholder} />
+        <div style={{flex: 1}} />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance/runs')}
+            shortcutLabel={`⌥1`}
+            shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+          >
+            <TopNavLink to="/instance/runs">Runs</TopNavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance/assets')}
+            shortcutLabel={`⌥2`}
+            shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
+          >
+            <TopNavLink to="/instance/assets">Assets</TopNavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance')}
+            shortcutLabel={`⌥3`}
+            shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
+          >
+            <TopNavLink to="/instance">
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                Status
+                <InstanceWarningIcon />
+              </Box>
+            </TopNavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/workspace')}
+            shortcutLabel={`⌥4`}
+            shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
+          >
+            <TopNavLink to="/workspace">
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                Workspace
+                <WorkspaceWarningIcon />
+              </Box>
+            </TopNavLink>
+          </ShortcutHandler>
+        </Box>
+        {children}
+      </Box>
+    </AppTopNavWrapper>
+  );
+};
+
+export const AppTopNavWrapper: React.FC = ({children}) => {
   const {nav} = React.useContext(LayoutContext);
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 
@@ -39,84 +93,35 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
 
   return (
     <AppTopNavContainer>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-        <LogoContainer>
-          <ShortcutHandler
-            onShortcut={() => onToggle()}
-            shortcutLabel="."
-            shortcutFilter={(e) => e.key === '.'}
+      <LogoContainer>
+        <ShortcutHandler
+          onShortcut={() => onToggle()}
+          shortcutLabel="."
+          shortcutFilter={(e) => e.key === '.'}
+        >
+          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+            <IconWIP name="menu" color={ColorsWIP.White} size={24} />
+          </NavButton>
+        </ShortcutHandler>
+        <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
+          <DaggyTooltip
+            content={
+              <Box flex={{direction: 'row', gap: 4}}>
+                <WebSocketStatus />
+                <VersionNumber />
+              </Box>
+            }
+            placement="bottom"
+            modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
           >
-            <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-              <IconWIP name="menu" color={ColorsWIP.White} size={24} />
-            </NavButton>
-          </ShortcutHandler>
-          <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
-            <DaggyTooltip
-              content={
-                <Box flex={{direction: 'row', gap: 4}}>
-                  <WebSocketStatus />
-                  <VersionNumber />
-                </Box>
-              }
-              placement="bottom"
-              modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
-            >
-              <Link to="/workspace" style={{outline: 0, display: 'flex'}}>
-                <GhostDaggy />
-              </Link>
-            </DaggyTooltip>
-          </Box>
-        </LogoContainer>
-        <SearchDialog searchPlaceholder={searchPlaceholder} />
-      </Box>
-      <Box flex={{direction: 'row', alignItems: 'center'}}>{children}</Box>
+            <Link to="/workspace" style={{outline: 0, display: 'flex'}}>
+              <GhostDaggy />
+            </Link>
+          </DaggyTooltip>
+        </Box>
+      </LogoContainer>
+      {children}
     </AppTopNavContainer>
-  );
-};
-
-export const AppTopNavTabs = () => {
-  const history = useHistory();
-  return (
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-      <ShortcutHandler
-        onShortcut={() => history.push('/instance/runs')}
-        shortcutLabel={`⌥1`}
-        shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
-      >
-        <NavLink to="/instance/runs">Runs</NavLink>
-      </ShortcutHandler>
-      <ShortcutHandler
-        onShortcut={() => history.push('/instance/assets')}
-        shortcutLabel={`⌥2`}
-        shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
-      >
-        <NavLink to="/instance/assets">Assets</NavLink>
-      </ShortcutHandler>
-      <ShortcutHandler
-        onShortcut={() => history.push('/instance')}
-        shortcutLabel={`⌥3`}
-        shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
-      >
-        <NavLink to="/instance">
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            Status
-            <InstanceWarningIcon />
-          </Box>
-        </NavLink>
-      </ShortcutHandler>
-      <ShortcutHandler
-        onShortcut={() => history.push('/workspace')}
-        shortcutLabel={`⌥4`}
-        shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
-      >
-        <NavLink to="/workspace">
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            Workspace
-            <WorkspaceWarningIcon />
-          </Box>
-        </NavLink>
-      </ShortcutHandler>
-    </Box>
   );
 };
 
@@ -167,7 +172,7 @@ const DaggyTooltip = styled(Tooltip)`
   }
 `;
 
-const NavLink = styled(Link)`
+export const TopNavLink = styled(Link)`
   color: ${ColorsWIP.Gray200};
   font-weight: 600;
   transition: color 50ms linear;
@@ -184,7 +189,6 @@ const AppTopNavContainer = styled.div`
   background: ${ColorsWIP.Gray900};
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
   height: 64px;
 `;
 
@@ -194,6 +198,7 @@ const LogoContainer = styled.div`
   align-items: center;
   flex-shrink: 0;
   padding-left: 12px;
+  margin-right: 16px;
 
   svg {
     transition: filter 100ms;

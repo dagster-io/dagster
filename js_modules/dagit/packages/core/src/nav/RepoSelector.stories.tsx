@@ -20,6 +20,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -30,6 +31,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(4).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -40,6 +42,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -50,6 +53,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(5).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -60,6 +64,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -70,6 +75,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(6).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -80,6 +86,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -90,6 +97,7 @@ const OPTIONS = [
       faker.random.words(5).toLowerCase().replace(/ /g, '-'),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},
@@ -100,6 +108,7 @@ const OPTIONS = [
       faker.random.word().toLowerCase(),
       faker.random.words(2).toLowerCase().replace(/ /g, '-'),
     ),
+    isReloadSupported: true,
     metadata: [
       {key: 'host', value: faker.random.word().toLowerCase()},
       {key: 'port', value: faker.random.number(9999).toString()},

@@ -22,6 +22,7 @@ import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 export type RepoDetails = {
   repoAddress: RepoAddress;
   metadata: {key: string; value: string}[];
+  isReloadSupported: boolean;
 };
 
 interface Props {
@@ -34,6 +35,9 @@ interface Props {
 export const RepoSelector: React.FC<Props> = (props) => {
   const {onBrowse, onToggle, options, selected} = props;
   const {canReloadRepositoryLocation} = usePermissions();
+  const reloadSupportedBySelection = options
+    .filter((o) => selected.has(o))
+    .some((o) => o.isReloadSupported);
 
   return (
     <Table>
@@ -78,7 +82,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   Browse
                 </Link>
               </td>
-              {canReloadRepositoryLocation ? (
+              {reloadSupportedBySelection && canReloadRepositoryLocation ? (
                 <td>
                   <ReloadButton repoAddress={repoAddress} />
                 </td>

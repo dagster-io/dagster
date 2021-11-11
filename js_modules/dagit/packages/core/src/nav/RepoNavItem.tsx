@@ -13,7 +13,6 @@ import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Tooltip} from '../ui/Tooltip';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
@@ -34,11 +33,11 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       return <span style={{color: ColorsWIP.Gray700}}>No repositories</span>;
     }
     if (allRepos.length === 1) {
-      return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} />;
+      return <SingleRepoSummary details={allRepos[0]} />;
     }
     if (selected.size === 1) {
       const selectedRepo = Array.from(selected)[0];
-      return <SingleRepoSummary repoAddress={selectedRepo.repoAddress} />;
+      return <SingleRepoSummary details={selectedRepo} />;
     }
     return <span>{`${selected.size} of ${allRepos.length} shown`}</span>;
   };
@@ -91,7 +90,8 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const SingleRepoSummary: React.FC<{details: RepoDetails}> = ({details}) => {
+  const {repoAddress, isReloadSupported} = details;
   const {canReloadRepositoryLocation} = usePermissions();
   return (
     <Group direction="row" spacing={4} alignItems="center">
@@ -101,7 +101,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
       >
         {repoAddress.name}
       </SingleRepoNameLink>
-      {canReloadRepositoryLocation ? (
+      {canReloadRepositoryLocation && isReloadSupported ? (
         <ReloadRepositoryLocationButton location={repoAddress.location}>
           {({tryReload, reloading}) => (
             <ShortcutHandler

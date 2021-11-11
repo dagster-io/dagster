@@ -21,6 +21,7 @@ export const REPO_KEYS = 'dagit.repo-keys';
 
 const buildDetails = memoize((option: DagsterRepoOption) => ({
   repoAddress: buildRepoAddress(option.repository.name, option.repositoryLocation.name),
+  isReloadSupported: option.repositoryLocation.isReloadSupported,
   metadata: option.repository.displayMetadata,
 }));
 

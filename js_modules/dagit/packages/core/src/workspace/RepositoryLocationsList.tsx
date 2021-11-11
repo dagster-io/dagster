@@ -167,7 +167,10 @@ export const RepositoryLocationsList = () => {
               <Timestamp timestamp={{unix: location.updatedTimestamp}} timeFormat={TIME_FORMAT} />
             </td>
             <td style={{width: '180px'}}>
-              <ReloadButton location={location.name} />
+              {location.locationOrLoadError?.__typename === 'RepositoryLocation' &&
+              !location.locationOrLoadError.isReloadSupported ? undefined : (
+                <ReloadButton location={location.name} />
+              )}
             </td>
           </tr>
         ))}
