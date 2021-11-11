@@ -35,6 +35,7 @@ export const RunFragments = {
       }
       rootRunId
       parentRunId
+      pipelineName
       pipeline {
         __typename
         ... on PipelineReference {

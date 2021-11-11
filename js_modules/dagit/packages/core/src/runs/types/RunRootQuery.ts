@@ -116,10 +116,10 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   tags: RunRootQuery_pipelineRunOrError_Run_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
-  pipelineName: string;
   repositoryOrigin: RunRootQuery_pipelineRunOrError_Run_repositoryOrigin | null;
   stats: RunRootQuery_pipelineRunOrError_Run_stats;
   stepStats: RunRootQuery_pipelineRunOrError_Run_stepStats[];

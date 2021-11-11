@@ -123,7 +123,7 @@ export function getReexecutionVariables(input: {
     selector: {
       repositoryLocationName,
       repositoryName,
-      pipelineName: 'pipelineName' in run ? run.pipelineName : run.pipeline.name,
+      pipelineName: run.pipelineName,
       solidSelection: 'solidSelection' in run ? run.solidSelection : run.pipeline.solidSelection,
     },
   };

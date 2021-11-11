@@ -111,11 +111,11 @@ export interface RunFragment {
   tags: RunFragment_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipeline: RunFragment_pipeline;
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
-  pipelineName: string;
   repositoryOrigin: RunFragment_repositoryOrigin | null;
   stats: RunFragment_stats;
   stepStats: RunFragment_stepStats[];
