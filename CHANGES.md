@@ -4,6 +4,7 @@
 
 ### New
 
+- [dagster-fivetran] A new dagster-fivetran integration allows you to launch Fivetran syncs and monitor their progress from within Dagster. It provides a pre-built `fivetran_sync_op`, as well as a more flexible `fivetran_resource` for more customized use cases. Check out the [api docs](https://docs.dagster.io/_apidocs/libraries/dagster-fivetran) to learn more!
 - When inferring a graph/job/op/solid/pipeline description from the docstring of the decorated function, we now dedent the docstring even if the first line isn’t indented. This allows descriptions to be formatted nicely even when the first line is on the same line as the triple-quotes.
 - The `SourceHashVersionStrategy` class has been added, which versions `op` and `resource` code. It can be provided to a job like so:
 
@@ -22,6 +23,7 @@ def my_job():
 - Fixed an issue where turning a partitioned schedule off and on again would sometimes result in unexpected past runs being created. (#5604)
 - Fixed an issue where partition sets that didn’t return a new copy of run configuration on each function call would sometimes apply the wrong config to partitions during backfills.
 - Fixed rare issue where using dynamic outputs in combination with optional outputs would cause errors when using certain executors.
+- [dagster-celery-k8s] Fixed bug where CeleryK8s executor would not respect job run config
 - [dagit] Fixed bug where graphs would sometimes appear off-center.
 
 ### Breaking Changes
