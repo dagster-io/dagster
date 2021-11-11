@@ -8,11 +8,11 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 
 import {PipelineRoot} from './PipelineRoot';
 
-jest.mock('./PipelineExplorer', () => ({
-  ...jest.requireActual('./PipelineExplorer'),
+jest.mock('./GraphExplorer', () => ({
+  ...jest.requireActual('./GraphExplorer'),
 
-  // Mock `PipelineExplorer` so that we don't actually try to render the DAG.
-  PipelineExplorer: () => <div />,
+  // Mock `GraphExplorer` so that we don't actually try to render the DAG.
+  GraphExplorer: () => <div />,
 }));
 
 const REPO_NAME = 'foo';

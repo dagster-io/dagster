@@ -5,12 +5,12 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
+import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {PipelineExplorerContainer} from './PipelineExplorerRoot';
 import {
   explorerPathFromString,
   explorerPathToString,
-  PipelineExplorerPath,
+  ExplorerPath,
   useStripSnapshotFromPath,
 } from './PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from './SidebarPipelineOrJobOverview';
@@ -31,7 +31,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   useStripSnapshotFromPath({pipelinePath: explorerPathToString(explorerPath)});
 
   const onChangeExplorerPath = React.useCallback(
-    (path: PipelineExplorerPath, action: 'push' | 'replace') => {
+    (path: ExplorerPath, action: 'push' | 'replace') => {
       history[action]({
         search: location.search,
         pathname: workspacePathFromAddress(
@@ -44,7 +44,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   );
 
   return (
-    <PipelineExplorerJobContext.Provider
+    <GraphExplorerJobContext.Provider
       value={{
         sidebarTab: (
           <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
@@ -56,6 +56,6 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         explorerPath={explorerPath}
         onChangeExplorerPath={onChangeExplorerPath}
       />
-    </PipelineExplorerJobContext.Provider>
+    </GraphExplorerJobContext.Provider>
   );
 };

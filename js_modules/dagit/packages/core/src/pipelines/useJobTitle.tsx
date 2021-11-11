@@ -2,9 +2,9 @@ import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
-import {PipelineExplorerPath} from './PipelinePathUtils';
+import {ExplorerPath} from './PipelinePathUtils';
 
-export const useJobTitle = (explorerPath: PipelineExplorerPath, isJob: boolean) => {
+export const useJobTitle = (explorerPath: ExplorerPath, isJob: boolean) => {
   const {pipelineName} = explorerPath;
 
   const value = React.useMemo(() => {
