@@ -11,6 +11,7 @@ import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
   RootRepositoriesQuery,
+  RootRepositoriesQuery_workspaceOrError,
   RootRepositoriesQuery_workspaceOrError_PythonError,
   RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries,
   RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation,
@@ -152,14 +153,29 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
  * in the workspace, and loading/error state for the relevant query.
+ *
+ * Note: This is split into a fetcher and a formatter hook so that a separate query can
+ * be used to retrieve workspace snapshots.
  */
 const useWorkspaceState = () => {
   const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
-  const workspaceOrError = data?.workspaceOrError;
+  const {error, locationEntries, allRepos} = useRepoOptionsFromWorkspace(data?.workspaceOrError);
 
+  return {
+    refetch,
+    loading: loading && !data, // Only "loading" on initial load.
+    error,
+    locationEntries,
+    allRepos,
+  };
+};
+
+export const useRepoOptionsFromWorkspace = (
+  workspaceOrError: RootRepositoriesQuery_workspaceOrError | null | undefined,
+) => {
   const locationEntries = React.useMemo(
     () => (workspaceOrError?.__typename === 'Workspace' ? workspaceOrError.locationEntries : []),
     [workspaceOrError],
@@ -179,7 +195,7 @@ const useWorkspaceState = () => {
       if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
         return accum;
       }
-      const repositoryLocation = locationEntry.locationOrLoadError;
+      const repositoryLocation = {...locationEntry.locationOrLoadError};
       const reposForLocation = repositoryLocation.repositories.map((repository) => {
         return {repository, repositoryLocation};
       });
@@ -189,13 +205,7 @@ const useWorkspaceState = () => {
     return {error: null, options};
   }, [workspaceOrError]);
 
-  return {
-    refetch,
-    loading: loading && !data, // Only "loading" on initial load.
-    error,
-    locationEntries,
-    allRepos: options,
-  };
+  return {locationEntries, allRepos: options, error};
 };
 
 export const WorkspaceProvider: React.FC = (props) => {

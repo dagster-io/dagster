@@ -7,10 +7,21 @@ import {Tooltip} from '../ui/Tooltip';
 
 import {useReloadWorkspace} from './useReloadWorkspace';
 
-export const ReloadAllButton = () => {
+export const ReloadAllButton: React.FC<{hasReloadableLocation: boolean}> = ({
+  hasReloadableLocation,
+}) => {
   const {reloading, onClick} = useReloadWorkspace();
   const {canReloadWorkspace} = usePermissions();
 
+  if (!hasReloadableLocation) {
+    return (
+      <Tooltip content={'None of the repository locations in this workspace support reloading.'}>
+        <ButtonWIP icon={<IconWIP name="refresh" />} disabled intent="none">
+          Reload all
+        </ButtonWIP>
+      </Tooltip>
+    );
+  }
   if (!canReloadWorkspace) {
     return (
       <Tooltip content={DISABLED_MESSAGE}>
