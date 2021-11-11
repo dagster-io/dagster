@@ -1,5 +1,45 @@
 # Changelog
 
+# 0.13.5
+
+### New
+
+- [dagster-fivetran] A new dagster-fivetran integration allows you to launch Fivetran syncs and monitor their progress from within Dagster. It provides a pre-built `fivetran_sync_op`, as well as a more flexible `fivetran_resource` for more customized use cases. Check out the [api docs](https://docs.dagster.io/_apidocs/libraries/dagster-fivetran) to learn more!
+- When inferring a graph/job/op/solid/pipeline description from the docstring of the decorated function, we now dedent the docstring even if the first line isn’t indented. This allows descriptions to be formatted nicely even when the first line is on the same line as the triple-quotes.
+- The `SourceHashVersionStrategy` class has been added, which versions `op` and `resource` code. It can be provided to a job like so:
+
+```
+from dagster import job, SourceHashVersionStrategy
+
+@job(version_strategy=SourceHashVersionStrategy())
+def my_job():
+     ...
+```
+
+- [dagit] Improved performance on the initial page load of the Run page, as well as the partitions UI / launch backfill modal
+
+### Bugfixes
+
+- Fixed an issue where turning a partitioned schedule off and on again would sometimes result in unexpected past runs being created. (#5604)
+- Fixed an issue where partition sets that didn’t return a new copy of run configuration on each function call would sometimes apply the wrong config to partitions during backfills.
+- Fixed rare issue where using dynamic outputs in combination with optional outputs would cause errors when using certain executors.
+- [dagster-celery-k8s] Fixed bug where CeleryK8s executor would not respect job run config
+- [dagit] Fixed bug where graphs would sometimes appear off-center.
+
+### Breaking Changes
+
+- In 0.13.0, job CLI commands executed via `dagster job` selected both pipelines and jobs. This release changes the `dagster job` command to select only jobs and not pipelines.
+
+### Community Contributions
+
+- [dagster-dask] Updated DaskClusterTypes to have the correct import paths for certain cluster managers (thanks @[kudryk](https://github.com/kudryk)!)
+- [dagster-azure] Updated version requirements for Azure to be more recent and more permissive (thanks @[roeap](https://github.com/roeap) !)
+- [dagster-shell] Ops will now copy the host environment variables at runtime, rather than copying them from the environment that their job is launched from (thanks @[alexismanuel](https://github.com/alexismanuel) !)
+
+### Documentation
+
+- The job, op, graph migration guide was erroneously marked experimental. This has been fixed.
+
 # 0.13.4
 
 ### New
@@ -17,7 +57,6 @@
 - Fixed a bug with using custom loggers with default config on a job.
 - [dagster-slack] The `slack_on_run_failure_sensor` now says “Job” instead of “Pipeline” in its default message.
 
-
 ### Community Contributions
 
 - Fixed a bug that was incorrectly causing a `DagsterTypeCheckDidNotPass` error when a Dagster Type contained a List inside a Tuple (thanks [@jan-eat](https://github.com/jan-eat)!)
@@ -31,7 +70,6 @@
 
 - Updated API docs and integration guides to reference job/op/graph for various libraries (`dagstermill`, `dagster-pandas`, `dagster-airflow`, etc)
 - Improved documentation when attempting to retrieve output value from `execute_in_process`, when job does not have a top-level output.
-
 
 # 0.13.3
 
