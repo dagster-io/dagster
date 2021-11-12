@@ -111,6 +111,7 @@ export interface RunFragment {
   tags: RunFragment_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipeline: RunFragment_pipeline;
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;

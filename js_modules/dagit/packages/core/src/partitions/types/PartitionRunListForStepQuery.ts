@@ -10,11 +10,6 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PartitionRunListForStepQuery
 // ====================================================
 
-export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -62,7 +57,6 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;

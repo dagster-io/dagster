@@ -14,11 +14,6 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelin
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -66,7 +61,6 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;

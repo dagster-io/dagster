@@ -116,6 +116,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   tags: RunRootQuery_pipelineRunOrError_Run_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
