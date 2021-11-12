@@ -8,6 +8,9 @@ This library provides a Dagster integration with `dbt <https://getdbt.com/>`_ (d
 Ops
 ===
 
+dbt Core Ops
+~~~~~~~~~~~~
+
 ``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
 more advanced use cases, we suggest building your own ops which directly interact with these resources.
 
@@ -25,6 +28,10 @@ more advanced use cases, we suggest building your own ops which directly interac
 
 .. autofunction:: dbt_docs_generate_op
 
+dbt Cloud Ops
+~~~~~~~~~~~~~
+
+.. autofunction:: dbt_cloud_run_op
 
 Resources
 =========
@@ -61,6 +68,15 @@ RPC Resources
     :annotation: ResourceDefinition
 
 .. autodata:: dbt_rpc_sync_resource
+    :annotation: ResourceDefinition
+
+dbt Cloud Resources
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: DbtCloudResourceV2
+    :members:
+
+.. autodata:: dbt_cloud_resource
     :annotation: ResourceDefinition
 
 
