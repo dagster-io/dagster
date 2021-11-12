@@ -9,6 +9,7 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.executor import ExecutorDefinition
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.job import JobDefinition
@@ -36,6 +37,7 @@ def build_assets_job(
     description: Optional[str] = None,
     config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
     tags: Optional[Dict[str, Any]] = None,
+    executor_def: Optional[ExecutorDefinition] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -90,6 +92,7 @@ def build_assets_job(
         resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
         config=config,
         tags=tags,
+        executor_def=executor_def,
     )
 
 
