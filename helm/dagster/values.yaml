@@ -179,6 +179,7 @@ pythonLogs: {}
 #  managedPythonLoggers:
 #    - foo_logger
 ## The log level for the instance. Logs emitted below this severity will be ignored.
+## One of [NOTSET, DEBUG, INFO, WARNING, WARN, ERROR, FATAL, CRITICAL]
 #  pythonLogLevel: INFO
 ## Python log handlers that will be applied to all Dagster logs
 #  dagsterHandlerConfig:

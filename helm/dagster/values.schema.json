@@ -1813,7 +1813,8 @@
                 "INFO",
                 "DEBUG",
                 "NOTSET"
-            ]
+            ],
+            "type": "string"
         },
         "PythonLogs": {
             "title": "PythonLogs",

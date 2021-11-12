@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 
-class PythonLogLevel(Enum):
+class PythonLogLevel(str, Enum):
     CRITICAL = "CRITICAL"
     FATAL = "FATAL"
     ERROR = "ERROR"
