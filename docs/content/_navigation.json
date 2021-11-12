@@ -481,6 +481,10 @@
             "path": "/_apidocs/memoization"
           },
           {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },
