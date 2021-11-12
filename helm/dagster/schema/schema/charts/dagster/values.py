@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
@@ -22,7 +22,7 @@ class DagsterHelmValues(BaseModel):
     computeLogManager: subschema.ComputeLogManager
     scheduler: subschema.Scheduler
     runLauncher: subschema.RunLauncher
-    pythonLogs: Optional[subschema.PythonLogs]
+    pythonLogs: subschema.PythonLogs
     dagsterDaemon: subschema.Daemon
     busybox: subschema.Busybox
     migrate: subschema.Migrate

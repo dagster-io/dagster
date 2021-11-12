@@ -76,6 +76,7 @@
         "computeLogManager",
         "scheduler",
         "runLauncher",
+        "pythonLogs",
         "dagsterDaemon",
         "busybox",
         "migrate",
@@ -1800,13 +1801,26 @@
                 }
             ]
         },
+        "PythonLogLevel": {
+            "title": "PythonLogLevel",
+            "description": "An enumeration.",
+            "enum": [
+                "CRITICAL",
+                "FATAL",
+                "ERROR",
+                "WARN",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET"
+            ]
+        },
         "PythonLogs": {
             "title": "PythonLogs",
             "type": "object",
             "properties": {
                 "pythonLogLevel": {
-                    "title": "Pythonloglevel",
-                    "type": "string"
+                    "$ref": "#/definitions/PythonLogLevel"
                 },
                 "managedPythonLoggers": {
                     "title": "Managedpythonloggers",
