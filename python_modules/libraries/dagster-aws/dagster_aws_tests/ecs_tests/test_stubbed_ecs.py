@@ -141,6 +141,21 @@ def test_list_tasks(ecs):
     assert other_cluster_dagster_family in response["taskArns"]
 
 
+def test_put_account_setting(ecs):
+    setting = ecs.put_account_setting(name="taskLongArnFormat", value="disabled")["setting"]
+    assert setting["name"] == "taskLongArnFormat"
+    assert setting["value"] == "disabled"
+
+    # It overrides the default settings
+    settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
+    assert settings
+
+    task_arn_format_setting = [
+        setting for setting in settings if setting["name"] == "taskLongArnFormat"
+    ][0]
+    assert task_arn_format_setting["value"] == "disabled"
+
+
 def test_register_task_definition(ecs):
     response = ecs.register_task_definition(family="dagster", containerDefinitions=[])
     assert response["taskDefinition"]["family"] == "dagster"

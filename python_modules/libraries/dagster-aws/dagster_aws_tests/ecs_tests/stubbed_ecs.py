@@ -242,6 +242,20 @@ class StubbedEcs:
         return self.client.list_tasks(**kwargs)
 
     @stubbed
+    def put_account_setting(self, **kwargs):
+        name = kwargs.get("name")
+        value = kwargs.get("value")
+        self.account_settings[name] = value
+
+        self.stubber.add_response(
+            method="put_account_setting",
+            service_response={"setting": {"name": name, "value": value}},
+            expected_params={**kwargs},
+        )
+
+        return self.client.put_account_setting(**kwargs)
+
+    @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
         # Revisions are 1 indexed
