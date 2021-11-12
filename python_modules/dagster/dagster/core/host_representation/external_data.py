@@ -133,11 +133,17 @@ class ExternalPipelineSubsetResult(
 class ExternalPipelineData(
     namedtuple(
         "_ExternalPipelineData",
-        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job",
+        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job op_selection_data",
     )
 ):
     def __new__(
-        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, is_job=False
+        cls,
+        name,
+        pipeline_snapshot,
+        active_presets,
+        parent_pipeline_snapshot,
+        is_job=False,
+        op_selection_data=None,
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -152,6 +158,21 @@ class ExternalPipelineData(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             is_job=check.bool_param(is_job, "is_job"),
+            op_selection_data=check.opt_inst_param(
+                op_selection_data, "op_selection_data", ExternalOpSelectionData
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ExternalOpSelectionData(
+    namedtuple("_ExternalOpSelectionData", "op_selection resolved_op_selection")
+):
+    def __new__(cls, op_selection, resolved_op_selection):
+        return super(ExternalOpSelectionData, cls).__new__(
+            cls,
+            op_selection=check.list_param(op_selection, "op_selection", of_type=str),
+            resolved_op_selection=check.set_param(resolved_op_selection, "resolved_op_selection"),
         )
 
 
@@ -524,6 +545,12 @@ def external_pipeline_data_from_def(pipeline_def):
             key=lambda pd: pd.name,
         ),
         is_job=isinstance(pipeline_def, JobDefinition),
+        op_selection_data=ExternalOpSelectionData(
+            op_selection=pipeline_def.op_selection_data.op_selection,
+            resolved_op_selection=pipeline_def.op_selection_data.resolved_op_selection,
+        )
+        if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data
+        else None,
     )
 
 

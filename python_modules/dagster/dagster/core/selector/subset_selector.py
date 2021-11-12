@@ -10,15 +10,12 @@ from dagster.utils import check
 MAX_NUM = sys.maxsize
 
 
-if TYPE_CHECKING:
-    from dagster.core.execution.plan.plan import ExecutionPlan
-
-
 class OpSelectionData(
     NamedTuple(
         "_OpSelectionData",
         [
-            ("resolved_op_selection", Optional[AbstractSet[str]]),
+            ("op_selection", List[str]),
+            ("resolved_op_selection", AbstractSet[str]),
             ("ignored_solids", List[Node]),
         ],
     )
@@ -26,18 +23,20 @@ class OpSelectionData(
     """The data about op selection.
 
     Attributes:
-        resolved_op_selection (Optional[AbstractSet[str]])): The names of selected ops.
+        op_selection (List[str]): The queries of op selection.
+        resolved_op_selection (AbstractSet[str]): The names of selected ops.
         ignored_solids (List[Node]): The solids in the original full graph but outside the current
             selection. This is used in run config resolution to handle unsatisfied inputs correctly.
     """
 
-    def __new__(cls, resolved_op_selection=None, ignored_solids=None):
+    def __new__(cls, op_selection, resolved_op_selection, ignored_solids):
         return super(OpSelectionData, cls).__new__(
             cls,
-            resolved_op_selection=check.opt_set_param(
+            op_selection=check.list_param(op_selection, "op_selection", str),
+            resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
-            ignored_solids=check.opt_list_param(ignored_solids, "ignored_solids", Node),
+            ignored_solids=check.list_param(ignored_solids, "ignored_solids", Node),
         )
 
 

@@ -202,7 +202,9 @@ class JobDefinition(PipelineDefinition):
             graph_def=subset_pipeline_def.graph,
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
-                resolved_op_selection=solids_to_execute, ignored_solids=ignored_solids
+                op_selection=op_selection,
+                resolved_op_selection=solids_to_execute,
+                ignored_solids=ignored_solids,
             ),
         )
 

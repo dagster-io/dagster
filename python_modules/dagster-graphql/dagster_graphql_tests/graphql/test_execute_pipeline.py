@@ -601,6 +601,28 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["launchPipelineExecution"]["__typename"] == "NoModeProvidedError"
 
+    def test_two_ins_job_subset_and_config(self, graphql_context):
+        selector = infer_pipeline_selector(
+            graphql_context, "two_ins_job", ["op_1", "op_with_2_ins"]
+        )
+        run_config = {
+            "ops": {"op_with_2_ins": {"inputs": {"in_2": {"value": 2}}}},
+        }
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
     for message_data in pipeline_run_logs["messages"]:
