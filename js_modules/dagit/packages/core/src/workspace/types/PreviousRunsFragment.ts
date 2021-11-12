@@ -14,11 +14,6 @@ export interface PreviousRunsFragment_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsFragment_Runs_results_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface PreviousRunsFragment_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -66,7 +61,6 @@ export interface PreviousRunsFragment_Runs_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PreviousRunsFragment_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: PreviousRunsFragment_Runs_results_repositoryOrigin | null;

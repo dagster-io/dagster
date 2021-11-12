@@ -293,9 +293,7 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
-        pipeline {
-          name
-        }
+        pipelineName
         pipelineSnapshotId
         runConfigYaml
         ...RunFragmentForRepositoryMatch
