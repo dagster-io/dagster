@@ -55,7 +55,8 @@ def schedule(
     Args:
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
-        pipeline_name (str): The name of the pipeline to execute when the schedule runs.
+        pipeline_name (Optional[str]): (legacy)  The name of the pipeline to execute when the
+            schedule runs.
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
@@ -77,7 +78,8 @@ def schedule(
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         description (Optional[str]): A human-readable description of the schedule.
-        job (Optional[Union[PipelineDefinition, GraphDefinition]]): Experimental
+        job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
+            schedule runs.
     """
 
     def inner(fn: Callable[["ScheduleEvaluationContext"], Dict[str, Any]]) -> ScheduleDefinition:
