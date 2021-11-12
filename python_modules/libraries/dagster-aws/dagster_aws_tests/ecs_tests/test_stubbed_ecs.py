@@ -61,6 +61,19 @@ def test_describe_tasks(ecs):
     assert ecs.describe_tasks(tasks=[dagster_id], cluster="dagster") == dagster
 
 
+def test_list_account_settings(ecs):
+    assert not ecs.list_account_settings()["settings"]
+    assert not ecs.list_account_settings(effectiveSettings=False)["settings"]
+
+    settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
+    assert settings
+
+    task_arn_format_setting = [
+        setting for setting in settings if setting["name"] == "taskLongArnFormat"
+    ][0]
+    assert task_arn_format_setting["value"] == "enabled"
+
+
 def test_list_tags_for_resource(ecs):
     invalid_arn = ecs._task_arn("invalid")
     with pytest.raises(ClientError):
