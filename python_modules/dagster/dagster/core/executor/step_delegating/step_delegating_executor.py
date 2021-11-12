@@ -127,6 +127,10 @@ class StepDelegatingExecutor(Executor):
                     running_steps[step.key] = step
 
             last_check_step_health_time = pendulum.now("UTC")
+
+            # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
+            # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
+            # is_complete can return true when we're just between steps.
             while not active_execution.is_complete:
 
                 if active_execution.check_for_interrupts():
@@ -165,6 +169,30 @@ class StepDelegatingExecutor(Executor):
 
                     return
 
+                for dagster_event in self._pop_events(
+                    plan_context.instance,
+                    plan_context.run_id,
+                ):  # type: ignore
+
+                    # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
+                    # and yields them.
+                    if dagster_event.is_step_skipped:
+                        assert isinstance(dagster_event.step_key, str)
+                        active_execution.verify_complete(plan_context, dagster_event.step_key)
+
+                    else:
+                        yield dagster_event
+                        active_execution.handle_event(dagster_event)
+
+                        if dagster_event.is_step_success or dagster_event.is_step_failure:
+                            assert isinstance(dagster_event.step_key, str)
+                            del running_steps[dagster_event.step_key]
+                            active_execution.verify_complete(plan_context, dagster_event.step_key)
+
+                # process skips from failures or uncovered inputs
+                for event in active_execution.plan_events_iterator(plan_context):
+                    yield event
+
                 curr_time = pendulum.now("UTC")
                 if (
                     curr_time - last_check_step_health_time
@@ -190,25 +218,5 @@ class StepDelegatingExecutor(Executor):
                         plan_context,
                         running_steps,
                     )
-
-                # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(plan_context):
-                    yield event
-
-                for dagster_event in self._pop_events(
-                    plan_context.instance,
-                    plan_context.run_id,
-                ):  # type: ignore
-                    yield dagster_event
-                    active_execution.handle_event(dagster_event)
-
-                    if (
-                        dagster_event.is_step_success
-                        or dagster_event.is_step_failure
-                        or dagster_event.is_step_skipped
-                    ):
-                        assert isinstance(dagster_event.step_key, str)
-                        del running_steps[dagster_event.step_key]
-                        active_execution.verify_complete(plan_context, dagster_event.step_key)
 
                 time.sleep(self._sleep_seconds)
