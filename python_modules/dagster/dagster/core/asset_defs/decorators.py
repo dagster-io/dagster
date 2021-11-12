@@ -9,6 +9,7 @@ from dagster.core.definitions.input import In
 from dagster.core.definitions.op_def import OpDefinition
 from dagster.core.definitions.output import Out
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_decorator
 
 from .asset_in import AssetIn
@@ -24,13 +25,14 @@ def asset(
     required_resource_keys: Optional[Set[str]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
+    dagster_type: Optional[DagsterType] = None,
 ) -> Callable[[Callable[..., Any]], OpDefinition]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
-    * An asset key, e.g. the name of a table.
-    * A function, which can be run to compute the contents of the asset.
-    * A set of upstream assets that are provided as inputs to the function when computing the asset.
+    1. An asset key, e.g. the name of a table.
+    2. A function, which can be run to compute the contents of the asset.
+    3. A set of upstream assets that are provided as inputs to the function when computing the asset.
 
     Unlike an op, whose dependencies are determined by the graph it lives inside, an asset knows
     about the upstream assets it depends on. The upstream assets are inferred from the arguments
@@ -50,6 +52,9 @@ def asset(
             (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+        dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
+            will be executed on the output of the decorated function after it runs.
+
 
     Examples:
 
@@ -72,6 +77,7 @@ def asset(
             required_resource_keys=required_resource_keys,
             io_manager_key=io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            dagster_type=dagster_type,
         )(fn)
 
     return inner
@@ -88,6 +94,7 @@ class _Asset:
         required_resource_keys: Optional[Set[str]] = None,
         io_manager_key: Optional[str] = None,
         compute_kind: Optional[str] = None,
+        dagster_type: Optional[DagsterType] = None,
     ):
         self.name = name
         self.namespace = namespace
@@ -97,6 +104,7 @@ class _Asset:
         self.required_resource_keys = required_resource_keys
         self.io_manager_key = io_manager_key
         self.compute_kind = compute_kind
+        self.dagster_type = dagster_type
 
     def __call__(self, fn: Callable):
         asset_name = self.name or fn.__name__
@@ -105,6 +113,7 @@ class _Asset:
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
+            dagster_type=self.dagster_type,
         )
         return _Op(
             name=asset_name,
