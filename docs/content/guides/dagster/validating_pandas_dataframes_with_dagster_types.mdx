@@ -1,12 +1,11 @@
 ---
 title: Validating Pandas Dataframes with Dagster Types | Dagster
-description: >
-  This guide illustrates the use of a Dagster Type factory to validate Pandas dataframes.
+description: This guide illustrates the use of a Dagster Type factory to validate Pandas dataframes.
 ---
 
 # Validating Pandas DataFrames with Dagster Types
 
-Dagster is designed to interoperate easily with other components of your stack. In this guide we'll illustrate a technique for integrating third-party data validation services into your Dagster jobs: the [Dagster Type](/concepts/types) factory pattern.
+Dagster is designed to interoperate easily with other components of your stack. In this guide we'll illustrate a technique for integrating third-party data validation libraries into your Dagster jobs: the [Dagster Type](/concepts/types) factory pattern.
 
 Dagster types are used to perform arbitrary runtime validation on data as it flows between ops. Often you'll want to write one-off types for your domain objects. However, we can also use a factory to generate types for entire categories of objects. Here we'll see how a small factory function allows us to integrate rich validation of arbitrary Pandas dateframes into our jobs.
 
@@ -16,22 +15,24 @@ Below, we'll see how to use a factory to wrap any Pandera schema in a Dagster ty
 
 ## Setup
 
-Suppose you are a data scientist working for an e-bike rental company. You've been tasked with setting up some pipelines to analyze trip data, and have been experimenting with implementing them in Dagster. You are currently looking at the distribution of trip lengths, so you've exported a slice of trips from October into a simple CSV file with 4 columns: `bike_id`, `start_time`, `end_time`, and `station` (trips must start and end from the same station):
+Suppose we are a data scientist working for an e-bike rental company. We've been tasked with setting up some pipelines to analyze trip data, and have been experimenting with implementing them in Dagster. We're currently looking at the distribution of trip lengths, so we've exported a slice of trips from October into a simple <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/validating_pandas_dataframes_with_dagster_types/ebike_trips.csv" format="inline">CSV file</CodeReferenceLink> with 3 columns: `bike_id`, `start_time`, `end_time`.
 
-<Image
-alt="data.png"
-src="/images/guides/validating_pandas_dataframes_with_dagster_types/data.png"
-width={730}
-height={608}
-/>
+     bike_id            start_time              end_time
+           9   2021-10-20 10:39:00   2021-10-20 12:29:00
+           9   2021-10-14 00:15:00   2021-10-14 00:33:00
+           5   2021-10-02 12:57:00   2021-10-02 13:23:00
+           1   2021-10-28 00:01:00   2021-10-28 00:34:00
+           8   2021-10-23 14:22:00   2021-10-23 15:26:00
+    ...
 
-The first thing you want is to visualize the distribution of trip lengths, so you set up a simple Dagster job to do this. Your job has two ops: `load_trips` reads a CSV with your data, and `plot_trip_length_dist` generates a plot of the distribution using the [Holoviews](https://holoviews.org/) plotting library.
+The first thing we want is to visualize the distribution of trip lengths. We set up a simple Dagster job with two ops: `load_trips` reads a CSV with our data, and `generate_plot` generates a plot of the distribution using the [MatplotLib](https://matplotlib.org/) plotting library.
 
 ```python file=/guides/validating_pandas_dataframes_with_dagster_types/job_1.py
-from dagster import AssetMaterialization, job, op
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import holoviews as hv
+from dagster import AssetMaterialization, job, op
+
 
 @op
 def load_trips():
@@ -40,40 +41,41 @@ def load_trips():
         parse_dates=["start_time", "end_time"],
     )
 
+
 @op
 def generate_plots(trips):
-    minute_lengths = [ x.total_seconds() / 60 for x in trips.end_time - trips.start_time ]
-    edges, freqs = np.histogram(minute_lengths, 15)
-    hist = hv.Histogram((freqs, edges)).opts(width=600, xlabel='Minutes')
-    hv.save(hist, 'trip_length_hist.png', fmt='png')
+    minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
+    bin_edges = np.histogram_bin_edges(minute_lengths, 15)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.set(title="Trip lengths", xlabel="Minutes", ylabel="Count")
+    ax.hist(minute_lengths, bins=bin_edges)
+    fig.savefig("trip_lengths.png")
     yield AssetMaterialization(
-        asset_key="trip_dist_plot",
-        description="Distribution of trip lengths."
+        asset_key="trip_dist_plot", description="Distribution of trip lengths."
     )
     yield Output(None)
 
+
 @job
 def generate_trip_plots():
-    generate_plots(load_trips)
+    generate_plots(load_trips())
 ```
 
-If we try running this job and inspect the result, we get a strange error:
+If we try running this job, our `np.histogram` call in `generate_plots` throws an error:
 
-```
-# => ...
-# => ValueError: autodetected range of [nan, nan] is not finite
-```
+    # => ...
+    # => ValueError: autodetected range of [nan, nan] is not finite
 
-## Schema
+## Validating dataframes with Pandera
 
 Since our code looks OK, the problem likely originates from the data. To investigate, we write a [Pandera schema](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html) and try to validate our data. Our schema is, like our dataset, very simple. It asserts column data type and existence. Pandera columns are non-nullable by default, so there is also an implicit assertion that all values are defined (NOTE: this illustrates only a small slice of Pandera's functionality):
 
 ```python file=/guides/validating_pandas_dataframes_with_dagster_types/schema.py
 import numpy as np
-import pandera as pa
 import pandas as pd
+import pandera as pa
 
-MIN_DATE = pd.Timestamp('2021-10-01')
+MIN_DATE = pd.Timestamp("2021-10-01")
 
 df = pd.read_csv(
     "./2021-10_ebike_trips.csv",
@@ -81,7 +83,7 @@ df = pd.read_csv(
 )
 
 schema = pa.DataFrameSchema(
-    columns = {
+    columns={
         "bike_id": pa.Column(int, checks=pa.Check.ge(0)),  # ge: greater than or equal to
         "start_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
         "end_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
@@ -96,23 +98,23 @@ schema.validate(df)
 
 Our call to `schema.validate` has found the culprit. Somehow, null values have crept into our `end_time` column-- maybe some customers never returned their bikes...
 
-## Dagster Type factory
+## Dagster type factory
 
-We are now facing a common situation in data science-- data is frequently dirty. This can cause puzzling bugs if the data travels a significant distance in a pipeline before causing a problem. In our example, it triggered an obtuse numpy error.
+We are now facing a common situation in data science-- dirty data. This can cause puzzling bugs if the data travels a significant distance in a pipeline before causing a problem. In our example, it triggered an obtuse numpy error.
 
-We can prevent these situations by validating our data before passing it downstream. There are several ways to do this problem in Dagster. We could inline the schema and validation call in our `load_trips` op. Alternatively, we could break validation into a dedicated op that sits in between `load_trips` and any downstream computations. However, both of these approaches complicate our logic at either the graph or single op level. If this validation strategy were scaled up across all present and future analysis jobs, it's could quickly become a headache. become a headache.
+We can prevent these situations by validating our data before passing it downstream. There are several ways to solve this problem in Dagster. We could inline the schema and validation call in our `load_trips` op. Alternatively, we could break validation into a dedicated op that sits in between `load_trips` and any downstream computations. However, both of these approaches complicate our logic at either the graph or single op level. If this validation strategy were scaled up across all present and future analysis jobs, it could quickly become a headache.
 
 [Dagster Types](/concepts/dagster-types) offer a more robust and elegant solution. Every op input and output can have a Dagster type that encapsulates runtime validation checks. Dagster automatically runs these checks during job execution. So if we can wrap our trip dataframe schema in a Dagster type, then we won't need to further complicate our graphs or individual ops with explicit validation calls and error handling-- Dagster's machinery will take care of this for us.
 
 Fortunately, it's easy to write a factory function that will wrap any Pandera schema in a unique Dagster type:
 
 ```python file=/guides/validating_pandas_dataframes_with_dagster_types/factory.py
-from dagster import DagsterType, TypeCheck
-import pandera as pa
 import pandas as pd
+import pandera as pa
+from dagster import DagsterType, TypeCheck
+
 
 def pandera_schema_to_dagster_type(schema, name, description):
-
     def type_check_fn(_context, value):
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
@@ -123,18 +125,20 @@ def pandera_schema_to_dagster_type(schema, name, description):
             # `lazy` instructs pandera to capture every (not just the first) validation error
             schema.validate(value, lazy=True)
         except pa.errors.SchemaErrors as e:
-            return TypeCheck(success=False,
-                description = str(e),
-                metadata = {
-                    'num_violations': len(e.failure_cases),
-                })
+            return TypeCheck(
+                success=False,
+                description=str(e),
+                metadata={
+                    "num_violations": len(e.failure_cases),
+                },
+            )
 
         return TypeCheck(success=True)
 
     return DagsterType(
-      type_check_fn = type_check_fn,
-      name = name,
-      description = description,
+        type_check_fn=type_check_fn,
+        name=name,
+        description=description,
     )
 ```
 
@@ -144,23 +148,23 @@ Inside `type_check_fn`, we let `pandera` do the heavy lifting. After confirming 
 
 Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [Dagit](/concepts/dagit) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
 
-## Apply our Dagster Type to our Job
+## Annotate our job with Dagster types
 
 Now that we can turn Pandera schemas into Dagster types, we only need to tweak our job definition a little bit to integrate Pandera validation.
 
 ```python file=/guides/validating_pandas_dataframes_with_dagster_types/job_2.py endbefore=execution
-from dagster import AssetMaterialization, In, job, op, Out
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandera as pa
-import holoviews as hv
+from dagster import AssetMaterialization, In, Out, job, op
 
 from .factory import pandera_schema_to_dagster_type
 
-MIN_DATE = pd.Timestamp('2021-10-01')
+MIN_DATE = pd.Timestamp("2021-10-01")
 
 schema = pa.DataFrameSchema(
-    columns = {
+    columns={
         "bike_id": pa.Column(int, checks=pa.Check.ge(0)),  # ge: greater than or equal to
         "start_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
         "end_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
@@ -169,42 +173,45 @@ schema = pa.DataFrameSchema(
 
 # This is a Dagster type that wraps the schema
 TripsDataFrame = pandera_schema_to_dagster_type(
-    schema, 'TripsDataFrame', 'DataFrame type for e-bike trips.'
+    schema, "TripsDataFrame", "DataFrame type for e-bike trips."
 )
 
 
 # We've added a Dagster type for this op's output
-@op(out=Out(TripsDataFrame), config_schema={'clean': bool})
+@op(out=Out(TripsDataFrame), config_schema={"clean": bool})
 def load_trips(context):
     df = pd.read_csv(
         "./ebike_trips.csv",
         parse_dates=["start_time", "end_time"],
     )
-    if context.op_config['clean']:
+    if context.op_config["clean"]:
         df = df[pd.notna(df.end_time)]
     return df
 
+
 # We've added a Dagster type for this op's input
-@op(ins={'trips': In(TripsDataFrame)})
+@op(ins={"trips": In(TripsDataFrame)})
 def generate_plots(trips):
-    minute_lengths = [ x.total_seconds() / 60 for x in trips.end_time - trips.start_time ]
-    edges, freqs = np.histogram(minute_lengths, 15)
-    hist = hv.Histogram((freqs, edges)).opts(width=600, xlabel='Minutes')
-    hv.save(hist, 'trip_length_hist.png', fmt='png')
+    minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
+    bin_edges = np.histogram_bin_edges(minute_lengths, 15)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.set(title="Trip lengths", xlabel="Minutes", ylabel="Count")
+    ax.hist(minute_lengths, bins=bin_edges)
+    fig.savefig("trip_lengths.png")
     yield AssetMaterialization(
-        asset_key="trip_dist_plot",
-        description="Distribution of trip lengths."
+        asset_key="trip_dist_plot", description="Distribution of trip lengths."
     )
     yield Output(None)
 
+
 @job
 def generate_trip_plots():
-    generate_plots(load_trips)
+    generate_plots(load_trips())
 ```
 
-The above job definition makes two modifications to the previous one. First, we've added `ins`/`out` arguments to the `op` decorators. We specify that `load_trips` must return a `TripsDataframe` as output, and `generate_plots` must take a `TripsDataframe` as input. Now when we execute the `generate_trip_plots` job, Dagster will automatically apply the `TripsDataframe` logic to our dataframe before it enters `generate_plots`.
+The above job definition makes two modifications to the previous one. First, we've added `ins`/`out` arguments to the `op` decorators. We specify that `load_trips` must return a `TripsDataFrame` as output, and `generate_plots` must take a `TripsDataFrame` as input. Now when we execute the `generate_trip_plots` job, Dagster will automatically apply the `TripsDataFrame` validation to our dataframe before it enters `generate_plots`, and terminate execution if the validation fails.
 
-Second, we've added a `clean` configuration parameter to `load_trips`. When `clean` is true, `load_trips` strip out records with missing end dates before outputting a dataframe.
+Second, we've added a `clean` configuration parameter to `load_trips`. When `clean` is true, `load_trips` strips out records with missing end dates before outputting a dataframe.
 
 Let's see what happens when we run without setting `clean`:
 
@@ -218,23 +225,24 @@ generate_trip_plots.execute_in_process()
 Now let's try with `clean` set. Stripping out the offeniing records should allow our dataframe to pass the `TripsDataframe` validation:
 
 ```python file=/guides/validating_pandas_dataframes_with_dagster_types/job_2.py startafter=execution_2
-generate_trip_plots.execute_in_process(run_config={
-    'ops': {
-        'load_trips': {
-            'config': {
-                'clean': True
-            }
-        }
-    }
-})
+generate_trip_plots.execute_in_process(
+    run_config={"ops": {"load_trips": {"config": {"clean": True}}}}
+)
 # => ...
 # => 2021-11-11 19:54:26 - dagster - DEBUG - generate_trip_plots - 3e00e9e3-27f3-490e-b1bd-ec17b92e5599 - 28168 - RUN_SUCCESS - Finished execution of run for "generate_trip_plots".
 ```
 
-Success! We also find that our histogram was successfully rendered to `./trip_length_hist.png`.
+Success! We also find that our histogram was successfully rendered to `./trip_lengths.png`.
+
+<Image
+src="/images/guides/validating_pandas_dataframes_with_dagster_types/trip_lengths.png"
+alt="trip_lengths.png"
+width={720}
+height={360}
+/>
 
 ## Conclusion
 
-In this guide, we saw how to smoothly integrate a third-party data validation service with Dagster. This can imbue your jobs with powerful runtime data validation while requiring little extra code.
+In this guide, we saw how to smoothly integrate a third-party data validation library with Dagster. This can imbue our jobs with powerful runtime data validation while requiring little extra code.
 
 We used [Pandas](https://pandas.pydata.org/) and [Pandera](https://pandera.readthedocs.io/en/stable/) as an example, but the same technique can be used for any kind of data validation service. The basic pattern is to wrap validation entities in [Dagster Types](/concepts/dagster-types). Use of a factory function achieves this with a minimum of code. Inside the factory, you are free to translate validation results into `TypeCheck` objects however you like. You can keep it simple, like we did here, or provide custom detailed validation metadata for inspection in Dagit.
