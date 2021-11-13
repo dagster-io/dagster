@@ -1,2 +1,5 @@
 /.yarn/releases/** binary
 /.yarn/plugins/** binary
+
+packages/core/src/graphql/* linguist-generated=true
+packages/core/src/**/types/* linguist-generated=true
