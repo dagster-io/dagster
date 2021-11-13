@@ -224,13 +224,13 @@ const Warning = ({ children }) => {
   );
 };
 
-const CodeReferenceLink = (props: { filePath: string, format?: string }) => {
-  const filePath = props.filePath;
-  const format = props.format || 'box';
-
+const CodeReferenceLink = ({ filePath, isInline, children }) => {
   const { version } = useVersion();
   const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
-  if (format === 'box') {
+
+  if (isInline) {
+    return <a href={url}>{children}</a>
+  } else {
     return (
       <div className="bg-primary-100 rounded flex item-center p-4">
         <div>
@@ -252,8 +252,6 @@ const CodeReferenceLink = (props: { filePath: string, format?: string }) => {
         </div>
       </div>
     );
-  } else if (format === 'inline') {
-    return <a href={url}>{props.children}</a>
   }
 };
 
