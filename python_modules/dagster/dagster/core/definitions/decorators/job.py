@@ -13,7 +13,7 @@ from ..resource import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from ..partition import PartitionedConfig
+    from ..partition import PartitionedConfig, PartitionsDefinition
     from ..executor import ExecutorDefinition
 
 
@@ -29,6 +29,7 @@ class _Job:
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         self.name = name
         self.description = description
@@ -39,6 +40,7 @@ class _Job:
         self.executor_def = executor_def
         self.hooks = hooks
         self.version_strategy = version_strategy
+        self.partitions_def = partitions_def
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -86,6 +88,7 @@ class _Job:
             executor_def=self.executor_def,
             hooks=self.hooks,
             version_strategy=self.version_strategy,
+            partitions_def=self.partitions_def,
         )
 
 
@@ -99,6 +102,7 @@ def job(
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     version_strategy: Optional[VersionStrategy] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
 ) -> Union[_Job, JobDefinition]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -142,6 +146,9 @@ def job(
         version_strategy (Optional[VersionStrategy]):
             Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
+        partitions_def (Optional[PartitionsDefinition]): Defines a screet set of partition keys
+            that can parameterize the job. If this argument is supplied, the config argument
+            can't also be supplied.
 
     """
     if callable(name):
@@ -158,4 +165,5 @@ def job(
         executor_def=executor_def,
         hooks=hooks,
         version_strategy=version_strategy,
+        partitions_def=partitions_def,
     )

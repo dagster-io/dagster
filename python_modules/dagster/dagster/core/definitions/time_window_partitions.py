@@ -37,11 +37,21 @@ class TimeWindowPartitionsDefinition(
     ),
 ):
     def __new__(
-        cls, schedule_type: ScheduleType, start: datetime, timezone: str, fmt: str, end_offset: int
+        cls,
+        schedule_type: ScheduleType,
+        start: Union[datetime, str],
+        timezone: Optional[str],
+        fmt: str,
+        end_offset: int,
     ):
+        if isinstance(start, str):
+            start_dt = datetime.strptime(start, fmt)
+        else:
+            start_dt = start
+
         check.param_invariant(end_offset >= 0, "end_offset", "end_offset must be non-negative")
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, schedule_type, start, timezone, fmt, end_offset
+            cls, schedule_type, start_dt, timezone or "UTC", fmt, end_offset
         )
 
     def get_partitions(
@@ -89,6 +99,40 @@ class TimeWindowPartitionsDefinition(
 
         return partitions
 
+    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+        start = self.start_time_for_partition_key(partition_key)
+        iterator = schedule_execution_time_iterator(
+            start_timestamp=start.timestamp(),
+            cron_schedule=get_cron_schedule(schedule_type=self.schedule_type),
+            execution_timezone=self.timezone,
+        )
+        return TimeWindow(start, next(iterator))
+
+    def start_time_for_partition_key(self, partition_key: str) -> datetime:
+        return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
+
+
+def daily_partitions_def(
+    start_date: Union[datetime, str],
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> PartitionsDefinition:
+    _fmt = fmt or DEFAULT_DATE_FORMAT
+
+    if isinstance(start_date, str):
+        _start_date = datetime.strptime(start_date, _fmt)
+    else:
+        _start_date = start_date
+
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.DAILY,
+        start=_start_date,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
+
 
 def daily_partitioned_config(
     start_date: Union[datetime, str],
@@ -119,13 +163,6 @@ def daily_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
-    _timezone = timezone or "UTC"
-
-    if isinstance(start_date, str):
-        _start_date = datetime.strptime(start_date, _fmt)
-    else:
-        _start_date = start_date
 
     def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -134,16 +171,32 @@ def daily_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=TimeWindowPartitionsDefinition(
-                schedule_type=ScheduleType.DAILY,
-                start=_start_date,
-                timezone=_timezone,
-                fmt=_fmt,
+            partitions_def=daily_partitions_def(
+                start_date=start_date,
+                timezone=timezone,
+                fmt=fmt,
                 end_offset=end_offset,
             ),
         )
 
     return inner
+
+
+def hourly_partitions_def(
+    start_date: Union[datetime, str],
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> PartitionsDefinition:
+    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.HOURLY,
+        start=start_date,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def hourly_partitioned_config(
@@ -175,13 +228,6 @@ def hourly_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-    _timezone = timezone or "UTC"
-
-    if isinstance(start_date, str):
-        _start_date = datetime.strptime(start_date, _fmt)
-    else:
-        _start_date = start_date
 
     def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -190,16 +236,32 @@ def hourly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=TimeWindowPartitionsDefinition(
-                schedule_type=ScheduleType.HOURLY,
-                start=_start_date,
-                timezone=_timezone,
-                fmt=_fmt,
+            partitions_def=hourly_partitions_def(
+                start_date=start_date,
+                timezone=timezone,
+                fmt=fmt,
                 end_offset=end_offset,
             ),
         )
 
     return inner
+
+
+def monthly_partitions_def(
+    start_date: Union[datetime, str],
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> PartitionsDefinition:
+    _fmt = fmt or DEFAULT_DATE_FORMAT
+
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.MONTHLY,
+        start=start_date,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def monthly_partitioned_config(
@@ -231,13 +293,6 @@ def monthly_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
-    _timezone = timezone or "UTC"
-
-    if isinstance(start_date, str):
-        _start_date = datetime.strptime(start_date, _fmt)
-    else:
-        _start_date = start_date
 
     def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -246,16 +301,32 @@ def monthly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=TimeWindowPartitionsDefinition(
-                schedule_type=ScheduleType.MONTHLY,
-                start=_start_date,
-                timezone=_timezone,
-                fmt=_fmt,
+            partitions_def=monthly_partitions_def(
+                start_date=start_date,
+                timezone=timezone,
+                fmt=fmt,
                 end_offset=end_offset,
             ),
         )
 
     return inner
+
+
+def weekly_partitions_def(
+    start_date: Union[datetime, str],
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> PartitionsDefinition:
+    _fmt = fmt or DEFAULT_DATE_FORMAT
+
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.WEEKLY,
+        start=start_date,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def weekly_partitioned_config(
@@ -287,13 +358,6 @@ def weekly_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
-    _timezone = timezone or "UTC"
-
-    if isinstance(start_date, str):
-        _start_date = datetime.strptime(start_date, _fmt)
-    else:
-        _start_date = start_date
 
     def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
@@ -302,11 +366,10 @@ def weekly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=TimeWindowPartitionsDefinition(
-                schedule_type=ScheduleType.WEEKLY,
-                start=_start_date,
-                timezone=_timezone,
-                fmt=_fmt,
+            partitions_def=weekly_partitions_def(
+                start_date=start_date,
+                timezone=timezone,
+                fmt=fmt,
                 end_offset=end_offset,
             ),
         )
