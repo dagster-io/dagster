@@ -38,7 +38,6 @@ dbt_prod_job = dbt_metrics.to_job(
                     {**{"database": "DEMO_DB"}, **SHARED_SNOWFLAKE_CONF}, "hackernews"
                 )
             ),
-            "partition_bounds": ResourceDefinition.none_resource(),
         },
     }
 )
@@ -53,7 +52,6 @@ dbt_staging_job = dbt_metrics.to_job(
                     {**{"database": "DEMO_DB_STAGING"}, **SHARED_SNOWFLAKE_CONF}, "hackernews"
                 )
             ),
-            "partition_bounds": ResourceDefinition.none_resource(),
         },
     }
 )

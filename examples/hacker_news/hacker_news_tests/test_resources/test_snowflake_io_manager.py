@@ -34,9 +34,7 @@ def temporary_snowflake_table(contents: PandasDataFrame):
 )
 def test_handle_output_then_load_input_pandas():
     snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(
-            config={"database": "TESTDB"}, resources={"partition_bounds": None}
-        )
+        build_init_resource_context(config={"database": "TESTDB"})
     )
     contents1 = PandasDataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = PandasDataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
@@ -56,9 +54,7 @@ def test_handle_output_then_load_input_pandas():
 )
 def test_handle_output_spark_then_load_input_pandas():
     snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(
-            config={"database": "TESTDB"}, resources={"partition_bounds": None}
-        )
+        build_init_resource_context(config={"database": "TESTDB"})
     )
     spark = SparkSession.builder.config(
         "spark.jars.packages",

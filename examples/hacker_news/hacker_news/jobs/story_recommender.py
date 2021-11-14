@@ -1,4 +1,4 @@
-from dagster import ResourceDefinition, graph
+from dagster import graph
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
     build_component_top_stories,
@@ -24,23 +24,8 @@ def story_recommender():
     build_user_top_recommended_stories(recommender_model, user_story_matrix)
 
 
-story_recommender_prod_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_PROD,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
+story_recommender_prod_job = story_recommender.to_job(resource_defs=RESOURCES_PROD)
 
-story_recommender_staging_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_STAGING,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
+story_recommender_staging_job = story_recommender.to_job(resource_defs=RESOURCES_STAGING)
 
-story_recommender_local_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_LOCAL,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
+story_recommender_local_job = story_recommender.to_job(resource_defs=RESOURCES_LOCAL)

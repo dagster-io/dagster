@@ -1,9 +1,11 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Mapping, Optional, Sequence, Union
+from datetime import datetime
+from typing import Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import AssetKey, EventMetadataEntry, IOManager, InputContext, OutputContext, io_manager
+from hacker_news.partitions import hourly_partitions
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -11,6 +13,8 @@ from pyspark.sql.types import StructField, StructType
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
+
+SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def spark_field_to_snowflake_type(spark_field: StructField):
@@ -51,7 +55,7 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-@io_manager(config_schema={"database": str}, required_resource_keys={"partition_bounds"})
+@io_manager(config_schema={"database": str})
 def snowflake_io_manager(init_context):
     return SnowflakeIOManager(
         config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
@@ -63,8 +67,7 @@ class SnowflakeIOManager(IOManager):
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
 
-    If an Out has {"partitioned": True} in its metadata, we just overwrite a single partition, based
-    on the time window specified by the partition_bounds resource.
+    If an Out has {"partitioned": True} in its metadata, we just overwrite a single partition..
 
     Because we specify a get_output_asset_key() function, AssetMaterialization events will be
     automatically created each time an output is processed with this IOManager.
@@ -76,13 +79,13 @@ class SnowflakeIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.metadata["table"].split(".")
 
-        partition_bounds = (
-            context.resources.partition_bounds
+        partition_window = (
+            hourly_partitions.time_window_for_partition_key(context.partition_key)
             if context.metadata.get("partitioned") is True
             else None
         )
         with connect_snowflake(config=self._config, schema=schema) as con:
-            con.execute(self._get_cleanup_statement(table, schema, partition_bounds))
+            con.execute(self._get_cleanup_statement(table, schema, partition_window))
 
         if isinstance(obj, SparkDataFrame):
             yield from self._handle_spark_output(obj, schema, table)
@@ -95,7 +98,7 @@ class SnowflakeIOManager(IOManager):
 
         yield EventMetadataEntry.text(
             self._get_select_statement(
-                table, schema, context.metadata.get("columns"), partition_bounds
+                table, schema, context.metadata.get("columns"), partition_window
             ),
             "Query",
         )
@@ -132,7 +135,7 @@ class SnowflakeIOManager(IOManager):
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
     def _get_cleanup_statement(
-        self, table: str, schema: str, partition_bounds: Mapping[str, str]
+        self, table: str, schema: str, partition_bounds: Tuple[datetime, datetime]
     ) -> str:
         """
         Returns a SQL statement that deletes data in the given table to make way for the output data
@@ -158,7 +161,7 @@ class SnowflakeIOManager(IOManager):
                     table,
                     schema,
                     metadata.get("columns"),
-                    context.resources.partition_bounds
+                    hourly_partitions.time_window_for_partition_key(context.partition_key)
                     if metadata.get("partitioned") is True
                     else None,
                 ),
@@ -172,7 +175,7 @@ class SnowflakeIOManager(IOManager):
         table: str,
         schema: str,
         columns: Optional[Sequence[str]],
-        partition_bounds: Optional[Mapping[str, str]],
+        partition_bounds: Optional[Tuple[datetime, datetime]],
     ):
         col_str = ", ".join(columns) if columns else "*"
         if partition_bounds:
@@ -184,14 +187,19 @@ class SnowflakeIOManager(IOManager):
             return f"""SELECT {col_str} FROM {schema}.{table}"""
 
     def _partition_where_clause(self, partition_bounds: Mapping[str, str]) -> str:
-        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{partition_bounds["start"]}' AND '{partition_bounds["end"]}'"""
+        start_dt, end_dt = partition_bounds
+        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}' AND '{end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}'"""
 
     def get_output_asset_key(self, context: OutputContext) -> AssetKey:
         return AssetKey(["snowflake", *context.metadata["table"].split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):
         if context.metadata.get("partitioned") is True:
-            return [context.resources.partition_bounds["start"]]
+            return [
+                hourly_partitions.time_window_for_partition_key(
+                    context.partition_key
+                ).start.strftime("%Y-%m-%d %H:%M:%S")
+            ]
         else:
             return None
 

@@ -5,6 +5,7 @@ import pandas
 import pyspark
 from dagster import AssetKey, EventMetadataEntry, Field, IOManager, OutputContext, check, io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
+from hacker_news.partitions import hourly_partitions
 
 
 class PartitionedParquetIOManager(IOManager):
@@ -53,9 +54,9 @@ class PartitionedParquetIOManager(IOManager):
 
     def _get_path(self, context: OutputContext):
         # filesystem-friendly string that is scoped to the start/end times of the data slice
-        partition_bounds = context.resources.partition_bounds
-        partition_str = partition_bounds["start"] + "_" + partition_bounds["end"]
-        partition_str = "".join(c for c in partition_str if c == "_" or c.isdigit())
+        start, end = hourly_partitions.time_window_for_partition_key(context.partition_key)
+        dt_format = "%Y%m%d%H%M%S"
+        partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
 
         # if local fs path, store all outptus in same directory
         if "://" not in self._base_path:
@@ -67,12 +68,16 @@ class PartitionedParquetIOManager(IOManager):
         return AssetKey([*self._base_path.split("://"), context.name])
 
     def get_output_asset_partitions(self, context: OutputContext):
-        return set([context.resources.partition_bounds["start"]])
+        return [
+            hourly_partitions.time_window_for_partition_key(context.partition_key).start.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        ]
 
 
 @io_manager(
     config_schema={"base_path": Field(str, is_required=False)},
-    required_resource_keys={"pyspark", "partition_bounds"},
+    required_resource_keys={"pyspark"},
 )
 def local_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(
@@ -80,6 +85,6 @@ def local_partitioned_parquet_io_manager(init_context):
     )
 
 
-@io_manager(required_resource_keys={"pyspark", "partition_bounds", "s3_bucket"})
+@io_manager(required_resource_keys={"pyspark", "s3_bucket"})
 def s3_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)

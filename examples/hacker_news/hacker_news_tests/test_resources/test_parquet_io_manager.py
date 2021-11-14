@@ -4,12 +4,12 @@ import tempfile
 import pandas
 from dagster import Out, graph, op
 from dagster_pyspark import pyspark_resource
+from hacker_news.partitions import hourly_partitions
 from hacker_news.resources.parquet_io_manager import local_partitioned_parquet_io_manager
-from hacker_news.resources.partition_bounds import partition_bounds
 from pyspark.sql import DataFrame as SparkDF
 
 
-@op(out={"out": Out(io_manager_key="pandas_to_spark")})
+@op(out={"out": Out(io_manager_key="parquet_io_manager")})
 def emit_pandas_df(_):
     return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
 
@@ -32,12 +32,12 @@ def test_io_manager():
         res = io_manager_test_pipeline.to_job(
             resource_defs={
                 "pyspark": pyspark_resource,
-                "pandas_to_spark": local_partitioned_parquet_io_manager,
-                "partition_bounds": partition_bounds.configured({"start": "1", "end": "2"}),
-            }
-        ).execute_in_process(
-            run_config={"resources": {"pandas_to_spark": {"config": {"base_path": temp_dir}}}}
-        )
+                "parquet_io_manager": local_partitioned_parquet_io_manager.configured(
+                    {"base_path": temp_dir}
+                ),
+            },
+            partitions_def=hourly_partitions,
+        ).execute_in_process(partition_key={"2020-12-30-00:00"})
         assert res.success
         assert os.path.exists(expected_path)
         intermediate_df = pandas.read_parquet(expected_path)
