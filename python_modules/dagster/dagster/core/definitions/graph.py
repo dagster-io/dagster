@@ -433,7 +433,7 @@ class GraphDefinition(NodeDefinition):
                 configuration in the standard format to configure the job.
 
                 If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
-                values that can parameterize the pipeline, as well as a function for mapping those
+                values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
             tags (Optional[Dict[str, Any]]):
