@@ -402,7 +402,7 @@
           },
           {
             "title": "Validating Pandas Dataframes with Dagster Types",
-            "path": "/guides/dagster/validating_pandas_dataframes_with_dagster_types"
+            "path": "/guides/dagster/pandas_dagster_types"
           }
         ]
       }

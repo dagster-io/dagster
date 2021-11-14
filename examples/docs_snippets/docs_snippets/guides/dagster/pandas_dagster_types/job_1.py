@@ -7,13 +7,13 @@ from dagster import AssetMaterialization, job, op
 @op
 def load_trips():
     return pd.read_csv(
-        "./2021-10_ebike_trips.csv",
+        "./ebike_trips.csv",
         parse_dates=["start_time", "end_time"],
     )
 
 
 @op
-def generate_plots(trips):
+def generate_plot(trips):
     minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
     bin_edges = np.histogram_bin_edges(minute_lengths, 15)
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -27,5 +27,5 @@ def generate_plots(trips):
 
 
 @job
-def generate_trip_plots():
-    generate_plots(load_trips())
+def generate_trip_distribution_plot():
+    generate_plot(load_trips())
