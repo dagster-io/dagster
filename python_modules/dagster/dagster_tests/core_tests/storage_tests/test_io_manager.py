@@ -8,7 +8,6 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     Field,
     IOManagerDefinition,
     In,
@@ -21,6 +20,7 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     graph,
+    job,
     op,
     pipeline,
     reexecute_pipeline,
@@ -29,6 +29,7 @@ from dagster import (
 )
 from dagster.check import CheckError
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.time_window_partitions import daily_partitioned_config
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.output import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -701,3 +702,31 @@ def test_asset_key():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
     ).execute_in_process()
     assert result.success
+
+
+def test_partition_key():
+    @op
+    def my_op():
+        pass
+
+    @op
+    def my_op2(_input1):
+        pass
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.has_partition_key
+            assert context.partition_key == "2020-01-01"
+
+        def handle_output(self, context, _obj):
+            assert context.has_partition_key
+            assert context.partition_key == "2020-01-01"
+
+    @job(
+        config=daily_partitioned_config(start_date="2020-01-01")(lambda s, e: {}),
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    def my_job():
+        my_op2(my_op())
+
+    assert my_job.execute_in_process(partition_key="2020-01-01").success
