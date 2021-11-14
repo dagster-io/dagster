@@ -285,6 +285,18 @@ class PlanExecutionContext(IPlanContext):
     def log(self) -> DagsterLogManager:
         return self._log_manager
 
+    @property
+    def partition_key(self) -> str:
+        tags = self._plan_data.pipeline_run.tags
+        check.invariant(
+            "partition" in tags, "Tried to access partition_key for a non-partitioned run"
+        )
+        return tags["partition"]
+
+    @property
+    def has_partition_key(self) -> bool:
+        return "partition" in self._plan_data.pipeline_run.tags
+
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
             self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
