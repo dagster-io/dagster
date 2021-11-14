@@ -4,6 +4,7 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     Out,
+    daily_partitioned_config,
     job,
     op,
     resource,
@@ -240,3 +241,24 @@ def test_output_value_error():
         match="Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
     ):
         result.output_value()
+
+
+def test_partitions_key():
+    @op
+    def my_op(context):
+        assert (
+            context._step_execution_context.plan_data.pipeline_run.tags[  # pylint: disable=protected-access
+                "partition"
+            ]
+            == "2020-01-01"
+        )
+
+    @daily_partitioned_config(start_date="2020-01-01")
+    def my_partitioned_config(_start, _end):
+        return {}
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    assert my_job.execute_in_process(partition_key="2020-01-01").success
