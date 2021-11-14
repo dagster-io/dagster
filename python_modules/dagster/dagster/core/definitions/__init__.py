@@ -82,6 +82,8 @@ from .partition import (
     Partition,
     PartitionScheduleDefinition,
     PartitionSetDefinition,
+    PartitionedConfig,
+    PartitionsDefinition,
     dynamic_partitioned_config,
     static_partitioned_config,
 )
@@ -121,9 +123,12 @@ from .sensor_definition import (
 from .solid_container import create_execution_structure
 from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .time_window_partitions import (
-    PartitionedConfig,
     daily_partitioned_config,
+    daily_partitions_def,
     hourly_partitioned_config,
+    hourly_partitions_def,
     monthly_partitioned_config,
+    monthly_partitions_def,
     weekly_partitioned_config,
+    weekly_partitions_def,
 )

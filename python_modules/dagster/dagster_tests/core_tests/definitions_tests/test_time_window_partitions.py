@@ -4,8 +4,11 @@ import pendulum
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
     daily_partitioned_config,
+    daily_partitions_def,
     hourly_partitioned_config,
+    hourly_partitions_def,
     monthly_partitioned_config,
+    monthly_partitions_def,
 )
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -21,15 +24,20 @@ def test_daily_partitions():
     def my_partitioned_config(_start, _end):
         return {}
 
+    partitions_def = my_partitioned_config.partitions_def
+    assert partitions_def == daily_partitions_def(start_date="2021-05-05")
+
     assert [
         partition.value
-        for partition in my_partitioned_config.partitions_def.get_partitions(
-            datetime.strptime("2021-05-07", DATE_FORMAT)
-        )
+        for partition in partitions_def.get_partitions(datetime.strptime("2021-05-07", DATE_FORMAT))
     ] == [
         time_window("2021-05-05", "2021-05-06"),
         time_window("2021-05-06", "2021-05-07"),
     ]
+
+    assert partitions_def.time_window_for_partition_key("2021-05-08") == time_window(
+        "2021-05-08", "2021-05-09"
+    )
 
 
 def test_daily_partitions_with_end_offset():
@@ -55,15 +63,20 @@ def test_monthly_partitions():
     def my_partitioned_config(_start, _end):
         return {}
 
+    partitions_def = my_partitioned_config.partitions_def
+    assert partitions_def == monthly_partitions_def(start_date="2021-05-01")
+
     assert [
         partition.value
-        for partition in my_partitioned_config.partitions_def.get_partitions(
-            datetime.strptime("2021-07-03", DATE_FORMAT)
-        )
+        for partition in partitions_def.get_partitions(datetime.strptime("2021-07-03", DATE_FORMAT))
     ] == [
         time_window("2021-05-01", "2021-06-01"),
         time_window("2021-06-01", "2021-07-01"),
     ]
+
+    assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
+        "2021-05-01", "2021-06-01"
+    )
 
 
 def test_monthly_partitions_with_end_offset():
@@ -89,7 +102,10 @@ def test_hourly_partitions():
     def my_partitioned_config(_start, _end):
         return {}
 
-    partitions = my_partitioned_config.partitions_def.get_partitions(
+    partitions_def = my_partitioned_config.partitions_def
+    assert partitions_def == hourly_partitions_def(start_date="2021-05-05-01:00")
+
+    partitions = partitions_def.get_partitions(
         datetime.strptime("2021-05-05-03:00", DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE)
     )
 
@@ -102,3 +118,7 @@ def test_hourly_partitions():
         "2021-05-05-01:00",
         "2021-05-05-02:00",
     ]
+
+    assert partitions_def.time_window_for_partition_key("2021-05-05-01:00") == time_window(
+        "2021-05-05T01:00:00", "2021-05-05T02:00:00"
+    )

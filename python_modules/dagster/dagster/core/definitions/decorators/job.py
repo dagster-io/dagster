@@ -14,7 +14,7 @@ from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from ..partition import PartitionedConfig
+    from ..partition import PartitionedConfig, PartitionsDefinition
     from ..executor_definition import ExecutorDefinition
 
 
@@ -31,6 +31,7 @@ class _Job:
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         self.name = name
         self.description = description
@@ -42,6 +43,7 @@ class _Job:
         self.hooks = hooks
         self.op_retry_policy = op_retry_policy
         self.version_strategy = version_strategy
+        self.partitions_def = partitions_def
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -90,6 +92,7 @@ class _Job:
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
+            partitions_def=self.partitions_def,
         )
         update_wrapper(job_def, fn)
         return job_def
@@ -106,6 +109,7 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
 ) -> Union[_Job, JobDefinition]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -151,6 +155,9 @@ def job(
         version_strategy (Optional[VersionStrategy]):
             Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
+        partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
+            that can parameterize the job. If this argument is supplied, the config argument
+            can't also be supplied.
 
     """
     if callable(name):
@@ -168,4 +175,5 @@ def job(
         hooks=hooks,
         op_retry_policy=op_retry_policy,
         version_strategy=version_strategy,
+        partitions_def=partitions_def,
     )

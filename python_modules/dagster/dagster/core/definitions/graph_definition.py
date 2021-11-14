@@ -54,7 +54,7 @@ from .version_strategy import VersionStrategy
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from .solid_definition import SolidDefinition
-    from .partition import PartitionedConfig
+    from .partition import PartitionedConfig, PartitionsDefinition
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -405,6 +405,7 @@ class GraphDefinition(NodeDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -450,12 +451,15 @@ class GraphDefinition(NodeDefinition):
             version_strategy (Optional[VersionStrategy]):
                 Defines how each solid (and optionally, resource) in the job can be versioned. If
                 provided, memoizaton will be enabled for this job.
+            partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
+                keys that can parameterize the job. If this argument is supplied, the config
+                argument can't also be supplied.
 
         Returns:
             JobDefinition
         """
         from .job_definition import JobDefinition
-        from .partition import PartitionedConfig
+        from .partition import PartitionedConfig, PartitionsDefinition
         from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
@@ -478,6 +482,13 @@ class GraphDefinition(NodeDefinition):
         presets = []
         config_mapping = None
         partitioned_config = None
+
+        if partitions_def:
+            check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+            check.invariant(
+                config is None, "Can't supply both the 'config' and 'partitions_def' arguments"
+            )
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: {})
 
         if isinstance(config, ConfigMapping):
             config_mapping = config

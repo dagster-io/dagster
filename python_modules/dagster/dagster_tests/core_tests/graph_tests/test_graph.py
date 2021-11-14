@@ -24,7 +24,7 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import daily_partitioned_config
+from dagster.core.definitions.time_window_partitions import daily_partitions_def
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -969,9 +969,7 @@ def test_job_partitions_def():
     def my_graph():
         my_op()
 
-    my_job = my_graph.to_job(
-        config=daily_partitioned_config(start_date="2020-01-01")(lambda s, e: {})
-    )
+    my_job = my_graph.to_job(config=daily_partitions_def(start_date="2020-01-01"))
     assert my_job.execute_in_process(partition_key="2020-01-01").success
 
 
