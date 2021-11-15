@@ -43,8 +43,8 @@ export const AssetWipeDialog: React.FC<{
         <Group direction="column" spacing={8}>
           <div>
             Assets defined only by their historical materializations will disappear from the Asset
-            Catalog. Statically defined assets will remain unless their definition is also deleted
-            from code.
+            Catalog. Software-defined assets will remain unless their definition is also deleted
+            from the repository.
           </div>
           <strong>This action cannot be undone.</strong>
         </Group>

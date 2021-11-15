@@ -241,7 +241,12 @@ const AssetActions: React.FC<{
   }
 
   const disabled = selected.length === 0;
-  const label = `Wipe materializations${selected.length > 0 ? ` (${selected.length})` : ''}`;
+  const label =
+    selected.length > 1
+      ? `Wipe materializations for ${selected.length} assets`
+      : selected.length === 1
+      ? `Wipe materializations for 1 asset`
+      : `Wipe materializations`;
 
   return (
     <>
