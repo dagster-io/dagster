@@ -61,6 +61,19 @@ def test_describe_tasks(ecs):
     assert ecs.describe_tasks(tasks=[dagster_id], cluster="dagster") == dagster
 
 
+def test_list_account_settings(ecs):
+    assert not ecs.list_account_settings()["settings"]
+    assert not ecs.list_account_settings(effectiveSettings=False)["settings"]
+
+    settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
+    assert settings
+
+    task_arn_format_setting = [
+        setting for setting in settings if setting["name"] == "taskLongArnFormat"
+    ][0]
+    assert task_arn_format_setting["value"] == "enabled"
+
+
 def test_list_tags_for_resource(ecs):
     invalid_arn = ecs._task_arn("invalid")
     with pytest.raises(ClientError):
@@ -76,6 +89,12 @@ def test_list_tags_for_resource(ecs):
     ecs.tag_resource(resourceArn=arn, tags=tags)
 
     assert ecs.list_tags_for_resource(resourceArn=arn)["tags"] == tags
+
+    # With the new ARN format disabled
+    ecs.put_account_setting(name="taskLongArnFormat", value="disabled")
+
+    with pytest.raises(ClientError):
+        ecs.list_tags_for_resource(resourceArn=arn)
 
 
 def test_list_task_definitions(ecs):
@@ -126,6 +145,21 @@ def test_list_tasks(ecs):
     response = ecs.list_tasks(cluster="other", family="dagster")
     assert len(response["taskArns"]) == 1
     assert other_cluster_dagster_family in response["taskArns"]
+
+
+def test_put_account_setting(ecs):
+    setting = ecs.put_account_setting(name="taskLongArnFormat", value="disabled")["setting"]
+    assert setting["name"] == "taskLongArnFormat"
+    assert setting["value"] == "disabled"
+
+    # It overrides the default settings
+    settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
+    assert settings
+
+    task_arn_format_setting = [
+        setting for setting in settings if setting["name"] == "taskLongArnFormat"
+    ][0]
+    assert task_arn_format_setting["value"] == "disabled"
 
 
 def test_register_task_definition(ecs):
@@ -268,3 +302,9 @@ def test_tag_resource(ecs):
     arn = ecs.run_task(taskDefinition="dagster")["tasks"][0]["taskArn"]
 
     ecs.tag_resource(resourceArn=arn, tags=tags)
+
+    # With the new ARN format disabled
+    ecs.put_account_setting(name="taskLongArnFormat", value="disabled")
+
+    with pytest.raises(ClientError):
+        ecs.tag_resource(resourceArn=arn, tags=tags)

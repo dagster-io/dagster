@@ -86,6 +86,8 @@ class StubbedEcs:
         self.tasks = defaultdict(list)
         self.task_definitions = defaultdict(list)
         self.tags = defaultdict(list)
+        self.account_settings = {}
+        self.default_account_settings = {"taskLongArnFormat": "enabled"}
         self.stub_count = 0
 
     @stubbed
@@ -151,13 +153,41 @@ class StubbedEcs:
         return self.client.describe_tasks(**kwargs)
 
     @stubbed
+    def list_account_settings(self, **kwargs):
+        """
+        Only taskLongArnFormat has a default value
+        """
+        if kwargs.get("effectiveSettings"):
+            account_settings = {
+                **self.default_account_settings,
+                **self.account_settings,
+            }
+        else:
+            account_settings = self.account_settings
+
+        account_settings = [
+            {
+                "name": key,
+                "value": value,
+            }
+            for key, value in account_settings.items()
+        ]
+
+        self.stubber.add_response(
+            method="list_account_settings",
+            service_response={"settings": account_settings},
+            expected_params={**kwargs},
+        )
+        return self.client.list_account_settings(**kwargs)
+
+    @stubbed
     def list_tags_for_resource(self, **kwargs):
         """
         Only task tagging is stubbed; other resources won't work.
         """
         arn = kwargs.get("resourceArn")
 
-        if self._task_exists(arn):
+        if self._task_exists(arn) and self._long_arn_enabled():
             self.stubber.add_response(
                 method="list_tags_for_resource",
                 service_response={"tags": self.tags.get(arn, [])},
@@ -210,6 +240,20 @@ class StubbedEcs:
         )
 
         return self.client.list_tasks(**kwargs)
+
+    @stubbed
+    def put_account_setting(self, **kwargs):
+        name = kwargs.get("name")
+        value = kwargs.get("value")
+        self.account_settings[name] = value
+
+        self.stubber.add_response(
+            method="put_account_setting",
+            service_response={"setting": {"name": name, "value": value}},
+            expected_params={**kwargs},
+        )
+
+        return self.client.put_account_setting(**kwargs)
 
     @stubbed
     def register_task_definition(self, **kwargs):
@@ -344,7 +388,7 @@ class StubbedEcs:
         tags = kwargs.get("tags")
         arn = kwargs.get("resourceArn")
 
-        if self._task_exists(arn):
+        if self._task_exists(arn) and self._long_arn_enabled():
             self.stubber.add_response(
                 method="tag_resource",
                 service_response={},
@@ -377,3 +421,10 @@ class StubbedEcs:
 
     def _task_definition_arn(self, family, revision):
         return self._arn("task-definition", f"{family}:{revision}")
+
+    def _long_arn_enabled(self):
+        settings = self.list_account_settings(effectiveSettings=True)["settings"]
+        task_arn_format_setting = [
+            setting for setting in settings if setting["name"] == "taskLongArnFormat"
+        ][0]
+        return task_arn_format_setting["value"] != "disabled"
