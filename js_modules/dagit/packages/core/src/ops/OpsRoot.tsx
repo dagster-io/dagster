@@ -167,7 +167,7 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
 
   const onClickOp = (defName: string) => {
     history.replace(
-      workspacePathFromAddress(repoAddress, `/solids/${defName}?${querystring.stringify({q})}`),
+      workspacePathFromAddress(repoAddress, `/ops/${defName}?${querystring.stringify({q})}`),
     );
   };
 
