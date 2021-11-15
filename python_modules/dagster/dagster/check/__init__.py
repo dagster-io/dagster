@@ -333,16 +333,12 @@ def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
     return _check_list_items(obj_list, of_type)
 
 
-def is_tuple(
-    obj_tuple: Any,
-    of_type: Type = None,
-    of_shape: Optional[Tuple[Type, ...]] = None,
-    desc: str = None,
-) -> Tuple:
+def is_tuple(obj_tuple: Any, of_type: Type = None, of_shape:
+             Optional[Tuple[Type, ...]] = None, desc: str = None) -> Tuple:
     if not isinstance(obj_tuple, tuple):
         raise _type_mismatch_error(obj_tuple, tuple, desc)
 
-    if not of_type or of_shape:
+    if of_type is None and of_shape is None:
         return obj_tuple
 
     return _check_tuple_items(obj_tuple, of_type, of_shape)
@@ -370,9 +366,8 @@ def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> AbstractSe
     return _check_set_items(obj_set, of_type)
 
 
-def tuple_param(
-    obj: Any, param_name: str, of_type: Type = None, of_shape: Optional[Tuple[Type, ...]] = None
-) -> Tuple:
+def tuple_param(obj: Any, param_name: str, of_type: Type = None, of_shape:
+                Optional[Tuple[Type, ...]] = None) -> Tuple:
     if not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name)
 
@@ -394,10 +389,7 @@ def matrix_param(matrix: Any, param_name: str, of_type: Type = None) -> List[Lis
 
 
 def opt_tuple_param(
-    obj: Any,
-    param_name: str,
-    default: Tuple = None,
-    of_type: Type = None,
+    obj: Any, param_name: str, default: Tuple = None, of_type: Type = None,
     of_shape: Optional[Tuple[Type, ...]] = None,
 ) -> Optional[Tuple]:
     if obj is not None and not isinstance(obj, tuple):
@@ -406,7 +398,7 @@ def opt_tuple_param(
     if obj is None:
         return default
 
-    if of_type is None:
+    if of_type is None and of_shape is None:
         return obj
 
     return _check_tuple_items(obj, of_type, of_shape)
@@ -457,9 +449,8 @@ def _check_set_items(obj_set: Any, of_type: Type) -> Set:
     return obj_set
 
 
-def _check_tuple_items(
-    obj_tuple: Any, of_type: Optional[Type] = None, of_shape: Optional[Tuple[Type, ...]] = None
-) -> Tuple:
+def _check_tuple_items(obj_tuple: Any, of_type: Optional[Type] = None,
+                       of_shape: Optional[Tuple[Type, ...]] = None) -> Tuple:
     if of_shape is not None:
         len_tuple = len(obj_tuple)
         len_type = len(of_shape)
