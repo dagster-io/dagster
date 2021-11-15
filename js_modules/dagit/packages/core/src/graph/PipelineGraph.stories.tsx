@@ -138,7 +138,7 @@ export const FanOut = () => {
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
-      focusOps={solids.filter((s) => focusOps.includes(s.name))}
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
     />
