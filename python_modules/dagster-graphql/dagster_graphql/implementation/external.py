@@ -41,7 +41,12 @@ def get_external_pipeline_or_raise(graphene_info, selector):
                     message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
                         solid_name=solid_name, pipeline_name=selector.pipeline_name
                     ),
-                    pipeline=GraphenePipeline(full_pipeline),
+                    pipeline=GraphenePipeline(
+                        full_pipeline,
+                        graphene_info.context.get_repository_location(
+                            selector.location_name
+                        ).get_repository(selector.repository_name),
+                    ),
                 )
             )
 
@@ -69,7 +74,9 @@ def get_subset_external_pipeline(context, selector):
                     if error_info.cause
                     else "",
                 ),
-                pipeline=GraphenePipeline(context.get_full_external_pipeline(selector)),
+                pipeline=GraphenePipeline(
+                    context.get_full_external_pipeline(selector), external_repository
+                ),
             )
         )
 

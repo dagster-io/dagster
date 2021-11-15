@@ -3,7 +3,7 @@ import yaml
 from dagster import check
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
-from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
+from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -360,6 +360,9 @@ class GrapheneIPipelineSnapshotMixin:
     def get_represented_pipeline(self):
         raise NotImplementedError()
 
+    def get_external_repository(self):
+        raise NotImplementedError()
+
     def resolve_pipeline_snapshot_id(self, _graphene_info):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
 
@@ -454,24 +457,28 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_schedules(self, graphene_info):
         represented_pipeline = self.get_represented_pipeline()
+        external_repository = self.get_external_repository()
+
         if not isinstance(represented_pipeline, ExternalPipeline):
             # this is an historical pipeline snapshot, so there are not any associated running
             # schedules
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        schedules = get_schedules_for_pipeline(graphene_info, pipeline_selector)
+        schedules = get_schedules_for_pipeline(graphene_info, external_repository, pipeline_selector)
         return schedules
 
     def resolve_sensors(self, graphene_info):
         represented_pipeline = self.get_represented_pipeline()
+        external_repository = self.get_external_repository()
+
         if not isinstance(represented_pipeline, ExternalPipeline):
             # this is an historical pipeline snapshot, so there are not any associated running
             # sensors
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        sensors = get_sensors_for_pipeline(graphene_info, pipeline_selector)
+        sensors = get_sensors_for_pipeline(graphene_info, external_repository, pipeline_selector)
         return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info):
@@ -567,10 +574,13 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_pipeline):
+    def __init__(self, external_pipeline, external_repository=None):
         super().__init__()
         self._external_pipeline = check.inst_param(
             external_pipeline, "external_pipeline", ExternalPipeline
+        )
+        self._external_repository = check.opt_inst_param(
+            external_repository, "external_repository", ExternalRepository
         )
 
     def resolve_id(self, _graphene_info):
@@ -578,6 +588,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def get_represented_pipeline(self):
         return self._external_pipeline
+
+    def get_external_repository(self):
+        return self._external_repository
 
     def resolve_presets(self, _graphene_info):
         return [

@@ -76,4 +76,9 @@ def get_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
-    return GraphenePipeline(get_external_pipeline_or_raise(graphene_info, selector))
+    return GraphenePipeline(
+        get_external_pipeline_or_raise(graphene_info, selector),
+        graphene_info.context.get_repository_location(selector.location_name).get_repository(
+            selector.repository_name
+        ),
+    )

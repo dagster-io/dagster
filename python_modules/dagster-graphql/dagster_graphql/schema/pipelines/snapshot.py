@@ -1,6 +1,6 @@
 import graphene
 from dagster import check
-from dagster.core.host_representation import RepresentedPipeline
+from dagster.core.host_representation import RepresentedPipeline, ExternalRepository
 
 from ..errors import (
     GraphenePipelineNotFoundError,
@@ -17,14 +17,20 @@ class GraphenePipelineSnapshot(GrapheneIPipelineSnapshotMixin, graphene.ObjectTy
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot, GraphenePipelineReference)
         name = "PipelineSnapshot"
 
-    def __init__(self, represented_pipeline):
+    def __init__(self, represented_pipeline, external_repository=None):
         super().__init__()
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
+        self._external_repository = check.opt_inst_param(
+            external_repository, "external_repository", ExternalRepository
+        )
 
     def get_represented_pipeline(self):
         return self._represented_pipeline
+
+    def get_external_repository(self):
+        raise self._external_repository
 
 
 class GraphenePipelineSnapshotOrError(graphene.Union):

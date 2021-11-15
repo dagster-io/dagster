@@ -196,7 +196,12 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_pipelines(self, _graphene_info):
         return [
-            GraphenePipeline(pipeline)
+            GraphenePipeline(
+                pipeline,
+                self._repository_location.get_repository(
+                    pipeline.repository_handle.repository_name
+                ),
+            )
             for pipeline in sorted(
                 self._repository.get_all_external_pipelines(), key=lambda pipeline: pipeline.name
             )
