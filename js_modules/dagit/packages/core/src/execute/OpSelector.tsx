@@ -32,7 +32,7 @@ interface ISolidSelectorProps {
 
 interface SolidSelectorModalProps {
   pipelineOrError: SolidSelectorQuery_pipelineOrError;
-  queryResultSolids: SolidSelectorQuery_pipelineOrError_Pipeline_solids[];
+  queryResultOps: SolidSelectorQuery_pipelineOrError_Pipeline_solids[];
   errorMessage: string | null;
 }
 
@@ -40,7 +40,7 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   graphRef = React.createRef<PipelineGraph>();
 
   render() {
-    const {pipelineOrError, queryResultSolids, errorMessage} = this.props;
+    const {pipelineOrError, queryResultOps, errorMessage} = this.props;
 
     if (pipelineOrError.__typename !== 'Pipeline') {
       return (
@@ -57,8 +57,8 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
           ref={this.graphRef}
           backgroundColor={ColorsWIP.White}
           pipelineName={pipelineOrError.name}
-          solids={queryResultSolids}
-          layout={getDagrePipelineLayout(queryResultSolids)}
+          solids={queryResultOps}
+          layout={getDagrePipelineLayout(queryResultOps)}
           interactor={SVGViewport.Interactors.None}
           focusSolids={[]}
           highlightedSolids={[]}
@@ -117,7 +117,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     setPending(query || '*');
   }, [query, focused]);
 
-  const queryResultSolids =
+  const queryResultOps =
     data?.pipelineOrError.__typename === 'Pipeline'
       ? filterByQuery(data!.pipelineOrError.solids, pending).all
       : [];
@@ -129,7 +129,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     console.error(`Could not load pipeline ${props.pipelineName}`);
   }
 
-  const invalidResult = !loading && (queryResultSolids.length === 0 || pending.length === 0);
+  const invalidResult = !loading && (queryResultOps.length === 0 || pending.length === 0);
 
   const errorMessage = React.useMemo(() => {
     if (invalidResult) {
@@ -149,15 +149,15 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     if (applied === '') {
       applied = '*';
     }
-    const queryResultSolids = filterByQuery(data.pipelineOrError.solids, applied).all;
+    const queryResultOps = filterByQuery(data.pipelineOrError.solids, applied).all;
 
     // If all solids are returned, we set the subset to null rather than sending
     // a comma separated list of evey solid to the API
-    if (queryResultSolids.length === data.pipelineOrError.solids.length) {
+    if (queryResultOps.length === data.pipelineOrError.solids.length) {
       onChange(null, applied);
     } else {
       onChange(
-        queryResultSolids.map((s) => s.name),
+        queryResultOps.map((s) => s.name),
         applied,
       );
     }
@@ -176,7 +176,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
           <SolidSelectorModal
             pipelineOrError={data.pipelineOrError}
             errorMessage={errorMessage}
-            queryResultSolids={queryResultSolids}
+            queryResultOps={queryResultOps}
           />
         }
       >

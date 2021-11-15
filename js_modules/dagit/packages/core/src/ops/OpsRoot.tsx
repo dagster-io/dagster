@@ -23,12 +23,12 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {SolidDetailScrollContainer, UsedSolidDetails} from './SolidDetailsRoot';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from './SolidTypeSignature';
+import {SolidDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
+import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {
-  SolidsRootQuery,
-  SolidsRootQuery_repositoryOrError_Repository_usedSolids,
-} from './types/SolidsRootQuery';
+  OpsRootQuery,
+  OpsRootQuery_repositoryOrError_Repository_usedSolids,
+} from './types/OpsRootQuery';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -40,9 +40,9 @@ function flatUniq(arrs: string[][]) {
   return Object.keys(results).sort((a, b) => a.localeCompare(b));
 }
 
-type Solid = SolidsRootQuery_repositoryOrError_Repository_usedSolids;
+type Solid = OpsRootQuery_repositoryOrError_Repository_usedSolids;
 
-function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
+function searchSuggestionsForOps(solids: Solid[]): SuggestionProvider[] {
   return [
     {
       token: 'name',
@@ -116,13 +116,13 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const SolidsRoot: React.FC<Props> = (props) => {
+export const OpsRoot: React.FC<Props> = (props) => {
   const {name, repoAddress} = props;
 
   useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
+  const queryResult = useQuery<OpsRootQuery>(SOLIDS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
 
@@ -132,7 +132,7 @@ export const SolidsRoot: React.FC<Props> = (props) => {
         {({repositoryOrError}) => {
           if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
             return (
-              <SolidsRootWithData
+              <OpsRootWithData
                 {...props}
                 name={name}
                 repoAddress={repoAddress}
@@ -147,13 +147,13 @@ export const SolidsRoot: React.FC<Props> = (props) => {
   );
 };
 
-const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
+const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
 
   const {q, typeExplorer} = querystring.parse(location.search);
-  const suggestions = searchSuggestionsForSolids(usedSolids);
+  const suggestions = searchSuggestionsForOps(usedSolids);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
@@ -165,7 +165,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
     });
   };
 
-  const onClickSolid = (defName: string) => {
+  const onClickOp = (defName: string) => {
     history.replace(
       workspacePathFromAddress(repoAddress, `/solids/${defName}?${querystring.stringify({q})}`),
     );
@@ -174,7 +174,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   React.useEffect(() => {
     // If the user has typed in a search that brings us to a single result, autoselect it
     if (filtered.length === 1 && (!selected || filtered[0] !== selected)) {
-      onClickSolid(filtered[0].definition.name);
+      onClickOp(filtered[0].definition.name);
     }
 
     // If the user has clicked a type, translate it into a search
@@ -221,7 +221,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
                     height={height}
                     width={width}
                     selected={selected}
-                    onClickSolid={onClickSolid}
+                    onClickOp={onClickOp}
                     items={filtered.sort((a, b) =>
                       a.definition.name.localeCompare(b.definition.name),
                     )}
@@ -260,7 +260,7 @@ interface SolidListProps {
   width: number;
   height: number;
   selected: Solid | undefined;
-  onClickSolid: (name: string) => void;
+  onClickOp: (name: string) => void;
 }
 
 const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
@@ -293,10 +293,10 @@ const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
               <SolidListItem
                 style={style}
                 selected={solid === props.selected}
-                onClick={() => props.onClickSolid(solid.definition.name)}
+                onClick={() => props.onClickOp(solid.definition.name)}
               >
                 <SolidName>{solid.definition.name}</SolidName>
-                <SolidTypeSignature definition={solid.definition} />
+                <OpTypeSignature definition={solid.definition} />
               </SolidListItem>
             </CellMeasurer>
           );
@@ -314,7 +314,7 @@ const Container = styled.div`
 `;
 
 const SOLIDS_ROOT_QUERY = gql`
-  query SolidsRootQuery($repositorySelector: RepositorySelector!) {
+  query OpsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         id
@@ -322,7 +322,7 @@ const SOLIDS_ROOT_QUERY = gql`
           __typename
           definition {
             name
-            ...SolidTypeSignatureFragment
+            ...OpTypeSignatureFragment
           }
           invocations {
             __typename
@@ -336,7 +336,7 @@ const SOLIDS_ROOT_QUERY = gql`
       }
     }
   }
-  ${SOLID_TYPE_SIGNATURE_FRAGMENT}
+  ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
 const SolidListItem = styled.div<{selected: boolean}>`

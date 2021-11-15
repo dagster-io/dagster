@@ -6,17 +6,17 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
-import {SolidIOBox, metadataForIO} from './SolidIOBox';
-import {SolidTags, ISolidTag} from './SolidTags';
+import {OpIOBox, metadataForIO} from './OpIOBox';
+import {OpTags, IOpTag} from './OpTags';
 import {IFullSolidLayout, ILayout} from './getFullSolidLayout';
 import {Edge} from './highlighting';
-import {SolidNodeDefinitionFragment} from './types/SolidNodeDefinitionFragment';
-import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
+import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
+import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
-interface ISolidNodeProps {
+interface IOpNodeProps {
   layout: IFullSolidLayout;
-  invocation?: SolidNodeInvocationFragment;
-  definition: SolidNodeDefinitionFragment;
+  invocation?: OpNodeInvocationFragment;
+  definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
@@ -33,8 +33,8 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 5,
 });
 
-export class SolidNode extends React.Component<ISolidNodeProps> {
-  shouldComponentUpdate(prevProps: ISolidNodeProps) {
+export class OpNode extends React.Component<IOpNodeProps> {
+  shouldComponentUpdate(prevProps: IOpNodeProps) {
     if (prevProps.dim !== this.props.dim) {
       return true;
     }
@@ -97,7 +97,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
       configField = definition.configField;
     }
 
-    const tags: ISolidTag[] = [];
+    const tags: IOpTag[] = [];
 
     const kind = metadata.find((m) => m.key === 'kind');
     const composite = definition.__typename === 'CompositeSolidDefinition';
@@ -135,7 +135,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         )}
 
         {definition.inputDefinitions.map((item, idx) => (
-          <SolidIOBox
+          <OpIOBox
             {...this.props}
             {...metadataForIO(item, invocation)}
             key={idx}
@@ -146,7 +146,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         ))}
 
         {definition.outputDefinitions.map((item, idx) => (
-          <SolidIOBox
+          <OpIOBox
             {...this.props}
             {...metadataForIO(item, invocation)}
             key={idx}
@@ -171,7 +171,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         </div>
 
         {tags.length > 0 && (
-          <SolidTags
+          <OpTags
             style={{
               left: layout.solid.x + layout.solid.width,
               top: layout.solid.y + layout.solid.height,
@@ -187,7 +187,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
 }
 
 export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
-  fragment SolidNodeInvocationFragment on Solid {
+  fragment OpNodeInvocationFragment on Solid {
     name
     isDynamicMapped
     inputs {
@@ -227,7 +227,7 @@ export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
 `;
 
 export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
-  fragment SolidNodeDefinitionFragment on ISolidDefinition {
+  fragment OpNodeDefinitionFragment on ISolidDefinition {
     __typename
     name
     description

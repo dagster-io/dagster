@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {LoadingSpinner} from '../ui/Loading';
@@ -9,31 +9,31 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarSolidDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarSolidDefinition';
-import {SidebarSolidInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarSolidInvocation';
+import {SidebarOpDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SidebarOpInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
 import {
   SidebarGraphSolidQuery,
   SidebarGraphSolidQueryVariables,
 } from './types/SidebarGraphSolidQuery';
+import {SidebarOpContainerFragment} from './types/SidebarOpContainerFragment';
 import {
   SidebarPipelineSolidQuery,
   SidebarPipelineSolidQueryVariables,
 } from './types/SidebarPipelineSolidQuery';
-import {SidebarSolidContainerFragment} from './types/SidebarSolidContainerFragment';
 
-interface SidebarSolidContainerProps {
+interface SidebarOpContainerProps {
   handleID: string;
   explorerPath: ExplorerPath;
-  showingSubsolids: boolean;
-  parentSolidHandleID?: string;
+  showingSubgraph: boolean;
+  parentOpHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];
-  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
-  onClickSolid: (arg: SolidNameOrPath) => void;
+  onEnterSubgraph: (arg: OpNameOrPath) => void;
+  onClickOp: (arg: OpNameOrPath) => void;
   repoAddress?: RepoAddress;
   isGraph: boolean;
 }
 
-const useSidebarSolidQuery = (
+const useSidebarOpQuery = (
   name: string,
   handleID: string,
   isGraph: boolean,
@@ -73,7 +73,7 @@ const useSidebarSolidQuery = (
 
   if (isGraph) {
     const {error, data, loading} = graphResult;
-    const solidContainer: SidebarSolidContainerFragment | undefined =
+    const solidContainer: SidebarOpContainerFragment | undefined =
       data?.graphOrError.__typename === 'Graph' ? data.graphOrError : undefined;
     return {
       error,
@@ -83,7 +83,7 @@ const useSidebarSolidQuery = (
   }
 
   const {error, data, loading} = pipelineResult;
-  const solidContainer: SidebarSolidContainerFragment | undefined =
+  const solidContainer: SidebarOpContainerFragment | undefined =
     data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError : undefined;
   return {
     error,
@@ -92,17 +92,17 @@ const useSidebarSolidQuery = (
   };
 };
 
-export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
+export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
   handleID,
   explorerPath,
   getInvocations,
-  showingSubsolids,
-  onEnterCompositeSolid,
-  onClickSolid,
+  showingSubgraph,
+  onEnterSubgraph,
+  onClickOp,
   repoAddress,
   isGraph,
 }) => {
-  const {error, solidContainer, isLoading} = useSidebarSolidQuery(
+  const {error, solidContainer, isLoading} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,
     isGraph,
@@ -132,21 +132,21 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
 
   return (
     <>
-      <SidebarSolidInvocation
+      <SidebarOpInvocation
         key={`${handleID}-inv`}
         solid={solidContainer!.solidHandle!.solid}
-        onEnterCompositeSolid={
+        onEnterSubgraph={
           solidContainer!.solidHandle!.solid.definition.__typename === 'CompositeSolidDefinition'
-            ? onEnterCompositeSolid
+            ? onEnterSubgraph
             : undefined
         }
       />
-      <SidebarSolidDefinition
+      <SidebarOpDefinition
         key={`${handleID}-def`}
-        showingSubsolids={showingSubsolids}
+        showingSubgraph={showingSubgraph}
         definition={solidContainer!.solidHandle!.solid.definition}
         getInvocations={getInvocations}
-        onClickInvocation={({handleID}) => onClickSolid({path: handleID.split('.')})}
+        onClickInvocation={({handleID}) => onClickOp({path: handleID.split('.')})}
         repoAddress={repoAddress}
       />
     </>
@@ -154,16 +154,16 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
 };
 
 const SIDEBAR_SOLID_CONTAINER_FRAGMENT = gql`
-  fragment SidebarSolidContainerFragment on SolidContainer {
+  fragment SidebarOpContainerFragment on SolidContainer {
     id
     name
     solidHandle(handleID: $handleID) {
       solid {
-        ...SidebarSolidInvocationFragment
+        ...SidebarOpInvocationFragment
 
         definition {
           __typename
-          ...SidebarSolidDefinitionFragment
+          ...SidebarOpDefinitionFragment
         }
       }
     }
@@ -178,7 +178,7 @@ const SIDEBAR_PIPELINE_SOLID_QUERY = gql`
       __typename
       ... on Pipeline {
         id
-        ...SidebarSolidContainerFragment
+        ...SidebarOpContainerFragment
       }
     }
   }
@@ -191,7 +191,7 @@ const SIDEBAR_GRAPH_SOLID_QUERY = gql`
       __typename
       ... on Graph {
         id
-        ...SidebarSolidContainerFragment
+        ...SidebarOpContainerFragment
       }
     }
   }

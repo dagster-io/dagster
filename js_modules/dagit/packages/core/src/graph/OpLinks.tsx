@@ -64,7 +64,7 @@ const inputIsDynamicCollect = (
   return inputDef?.isDynamicCollect || false;
 };
 
-export const SolidLinks = React.memo(
+export const OpLinks = React.memo(
   (props: {
     opacity: number;
     solids: PipelineGraphSolidFragment[];
@@ -102,7 +102,7 @@ export const SolidLinks = React.memo(
   ),
 );
 
-SolidLinks.displayName = 'SolidLinks';
+OpLinks.displayName = 'OpLinks';
 
 const DynamicMarker: React.FunctionComponent<{
   x: number;

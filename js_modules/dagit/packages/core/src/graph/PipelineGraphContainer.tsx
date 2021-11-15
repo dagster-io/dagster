@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 
@@ -21,8 +21,8 @@ interface Props {
   highlightedSolids: PipelineGraphSolidFragment[];
   selectedHandle?: GraphExplorerSolidHandleFragment;
   parentHandle?: GraphExplorerSolidHandleFragment;
-  onClickSolid?: (arg: SolidNameOrPath) => void;
-  onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
+  onClickOp?: (arg: OpNameOrPath) => void;
+  onEnterSubgraph?: (arg: OpNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
   onClickBackground?: () => void;
 }
@@ -67,8 +67,8 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
     highlightedSolids,
     selectedHandle,
     parentHandle,
-    onClickSolid,
-    onEnterCompositeSolid,
+    onClickOp,
+    onEnterSubgraph,
     onLeaveCompositeSolid,
     onClickBackground,
   } = props;
@@ -117,9 +117,9 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
       selectedSolid={selectedHandle && selectedHandle.solid}
       parentHandleID={parentHandle && parentHandle.handleID}
       parentSolid={parentSolid}
-      onClickSolid={onClickSolid}
+      onClickOp={onClickOp}
       onClickBackground={onClickBackground}
-      onEnterCompositeSolid={onEnterCompositeSolid}
+      onEnterSubgraph={onEnterSubgraph}
       onLeaveCompositeSolid={onLeaveCompositeSolid}
       layout={layout}
     />

@@ -2,17 +2,13 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ColorsWIP} from '../ui/Colors';
 
-import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
+import {OpLinks} from './OpLinks';
+import {OpNode, SOLID_NODE_DEFINITION_FRAGMENT, SOLID_NODE_INVOCATION_FRAGMENT} from './OpNode';
+import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
-import {SolidLinks} from './SolidLinks';
-import {
-  SolidNode,
-  SOLID_NODE_DEFINITION_FRAGMENT,
-  SOLID_NODE_INVOCATION_FRAGMENT,
-} from './SolidNode';
 import {IFullPipelineLayout, IFullSolidLayout, ILayout} from './getFullSolidLayout';
 import {Edge, isHighlighted, isSolidHighlighted} from './highlighting';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
@@ -31,9 +27,9 @@ interface IPipelineGraphProps {
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
   interactor?: SVGViewportInteractor;
-  onClickSolid?: (arg: SolidNameOrPath) => void;
-  onDoubleClickSolid?: (arg: SolidNameOrPath) => void;
-  onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
+  onClickOp?: (arg: OpNameOrPath) => void;
+  onDoubleClickSolid?: (arg: OpNameOrPath) => void;
+  onEnterSubgraph?: (arg: OpNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
   onClickBackground?: () => void;
 }
@@ -108,9 +104,9 @@ export class PipelineGraphContents extends React.PureComponent<
       focusSolids,
       parentSolid,
       parentHandleID,
-      onClickSolid = NoOp,
+      onClickOp = NoOp,
       onDoubleClickSolid = NoOp,
-      onEnterCompositeSolid = NoOp,
+      onEnterSubgraph = NoOp,
       highlightedSolids,
       selectedSolid,
     } = this.props;
@@ -141,8 +137,8 @@ export class PipelineGraphContents extends React.PureComponent<
         )} */}
 
         {parentSolid && (
-          <ParentSolidNode
-            onClickSolid={onClickSolid}
+          <ParentOpNode
+            onClickOp={onClickOp}
             onDoubleClick={(name) => onDoubleClickSolid({name})}
             onHighlightEdges={this.onHighlightEdges}
             highlightedEdges={this.state.highlighted}
@@ -152,14 +148,14 @@ export class PipelineGraphContents extends React.PureComponent<
             layout={layout}
           />
         )}
-        <SolidLinks
+        <OpLinks
           solids={solids}
           layout={layout}
           opacity={0.2}
           connections={layout.connections}
           onHighlight={this.onHighlightEdges}
         />
-        <SolidLinks
+        <OpLinks
           solids={solids}
           layout={layout}
           opacity={0.55}
@@ -182,14 +178,14 @@ export class PipelineGraphContents extends React.PureComponent<
         ))}
         <foreignObject width={layout.width} height={layout.height}>
           {solids.map((solid) => (
-            <SolidNode
+            <OpNode
               key={solid.name}
               invocation={solid}
               definition={solid.definition}
               minified={minified}
-              onClick={() => onClickSolid({name: solid.name})}
+              onClick={() => onClickOp({name: solid.name})}
               onDoubleClick={() => onDoubleClickSolid({name: solid.name})}
-              onEnterComposite={() => onEnterCompositeSolid({name: solid.name})}
+              onEnterComposite={() => onEnterSubgraph({name: solid.name})}
               onHighlightEdges={this.onHighlightEdges}
               layout={layout.solids[solid.name]}
               selected={selectedSolid === solid}
@@ -209,14 +205,14 @@ export class PipelineGraphContents extends React.PureComponent<
 }
 
 // This is a specific empty array we pass to represent the common / empty case
-// so that SolidNode can use shallow equality comparisons in shouldComponentUpdate.
+// so that OpNode can use shallow equality comparisons in shouldComponentUpdate.
 const EmptyHighlightedArray: never[] = [];
 
 export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   resolveSolidPosition = (
-    arg: SolidNameOrPath,
+    arg: OpNameOrPath,
     cb: (cx: number, cy: number, layout: IFullSolidLayout) => void,
   ) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
@@ -229,14 +225,14 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     cb(cx, cy, solidLayout);
   };
 
-  centerSolid = (arg: SolidNameOrPath) => {
+  centerSolid = (arg: OpNameOrPath) => {
     this.resolveSolidPosition(arg, (cx, cy) => {
       const viewportEl = this.viewportEl.current!;
       viewportEl.smoothZoomToSVGCoords(cx, cy, viewportEl.state.scale);
     });
   };
 
-  focusOnSolid = (arg: SolidNameOrPath) => {
+  focusOnSolid = (arg: OpNameOrPath) => {
     this.resolveSolidPosition(arg, (cx, cy) => {
       this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
     });
@@ -296,10 +292,10 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     }
 
     const nextSolid = this.closestSolidInDirection(dir);
-    if (nextSolid && this.props.onClickSolid) {
+    if (nextSolid && this.props.onClickOp) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.onClickSolid({name: nextSolid});
+      this.props.onClickOp({name: nextSolid});
     }
   };
 
@@ -364,10 +360,10 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
 export const PIPELINE_GRAPH_SOLID_FRAGMENT = gql`
   fragment PipelineGraphSolidFragment on Solid {
     name
-    ...SolidNodeInvocationFragment
+    ...OpNodeInvocationFragment
     definition {
       name
-      ...SolidNodeDefinitionFragment
+      ...OpNodeDefinitionFragment
     }
   }
   ${SOLID_NODE_INVOCATION_FRAGMENT}

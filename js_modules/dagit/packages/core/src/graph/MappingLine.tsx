@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {Edge} from './SolidLinks';
+import {Edge} from './OpLinks';
 import {IPoint} from './getFullSolidLayout';
 import {isHighlighted} from './highlighting';
 

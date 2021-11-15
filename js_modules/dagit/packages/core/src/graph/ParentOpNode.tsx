@@ -2,30 +2,30 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ColorsWIP} from '../ui/Colors';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
+import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
+import {position} from './OpNode';
 import {SVGLabeledRect} from './SVGComponents';
-import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, SolidIOBox} from './SolidIOBox';
-import {position} from './SolidNode';
 import {IFullPipelineLayout} from './getFullSolidLayout';
 import {Edge} from './highlighting';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
-interface ParentSolidNodeProps {
+interface ParentOpNodeProps {
   layout: IFullPipelineLayout;
   solid: PipelineGraphSolidFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];
   onDoubleClick: (solidName: string) => void;
-  onClickSolid: (arg: SolidNameOrPath) => void;
+  onClickOp: (arg: OpNameOrPath) => void;
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (props) => {
+export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) => {
   const {layout, solid, minified} = props;
 
   const def = props.solid.definition;
@@ -43,7 +43,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (p
     highlightedEdges: props.highlightedEdges,
     onHighlightEdges: props.onHighlightEdges,
     onDoubleClick: props.onDoubleClick,
-    onClickSolid: props.onClickSolid,
+    onClickOp: props.onClickOp,
   };
 
   if (boundingBox.height < 0 || boundingBox.width < 0) {
@@ -113,10 +113,10 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (p
                 minified={minified}
                 layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
                 target={parentLayout.inputs[input.name].port}
-                onDoubleClickLabel={() => props.onClickSolid({path: ['..', dependsOn.solid.name]})}
+                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
               />
             ))}
-            <SolidIOBox
+            <OpIOBox
               {...highlightingProps}
               {...metadata}
               minified={minified}
@@ -143,10 +143,10 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (p
                 minified={minified}
                 layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
                 target={parentLayout.outputs[output.name].port}
-                onDoubleClickLabel={() => props.onClickSolid({path: ['..', dependedBy.solid.name]})}
+                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
               />
             ))}
-            <SolidIOBox
+            <OpIOBox
               {...highlightingProps}
               {...metadata}
               minified={minified}

@@ -20,38 +20,38 @@ import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
-import {ExplorerPath} from './PipelinePathUtils';
+import {PipelineExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
 } from './SidebarTabbedContainer';
-import {GraphExplorerFragment} from './types/GraphExplorerFragment';
-import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
+import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 
-export interface GraphExplorerOptions {
+export interface PipelineExplorerOptions {
   explodeComposites: boolean;
 }
 
-interface GraphExplorerProps {
-  explorerPath: ExplorerPath;
-  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  options: GraphExplorerOptions;
-  setOptions: (options: GraphExplorerOptions) => void;
-  pipelineOrGraph: GraphExplorerFragment;
+interface PipelineExplorerProps {
+  explorerPath: PipelineExplorerPath;
+  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
+  options: PipelineExplorerOptions;
+  setOptions: (options: PipelineExplorerOptions) => void;
+  pipeline: PipelineExplorerFragment;
   repoAddress?: RepoAddress;
-  handles: GraphExplorerSolidHandleFragment[];
-  selectedHandle?: GraphExplorerSolidHandleFragment;
-  parentHandle?: GraphExplorerSolidHandleFragment;
+  handles: PipelineExplorerSolidHandleFragment[];
+  selectedHandle?: PipelineExplorerSolidHandleFragment;
+  parentHandle?: PipelineExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   isGraph: boolean;
 }
 
-export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
+export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
   const {
     getInvocations,
     handles,
     options,
-    pipelineOrGraph,
+    pipeline,
     explorerPath,
     onChangeExplorerPath,
     parentHandle,
@@ -66,13 +66,13 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
   };
 
-  const handleAdjustPath = (fn: (opNames: string[]) => void) => {
-    const opNames = [...explorerPath.opNames];
-    const retValue = fn(opNames);
+  const handleAdjustPath = (fn: (solidNames: string[]) => void) => {
+    const ops = [...explorerPath.ops];
+    const retValue = fn(ops);
     if (retValue !== undefined) {
       throw new Error('handleAdjustPath function is expected to mutate the array');
     }
-    onChangeExplorerPath({...explorerPath, opNames}, 'push');
+    onChangeExplorerPath({...explorerPath, ops}, 'push');
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -213,7 +213,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             queryResultOps.all.length === 0 &&
             !explorerPath.opsQuery.length && <LargeDAGNotice />}
           <PipelineGraphContainer
-            pipelineName={pipelineOrGraph.name}
+            pipelineName={pipeline.name}
             backgroundColor={backgroundColor}
             solids={queryResultOps.all}
             focusSolids={queryResultOps.focus}
@@ -233,7 +233,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             // eslint-disable-next-line react/no-children-prop
             children={({location}: {location: any}) => (
               <SidebarTabbedContainer
-                pipeline={pipelineOrGraph}
+                pipeline={pipeline}
                 explorerPath={explorerPath}
                 solidHandleID={selectedHandle && selectedHandle.handleID}
                 parentOpHandleID={parentHandle && parentHandle.handleID}
@@ -241,7 +241,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickSolid}
                 repoAddress={repoAddress}
-                isGraph={isGraph}
                 {...querystring.parse(location.search || '')}
               />
             )}
@@ -252,9 +251,8 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   );
 };
 
-export const GRAPH_EXPLORER_FRAGMENT = gql`
-  fragment GraphExplorerFragment on SolidContainer {
-    id
+export const PIPELINE_EXPLORER_FRAGMENT = gql`
+  fragment PipelineExplorerFragment on IPipelineSnapshot {
     name
     description
     ...SidebarTabbedContainerPipelineFragment
@@ -262,8 +260,8 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
   ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
 `;
 
-export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
-  fragment GraphExplorerSolidHandleFragment on SolidHandle {
+export const PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
+  fragment PipelineExplorerSolidHandleFragment on SolidHandle {
     handleID
     solid {
       name

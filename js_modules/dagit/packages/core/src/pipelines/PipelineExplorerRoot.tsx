@@ -50,8 +50,8 @@ export const PipelineExplorerContainer: React.FC<{
     explodeComposites: false,
   });
 
-  const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
-  const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
+  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
+  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
 
@@ -100,7 +100,7 @@ export const PipelineExplorerContainer: React.FC<{
           onChangeExplorerPath(
             {
               ...explorerPath,
-              pathSolids: explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1),
+              opNames: explorerPath.opNames.slice(0, explorerPath.opNames.length - 1),
             },
             'replace',
           );

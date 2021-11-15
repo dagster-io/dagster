@@ -2,8 +2,8 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
+import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {Box} from '../ui/Box';
@@ -24,25 +24,25 @@ import {
   ResourceContainer,
   ResourceHeader,
   ShowAllButton,
-  SidebarSolidInvocationInfo,
-  SolidLinks,
+  SidebarOpInvocationInfo,
+  OpLinks,
   SolidMappingTable,
   TypeWrapper,
-} from './SidebarSolidHelpers';
-import {SidebarSolidDefinitionFragment} from './types/SidebarSolidDefinitionFragment';
+} from './SidebarOpHelpers';
+import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinitionFragment';
 
-interface SidebarSolidDefinitionProps {
-  definition: SidebarSolidDefinitionFragment;
+interface SidebarOpDefinitionProps {
+  definition: SidebarOpDefinitionFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
-  showingSubsolids: boolean;
-  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  showingSubgraph: boolean;
+  onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
   repoAddress?: RepoAddress;
 }
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
-export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (props) => {
-  const {definition, getInvocations, showingSubsolids, onClickInvocation, repoAddress} = props;
+export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) => {
+  const {definition, getInvocations, showingSubgraph, onClickInvocation, repoAddress} = props;
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -50,7 +50,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
   const inputMappings: SolidMappingTable = {};
   const outputMappings: SolidMappingTable = {};
 
-  if (showingSubsolids && definition.__typename === 'CompositeSolidDefinition') {
+  if (showingSubgraph && definition.__typename === 'CompositeSolidDefinition') {
     definition.inputMappings.forEach(
       (m) =>
         (inputMappings[m.definition.name] = [
@@ -78,7 +78,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
         <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarSubhead>{isComposite ? 'Graph' : 'Op'}</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
-          <SolidTypeSignature definition={definition} />
+          <OpTypeSignature definition={definition} />
         </Box>
       </SidebarSection>
       {definition.description && (
@@ -126,7 +126,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
-              <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
+              <OpLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
             </SectionItemContainer>
           ))}
         </Box>
@@ -142,7 +142,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
-              <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <OpLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
               <Description description={outputDef.description} />
             </SectionItemContainer>
           ))}
@@ -161,8 +161,8 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
 };
 
 export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
-  fragment SidebarSolidDefinitionFragment on ISolidDefinition {
-    ...SolidTypeSignatureFragment
+  fragment SidebarOpDefinitionFragment on ISolidDefinition {
+    ...OpTypeSignatureFragment
     __typename
     name
     description
@@ -230,13 +230,13 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
   }
 
   ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-  ${SOLID_TYPE_SIGNATURE_FRAGMENT}
+  ${OP_TYPE_SIGNATURE_FRAGMENT}
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
 const InvocationList: React.FC<{
-  invocations: SidebarSolidInvocationInfo[];
-  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  invocations: SidebarOpInvocationInfo[];
+  onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }> = ({invocations, onClickInvocation}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
   const displayed = showAll ? invocations : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);

@@ -4,15 +4,15 @@ import styled from 'styled-components/macro';
 import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
-export interface ISolidTag {
+export interface IOpTag {
   label: string;
   onClick: (e: React.MouseEvent) => void;
 }
 
-interface ISolidTagsProps {
+interface IOpTagsProps {
   style: React.CSSProperties;
   minified: boolean;
-  tags: ISolidTag[];
+  tags: IOpTag[];
 }
 
 function hueForTag(text = '') {
@@ -39,9 +39,9 @@ function hueForTag(text = '') {
   );
 }
 
-export const SolidTags = React.memo(({tags, style, minified}: ISolidTagsProps) => {
+export const OpTags = React.memo(({tags, style, minified}: IOpTagsProps) => {
   return (
-    <SolidTagsContainer style={style} $minified={minified}>
+    <OpTagsContainer style={style} $minified={minified}>
       {tags.map((tag) => (
         <div
           key={tag.label}
@@ -51,11 +51,11 @@ export const SolidTags = React.memo(({tags, style, minified}: ISolidTagsProps) =
           {tag.label}
         </div>
       ))}
-    </SolidTagsContainer>
+    </OpTagsContainer>
   );
 });
 
-const SolidTagsContainer = styled.div<{$minified: boolean}>`
+const OpTagsContainer = styled.div<{$minified: boolean}>`
   gap: 6px;
   position: absolute;
   display: flex;

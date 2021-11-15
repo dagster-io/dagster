@@ -45,7 +45,7 @@ import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {LoadingOverlay} from './LoadingOverlay';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
-import {SolidSelector} from './SolidSelector';
+import {SolidSelector} from './OpSelector';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';

@@ -2,17 +2,17 @@ import {gql} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {SolidNode, SOLID_NODE_DEFINITION_FRAGMENT} from '../graph/SolidNode';
+import {OpNode, SOLID_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
 import {layoutSolid} from '../graph/getFullSolidLayout';
 import {Box} from '../ui/Box';
 
-import {SolidCardSolidDefinitionFragment} from './types/SolidCardSolidDefinitionFragment';
+import {OpCardSolidDefinitionFragment} from './types/OpCardSolidDefinitionFragment';
 
-interface SolidCardProps {
-  definition: SolidCardSolidDefinitionFragment;
+interface OpCardProps {
+  definition: OpCardSolidDefinitionFragment;
 }
 
-export const SolidCard: React.FC<SolidCardProps> = (props) => {
+export const OpCard: React.FC<OpCardProps> = (props) => {
   const {name, inputDefinitions, outputDefinitions} = props.definition;
   const layout = layoutSolid(
     {
@@ -31,8 +31,8 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
 
   return (
     <Box padding={24}>
-      <SolidCardContainer style={{height: layout.boundingBox.height}}>
-        <SolidNode
+      <OpCardContainer style={{height: layout.boundingBox.height}}>
+        <OpNode
           invocation={undefined}
           definition={props.definition}
           minified={false}
@@ -46,14 +46,14 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
           highlightedEdges={[]}
           dim={false}
         />
-      </SolidCardContainer>
+      </OpCardContainer>
     </Box>
   );
 };
 
 export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
-  fragment SolidCardSolidDefinitionFragment on ISolidDefinition {
-    ...SolidNodeDefinitionFragment
+  fragment OpCardSolidDefinitionFragment on ISolidDefinition {
+    ...OpNodeDefinitionFragment
     __typename
     name
     description
@@ -72,7 +72,7 @@ export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   ${SOLID_NODE_DEFINITION_FRAGMENT}
 `;
 
-const SolidCardContainer = styled.div`
+const OpCardContainer = styled.div`
   flex: 1;
   max-width: 450px;
   position: relative;

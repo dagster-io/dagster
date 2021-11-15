@@ -7,16 +7,16 @@ import {Box} from '../ui/Box';
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
 import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
-import {SidebarSolidContainerInfoFragment} from './types/SidebarSolidContainerInfoFragment';
+import {SidebarOpContainerInfoFragment} from './types/SidebarOpContainerInfoFragment';
 
 const NO_DESCRIPTION = '';
 
-interface ISidebarSolidContainerInfoProps {
+interface ISidebarOpContainerInfoProps {
   isGraph: boolean;
-  pipeline: SidebarSolidContainerInfoFragment;
+  pipeline: SidebarOpContainerInfoFragment;
 }
 
-export const SidebarSolidContainerInfo: React.FC<ISidebarSolidContainerInfoProps> = ({
+export const SidebarOpContainerInfo: React.FC<ISidebarOpContainerInfoProps> = ({
   isGraph,
   pipeline,
 }) => {
@@ -45,7 +45,7 @@ export const SidebarSolidContainerInfo: React.FC<ISidebarSolidContainerInfoProps
 };
 
 export const SIDEBAR_SOLID_CONTAINER_INFO_FRAGMENT = gql`
-  fragment SidebarSolidContainerInfoFragment on SolidContainer {
+  fragment SidebarOpContainerInfoFragment on SolidContainer {
     id
     name
     description

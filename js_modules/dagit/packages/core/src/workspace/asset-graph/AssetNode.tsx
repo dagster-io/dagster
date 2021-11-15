@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../execute/showLaunchError';
-import {SolidTags} from '../../graph/SolidTags';
+import {OpTags} from '../../graph/OpTags';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -166,7 +166,7 @@ export const AssetNode: React.FC<{
             </Stats>
           )}
           {kind && (
-            <SolidTags
+            <OpTags
               minified={false}
               style={{right: -2, paddingTop: 5}}
               tags={[

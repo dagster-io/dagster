@@ -3,7 +3,7 @@ import {writeFileSync} from 'fs';
 
 import {buildClientSchema, getIntrospectionQuery, printSchema} from 'graphql';
 
-const pyVer = execSync('python --version').toString();
+const pyVer = execSync('python3 --version').toString();
 const verMatch = pyVer.match(/Python ([\d.]*)/);
 if (!(verMatch != null && verMatch.length >= 2 && parseFloat(verMatch[1]) >= 3.6)) {
   const errMsg =
@@ -47,7 +47,7 @@ writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possi
 console.log('Generating TypeScript types...');
 
 execSync(
-  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py',
+  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python3 append_generated.py',
   {stdio: 'inherit'},
 );
 

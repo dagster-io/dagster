@@ -7,11 +7,11 @@ import {FontFamily} from '../ui/styles';
 
 import {Edge, isHighlighted} from './highlighting';
 import {
-  SolidNodeDefinitionFragment,
-  SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
-  SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-} from './types/SolidNodeDefinitionFragment';
-import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
+  OpNodeDefinitionFragment,
+  OpNodeDefinitionFragment_SolidDefinition_inputDefinitions,
+  OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+} from './types/OpNodeDefinitionFragment';
+import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
@@ -22,11 +22,11 @@ interface SolidIORenderMetadata {
   title: string;
 }
 
-interface SolidIOBoxProps extends SolidIORenderMetadata {
+interface OpIOBoxProps extends SolidIORenderMetadata {
   colorKey: 'input' | 'output';
   item:
-    | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions;
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions;
   style: React.CSSProperties;
 
   // Passed through from Solid props
@@ -36,7 +36,7 @@ interface SolidIOBoxProps extends SolidIORenderMetadata {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
+export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
   minified,
   title,
   jumpTargetSolid,
@@ -112,10 +112,10 @@ const SolidIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
 `;
 
 export function metadataForCompositeParentIO(
-  parentDefinition: SolidNodeDefinitionFragment,
+  parentDefinition: OpNodeDefinitionFragment,
   item:
-    | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
 ): SolidIORenderMetadata {
   const edges: Edge[] = [];
   let title = `${item.name}: ${item.type.displayName}`;
@@ -160,9 +160,9 @@ export function metadataForCompositeParentIO(
 
 export function metadataForIO(
   item:
-    | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-  invocation?: SolidNodeInvocationFragment,
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+  invocation?: OpNodeInvocationFragment,
 ): SolidIORenderMetadata {
   const edges: Edge[] = [];
 

@@ -8,13 +8,13 @@ import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplor
 import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
-import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
+import {OpTypeSignatureFragment} from './types/OpTypeSignatureFragment';
 
-interface ISolidTypeSignature {
-  definition: SolidTypeSignatureFragment;
+interface IOpTypeSignature {
+  definition: OpTypeSignatureFragment;
 }
 
-export const SolidTypeSignature: React.FC<ISolidTypeSignature> = (props) => {
+export const OpTypeSignature: React.FC<IOpTypeSignature> = (props) => {
   const {inputDefinitions, outputDefinitions} = props.definition;
 
   const inputSide = inputDefinitions.map((input, i) => (
@@ -36,8 +36,8 @@ export const SolidTypeSignature: React.FC<ISolidTypeSignature> = (props) => {
   );
 };
 
-export const SOLID_TYPE_SIGNATURE_FRAGMENT = gql`
-  fragment SolidTypeSignatureFragment on ISolidDefinition {
+export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
+  fragment OpTypeSignatureFragment on ISolidDefinition {
     outputDefinitions {
       name
       type {

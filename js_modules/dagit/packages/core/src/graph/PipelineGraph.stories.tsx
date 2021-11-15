@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraph} from './PipelineGraph';
@@ -111,7 +111,7 @@ export const Basic = () => {
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
       highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      onClickOp={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
@@ -140,7 +140,7 @@ export const FanOut = () => {
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
       highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      onClickOp={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
@@ -166,7 +166,7 @@ export const Tagged = () => {
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
       highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      onClickOp={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
@@ -211,7 +211,7 @@ export const Composite = () => {
     ],
   };
 
-  const toName = (s: SolidNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
+  const toName = (s: OpNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
   const parentSolid = solids.find((s) => s.name === parentSolidName);
 
   return (
@@ -229,8 +229,8 @@ export const Composite = () => {
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
       highlightedSolids={[]}
-      onClickSolid={(nameOrPath) => setFocusSolids([toName(nameOrPath)])}
-      onEnterCompositeSolid={(nameOrPath) => setParentSolidName(toName(nameOrPath))}
+      onClickOp={(nameOrPath) => setFocusSolids([toName(nameOrPath)])}
+      onEnterSubgraph={(nameOrPath) => setParentSolidName(toName(nameOrPath))}
       onLeaveCompositeSolid={() => setParentSolidName(undefined)}
       onDoubleClickSolid={(nameOrPath) => {
         const solid = solids.find((s) => s.name === toName(nameOrPath));

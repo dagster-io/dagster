@@ -4,8 +4,8 @@ import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
 
+import {Edge} from './OpLinks';
 import {SVGMonospaceText} from './SVGComponents';
-import {Edge} from './SolidLinks';
 import {IPoint} from './getFullSolidLayout';
 import {isHighlighted} from './highlighting';
 

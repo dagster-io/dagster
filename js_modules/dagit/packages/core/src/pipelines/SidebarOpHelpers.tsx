@@ -18,7 +18,7 @@ type SolidLinkInfo = {
   definition: {name: string};
 };
 
-export interface SidebarSolidInvocationInfo {
+export interface SidebarOpInvocationInfo {
   handleID: string;
   pipelineName?: string;
 }
@@ -46,7 +46,7 @@ const SolidLink = (props: SolidLinkInfo) => (
   </Link>
 );
 
-export const SolidLinks = (props: {title: string; items: SolidLinkInfo[]}) =>
+export const OpLinks = (props: {title: string; items: SolidLinkInfo[]}) =>
   props.items && props.items.length ? (
     <Text>
       {props.title}
@@ -56,10 +56,7 @@ export const SolidLinks = (props: {title: string; items: SolidLinkInfo[]}) =>
     </Text>
   ) : null;
 
-export const Invocation = (props: {
-  invocation: SidebarSolidInvocationInfo;
-  onClick: () => void;
-}) => {
+export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick: () => void}) => {
   const {handleID, pipelineName} = props.invocation;
   const handlePath = handleID.split('.');
   return (

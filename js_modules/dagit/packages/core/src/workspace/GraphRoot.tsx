@@ -37,8 +37,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
 
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
-  const title =
-    path.pathSolids.length > 1 ? path.pathSolids[path.pathSolids.length - 2] : path.pipelineName;
+  const title = path.opNames.length > 1 ? path.opNames[path.opNames.length - 2] : path.pipelineName;
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
@@ -69,8 +68,8 @@ export const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: Rep
     explodeComposites: false,
   });
 
-  const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
-  const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
+  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
+  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
 
   useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
 
