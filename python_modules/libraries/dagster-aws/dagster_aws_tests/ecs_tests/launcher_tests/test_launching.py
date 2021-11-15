@@ -5,6 +5,7 @@ from dagster.check import CheckError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
 
+@pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
 def test_default_launcher(
     ecs,
     instance,
@@ -14,7 +15,9 @@ def test_default_launcher(
     network_interface,
     image,
     environment,
+    task_long_arn_format,
 ):
+    ecs.put_account_setting(name="taskLongArnFormat", value=task_long_arn_format)
     assert not run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -52,9 +55,13 @@ def test_default_launcher(
     assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
     assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == ecs._cluster_arn("default")
 
-    # And the ECS task is tagged with info about the Dagster run
-    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
-    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
+    # If we're using the new long ARN format,
+    # the ECS task is tagged with info about the Dagster run
+    if task_long_arn_format == "enabled":
+        assert (
+            ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
+        )
+        assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
     # We set pipeline-specific overides
     overrides = task["overrides"]["containerOverrides"]
