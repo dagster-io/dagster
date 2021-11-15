@@ -1,5 +1,6 @@
 import re
 import time
+import asyncio
 from collections import Counter
 from contextlib import ExitStack
 
@@ -14,6 +15,7 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    op,
     pipeline,
     resource,
     seven,
@@ -1046,6 +1048,47 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.FAILURE
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
+
+    def test_run_step_stats_with_in_progress(self, storage):
+        def _in_progress_run_records(run_id):
+            now = time.time()
+            return [
+                _event_record(run_id, "A", now - 325, DagsterEventType.STEP_START),
+                _event_record(run_id, "C", now - 175, DagsterEventType.STEP_START),
+                _event_record(run_id, "C", now - 150, DagsterEventType.STEP_SKIPPED),
+                _event_record(run_id, "D", now - 150, DagsterEventType.STEP_START),
+                _event_record(run_id, "D", now - 150, DagsterEventType.STEP_UP_FOR_RETRY),
+                _event_record(run_id, "E", now - 150, DagsterEventType.STEP_START),
+                _event_record(run_id, "E", now - 150, DagsterEventType.STEP_UP_FOR_RETRY),
+                _event_record(run_id, "E", now - 125, DagsterEventType.STEP_RESTARTED),
+            ]
+
+        for record in _in_progress_run_records(run_id=DEFAULT_RUN_ID):
+            storage.store_event(record)
+
+        step_stats = storage.get_step_stats_for_run(DEFAULT_RUN_ID)
+
+        assert len(step_stats) == 4
+
+        assert step_stats[0].step_key == "A"
+        assert step_stats[0].status == StepEventStatus.IN_PROGRESS
+        assert not step_stats[0].end_time
+        assert step_stats[0].attempts == 1
+
+        assert step_stats[1].step_key == "C"
+        assert step_stats[1].status == StepEventStatus.SKIPPED
+        assert step_stats[1].end_time > step_stats[1].start_time
+        assert step_stats[1].attempts == 1
+
+        assert step_stats[2].step_key == "D"
+        assert step_stats[2].status == StepEventStatus.IN_PROGRESS
+        assert not step_stats[2].end_time
+        assert step_stats[2].attempts == 1
+
+        assert step_stats[3].step_key == "E"
+        assert step_stats[3].status == StepEventStatus.IN_PROGRESS
+        assert not step_stats[3].end_time
+        assert step_stats[3].attempts == 2
 
     @pytest.mark.skip("skip until we can support in cloud")
     def test_run_step_stats_with_resource_markers(self, storage):

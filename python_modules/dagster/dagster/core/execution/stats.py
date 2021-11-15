@@ -82,6 +82,7 @@ class StepEventStatus(Enum):
     SKIPPED = "SKIPPED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    IN_PROGRESS = "IN_PROGRESS"
 
 
 def build_run_step_stats_from_events(
@@ -150,6 +151,7 @@ def build_run_step_stats_from_events(
         events = attempt_events[step_key]
         step_attempts = []
         attempt_start = step_stats.get("start_time")
+
         for event in events:
             if not event.dagster_event:
                 continue
@@ -163,6 +165,9 @@ def build_run_step_stats_from_events(
             step_attempts.append(
                 RunStepMarker(start_time=attempt_start, end_time=step_stats["end_time"])
             )
+        else:
+            step_attempts.append(RunStepMarker(start_time=attempt_start))
+            by_step_key[step_key]["status"] = StepEventStatus.IN_PROGRESS
         attempts[step_key] = step_attempts
 
     return [
