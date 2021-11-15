@@ -5,7 +5,7 @@ from dagster import executor, pipeline, reconstructable, solid
 from dagster.config.field_utils import Permissive
 from dagster.core.definitions.executor import multiple_process_executor_requirements
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating import StepDelegatingExecutor, StepHandler
@@ -120,12 +120,50 @@ def test_execute():
 
 
 def test_skip_execute():
-    from .dynamic_job import define_dynamic_skipping_job
+    from .test_jobs import define_dynamic_skipping_job
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(define_dynamic_skipping_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+
+
+def test_dynamic_execute():
+    from .test_jobs import define_dynamic_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_dynamic_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+    assert (
+        len(
+            [
+                e
+                for e in result.event_list
+                if e.event_type_value == DagsterEventType.STEP_START.value
+            ]
+        )
+        == 11
+    )
+
+
+def test_skipping():
+    from .test_jobs import define_skpping_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_skpping_job),
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
