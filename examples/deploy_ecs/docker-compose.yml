@@ -68,6 +68,7 @@ services:
             - "ec2:DescribeNetworkInterfaces"
             - "ecs:DescribeTaskDefinition"
             - "ecs:DescribeTasks"
+            - "ecs:ListAccountSettings"
             - "ecs:RegisterTaskDefinition"
             - "ecs:RunTask"
             - "ecs:TagResource"

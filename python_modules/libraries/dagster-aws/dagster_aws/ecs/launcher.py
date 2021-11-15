@@ -1,5 +1,6 @@
 import boto3
 import dagster
+from botocore.exceptions import ClientError
 from dagster import Field, check
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
@@ -63,8 +64,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
     def _set_ecs_tags(self, run_id, task_arn):
-        tags = [{"key": "dagster/run_id", "value": run_id}]
-        self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
+        try:
+            tags = [{"key": "dagster/run_id", "value": run_id}]
+            self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
+        except ClientError:
+            pass
 
     def _set_run_tags(self, run_id, task_arn):
         cluster = self._task_metadata().cluster
