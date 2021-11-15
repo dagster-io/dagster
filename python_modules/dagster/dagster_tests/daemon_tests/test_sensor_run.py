@@ -23,9 +23,9 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
-from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     RunRequest,
