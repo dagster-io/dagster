@@ -1,5 +1,16 @@
 # Changelog
 
+# 0.13.6
+
+### Bugfixes
+
+- Fixed a bug in the `k8s_job_executor` and `docker_executor` that could result in jobs exiting as `SUCCESS` before all ops have run.
+- Fixed a bug in the `k8s_job_executor` and `docker_executor` that could result in jobs failing when an op is skipped.
+
+### Dependencies
+
+- `graphene` is temporarily pinned to be prior to version 3 to unbreak Dagit dependencies.
+
 # 0.13.5
 
 ### New
