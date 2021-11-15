@@ -8,13 +8,13 @@ from dagster.core.instance import DagsterInstance
 class InitExecutorContext(
     namedtuple(
         "InitExecutorContext",
-        "pipeline executor_def executor_config instance",
+        "job executor_def executor_config instance",
     )
 ):
     """Executor-specific initialization context.
 
     Attributes:
-        pipeline (IPipeline): The pipeline to be executed.
+        job (IPipeline): The job to be executed.
         executor_def (ExecutorDefinition): The definition of the executor currently being
             constructed.
         executor_config (dict): The parsed config passed to the executor.
@@ -23,15 +23,19 @@ class InitExecutorContext(
 
     def __new__(
         cls,
-        pipeline,
+        job,
         executor_def,
         executor_config,
         instance,
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,
-            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
+            job=check.inst_param(job, "job", IPipeline),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),
             executor_config=check.dict_param(executor_config, executor_config, key_type=str),
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
+
+    @property
+    def pipeline(self) -> IPipeline:
+        return self.job

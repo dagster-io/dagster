@@ -411,7 +411,7 @@ def _validate_plan_with_context(
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
     init_context = InitExecutorContext(
-        pipeline=context_creation_data.pipeline,
+        job=context_creation_data.pipeline,
         executor_def=context_creation_data.executor_def,
         executor_config=context_creation_data.resolved_run_config.execution.execution_engine_config,
         instance=context_creation_data.instance,
