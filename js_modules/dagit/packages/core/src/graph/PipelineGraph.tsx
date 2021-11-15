@@ -6,12 +6,12 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ColorsWIP} from '../ui/Colors';
 
 import {OpLinks} from './OpLinks';
-import {OpNode, SOLID_NODE_DEFINITION_FRAGMENT, SOLID_NODE_INVOCATION_FRAGMENT} from './OpNode';
+import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
-import {IFullPipelineLayout, IFullSolidLayout, ILayout} from './getFullSolidLayout';
-import {Edge, isHighlighted, isSolidHighlighted} from './highlighting';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {IFullPipelineLayout, IFullOpLayout, ILayout} from './getFullOpLayout';
+import {Edge, isHighlighted, isOpHighlighted} from './highlighting';
+import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 const NoOp = () => {};
 
@@ -19,18 +19,18 @@ interface IPipelineGraphProps {
   pipelineName: string;
   backgroundColor: string;
   layout: IFullPipelineLayout;
-  solids: PipelineGraphSolidFragment[];
-  focusSolids: PipelineGraphSolidFragment[];
+  ops: PipelineGraphOpFragment[];
+  focusOps: PipelineGraphOpFragment[];
   parentHandleID?: string;
-  parentSolid?: PipelineGraphSolidFragment;
+  parentOp?: PipelineGraphOpFragment;
   selectedHandleID?: string;
-  selectedSolid?: PipelineGraphSolidFragment;
-  highlightedSolids: Array<PipelineGraphSolidFragment>;
+  selectedOp?: PipelineGraphOpFragment;
+  highlightedOps: Array<PipelineGraphOpFragment>;
   interactor?: SVGViewportInteractor;
   onClickOp?: (arg: OpNameOrPath) => void;
-  onDoubleClickSolid?: (arg: OpNameOrPath) => void;
+  onDoubleClickOp?: (arg: OpNameOrPath) => void;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
-  onLeaveCompositeSolid?: () => void;
+  onLeaveSubgraph?: () => void;
   onClickBackground?: () => void;
 }
 
@@ -44,15 +44,15 @@ interface IPipelineContentsState {
 }
 
 /**
- * Identifies groups of solids that share a similar `prefix.` and returns
+ * Identifies groups of ops that share a similar `prefix.` and returns
  * an array of bounding boxes and common prefixes. Used to render lightweight
  * outlines around flattened composites.
  */
-function computeSolidPrefixBoundingBoxes(layout: IFullPipelineLayout) {
+function computeOpPrefixBoundingBoxes(layout: IFullPipelineLayout) {
   const groups: {[base: string]: ILayout[]} = {};
   let maxDepth = 0;
 
-  for (const key of Object.keys(layout.solids)) {
+  for (const key of Object.keys(layout.ops)) {
     const parts = key.split('.');
     if (parts.length === 1) {
       continue;
@@ -60,7 +60,7 @@ function computeSolidPrefixBoundingBoxes(layout: IFullPipelineLayout) {
     for (let ii = 1; ii < parts.length; ii++) {
       const base = parts.slice(0, ii).join('.');
       groups[base] = groups[base] || [];
-      groups[base].push(layout.solids[key].boundingBox);
+      groups[base].push(layout.ops[key].boundingBox);
       maxDepth = Math.max(maxDepth, ii);
     }
   }
@@ -100,35 +100,35 @@ export class PipelineGraphContents extends React.PureComponent<
     const {
       layout,
       minified,
-      solids,
-      focusSolids,
-      parentSolid,
+      ops,
+      focusOps,
+      parentOp,
       parentHandleID,
       onClickOp = NoOp,
-      onDoubleClickSolid = NoOp,
+      onDoubleClickOp = NoOp,
       onEnterSubgraph = NoOp,
-      highlightedSolids,
-      selectedSolid,
+      highlightedOps,
+      selectedOp,
     } = this.props;
 
     return (
       <>
-        {parentSolid && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
+        {parentOp && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
           <SVGLabeledParentRect
             {...layout.parent.invocationBoundingBox}
             key={`composite-rect-${parentHandleID}`}
-            label={parentSolid.name}
+            label={parentOp.name}
             fill={ColorsWIP.Gray50}
             minified={minified}
           />
         )}
-        {/* {selectedSolid && layout.solids[selectedSolid.name] && (
+        {/* {selectedOp && layout.ops[selectedOp.name] && (
           // this rect is hidden beneath the user's selection with a React key so that
-          // when they expand the composite solid React sees this component becoming
+          // when they expand the composite op React sees this component becoming
           // the one above and re-uses the DOM node. This allows us to animate the rect's
           // bounds from the parent layout to the inner layout with no React state.
           <SVGLabeledParentRect
-            {...layout.solids[selectedSolid.name].solid}
+            {...layout.ops[selectedOp.name].op}
             key={`composite-rect-${selectedHandleID}`}
             label={''}
             fill={ColorsWIP.Gray50}
@@ -136,38 +136,38 @@ export class PipelineGraphContents extends React.PureComponent<
           />
         )} */}
 
-        {parentSolid && (
+        {parentOp && (
           <ParentOpNode
             onClickOp={onClickOp}
-            onDoubleClick={(name) => onDoubleClickSolid({name})}
+            onDoubleClick={(name) => onDoubleClickOp({name})}
             onHighlightEdges={this.onHighlightEdges}
             highlightedEdges={this.state.highlighted}
             key={`composite-rect-${parentHandleID}-definition`}
             minified={minified}
-            solid={parentSolid}
+            op={parentOp}
             layout={layout}
           />
         )}
         <OpLinks
-          solids={solids}
+          ops={ops}
           layout={layout}
           opacity={0.2}
           connections={layout.connections}
           onHighlight={this.onHighlightEdges}
         />
         <OpLinks
-          solids={solids}
+          ops={ops}
           layout={layout}
           opacity={0.55}
           onHighlight={this.onHighlightEdges}
           connections={layout.connections.filter(({from, to}) =>
             isHighlighted(this.state.highlighted, {
-              a: from.solidName,
-              b: to.solidName,
+              a: from.opName,
+              b: to.opName,
             }),
           )}
         />
-        {computeSolidPrefixBoundingBoxes(layout).map((box, idx) => (
+        {computeOpPrefixBoundingBoxes(layout).map((box, idx) => (
           <rect
             key={idx}
             {...box}
@@ -177,25 +177,25 @@ export class PipelineGraphContents extends React.PureComponent<
           />
         ))}
         <foreignObject width={layout.width} height={layout.height}>
-          {solids.map((solid) => (
+          {ops.map((op) => (
             <OpNode
-              key={solid.name}
-              invocation={solid}
-              definition={solid.definition}
+              key={op.name}
+              invocation={op}
+              definition={op.definition}
               minified={minified}
-              onClick={() => onClickOp({name: solid.name})}
-              onDoubleClick={() => onDoubleClickSolid({name: solid.name})}
-              onEnterComposite={() => onEnterSubgraph({name: solid.name})}
+              onClick={() => onClickOp({name: op.name})}
+              onDoubleClick={() => onDoubleClickOp({name: op.name})}
+              onEnterComposite={() => onEnterSubgraph({name: op.name})}
               onHighlightEdges={this.onHighlightEdges}
-              layout={layout.solids[solid.name]}
-              selected={selectedSolid === solid}
-              focused={focusSolids.includes(solid)}
+              layout={layout.ops[op.name]}
+              selected={selectedOp === op}
+              focused={focusOps.includes(op)}
               highlightedEdges={
-                isSolidHighlighted(this.state.highlighted, solid.name)
+                isOpHighlighted(this.state.highlighted, op.name)
                   ? this.state.highlighted
                   : EmptyHighlightedArray
               }
-              dim={highlightedSolids.length > 0 && highlightedSolids.indexOf(solid) === -1}
+              dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
             />
           ))}
         </foreignObject>
@@ -211,51 +211,51 @@ const EmptyHighlightedArray: never[] = [];
 export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
-  resolveSolidPosition = (
+  resolveOpPosition = (
     arg: OpNameOrPath,
-    cb: (cx: number, cy: number, layout: IFullSolidLayout) => void,
+    cb: (cx: number, cy: number, layout: IFullOpLayout) => void,
   ) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
-    const solidLayout = this.props.layout.solids[lastName];
-    if (!solidLayout) {
+    const opLayout = this.props.layout.ops[lastName];
+    if (!opLayout) {
       return;
     }
-    const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
-    const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
-    cb(cx, cy, solidLayout);
+    const cx = opLayout.boundingBox.x + opLayout.boundingBox.width / 2;
+    const cy = opLayout.boundingBox.y + opLayout.boundingBox.height / 2;
+    cb(cx, cy, opLayout);
   };
 
-  centerSolid = (arg: OpNameOrPath) => {
-    this.resolveSolidPosition(arg, (cx, cy) => {
+  centerOp = (arg: OpNameOrPath) => {
+    this.resolveOpPosition(arg, (cx, cy) => {
       const viewportEl = this.viewportEl.current!;
       viewportEl.smoothZoomToSVGCoords(cx, cy, viewportEl.state.scale);
     });
   };
 
-  focusOnSolid = (arg: OpNameOrPath) => {
-    this.resolveSolidPosition(arg, (cx, cy) => {
+  focusOnOp = (arg: OpNameOrPath) => {
+    this.resolveOpPosition(arg, (cx, cy) => {
       this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
     });
   };
 
-  closestSolidInDirection = (dir: string): string | undefined => {
-    const {layout, selectedSolid} = this.props;
-    if (!selectedSolid) {
+  closestOpInDirection = (dir: string): string | undefined => {
+    const {layout, selectedOp} = this.props;
+    if (!selectedOp) {
       return;
     }
 
-    const current = layout.solids[selectedSolid.name];
-    const center = (solid: IFullSolidLayout): {x: number; y: number} => ({
-      x: solid.boundingBox.x + solid.boundingBox.width / 2,
-      y: solid.boundingBox.y + solid.boundingBox.height / 2,
+    const current = layout.ops[selectedOp.name];
+    const center = (op: IFullOpLayout): {x: number; y: number} => ({
+      x: op.boundingBox.x + op.boundingBox.width / 2,
+      y: op.boundingBox.y + op.boundingBox.height / 2,
     });
 
-    /* Sort all the solids in the graph based on their attractiveness
+    /* Sort all the ops in the graph based on their attractiveness
     as a jump target. We want the nearest node in the exact same row for left/right,
     and the visually "closest" node above/below for up/down. */
-    const score = (solid: IFullSolidLayout): number => {
-      const dx = center(solid).x - center(current).x;
-      const dy = center(solid).y - center(current).y;
+    const score = (op: IFullOpLayout): number => {
+      const dx = center(op).x - center(current).x;
+      const dy = center(op).y - center(current).y;
 
       if (dir === 'left' && dy === 0 && dx < 0) {
         return -dx;
@@ -272,9 +272,9 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       return Number.NaN;
     };
 
-    const closest = Object.keys(layout.solids)
-      .map((name) => ({name, score: score(layout.solids[name])}))
-      .filter((e) => e.name !== selectedSolid.name && !Number.isNaN(e.score))
+    const closest = Object.keys(layout.ops)
+      .map((name) => ({name, score: score(layout.ops[name])}))
+      .filter((e) => e.name !== selectedOp.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)
       .pop();
 
@@ -291,11 +291,11 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       return;
     }
 
-    const nextSolid = this.closestSolidInDirection(dir);
-    if (nextSolid && this.props.onClickOp) {
+    const nextOp = this.closestOpInDirection(dir);
+    if (nextOp && this.props.onClickOp) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.onClickOp({name: nextSolid});
+      this.props.onClickOp({name: nextOp});
     }
   };
 
@@ -305,15 +305,15 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   };
 
   componentDidUpdate(prevProps: IPipelineGraphProps) {
-    if (prevProps.parentSolid !== this.props.parentSolid) {
+    if (prevProps.parentOp !== this.props.parentOp) {
       this.viewportEl.current!.cancelAnimations();
       this.viewportEl.current!.autocenter();
     }
     if (prevProps.layout !== this.props.layout) {
       this.viewportEl.current!.autocenter();
     }
-    if (prevProps.selectedSolid !== this.props.selectedSolid && this.props.selectedSolid) {
-      this.centerSolid(this.props.selectedSolid);
+    if (prevProps.selectedOp !== this.props.selectedOp && this.props.selectedOp) {
+      this.centerOp(this.props.selectedOp);
     }
   }
 
@@ -324,7 +324,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       pipelineName,
       backgroundColor,
       onClickBackground,
-      onDoubleClickSolid,
+      onDoubleClickOp,
     } = this.props;
 
     return (
@@ -347,7 +347,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
                 {...this.props}
                 layout={layout}
                 minified={scale < DETAIL_ZOOM - 0.01}
-                onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
+                onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
               />
             </SVGContainer>
           </>
@@ -357,8 +357,8 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   }
 }
 
-export const PIPELINE_GRAPH_SOLID_FRAGMENT = gql`
-  fragment PipelineGraphSolidFragment on Solid {
+export const PIPELINE_GRAPH_OP_FRAGMENT = gql`
+  fragment PipelineGraphOpFragment on Solid {
     name
     ...OpNodeInvocationFragment
     definition {
@@ -366,8 +366,8 @@ export const PIPELINE_GRAPH_SOLID_FRAGMENT = gql`
       ...OpNodeDefinitionFragment
     }
   }
-  ${SOLID_NODE_INVOCATION_FRAGMENT}
-  ${SOLID_NODE_DEFINITION_FRAGMENT}
+  ${OP_NODE_INVOCATION_FRAGMENT}
+  ${OP_NODE_DEFINITION_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`

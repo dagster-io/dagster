@@ -9,14 +9,14 @@ import {SelectWIP} from '../ui/Select';
 
 import {GraphExplorerSolidHandleFragment_solid} from './types/GraphExplorerSolidHandleFragment';
 
-interface SolidJumpBarProps {
-  solids: Array<GraphExplorerSolidHandleFragment_solid>;
-  selectedSolid: GraphExplorerSolidHandleFragment_solid | undefined;
-  onChange: (solid: GraphExplorerSolidHandleFragment_solid) => void;
+interface OpJumpBarProps {
+  ops: Array<GraphExplorerSolidHandleFragment_solid>;
+  selectedOp: GraphExplorerSolidHandleFragment_solid | undefined;
+  onChange: (op: GraphExplorerSolidHandleFragment_solid) => void;
 }
 
-export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
-  const {solids, selectedSolid, onChange} = props;
+export const OpJumpBar: React.FC<OpJumpBarProps> = (props) => {
+  const {ops, selectedOp, onChange} = props;
   const button = React.useRef<HTMLButtonElement | null>(null);
 
   return (
@@ -26,14 +26,14 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
       shortcutFilter={(e) => e.code === 'KeyS' && e.altKey}
     >
       <SelectWIP
-        items={solids.map((s) => s.name)}
+        items={ops.map((s) => s.name)}
         itemRenderer={BasicStringRenderer}
         itemListPredicate={BasicStringPredicate}
         noResults={<MenuItemWIP disabled text="No results." />}
-        onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
+        onItemSelect={(name) => onChange(ops.find((s) => s.name === name)!)}
       >
         <SelectButton ref={button} rightIcon={<IconWIP name="unfold_more" />}>
-          {selectedSolid ? selectedSolid.name : 'Select an op…'}
+          {selectedOp ? selectedOp.name : 'Select an op…'}
         </SelectButton>
       </SelectWIP>
     </ShortcutHandler>

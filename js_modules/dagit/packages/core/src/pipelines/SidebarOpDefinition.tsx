@@ -26,7 +26,7 @@ import {
   ShowAllButton,
   SidebarOpInvocationInfo,
   OpLinks,
-  SolidMappingTable,
+  OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
 import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinitionFragment';
@@ -47,8 +47,8 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
 
-  const inputMappings: SolidMappingTable = {};
-  const outputMappings: SolidMappingTable = {};
+  const inputMappings: OpMappingTable = {};
+  const outputMappings: OpMappingTable = {};
 
   if (showingSubgraph && definition.__typename === 'CompositeSolidDefinition') {
     definition.inputMappings.forEach(

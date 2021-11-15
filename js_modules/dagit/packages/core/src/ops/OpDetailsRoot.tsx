@@ -11,7 +11,7 @@ import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {OpCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
+import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
 import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
 
 interface UsedSolidDetailsProps {
@@ -85,11 +85,11 @@ const USED_SOLID_DETAILS_QUERY = gql`
     }
   }
 
-  ${SOLID_CARD_SOLID_DEFINITION_FRAGMENT}
+  ${OP_CARD_SOLID_DEFINITION_FRAGMENT}
   ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
 `;
 
-export const SolidDetailScrollContainer = styled.div`
+export const OpDetailScrollContainer = styled.div`
   overflow: scroll;
   flex: 1;
 `;

@@ -16,13 +16,13 @@ import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
 
-interface SolidIORenderMetadata {
+interface OpIORenderMetadata {
   edges: Edge[];
-  jumpTargetSolid: string | null;
+  jumpTargetOp: string | null;
   title: string;
 }
 
-interface OpIOBoxProps extends SolidIORenderMetadata {
+interface OpIOBoxProps extends OpIORenderMetadata {
   colorKey: 'input' | 'output';
   item:
     | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
@@ -32,14 +32,14 @@ interface OpIOBoxProps extends SolidIORenderMetadata {
   // Passed through from Solid props
   minified: boolean;
   highlightedEdges: Edge[];
-  onDoubleClick: (solidName: string) => void;
+  onDoubleClick: (opName: string) => void;
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
 export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
   minified,
   title,
-  jumpTargetSolid,
+  jumpTargetOp,
   edges,
   highlightedEdges,
   colorKey,
@@ -52,13 +52,13 @@ export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
 
   return (
-    <SolidIOContainer
+    <OpIOContainer
       title={title}
       style={{...style, width: 'initial'}}
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
       onClick={(e) => {
-        jumpTargetSolid && onDoubleClick(jumpTargetSolid);
+        jumpTargetOp && onDoubleClick(jumpTargetOp);
         e.stopPropagation();
       }}
       onDoubleClick={(e) => e.stopPropagation()}
@@ -70,11 +70,11 @@ export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
         {!minified && name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
         {!minified && type.displayName && <div className="type">{type.displayName}</div>}
       </div>
-    </SolidIOContainer>
+    </OpIOContainer>
   );
 };
 
-const SolidIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
+const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   display: block;
   & > div {
     display: inline-flex;
@@ -116,7 +116,7 @@ export function metadataForCompositeParentIO(
   item:
     | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-): SolidIORenderMetadata {
+): OpIORenderMetadata {
   const edges: Edge[] = [];
   let title = `${item.name}: ${item.type.displayName}`;
 
@@ -154,7 +154,7 @@ export function metadataForCompositeParentIO(
   return {
     edges,
     title,
-    jumpTargetSolid: edges.length === 1 ? edges[0].a : null,
+    jumpTargetOp: edges.length === 1 ? edges[0].a : null,
   };
 }
 
@@ -163,17 +163,17 @@ export function metadataForIO(
     | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
   invocation?: OpNodeInvocationFragment,
-): SolidIORenderMetadata {
+): OpIORenderMetadata {
   const edges: Edge[] = [];
 
   let title = `${item.name}: ${item.type.displayName}`;
-  let jumpTargetSolid: string | null = null;
+  let jumpTargetOp: string | null = null;
 
   if (invocation && item.__typename === 'InputDefinition') {
     const others = invocation.inputs.find((i) => i.definition.name === item.name)!.dependsOn;
     if (others.length) {
       title += `\n\nFrom:\n` + others.map(titleOfIO).join('\n');
-      jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;
+      jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_IN});
@@ -189,11 +189,11 @@ export function metadataForIO(
     const others = output.dependedBy;
     if (others.length) {
       title += '\n\nUsed By:\n' + others.map((o) => titleOfIO(o)).join('\n');
-      jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;
+      jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_OUT});
   }
 
-  return {edges, title, jumpTargetSolid};
+  return {edges, title, jumpTargetOp};
 }

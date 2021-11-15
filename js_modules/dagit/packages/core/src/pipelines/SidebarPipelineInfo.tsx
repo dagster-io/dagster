@@ -44,7 +44,7 @@ export const SidebarOpContainerInfo: React.FC<ISidebarOpContainerInfoProps> = ({
   );
 };
 
-export const SIDEBAR_SOLID_CONTAINER_INFO_FRAGMENT = gql`
+export const SIDEBAR_OP_CONTAINER_INFO_FRAGMENT = gql`
   fragment SidebarOpContainerInfoFragment on SolidContainer {
     id
     name

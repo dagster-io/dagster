@@ -10,32 +10,32 @@ import {MappingLine} from './MappingLine';
 import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
 import {position} from './OpNode';
 import {SVGLabeledRect} from './SVGComponents';
-import {IFullPipelineLayout} from './getFullSolidLayout';
+import {IFullPipelineLayout} from './getFullOpLayout';
 import {Edge} from './highlighting';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 interface ParentOpNodeProps {
   layout: IFullPipelineLayout;
-  solid: PipelineGraphSolidFragment;
+  op: PipelineGraphOpFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];
-  onDoubleClick: (solidName: string) => void;
+  onDoubleClick: (opName: string) => void;
   onClickOp: (arg: OpNameOrPath) => void;
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
 export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) => {
-  const {layout, solid, minified} = props;
+  const {layout, op, minified} = props;
 
-  const def = props.solid.definition;
+  const def = props.op.definition;
   if (def.__typename !== 'CompositeSolidDefinition') {
-    throw new Error('Parent solid is not a composite - how did this happen?');
+    throw new Error('Parent op is not a composite - how did this happen?');
   }
 
   const parentLayout = layout.parent;
   if (!parentLayout) {
-    throw new Error('Parent solid rendered when no parent layout is present.');
+    throw new Error('Parent op rendered when no parent layout is present.');
   }
 
   const {boundingBox, mappingLeftEdge, mappingLeftSpacing} = parentLayout;
@@ -53,12 +53,12 @@ export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) 
     <>
       <SVGLabeledParentRect
         {...boundingBox}
-        label={solid.definition.name}
+        label={op.definition.name}
         fill={ColorsWIP.Gray50}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
-        const destination = layout.solids[mappedInput.solid.name];
+        const destination = layout.ops[mappedInput.solid.name];
         if (!destination) {
           return <g />;
         }
@@ -78,7 +78,7 @@ export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) 
         );
       })}
       {def.outputMappings.map(({definition, mappedOutput}, idx) => {
-        const destination = layout.solids[mappedOutput.solid.name];
+        const destination = layout.ops[mappedOutput.solid.name];
         if (!destination) {
           return <g />;
         }
@@ -97,9 +97,9 @@ export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) 
           />
         );
       })}
-      {solid.definition.inputDefinitions.map((input, idx) => {
-        const metadata = metadataForCompositeParentIO(solid.definition, input);
-        const invocationInput = solid.inputs.find((i) => i.definition.name === input.name)!;
+      {op.definition.inputDefinitions.map((input, idx) => {
+        const metadata = metadataForCompositeParentIO(op.definition, input);
+        const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
 
         return (
           <React.Fragment key={idx}>
@@ -127,9 +127,9 @@ export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) 
           </React.Fragment>
         );
       })}
-      {solid.definition.outputDefinitions.map((output, idx) => {
-        const metadata = metadataForCompositeParentIO(solid.definition, output);
-        const invocationOutput = solid.outputs.find((i) => i.definition.name === output.name)!;
+      {op.definition.outputDefinitions.map((output, idx) => {
+        const metadata = metadataForCompositeParentIO(op.definition, output);
+        const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
 
         return (
           <React.Fragment key={idx}>

@@ -12,7 +12,7 @@ import {RepoAddress} from '../workspace/types';
 import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpContainer} from './SidebarOpContainer';
-import {SidebarOpContainerInfo, SIDEBAR_SOLID_CONTAINER_INFO_FRAGMENT} from './SidebarPipelineInfo';
+import {SidebarOpContainerInfo, SIDEBAR_OP_CONTAINER_INFO_FRAGMENT} from './SidebarPipelineInfo';
 import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
 
 type TabKey = 'types' | 'info';
@@ -28,7 +28,7 @@ interface ISidebarTabbedContainerProps {
   typeName?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
   explorerPath: ExplorerPath;
-  solidHandleID?: string;
+  opHandleID?: string;
   parentOpHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   onEnterSubgraph: (arg: OpNameOrPath) => void;
@@ -43,7 +43,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     typeName,
     pipeline,
     explorerPath,
-    solidHandleID,
+    opHandleID,
     getInvocations,
     parentOpHandleID,
     onEnterSubgraph,
@@ -61,11 +61,11 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
       name: 'Info',
       key: 'info',
       content: () =>
-        solidHandleID ? (
+        opHandleID ? (
           <SidebarOpContainer
-            key={solidHandleID}
+            key={opHandleID}
             explorerPath={explorerPath}
-            handleID={solidHandleID}
+            handleID={opHandleID}
             showingSubgraph={false}
             getInvocations={getInvocations}
             onEnterSubgraph={onEnterSubgraph}
@@ -131,5 +131,5 @@ export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
     ...SidebarOpContainerInfoFragment
   }
 
-  ${SIDEBAR_SOLID_CONTAINER_INFO_FRAGMENT}
+  ${SIDEBAR_OP_CONTAINER_INFO_FRAGMENT}
 `;

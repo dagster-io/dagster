@@ -41,9 +41,9 @@ function simulateTagFilteringInQuery(
   );
 }
 
-function buildSolidHandles(solidNames: string[], deps: string[]) {
+function buildOpHandles(opNames: string[], deps: string[]) {
   const result: ISolidHandle[] = [];
-  for (const name of solidNames) {
+  for (const name of opNames) {
     result.push({
       __typename: 'SolidHandle',
       handleID: name,
@@ -115,7 +115,7 @@ const PipelineMocks = {
   PipelineSnapshot: () => ({
     name: () => 'TestPipeline',
     solidHandles: () =>
-      buildSolidHandles(
+      buildOpHandles(
         ['first', 'second', 'third', 'fourth'],
         ['first => second', 'first => third', 'second => fourth', 'third => fourth'],
       ),

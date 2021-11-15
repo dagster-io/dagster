@@ -116,18 +116,18 @@ export const PipelineExplorerContainer: React.FC<{
         );
 
         if (flagAssetGraph && isAssetGraph) {
-          const unrepresentedSolids = result.solidHandles.filter(
+          const unrepresentedOps = result.solidHandles.filter(
             (handle) =>
               !repositoryAssets.some(
                 (asset) =>
                   asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
               ),
           );
-          if (unrepresentedSolids.length) {
+          if (unrepresentedOps.length) {
             console.error(
               `The following ops are not represented in the ${
                 explorerPath.pipelineName
-              } asset graph: ${unrepresentedSolids.map((h) => h.solid.name).join(', ')}`,
+              } asset graph: ${unrepresentedOps.map((h) => h.solid.name).join(', ')}`,
             );
           }
           return (

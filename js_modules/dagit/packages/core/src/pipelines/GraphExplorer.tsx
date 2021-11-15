@@ -7,7 +7,7 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
+import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {Checkbox} from '../ui/Checkbox';
@@ -19,7 +19,7 @@ import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
-import {SolidJumpBar} from './PipelineJumpComponents';
+import {OpJumpBar} from './PipelineJumpComponents';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -79,22 +79,22 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   // This is important because the DAG component tree doesn't always have access to a handleID,
   // and we sometimes want to be able to jump to a solid in the parent layer.
   //
-  const handleClickSolid = (arg: OpNameOrPath) => {
-    handleAdjustPath((solidNames) => {
+  const handleClickOp = (arg: OpNameOrPath) => {
+    handleAdjustPath((opNames) => {
       if ('name' in arg) {
-        solidNames[solidNames.length ? solidNames.length - 1 : 0] = arg.name;
+        opNames[opNames.length ? opNames.length - 1 : 0] = arg.name;
       } else {
         if (arg.path[0] !== '..') {
-          solidNames.length = 0;
+          opNames.length = 0;
         }
-        if (arg.path[0] === '..' && solidNames[solidNames.length - 1] !== '') {
-          solidNames.pop(); // remove the last path component indicating selection
+        if (arg.path[0] === '..' && opNames[opNames.length - 1] !== '') {
+          opNames.pop(); // remove the last path component indicating selection
         }
         while (arg.path[0] === '..') {
           arg.path.shift();
-          solidNames.pop();
+          opNames.pop();
         }
-        solidNames.push(...arg.path);
+        opNames.push(...arg.path);
       }
     });
   };
@@ -103,25 +103,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     // To animate the rect of the composite solid expanding correctly, we need
     // to select it before entering it so we can draw the "initial state" of the
     // labeled rectangle.
-    handleClickSolid(arg);
+    handleClickOp(arg);
 
     window.requestAnimationFrame(() => {
-      handleAdjustPath((solidNames) => {
+      handleAdjustPath((opNames) => {
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
-        solidNames[solidNames.length - 1] = last;
-        solidNames.push('');
+        opNames[opNames.length - 1] = last;
+        opNames.push('');
       });
     });
   };
 
   const handleLeaveCompositeSolid = () => {
-    handleAdjustPath((solidNames) => {
-      solidNames.pop();
+    handleAdjustPath((opNames) => {
+      opNames.pop();
     });
   };
 
   const handleClickBackground = () => {
-    handleClickSolid({name: ''});
+    handleClickOp({name: ''});
   };
 
   const {opsQuery} = explorerPath;
@@ -138,7 +138,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   );
 
   const {all} = queryResultOps;
-  const highlightedSolids = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
+  const highlightedOps = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
     highlighted,
     all,
   ]);
@@ -165,10 +165,10 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 };
               })}
               currentBreadcrumbRenderer={() => (
-                <SolidJumpBar
-                  solids={queryResultOps.all}
-                  selectedSolid={selectedHandle && selectedHandle.solid}
-                  onChange={(solid) => handleClickSolid({name: solid.name})}
+                <OpJumpBar
+                  ops={queryResultOps.all}
+                  selectedOp={selectedHandle && selectedHandle.solid}
+                  onChange={(solid) => handleClickOp({name: solid.name})}
                 />
               )}
             />
@@ -215,15 +215,15 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
             backgroundColor={backgroundColor}
-            solids={queryResultOps.all}
-            focusSolids={queryResultOps.focus}
-            highlightedSolids={highlightedSolids}
+            ops={queryResultOps.all}
+            focusOps={queryResultOps.focus}
+            highlightedOps={highlightedOps}
             selectedHandle={selectedHandle}
             parentHandle={parentHandle}
-            onClickOp={handleClickSolid}
+            onClickOp={handleClickOp}
             onClickBackground={handleClickBackground}
             onEnterSubgraph={handleEnterCompositeSolid}
-            onLeaveCompositeSolid={handleLeaveCompositeSolid}
+            onLeaveSubgraph={handleLeaveCompositeSolid}
           />
         </>
       }
@@ -235,11 +235,11 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               <SidebarTabbedContainer
                 pipeline={pipelineOrGraph}
                 explorerPath={explorerPath}
-                solidHandleID={selectedHandle && selectedHandle.handleID}
+                opHandleID={selectedHandle && selectedHandle.handleID}
                 parentOpHandleID={parentHandle && parentHandle.handleID}
                 getInvocations={getInvocations}
                 onEnterSubgraph={handleEnterCompositeSolid}
-                onClickOp={handleClickSolid}
+                onClickOp={handleClickOp}
                 repoAddress={repoAddress}
                 isGraph={isGraph}
                 {...querystring.parse(location.search || '')}
@@ -267,10 +267,10 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
     handleID
     solid {
       name
-      ...PipelineGraphSolidFragment
+      ...PipelineGraphOpFragment
     }
   }
-  ${PIPELINE_GRAPH_SOLID_FRAGMENT}
+  ${PIPELINE_GRAPH_OP_FRAGMENT}
 `;
 
 const RightInfoPanel = styled.div`

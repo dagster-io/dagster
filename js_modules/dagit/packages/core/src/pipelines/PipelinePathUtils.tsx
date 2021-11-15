@@ -21,9 +21,9 @@ export function explorerPathToString(path: ExplorerPath) {
 }
 
 export function explorerPathFromString(path: string): ExplorerPath {
-  const rootAndSolids = path.split('/');
-  const root = rootAndSolids[0];
-  const opNames = rootAndSolids.length === 1 ? [''] : rootAndSolids.slice(1);
+  const rootAndOps = path.split('/');
+  const root = rootAndOps[0];
+  const opNames = rootAndOps.length === 1 ? [''] : rootAndOps.slice(1);
 
   const match = /^([^:@~]+)@?([^:~]+)?~?(.*)$/.exec(root);
   const [, pipelineName, snapshotId, opsQuery] = [...(match || []), '', '', ''];

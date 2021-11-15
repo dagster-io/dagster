@@ -8,13 +8,13 @@ import {FontFamily} from '../ui/styles';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
-import {IFullSolidLayout, ILayout} from './getFullSolidLayout';
+import {IFullOpLayout, ILayout} from './getFullOpLayout';
 import {Edge} from './highlighting';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 interface IOpNodeProps {
-  layout: IFullSolidLayout;
+  layout: IFullOpLayout;
   invocation?: OpNodeInvocationFragment;
   definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
@@ -119,16 +119,16 @@ export class OpNode extends React.Component<IOpNodeProps> {
         onDoubleClick={this.handleDoubleClick}
       >
         <div className="highlight-box" style={{...position(layout.boundingBox)}} />
-        {composite && <div className="composite-marker" style={{...position(layout.solid)}} />}
+        {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
 
         {invocation?.isDynamicMapped && (
-          <div className="dynamic-marker" style={{...position(layout.solid)}} />
+          <div className="dynamic-marker" style={{...position(layout.op)}} />
         )}
 
         {configField && configField.configType.key !== 'Any' && (
           <div
             className="config-marker"
-            style={{left: layout.solid.x + layout.solid.width, top: layout.solid.y}}
+            style={{left: layout.op.x + layout.op.width, top: layout.op.y}}
           >
             {minified ? 'C' : 'Config'}
           </div>
@@ -156,7 +156,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
           />
         ))}
 
-        <div className="node-box" style={{...position(layout.solid)}}>
+        <div className="node-box" style={{...position(layout.op)}}>
           <div
             className="name"
             data-tooltip={invocation ? invocation.name : definition.name}
@@ -173,8 +173,8 @@ export class OpNode extends React.Component<IOpNodeProps> {
         {tags.length > 0 && (
           <OpTags
             style={{
-              left: layout.solid.x + layout.solid.width,
-              top: layout.solid.y + layout.solid.height,
+              left: layout.op.x + layout.op.width,
+              top: layout.op.y + layout.op.height,
               transform: 'translate(-100%, 3px)',
             }}
             minified={minified}
@@ -186,7 +186,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
   }
 }
 
-export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
+export const OP_NODE_INVOCATION_FRAGMENT = gql`
   fragment OpNodeInvocationFragment on Solid {
     name
     isDynamicMapped
@@ -226,7 +226,7 @@ export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
   }
 `;
 
-export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
+export const OP_NODE_DEFINITION_FRAGMENT = gql`
   fragment OpNodeDefinitionFragment on ISolidDefinition {
     __typename
     name

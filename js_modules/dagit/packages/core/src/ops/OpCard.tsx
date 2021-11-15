@@ -2,8 +2,8 @@ import {gql} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {OpNode, SOLID_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
-import {layoutSolid} from '../graph/getFullSolidLayout';
+import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
+import {layoutOp} from '../graph/getFullOpLayout';
 import {Box} from '../ui/Box';
 
 import {OpCardSolidDefinitionFragment} from './types/OpCardSolidDefinitionFragment';
@@ -14,7 +14,7 @@ interface OpCardProps {
 
 export const OpCard: React.FC<OpCardProps> = (props) => {
   const {name, inputDefinitions, outputDefinitions} = props.definition;
-  const layout = layoutSolid(
+  const layout = layoutOp(
     {
       name: name,
       inputs: inputDefinitions.map((d) => ({
@@ -51,7 +51,7 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
   );
 };
 
-export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
+export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   fragment OpCardSolidDefinitionFragment on ISolidDefinition {
     ...OpNodeDefinitionFragment
     __typename
@@ -69,7 +69,7 @@ export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
     }
   }
 
-  ${SOLID_NODE_DEFINITION_FRAGMENT}
+  ${OP_NODE_DEFINITION_FRAGMENT}
 `;
 
 const OpCardContainer = styled.div`

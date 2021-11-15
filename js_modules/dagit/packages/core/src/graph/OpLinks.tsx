@@ -5,8 +5,8 @@ import styled from 'styled-components/macro';
 import {weakmapMemoize} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
 
-import {IFullPipelineLayout, IFullSolidLayout, ILayoutConnection} from './getFullSolidLayout';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {IFullPipelineLayout, IFullOpLayout, ILayoutConnection} from './getFullOpLayout';
+import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 export type Edge = {a: string; b: string};
 
@@ -18,18 +18,18 @@ const buildSVGPath = pathVerticalDiagonal({
 });
 
 const buildSVGPaths = weakmapMemoize(
-  (connections: ILayoutConnection[], solids: {[name: string]: IFullSolidLayout}) =>
+  (connections: ILayoutConnection[], ops: {[name: string]: IFullOpLayout}) =>
     connections.map(({from, to}) => {
-      const sourceOutput = solids[from.solidName].outputs[from.edgeName];
+      const sourceOutput = ops[from.opName].outputs[from.edgeName];
       if (!sourceOutput) {
         throw new Error(
-          `Cannot find ${from.solidName}:${from.edgeName} for edge to ${to.solidName}:${to.edgeName}`,
+          `Cannot find ${from.opName}:${from.edgeName} for edge to ${to.opName}:${to.edgeName}`,
         );
       }
-      const targetInput = solids[to.solidName].inputs[to.edgeName];
+      const targetInput = ops[to.opName].inputs[to.edgeName];
       if (!targetInput) {
         throw new Error(
-          `Cannot find ${to.solidName}:${to.edgeName} for edge from ${from.solidName}:${from.edgeName}`,
+          `Cannot find ${to.opName}:${to.edgeName} for edge from ${from.opName}:${from.edgeName}`,
         );
       }
       return {
@@ -47,48 +47,48 @@ const buildSVGPaths = weakmapMemoize(
 );
 
 const outputIsDynamic = (
-  solids: PipelineGraphSolidFragment[],
-  from: {solidName: string; edgeName: string},
+  ops: PipelineGraphOpFragment[],
+  from: {opName: string; edgeName: string},
 ) => {
-  const solid = solids.find((s) => s.name === from.solidName);
-  const outDef = solid?.definition.outputDefinitions.find((o) => o.name === from.edgeName);
+  const op = ops.find((s) => s.name === from.opName);
+  const outDef = op?.definition.outputDefinitions.find((o) => o.name === from.edgeName);
   return outDef?.isDynamic || false;
 };
 
 const inputIsDynamicCollect = (
-  solids: PipelineGraphSolidFragment[],
-  to: {solidName: string; edgeName: string},
+  ops: PipelineGraphOpFragment[],
+  to: {opName: string; edgeName: string},
 ) => {
-  const solid = solids.find((s) => s.name === to.solidName);
-  const inputDef = solid?.inputs.find((o) => o.definition.name === to.edgeName);
+  const op = ops.find((s) => s.name === to.opName);
+  const inputDef = op?.inputs.find((o) => o.definition.name === to.edgeName);
   return inputDef?.isDynamicCollect || false;
 };
 
 export const OpLinks = React.memo(
   (props: {
     opacity: number;
-    solids: PipelineGraphSolidFragment[];
+    ops: PipelineGraphOpFragment[];
     layout: IFullPipelineLayout;
     connections: ILayoutConnection[];
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g opacity={props.opacity}>
-      {buildSVGPaths(props.connections, props.layout.solids).map(
+      {buildSVGPaths(props.connections, props.layout.ops).map(
         ({path, from, sourceOutput, targetInput, to}, idx) => (
           <g
             key={idx}
             onMouseLeave={() => props.onHighlight([])}
-            onMouseEnter={() => props.onHighlight([{a: from.solidName, b: to.solidName}])}
+            onMouseEnter={() => props.onHighlight([{a: from.opName, b: to.opName}])}
           >
             <StyledPath d={path} />
-            {outputIsDynamic(props.solids, from) && (
+            {outputIsDynamic(props.ops, from) && (
               <DynamicMarker
                 x={sourceOutput.layout.x}
                 y={sourceOutput.layout.y}
                 direction={'output'}
               />
             )}
-            {inputIsDynamicCollect(props.solids, to) && (
+            {inputIsDynamicCollect(props.ops, to) && (
               <DynamicMarker
                 x={targetInput.layout.x}
                 y={targetInput.layout.y}

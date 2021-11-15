@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {Edge} from './OpLinks';
-import {IPoint} from './getFullSolidLayout';
+import {IPoint} from './getFullOpLayout';
 import {isHighlighted} from './highlighting';
 
 interface MappingLineProps {

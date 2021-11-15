@@ -23,7 +23,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {SolidDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
+import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {
   OpsRootQuery,
@@ -122,7 +122,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
   useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<OpsRootQuery>(SOLIDS_ROOT_QUERY, {
+  const queryResult = useQuery<OpsRootQuery>(OPS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
 
@@ -202,7 +202,7 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
         firstInitialPercent={40}
         firstMinSize={420}
         first={
-          <SolidListColumnContainer>
+          <OpListColumnContainer>
             <Box
               padding={{vertical: 12, horizontal: 24}}
               border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
@@ -217,7 +217,7 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             <div style={{flex: 1}}>
               <AutoSizer nonce={window.__webpack_nonce__}>
                 {({height, width}) => (
-                  <SolidList
+                  <OpList
                     height={height}
                     width={width}
                     selected={selected}
@@ -229,17 +229,17 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
                 )}
               </AutoSizer>
             </div>
-          </SolidListColumnContainer>
+          </OpListColumnContainer>
         }
         second={
           selected ? (
-            <SolidDetailScrollContainer>
+            <OpDetailScrollContainer>
               <UsedSolidDetails
                 name={selected.definition.name}
                 onClickInvocation={onClickInvocation}
                 repoAddress={repoAddress}
               />
-            </SolidDetailScrollContainer>
+            </OpDetailScrollContainer>
           ) : (
             <Box padding={{vertical: 64}}>
               <NonIdealState
@@ -255,7 +255,7 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   );
 };
 
-interface SolidListProps {
+interface OpListProps {
   items: Solid[];
   width: number;
   height: number;
@@ -263,7 +263,7 @@ interface SolidListProps {
   onClickOp: (name: string) => void;
 }
 
-const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
+const OpList: React.FunctionComponent<OpListProps> = (props) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
@@ -290,14 +290,14 @@ const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
           const solid = props.items[index];
           return (
             <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
-              <SolidListItem
+              <OpListItem
                 style={style}
                 selected={solid === props.selected}
                 onClick={() => props.onClickOp(solid.definition.name)}
               >
-                <SolidName>{solid.definition.name}</SolidName>
+                <OpName>{solid.definition.name}</OpName>
                 <OpTypeSignature definition={solid.definition} />
-              </SolidListItem>
+              </OpListItem>
             </CellMeasurer>
           );
         }}
@@ -313,7 +313,7 @@ const Container = styled.div`
   }
 `;
 
-const SOLIDS_ROOT_QUERY = gql`
+const OPS_ROOT_QUERY = gql`
   query OpsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
@@ -339,7 +339,7 @@ const SOLIDS_ROOT_QUERY = gql`
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
-const SolidListItem = styled.div<{selected: boolean}>`
+const OpListItem = styled.div<{selected: boolean}>`
   background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
   box-shadow: ${({selected}) => (selected ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0 inset,
     ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
@@ -359,12 +359,12 @@ const SolidListItem = styled.div<{selected: boolean}>`
   }
 `;
 
-const SolidName = styled.div`
+const OpName = styled.div`
   flex: 1;
   font-weight: 600;
 `;
 
-const SolidListColumnContainer = styled.div`
+const OpListColumnContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
