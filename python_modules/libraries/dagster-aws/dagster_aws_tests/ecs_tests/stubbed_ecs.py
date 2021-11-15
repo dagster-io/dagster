@@ -187,7 +187,7 @@ class StubbedEcs:
         """
         arn = kwargs.get("resourceArn")
 
-        if self._task_exists(arn):
+        if self._task_exists(arn) and self._long_arn_enabled():
             self.stubber.add_response(
                 method="list_tags_for_resource",
                 service_response={"tags": self.tags.get(arn, [])},
@@ -388,7 +388,7 @@ class StubbedEcs:
         tags = kwargs.get("tags")
         arn = kwargs.get("resourceArn")
 
-        if self._task_exists(arn):
+        if self._task_exists(arn) and self._long_arn_enabled():
             self.stubber.add_response(
                 method="tag_resource",
                 service_response={},
@@ -421,3 +421,12 @@ class StubbedEcs:
 
     def _task_definition_arn(self, family, revision):
         return self._arn("task-definition", f"{family}:{revision}")
+
+    def _long_arn_enabled(self):
+        settings = self.list_account_settings(effectiveSettings=True)["settings"]
+        task_arn_format_setting = [
+            setting for setting in settings if setting["name"] == "taskLongArnFormat"
+        ][0]
+        if task_arn_format_setting["value"] == "disabled":
+            return False
+        return True

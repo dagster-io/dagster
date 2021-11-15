@@ -90,6 +90,12 @@ def test_list_tags_for_resource(ecs):
 
     assert ecs.list_tags_for_resource(resourceArn=arn)["tags"] == tags
 
+    # With the new ARN format disabled
+    ecs.put_account_setting(name="taskLongArnFormat", value="disabled")
+
+    with pytest.raises(ClientError):
+        ecs.list_tags_for_resource(resourceArn=arn)
+
 
 def test_list_task_definitions(ecs):
     assert not ecs.list_task_definitions()["taskDefinitionArns"]
@@ -296,3 +302,9 @@ def test_tag_resource(ecs):
     arn = ecs.run_task(taskDefinition="dagster")["tasks"][0]["taskArn"]
 
     ecs.tag_resource(resourceArn=arn, tags=tags)
+
+    # With the new ARN format disabled
+    ecs.put_account_setting(name="taskLongArnFormat", value="disabled")
+
+    with pytest.raises(ClientError):
+        ecs.tag_resource(resourceArn=arn, tags=tags)
