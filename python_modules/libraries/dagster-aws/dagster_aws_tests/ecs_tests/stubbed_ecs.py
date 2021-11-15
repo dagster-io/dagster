@@ -427,6 +427,4 @@ class StubbedEcs:
         task_arn_format_setting = [
             setting for setting in settings if setting["name"] == "taskLongArnFormat"
         ][0]
-        if task_arn_format_setting["value"] == "disabled":
-            return False
-        return True
+        return task_arn_format_setting["value"] != "disabled"
