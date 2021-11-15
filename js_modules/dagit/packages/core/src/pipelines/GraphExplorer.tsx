@@ -7,9 +7,9 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
+import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -19,7 +19,7 @@ import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
-import {SolidJumpBar} from './PipelineJumpComponents';
+import {OpJumpBar} from './PipelineJumpComponents';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -62,69 +62,69 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   } = props;
   const [highlighted, setHighlighted] = React.useState('');
 
-  const handleQueryChange = (solidsQuery: string) => {
-    onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
+  const handleQueryChange = (opsQuery: string) => {
+    onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
   };
 
-  const handleAdjustPath = (fn: (solidNames: string[]) => void) => {
-    const pathSolids = [...explorerPath.pathSolids];
-    const retValue = fn(pathSolids);
+  const handleAdjustPath = (fn: (opNames: string[]) => void) => {
+    const opNames = [...explorerPath.opNames];
+    const retValue = fn(opNames);
     if (retValue !== undefined) {
       throw new Error('handleAdjustPath function is expected to mutate the array');
     }
-    onChangeExplorerPath({...explorerPath, pathSolids}, 'push');
+    onChangeExplorerPath({...explorerPath, opNames}, 'push');
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
   // This is important because the DAG component tree doesn't always have access to a handleID,
   // and we sometimes want to be able to jump to a solid in the parent layer.
   //
-  const handleClickSolid = (arg: SolidNameOrPath) => {
-    handleAdjustPath((solidNames) => {
+  const handleClickOp = (arg: OpNameOrPath) => {
+    handleAdjustPath((opNames) => {
       if ('name' in arg) {
-        solidNames[solidNames.length ? solidNames.length - 1 : 0] = arg.name;
+        opNames[opNames.length ? opNames.length - 1 : 0] = arg.name;
       } else {
         if (arg.path[0] !== '..') {
-          solidNames.length = 0;
+          opNames.length = 0;
         }
-        if (arg.path[0] === '..' && solidNames[solidNames.length - 1] !== '') {
-          solidNames.pop(); // remove the last path component indicating selection
+        if (arg.path[0] === '..' && opNames[opNames.length - 1] !== '') {
+          opNames.pop(); // remove the last path component indicating selection
         }
         while (arg.path[0] === '..') {
           arg.path.shift();
-          solidNames.pop();
+          opNames.pop();
         }
-        solidNames.push(...arg.path);
+        opNames.push(...arg.path);
       }
     });
   };
 
-  const handleEnterCompositeSolid = (arg: SolidNameOrPath) => {
+  const handleEnterCompositeSolid = (arg: OpNameOrPath) => {
     // To animate the rect of the composite solid expanding correctly, we need
     // to select it before entering it so we can draw the "initial state" of the
     // labeled rectangle.
-    handleClickSolid(arg);
+    handleClickOp(arg);
 
     window.requestAnimationFrame(() => {
-      handleAdjustPath((solidNames) => {
+      handleAdjustPath((opNames) => {
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
-        solidNames[solidNames.length - 1] = last;
-        solidNames.push('');
+        opNames[opNames.length - 1] = last;
+        opNames.push('');
       });
     });
   };
 
   const handleLeaveCompositeSolid = () => {
-    handleAdjustPath((solidNames) => {
-      solidNames.pop();
+    handleAdjustPath((opNames) => {
+      opNames.pop();
     });
   };
 
   const handleClickBackground = () => {
-    handleClickSolid({name: ''});
+    handleClickOp({name: ''});
   };
 
-  const {solidsQuery} = explorerPath;
+  const {opsQuery} = explorerPath;
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
   const explodeCompositesEnabled =
@@ -132,13 +132,13 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultSolids = React.useMemo(
-    () => (solidsQueryEnabled ? filterByQuery(solids, solidsQuery) : {all: solids, focus: []}),
-    [solidsQuery, solids, solidsQueryEnabled],
+  const queryResultOps = React.useMemo(
+    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
+    [opsQuery, solids, solidsQueryEnabled],
   );
 
-  const {all} = queryResultSolids;
-  const highlightedSolids = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
+  const {all} = queryResultOps;
+  const highlightedOps = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
     highlighted,
     all,
   ]);
@@ -154,21 +154,21 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
         <>
           <PathOverlay style={{background: backgroundTranslucent}}>
             <Breadcrumbs
-              items={explorerPath.pathSolids.map((name, idx) => {
+              items={explorerPath.opNames.map((name, idx) => {
                 return {
                   text: name,
                   onClick: () =>
                     onChangeExplorerPath(
-                      {...explorerPath, pathSolids: explorerPath.pathSolids.slice(0, idx + 1)},
+                      {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
                       'push',
                     ),
                 };
               })}
               currentBreadcrumbRenderer={() => (
-                <SolidJumpBar
-                  solids={queryResultSolids.all}
-                  selectedSolid={selectedHandle && selectedHandle.solid}
-                  onChange={(solid) => handleClickSolid({name: solid.name})}
+                <OpJumpBar
+                  ops={queryResultOps.all}
+                  selectedOp={selectedHandle && selectedHandle.solid}
+                  onChange={(solid) => handleClickOp({name: solid.name})}
                 />
               )}
             />
@@ -177,7 +177,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <PipelineGraphQueryInputContainer>
               <GraphQueryInput
                 items={solids}
-                value={explorerPath.solidsQuery}
+                value={explorerPath.opsQuery}
                 placeholder="Type an op subset…"
                 onChange={handleQueryChange}
               />
@@ -210,20 +210,20 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
           )}
           {solids.length === 0 ? <EmptyDAGNotice isGraph={isGraph} /> : null}
           {solids.length > 0 &&
-            queryResultSolids.all.length === 0 &&
-            !explorerPath.solidsQuery.length && <LargeDAGNotice />}
+            queryResultOps.all.length === 0 &&
+            !explorerPath.opsQuery.length && <LargeDAGNotice />}
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
             backgroundColor={backgroundColor}
-            solids={queryResultSolids.all}
-            focusSolids={queryResultSolids.focus}
-            highlightedSolids={highlightedSolids}
+            ops={queryResultOps.all}
+            focusOps={queryResultOps.focus}
+            highlightedOps={highlightedOps}
             selectedHandle={selectedHandle}
             parentHandle={parentHandle}
-            onClickSolid={handleClickSolid}
+            onClickOp={handleClickOp}
             onClickBackground={handleClickBackground}
-            onEnterCompositeSolid={handleEnterCompositeSolid}
-            onLeaveCompositeSolid={handleLeaveCompositeSolid}
+            onEnterSubgraph={handleEnterCompositeSolid}
+            onLeaveSubgraph={handleLeaveCompositeSolid}
           />
         </>
       }
@@ -235,11 +235,11 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               <SidebarTabbedContainer
                 pipeline={pipelineOrGraph}
                 explorerPath={explorerPath}
-                solidHandleID={selectedHandle && selectedHandle.handleID}
-                parentSolidHandleID={parentHandle && parentHandle.handleID}
+                opHandleID={selectedHandle && selectedHandle.handleID}
+                parentOpHandleID={parentHandle && parentHandle.handleID}
                 getInvocations={getInvocations}
-                onEnterCompositeSolid={handleEnterCompositeSolid}
-                onClickSolid={handleClickSolid}
+                onEnterSubgraph={handleEnterCompositeSolid}
+                onClickOp={handleClickOp}
                 repoAddress={repoAddress}
                 isGraph={isGraph}
                 {...querystring.parse(location.search || '')}
@@ -267,10 +267,10 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
     handleID
     solid {
       name
-      ...PipelineGraphSolidFragment
+      ...PipelineGraphOpFragment
     }
   }
-  ${PIPELINE_GRAPH_SOLID_FRAGMENT}
+  ${PIPELINE_GRAPH_OP_FRAGMENT}
 `;
 
 const RightInfoPanel = styled.div`

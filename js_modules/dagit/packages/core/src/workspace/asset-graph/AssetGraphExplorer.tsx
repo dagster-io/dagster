@@ -56,7 +56,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       onChangeExplorerPath(
         {
           ...explorerPath,
-          pathSolids: node ? [node.definition.opName!] : [],
+          opNames: node ? [node.definition.opName!] : [],
           pipelineName: node?.definition.jobName || explorerPath.pipelineName,
         },
         'replace',

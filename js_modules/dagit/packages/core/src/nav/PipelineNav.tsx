@@ -61,7 +61,7 @@ function tabForPipelinePathComponent(component?: string): TabConfig {
 const tabForKey = (repoAddress: RepoAddress, isJob: boolean, explorerPath: ExplorerPath) => {
   const explorerPathForTab = explorerPathToString({
     ...explorerPath,
-    pathSolids: [],
+    opNames: [],
   });
 
   // When you click one of the top tabs, it resets the snapshot you may be looking at

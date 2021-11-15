@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
-import {SolidColumn, SolidColumnContainer} from '../runs/LogsRowComponents';
+import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
@@ -13,18 +13,18 @@ import {FontFamily} from '../ui/styles';
 
 import {SectionHeader} from './SidebarComponents';
 
-type SolidLinkInfo = {
+type OpLinkInfo = {
   solid: {name: string};
   definition: {name: string};
 };
 
-export interface SidebarSolidInvocationInfo {
+export interface SidebarOpInvocationInfo {
   handleID: string;
   pipelineName?: string;
 }
 
-export type SolidMappingTable = {
-  [key: string]: SolidLinkInfo[];
+export type OpMappingTable = {
+  [key: string]: OpLinkInfo[];
 };
 
 export const ShowAllButton = styled.button`
@@ -40,32 +40,29 @@ export const TypeWrapper = styled.div`
   margin-bottom: 10px;
 `;
 
-const SolidLink = (props: SolidLinkInfo) => (
+const OpLink = (props: OpLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
     <Code>{titleOfIO(props)}</Code>
   </Link>
 );
 
-export const SolidLinks = (props: {title: string; items: SolidLinkInfo[]}) =>
+export const OpLinks = (props: {title: string; items: OpLinkInfo[]}) =>
   props.items && props.items.length ? (
     <Text>
       {props.title}
       {props.items.map((i, idx) => (
-        <SolidLink key={idx} {...i} />
+        <OpLink key={idx} {...i} />
       ))}
     </Text>
   ) : null;
 
-export const Invocation = (props: {
-  invocation: SidebarSolidInvocationInfo;
-  onClick: () => void;
-}) => {
+export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick: () => void}) => {
   const {handleID, pipelineName} = props.invocation;
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
       {pipelineName && <div style={{color: ColorsWIP.Blue700}}>{pipelineName}</div>}
-      <SolidColumn stepKey={handlePath.join('.')} />
+      <OpColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
 };
@@ -75,20 +72,20 @@ export const DependencyRow = ({
   to,
   isDynamic,
 }: {
-  from: SolidLinkInfo | string;
-  to: SolidLinkInfo | string;
+  from: OpLinkInfo | string;
+  to: OpLinkInfo | string;
   isDynamic: boolean | null;
 }) => {
   return (
     <tr>
-      <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
+      <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Group direction="row" spacing={2} alignItems="center">
           {isDynamic && <IconWIP name="op_dynamic" color={ColorsWIP.Gray700} />}
           <IconWIP name="arrow_forward" color={ColorsWIP.Gray700} />
         </Group>
       </td>
-      <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <SolidLink {...to} />}</Cell>
+      <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
     </tr>
   );
 };
@@ -155,7 +152,7 @@ const InvocationContainer = styled.div`
 
   font-family: ${FontFamily.monospace};
 
-  ${SolidColumnContainer} {
+  ${OpColumnContainer} {
     margin-left: -12px;
   }
 `;

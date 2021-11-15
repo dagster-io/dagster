@@ -3,14 +3,14 @@ import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker.ts';
 
 import {asyncMemoize} from '../app/Util';
 
-import {ILayoutSolid, layoutPipeline} from './layout';
+import {ILayoutOp, layoutPipeline} from './layout';
 
 // Loads the web worker using the Webpack loader `worker-loader`, specifying the import inline.
 // This allows us to use web workers without ejecting from `create-react-app` (in order to use the
 // config).  We need both worker-loader (wraps the worker code) and babel-loader (transpiles from
 // TypeScript to target ES5) in order to keep worker code in sync with our existing libraries.
 
-const _layoutCacheKey = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
+const _layoutCacheKey = (solids: ILayoutOp[], parentSolid?: ILayoutOp) => {
   const solidKey = solids.map((x) => x.name).join('|');
   const parentKey = parentSolid?.name;
   return `${solidKey}:${parentKey}`;
@@ -18,7 +18,7 @@ const _layoutCacheKey = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => 
 
 export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 
-const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
+const _asyncDagrePipelineLayout = (solids: ILayoutOp[], parentSolid?: ILayoutOp) => {
   return new Promise((resolve) => {
     const worker = new LayoutWorker();
     worker.addEventListener('message', (event) => {
@@ -31,10 +31,10 @@ const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayout
 
 export const asyncDagrePipelineLayout = asyncMemoize(_asyncDagrePipelineLayout, _layoutCacheKey);
 
-export {layoutSolid} from './layout';
+export {layoutOp} from './layout';
 export type {
   IFullPipelineLayout,
-  IFullSolidLayout,
+  IFullOpLayout,
   ILayout,
   ILayoutConnection,
   IPoint,

@@ -1,13 +1,13 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraph} from './PipelineGraph';
 import {SVGViewport} from './SVGViewport';
-import {getDagrePipelineLayout} from './getFullSolidLayout';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {getDagrePipelineLayout} from './getFullOpLayout';
+import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -21,9 +21,9 @@ const IO_TYPE = {
 } as const;
 
 interface Edge {
-  fromSolid: string;
+  fromOp: string;
   fromIO: string;
-  toSolid: string;
+  toOp: string;
   toIO: string;
 }
 
@@ -32,12 +32,12 @@ function buildEdge(descriptor: string): Edge {
   if (!match) {
     throw new Error(`Cannot parse ${descriptor}`);
   }
-  const [_, fromSolid, fromIO, toSolid, toIO] = match;
-  return {fromSolid, fromIO, toSolid, toIO};
+  const [_, fromOp, fromIO, toOp, toIO] = match;
+  return {fromOp, fromIO, toOp, toIO};
 }
 
 function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], edges: Edge[]) {
-  const result: PipelineGraphSolidFragment = {
+  const result: PipelineGraphOpFragment = {
     __typename: 'Solid',
     name: sname,
     definition: {
@@ -63,20 +63,20 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
       definition: {__typename: 'InputDefinition', name: iname},
       isDynamicCollect: false,
       dependsOn: edges
-        .filter((e) => e.toSolid === sname && e.toIO === iname)
+        .filter((e) => e.toOp === sname && e.toIO === iname)
         .map((o) => ({
           __typename: 'Output',
-          solid: {name: o.fromSolid, __typename: 'Solid'},
+          solid: {name: o.fromOp, __typename: 'Solid'},
           definition: {__typename: 'OutputDefinition', name: o.fromIO, type: IO_TYPE},
         })),
     })),
     outputs: outs.map((oname) => ({
       __typename: 'Output',
       dependedBy: edges
-        .filter((e) => e.fromSolid === sname && e.fromIO === oname)
+        .filter((e) => e.fromOp === sname && e.fromIO === oname)
         .map((o) => ({
           __typename: 'Input',
-          solid: {name: o.toSolid, __typename: 'Solid'},
+          solid: {name: o.toOp, __typename: 'Solid'},
           definition: {__typename: 'InputDefinition', name: o.toIO, type: IO_TYPE},
         })),
       definition: {__typename: 'OutputDefinition', name: oname},
@@ -89,68 +89,68 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
 function buildBasicDAG() {
   const edges = ['A:out=>B:in', 'B:out1=>C:in', 'B:out2=>D:in1', 'C:out=>D:in2'].map(buildEdge);
 
-  const solids: PipelineGraphSolidFragment[] = [
+  const ops: PipelineGraphOpFragment[] = [
     buildGraphSolidFragment('A', [], ['out'], edges),
     buildGraphSolidFragment('B', ['in'], ['out1', 'out2'], edges),
     buildGraphSolidFragment('C', ['in'], ['out'], edges),
     buildGraphSolidFragment('D', ['in1', 'in2'], [], edges),
   ];
-  return solids;
+  return ops;
 }
 
 export const Basic = () => {
-  const [focusSolids, setFocusSolids] = React.useState<string[]>([]);
-  const solids = buildBasicDAG();
+  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const ops = buildBasicDAG();
 
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
-      solids={solids}
-      layout={getDagrePipelineLayout(solids)}
+      ops={ops}
+      layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
-      focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
-      highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
+      highlightedOps={[]}
+      onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
 
 export const FanOut = () => {
-  const [focusSolids, setFocusSolids] = React.useState<string[]>([]);
+  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
 
   const edges = [];
   for (let ii = 0; ii < 60; ii++) {
     edges.push(buildEdge(`A:out=>B${ii}:in`));
     edges.push(buildEdge(`B${ii}:out=>C:in`));
   }
-  const solids: PipelineGraphSolidFragment[] = [];
-  solids.push(buildGraphSolidFragment('A', ['in'], ['out'], edges));
-  solids.push(buildGraphSolidFragment('C', ['in'], ['out'], edges));
+  const ops: PipelineGraphOpFragment[] = [];
+  ops.push(buildGraphSolidFragment('A', ['in'], ['out'], edges));
+  ops.push(buildGraphSolidFragment('C', ['in'], ['out'], edges));
   for (let ii = 0; ii < 60; ii++) {
-    solids.push(buildGraphSolidFragment(`B${ii}`, ['in'], ['out'], edges));
+    ops.push(buildGraphSolidFragment(`B${ii}`, ['in'], ['out'], edges));
   }
 
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
-      solids={solids}
-      layout={getDagrePipelineLayout(solids)}
+      ops={ops}
+      layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
-      focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
-      highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
+      highlightedOps={[]}
+      onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
 
 export const Tagged = () => {
-  const [focusSolids, setFocusSolids] = React.useState<string[]>([]);
-  const solids = buildBasicDAG();
+  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const ops = buildBasicDAG();
 
   ['ipynb', 'sql', 'verylongtypename', 'story'].forEach((kind, idx) =>
-    solids[idx].definition.metadata.push({
+    ops[idx].definition.metadata.push({
       key: 'kind',
       value: kind,
       __typename: 'MetadataItemDefinition',
@@ -161,24 +161,24 @@ export const Tagged = () => {
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
-      solids={solids}
-      layout={getDagrePipelineLayout(solids)}
+      ops={ops}
+      layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
-      focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
-      highlightedSolids={[]}
-      onClickSolid={(s) => setFocusSolids(['name' in s ? s.name : s.path.join('.')])}
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
+      highlightedOps={[]}
+      onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
     />
   );
 };
 
 export const Composite = () => {
-  const [focusSolids, setFocusSolids] = React.useState<string[]>([]);
-  const [parentSolidName, setParentSolidName] = React.useState<string | undefined>();
-  const solids = buildBasicDAG();
-  const composite = solids.find((s) => s.name === 'C')!;
+  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const [parentOpName, setParentOpName] = React.useState<string | undefined>();
+  const ops = buildBasicDAG();
+  const composite = ops.find((s) => s.name === 'C')!;
 
   const edges = [buildEdge(`CA:out=>CB:in`)];
-  const childSolids = [
+  const childOps = [
     buildGraphSolidFragment(`CA`, ['in'], ['out'], edges),
     buildGraphSolidFragment(`CB`, ['in'], ['out'], edges),
   ];
@@ -193,8 +193,8 @@ export const Composite = () => {
         definition: composite.definition.inputDefinitions[0],
         mappedInput: {
           __typename: 'Input',
-          solid: childSolids[0],
-          definition: childSolids[0].definition.inputDefinitions[0],
+          solid: childOps[0],
+          definition: childOps[0].definition.inputDefinitions[0],
         },
       },
     ],
@@ -204,38 +204,34 @@ export const Composite = () => {
         definition: composite.definition.outputDefinitions[0],
         mappedOutput: {
           __typename: 'Output',
-          solid: childSolids[1],
-          definition: childSolids[1].definition.outputDefinitions[0],
+          solid: childOps[1],
+          definition: childOps[1].definition.outputDefinitions[0],
         },
       },
     ],
   };
 
-  const toName = (s: SolidNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
-  const parentSolid = solids.find((s) => s.name === parentSolidName);
+  const toName = (s: OpNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
+  const parentOp = ops.find((s) => s.name === parentOpName);
 
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
-      solids={parentSolid ? childSolids : solids}
-      parentSolid={parentSolid}
-      parentHandleID={parentSolidName}
-      layout={
-        parentSolid
-          ? getDagrePipelineLayout(childSolids, parentSolid)
-          : getDagrePipelineLayout(solids)
-      }
+      ops={parentOp ? childOps : ops}
+      parentOp={parentOp}
+      parentHandleID={parentOpName}
+      layout={parentOp ? getDagrePipelineLayout(childOps, parentOp) : getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
-      focusSolids={solids.filter((s) => focusSolids.includes(s.name))}
-      highlightedSolids={[]}
-      onClickSolid={(nameOrPath) => setFocusSolids([toName(nameOrPath)])}
-      onEnterCompositeSolid={(nameOrPath) => setParentSolidName(toName(nameOrPath))}
-      onLeaveCompositeSolid={() => setParentSolidName(undefined)}
-      onDoubleClickSolid={(nameOrPath) => {
-        const solid = solids.find((s) => s.name === toName(nameOrPath));
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
+      highlightedOps={[]}
+      onClickOp={(nameOrPath) => setsetFocusOps([toName(nameOrPath)])}
+      onEnterSubgraph={(nameOrPath) => setParentOpName(toName(nameOrPath))}
+      onLeaveSubgraph={() => setParentOpName(undefined)}
+      onDoubleClickOp={(nameOrPath) => {
+        const solid = ops.find((s) => s.name === toName(nameOrPath));
         if (solid?.definition.__typename === 'CompositeSolidDefinition') {
-          setParentSolidName(solid.name);
+          setParentOpName(solid.name);
         }
       }}
     />

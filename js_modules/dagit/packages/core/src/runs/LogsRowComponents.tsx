@@ -70,17 +70,17 @@ export const StructuredContent = styled.div`
 // Manually implements middle text truncation since we can count on monospace font
 // rendering being fairly consistent.
 //
-export const SolidColumn = (props: {stepKey: string | false | null}) => {
+export const OpColumn = (props: {stepKey: string | false | null}) => {
   const widths = React.useContext(ColumnWidthsContext);
   const parts = String(props.stepKey).split('.');
   return (
-    <SolidColumnContainer style={{width: widths.solid}}>
+    <OpColumnContainer style={{width: widths.solid}}>
       {props.stepKey
         ? parts.map((p, idx) => (
             <div
               key={idx}
               data-tooltip={p}
-              data-tooltip-style={SolidColumnTooltipStyle}
+              data-tooltip-style={OpColumnTooltipStyle}
               style={{
                 marginLeft: Math.max(0, idx * 15 - 9),
                 fontWeight: idx === parts.length - 1 ? 600 : 300,
@@ -93,17 +93,17 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
             </div>
           ))
         : '-'}
-    </SolidColumnContainer>
+    </OpColumnContainer>
   );
 };
 
-export const SolidColumnContainer = styled.div`
+export const OpColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
   padding: 4px 12px;
 `;
 
-const SolidColumnTooltipStyle = JSON.stringify({
+const OpColumnTooltipStyle = JSON.stringify({
   fontSize: '0.9em',
   fontFamily: FontFamily.monospace,
   color: ColorsWIP.Dark,

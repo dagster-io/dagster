@@ -34,7 +34,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const {pipelineName, snapshotId} = explorerPath;
   const explorerPathString = explorerPathToString({
     ...explorerPath,
-    pathSolids: [],
+    opNames: [],
   });
 
   const currentPipelineState = useActivePipelineForName(pipelineName);

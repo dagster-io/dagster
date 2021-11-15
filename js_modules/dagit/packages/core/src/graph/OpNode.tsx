@@ -6,17 +6,17 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
-import {SolidIOBox, metadataForIO} from './SolidIOBox';
-import {SolidTags, ISolidTag} from './SolidTags';
-import {IFullSolidLayout, ILayout} from './getFullSolidLayout';
+import {OpIOBox, metadataForIO} from './OpIOBox';
+import {OpTags, IOpTag} from './OpTags';
+import {IFullOpLayout, ILayout} from './getFullOpLayout';
 import {Edge} from './highlighting';
-import {SolidNodeDefinitionFragment} from './types/SolidNodeDefinitionFragment';
-import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
+import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
+import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
-interface ISolidNodeProps {
-  layout: IFullSolidLayout;
-  invocation?: SolidNodeInvocationFragment;
-  definition: SolidNodeDefinitionFragment;
+interface IOpNodeProps {
+  layout: IFullOpLayout;
+  invocation?: OpNodeInvocationFragment;
+  definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
@@ -33,8 +33,8 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 5,
 });
 
-export class SolidNode extends React.Component<ISolidNodeProps> {
-  shouldComponentUpdate(prevProps: ISolidNodeProps) {
+export class OpNode extends React.Component<IOpNodeProps> {
+  shouldComponentUpdate(prevProps: IOpNodeProps) {
     if (prevProps.dim !== this.props.dim) {
       return true;
     }
@@ -97,7 +97,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
       configField = definition.configField;
     }
 
-    const tags: ISolidTag[] = [];
+    const tags: IOpTag[] = [];
 
     const kind = metadata.find((m) => m.key === 'kind');
     const composite = definition.__typename === 'CompositeSolidDefinition';
@@ -119,23 +119,23 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         onDoubleClick={this.handleDoubleClick}
       >
         <div className="highlight-box" style={{...position(layout.boundingBox)}} />
-        {composite && <div className="composite-marker" style={{...position(layout.solid)}} />}
+        {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
 
         {invocation?.isDynamicMapped && (
-          <div className="dynamic-marker" style={{...position(layout.solid)}} />
+          <div className="dynamic-marker" style={{...position(layout.op)}} />
         )}
 
         {configField && configField.configType.key !== 'Any' && (
           <div
             className="config-marker"
-            style={{left: layout.solid.x + layout.solid.width, top: layout.solid.y}}
+            style={{left: layout.op.x + layout.op.width, top: layout.op.y}}
           >
             {minified ? 'C' : 'Config'}
           </div>
         )}
 
         {definition.inputDefinitions.map((item, idx) => (
-          <SolidIOBox
+          <OpIOBox
             {...this.props}
             {...metadataForIO(item, invocation)}
             key={idx}
@@ -146,7 +146,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         ))}
 
         {definition.outputDefinitions.map((item, idx) => (
-          <SolidIOBox
+          <OpIOBox
             {...this.props}
             {...metadataForIO(item, invocation)}
             key={idx}
@@ -156,7 +156,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
           />
         ))}
 
-        <div className="node-box" style={{...position(layout.solid)}}>
+        <div className="node-box" style={{...position(layout.op)}}>
           <div
             className="name"
             data-tooltip={invocation ? invocation.name : definition.name}
@@ -171,10 +171,10 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         </div>
 
         {tags.length > 0 && (
-          <SolidTags
+          <OpTags
             style={{
-              left: layout.solid.x + layout.solid.width,
-              top: layout.solid.y + layout.solid.height,
+              left: layout.op.x + layout.op.width,
+              top: layout.op.y + layout.op.height,
               transform: 'translate(-100%, 3px)',
             }}
             minified={minified}
@@ -186,8 +186,8 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
   }
 }
 
-export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
-  fragment SolidNodeInvocationFragment on Solid {
+export const OP_NODE_INVOCATION_FRAGMENT = gql`
+  fragment OpNodeInvocationFragment on Solid {
     name
     isDynamicMapped
     inputs {
@@ -226,8 +226,8 @@ export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
   }
 `;
 
-export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
-  fragment SolidNodeDefinitionFragment on ISolidDefinition {
+export const OP_NODE_DEFINITION_FRAGMENT = gql`
+  fragment OpNodeDefinitionFragment on ISolidDefinition {
     __typename
     name
     description

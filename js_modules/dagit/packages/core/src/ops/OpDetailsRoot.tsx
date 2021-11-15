@@ -3,20 +3,20 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {
-  SidebarSolidDefinition,
+  SidebarOpDefinition,
   SIDEBAR_SOLID_DEFINITION_FRAGMENT,
-} from '../pipelines/SidebarSolidDefinition';
-import {SidebarSolidInvocationInfo} from '../pipelines/SidebarSolidHelpers';
+} from '../pipelines/SidebarOpDefinition';
+import {SidebarOpInvocationInfo} from '../pipelines/SidebarOpHelpers';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {SolidCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from './SolidCard';
+import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
 import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
 
 interface UsedSolidDetailsProps {
   name: string;
-  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
   repoAddress: RepoAddress;
 }
 
@@ -40,10 +40,10 @@ export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
         const usedSolid = repositoryOrError.usedSolid;
         return (
           <>
-            <SolidCard definition={usedSolid.definition} />
-            <SidebarSolidDefinition
+            <OpCard definition={usedSolid.definition} />
+            <SidebarOpDefinition
               definition={usedSolid.definition}
-              showingSubsolids={false}
+              showingSubgraph={false}
               onClickInvocation={onClickInvocation}
               getInvocations={() => {
                 return usedSolid.invocations.map((i) => ({
@@ -67,8 +67,8 @@ const USED_SOLID_DETAILS_QUERY = gql`
         usedSolid(name: $name) {
           __typename
           definition {
-            ...SolidCardSolidDefinitionFragment
-            ...SidebarSolidDefinitionFragment
+            ...OpCardSolidDefinitionFragment
+            ...SidebarOpDefinitionFragment
           }
           invocations {
             __typename
@@ -85,11 +85,11 @@ const USED_SOLID_DETAILS_QUERY = gql`
     }
   }
 
-  ${SOLID_CARD_SOLID_DEFINITION_FRAGMENT}
+  ${OP_CARD_SOLID_DEFINITION_FRAGMENT}
   ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
 `;
 
-export const SolidDetailScrollContainer = styled.div`
+export const OpDetailScrollContainer = styled.div`
   overflow: scroll;
   flex: 1;
 `;

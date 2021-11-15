@@ -50,8 +50,8 @@ export const PipelineExplorerContainer: React.FC<{
     explodeComposites: false,
   });
 
-  const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
-  const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
+  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
+  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
 
@@ -100,7 +100,7 @@ export const PipelineExplorerContainer: React.FC<{
           onChangeExplorerPath(
             {
               ...explorerPath,
-              pathSolids: explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1),
+              opNames: explorerPath.opNames.slice(0, explorerPath.opNames.length - 1),
             },
             'replace',
           );
@@ -116,18 +116,18 @@ export const PipelineExplorerContainer: React.FC<{
         );
 
         if (flagAssetGraph && isAssetGraph) {
-          const unrepresentedSolids = result.solidHandles.filter(
+          const unrepresentedOps = result.solidHandles.filter(
             (handle) =>
               !repositoryAssets.some(
                 (asset) =>
                   asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
               ),
           );
-          if (unrepresentedSolids.length) {
+          if (unrepresentedOps.length) {
             console.error(
               `The following ops are not represented in the ${
                 explorerPath.pipelineName
-              } asset graph: ${unrepresentedSolids.map((h) => h.solid.name).join(', ')}`,
+              } asset graph: ${unrepresentedOps.map((h) => h.solid.name).join(', ')}`,
             );
           }
           return (
