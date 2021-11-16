@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, SolidDefinition
+from dagster import AssetKey, DagsterInvalidDefinitionError, SolidDefinition, String
 from dagster.core.asset_defs import AssetIn, asset
 
 
@@ -30,6 +30,14 @@ def test_asset_with_compute_kind():
         return arg1
 
     assert my_asset.tags == {"kind": "sql"}
+
+
+def test_asset_with_dagster_type():
+    @asset(dagster_type=String)
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.output_defs[0].dagster_type.display_name == "String"
 
 
 def test_asset_with_inputs_and_namespace():
