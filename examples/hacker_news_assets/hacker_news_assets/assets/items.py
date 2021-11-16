@@ -4,6 +4,7 @@ from typing import Tuple
 
 from dagster import Output
 from dagster.core.asset_defs import asset
+from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
@@ -31,6 +32,7 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
     description="Items from the Hacker News API: each is a story or a comment on a story.",
+    partitions_def=hourly_partitions,
 )
 def items(context, id_range_for_time: Tuple[int, int]):
     """
