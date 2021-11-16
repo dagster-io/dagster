@@ -134,6 +134,7 @@ class DagitWebserver(GraphQLServer):
             return Route(
                 file_path,
                 lambda _: FileResponse(path=self.relative_path(f"webapp/build{file_path}")),
+                name="root_static",
             )
 
         return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]
