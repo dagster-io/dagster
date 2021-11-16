@@ -11,8 +11,6 @@
 export interface LogTelemetryMutation_logTelemetry_LogTelemetrySuccess {
   __typename: "LogTelemetrySuccess";
   action: string;
-  metadata: string;
-  clientTime: string;
 }
 
 export interface LogTelemetryMutation_logTelemetry_PythonError {

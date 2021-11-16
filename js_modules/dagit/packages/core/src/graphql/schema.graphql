@@ -1758,8 +1758,6 @@ union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
 type LogTelemetrySuccess {
   action: String!
-  metadata: String!
-  clientTime: String!
 }
 
 type Subscription {

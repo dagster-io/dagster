@@ -5,8 +5,6 @@ const LOG_TELEMETRY_MUTATION = gql`
     logTelemetry(action: $action, metadata: $metadata, clientTime: $clientTime) {
       ... on LogTelemetrySuccess {
         action
-        metadata
-        clientTime
       }
       ... on PythonError {
         message

@@ -476,8 +476,6 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     action = graphene.NonNull(graphene.String)
-    metadata = graphene.NonNull(graphene.String)
-    clientTime = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "LogTelemetrySuccess"
@@ -505,12 +503,13 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
 
     @capture_error
     def mutate(self, graphene_info, **kwargs):
-        log_dagit_telemetry_event(
+        action = log_dagit_telemetry_event(
             graphene_info,
             action=kwargs["action"],
             client_time=kwargs["clientTime"],
             metadata=kwargs["metadata"],
         )
+        return action
 
 
 class GrapheneMutation(graphene.ObjectType):

@@ -562,6 +562,8 @@ class DagsterInstance:
 
         if "enabled" in telemetry_settings:
             return telemetry_settings["enabled"]
+        elif "experimental_dagit" in telemetry_settings:
+            return telemetry_settings["experimental_dagit"]
         else:
             return dagster_telemetry_enabled_default
 

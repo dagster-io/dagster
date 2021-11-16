@@ -66,7 +66,9 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
   });
   const logButtonClick = useTelemetryAction("Clicked LaunchPad Button");
   const onClick = () => {
-    logButtonClick()
+    const result = logButtonClick()
+    console.log("BUTTON HAS BEEN CLICKED")
+    console.log(result)
     status === LaunchButtonStatus.Ready && onConfigSelected(config);
   };
   return (
