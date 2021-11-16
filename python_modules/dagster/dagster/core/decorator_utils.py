@@ -67,7 +67,7 @@ def format_docstring_for_description(fn: Callable) -> Optional[str]:
             else:
                 return (
                     docstring[: first_newline_pos + 1]
-                    + textwrap.dedent(docstring[first_newline_pos + 1 :]).strip()
-                )
+                    + textwrap.dedent(docstring[first_newline_pos + 1 :])
+                ).strip()
     else:
         return None
