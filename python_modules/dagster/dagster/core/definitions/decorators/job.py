@@ -76,8 +76,8 @@ class _Job:
             positional_inputs=positional_inputs,
             tags=self.tags,
         )
-        update_wrapper(graph_def, fn)
-        return graph_def.to_job(
+
+        job_def = graph_def.to_job(
             description=self.description or format_docstring_for_description(fn),
             resource_defs=self.resource_defs,
             config=self.config,
@@ -87,6 +87,8 @@ class _Job:
             hooks=self.hooks,
             version_strategy=self.version_strategy,
         )
+        update_wrapper(job_def, fn)
+        return job_def
 
 
 def job(
