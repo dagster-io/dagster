@@ -64,9 +64,9 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     runCount,
     disabled: config.disabled,
   });
-  const [telemetryRequest] = useTelemetryAction("Clicked LaunchPad Button");
+  const logButtonClick = useTelemetryAction("Clicked LaunchPad Button");
   const onClick = () => {
-    telemetryRequest()
+    logButtonClick()
     status === LaunchButtonStatus.Ready && onConfigSelected(config);
   };
   return (

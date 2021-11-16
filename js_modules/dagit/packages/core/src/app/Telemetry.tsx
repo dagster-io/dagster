@@ -23,5 +23,6 @@ export const useTelemetryAction = (action: string, metadata: {[key: string]: str
         variables: {action: action, metadata: metadataString, clientTime: clientTime},
       });
 
-    return telemetryRequest;
+    const [loggedAction] = telemetryRequest;
+    return loggedAction;
 }
