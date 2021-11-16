@@ -74,3 +74,19 @@ def test_non_reconstructable_job_error():
         match="you must wrap the ``to_job`` call in a function at module scope",
     ):
         reconstructable(basic_job)
+
+
+@job
+def my_namespace_job():
+    @op
+    def inner_op():
+        pass
+
+    inner_op()
+
+
+def test_reconstructable_job_namespace():
+    with instance_for_test() as instance:
+        result = execute_pipeline(reconstructable(my_namespace_job), instance=instance)
+
+        assert result.success
