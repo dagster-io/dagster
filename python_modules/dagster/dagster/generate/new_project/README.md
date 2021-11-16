@@ -76,5 +76,5 @@ pytest {{ repo_name }}_tests
 As you create Dagster ops and graphs, add tests in `{{ repo_name }}_tests/` to check that your
 code behaves as desired and does not break over time.
 
-[For hints on how to write tests for ops and graphs in Dagster,
+For hints on how to write tests for ops and graphs in Dagster,
 [see our documentation tutorial on Testing](https://docs.dagster.io/tutorial/testable).
