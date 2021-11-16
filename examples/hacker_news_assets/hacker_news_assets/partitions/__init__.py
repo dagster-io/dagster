@@ -1,5 +1,5 @@
 from datetime import datetime
 
-from dagster import hourly_partitions_def
+from dagster import HourlyPartitionsDefinition
 
-hourly_partitions = hourly_partitions_def(start_date=datetime(2020, 12, 1))
+hourly_partitions = HourlyPartitionsDefinition(start_date=datetime(2020, 12, 1))

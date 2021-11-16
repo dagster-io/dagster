@@ -59,11 +59,11 @@ def items(context, id_range_for_time: Tuple[int, int]):
     )
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def comments(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "comment")
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def stories(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "stories")
