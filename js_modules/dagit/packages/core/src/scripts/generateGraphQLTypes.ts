@@ -47,7 +47,7 @@ writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possi
 console.log('Generating TypeScript types...');
 
 execSync(
-  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python3 append_generated.py',
+  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts',
   {stdio: 'inherit'},
 );
 
