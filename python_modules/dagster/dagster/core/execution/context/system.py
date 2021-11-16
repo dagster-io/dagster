@@ -457,6 +457,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
                 return True
 
+        # source is skipped so cannot load
+        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_SKIPPED):
+            if step_output_handle.step_key == record.dagster_event.step_key:
+                return False
+
         # can load from a previous run
         if self._get_source_run_id_from_logs(step_output_handle):
             return True

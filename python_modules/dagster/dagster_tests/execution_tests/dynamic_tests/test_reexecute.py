@@ -1,12 +1,19 @@
+from typing import List
+
 import pytest
 from dagster import (
     DynamicOutput,
     DynamicOutputDefinition,
     execute_pipeline,
+    job,
+    op,
     pipeline,
+    reconstructable,
     reexecute_pipeline,
     solid,
 )
+from dagster.core.definitions.events import Output
+from dagster.core.definitions.output import DynamicOut, Out
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
@@ -139,3 +146,48 @@ def test_reexec_from_parent_3():
         assert reexec_result.result_for_solid("multiply_by_two").output_value() == {
             "2": 40,
         }
+
+
+def dynamic_job():
+    @op
+    def echo(x):
+        return x
+
+    @op
+    def adder(ls: List[int]) -> int:
+        return sum(ls)
+
+    @op(out=Out(is_required=False))
+    def add_one(context, i: int) -> int:
+        if (
+            context.pipeline_run.parent_run_id
+            and i % 2 == 0  # re-execution run skipped odd numbers
+            or not context.pipeline_run.parent_run_id
+            and i % 2 == 1  # root run skipped even numbers
+        ):
+            yield Output(i + 1)
+
+    @op(out=DynamicOut())
+    def dynamic_op():
+        for i in range(10):
+            yield DynamicOutput(value=i, mapping_key=str(i))
+
+    @job
+    def _dynamic_job():
+        dynamic_results = dynamic_op().map(lambda n: echo(add_one(n)))
+        adder(dynamic_results.collect())
+
+    return _dynamic_job
+
+
+def test_reexec_all_dynamic_with_partial_skip_fan_in():
+    with instance_for_test() as instance:
+        result = dynamic_job().execute_in_process(instance=instance)
+        assert result.success
+        assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
+
+        re_result = reexecute_pipeline(
+            reconstructable(dynamic_job), parent_run_id=result.run_id, instance=instance
+        )
+        assert re_result.success
+        assert re_result.output_for_solid("adder") == sum([i + 1 for i in range(10) if i % 2 == 0])
