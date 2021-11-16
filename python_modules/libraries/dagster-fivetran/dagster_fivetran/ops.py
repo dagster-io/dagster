@@ -5,6 +5,7 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 
 
 @op(
+    required_resource_keys={"fivetran"},
     ins={"start_after": In(Nothing)},
     out=Out(
         dict,
@@ -32,7 +33,7 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
             "default, this will never time out.",
         ),
     },
-    required_resource_keys={"fivetran"},
+    tags={"kind": "fivetran"},
 )
 def fivetran_sync_op(context) -> Dict[str, Any]:
     """

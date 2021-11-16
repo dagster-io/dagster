@@ -467,7 +467,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         from dagster import job
         from dagster_dbt import dbt_cloud_resource
 
-        my_dbt_cloud_resource = fivetran_resource.configured(
+        my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
                 "account_id": 30000,

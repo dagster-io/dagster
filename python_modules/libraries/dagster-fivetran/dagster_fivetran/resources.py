@@ -53,8 +53,11 @@ class FivetranResource:
     def api_base_url(self) -> str:
         return urljoin(FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH)
 
+    def _connector_url(self, service: str, schema: str) -> str:
+        return f"https://fivetran.com/dashboard/connectors/{service}/{schema}"
+
     def _logs_url(self, service: str, schema: str) -> str:
-        return f"https://fivetran.com/dashboard/connectors/{service}/{schema}/logs"
+        return f"{self._connector_url(service, schema)}/logs"
 
     def make_request(self, method: str, endpoint: str, data: str = None) -> Dict[str, Any]:
         """
@@ -118,10 +121,10 @@ class FivetranResource:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
         """
-        connector_data = self.get_connector_details(connector_id)
-        if connector_data["paused"]:
+        connector_details = self.get_connector_details(connector_id)
+        if connector_details["paused"]:
             raise Failure("Connector '{connector_id}' cannot be synced as it is currently paused.")
-        if connector_data["status"]["setup_state"] != "connected":
+        if connector_details["status"]["setup_state"] != "connected":
             raise Failure("Connector '{connector_id}' cannot be synced as it has not been setup")
 
     def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
@@ -138,16 +141,16 @@ class FivetranResource:
                 Tuple representing the timestamp of the last completeded sync, if it succeeded, and
                 the currently reported sync status.
         """
-        connector_data = self.get_connector_details(connector_id)
+        connector_details = self.get_connector_details(connector_id)
 
         min_time_str = "0001-01-01 00:00:00+00"
-        succeeded_at = parser.parse(connector_data["succeeded_at"] or min_time_str)
-        failed_at = parser.parse(connector_data["failed_at"] or min_time_str)
+        succeeded_at = parser.parse(connector_details["succeeded_at"] or min_time_str)
+        failed_at = parser.parse(connector_details["failed_at"] or min_time_str)
 
         return (
             max(succeeded_at, failed_at),
             succeeded_at > failed_at,
-            connector_data["status"]["sync_state"],
+            connector_details["status"]["sync_state"],
         )
 
     def update_connector(
@@ -193,12 +196,20 @@ class FivetranResource:
                 "Setup" tab of a given connector in the Fivetran UI.
 
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
+            Dict[str, Any]: Parsed json data representing the connector details API response after
+                the sync is started.
         """
         if self._disable_schedule_on_trigger:
+            self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
-        return self.make_request(method="POST", endpoint=f"{connector_id}/force")
+        self.make_request(method="POST", endpoint=f"{connector_id}/force")
+        connector_details = self.get_connector_details(connector_id)
+        self._log.info(
+            f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran UI: "
+            f"{self._connector_url(connector_details['service'], connector_details['schema'])}"
+        )
+        return connector_details
 
     def poll_sync(
         self,
