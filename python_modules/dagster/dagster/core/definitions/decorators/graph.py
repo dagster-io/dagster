@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping
-from ..graph import GraphDefinition
+from ..graph_definition import GraphDefinition
 from ..input import GraphIn, InputDefinition
 from ..output import GraphOut, OutputDefinition
 

@@ -5,12 +5,12 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
-from .graph import GraphDefinition
-from .job import JobDefinition
+from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
-from .pipeline import PipelineDefinition
-from .schedule import ScheduleDefinition
-from .sensor import SensorDefinition
+from .pipeline_definition import PipelineDefinition
+from .schedule_definition import ScheduleDefinition
+from .sensor_definition import SensorDefinition
 from .utils import check_valid_name
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {

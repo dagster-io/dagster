@@ -4,7 +4,7 @@ from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
-from dagster.core.definitions.executor import (
+from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
     in_process_executor,
@@ -20,11 +20,11 @@ from dagster.utils import check
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
 from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
-from .graph import GraphDefinition
-from .logger import LoggerDefinition
+from .graph_definition import GraphDefinition
+from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
-from .resource import ResourceDefinition
-from .solid import NodeDefinition, SolidDefinition
+from .resource_definition import ResourceDefinition
+from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(

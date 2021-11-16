@@ -24,7 +24,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
-from .schedule import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"

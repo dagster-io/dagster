@@ -9,15 +9,15 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.executor import ExecutorDefinition
-from dagster.core.definitions.graph import GraphDefinition
+from dagster.core.definitions.executor_definition import ExecutorDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.job import JobDefinition
-from dagster.core.definitions.node import NodeDefinition
-from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.node_definition import NodeDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context

@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.definitions.executor import ExecutorDefinition, default_executors
+from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
 from dagster.utils.merger import merge_dicts
 
 from .config import ConfigMapping
-from .logger import LoggerDefinition
-from .resource import ResourceDefinition
+from .logger_definition import LoggerDefinition
+from .resource_definition import ResourceDefinition
 from .utils import check_valid_name
 
 DEFAULT_MODE_NAME = "default"

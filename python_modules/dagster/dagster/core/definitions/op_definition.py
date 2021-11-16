@@ -2,7 +2,7 @@ from typing import Dict
 
 from .input import In
 from .output import Out
-from .solid import SolidDefinition
+from .solid_definition import SolidDefinition
 
 
 class OpDefinition(SolidDefinition):

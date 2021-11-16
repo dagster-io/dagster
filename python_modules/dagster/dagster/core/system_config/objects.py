@@ -3,9 +3,12 @@ from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Uni
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
-from dagster.core.definitions.executor import ExecutorDefinition, execute_in_process_executor
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.executor_definition import (
+    ExecutorDefinition,
+    execute_in_process_executor,
+)
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 

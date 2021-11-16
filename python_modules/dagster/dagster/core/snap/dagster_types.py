@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import whitelist_for_serdes
 

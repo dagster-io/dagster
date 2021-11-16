@@ -18,7 +18,10 @@ from dagster.config.snap import (
     ConfigType,
     ConfigTypeSnap,
 )
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_definition import (
+    PipelineDefinition,
+    PipelineSubsetDefinition,
+)
 from dagster.core.utils import toposort_flatten
 from dagster.serdes import (
     DefaultNamedTupleSerializer,

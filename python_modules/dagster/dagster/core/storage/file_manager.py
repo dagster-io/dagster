@@ -9,7 +9,7 @@ from typing import BinaryIO, TextIO, Union
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
-from dagster.core.definitions.resource import resource
+from dagster.core.definitions.resource_definition import resource
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.decorator import usable_as_dagster_type
 from dagster.utils import mkdir_p

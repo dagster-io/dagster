@@ -5,14 +5,14 @@ from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
-from .executor import ExecutorDefinition
-from .graph import GraphDefinition
-from .hook import HookDefinition
+from .executor_definition import ExecutorDefinition
+from .graph_definition import GraphDefinition
+from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
-from .pipeline import PipelineDefinition
+from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .resource import ResourceDefinition
+from .resource_definition import ResourceDefinition
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -104,7 +104,7 @@ class JobDefinition(PipelineDefinition):
             :py:class:`~dagster.ExecuteInProcessResult`
 
         """
-        from dagster.core.definitions.executor import execute_in_process_executor
+        from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
@@ -253,7 +253,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
-    from .graph import default_job_io_manager
+    from .graph_definition import default_job_io_manager
 
     if (
         # pylint: disable=comparison-with-callable

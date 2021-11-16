@@ -6,7 +6,7 @@ from dagster.core.decorator_utils import get_function_params, get_valid_name_per
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
-from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType

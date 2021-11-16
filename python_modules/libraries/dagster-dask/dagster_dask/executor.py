@@ -10,7 +10,7 @@ from dagster import (
     multiple_process_executor_requirements,
     seven,
 )
-from dagster.core.definitions.executor import executor
+from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan

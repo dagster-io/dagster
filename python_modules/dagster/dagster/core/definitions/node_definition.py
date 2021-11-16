@@ -6,12 +6,12 @@ from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils import frozendict, frozenlist
 
-from .hook import HookDefinition
+from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
-    from .graph import GraphDefinition
-    from .solid import SolidDefinition
+    from .graph_definition import GraphDefinition
+    from .solid_definition import SolidDefinition
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
@@ -212,7 +212,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         )
 
     def ensure_graph_def(self) -> "GraphDefinition":
-        from .graph import GraphDefinition
+        from .graph_definition import GraphDefinition
 
         if isinstance(self, GraphDefinition):
             return self
@@ -220,7 +220,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         check.failed(f"{self.name} is not a GraphDefinition")
 
     def ensure_solid_def(self) -> "SolidDefinition":
-        from .solid import SolidDefinition
+        from .solid_definition import SolidDefinition
 
         if isinstance(self, SolidDefinition):
             return self

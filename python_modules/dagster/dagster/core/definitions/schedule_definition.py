@@ -22,9 +22,9 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
-from .graph import GraphDefinition
+from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pipeline import PipelineDefinition
+from .pipeline_definition import PipelineDefinition
 from .run_request import JobType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name

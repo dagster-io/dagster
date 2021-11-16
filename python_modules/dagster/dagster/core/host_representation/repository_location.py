@@ -70,8 +70,8 @@ if TYPE_CHECKING:
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
     )
-    from dagster.core.definitions.schedule import ScheduleExecutionData
-    from dagster.core.definitions.sensor import SensorExecutionData
+    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster.core.definitions.sensor_definition import SensorExecutionData
     from dagster.core.host_representation.external_data import (
         ExternalSensorExecutionErrorData,
     )

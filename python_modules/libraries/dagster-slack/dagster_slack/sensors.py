@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Optional, Union
 
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.pipeline_sensor import (
+from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
     pipeline_failure_sensor,
