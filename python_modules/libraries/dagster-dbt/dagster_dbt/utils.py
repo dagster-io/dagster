@@ -90,10 +90,16 @@ def result_to_materialization(
     else:
         unique_id = result["unique_id"]
 
+    id_prefix = unique_id.split(".")
+
+    # only generate materializations for models
+    if id_prefix[0] != "model":
+        return None
+
     return AssetMaterialization(
         description=f"dbt node: {unique_id}",
         metadata_entries=metadata,
-        asset_key=asset_key_prefix + unique_id.split("."),
+        asset_key=asset_key_prefix + id_prefix,
     )
 
 
