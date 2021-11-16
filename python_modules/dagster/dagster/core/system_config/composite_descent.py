@@ -124,7 +124,7 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
             )
             if not config_mapped_solid_config.success:
                 raise DagsterInvalidConfigError(
-                    f"Error in config for {solid.describe_node()()}".format(solid.name),
+                    f"Error in config for {solid.describe_node()}".format(solid.name),
                     config_mapped_solid_config.errors,
                     config_mapped_solid_config,
                 )
