@@ -62,12 +62,6 @@ class SnowflakeIOManager(IOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
-
-    If an Out has {"partitioned": True} in its metadata, we just overwrite a single partition, based
-    on the time window specified by the partition_bounds resource.
-
-    Because we specify a get_output_asset_key() function, AssetMaterialization events will be
-    automatically created each time an output is processed with this IOManager.
     """
 
     def __init__(self, config):
