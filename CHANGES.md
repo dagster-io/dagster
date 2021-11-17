@@ -1,5 +1,19 @@
 # Changelog
 
+# 0.13.7
+
+### New
+
+- The Runs page in Dagit now loads much more quickly.
+
+### Bugfixes
+
+- Fixed an issue where Dagit would sometimes display a red "Invalid JSON" error message.
+
+### Dependencies
+
+- `google-cloud-bigquery` is temporarily pinned to be prior to version 3 due to a breaking change in that version.
+
 # 0.13.6
 
 ### Bugfixes
