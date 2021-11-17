@@ -1,6 +1,5 @@
 import re
 import time
-import asyncio
 from collections import Counter
 from contextlib import ExitStack
 

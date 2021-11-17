@@ -1,5 +1,4 @@
 import time
-import pytest
 from threading import Thread
 
 from dagster import AssetKey
@@ -9,9 +8,7 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
     infer_repository_selector,
 )
-from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
-from dagster.core.errors import DagsterExecutionInterruptedError
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -294,17 +291,20 @@ class TestAssetAwareEventLog(
         assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
 
     def test_asset_in_progress_foo(self, graphql_context):
+        # cannot run multithreaded test on ephemeral Dagster instance
         if graphql_context.instance.is_persistent:
 
             # assertions in threads aren't raised to main thread, creating a subclass
             # that will raise exceptions upon join
             class RaiseOnErrorThread(Thread):
                 def run(self):
-                    self.exc = None
+                    self.exc = None  # pylint: disable=attribute-defined-outside-init
                     try:
-                        self.ret = self._target(*self._args, **self._kwargs)
+                        self.ret = self._target(
+                            *self._args, **self._kwargs
+                        )  # pylint: disable=attribute-defined-outside-init
                     except BaseException as e:
-                        self.exc = e
+                        self.exc = e  # pylint: disable=attribute-defined-outside-init
 
                 def join(self, timeout=None):
                     super(RaiseOnErrorThread, self).join(timeout)

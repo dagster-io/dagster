@@ -1250,16 +1250,14 @@ def job_with_default_config():
     a_solid_with_config()
 
 
-@asset(
-    description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
-)
+@asset
 def hanging_asset(context):
     """
-    For the configured time partition, searches for the range of ids that were created in that time.
+    Asset that hangs forever, used to test in-progress ops.
     """
     while True:
         time.sleep(1)
-        context.log.info("blah blah")
+        context.log.info("I'm sleeping")
     yield Output(5)
 
 

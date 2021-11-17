@@ -185,6 +185,11 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   materializationEvent: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent;
 }
 
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_inProgressRuns {
+  __typename: "Run";
+  runId: string;
+}
+
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes {
   __typename: "AssetNode";
   id: string;
@@ -194,6 +199,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes {
   jobName: string | null;
   dependencies: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies[];
   assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations[];
+  inProgressRuns: AssetGraphQuery_repositoryOrError_Repository_assetNodes_inProgressRuns[];
 }
 
 export interface AssetGraphQuery_repositoryOrError_Repository_pipelines_modes {
