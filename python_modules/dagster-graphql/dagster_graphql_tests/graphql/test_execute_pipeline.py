@@ -622,6 +622,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        assert set(result.data["launchPipelineExecution"]["run"]["resolvedOpSelection"]) == set(
+            [
+                "op_1",
+                "op_with_2_ins",
+            ]
+        )
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):

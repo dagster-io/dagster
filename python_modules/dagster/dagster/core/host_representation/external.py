@@ -238,21 +238,19 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_selection(self):
-        if self.external_pipeline_data.op_selection_data:
-            return self.external_pipeline_data.op_selection_data.op_selection
-        elif self._pipeline_index.pipeline_snapshot.lineage_snapshot:
-            return self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
-        else:
-            return None
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
 
     @property
     def solids_to_execute(self):
-        if self.external_pipeline_data.op_selection_data:
-            return self.external_pipeline_data.op_selection_data.resolved_op_selection
-        elif self._pipeline_index.pipeline_snapshot.lineage_snapshot:
+        return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
-        else:
-            return None
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
 
     @property
     def active_presets(self):

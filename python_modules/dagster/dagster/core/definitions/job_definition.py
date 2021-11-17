@@ -18,6 +18,7 @@ from .version_strategy import VersionStrategy
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.snap import PipelineSnapshot
 
 
 class JobDefinition(PipelineDefinition):
@@ -205,6 +206,7 @@ class JobDefinition(PipelineDefinition):
                 op_selection=op_selection,
                 resolved_op_selection=solids_to_execute,
                 ignored_solids=ignored_solids,
+                parent_job_def=self,
             ),
         )
 
@@ -248,6 +250,13 @@ class JobDefinition(PipelineDefinition):
         update_wrapper(job_def, self, updated=())
 
         return job_def
+
+    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
+        return (
+            self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+            if self.op_selection_data
+            else None
+        )
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
