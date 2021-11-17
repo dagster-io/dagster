@@ -14,7 +14,7 @@ def mock_slack_resource(_context):
 
 
 @op(out={"all_articles": Out(is_required=True), "nyc_articles": Out(is_required=False)})
-def fetch_stories(context):
+def fetch_stories():
     tree = ET.fromstring(requests.get(ARTICLES_LINK).text)
 
     all_articles = []
