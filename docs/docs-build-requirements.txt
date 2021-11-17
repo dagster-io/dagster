@@ -11,7 +11,7 @@ recommonmark==0.7.1
 nbsphinx==0.8.2
 pendulum==1.4.4
 pyspark>=3.0.0
-google-cloud-bigquery>=1.19.*
+google-cloud-bigquery>=1.19.*,<3
 google-api-python-client<2.0.0
 google-cloud-storage
 paramiko
