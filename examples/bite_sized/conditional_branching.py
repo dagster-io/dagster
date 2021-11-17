@@ -1,10 +1,11 @@
-import requests
 import csv
 import xml.etree.ElementTree as ET
 from unittest.mock import MagicMock
+
+import requests
 from dagster import Out, Output, job, op, resource
 
-ARTICLES_LINK = 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
+ARTICLES_LINK = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
 
 
 @resource(config_schema={"token": str})
@@ -19,11 +20,11 @@ def fetch_stories(context):
     all_articles = []
     nyc_articles = []
 
-    for article in tree[0].findall('item'):
+    for article in tree[0].findall("item"):
         all_articles.append(article)
 
         if [
-            category for category in article.findall('category') if category.text == "New York City"
+            category for category in article.findall("category") if category.text == "New York City"
         ]:
             nyc_articles.append(article)
 
@@ -37,14 +38,14 @@ def fetch_stories(context):
 def parse_xml(raw_articles):
     rows = []
     for article in raw_articles:
-        category_names = [x.text for x in article.findall('category')]
+        category_names = [x.text for x in article.findall("category")]
         for category in category_names:
             rows.append(
                 {
-                    "Title": article.find('title').text,
-                    "Link": article.find('link').text,
+                    "Title": article.find("title").text,
+                    "Link": article.find("link").text,
                     "Category": category,
-                    "Description": article.find('description').text,
+                    "Description": article.find("description").text,
                 }
             )
     return rows
@@ -61,7 +62,7 @@ def write_to_csv(context, articles):
 
 @op(required_resource_keys={"slack"})
 def send_slack_msg(context, articles):
-    formatted_str = '\n'.join([a["Title"] + ": " + a["Link"] for a in articles])
+    formatted_str = "\n".join([a["Title"] + ": " + a["Link"] for a in articles])
     context.resources.slack.chat_postMessage(channel="my-news-channel", text=formatted_str)
 
 
