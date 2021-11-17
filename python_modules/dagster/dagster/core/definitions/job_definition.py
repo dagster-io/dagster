@@ -155,6 +155,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_tags={"partition": partition_key} if partition_key else None,
         )
 
     @property
