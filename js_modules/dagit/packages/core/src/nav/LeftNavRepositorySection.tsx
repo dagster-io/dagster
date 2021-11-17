@@ -17,25 +17,21 @@ import {RepoDetails} from './RepoSelector';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
-export const REPO_KEYS = 'dagit.repo-keys';
+// export const REPO_KEYS = 'dagit.repo-keys';
+export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
 const buildDetails = memoize((option: DagsterRepoOption) => ({
   repoAddress: buildRepoAddress(option.repository.name, option.repositoryLocation.name),
   metadata: option.repository.displayMetadata,
 }));
 
-const keysFromLocalStorage = () => {
-  const keys = window.localStorage.getItem(REPO_KEYS);
+const hiddenKeysFromLocalStorage = () => {
+  const keys = window.localStorage.getItem(HIDDEN_REPO_KEYS);
   if (keys) {
-    const parsed: string[] = JSON.parse(keys);
-    return new Set(parsed);
-  }
-
-  // todo dish: Temporary while migrating to support filtering on multiple repos in
-  // left nav.
-  const key = window.localStorage.getItem(LAST_REPO_KEY);
-  if (key) {
-    return new Set([key]);
+    const parsed = JSON.parse(keys);
+    if (Array.isArray(parsed)) {
+      return new Set(parsed);
+    }
   }
 
   return new Set();
@@ -50,33 +46,31 @@ const useNavVisibleRepos = (
   options: DagsterRepoOption[],
 ): [typeof repoDetailsForKeys, typeof toggleRepo] => {
   // Initialize local state with an empty Set.
-  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => new Set());
+  const [visibleKeys, setVisibleKeys] = React.useState<Set<string>>(() => new Set());
 
-  // Collect keys from localStorage. Any keys that are present in our option list will be pushed into
-  // local state. If there are none specified in localStorage, just grab the first option.
+  const allKeys = React.useMemo(() => options.map((option) => getRepositoryOptionHash(option)), [
+    options,
+  ]);
+
+  // Collect hidden keys from localStorage and remove them from the visible repo key list.
   React.useEffect(() => {
-    setRepoKeys(() => {
-      const keys = keysFromLocalStorage();
-      const hashes = options.map((option) => getRepositoryOptionHash(option));
-      const matches = hashes.filter((hash) => keys.has(hash));
+    setVisibleKeys(() => {
+      const hiddenKeys = hiddenKeysFromLocalStorage();
+      const visible = allKeys.filter((key) => !hiddenKeys.has(key));
 
-      if (matches.length) {
-        return new Set(matches);
-      }
-
-      if (hashes.length) {
-        return new Set([hashes[0]]);
+      if (visible.length) {
+        return new Set(visible);
       }
 
       return new Set();
     });
-  }, [options]);
+  }, [allKeys]);
 
   const toggleRepo = React.useCallback((option: RepoDetails) => {
     const {repoAddress} = option;
     const key = `${repoAddress.name}:${repoAddress.location}`;
 
-    setRepoKeys((current) => {
+    setVisibleKeys((current) => {
       const copy = new Set([...Array.from(current || [])]);
       if (copy.has(key)) {
         copy.delete(key);
@@ -87,20 +81,24 @@ const useNavVisibleRepos = (
     });
   }, []);
 
-  const reposForKeys = React.useMemo(
-    () => options.filter((o) => repoKeys.has(getRepositoryOptionHash(o))),
-    [options, repoKeys],
-  );
-
-  // When the list of matching repos changes, update localStorage.
+  // When the list of matching repos changes, update localStorage. Any repos in the
+  // `options` list that are not marked as "visible" should be stored as "hidden".
   React.useEffect(() => {
-    const foundKeys = reposForKeys.map((option) => getRepositoryOptionHash(option));
-    window.localStorage.setItem(REPO_KEYS, JSON.stringify(foundKeys));
-  }, [reposForKeys]);
+    const hiddenKeys = hiddenKeysFromLocalStorage();
+    allKeys.forEach((key) => {
+      if (visibleKeys.has(key)) {
+        hiddenKeys.delete(key);
+      } else {
+        hiddenKeys.add(key);
+      }
+    });
+    window.localStorage.setItem(HIDDEN_REPO_KEYS, JSON.stringify(Array.from(hiddenKeys)));
+  }, [allKeys, visibleKeys]);
 
-  const repoDetailsForKeys = React.useMemo(() => new Set(reposForKeys.map(buildDetails)), [
-    reposForKeys,
-  ]);
+  const repoDetailsForKeys = React.useMemo(() => {
+    const visibleOptions = options.filter((o) => visibleKeys.has(getRepositoryOptionHash(o)));
+    return new Set(visibleOptions.map(buildDetails));
+  }, [options, visibleKeys]);
 
   return [repoDetailsForKeys, toggleRepo];
 };
