@@ -96,7 +96,7 @@ def test_docker_monitoring():
             "solids": {
                 "multiply_the_word_slow": {
                     "inputs": {"word": "bar"},
-                    "config": {"factor": 2, "sleep_time": 10},
+                    "config": {"factor": 2, "sleep_time": 20},
                 }
             },
             "execution": {"docker": {"config": {}}},
@@ -181,7 +181,7 @@ def test_docker_monitoring_run_out_of_attempts():
             "solids": {
                 "multiply_the_word_slow": {
                     "inputs": {"word": "bar"},
-                    "config": {"factor": 2, "sleep_time": 10},
+                    "config": {"factor": 2, "sleep_time": 20},
                 }
             },
             "execution": {"docker": {"config": {}}},

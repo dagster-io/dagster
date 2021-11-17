@@ -939,10 +939,11 @@ dagsterDaemon:
     enabled: false
     # Timeout for runs to start (avoids runs hanging in STARTED)
     startTimeoutSeconds: 180
-    # Max number of times to attempt to resume a run with a new run worker
-    maxResumeRunAttempts: 3
     # How often to check on in progress runs
     pollIntervalSeconds: 120
+    # Max number of times to attempt to resume a run with a new run worker. Defaults to 3 if the the
+    # run launcher supports resuming runs, otherwise defaults to 0.
+    maxResumeRunAttempts: ~
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

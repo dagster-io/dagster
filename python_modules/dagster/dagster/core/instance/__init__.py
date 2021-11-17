@@ -324,8 +324,14 @@ class DagsterInstance:
         if self.run_monitoring_enabled:
             check.invariant(
                 self.run_launcher.supports_check_run_worker_health,
-                "Run monitoring only supports select RunLaunchers",
+                "The configured run launcher does not support run monitoring.",
             )
+
+            if self.run_monitoring_max_resume_run_attempts:
+                check.invariant(
+                    self.run_launcher.supports_resume_run,
+                    "The configured run launcher does not support resuming runs. Set max_resume_run_attempts to 0.",
+                )
 
     # ctors
 
@@ -611,7 +617,10 @@ class DagsterInstance:
 
     @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
-        return self.run_monitoring_settings.get("max_resume_run_attempts", 3)
+        default_max_resume_run_attempts = 3 if self.run_launcher.supports_resume_run else 0
+        return self.run_monitoring_settings.get(
+            "max_resume_run_attempts", default_max_resume_run_attempts
+        )
 
     @property
     def run_monitoring_poll_interval_seconds(self) -> int:

@@ -55,6 +55,10 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
         raise NotImplementedError()
 
     @property
+    def supports_resume_run(self):
+        return True
+
+    @property
     def supports_check_run_worker_health(self):
         return True
 
