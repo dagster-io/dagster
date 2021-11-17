@@ -1,10 +1,15 @@
 import requests
 import csv
 import xml.etree.ElementTree as ET
-from dagster import Out, Output, job, op
-from dagster_slack.resources import slack_resource
+from unittest.mock import MagicMock
+from dagster import Out, Output, job, op, resource
 
 ARTICLES_LINK = 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
+
+
+@resource(config_schema={"token": str})
+def mock_slack_resource(_context):
+    return MagicMock()
 
 
 @op(out={"all_articles": Out(is_required=True), "nyc_articles": Out(is_required=False)})
@@ -54,16 +59,16 @@ def write_to_csv(context, articles):
         writer.writerows(articles)
 
 
-@op(required_resource_keys={"slack_resource"})
+@op(required_resource_keys={"slack"})
 def send_slack_msg(context, articles):
     formatted_str = '\n'.join([a["Title"] + ": " + a["Link"] for a in articles])
     context.resources.slack.chat_postMessage(channel="my-news-channel", text=formatted_str)
 
 
 @job(
-    resource_defs={"slack_resource": slack_resource},
+    resource_defs={"slack": mock_slack_resource},
 )
-def branching():
+def conditional_branching():
     all_articles, nyc_articles = fetch_stories()
     write_to_csv.alias("nyc_csv")(parse_xml(nyc_articles))
     write_to_csv.alias("all_csv")(parse_xml(all_articles))
