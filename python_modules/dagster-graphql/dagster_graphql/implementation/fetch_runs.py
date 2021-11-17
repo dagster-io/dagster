@@ -107,7 +107,7 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [GrapheneRun(run) for run in runs]
 
 
-def get_in_progress_runs(graphene_info, job_name):
+def get_in_progress_runs(graphene_info, job_name: str):
     instance = graphene_info.context.instance
 
     in_progress_runs_filter = PipelineRunsFilter(
@@ -125,15 +125,14 @@ def get_in_progress_runs(graphene_info, job_name):
     return instance.get_runs(in_progress_runs_filter)
 
 
-def get_in_progress_runs_with_op(graphene_info, job_name, op_name):
+def get_in_progress_runs_with_in_progress_step(graphene_info, job_name: str, op_name: str):
     runs = get_in_progress_runs(graphene_info, job_name)
     runs_with_step = []
 
-    if runs:
-        for run in runs:
-            step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, [op_name])
-            if step_stats and step_stats[0].status == StepEventStatus.IN_PROGRESS:
-                runs_with_step.append(run)
+    for run in runs:
+        step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, [op_name])
+        if step_stats and step_stats[0].status == StepEventStatus.IN_PROGRESS:
+            runs_with_step.append(run)
 
     return runs_with_step
 

@@ -1,8 +1,8 @@
 import time
-from threading import Thread
+import os
 
 from dagster import AssetKey
-from dagster.core.utils import make_new_run_id
+from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -114,7 +114,7 @@ GET_ASSET_IN_PROGRESS_RUNS = """
 """
 
 
-def _create_run(graphql_context, pipeline_name, mode="default", run_id=None):
+def _create_run(graphql_context, pipeline_name, mode="default"):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
     result = execute_dagster_graphql(
         graphql_context,
@@ -122,7 +122,6 @@ def _create_run(graphql_context, pipeline_name, mode="default", run_id=None):
         variables={
             "executionParams": {
                 "selector": selector,
-                "executionMetadata": {"runId": run_id if run_id else make_new_run_id()},
                 "mode": mode,
             }
         },
@@ -290,59 +289,57 @@ class TestAssetAwareEventLog(
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
 
-    def test_asset_in_progress_foo(self, graphql_context):
-        # cannot run multithreaded test on ephemeral Dagster instance
-        if graphql_context.instance.is_persistent:
 
-            # assertions in threads aren't raised to main thread, creating a subclass
-            # that will raise exceptions upon join
-            class RaiseOnErrorThread(Thread):
-                def run(self):
-                    self.exc = None  # pylint: disable=attribute-defined-outside-init
-                    try:
-                        self.ret = self._target(  # pylint: disable=attribute-defined-outside-init
-                            *self._args, **self._kwargs
-                        )  # pylint: disable=attribute-defined-outside-init
-                    except BaseException as e:
-                        self.exc = e  # pylint: disable=attribute-defined-outside-init
+class TestPersistentInstanceAssetInProgress(
+    make_graphql_context_test_suite(
+        context_variants=[
+            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
+        ]
+    )
+):
+    def test_asset_in_progress(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "hanging_job")
+        run_id = "foo"
 
-                def join(self, timeout=None):
-                    super(RaiseOnErrorThread, self).join(timeout)
-                    if self.exc:
-                        raise self.exc
-                    return self.ret
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                        "executionMetadata": {"runId": run_id},
+                    }
+                },
+            )
 
-            run_id = "foo"
+            assert not result.errors
+            assert result.data
 
-            def launch_run():
-                _create_run(graphql_context, "hanging_job", run_id=run_id)
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
 
-            def query_on_run():
-                time.sleep(
-                    5
-                )  # Requires database to be started and op to be executed, long wait time
-                result = execute_dagster_graphql(
-                    graphql_context,
-                    GET_ASSET_IN_PROGRESS_RUNS,
-                    variables={"repositorySelector": infer_repository_selector(graphql_context)},
-                )
-                graphql_context.instance.run_launcher.terminate(run_id)
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_IN_PROGRESS_RUNS,
+                variables={"repositorySelector": infer_repository_selector(graphql_context)},
+            )
+            graphql_context.instance.run_launcher.terminate(run_id)
 
-                assert result.data
-                assert result.data["repositoryOrError"]
-                asset_nodes = [
-                    node
-                    for node in result.data["repositoryOrError"]["assetNodes"]
-                    if node["jobName"] == "hanging_job"
-                ]
+            assert result.data
+            assert result.data["repositoryOrError"]
+            asset_nodes = [
+                node
+                for node in result.data["repositoryOrError"]["assetNodes"]
+                if node["jobName"] == "hanging_job"
+            ]
 
-                assert len(asset_nodes) == 1
-                assert len(asset_nodes[0]["inProgressRuns"]) == 1
-                assert asset_nodes[0]["inProgressRuns"][0]["runId"] == run_id
-
-            t1 = RaiseOnErrorThread(target=launch_run)
-            t2 = RaiseOnErrorThread(target=query_on_run)
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
+            assert len(asset_nodes) == 1
+            assert len(asset_nodes[0]["inProgressRuns"]) == 1
+            assert asset_nodes[0]["inProgressRuns"][0]["runId"] == run_id

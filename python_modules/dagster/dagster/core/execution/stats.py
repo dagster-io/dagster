@@ -166,7 +166,6 @@ def build_run_step_stats_from_events(
                 RunStepMarker(start_time=attempt_start, end_time=step_stats["end_time"])
             )
         else:
-            step_attempts.append(RunStepMarker(start_time=attempt_start))
             by_step_key[step_key]["status"] = StepEventStatus.IN_PROGRESS
         attempts[step_key] = step_attempts
 

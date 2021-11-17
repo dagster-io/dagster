@@ -1250,18 +1250,29 @@ def job_with_default_config():
     a_solid_with_config()
 
 
-@asset
+@resource(config_schema={"file": Field(String)})
+def hanging_asset_resource(context):
+    # Hack to allow asset to get value from run config
+    return context.resource_config.get("file")
+
+
+@asset(required_resource_keys={"hanging_asset_resource"})
 def hanging_asset(context):
     """
     Asset that hangs forever, used to test in-progress ops.
     """
+    with open(context.resources.hanging_asset_resource, "w") as ff:
+        ff.write("yup")
+
     while True:
-        time.sleep(1)
-        context.log.info("I'm sleeping")
-    yield Output(5)
+        time.sleep(0.1)
 
 
-hanging_job = build_assets_job(name="hanging_job", assets=[hanging_asset])
+hanging_job = build_assets_job(
+    name="hanging_job",
+    assets=[hanging_asset],
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
 
 
 @repository

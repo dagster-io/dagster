@@ -2,7 +2,7 @@ import graphene
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalAssetNode
-from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_with_op
+from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_with_in_progress_step
 
 from ..schema.pipelines.pipeline import GrapheneRun
 from .asset_key import GrapheneAssetKey
@@ -83,7 +83,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             runs.extend(
                 [
                     GrapheneRun(run)
-                    for run in get_in_progress_runs_with_op(
+                    for run in get_in_progress_runs_with_in_progress_step(
                         _graphene_info, job_name, self._external_asset_node.op_name
                     )
                 ]
