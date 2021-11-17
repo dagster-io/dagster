@@ -1,4 +1,4 @@
-from dagster import PipelineDefinition, check
+from dagster import PipelineDefinition, check, PipelineRunStatus
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
@@ -6,6 +6,7 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
+from dagster.core.execution.stats import StepEventStatus
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -104,6 +105,37 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
         runs = instance.get_runs(cursor=cursor, limit=limit)
 
     return [GrapheneRun(run) for run in runs]
+
+
+def get_in_progress_runs(graphene_info, job_name):
+    instance = graphene_info.context.instance
+
+    in_progress_runs_filter = PipelineRunsFilter(
+        pipeline_name=job_name,
+        statuses=[
+            PipelineRunStatus.STARTING,
+            PipelineRunStatus.MANAGED,
+            PipelineRunStatus.NOT_STARTED,
+            PipelineRunStatus.QUEUED,
+            PipelineRunStatus.STARTED,
+            PipelineRunStatus.CANCELING,
+        ],
+    )
+
+    return instance.get_runs(in_progress_runs_filter)
+
+
+def get_in_progress_runs_with_op(graphene_info, job_name, op_name):
+    runs = get_in_progress_runs(graphene_info, job_name)
+    runs_with_step = []
+
+    if runs:
+        for run in runs:
+            step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, [op_name])
+            if step_stats and step_stats[0].status == StepEventStatus.IN_PROGRESS:
+                runs_with_step.append(run)
+
+    return runs_with_step
 
 
 def get_runs_count(graphene_info, filters):

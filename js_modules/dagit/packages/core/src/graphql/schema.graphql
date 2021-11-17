@@ -413,6 +413,7 @@ enum StepEventStatus {
   SKIPPED
   SUCCESS
   FAILURE
+  IN_PROGRESS
 }
 
 type Materialization implements DisplayableEvent {
@@ -617,6 +618,7 @@ type AssetNode {
   jobName: String
   dependencies: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  inProgressRuns: [Run!]!
 }
 
 type AssetDependency {

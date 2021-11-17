@@ -57,6 +57,7 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
+from dagster.core.asset_defs import build_assets_job, asset
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
@@ -1249,6 +1250,22 @@ def job_with_default_config():
     a_solid_with_config()
 
 
+@asset(
+    description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
+)
+def hanging_asset(context):
+    """
+    For the configured time partition, searches for the range of ids that were created in that time.
+    """
+    while True:
+        time.sleep(1)
+        context.log.info("blah blah")
+    yield Output(5)
+
+
+hanging_job = build_assets_job(name="hanging_job", assets=[hanging_asset])
+
+
 @repository
 def empty_repo():
     return []
@@ -1298,6 +1315,7 @@ def define_pipelines():
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
         job_with_default_config,
+        hanging_job,
     ]
 
 

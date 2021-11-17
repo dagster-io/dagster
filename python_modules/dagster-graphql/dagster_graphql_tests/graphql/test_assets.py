@@ -1,8 +1,17 @@
 import time
+import pytest
+from threading import Thread
 
 from dagster import AssetKey
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+    infer_repository_selector,
+)
+from dagster.core.test_utils import instance_for_test
+from dagster.core.utils import make_new_run_id
+from dagster.core.errors import DagsterExecutionInterruptedError
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -90,13 +99,36 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
     }
 """
 
+GET_ASSET_IN_PROGRESS_RUNS = """
+    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                assetNodes {
+                    opName
+                    description
+                    jobName
+                    inProgressRuns {
+                        runId
+                    }
+                }
+            }
+        }
+    }
+"""
 
-def _create_run(graphql_context, pipeline_name, mode="default"):
+
+def _create_run(graphql_context, pipeline_name, mode="default", run_id=None):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={"executionParams": {"selector": selector, "mode": mode}},
+        variables={
+            "executionParams": {
+                "selector": selector,
+                "executionMetadata": {"runId": run_id if run_id else make_new_run_id()},
+                "mode": mode,
+            }
+        },
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
@@ -260,3 +292,57 @@ class TestAssetAwareEventLog(
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
+
+    def test_asset_in_progress_foo(self, graphql_context):
+        if graphql_context.instance.is_persistent:
+
+            # assertions in threads aren't raised to main thread, creating a subclass
+            # that will raise exceptions upon join
+            class RaiseOnErrorThread(Thread):
+                def run(self):
+                    self.exc = None
+                    try:
+                        self.ret = self._target(*self._args, **self._kwargs)
+                    except BaseException as e:
+                        self.exc = e
+
+                def join(self, timeout=None):
+                    super(RaiseOnErrorThread, self).join(timeout)
+                    if self.exc:
+                        raise self.exc
+                    return self.ret
+
+            run_id = "foo"
+
+            def launch_run():
+                _create_run(graphql_context, "hanging_job", run_id=run_id)
+
+            def query_on_run():
+                time.sleep(
+                    5
+                )  # Requires database to be started and op to be executed, long wait time
+                result = execute_dagster_graphql(
+                    graphql_context,
+                    GET_ASSET_IN_PROGRESS_RUNS,
+                    variables={"repositorySelector": infer_repository_selector(graphql_context)},
+                )
+                graphql_context.instance.run_launcher.terminate(run_id)
+
+                assert result.data
+                assert result.data["repositoryOrError"]
+                asset_nodes = [
+                    node
+                    for node in result.data["repositoryOrError"]["assetNodes"]
+                    if node['jobName'] == 'hanging_job'
+                ]
+
+                assert len(asset_nodes) == 1
+                assert len(asset_nodes[0]["inProgressRuns"]) == 1
+                assert asset_nodes[0]["inProgressRuns"][0]["runId"] == run_id
+
+            t1 = RaiseOnErrorThread(target=launch_run)
+            t2 = RaiseOnErrorThread(target=query_on_run)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()

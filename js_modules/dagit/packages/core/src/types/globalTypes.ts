@@ -134,6 +134,7 @@ export enum RunStatus {
 
 export enum StepEventStatus {
   FAILURE = "FAILURE",
+  IN_PROGRESS = "IN_PROGRESS",
   SKIPPED = "SKIPPED",
   SUCCESS = "SUCCESS",
 }

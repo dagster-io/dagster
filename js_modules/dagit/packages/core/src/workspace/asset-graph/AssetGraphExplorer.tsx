@@ -1,24 +1,24 @@
-import {gql, useQuery} from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {SVGViewport} from '../../graph/SVGViewport';
-import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
-import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
-import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
-import {ColorsWIP} from '../../ui/Colors';
-import {Loading} from '../../ui/Loading';
-import {NonIdealState} from '../../ui/NonIdealState';
-import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
-import {repoAddressToSelector} from '../repoAddressToSelector';
-import {RepoAddress} from '../types';
+import { LATEST_MATERIALIZATION_METADATA_FRAGMENT } from '../../assets/LastMaterializationMetadata';
+import { SVGViewport } from '../../graph/SVGViewport';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { ExplorerPath } from '../../pipelines/PipelinePathUtils';
+import { SidebarPipelineOrJobOverview } from '../../pipelines/SidebarPipelineOrJobOverview';
+import { GraphExplorerSolidHandleFragment } from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import { METADATA_ENTRY_FRAGMENT } from '../../runs/MetadataEntry';
+import { ColorsWIP } from '../../ui/Colors';
+import { Loading } from '../../ui/Loading';
+import { NonIdealState } from '../../ui/NonIdealState';
+import { SplitPanelContainer } from '../../ui/SplitPanelContainer';
+import { repoAddressToSelector } from '../repoAddressToSelector';
+import { RepoAddress } from '../types';
 
-import {AssetNode, getNodeDimensions} from './AssetNode';
-import {ForeignNode, getForeignNodeDimensions} from './ForeignNode';
-import {SidebarAssetInfo} from './SidebarAssetInfo';
+import { AssetNode, getNodeDimensions } from './AssetNode';
+import { ForeignNode, getForeignNodeDimensions } from './ForeignNode';
+import { SidebarAssetInfo } from './SidebarAssetInfo';
 import {
   buildGraphComputeStatuses,
   buildGraphData,
@@ -44,10 +44,10 @@ interface Props {
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {repoAddress, handles, selectedHandle, explorerPath, onChangeExplorerPath} = props;
+  const { repoAddress, handles, selectedHandle, explorerPath, onChangeExplorerPath } = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
-    variables: {repositorySelector},
+    variables: { repositorySelector },
     notifyOnNetworkStatusChange: true,
   });
 
@@ -69,7 +69,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
   return (
     <Loading allowStaleData queryResult={queryResult}>
-      {({repositoryOrError}) => {
+      {({ repositoryOrError }) => {
         if (repositoryOrError.__typename !== 'Repository') {
           return <NonIdealState icon="error" title="Query Error" />;
         }
@@ -113,12 +113,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                 interactor={SVGViewport.Interactors.PanAndZoom}
                 graphWidth={layout.width}
                 graphHeight={layout.height}
-                onKeyDown={() => {}}
+                onKeyDown={() => { }}
                 onClick={() => selectNode(null)}
                 maxZoom={1.2}
                 maxAutocenterZoom={1.0}
               >
-                {({scale: _scale}: any) => (
+                {({ scale: _scale }: any) => (
                   <SVGContainer width={layout.width} height={layout.height}>
                     <defs>
                       <marker
@@ -138,7 +138,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                       {layout.edges.map((edge, idx) => (
                         <StyledPath
                           key={idx}
-                          d={buildSVGPath({source: edge.from, target: edge.to})}
+                          d={buildSVGPath({ source: edge.from, target: edge.to })}
                           dashed={edge.dashed}
                           markerEnd="url(#arrow)"
                         />
@@ -146,7 +146,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                     </g>
                     {layout.nodes.map((layoutNode) => {
                       const graphNode = graphData.nodes[layoutNode.id];
-                      const {width, height} = graphNode.hidden
+                      const { width, height } = graphNode.hidden
                         ? getForeignNodeDimensions(layoutNode.id)
                         : getNodeDimensions(graphNode.definition);
                       return (
@@ -255,6 +255,9 @@ const ASSETS_GRAPH_QUERY = gql`
               }
             }
           }
+          inProgressRuns {
+            runId
+          }
         }
         pipelines {
           id
@@ -275,9 +278,9 @@ const SVGContainer = styled.svg`
   overflow: visible;
   border-radius: 0;
 `;
-const StyledPath = styled('path')<{dashed: boolean}>`
+const StyledPath = styled('path') <{ dashed: boolean }>`
   stroke-width: 4;
   stroke: ${ColorsWIP.Gray600};
-  ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
+  ${({ dashed }) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;
