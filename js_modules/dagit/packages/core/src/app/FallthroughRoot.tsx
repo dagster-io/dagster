@@ -20,22 +20,9 @@ export const FallthroughRoot = () => {
       <Route path={['/runs/(.*)?', '/assets/(.*)?', '/scheduler']} component={InstanceRedirect} />
       <WorkspaceContext.Consumer>
         {(context) => {
-          const firstRepo = context.allRepos[0] || null;
-          if (firstRepo?.repository.pipelines.length) {
-            const first = firstRepo.repository.pipelines[0];
-            return (
-              <Redirect
-                to={workspacePipelinePath({
-                  repoName: firstRepo.repository.name,
-                  repoLocation: firstRepo.repositoryLocation.name,
-                  pipelineName: first.name,
-                  isJob: first.isJob,
-                })}
-              />
-            );
-          }
+          const {allRepos, loading, locationEntries} = context;
 
-          if (context.loading) {
+          if (loading) {
             return (
               <Route
                 render={() => (
@@ -49,6 +36,29 @@ export const FallthroughRoot = () => {
                     </Box>
                   </Box>
                 )}
+              />
+            );
+          }
+
+          // If we have location entries but no repos, we have no useful objects to show.
+          // Redirect to Workspace overview to surface relevant errors to the user.
+          if (!allRepos.length && locationEntries.length) {
+            return <Redirect to="/workspace" />;
+          }
+
+          // Default to the first job available in the first repo. This is kind of a legacy
+          // approach, and might be worth rethinking.
+          const firstRepo = allRepos[0] || null;
+          if (firstRepo?.repository.pipelines.length) {
+            const first = firstRepo.repository.pipelines[0];
+            return (
+              <Redirect
+                to={workspacePipelinePath({
+                  repoName: firstRepo.repository.name,
+                  repoLocation: firstRepo.repositoryLocation.name,
+                  pipelineName: first.name,
+                  isJob: first.isJob,
+                })}
               />
             );
           }
