@@ -2,13 +2,13 @@ import graphene
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalAssetNode
+from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_with_op
 
+from ..schema.pipelines.pipeline import GrapheneRun
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization
 from .util import non_null_list
-from ..schema.pipelines.pipeline import GrapheneRun
-from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_with_op
 
 
 class GrapheneAssetDependency(graphene.ObjectType):

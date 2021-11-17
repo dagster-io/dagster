@@ -2,13 +2,13 @@ import time
 from threading import Thread
 
 from dagster import AssetKey
+from dagster.core.utils import make_new_run_id
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_pipeline_selector,
     infer_repository_selector,
 )
-from dagster.core.utils import make_new_run_id
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -300,7 +300,7 @@ class TestAssetAwareEventLog(
                 def run(self):
                     self.exc = None  # pylint: disable=attribute-defined-outside-init
                     try:
-                        self.ret = self._target(
+                        self.ret = self._target(  # pylint: disable=attribute-defined-outside-init
                             *self._args, **self._kwargs
                         )  # pylint: disable=attribute-defined-outside-init
                     except BaseException as e:
@@ -333,7 +333,7 @@ class TestAssetAwareEventLog(
                 asset_nodes = [
                     node
                     for node in result.data["repositoryOrError"]["assetNodes"]
-                    if node['jobName'] == 'hanging_job'
+                    if node["jobName"] == "hanging_job"
                 ]
 
                 assert len(asset_nodes) == 1

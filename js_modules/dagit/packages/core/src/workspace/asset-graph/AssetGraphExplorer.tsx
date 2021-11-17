@@ -255,9 +255,6 @@ const ASSETS_GRAPH_QUERY = gql`
               }
             }
           }
-          inProgressRuns {
-            runId
-          }
         }
         pipelines {
           id
