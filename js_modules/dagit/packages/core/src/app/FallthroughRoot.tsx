@@ -2,8 +2,9 @@ import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
 import {NonIdealState} from '../ui/NonIdealState';
+import {Spinner} from '../ui/Spinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -33,6 +34,25 @@ export const FallthroughRoot = () => {
               />
             );
           }
+
+          if (context.loading) {
+            return (
+              <Route
+                render={() => (
+                  <Box
+                    flex={{direction: 'row', justifyContent: 'center'}}
+                    style={{paddingTop: '100px'}}
+                  >
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+                      <Spinner purpose="section" />
+                      <div style={{color: ColorsWIP.Gray600}}>Loading workspace…</div>
+                    </Box>
+                  </Box>
+                )}
+              />
+            );
+          }
+
           return (
             <Route
               render={() => (
@@ -49,9 +69,9 @@ export const FallthroughRoot = () => {
                       <a
                         href="https://docs.dagster.io/getting-started"
                         target="_blank"
-                        rel="noreferrer"
+                        rel="nofollow noreferrer"
                       >
-                        <ButtonWIP>View Documentation</ButtonWIP>
+                        View documentation
                       </a>
                     }
                   />
