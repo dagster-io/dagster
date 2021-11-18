@@ -112,23 +112,12 @@ export const EXECUTION_PLAN_TO_GRAPH_FRAGMENT = gql`
     steps {
       key
       kind
-    }
-    steps {
-      key
-      kind
       inputs {
         dependsOn {
           key
           kind
-          outputs {
-            name
-            type {
-              name
-            }
-          }
         }
       }
     }
-    artifactsPersisted
   }
 `;
