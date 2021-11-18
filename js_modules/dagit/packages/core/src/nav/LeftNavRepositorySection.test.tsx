@@ -5,7 +5,7 @@ import * as React from 'react';
 import {TestProvider} from '../testing/TestProvider';
 import {LocationStateChangeEventType} from '../types/globalTypes';
 
-import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepositorySection';
+import {LeftNavRepositorySection, HIDDEN_REPO_KEYS} from './LeftNavRepositorySection';
 
 describe('Repository options', () => {
   const defaultMocks = {
@@ -144,8 +144,8 @@ describe('Repository options', () => {
       });
     });
 
-    it('initializes with correct repo option, if `LAST_REPO_KEY` localStorage', async () => {
-      window.localStorage.setItem(LAST_REPO_KEY, 'lorem:ipsum');
+    it('initializes with correct repo option, if `HIDDEN_REPO_KEYS` localStorage', async () => {
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, '["lorem:ipsum"]');
       render(
         <TestProvider
           apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
@@ -155,48 +155,14 @@ describe('Repository options', () => {
         </TestProvider>,
       );
 
-      await waitFor(() => {
-        // Three links. One for repo, two for pipelines.
-        expect(screen.getAllByRole('link')).toHaveLength(3);
-      });
-    });
-
-    it('initializes with correct repo option, if `REPO_KEYS` localStorage', async () => {
-      window.localStorage.setItem(REPO_KEYS, '["foo:bar"]');
-      render(
-        <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-          routerProps={{initialEntries: ['/instance/runs']}}
-        >
-          <LeftNavRepositorySection />
-        </TestProvider>,
-      );
-
-      // Initialize to `foo@bar`, which has four pipelines. Plus one for repo.
+      // `foo@bar` is visible, and has four pipelines. Plus one for repo.
       await waitFor(() => {
         expect(screen.getAllByRole('link')).toHaveLength(5);
       });
     });
 
-    it('initializes with first repo option, if one option and no matching `REPO_KEYS` localStorage', async () => {
-      window.localStorage.setItem(REPO_KEYS, '["hello:world"]');
-      render(
-        <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-          routerProps={{initialEntries: ['/instance/runs']}}
-        >
-          <LeftNavRepositorySection />
-        </TestProvider>,
-      );
-
-      // Initialize to `lorem@ipsum`, which has two pipelines. Plus one for repo.
-      await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(3);
-      });
-    });
-
-    it('initializes with multiple repo option, if multiple `REPO_KEYS` localStorage', async () => {
-      window.localStorage.setItem(REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
+    it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, '["hello:world"]');
       render(
         <TestProvider
           apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
@@ -206,13 +172,30 @@ describe('Repository options', () => {
         </TestProvider>,
       );
 
-      // Six total pipelines, and no link for single repo name.
+      // All repos visible. `lorem@ipsum` has two pipelines, `foo@bar` has four.
       await waitFor(() => {
         expect(screen.getAllByRole('link')).toHaveLength(6);
       });
     });
 
-    it('initializes empty, then shows first option when options are added', async () => {
+    it('initializes empty, if all items in `HIDDEN_REPO_KEYS` localStorage', async () => {
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      // No links.
+      await waitFor(() => {
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
+      });
+    });
+
+    it('initializes empty, then shows options when they are added', async () => {
       const initialMocks = {
         Workspace: () => ({
           locationEntries: () => [],
@@ -235,16 +218,16 @@ describe('Repository options', () => {
 
       rerender(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
         </TestProvider>,
       );
 
-      // After repositories are added, the first one becomes visible.
+      // After repositories are added, all become visible.
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(3);
+        expect(screen.getAllByRole('link')).toHaveLength(6);
       });
     });
 
