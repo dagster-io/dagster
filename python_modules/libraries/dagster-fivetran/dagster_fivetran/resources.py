@@ -16,6 +16,8 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster_fivetran.types import FivetranOutput
+from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
 from dateutil import parser
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
@@ -52,12 +54,6 @@ class FivetranResource:
     @property
     def api_base_url(self) -> str:
         return urljoin(FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH)
-
-    def _connector_url(self, service: str, schema: str) -> str:
-        return f"https://fivetran.com/dashboard/connectors/{service}/{schema}"
-
-    def _logs_url(self, service: str, schema: str) -> str:
-        return f"{self._connector_url(service, schema)}/logs"
 
     def make_request(self, method: str, endpoint: str, data: str = None) -> Dict[str, Any]:
         """
@@ -187,6 +183,9 @@ class FivetranResource:
             check.failed("schedule_type must be either 'auto' or 'manual'.")
         return self.update_connector(connector_id, properties={"schedule_type": schedule_type})
 
+    def get_connector_schema_config(self, connector_id: str) -> Dict[str, Any]:
+        return self.make_request("GET", endpoint=f"{connector_id}/schemas")
+
     def start_sync(self, connector_id: str) -> Dict[str, Any]:
         """
         Initiates a sync of a Fivetran connector.
@@ -207,7 +206,7 @@ class FivetranResource:
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
             f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran UI: "
-            f"{self._connector_url(connector_details['service'], connector_details['schema'])}"
+            + get_fivetran_connector_url(connector_details)
         )
         return connector_details
 
@@ -265,12 +264,7 @@ class FivetranResource:
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
                     "connector_details": EventMetadata.json(connector_details),
-                    "log_url": EventMetadata.url(
-                        self._logs_url(
-                            service=connector_details["service"],
-                            schema=connector_details["schema"],
-                        )
-                    ),
+                    "log_url": EventMetadata.url(get_fivetran_logs_url(connector_details)),
                 },
             )
         return connector_details
@@ -280,7 +274,7 @@ class FivetranResource:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: float = None,
-    ) -> Dict[str, Any]:
+    ) -> FivetranOutput:
         """
         Initializes a sync operation for the given connector, and polls until it completes.
 
@@ -292,16 +286,19 @@ class FivetranResource:
                 out. By default, this will never time out.
 
         Returns:
-            Dict[str, Any]: Parsed json data representing the final state of the connector.
+            :py:class:`~DbtCloudOutput`:
+                Object containing details about the connector and the tables it updates
         """
+        schema_config = self.get_connector_schema_config(connector_id)
         init_last_sync_timestamp, _, _ = self.get_connector_sync_status(connector_id)
         self.start_sync(connector_id)
-        return self.poll_sync(
+        final_details = self.poll_sync(
             connector_id,
             init_last_sync_timestamp,
             poll_interval=poll_interval,
             poll_timeout=poll_timeout,
         )
+        return FivetranOutput(connector_details=final_details, schema_config=schema_config)
 
 
 @resource(

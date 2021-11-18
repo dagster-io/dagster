@@ -36,7 +36,7 @@ from .types import DbtCloudOutput
             default_value=True,
             description=(
                 "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes."
+                "be yielded when the op executes."
             ),
         ),
         "asset_key_prefix": Field(

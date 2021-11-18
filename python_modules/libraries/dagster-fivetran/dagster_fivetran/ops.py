@@ -1,6 +1,8 @@
 from typing import Any, Dict
 
-from dagster import Field, In, Noneable, Nothing, Out, op
+from dagster import Field, In, Noneable, Nothing, Out, op, Output, Bool, Array
+from dagster_fivetran.types import FivetranOutput
+from dagster_fivetran.utils import generate_materializations
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 
 
@@ -8,7 +10,7 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
     required_resource_keys={"fivetran"},
     ins={"start_after": In(Nothing)},
     out=Out(
-        dict,
+        FivetranOutput,
         description="Parsed json dictionary representing the details of the Fivetran connector after "
         "the sync successfully completes. "
         "See the [Fivetran API Docs](https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails) "
@@ -32,14 +34,31 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
             description="The maximum time that will waited before this operation is timed out. By "
             "default, this will never time out.",
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the Fivetran sync will "
+                "be yielded when the op executes."
+            ),
+        ),
+        "asset_key_prefix": Field(
+            config=Array(str),
+            default_value=["fivetran"],
+            description=(
+                "If provided and yield_materializations is True, these components will be used to "
+                "prefix the generated asset keys."
+            ),
+        ),
     },
     tags={"kind": "fivetran"},
 )
-def fivetran_sync_op(context) -> Dict[str, Any]:
+def fivetran_sync_op(context):
     """
     This op executes a Fivetran sync for a given ``connector_id``, and polls until that sync
-    completes, raising an error if it is unsuccessful. It outputs a dictionary which represents the
-    details of the Fivetran connector after the sync successfully completes.
+    completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
+    the details of the Fivetran connector after the sync successfully completes, as well as details
+    about which tables the sync updates.
 
     It requires the use of the :py:class:`~dagster_fivetran.fivetran_resource`, which allows it to
     communicate with the Fivetran API.
@@ -69,8 +88,14 @@ def fivetran_sync_op(context) -> Dict[str, Any]:
             final_foobar_state = sync_foobar(start_after=some_op())
             other_op(final_foobar_state)
     """
-    return context.resources.fivetran.sync_and_poll(
+
+    fivetran_output = context.resources.fivetran.sync_and_poll(
         connector_id=context.op_config["connector_id"],
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
+    if context.op_config["yield_materializations"]:
+        yield from generate_materializations(
+            fivetran_output, asset_key_prefix=context.op_config["asset_key_prefix"]
+        )
+    yield Output(fivetran_output)

@@ -39,6 +39,109 @@ def get_sample_connector_response(**kwargs):
     )
 
 
+def get_sample_connector_schema_config():
+
+    return {
+        "code": "Success",
+        "data": {
+            "enable_new_by_default": False,
+            "schemas": {
+                "schema_1": {
+                    "name_in_destination": "xyz1",
+                    "enabled": True,
+                    "tables": {
+                        "table_1": {
+                            "name_in_destination": "abc1",
+                            "enabled": True,
+                            "enabled_patch_settings": {"allowed": True},
+                            "columns": {
+                                "column_1": {
+                                    "name_in_destination": "column_1",
+                                    "enabled": True,
+                                    "hashed": False,
+                                    "enabled_patch_settings": {
+                                        "allowed": False,
+                                        "reason_code": "SYSTEM_COLUMN",
+                                        "reason": "The column does not support exclusion as it is a Primary Key",
+                                    },
+                                },
+                                "column_2": {
+                                    "name_in_destination": "column_2",
+                                    "enabled": True,
+                                    "hashed": False,
+                                    "enabled_patch_settings": {"allowed": True},
+                                },
+                                "column_3": {
+                                    "name_in_destination": "column_3",
+                                    "enabled": True,
+                                    "hashed": True,
+                                    "enabled_patch_settings": {"allowed": True},
+                                },
+                            },
+                        },
+                        "table_2": {
+                            "name_in_destination": "abc2",
+                            "enabled": True,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason_code": "SYSTEM_TABLE",
+                            },
+                        },
+                    },
+                },
+                "schema_2": {
+                    "name_in_destination": "abc",
+                    "enabled": True,
+                    "tables": {
+                        "table_1": {
+                            "name_in_destination": "xyz",
+                            "enabled": True,
+                            "enabled_patch_settings": {"allowed": True},
+                            "columns": {
+                                "name_in_destination": "column_1",
+                                "column_1": {"enabled": False},
+                            },
+                        },
+                        "table_2": {
+                            "name_in_destination": "fed",
+                            "enabled": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason_code": "OTHER",
+                                "reason": "Permission denied",
+                            },
+                        },
+                    },
+                },
+                "schema_3": {
+                    "name_in_destination": "qwerty",
+                    "enabled": False,
+                    "tables": {
+                        "table_1": {
+                            "name_in_destination": "bar",
+                            "enabled": True,
+                            "enabled_patch_settings": {"allowed": True},
+                            "columns": {
+                                "name_in_destination": "column_1",
+                                "column_1": {"enabled": False},
+                            },
+                        },
+                        "table_2": {
+                            "name_in_destination": "fed",
+                            "enabled": True,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason_code": "OTHER",
+                                "reason": "Permission denied",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+
 def get_sample_update_response():
     return {
         "code": "Success",
