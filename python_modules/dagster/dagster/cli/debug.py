@@ -1,9 +1,12 @@
 from gzip import GzipFile
 
 import click
-from dagster import DagsterInstance
+from dagster import DagsterInstance, check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.runs.sql_run_storage import SnapshotType
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from tqdm import tqdm
 
 
 def _recent_failed_runs_text(instance):
@@ -52,3 +55,38 @@ def export_command(run_id, output_file):
             )
 
         export_run(instance, run, output_file)
+
+
+@debug_cli.command(
+    name="import", help="Import the relevant artifacts for a pipeline/job run from a file."
+)
+@click.argument("input_files", nargs=-1, type=click.Path(exists=True))
+def import_command(input_files):
+    debug_payloads = []
+    for input_file in input_files:
+        with GzipFile(input_file, "rb") as file:
+            blob = file.read().decode("utf-8")
+            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
+            check.invariant(isinstance(debug_payload, DebugRunPayload))
+            debug_payloads.append(debug_payload)
+
+    with DagsterInstance.get() as instance:
+        for debug_payload in debug_payloads:
+            run = debug_payload.pipeline_run
+            click.echo(f"Importing run {run.run_id} (Dagster: {debug_payload.version})")
+            if not instance.has_snapshot(run.execution_plan_snapshot_id):
+                instance.add_snapshot(
+                    debug_payload.execution_plan_snapshot,
+                    run.execution_plan_snapshot_id,
+                )
+            if not instance.has_snapshot(run.pipeline_snapshot_id):
+                instance.add_snapshot(
+                    debug_payload.pipeline_snapshot,
+                    run.pipeline_snapshot_id,
+                )
+
+            if not instance.has_run(run.run_id):
+                instance.add_run(run)
+
+                for event in tqdm(debug_payload.event_list):
+                    instance.store_event(event)
