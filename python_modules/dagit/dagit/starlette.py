@@ -70,7 +70,7 @@ class DagitWebserver(GraphQLServer):
         context = self.make_request_context(request)
 
         run = context.instance.get_run_by_id(run_id)
-        debug_payload = DebugRunPayload.build(self._process_context.instance, run)
+        debug_payload = DebugRunPayload.build(context.instance, run)
 
         result = io.BytesIO()
         with gzip.GzipFile(fileobj=result, mode="wb") as file:
