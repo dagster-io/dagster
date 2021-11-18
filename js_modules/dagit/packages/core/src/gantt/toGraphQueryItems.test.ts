@@ -35,16 +35,6 @@ describe('toGraphQueryItems', () => {
                       __typename: 'ExecutionStep',
                       key: 'a',
                       kind: StepKind.COMPUTE,
-                      outputs: [
-                        {
-                          __typename: 'ExecutionStepOutput',
-                          name: 'result',
-                          type: {
-                            __typename: 'RegularDagsterType',
-                            name: 'Any',
-                          },
-                        },
-                      ],
                     },
                   ],
                 },
@@ -85,16 +75,6 @@ describe('toGraphQueryItems', () => {
                       __typename: 'ExecutionStep',
                       key: 'a',
                       kind: StepKind.COMPUTE,
-                      outputs: [
-                        {
-                          __typename: 'ExecutionStepOutput',
-                          name: 'result',
-                          type: {
-                            __typename: 'RegularDagsterType',
-                            name: 'Any',
-                          },
-                        },
-                      ],
                     },
                   ],
                 },
@@ -112,16 +92,6 @@ describe('toGraphQueryItems', () => {
                       __typename: 'ExecutionStep',
                       key: 'b[?]',
                       kind: StepKind.UNRESOLVED_MAPPED,
-                      outputs: [
-                        {
-                          __typename: 'ExecutionStepOutput',
-                          name: 'result',
-                          type: {
-                            __typename: 'RegularDagsterType',
-                            name: 'Any',
-                          },
-                        },
-                      ],
                     },
                   ],
                 },
