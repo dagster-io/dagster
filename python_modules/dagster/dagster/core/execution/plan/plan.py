@@ -166,7 +166,9 @@ class _PlanBuilder:
         )
 
         pipeline_def = self.pipeline.get_definition()
-        root_inputs = []
+        root_inputs: List[
+            Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
+        ] = []
         # Recursively build the execution plan starting at the root pipeline
         for input_def in pipeline_def.graph.input_defs:
             input_name = input_def.name
@@ -387,14 +389,10 @@ class _PlanBuilder:
                 self.set_output_handle(output_handle, step_output_handle)
 
 
-def get_step_input():
-    pass
-
-
 def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
-):
+) -> FromRootInputConfig:
 
     input_config = plan_builder.resolved_run_config.inputs
 

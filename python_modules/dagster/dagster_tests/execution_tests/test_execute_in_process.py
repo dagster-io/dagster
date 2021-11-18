@@ -137,22 +137,6 @@ def test_executor_config_ignored_by_execute_in_process():
     assert result.success
 
 
-def test_graph_with_inputs_error():
-    @solid
-    def my_solid(x):
-        return x
-
-    @graph
-    def my_graph(x):
-        my_solid(x)
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Graphs with inputs cannot be used with execute_in_process at this time.",
-    ):
-        my_graph.execute_in_process()
-
-
 def test_output_for_node_composite():
     @op(out={"foo": Out()})
     def my_op():

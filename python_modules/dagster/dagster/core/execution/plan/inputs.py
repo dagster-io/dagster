@@ -413,10 +413,7 @@ class FromRootInputConfig(
     def load_input_object(self, step_context: "StepExecutionContext") -> Any:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
-            msg_fn=lambda: (
-                f'Error occurred while loading input "{self.input_name}" of '
-                f'step "{step_context.step.key}":'
-            ),
+            msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
             log_manager=step_context.log,
         ):
             dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
