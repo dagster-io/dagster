@@ -1249,6 +1249,23 @@ def job_with_default_config():
     a_solid_with_config()
 
 
+@job
+def two_ins_job():
+    @op
+    def op_1():
+        return 1
+
+    @op
+    def op_2():
+        return 1
+
+    @op
+    def op_with_2_ins(in_1, in_2):
+        return in_1 + in_2
+
+    op_with_2_ins(op_1(), op_2())
+
+
 @repository
 def empty_repo():
     return []
@@ -1298,6 +1315,7 @@ def define_pipelines():
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
         job_with_default_config,
+        two_ins_job,
     ]
 
 
