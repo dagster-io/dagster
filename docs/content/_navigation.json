@@ -399,6 +399,10 @@
           {
             "title": "Fully-Featured Example Project",
             "path": "/guides/dagster/example_project"
+          },
+          {
+            "title": "Model Selection",
+            "path": "/guides/dagster/model_selection"
           }
         ]
       }

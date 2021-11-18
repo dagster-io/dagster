@@ -1,0 +1,231 @@
+---
+title: Model Selection | Dagster
+description: This guide describes how to use Dagster for exploratory model selection for machine learning.
+---
+
+# Model Selection
+
+Every machine learning problem begins with exploration. Before training a final model or building an online learning system, there are many decisions to make. One of the most important decisions is: _what learning algorithm should be used, and how should it be configured_? This is known as _model selection._
+
+There are many learning algorithms for common tasks (e.g. classification, regression). Each algorithm defines a set of configurable hyperparameters, and each hyperparameter may range over a potentially infinite set of values. We can call a learning algorithm together with a fixed set of hyperparameter bindings a _model architecture_. Model selection then involves choosing a single model architecture out of an infinite set of possibilities.
+
+Any given model architecture can be evaluated by fitting a model with a training dataset and computing the model’s performance score against a test dataset. Thus, we can frame model selection as an optimization problem— we’d like to find the model architecture with the highest score. However, because there are an infinite number of possible model architectures, we can’t simply evaluate them all and choose the highest-scoring one. Further, the performance landscape (i.e. the function mapping model architecture to score) is undefined until we select a fixed range of candidate model architectures. Even then, the landscape is often high-dimensional and we rarely know much about its form. This means that we are unlikely to get a good result from applying standard optimization algorithms.
+
+Therefore, model selection is inherently _ad hoc_. The candidate space must be narrowed via an external agent’s judgment before a “best” model architecture can be identified quantitatively. Common approaches include grid search ( candidate architectures specified in a fixed set) and random search ( candidate architectures sampled from a fixed distribution). More sophisticated approaches apply Bayesian inference to intelligently search a bounded candidate space.
+
+All of these methods require constraints defined by the user. It is often difficult to intelligently choose such constraints. It helps to be able to examine detailed output from a set of candidate model architectures.
+
+Below we’ll provide a Dagster-based and slightly-modified implementation of the model selection pipeline described in Caleb Neale's excellent tutorial [Hyper-Parameter Tuning and Model Selection, Like a Movie Star](https://towardsdatascience.com/hyper-parameter-tuning-and-model-selection-like-a-movie-star-a884b8ee8d68). We'll explain each step of the pipeline as we go, but Neale's tutorial is recommended reading for deeper understanding.
+
+## Problem
+
+Our problem is to classify the records in the the famous [Iris dataset](https://archive.ics.uci.edu/ml/datasets/iris). This dataset is a single 150-row table, with each record (row) representing a single flower belonging to one of three classes. Each record has five features, including four physical measurements: sepal length, sepal width, petal length, and petal width. The last feature is the plant class, a categorical feature representing one of three kinds of plant class. Here is a sample from the above-linked version of the data (note that the plant class is labeled `target` and represented by an element of set `{0, 1, 2}`):
+
+     sepal length (cm)  sepal width (cm)  petal length (cm)  petal width (cm)  target
+                   5.1               3.5                1.4               0.2       0
+                   4.9               3.0                1.4               0.2       0
+                   4.7               3.2                1.3               0.2       0
+                   4.6               3.1                1.5               0.2       0
+                   5.0               3.6                1.4               0.2       0
+
+The classification task is to predict the `target` using the physical measurements. Because this is a [supervised learning problem](https://machinelearningmastery.com/supervised-and-unsupervised-machine-learning-algorithms/), we have a clear model performance metric: the fraction of records correctly classified by the model. We'll call this number (ranging from 0-1) the _classification accuracy_.
+
+The model selection problem is then to select a model architecture that maximizes the classification accuracy. Recall that a "model architecture" here means "a learning algorithm together with bindings for its hyperparameters". Our candidate architectures will be based on two classification algorithms: [Logistic Regression]() and [Random Forest](). For each algorithm, we'll generate candidate model architectures by iterating over a fixed set of hyperparameter bindings (i.e we'll perform a [Grid Search](https://machinelearningmastery.com/hyperparameter-optimization-with-random-search-and-grid-search/)). For each model architecture, we'll apply 5-fold [cross-validation](https://scikit-learn.org/stable/modules/cross_validation.html) to obtain a classification accuracy score. Finally, we'll select the architecture with the highest score, use it to train a model on the entire training set, and calculate it's final score against the test set.
+
+## Dagster solution
+
+We're going to implement our solution using a combination of Dagster and popular machine learning library [Scikit Learn](https://scikit-learn.org/stable/index.html) (`sklearn`). We'll implement the orchestration aspects of our solution in Dagster, and outsource the fitting of individual models to `sklearn`. (Note: `sklearn` has its own powerful and concise API for model selection, as well as a limited pipeline API. Both are useful, but Dagster gives us much greater control over and observability of our computation graph.)
+
+Let's start with an overview of the finished Dagster job we will build. Here is what the completed job looks like in [Dagit](/concepts/dagit):
+
+<Image
+alt="graph"
+src="/images/guides/model_selection/graph.png"
+width={1966}
+height={1848}
+/>
+
+And here is the job definition:
+
+```python file=/guides/dagster/model_selection/job.py startafter=job_start endbefore=job_end
+@job
+def model_selection():
+    training_set, test_set = load_iris_data()
+    lr_hparam_sets, rf_hparam_sets = generate_candidate_model_architectures()
+    lr_results = lr_hparam_sets.map(
+        lambda hparams: score_lr_architecture(training_set, hparams)
+    ).collect()
+    rf_results = rf_hparam_sets.map(
+        lambda hparams: score_rf_architecture(training_set, hparams)
+    ).collect()
+    best_arch = select_best_architecture(lr_results, rf_results)
+    best_arch_with_final_score = compute_final_score(training_set, test_set, best_arch)
+    report_result(best_arch_with_final_score)
+```
+
+There are 7 total ops, which we can break into three categories:
+
+- **source ops** `load_iris_data` and `generate_candidate_model_architectures` have no upstream inputs. They provide the source data for the rest of the graph.
+- **analysis ops** `score_lr_architecture` and `score_rf_architecture` perform the bulk of computation. This is where models are trained and scored.
+- **summary ops** `select_best_architecture`, `compute_final_score`, and `report_result` collect, summarize, and report the results of analysis.
+
+### Source ops
+
+We need two broad inputs for model selection: (1) a dataset and (2) a set of candidate model architectures. These are what the ops `load_iris_dataset` and `generate_candidate_model_architectures` respectively provide. First, let's write `load_iris_data`:
+
+```python file=/guides/dagster/model_selection/job.py startafter=load_iris_data_start endbefore=load_iris_data_end
+import pandas as pd
+import sklearn.datasets
+from sklearn.model_selection import train_test_split
+from dagster import Out, job, op
+
+
+@op(out={"training_set": Out(pd.DataFrame), "test_set": Out(pd.DataFrame)})
+def load_iris_data():
+    df = sklearn.datasets.load_iris(as_frame=True)["frame"]
+    # set random_state here to get reproducible results
+    training_set, test_set = train_test_split(df, test_size=0.33, random_state=5)
+    return training_set, test_set
+```
+
+Our code makes use of two convenient `sklearn` functions: `sklearn.datasets.load_iris` downloads the Iris data and packages it in a dataframe. `train_test_split` is used to divide the data into training and test sets with a size ratio of 2:1 (so 100 training records, 50 test records). Now onto `generate_candidate_model_architectures`:
+
+```python file=/guides/dagster/model_selection/job.py startafter=generate_candidate_model_architectures_start endbefore=generate_candidate_model_architectures_end
+from dagster import DynamicOut, DynamicOutput
+from sklearn.model_selection import ParameterGrid
+
+
+@op(
+    # "lr": logistic regression, "rf": random forest, "hparam": hyperparameter
+    out={
+        "lr_hparam_sets": DynamicOut(dict),
+        "rf_hparam_sets": DynamicOut(dict),
+    }
+)
+def generate_candidate_model_architectures():
+
+    # logistic regression
+    lr_grid = ParameterGrid({"C": np.logspace(0, 4, 5)})
+    for hparams in lr_grid:
+        yield DynamicOutput(
+            output_name="lr_hparam_sets",
+            mapping_key=serialize_hparams(hparams),
+            value=hparams,
+        )
+
+    rf_grid = ParameterGrid(
+        {
+            "n_estimators": [10, 1000],
+            "max_depth": [5, 30, None],
+            "min_samples_leaf": [1, 10, 100],
+        }
+    )
+    for hparams in rf_grid:
+        yield DynamicOutput(
+            output_name="rf_hparam_sets",
+            mapping_key=serialize_hparams(hparams),
+            value=hparams,
+        )
+```
+
+This op generates candidate model architectures for both logistic regression and random forest. It uses another convenient `sklearn` API, [`ParameterGrid`](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.ParameterGrid.html), to generate all possible combinations from a set of discrete options for each variable hyperparameter. To keep execution time low for this example, we (1) vary only a subset of the available hyperparameters for each algorithm; (2) specify only a small set of values for each varied hyperparameter. This gives us a "small" candidate search space: 5 candidate architectures for logistic regression, and 18 (2 \* 3 \* 3) for random forest, for 23 total candidates. However, since we are using 5-fold cross-validation, we will actually be training 5 x 23 = 115 models! For an in-the-wild problem, a reasonable candidate set could easily be much larger. Model selection can quickly become very computationally expensive.
+
+Notice that the two outputs `lr_hparam_sets` and `rf_hparam_sets` are [Dynamic Outputs](http://localhost:3001/concepts/ops-jobs-graphs/jobs-graphs#dynamic-mapping--collect). This means that they can be yielded multiple times. Any downstream ops that consume them as input will be cloned for each yielded instance. Dagster requires each yielded instance to have a unique identifier called the `mapping_key`. Here we set the mapping key with a utility function `serialize_hparams`, which returns a string representation of a hyperparameter set:
+
+```python file=/guides/dagster/model_selection/job.py startafter=serialize_hparams_start endbefore=serialize_hparams_end
+def serialize_hparams(hparams):
+    parts = []
+    for k in sorted(hparams.keys()):
+        val = str(hparams[k]).replace(r"^-", "neg").replace(".", "_")
+        parts.append(f"{k}_eq_{val}")
+    return "__".join(parts)
+```
+
+### Analysis ops
+
+Our two analysis ops `score_lr_architecture` and `score_rf_architecture` are the workhorses of this job. They are nearly identical:
+
+```python file=/guides/dagster/model_selection/job.py startafter=analysis_ops_start endbefore=analysis_ops_end
+@op
+def score_lr_architecture(training_set, hparams):
+    feats, target = split_dataset(training_set)
+    arch = LogisticRegression(**hparams)
+    score = cross_val_score(arch, feats, target, cv=5).mean()
+    return dict(arch=arch, hparams=hparams, score=score)
+
+
+@op
+def score_rf_architecture(training_set, hparams):
+    feats, target = split_dataset(training_set)
+    arch = RandomForestClassifier(**hparams)
+    score = cross_val_score(arch, feats, target, cv=5).mean()
+    return dict(arch=arch, hparams=hparams, score=score)
+```
+
+Both ops start by using another utility function, `split_dataset`, to separate the features from the target variable (this is necessary for `sklearn`'s API):
+
+```python file=/guides/dagster/model_selection/job.py startafter=split_dataset_start endbefore=split_dataset_end
+def split_dataset(df):
+    features = df[
+        ["sepal length (cm)", "sepal width (cm)", "petal length (cm)", "petal width (cm)"]
+    ]
+    target = df["target"]
+    return features, target
+```
+
+They then define a model architecture by instantiating the appropriate `sklearn` [Estimator class](https://scikit-learn.org/stable/developers/develop.html) with the passed-in hyperparameters, and compute a cross-validated score for the architecture using `sklearn`'s `cross_val_score` function. This function does a lot under the hood. It creates `cv` (5 in our case) partitions of the training data and fits and scores a model for each partition. The return value is a list of the scores for each trained model. We take the average of these scores as an estimate of the model architecture's performance.
+
+Finally, we return a `dict` packaging the model architecture, passed-in `hparams`, and score. Even though there will be one dict output for each `hparams` value dynamically fed in upstream, notice that this time we return a plain, non-dynamic output. That is because the analysis ops will be cloned for each for each `hparams` value, with each instance yielding a single output dictionary. This is different than `generate_candidate_model_architectures`, which yielded multiple `hparams` values from a single instance.
+
+### Summary ops
+
+The three summary ops `select_best_architecture`, `compute_final_score`, and `report_result` have a simple linear flow:
+
+```python file=/guides/dagster/model_selection/job.py startafter=summary_ops_start endbefore=summary_ops_end
+@op
+def select_best_architecture(context, lr_results, rf_results):
+    all_results = lr_results + rf_results
+    best_arch = max(all_results, key=lambda m: m["score"])
+    return best_arch
+
+
+@op
+def compute_final_score(context, training_set, test_set, best_arch):
+    train_feats, train_target = split_dataset(training_set)
+    test_feats, test_target = split_dataset(test_set)
+    final_score = best_arch["arch"].fit(train_feats, train_target).score(test_feats, test_target)
+    return dict(**best_arch, score=final_score)
+
+
+@op
+def report_result(context, result):
+    lines = [
+        "Best model architecture",
+        "-----------------------",
+        f'Score: {result["score"]}',
+        f'Algorithm: {type(result["arch"])}',
+        "Hyperparameters:",
+    ] + [f"  {k}: {v}" for k, v in result["hparams"].items()]
+    context.log.info("\n".join(lines))
+```
+
+These ops consist of standard Python or calls to previously explained functions, so the logic should be understandable.
+
+However, you may be wondering _why_ the `compute_final_score` op exists. Didn't we already score each architecture? We did, but those scores suffer from subtle and contrasting biases. First, each score is an average from models trained on only 80% (from 5-fold cross-validation) of the training data-- training on less data will lead to lower performance and thus leads to _downward_ performance bias. But more subtly, there is also a contrasting _upward_ bias. This is due to the fact that the evaluation of individual model architectures is "noisy". Each architecture may have been "lucky" or "unlucky". And because we are choosing the best-scoring architecture, we are likely to have selected a "lucky" one, giving an upward bias to the score.
+
+The solution is to use our winning architecture to train/score a single model (eliminates upward bias) on the full respective training/test sets (eliminates downward bias). This gives an unbiased estimate of model performance, and is the purpose of `compute_final_score`.
+
+## Running our job
+
+TODO
+
+<Image
+alt="run"
+src="/images/guides/model_selection/run.png"
+width={4432}
+height={2478}
+/>
+
+## Conclusion
+
+TODO
