@@ -23,15 +23,17 @@ def _table_data_to_materialization(
     asset_key = asset_key_prefix + [schema_name, table_name]
     if not table_data["enabled"]:
         return None
+    metadata = {
+        "connector_url": EventMetadata.url(
+            get_fivetran_connector_url(fivetran_output.connector_details)
+        )
+    }
+    if table_data.get("columns"):
+        metadata["column_info"] = EventMetadata.json(table_data.get("columns"))
     return AssetMaterialization(
         asset_key=asset_key,
         description=f"Table generated via Fivetran sync: {schema_name}.{table_name}",
-        metadata={
-            "connector_url": EventMetadata.url(
-                get_fivetran_connector_url(fivetran_output.connector_details)
-            ),
-            "column_info": EventMetadata.json(table_data["columns"]),
-        },
+        metadata=metadata,
     )
 
 

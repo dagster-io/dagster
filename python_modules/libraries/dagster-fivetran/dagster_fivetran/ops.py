@@ -55,7 +55,7 @@ from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 )
 def fivetran_sync_op(context):
     """
-    This op executes a Fivetran sync for a given ``connector_id``, and polls until that sync
+    Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
     the details of the Fivetran connector after the sync successfully completes, as well as details
     about which tables the sync updates.

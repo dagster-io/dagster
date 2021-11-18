@@ -53,8 +53,7 @@ class DbtCloudOutput(DbtOutput):
         job = self.run_details["job"]
         if not job or not job.get("generate_docs"):
             return None
-        return "foo"
-        # account_id = self._run_details["account_id"]
+        return f"https://cloud.getdbt.com/accounts/{self.run_details['account_id']}/runs/{self.run_id}/docs/"
 
     @property
     def run_id(self) -> int:

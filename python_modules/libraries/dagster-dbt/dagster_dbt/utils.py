@@ -57,7 +57,7 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[EventMetadataEntr
 
 
 def result_to_materialization(
-    result: Dict[str, Any], asset_key_prefix: List[str] = None
+    result: Dict[str, Any], asset_key_prefix: List[str] = None, docs_url: str = None
 ) -> Optional[AssetMaterialization]:
     """
     This is a hacky solution that attempts to consolidate parsing many of the potential formats
@@ -95,6 +95,11 @@ def result_to_materialization(
     # only generate materializations for models
     if id_prefix[0] != "model":
         return None
+
+    if docs_url:
+        metadata = [
+            EventMetadataEntry.url(url=f"{docs_url}#!/model/{unique_id}", label="docs_url")
+        ] + metadata
 
     return AssetMaterialization(
         description=f"dbt node: {unique_id}",
@@ -143,6 +148,8 @@ def generate_materializations(
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     for result in dbt_output.result["results"]:
-        materialization = result_to_materialization(result, asset_key_prefix)
+        materialization = result_to_materialization(
+            result, asset_key_prefix, docs_url=dbt_output.docs_url
+        )
         if materialization is not None:
             yield materialization
