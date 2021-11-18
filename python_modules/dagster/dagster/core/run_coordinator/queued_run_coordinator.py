@@ -27,14 +27,14 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self.max_concurrent_runs = check.opt_int_param(
+        self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
-        self.tag_concurrency_limits = check.opt_list_param(
+        self._tag_concurrency_limits = check.opt_list_param(
             tag_concurrency_limits,
             "tag_concurrency_limits",
         )
-        self.dequeue_interval_seconds = check.opt_int_param(
+        self._dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
         )
 
@@ -43,6 +43,18 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     @property
     def inst_data(self):
         return self._inst_data
+
+    @property
+    def max_concurrent_runs(self):
+        return self._max_concurrent_runs
+
+    @property
+    def tag_concurrency_limits(self):
+        return self._tag_concurrency_limits
+
+    @property
+    def dequeue_interval_seconds(self):
+        return self._dequeue_interval_seconds
 
     @classmethod
     def config_type(cls):
