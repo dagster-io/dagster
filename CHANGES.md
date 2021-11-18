@@ -1,5 +1,36 @@
 # Changelog
 
+# 0.13.8
+
+### New
+
+- Improved the error message for situations where you try `a, b = my_op()`, inside `@graph` or `@job`, but `my`_op only has a single `Out`.
+- [dagster-dbt] A new integration with dbt Cloud allows you to launch dbt Cloud jobs as part of your Dagster jobs. This comes complete with rich error messages, links back to the dbt Cloud UI, and automatically generated [Asset Materializations](https://docs.dagster.io/concepts/assets/asset-materializations) to help keep track of your dbt models in Dagit. It provides a pre-built `dbt_cloud_run_op`, as well as a more flexible `dbt_cloud_resource` for more customized use cases. Check out the [api docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#ops) to learn more!
+- [dagster-gcp] Pinned the google-cloud-bigquery dependency to <3, because the new 3.0.0b1 version was causing some problems in tests.
+- [dagit] Verbiage update to make it clear that wiping an asset means deleting the materialization events for that asset.
+
+### Bugfixes
+
+- Fixed a bug with the `pipeline launch` / `job launch` CLIs that would spin up an ephemeral dagster instance for the launch, then tear it down before the run actually executed. Now, the CLI will enforce that your instance is non-ephemeral.
+- Fixed a bug with re-execution when upstream step skips some outputs. Previously, it mistakenly tried to load inputs from parent runs. Now, if an upstream step doesn’t yield outputs, the downstream step would skip.
+- [dagit] Fixed a bug where configs for unsatisfied input wasn’t properly resolved when op selection is specified in Launchpad.
+- [dagit] Restored local font files for Inter and Inconsolata instead of using the Google Fonts API. This allows correct font rendering for offline use.
+- [dagit] Improved initial workspace loading screen to indicate loading state instead of showing an empty repository message.
+
+### Breaking Changes
+
+- The `pipeline` argument of the `InitExecutorContext` constructor has been changed to `job`.
+
+### Experimental
+
+- The `@asset` decorator now accepts a `dagster_type` argument, which determines the DagsterType for the output of the asset op.
+- `build_assets_job` accepts an `executor_def` argument, which determines the executor for the job.
+
+### Documentation
+
+- A docs section on context manager resources has been added. Check it out [here](https://docs.dagster.io/concepts/resources#context-manager-resources).
+- Removed the versions of the Hacker News example jobs that used the legacy solid & pipeline APIs.
+
 # 0.13.7
 
 ### New
