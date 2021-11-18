@@ -9,7 +9,7 @@
 
 export interface InstanceConfigQuery_instance {
   __typename: "Instance";
-  info: string;
+  info: string | null;
 }
 
 export interface InstanceConfigQuery {

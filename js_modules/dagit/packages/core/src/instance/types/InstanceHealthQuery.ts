@@ -39,6 +39,7 @@ export interface InstanceHealthQuery_instance_daemonHealth {
 export interface InstanceHealthQuery_instance {
   __typename: "Instance";
   daemonHealth: InstanceHealthQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface InstanceHealthQuery {

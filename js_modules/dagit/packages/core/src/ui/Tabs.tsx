@@ -14,22 +14,24 @@ interface TabsProps {
 }
 
 export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', ...rest}) => {
-  if (!(children instanceof Array) || children.some((c) => c.type !== Tab)) {
+  if (!(children instanceof Array) || children.filter((_) => !!_).some((c) => c.type !== Tab)) {
     throw new Error('Tabs must render Tab instances');
   }
 
   return (
     <div {...rest} role="tablist">
       {React.Children.map(children, (child) =>
-        React.cloneElement(child, {
-          selected: child.props.selected || child.props.id === selectedTabId,
-          $size: size,
-          ...(onChange
-            ? {
-                onClick: () => onChange(child.props.id),
-              }
-            : {}),
-        }),
+        child
+          ? React.cloneElement(child, {
+              selected: child.props.selected || child.props.id === selectedTabId,
+              $size: size,
+              ...(onChange
+                ? {
+                    onClick: () => onChange(child.props.id),
+                  }
+                : {}),
+            })
+          : null,
       )}
     </div>
   );
