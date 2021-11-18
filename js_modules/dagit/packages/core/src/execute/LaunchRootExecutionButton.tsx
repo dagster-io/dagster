@@ -8,9 +8,12 @@ import {
   LaunchPipelineExecution,
   LaunchPipelineExecutionVariables,
 } from '../runs/types/LaunchPipelineExecution';
+import {useTelemetryAction, TelemetryAction} from '../app/Telemetry'
+
 
 import {LaunchButton} from './LaunchButton';
 import {showLaunchError} from './showLaunchError';
+import { ExecutionParams } from '../types/globalTypes';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -33,7 +36,14 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
       return;
     }
 
+    const metadata: {[key: string]: string | null | undefined} = {}
+    metadata["opSelection"] = variables.executionParams.selector.solidSelection?.toString()
+    metadata["jobName"] = variables.executionParams.selector.jobName || variables.executionParams.selector.pipelineName
+    const logLaunch = useTelemetryAction(TelemetryAction.LAUNCH_RUN, metadata);
+
+
     try {
+      logLaunch();
       const result = await launchPipelineExecution({variables});
       handleLaunchResult(basePath, props.pipelineName, result);
     } catch (error) {
