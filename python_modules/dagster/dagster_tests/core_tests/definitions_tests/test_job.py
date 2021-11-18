@@ -90,3 +90,16 @@ def test_reconstructable_job_namespace():
         result = execute_pipeline(reconstructable(my_namespace_job), instance=instance)
 
         assert result.success
+
+
+def test_job_top_level_input():
+    @job
+    def my_job_with_input(x):
+        @op
+        def my_op(y):
+            return y
+
+        my_op(x)
+
+    result = my_job_with_input.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
+    result

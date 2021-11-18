@@ -368,6 +368,10 @@ class _PlanBuilder:
                 self.set_output_handle(output_handle, step_output_handle)
 
 
+def get_step_input():
+    pass
+
+
 def get_step_input_source(
     plan_builder: _PlanBuilder,
     solid: Node,
