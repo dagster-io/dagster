@@ -302,6 +302,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
+  resolvedOpSelection: [String!]
 }
 
 interface PipelineRun {
