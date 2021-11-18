@@ -4,7 +4,6 @@ import click
 from dagster import DagsterInstance, check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.runs.sql_run_storage import SnapshotType
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from tqdm import tqdm
 
