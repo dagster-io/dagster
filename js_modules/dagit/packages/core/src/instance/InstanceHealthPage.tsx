@@ -26,7 +26,9 @@ export const InstanceHealthPage = () => {
     if (loading && !data?.instance) {
       return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
     }
-    return data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null;
+    return data?.instance ? (
+      <DaemonList daemonStatuses={data.instance.daemonHealth.allDaemonStatuses} />
+    ) : null;
   };
 
   return (
