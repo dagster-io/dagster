@@ -395,6 +395,65 @@ class FromConfig(
 
 
 @whitelist_for_serdes
+class FromRootInputConfig(
+    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
+    StepInputSource,
+):
+    """This step input source is configuration to be passed to a type loader"""
+
+    def __new__(cls, input_name: str):
+        return super(FromRootInputConfig, cls).__new__(
+            cls,
+            input_name=input_name,
+        )
+
+    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
+        return pipeline_def.graph.input_def_named(self.input_name)
+
+    def load_input_object(self, step_context: "StepExecutionContext") -> Any:
+        with user_code_error_boundary(
+            DagsterTypeLoadingError,
+            msg_fn=lambda: (
+                f'Error occurred while loading input "{self.input_name}" of '
+                f'step "{step_context.step.key}":'
+            ),
+            log_manager=step_context.log,
+        ):
+            dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
+
+            input_config = step_context.resolved_run_config.inputs
+            config_data = input_config.get(self.input_name) if input_config else None
+
+            return dagster_type.loader.construct_from_config_value(step_context, config_data)
+
+    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
+        input_def = self.get_input_def(pipeline_def)
+        return (
+            input_def.dagster_type.loader.required_resource_keys()
+            if input_def.dagster_type.loader
+            else set()
+        )
+
+    @property
+    def solid_handle(self):
+        raise DagsterInvariantViolationError(
+            "Solid handle is not set on the root input config source."
+        )
+
+    def compute_version(
+        self,
+        step_versions: Dict[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
+        input_config = resolved_run_config.inputs
+        config_data = input_config.get(self.input_name) if input_config else None
+
+        dagster_type = self.get_input_def(pipeline_def).dagster_type
+        return dagster_type.loader.compute_loaded_input_version(config_data)
+
+
+@whitelist_for_serdes
 class FromDefaultValue(
     NamedTuple(
         "_FromDefaultValue",

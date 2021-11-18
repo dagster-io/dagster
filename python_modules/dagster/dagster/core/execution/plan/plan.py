@@ -54,6 +54,7 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
+    FromRootInputConfig,
     FromRootInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -165,10 +166,28 @@ class _PlanBuilder:
         )
 
         pipeline_def = self.pipeline.get_definition()
+        root_inputs = []
         # Recursively build the execution plan starting at the root pipeline
+        for input_def in pipeline_def.graph.input_defs:
+            input_name = input_def.name
+
+            input_source = get_root_graph_input_source(
+                plan_builder=self,
+                input_name=input_name,
+            )
+
+            root_inputs.append(
+                StepInput(
+                    name=input_name,
+                    dagster_type_key=input_def.dagster_type.key,
+                    source=input_source,
+                )
+            )
+
         self._build_from_sorted_solids(
             pipeline_def.solids_in_topological_order,
             pipeline_def.dependency_structure,
+            parent_step_inputs=root_inputs,
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
@@ -370,6 +389,28 @@ class _PlanBuilder:
 
 def get_step_input():
     pass
+
+
+def get_root_graph_input_source(
+    plan_builder: _PlanBuilder,
+    input_name: str,
+):
+
+    input_config = plan_builder.resolved_run_config.inputs
+
+    if input_config and input_name in input_config:
+        return FromRootInputConfig(input_name=input_name)
+
+    # Otherwise we throw an error.
+    raise DagsterInvariantViolationError(
+        (
+            "In top-level graph of {described_target}, input {input_name} "
+            "must get a value from the inputs section of its configuration."
+        ).format(
+            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            input_name=input_name,
+        )
+    )
 
 
 def get_step_input_source(

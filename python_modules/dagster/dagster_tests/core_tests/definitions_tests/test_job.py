@@ -102,4 +102,5 @@ def test_job_top_level_input():
         my_op(x)
 
     result = my_job_with_input.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
-    result
+    assert result.success
+    assert result.output_for_node("my_op") == 2
