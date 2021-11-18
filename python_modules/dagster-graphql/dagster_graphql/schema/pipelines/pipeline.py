@@ -178,6 +178,7 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
@@ -237,6 +238,9 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_solidSelection(self, _graphene_info):
         return self._pipeline_run.solid_selection
+
+    def resolve_resolvedOpSelection(self, _graphene_info):
+        return self._pipeline_run.solids_to_execute
 
     def resolve_pipelineSnapshotId(self, _graphene_info):
         return self._pipeline_run.pipeline_snapshot_id
