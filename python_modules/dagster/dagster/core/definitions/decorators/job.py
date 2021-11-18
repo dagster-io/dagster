@@ -9,8 +9,8 @@ from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
-from ..resource_definition import ResourceDefinition
 from ..policy import RetryPolicy
+from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:

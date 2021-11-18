@@ -466,7 +466,7 @@ def test_retry_policy_rules_job():
     def fail_no_policy():
         raise Failure("I fail")
 
-    @job(retry_policy=RetryPolicy(max_retries=3))
+    @job(op_retry_policy=RetryPolicy(max_retries=3))
     def policy_test():
         throw_with_policy()
         throw_no_policy()
@@ -485,3 +485,22 @@ def test_retry_policy_rules_job():
     assert len(_get_retry_events(result.events_for_node("override_with"))) == 1
     assert len(_get_retry_events(result.events_for_node("config_override_no"))) == 1
     assert len(_get_retry_events(result.events_for_node("override_fail"))) == 1
+
+
+def test_basic_op_retry_policy_subset():
+    @op
+    def do_nothing():
+        pass
+
+    @op
+    def throws(_):
+        raise Exception("I fail")
+
+    @job(op_retry_policy=RetryPolicy())
+    def policy_test():
+        throws()
+        do_nothing()
+
+    result = policy_test.execute_in_process(raise_on_error=False, op_selection=["throws"])
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("throws"))) == 1
