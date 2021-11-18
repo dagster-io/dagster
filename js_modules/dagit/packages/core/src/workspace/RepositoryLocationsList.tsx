@@ -46,14 +46,14 @@ const LocationStatus: React.FC<{location: string; locationOrError: LocationOrErr
   if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
-        <div style={{display: 'flex', alignItems: 'start'}}>
+        <Box flex={{alignItems: 'center', gap: 12}}>
           <TagWIP minimal intent="danger">
             Failed
           </TagWIP>
-          <div style={{fontSize: '14px', marginLeft: '8px'}}>
-            <ButtonLink onClick={() => setShowDialog(true)}>View error</ButtonLink>
-          </div>
-        </div>
+          <ButtonLink onClick={() => setShowDialog(true)}>
+            <span style={{fontSize: '14px'}}>View error</span>
+          </ButtonLink>
+        </Box>
         <RepositoryLocationNonBlockingErrorDialog
           location={location}
           isOpen={showDialog}
