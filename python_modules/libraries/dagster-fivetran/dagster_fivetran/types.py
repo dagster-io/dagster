@@ -1,4 +1,5 @@
-from typing import NamedTuple, Dict, Any
+from typing import Any, Dict, NamedTuple
+
 from dagster import usable_as_dagster_type
 
 

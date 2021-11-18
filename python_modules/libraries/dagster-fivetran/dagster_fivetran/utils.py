@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from dagster import AssetMaterialization, EventMetadata
 from dagster_fivetran.types import FivetranOutput
 

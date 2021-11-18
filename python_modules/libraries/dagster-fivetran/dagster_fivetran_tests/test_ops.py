@@ -1,14 +1,14 @@
 import responses
-from dagster import job, op, AssetKey
-from dagster_fivetran import fivetran_resource, fivetran_sync_op, FivetranOutput
+from dagster import AssetKey, job, op
+from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_sync_op
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
     get_sample_connector_response,
+    get_sample_connector_schema_config,
     get_sample_sync_response,
     get_sample_update_response,
-    get_sample_connector_schema_config,
 )
 
 
