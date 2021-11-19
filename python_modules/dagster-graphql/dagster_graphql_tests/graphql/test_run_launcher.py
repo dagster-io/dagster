@@ -72,3 +72,12 @@ class TestBasicLaunch(
         assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
         assert result.data["pipelineRunOrError"]["stats"]["stepsSucceeded"] == 1
+
+    def test_modeless_launch(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+        result = execute_dagster_graphql(
+            context=graphql_context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={"executionParams": {"selector": selector}},  # omit the default mode
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"

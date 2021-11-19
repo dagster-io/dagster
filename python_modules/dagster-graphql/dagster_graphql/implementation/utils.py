@@ -2,6 +2,7 @@ import sys
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
@@ -81,7 +82,7 @@ class ExecutionParams(
             cls,
             selector=check.inst_param(selector, "selector", PipelineSelector),
             run_config=run_config,
-            mode=check.opt_str_param(mode, "mode"),
+            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
             execution_metadata=check.inst_param(
                 execution_metadata, "execution_metadata", ExecutionMetadata
             ),
