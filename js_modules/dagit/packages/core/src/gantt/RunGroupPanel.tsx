@@ -45,6 +45,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   if (!group || group.__typename === 'RunGroupNotFoundError') {
     return null;
   }
+
   if (group.__typename === 'PythonError') {
     return (
       <Group direction="row" spacing={8} padding={8}>
@@ -74,7 +75,23 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
 
   // BG Note: the g.stats check is a fix for our storybook tests, something is wrong with the
   // apollo mocks for stats and I cannot figure it out.
-  const runs = (group.runs || []).filter((g) => g !== null && g.stats);
+  const runs = (group.runs || [])
+    .filter(
+      (g) =>
+        g !== null &&
+        g.stats.__typename === 'RunStatsSnapshot' &&
+        typeof g.stats.startTime === 'number',
+    )
+    .sort((a, b) => {
+      // We've already filtered out runs that don't have stats, but we need to appease TS here.
+      const statsA = a?.stats;
+      const statsB = b?.stats;
+      if (statsA?.__typename === 'RunStatsSnapshot' && statsB?.__typename === 'RunStatsSnapshot') {
+        return (statsA.startTime || 0) - (statsB.startTime || 0);
+      }
+
+      return 0;
+    });
 
   return (
     <SidebarSection title={runs[0] ? `${runs[0].pipelineName} (${runs.length})` : ''}>
@@ -90,7 +107,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
               <Box padding={{top: 4}}>
                 <RunStatusIndicator status={g.status} />
               </Box>
-
               <div
                 style={{
                   flex: 1,
@@ -106,7 +122,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
                   </RunTitle>
                   <RunTime run={g} />
                 </div>
-
                 <div
                   style={{
                     display: 'flex',
