@@ -6,6 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     InputDefinition,
+    ModeDefinition,
     Output,
     OutputDefinition,
     execute_pipeline,
@@ -14,7 +15,7 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def test_multiple_outputs():
@@ -99,7 +100,7 @@ def define_multi_out():
         del some_input
         raise Exception("do not call me")
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def multiple_outputs_only_emit_one_pipeline():
         output_one, output_two = multiple_outputs()
         downstream_one(output_one)
@@ -142,7 +143,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
         pipe = reconstructable(define_multi_out)
         result = execute_pipeline(
             pipe,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={"execution": {"multiprocess": {}}},
             instance=instance,
         )
         assert result.success

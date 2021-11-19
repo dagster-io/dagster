@@ -3,13 +3,13 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {timingStringForStatus} from '../runs/RunDetails';
-import {RunStatus} from '../runs/RunStatusDots';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -61,7 +61,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   }, [data]);
 
   const runs = React.useMemo(() => {
-    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'PipelineRuns') {
+    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs') {
       return data.pipelineRunsOrError.results;
     }
     return [];
@@ -290,7 +290,7 @@ const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
-    if (run.stats.__typename === 'PipelineRunStatsSnapshot') {
+    if (run.stats.__typename === 'RunStatsSnapshot') {
       return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
     }
     return null;
@@ -298,11 +298,11 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
 
   const intent = () => {
     switch (run.status) {
-      case PipelineRunStatus.SUCCESS:
+      case RunStatus.SUCCESS:
         return 'success';
-      case PipelineRunStatus.CANCELED:
-      case PipelineRunStatus.CANCELING:
-      case PipelineRunStatus.FAILURE:
+      case RunStatus.CANCELED:
+      case RunStatus.CANCELING:
+      case RunStatus.FAILURE:
         return 'danger';
       default:
         return 'none';
@@ -312,7 +312,7 @@ const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   return (
     <TagWIP intent={intent()}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatus status={run.status} size={10} />
+        <RunStatusIndicator status={run.status} size={10} />
         Latest run:
         {stats ? (
           <Tooltip
@@ -442,7 +442,7 @@ const RUN_METADATA_FRAGMENT = gql`
 `;
 
 const JOB_METADATA_QUERY = gql`
-  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: PipelineRunsFilter) {
+  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id

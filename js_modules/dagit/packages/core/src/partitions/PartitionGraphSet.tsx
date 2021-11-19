@@ -21,29 +21,10 @@ import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment
 
 export const PartitionGraphSet: React.FC<{
   partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
-  allStepKeys: string[];
   isJob: boolean;
-}> = ({partitions, allStepKeys, isJob}) => {
+}> = React.memo(({partitions, isJob}) => {
+  const allStepKeys = getStepKeys(partitions);
   const [hiddenStepKeys, setHiddenStepKeys] = React.useState<string[]>([]);
-  const durationGraph = React.useRef<any>(undefined);
-  const materializationGraph = React.useRef<any>(undefined);
-  const successGraph = React.useRef<any>(undefined);
-  const failureGraph = React.useRef<any>(undefined);
-  const rateGraph = React.useRef<any>(undefined);
-  const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
-
-  const onChangeHiddenStepKeys = (hiddenKeys: string[]) => {
-    setHiddenStepKeys(hiddenKeys);
-
-    graphs.forEach((graph) => {
-      const chart = graph?.current?.getChartInstance();
-      const datasets = chart?.data?.datasets || [];
-      datasets.forEach((dataset: any, idx: number) => {
-        const meta = chart.getDatasetMeta(idx);
-        meta.hidden = hiddenKeys.includes(dataset.label);
-      });
-    });
-  };
 
   const runsByPartitionName = {};
   partitions.forEach((partition) => {
@@ -56,7 +37,7 @@ export const PartitionGraphSet: React.FC<{
         isJob={isJob}
         all={allStepKeys}
         hidden={hiddenStepKeys}
-        onChangeHidden={onChangeHiddenStepKeys}
+        onChangeHidden={setHiddenStepKeys}
       />
 
       <div style={{flex: 1}}>
@@ -67,7 +48,7 @@ export const PartitionGraphSet: React.FC<{
           runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineDurationForRun}
           getStepDataForRun={getStepDurationsForRun}
-          ref={durationGraph}
+          hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
@@ -76,7 +57,7 @@ export const PartitionGraphSet: React.FC<{
           runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineMaterializationCountForRun}
           getStepDataForRun={getStepMaterializationCountForRun}
-          ref={materializationGraph}
+          hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
@@ -85,7 +66,7 @@ export const PartitionGraphSet: React.FC<{
           runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationSuccessForRun}
           getStepDataForRun={getStepExpectationSuccessForRun}
-          ref={successGraph}
+          hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
@@ -94,7 +75,7 @@ export const PartitionGraphSet: React.FC<{
           runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationFailureForRun}
           getStepDataForRun={getStepExpectationFailureForRun}
-          ref={failureGraph}
+          hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
@@ -103,12 +84,12 @@ export const PartitionGraphSet: React.FC<{
           runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationRateForRun}
           getStepDataForRun={getStepExpectationRateForRun}
-          ref={rateGraph}
+          hiddenStepKeys={hiddenStepKeys}
         />
       </div>
     </PartitionContentContainer>
   );
-};
+});
 
 export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
   fragment PartitionGraphSetRunFragment on PipelineRun {
@@ -129,3 +110,15 @@ const PartitionContentContainer = styled.div`
   position: relative;
   margin: 0 auto;
 `;
+
+function getStepKeys(partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[]) {
+  const allStepKeys = new Set<string>();
+  partitions.forEach((partition) => {
+    partition.runs.forEach((run) => {
+      run.stepStats.forEach((stat) => {
+        allStepKeys.add(stat.stepKey);
+      });
+    });
+  });
+  return Array.from(allStepKeys).sort();
+}

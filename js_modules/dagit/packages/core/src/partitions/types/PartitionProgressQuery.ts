@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, PipelineRunStatus } from "./../../types/globalTypes";
+import { BulkActionStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionProgressQuery
@@ -17,10 +16,10 @@ export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfi
 }
 
 export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   canTerminate: boolean;
-  status: PipelineRunStatus;
+  status: RunStatus;
   tags: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs_tags[];
 }
 

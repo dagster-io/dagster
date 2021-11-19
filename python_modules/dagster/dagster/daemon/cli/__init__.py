@@ -35,13 +35,6 @@ def _get_heartbeat_tolerance():
 def run_command():
     with capture_interrupts():
         with DagsterInstance.get() as instance:
-            if instance.is_ephemeral:
-                raise Exception(
-                    "dagster-daemon can't run using an in-memory instance. Make sure "
-                    "the DAGSTER_HOME environment variable has been set correctly and that "
-                    "you have created a dagster.yaml file there."
-                )
-
             with daemon_controller_from_instance(
                 instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()
             ) as controller:

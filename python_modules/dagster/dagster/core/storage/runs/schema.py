@@ -15,7 +15,9 @@ RunsTable = db.Table(
         db.ForeignKey("snapshots.snapshot_id", name="fk_runs_snapshot_id_snapshots_snapshot_id"),
     ),
     db.Column("pipeline_name", db.Text),
-    db.Column("mode", db.Text),
+    db.Column(
+        "mode", db.Text
+    ),  # The mode column may be filled with garbage data. In 0.13.0, it is no longer populated.
     db.Column("status", db.String(63)),
     db.Column("run_body", db.Text),
     db.Column("partition", db.Text),

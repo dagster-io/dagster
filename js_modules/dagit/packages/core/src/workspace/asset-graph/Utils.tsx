@@ -41,7 +41,7 @@ export type IEdge = {
 
 export function runForDisplay(d: AssetNode) {
   const run = d.assetMaterializations[0]?.runOrError;
-  return run && run.__typename === 'PipelineRun' ? run : null;
+  return run && run.__typename === 'Run' ? run : null;
 }
 
 export function assetKeyToString(key: {path: string[]}) {

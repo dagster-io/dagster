@@ -97,10 +97,42 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         )
 
 
-class GraphenePipelineRunNotFoundError(graphene.ObjectType):
+class GrapheneGraphNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "GraphNotFoundError"
+
+    graph_name = graphene.NonNull(graphene.String)
+    repository_name = graphene.NonNull(graphene.String)
+    repository_location_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, selector):
+        from ..implementation.utils import GraphSelector
+
+        super().__init__()
+        check.inst_param(selector, "selector", GraphSelector)
+        self.graph_name = selector.graph_name
+        self.repository_name = selector.repository_name
+        self.repository_location_name = selector.location_name
+        self.message = (
+            "Could not find Graph "
+            f"{selector.location_name}.{selector.repository_name}.{selector.graph_name}"
+        )
+
+
+class GraphenePipelineRunNotFoundError(graphene.Interface):
     class Meta:
         interfaces = (GrapheneError,)
         name = "PipelineRunNotFoundError"
+
+    run_id = graphene.NonNull(graphene.String)
+    message = graphene.String(required=True)
+
+
+class GrapheneRunNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GraphenePipelineRunNotFoundError, GrapheneError)
+        name = "RunNotFoundError"
 
     run_id = graphene.NonNull(graphene.String)
 
@@ -171,6 +203,20 @@ class GrapheneModeNotFoundError(graphene.ObjectType):
         self.message = f"Mode {mode} not found in pipeline {selector.pipeline_name}."
 
 
+class GrapheneNoModeProvidedError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "NoModeProvidedError"
+
+    pipeline_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, pipeline_name, mode_list):
+        super().__init__()
+        mode_list = check.list_param(mode_list, "mode_list", of_type=str)
+        pipeline_name = check.str_param(pipeline_name, "pipeline_name")
+        self.message = f"No mode provided for pipeline '{pipeline_name}', which has multiple modes. Available modes: {mode_list}"
+
+
 class GrapheneInvalidStepError(graphene.ObjectType):
     invalid_step_key = graphene.NonNull(graphene.String)
 
@@ -186,15 +232,25 @@ class GrapheneInvalidOutputError(graphene.ObjectType):
         name = "InvalidOutputError"
 
 
-class GraphenePipelineRunConflict(graphene.ObjectType):
+class GraphenePipelineRunConflict(graphene.Interface):
+    message = graphene.NonNull(graphene.String)
+
     class Meta:
-        interfaces = (GrapheneError,)
         name = "PipelineRunConflict"
+
+
+class GrapheneRunConflict(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError, GraphenePipelineRunConflict)
+        name = "RunConflict"
 
 
 create_execution_params_error_types = (
     GraphenePresetNotFoundError,
     GrapheneConflictingExecutionParamsError,
+    GrapheneNoModeProvidedError,
 )
 
 
@@ -292,9 +348,11 @@ types = [
     GrapheneInvalidPipelineRunsFilterError,
     GrapheneInvalidStepError,
     GrapheneModeNotFoundError,
+    GrapheneNoModeProvidedError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
+    GrapheneRunConflict,
     GraphenePipelineRunNotFoundError,
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
@@ -304,6 +362,7 @@ types = [
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
     GrapheneRunGroupNotFoundError,
+    GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,

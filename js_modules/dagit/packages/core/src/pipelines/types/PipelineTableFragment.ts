@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineTableFragment
@@ -17,11 +16,11 @@ export interface PipelineTableFragment_modes {
 }
 
 export interface PipelineTableFragment_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   mode: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface PipelineTableFragment_schedules {

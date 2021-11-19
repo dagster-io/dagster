@@ -13,7 +13,7 @@ import { parse as yaml } from "yaml";
 
 // Main
 (async () => {
-  const stream = fg.stream(["../content-crag/**/*.mdx"]);
+  const stream = fg.stream(["../content/**/*.mdx"]);
 
   let stats: SnapshotStats & ImageStats = {
     totalSnapshots: 0,

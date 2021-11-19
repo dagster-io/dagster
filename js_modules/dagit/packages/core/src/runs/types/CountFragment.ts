@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -9,6 +8,6 @@
 // ====================================================
 
 export interface CountFragment {
-  __typename: "PipelineRuns";
+  __typename: "Runs";
   count: number | null;
 }

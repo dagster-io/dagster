@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -22,12 +21,12 @@ export interface Delete_deletePipelineRun_UnauthorizedError {
   message: string;
 }
 
-export interface Delete_deletePipelineRun_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError";
+export interface Delete_deletePipelineRun_RunNotFoundError {
+  __typename: "RunNotFoundError";
   message: string;
 }
 
-export type Delete_deletePipelineRun = Delete_deletePipelineRun_DeletePipelineRunSuccess | Delete_deletePipelineRun_PythonError | Delete_deletePipelineRun_UnauthorizedError | Delete_deletePipelineRun_PipelineRunNotFoundError;
+export type Delete_deletePipelineRun = Delete_deletePipelineRun_DeletePipelineRunSuccess | Delete_deletePipelineRun_PythonError | Delete_deletePipelineRun_UnauthorizedError | Delete_deletePipelineRun_RunNotFoundError;
 
 export interface Delete {
   deletePipelineRun: Delete_deletePipelineRun;

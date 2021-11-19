@@ -3,10 +3,9 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
-from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
-from ..graph import GraphDefinition
+from ..graph_definition import GraphDefinition
 from ..input import GraphIn, InputDefinition
 from ..output import GraphOut, OutputDefinition
 
@@ -90,9 +89,8 @@ class _Graph:
         return graph_def
 
 
-@experimental_decorator
 def graph(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
@@ -104,7 +102,7 @@ def graph(
     """Create a graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a
-    function that invokes solids (or other graphs) and passes the output to subsequent invocations.
+    function that invokes ops (or other graphs) and passes the output to subsequent invocations.
 
     Args:
         name (Optional[str]):

@@ -417,7 +417,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
             status = None
             try:
                 status = self._cb(event)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (

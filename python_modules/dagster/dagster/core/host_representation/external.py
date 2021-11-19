@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
@@ -355,8 +355,8 @@ class ExternalExecutionPlan:
             != represented_pipeline.identifying_pipeline_snapshot_id
         ):
             raise DagsterInvariantViolationError(
-                "The pipeline snapshot ID from the execution plan snapshot does not match the "
-                "passed in pipeline snapshot. "
+                "The target snapshot ID from the execution plan snapshot does not match the "
+                "passed in target snapshot. "
             )
 
         self._step_keys_in_plan = (

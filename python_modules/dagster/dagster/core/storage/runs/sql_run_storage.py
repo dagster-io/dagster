@@ -35,7 +35,7 @@ from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
-from .migration import MODE_MIGRATION, RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
@@ -95,27 +95,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
         partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
-        if self.has_built_index(MODE_MIGRATION):
-            runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                mode=pipeline_run.mode,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
-                partition=partition,
-                partition_set=partition_set,
-            )
-        else:
-            runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
-                partition=partition,
-                partition_set=partition_set,
-            )
+
+        runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=pipeline_run.run_id,
+            pipeline_name=pipeline_run.pipeline_name,
+            status=pipeline_run.status.value,
+            run_body=serialize_dagster_namedtuple(pipeline_run),
+            snapshot_id=pipeline_run.pipeline_snapshot_id,
+            partition=partition,
+            partition_set=partition_set,
+        )
         with self.connect() as conn:
             try:
                 conn.execute(runs_insert)
@@ -591,10 +580,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
         return self._has_snapshot_id(pipeline_snapshot_id)
 
-    def add_pipeline_snapshot(self, pipeline_snapshot: PipelineSnapshot) -> str:
+    def add_pipeline_snapshot(
+        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_str_param(snapshot_id, "snapshot_id")
+
+        if not snapshot_id:
+            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+
         return self._add_snapshot(
-            snapshot_id=create_pipeline_snapshot_id(pipeline_snapshot),
+            snapshot_id=snapshot_id,
             snapshot_obj=pipeline_snapshot,
             snapshot_type=SnapshotType.PIPELINE,
         )
@@ -607,11 +603,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
         return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
 
-    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
+    def add_execution_plan_snapshot(
+        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        check.opt_str_param(snapshot_id, "snapshot_id")
+
+        if not snapshot_id:
+            snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+
         return self._add_snapshot(
-            snapshot_id=execution_plan_snapshot_id,
+            snapshot_id=snapshot_id,
             snapshot_obj=execution_plan_snapshot,
             snapshot_type=SnapshotType.EXECUTION_PLAN,
         )

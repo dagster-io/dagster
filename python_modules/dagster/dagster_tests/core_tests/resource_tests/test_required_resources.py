@@ -23,7 +23,6 @@ from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.api import create_execution_plan, execute_run
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
 
 
@@ -438,84 +437,6 @@ def test_resource_dependent_hydration_with_selective_init():
     assert set(resources_initted.keys()) == set()
 
 
-def define_plugin_pipeline(
-    should_require_resources=True,
-    resources_initted=None,
-    compatible_storage=True,
-    mode_defines_resource=True,
-):
-    if resources_initted is None:
-        resources_initted = {}
-
-    class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-        @classmethod
-        def compatible_with_storage_def(cls, _):
-            return compatible_storage
-
-        @classmethod
-        def set_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle, value
-        ):
-            assert context.resources.a == "A"
-            return intermediate_storage.set_intermediate_object(
-                dagster_type, step_output_handle, value
-            )
-
-        @classmethod
-        def get_intermediate_object(
-            cls, intermediate_storage, context, dagster_type, step_output_handle
-        ):
-            assert context.resources.a == "A"
-            return intermediate_storage.get_intermediate_object(dagster_type, step_output_handle)
-
-        @classmethod
-        def required_resource_keys(cls):
-            return {"a"} if should_require_resources else set()
-
-    @resource
-    def resource_a(_):
-        resources_initted["a"] = True
-        yield "A"
-
-    CustomDagsterType = create_any_type(name="CustomType", auto_plugins=[CustomStoragePlugin])
-
-    @solid(output_defs=[OutputDefinition(CustomDagsterType)])
-    def output_solid(_context):
-        return "hello"
-
-    if mode_defines_resource:
-        mode_defs = [ModeDefinition(resource_defs={"a": resource_a})]
-    else:
-        mode_defs = [ModeDefinition()]
-
-    @pipeline(mode_defs=mode_defs)
-    def plugin_pipeline():
-        output_solid()
-
-    return plugin_pipeline
-
-
-def test_custom_type_with_resource_dependent_storage_plugin():
-    under_required_pipeline = define_plugin_pipeline(should_require_resources=False)
-    with pytest.raises(DagsterUnknownResourceError):
-        execute_pipeline(under_required_pipeline, {"intermediate_storage": {"filesystem": {}}})
-
-    resources_initted = {}
-    sufficiently_required_pipeline = define_plugin_pipeline(
-        should_require_resources=True, resources_initted=resources_initted
-    )
-    assert execute_pipeline(
-        sufficiently_required_pipeline, {"intermediate_storage": {"filesystem": {}}}
-    ).success
-    assert set(resources_initted.keys()) == set("a")
-
-    resources_initted = {}
-    assert execute_pipeline(
-        define_plugin_pipeline(resources_initted, compatible_storage=False)
-    ).success
-    assert set(resources_initted.keys()) == set()
-
-
 def define_materialization_pipeline(should_require_resources=True, resources_initted=None):
     if resources_initted is None:
         resources_initted = {}
@@ -767,17 +688,6 @@ def test_materialize_missing_resource_fails():
         @pipeline
         def _type_check_pipeline():
             custom_type_solid()
-
-
-def test_plugin_missing_resource_fails():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"required by the plugin 'CustomStoragePlugin' on type 'CustomType' \(used with storages",
-    ):
-        define_plugin_pipeline(mode_defines_resource=False)
-
-    # works since storages are not compatible with plugin
-    define_plugin_pipeline(mode_defines_resource=False, compatible_storage=False)
 
 
 def test_extra_resources():

@@ -14,7 +14,7 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.definitions.executor import executor
+from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -136,7 +136,7 @@ def test_in_process_executor_dict_config_configured():
     test_executor_configured = test_executor.configured(
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
-    assert test_executor_configured.requirements == test_executor.requirements
+    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)
 
     with instance_for_test() as instance:
         assert_pipeline_runs_with_executor(

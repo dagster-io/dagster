@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Optional, Union
 
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.pipeline_sensor import (
+from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
     pipeline_failure_sensor,
@@ -13,7 +13,7 @@ from slack_sdk import WebClient
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:
     return "\n".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
+            f"Job {context.pipeline_run.pipeline_name} failed!",
             f"Run ID: {context.pipeline_run.run_id}",
             f"Mode: {context.pipeline_run.mode}",
             f"Error: {context.failure_event.message}",
@@ -111,7 +111,7 @@ def make_slack_on_run_failure_sensor(
     dagit_base_url: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
 ):
-    """Create a sensor on pipeline failures that will message the given Slack channel.
+    """Create a sensor on job failures that will message the given Slack channel.
 
     Args:
         channel (str): The channel to send the message to (e.g. "#my_channel")
@@ -120,7 +120,7 @@ def make_slack_on_run_failure_sensor(
             documentation here: https://api.slack.com/docs/token-types
         text_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
             takes in the ``RunFailureSensorContext`` and outputs the message you want to send.
-            Defaults to a text message that contains error message, pipeline name, and run ID.
+            Defaults to a text message that contains error message, job name, and run ID.
             The usage of the `text_fn` changes depending on whether you're using `blocks_fn`. If you
             are using `blocks_fn`, this is used as a fallback string to display in notifications. If
             you aren't, this is the main body text of the message. It can be formatted as plain text,
@@ -129,9 +129,9 @@ def make_slack_on_run_failure_sensor(
         blocks_fn (Callable[[RunFailureSensorContext], List[Dict]]): Function which takes in
             the ``RunFailureSensorContext`` and outputs the message blocks you want to send.
             See information about Blocks in https://api.slack.com/reference/block-kit/blocks
-        name: (Optional[str]): The name of the sensor. Defaults to "slack_on_pipeline_failure".
+        name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the failed pipeline run.
+            messages to include deeplinks to the failed job run.
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.

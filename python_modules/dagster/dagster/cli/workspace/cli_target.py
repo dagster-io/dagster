@@ -180,7 +180,7 @@ def get_workspace_from_kwargs(instance: DagsterInstance, version: str, kwargs):
         yield workspace_process_context.create_request_context()
 
 
-def python_target_click_options():
+def python_target_click_options(is_using_job_op_graph_apis: bool = False):
     return [
         click.option(
             "--empty-working-directory",
@@ -193,7 +193,7 @@ def python_target_click_options():
         click.option(
             "--working-directory",
             "-d",
-            help="Specify working directory to use when loading the repository or pipeline. Can only be used along with -f/--python-file",
+            help=f"Specify working directory to use when loading the repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}. Can only be used along with -f/--python-file",
         ),
         click.option(
             "--python-file",
@@ -201,21 +201,23 @@ def python_target_click_options():
             # Checks that the path actually exists lower in the stack, where we
             # are better equipped to surface errors
             type=click.Path(exists=False),
-            help="Specify python file where repository or pipeline function lives",
+            help=f"Specify python file where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
         ),
         click.option(
             "--package-name",
-            help="Specify installed Python package where repository or pipeline function lives",
+            help=f"Specify installed Python package where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
         ),
         click.option(
-            "--module-name", "-m", help="Specify module where repository or pipeline function lives"
+            "--module-name",
+            "-m",
+            help=f"Specify module where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
         ),
         click.option(
             "--attribute",
             "-a",
             help=(
-                "Attribute that is either a 1) repository or pipeline or "
-                "2) a function that returns a repository or pipeline"
+                f"Attribute that is either a 1) repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} or "
+                f"2) a function that returns a repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}"
             ),
         ),
     ]
@@ -250,7 +252,7 @@ def grpc_server_target_click_options():
     ]
 
 
-def workspace_target_click_options():
+def workspace_target_click_options(using_job_op_graph_apis: bool = False):
     return (
         [
             click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
@@ -262,7 +264,7 @@ def workspace_target_click_options():
                 help=("Path to workspace file. Argument can be provided multiple times."),
             ),
         ]
-        + python_target_click_options()
+        + python_target_click_options(using_job_op_graph_apis)
         + grpc_server_target_click_options()
     )
 
@@ -283,7 +285,7 @@ def python_pipeline_target_click_options():
 
 def python_job_target_click_options():
     return (
-        python_target_click_options()
+        python_target_click_options(is_using_job_op_graph_apis=True)
         + [
             click.option(
                 "--repository",
@@ -347,6 +349,12 @@ def workspace_target_argument(f):
     return apply_click_params(f, *workspace_target_click_options())
 
 
+def job_workspace_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(f, *workspace_target_click_options(using_job_op_graph_apis=True))
+
+
 def grpc_server_origin_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
@@ -361,11 +369,8 @@ def python_origin_target_argument(f):
     return apply_click_params(f, *options)
 
 
-def repository_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
-
-    return apply_click_params(
-        workspace_target_argument(f),
+def repository_click_options():
+    return [
         click.option(
             "--repository",
             "-r",
@@ -380,7 +385,19 @@ def repository_target_argument(f):
                 "RepositoryLocation within the workspace, necessary if more than one location is present."
             ),
         ),
-    )
+    ]
+
+
+def repository_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(workspace_target_argument(f), *repository_click_options())
+
+
+def job_repository_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(job_workspace_target_argument(f), *repository_click_options())
 
 
 def pipeline_option():
@@ -388,7 +405,9 @@ def pipeline_option():
         "--pipeline",
         "-p",
         "pipeline_or_job",
-        help=("Pipeline within the repository, necessary if more than one pipeline is present."),
+        help=(
+            "Pipeline/Job within the repository, necessary if more than one pipeline/job is present."
+        ),
     )
 
 
@@ -410,7 +429,7 @@ def job_option():
 def job_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
-    return apply_click_params(repository_target_argument(f), job_option())
+    return apply_click_params(job_repository_target_argument(f), job_option())
 
 
 def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_apis=False):
@@ -420,10 +439,12 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
 
-    pipeline_names = set(repo_definition.pipeline_names)
+    pipeline_or_job_names = set(
+        repo_definition.job_names if using_job_op_graph_apis else repo_definition.pipeline_names
+    )
 
-    if provided_pipeline_name is None and len(pipeline_names) == 1:
-        pipeline_name = next(iter(pipeline_names))
+    if provided_pipeline_name is None and len(pipeline_or_job_names) == 1:
+        pipeline_name = next(iter(pipeline_or_job_names))
     elif provided_pipeline_name is None:
         raise click.UsageError(
             (
@@ -432,10 +453,10 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
             ).format(
                 flag="--job" if using_job_op_graph_apis else "--pipeline",
                 repository=repo_definition.name,
-                pipelines=_sorted_quoted(pipeline_names),
+                pipelines=_sorted_quoted(pipeline_or_job_names),
             )
         )
-    elif not provided_pipeline_name in pipeline_names:
+    elif not provided_pipeline_name in pipeline_or_job_names:
         raise click.UsageError(
             (
                 'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
@@ -443,7 +464,7 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
             ).format(
                 provided_pipeline_name=provided_pipeline_name,
                 repository_name=repo_definition.name,
-                found_names=_sorted_quoted(pipeline_names),
+                found_names=_sorted_quoted(pipeline_or_job_names),
             )
         )
     else:
@@ -652,7 +673,14 @@ def get_external_pipeline_or_job_from_external_repo(
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 
-    external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
+    external_pipelines = {
+        ep.name: ep
+        for ep in (
+            external_repo.get_external_jobs()
+            if using_job_op_graph_apis
+            else external_repo.get_all_external_pipelines()
+        )
+    }
 
     check.invariant(external_pipelines)
 

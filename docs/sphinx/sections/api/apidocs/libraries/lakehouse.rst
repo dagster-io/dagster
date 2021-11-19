@@ -1,4 +1,0 @@
-Lakehouse (experimental)
-------------------------
-
-.. currentmodule:: lakehouse

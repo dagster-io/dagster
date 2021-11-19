@@ -377,7 +377,8 @@ def test_failure_multiprocessing():
 def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # pylint: disable=print-call
-    sys.exit("Crashy output to stderr")
+    sys.stdout.flush()
+    os._exit(1)  # pylint: disable=W0212
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])

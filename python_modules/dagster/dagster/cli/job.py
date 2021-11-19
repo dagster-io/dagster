@@ -1,5 +1,3 @@
-import warnings
-
 import click
 from dagster import __version__ as dagster_version
 from dagster import check
@@ -16,18 +14,19 @@ from dagster.cli.pipeline import (
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_pipeline_or_job_python_origin_from_kwargs,
+    job_repository_target_argument,
     job_target_argument,
     python_job_target_argument,
     python_pipeline_or_job_config_argument,
-    repository_target_argument,
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
+
+from .utils import get_instance_for_service
 
 
 @click.group(name="job")
@@ -41,7 +40,7 @@ def job_cli():
     name="list",
     help="List the jobs in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
 )
-@repository_target_argument
+@job_repository_target_argument
 def job_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo, True)
 
@@ -75,7 +74,7 @@ def get_job_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @job_target_argument
 def job_print_command(verbose, **cli_args):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_service("``dagster job print``") as instance:
         return execute_print_command(
             instance, verbose, cli_args, click.echo, using_job_op_graph_apis=True
         )
@@ -125,14 +124,8 @@ def execute_list_versions_command(instance, kwargs):
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 def job_execute_command(**kwargs):
     with capture_interrupts():
-        if is_dagster_home_set():
-            with DagsterInstance.get() as instance:
-                execute_execute_command(instance, kwargs, True)
-        else:
-            warnings.warn(
-                "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
-            )
-            execute_execute_command(DagsterInstance.ephemeral(), kwargs, True)
+        with get_instance_for_service("``dagster job execute``") as instance:
+            execute_execute_command(instance, kwargs, True)
 
 
 @job_cli.command(
@@ -142,7 +135,7 @@ def job_execute_command(**kwargs):
     ),
 )
 @job_target_argument
-@python_pipeline_or_job_config_argument("launch")
+@python_pipeline_or_job_config_argument("launch", True)
 @click.option(
     "--config-json",
     type=click.STRING,
@@ -164,7 +157,7 @@ def job_launch_command(**kwargs):
 @python_job_target_argument
 @click.option("--print-only-required", default=False, is_flag=True)
 def job_scaffold_command(**kwargs):
-    execute_scaffold_command(kwargs, click.echo)
+    execute_scaffold_command(kwargs, click.echo, using_job_op_graph_apis=True)
 
 
 @job_cli.command(

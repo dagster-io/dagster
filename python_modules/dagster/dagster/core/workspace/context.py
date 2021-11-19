@@ -90,6 +90,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def has_permission(self, permission: str) -> bool:
         pass
 
+    @property
+    def show_instance_config(self) -> bool:
+        return True
+
     def get_location(self, origin):
         location_name = origin.location_name
         location_entry = self.get_location_entry(location_name)
@@ -528,7 +532,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         error = None
         try:
             location = self._create_location_from_origin(origin)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             warnings.warn(
                 "Error loading repository location {location_name}:{error_string}".format(

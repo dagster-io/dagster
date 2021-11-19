@@ -203,7 +203,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
         try:
             self._repository_symbols_and_code_pointers.load()
-        except Exception:  # pylint:disable=broad-except
+        except Exception:
             if not lazy_load_user_code:
                 raise
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
@@ -263,7 +263,7 @@ class DagsterApiServer(DagsterApiServicer):
 
                         # the process died in an unexpected manner. inform the system
                         message = (
-                            f"Pipeline execution process for {run.run_id} unexpectedly "
+                            f"Run execution process for {run.run_id} unexpectedly "
                             f"exited with exit code {process.exitcode}."
                         )
 
@@ -298,6 +298,7 @@ class DagsterApiServer(DagsterApiServicer):
                 external_repository_origin.repository_name
             ],
             self._get_current_image(),
+            sys.executable,
         )
 
     def _recon_pipeline_from_origin(self, external_pipeline_origin):
@@ -563,7 +564,7 @@ class DagsterApiServer(DagsterApiServicer):
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
-        except:  # pylint: disable=bare-except
+        except:
             return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_dagster_namedtuple(
                     ShutdownServerResult(
@@ -590,7 +591,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._termination_times[cancel_execution_request.run_id] = time.time()
                     success = True
 
-        except:  # pylint: disable=bare-except
+        except:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
         return api_pb2.CancelExecutionReply(
@@ -640,7 +641,7 @@ class DagsterApiServer(DagsterApiServicer):
             run_id = execute_run_args.pipeline_run_id
             recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
 
-        except:  # pylint: disable=bare-except
+        except:
             return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_dagster_namedtuple(
                     StartRunResult(

@@ -1,11 +1,10 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
-import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
+import {ExecutionParams, RunStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -46,7 +45,7 @@ export function handleLaunchResult(
     return;
   }
 
-  if (obj.__typename === 'LaunchPipelineRunSuccess') {
+  if (obj.__typename === 'LaunchRunSuccess') {
     const url = `${basePath}/instance/runs/${obj.run.runId}`;
     if (openInTab) {
       window.open(url, '_blank');
@@ -106,7 +105,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
+  run: (RunFragment | RunTableRunFragment) & {runConfig: any};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -119,12 +118,12 @@ export function getReexecutionVariables(input: {
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
-    runConfigData: yaml.parse(run.runConfigYaml),
+    runConfigData: run.runConfig,
     executionMetadata: getBaseExecutionMetadata(run),
     selector: {
       repositoryLocationName,
       repositoryName,
-      pipelineName: 'pipelineName' in run ? run.pipelineName : run.pipeline.name,
+      pipelineName: run.pipelineName,
       solidSelection: 'solidSelection' in run ? run.solidSelection : run.pipeline.solidSelection,
     },
   };
@@ -150,7 +149,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineRunSuccess {
+      ... on LaunchRunSuccess {
         run {
           id
           runId
@@ -160,7 +159,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         errors {
           message
         }
@@ -183,7 +182,7 @@ export const DELETE_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PipelineRunNotFoundError {
+      ... on RunNotFoundError {
         message
       }
     }
@@ -191,16 +190,16 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const TERMINATE_MUTATION = gql`
-  mutation Terminate($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+  mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
-      ... on TerminatePipelineExecutionFailure {
+      ... on TerminateRunFailure {
         message
       }
-      ... on PipelineRunNotFoundError {
+      ... on RunNotFoundError {
         message
       }
-      ... on TerminatePipelineExecutionSuccess {
+      ... on TerminateRunSuccess {
         run {
           id
           runId
@@ -221,7 +220,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
     launchPipelineReexecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineRunSuccess {
+      ... on LaunchRunSuccess {
         run {
           id
           runId
@@ -233,7 +232,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         errors {
           message
         }
@@ -253,7 +252,7 @@ interface RunTimeProps {
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {stats} = run;
 
-  if (stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (stats.__typename !== 'RunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={stats} />}>
         <Group direction="row" spacing={4} alignItems="center">
@@ -276,11 +275,11 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
     }
 
     switch (run.status) {
-      case PipelineRunStatus.FAILURE:
+      case RunStatus.FAILURE:
         return 'Failed to start';
-      case PipelineRunStatus.CANCELED:
+      case RunStatus.CANCELED:
         return 'Canceled';
-      case PipelineRunStatus.CANCELING:
+      case RunStatus.CANCELING:
         return 'Canceling…';
       default:
         return 'Starting…';
@@ -291,7 +290,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
 });
 
 export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
-  if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (run.stats.__typename !== 'RunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
         <Group direction="row" spacing={4} alignItems="center">
@@ -306,11 +305,11 @@ export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
 });
 
 export const RUN_TIME_FRAGMENT = gql`
-  fragment RunTimeFragment on PipelineRun {
+  fragment RunTimeFragment on Run {
     id
     status
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         enqueuedTime
         launchTime

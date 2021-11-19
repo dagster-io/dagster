@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -8,11 +7,6 @@
 // GraphQL fragment: RunFragmentForRepositoryMatch
 // ====================================================
 
-export interface RunFragmentForRepositoryMatch_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface RunFragmentForRepositoryMatch_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -21,9 +15,9 @@ export interface RunFragmentForRepositoryMatch_repositoryOrigin {
 }
 
 export interface RunFragmentForRepositoryMatch {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
-  pipeline: RunFragmentForRepositoryMatch_pipeline;
+  pipelineName: string;
   pipelineSnapshotId: string | null;
   repositoryOrigin: RunFragmentForRepositoryMatch_repositoryOrigin | null;
 }

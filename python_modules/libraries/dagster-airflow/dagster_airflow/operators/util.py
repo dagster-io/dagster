@@ -66,8 +66,8 @@ def get_aws_environment():
     return default_env
 
 
-def check_storage_specified(pipeline_def, mode_def, run_config):
-    if not can_isolate_steps(pipeline_def, mode_def) and "intermediate_storage" not in run_config:
+def check_storage_specified(pipeline_def, mode_def):
+    if not can_isolate_steps(pipeline_def, mode_def):
         raise AirflowException(
             "DAGs created using dagster-airflow run each step in its own process, but your "
             "pipeline includes solid outputs that will not be stored somewhere where other "
@@ -75,12 +75,6 @@ def check_storage_specified(pipeline_def, mode_def, run_config):
             "outputs. E.g. with\n"
             '    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
         )
-
-    check.invariant(
-        "in_memory" not in run_config.get("intermediate_storage", {}),
-        "Cannot use in-memory intermediate storage with Airflow. Must use intermediate storage "
-        "available from all nodes (e.g. s3)",
-    )
     return
 
 

@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {explorerPathToString, PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
+import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
 import {TagWIP} from '../ui/TagWIP';
@@ -26,7 +26,7 @@ const SNAPSHOT_PARENT_QUERY = gql`
 
 interface SnapshotNavProps {
   activeTab?: string;
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
 }
 
 export const SnapshotNav = (props: SnapshotNavProps) => {
@@ -34,7 +34,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const {pipelineName, snapshotId} = explorerPath;
   const explorerPathString = explorerPathToString({
     ...explorerPath,
-    pathSolids: [],
+    opNames: [],
   });
 
   const currentPipelineState = useActivePipelineForName(pipelineName);

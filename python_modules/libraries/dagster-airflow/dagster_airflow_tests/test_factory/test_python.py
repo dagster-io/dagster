@@ -34,7 +34,6 @@ def test_fs_storage_no_explicit_base_dir(
         ),
         environment_yaml=[
             os.path.join(environments_path, "env.yaml"),
-            os.path.join(environments_path, "env_filesystem_no_explicit_base_dir.yaml"),
         ],
     )
     validate_pipeline_execution(results)
@@ -64,7 +63,7 @@ def test_fs_storage(
 def test_s3_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_pipeline_s3"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
@@ -167,6 +166,57 @@ def test_airflow_execution_date_tags():
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_for_recon_repo(recon_repo, pipeline_name, run_config)
+
+    results = execute_tasks_in_dag(
+        dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
+    )
+
+    materialized_airflow_execution_date = None
+    for result in results.values():
+        for event in result:
+            if event.event_type_value == "ASSET_MATERIALIZATION":
+                materialization = event.event_specific_data.materialization
+                materialization_entry = materialization.metadata_entries[0]
+                materialized_airflow_execution_date = materialization_entry.entry_data.text
+
+    assert execution_date.isoformat() == materialized_airflow_execution_date
+
+
+@requires_airflow_db
+def test_error_dag_python_job():
+    job_name = "demo_error_job"
+    recon_repo = ReconstructableRepository.for_module(
+        "dagster_test.test_project.test_pipelines.repo", job_name
+    )
+    environments_path = get_test_project_environments_path()
+    environment_yaml = [
+        os.path.join(environments_path, "env_filesystem.yaml"),
+    ]
+    run_config = load_yaml_from_glob_list(environment_yaml)
+    execution_date = timezone.utcnow()
+
+    dag, tasks = make_airflow_dag_for_recon_repo(recon_repo, job_name, run_config)
+
+    with pytest.raises(AirflowException) as exc_info:
+        execute_tasks_in_dag(dag, tasks, run_id=make_new_run_id(), execution_date=execution_date)
+
+    assert "Exception: Unusual error" in str(exc_info.value)
+
+
+@requires_airflow_db
+def test_airflow_execution_date_tags_job():
+    job_name = "demo_airflow_execution_date_job"
+    recon_repo = ReconstructableRepository.for_module(
+        "dagster_test.test_project.test_pipelines.repo", job_name
+    )
+    environments_path = get_test_project_environments_path()
+    environment_yaml = [
+        os.path.join(environments_path, "env_filesystem.yaml"),
+    ]
+    run_config = load_yaml_from_glob_list(environment_yaml)
+    execution_date = timezone.utcnow()
+
+    dag, tasks = make_airflow_dag_for_recon_repo(recon_repo, job_name, run_config)
 
     results = execute_tasks_in_dag(
         dag, tasks, run_id=make_new_run_id(), execution_date=execution_date

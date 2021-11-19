@@ -7,15 +7,12 @@ from dagster import (
     OutputDefinition,
     execute_solid,
     file_relative_path,
-    mem_intermediate_storage,
     solid,
 )
 from dagster.utils import dict_without_keys
 from dagster.utils.test import get_temp_dir
-from dagster_aws.s3 import s3_intermediate_storage
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
-from dagster_pyspark.types import SparkDataFrameS3StoragePlugin
 from pyspark.sql import Row, SparkSession
 
 spark = SparkSession.builder.getOrCreate()
@@ -110,12 +107,3 @@ def test_dataframe_inputs(file_type, read, other):
     assert result.success
     actual = read(options["path"], **dict_without_keys(options, "path"))
     assert sorted(result.output_value().collect()) == sorted(actual.collect())
-
-
-def test_s3_storage_plugin_compatible_with_storage_def():
-    assert SparkDataFrameS3StoragePlugin.compatible_with_storage_def(s3_intermediate_storage)
-    assert not SparkDataFrameS3StoragePlugin.compatible_with_storage_def(mem_intermediate_storage)
-    configured_storage = s3_intermediate_storage.configured(
-        {"bucket": "somebucket", "prefix": "someprefix"}
-    )
-    assert SparkDataFrameS3StoragePlugin.compatible_with_storage_def(configured_storage)

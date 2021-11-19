@@ -25,6 +25,7 @@ const REPOSITORY_GRAPHS_LIST_QUERY = gql`
           definition {
             __typename
             ... on CompositeSolidDefinition {
+              id
               name
               description
             }
@@ -43,6 +44,8 @@ const REPOSITORY_GRAPHS_LIST_QUERY = gql`
           id
           description
           name
+          isJob
+          graphName
         }
       }
       ... on RepositoryNotFoundError {
@@ -56,6 +59,12 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
+interface Item {
+  name: string;
+  description: string | null;
+  path: string;
+  repoAddress: RepoAddress;
+}
 export const RepositoryGraphsList: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
@@ -70,10 +79,13 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     if (!repo || repo.__typename !== 'Repository') {
       return null;
     }
-    const items = repo.pipelines.map((pipeline) => ({
-      name: pipeline.name,
-      path: `/graphs/${pipeline.name}`,
-      description: pipeline.description,
+    const jobGraphNames = new Set<string>(
+      repo.pipelines.filter((p) => p.isJob).map((p) => p.graphName),
+    );
+    const items: Item[] = Array.from(jobGraphNames).map((graphName) => ({
+      name: graphName,
+      path: `/graphs/${graphName}`,
+      description: null,
       repoAddress,
     }));
 

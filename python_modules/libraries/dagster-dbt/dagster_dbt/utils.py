@@ -100,7 +100,39 @@ def result_to_materialization(
 def generate_materializations(
     dbt_output: DbtOutput, asset_key_prefix: Optional[List[str]] = None
 ) -> Iterator[AssetMaterialization]:
-    """Yields ``AssetMaterializations`` for metadata in the dbt RPC ``DbtRpcOutput``."""
+
+    """
+    This function yields :py:class:`dagster.AssetMaterialization` events for each model created by
+    a dbt run command (with information parsed from a :py:class:`~DbtOutput` object).
+
+    Note that this will not work with output from the `dbt_rpc_resource`, because this resource does
+    not wait for a response from the RPC server before returning. Instead, use the
+    `dbt_rpc_sync_resource`, which will wait for execution to complete.
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster import op, Output
+        from dagster_dbt.utils import generate_materializations
+        from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
+
+        @op(required_resource_keys={"dbt"})
+        def my_custom_dbt_run(context):
+            dbt_output = context.resources.dbt.run()
+            for materialization in generate_materializations(dbt_output):
+                # you can modify the materialization object to add extra metadata, if desired
+                yield materialization
+            yield Output(my_dbt_output)
+
+        @job(resource_defs={{"dbt":dbt_cli_resource}})
+        def my_dbt_cli_job():
+            my_custom_dbt_run()
+
+        @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
+        def my_dbt_rpc_job():
+            my_custom_dbt_run()
+    """
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 

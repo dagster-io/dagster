@@ -1,19 +1,17 @@
 import kubernetes
 from dagster import Field, StringSource, check, executor
-from dagster.core.definitions.executor import multiple_process_executor_requirements
+from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.retries import get_retries_config
+from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.types.dagster_type import Optional
-from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
-from dagster.utils.backcompat import experimental
 from dagster_k8s.launcher import K8sRunLauncher
 
 from .job import (
@@ -34,34 +32,30 @@ from .utils import delete_job
     ),
     requirements=multiple_process_executor_requirements(),
 )
-@experimental
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     """
-    Executor which launches steps as Kubernetes Jobs. This executor is experimental.
+    Executor which launches steps as Kubernetes Jobs.
 
-    To add the Kubernetes Job executor in addition to the
-    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
-    :py:class:`~dagster.ModeDefinition` as follows:
+    To use the `k8s_job_executor`, set it as the `executor_def` when defining a job:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_executor_mode_def.py
        :start-after: start_marker
        :end-before: end_marker
        :language: python
 
-    Then you can configure the executor with run config (either via a :py:class:`~dagster.PresetDefinition` or the Dagit playground) as follows:
+    Then you can configure the executor with run config as follows:
 
     .. code-block:: YAML
 
         execution:
-          k8s:
-            config:
-              job_namespace: 'some-namespace'
-              image_pull_policy: ...
-              image_pull_secrets: ...
-              service_account_name: ...
-              env_config_maps: ...
-              env_secrets: ...
-              job_image: ... # leave out if using userDeployments
+          config:
+            job_namespace: 'some-namespace'
+            image_pull_policy: ...
+            image_pull_secrets: ...
+            service_account_name: ...
+            env_config_maps: ...
+            env_secrets: ...
+            job_image: ... # leave out if using userDeployments
     """
 
     run_launcher = init_context.instance.run_launcher
@@ -105,11 +99,11 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             ),
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
-        )
+        ),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
 
-@experimental
 class K8sStepHandler(StepHandler):
     @property
     def name(self):
@@ -143,6 +137,21 @@ class K8sStepHandler(StepHandler):
     def _batch_api(self):
         return self._fixed_k8s_client_batch_api or kubernetes.client.BatchV1Api()
 
+    def _get_k8s_step_job_name(self, step_handler_context):
+        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+
+        name_key = get_k8s_job_name(
+            step_handler_context.execute_step_args.pipeline_run_id,
+            step_key,
+        )
+
+        if step_handler_context.execute_step_args.known_state:
+            retry_state = step_handler_context.execute_step_args.known_state.get_retry_state()
+            if retry_state.get_attempt_count(step_key):
+                return "dagster-job-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
+
+        return "dagster-job-%s" % (name_key)
+
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
 
@@ -151,15 +160,10 @@ class K8sStepHandler(StepHandler):
         ), "Launching multiple steps is not currently supported"
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
-        pod_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
+        pod_name = job_name
 
-        input_json = serialize_dagster_namedtuple(step_handler_context.execute_step_args)
-        args = ["dagster", "api", "execute_step", input_json]
+        args = step_handler_context.execute_step_args.get_command_args()
 
         job_config = self._job_config
         if not job_config.job_image:
@@ -168,7 +172,7 @@ class K8sStepHandler(StepHandler):
             )
 
         if not job_config.job_image:
-            raise Exception("No image included in either executor config or the pipeline")
+            raise Exception("No image included in either executor config or the job")
 
         user_defined_k8s_config = get_user_defined_k8s_config(
             frozentags(step_handler_context.step_tags[step_key])
@@ -208,11 +212,7 @@ class K8sStepHandler(StepHandler):
         ), "Launching multiple steps is not currently supported"
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
 
         job = self._batch_api.read_namespaced_job(namespace=self._job_namespace, name=job_name)
         if job.status.failed:
@@ -234,13 +234,8 @@ class K8sStepHandler(StepHandler):
         assert (
             len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
         ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
-        k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
-        job_name = "dagster-job-%s" % (k8s_name_key)
+        job_name = self._get_k8s_step_job_name(step_handler_context)
 
         delete_job(job_name=job_name, namespace=self._job_namespace)
         return []

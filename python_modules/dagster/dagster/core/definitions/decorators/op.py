@@ -10,7 +10,7 @@ from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid import SolidDefinition
+from ..solid_definition import SolidDefinition
 from .solid import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
@@ -54,11 +54,11 @@ class _Op:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-        self.ins = ins
+        self.ins = check.opt_nullable_dict_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
-        from ..op_def import OpDefinition
+        from ..op_definition import OpDefinition
 
         if self.input_defs is not None and self.ins is not None:
             check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")
@@ -179,7 +179,7 @@ def op(
     """
     Create an op with the specified parameters from the decorated function.
 
-    Input and output definitions will be inferred from the type signature of the decorated function
+    Ins and outs will be inferred from the type signature of the decorated function
     if not explicitly provided.
 
     The decorated function will be used as the op's compute function. The signature of the
@@ -194,7 +194,7 @@ def op(
     :py:class:`Output` and yield it.
 
     @op supports ``async def`` functions as well, including async generators when yielding multiple
-    events or outputs. Note that async solids will generally be run on their own unless using a custom
+    events or outputs. Note that async ops will generally be run on their own unless using a custom
     :py:class:`Executor` implementation that supports running them together.
 
     Args:
@@ -206,12 +206,12 @@ def op(
             Information about the inputs to the op. Information provided here will be combined
             with what can be inferred from the function signature.
         out (Optional[Union[Out, Dict[str, Out]]]):
-            Information about the solids outputs. Information provided here will be combined with
+            Information about the op outputs. Information provided here will be combined with
             what can be inferred from the return type signature if the function does not use yield.
         config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
-            that config provided for the solid matches this schema and fail if it does not. If not
-            set, Dagster will accept any config provided for the solid.
-        required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
+            that config provided for the op matches this schema and fail if it does not. If not
+            set, Dagster will accept any config provided for the op.
+        required_resource_keys (Optional[Set[str]]): Set of resource handles required by this op.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the op. Frameworks may
             expect and require certain metadata to be attached to a op. Values that are not strings
             will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
@@ -220,9 +220,9 @@ def op(
             provided the same inputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
         input_defs (Optional[List[InputDefinition]]):
-            Preserved to ease migration from :py:class:`solid`
+            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of ins argument.
         output_defs (Optional[List[OutputDefinition]]):
-            Preserved to ease migration from :py:class:`solid`
+            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of out argument.
 
     Examples:
 

@@ -2,9 +2,10 @@ import os
 import tempfile
 
 import pandas
-from dagster import Out, ResourceDefinition, graph, op
+from dagster import Out, graph, op
 from dagster_pyspark import pyspark_resource
-from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
+from hacker_news.resources.parquet_io_manager import local_partitioned_parquet_io_manager
+from hacker_news.resources.partition_bounds import partition_bounds
 from pyspark.sql import DataFrame as SparkDF
 
 
@@ -31,9 +32,8 @@ def test_io_manager():
         res = io_manager_test_pipeline.to_job(
             resource_defs={
                 "pyspark": pyspark_resource,
-                "pandas_to_spark": partitioned_parquet_io_manager,
-                "partition_start": ResourceDefinition.hardcoded_resource("1"),
-                "partition_end": ResourceDefinition.hardcoded_resource("2"),
+                "pandas_to_spark": local_partitioned_parquet_io_manager,
+                "partition_bounds": partition_bounds.configured({"start": "1", "end": "2"}),
             }
         ).execute_in_process(
             run_config={"resources": {"pandas_to_spark": {"config": {"base_path": temp_dir}}}}

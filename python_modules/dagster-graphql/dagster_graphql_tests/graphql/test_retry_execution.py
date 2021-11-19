@@ -1,7 +1,6 @@
+import os
 from time import sleep
 
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster_graphql.client.query import (
@@ -20,13 +19,7 @@ from .graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,
 )
-from .setup import (
-    PoorMansDataFrame,
-    csv_hello_world_solids_config,
-    csv_hello_world_solids_config_fs_storage,
-    get_retry_multi_execution_params,
-    retry_config,
-)
+from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
@@ -187,7 +180,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "mode": "default",
                     "selector": selector,
-                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                 }
             },
         )
@@ -206,7 +198,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "mode": "default",
                     "selector": selector,
-                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {
                         "rootRunId": run_id,
                         "parentRunId": run_id,
@@ -294,37 +285,22 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
             },
         )
 
-        assert (
-            result_one.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
-
-        expected_value_repr = (
-            """[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), """
-            """('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), """
-            """('sum_sq', 49)])]"""
-        )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         instance = graphql_context.instance
 
-        intermediate_storage = build_fs_intermediate_storage(
-            instance.intermediates_directory, run_id
+        assert os.path.exists(
+            os.path.join(instance.storage_directory(), run_id, "sum_solid", "result")
         )
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid"))
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid"))
-        assert (
-            str(
-                intermediate_storage.get_intermediate(
-                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
-                ).obj
-            )
-            == expected_value_repr
+        assert os.path.exists(
+            os.path.join(instance.storage_directory(), run_id, "sum_sq_solid", "result")
         )
 
         # retry
@@ -336,7 +312,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "stepKeys": ["sum_sq_solid"],
                     "executionMetadata": {
                         "runId": new_run_id,
@@ -350,34 +326,32 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "LaunchPipelineRunSuccess"
+        assert query_result["__typename"] == "LaunchRunSuccess"
 
         result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result["pipelineRunLogs"]["messages"]
 
         assert isinstance(logs, list)
-        assert has_event_of_type(logs, "PipelineStartEvent")
-        assert has_event_of_type(logs, "PipelineSuccessEvent")
-        assert not has_event_of_type(logs, "PipelineFailureEvent")
+        assert has_event_of_type(logs, "RunStartEvent")
+        assert has_event_of_type(logs, "RunSuccessEvent")
+        assert not has_event_of_type(logs, "RunFailureEvent")
 
         assert not get_step_output_event(logs, "sum_solid")
         assert get_step_output_event(logs, "sum_sq_solid")
 
-        intermediate_storage = build_fs_intermediate_storage(
-            instance.intermediates_directory, new_run_id
-        )
-        assert not intermediate_storage.has_intermediate(
-            None, StepOutputHandle("sum_solid.inputs.num.read", "input_thunk_output")
-        )
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid"))
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid"))
-        assert (
-            str(
-                intermediate_storage.get_intermediate(
-                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
-                ).obj
+        assert not os.path.exists(
+            os.path.join(
+                instance.storage_directory(),
+                new_run_id,
+                "sum_solid.inputs.num.read",
+                "input_thunk_output",
             )
-            == expected_value_repr
+        )
+        assert not os.path.exists(
+            os.path.join(instance.storage_directory(), new_run_id, "sum_solid", "result")
+        )
+        assert os.path.exists(
+            os.path.join(instance.storage_directory(), new_run_id, "sum_sq_solid", "result")
         )
 
     def test_pipeline_reexecution_info_query(self, graphql_context, snapshot):
@@ -391,7 +365,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -406,7 +380,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config_fs_storage(),
+                    "runConfigData": csv_hello_world_solids_config(),
                     "stepKeys": ["sum_sq_solid"],
                     "executionMetadata": {
                         "runId": new_run_id,
@@ -423,14 +397,14 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": run_id}
         )
         query_result_one = result_one.data["pipelineRunOrError"]
-        assert query_result_one["__typename"] == "PipelineRun"
+        assert query_result_one["__typename"] == "Run"
         assert query_result_one["stepKeysToExecute"] is None
 
         result_two = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": new_run_id}
         )
         query_result_two = result_two.data["pipelineRunOrError"]
-        assert query_result_two["__typename"] == "PipelineRun"
+        assert query_result_two["__typename"] == "Run"
         stepKeysToExecute = query_result_two["stepKeysToExecute"]
         assert stepKeysToExecute is not None
         snapshot.assert_match(stepKeysToExecute)
@@ -597,7 +571,6 @@ class TestRetryExecutionAsyncOnlyBehavior(
                             "get_input_one": {"config": {"wait_to_terminate": True}},
                             "get_input_two": {"config": {"wait_to_terminate": True}},
                         },
-                        "intermediate_storage": {"filesystem": {}},
                     },
                     "executionMetadata": {"runId": run_id},
                 }
@@ -639,7 +612,6 @@ class TestRetryExecutionAsyncOnlyBehavior(
                             "get_input_one": {"config": {"wait_to_terminate": False}},
                             "get_input_two": {"config": {"wait_to_terminate": False}},
                         },
-                        "intermediate_storage": {"filesystem": {}},
                     },
                     "executionMetadata": {
                         "runId": new_run_id,

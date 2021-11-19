@@ -1,2 +1,0 @@
-load_from:
-  - python_module: docs_snippets_crag.concepts.partitions_schedules_sensors.repo

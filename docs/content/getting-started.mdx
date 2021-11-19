@@ -1,0 +1,106 @@
+# Getting Started with Dagster
+
+<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">
+  Dagster is the data orchestration platform built for productivity.
+</p>
+
+## Installing Dagster
+
+To install Dagster into an existing Python environment, run:
+
+```bash
+pip install dagster
+```
+
+This will install the latest stable version of the core Dagster packages in your current Python environment.
+
+## Writing a Job
+
+Let's get your first job up and running.
+
+```python file=/getting_started/hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import job, op
+
+
+@op
+def get_name():
+    return "dagster"
+
+
+@op
+def hello(context, name: str):
+    context.log.info(f"Hello, {name}!")
+
+
+@job
+def hello_dagster():
+    hello(get_name())
+```
+
+Save the code above in a file named `hello_world.py`.
+
+You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
+
+## Running the Job in Dagit
+
+Dagit is a web-based interface for viewing and interacting with Dagster objects.
+
+```bash
+pip install dagit
+```
+
+To visualize your job in Dagit, run the following command:
+
+```bash
+dagit -f hello_world.py
+```
+
+Then navigate to <http://localhost:3000> to start using Dagit:
+
+<Image
+alt="dagit-def"
+src="/images/getting-started/dagit-def.png"
+width={4032}
+height={2454}
+/>
+
+Click on the "Launchpad" tab, then press the "Launch Run" button to launch the job.
+
+<Image
+alt="dagit-run"
+src="/images/getting-started/dagit-run.png"
+width={4032}
+height={2454}
+/>
+
+## Running the Job Programmatically
+
+You can also execute the job without the UI.
+
+**Dagster Python API**
+
+```python file=/getting_started/hello_world.py startafter=start_execute_marker endbefore=end_execute_marker
+if __name__ == "__main__":
+    result = hello_dagster.execute_in_process()
+```
+
+**Dagster CLI**
+
+```bash
+dagster job execute -f hello_world.py
+```
+
+---
+
+To learn more about Dagster, head over to the [Tutorial](/tutorial). And if you get stuck or have any other questions, we'd love to hear from you on Slack:
+
+<p align="center">
+  <a href="https://dagster-slackin.herokuapp.com/" target="_blank">
+    <Image
+      alt="join-us-on-slack"
+      src="/assets/join-us-on-slack.png"
+      width="160"
+      height="40"
+    />
+  </a>
+</p>

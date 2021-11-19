@@ -82,6 +82,5 @@ const StyledUL = styled.ul`
 `;
 
 const TypeLI = styled.li`
-  text-overflow: ellipsis;
-  overflow: hidden;
+  list-style-type: none;
 `;

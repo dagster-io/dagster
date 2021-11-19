@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -20,6 +19,7 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSoli
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  id: string;
   name: string;
   description: string | null;
 }
@@ -38,7 +38,7 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSoli
 }
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations {
-  __typename: "SolidInvocationSite";
+  __typename: "NodeInvocationSite";
   pipeline: RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline;
   solidHandle: RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_invocations_solidHandle;
 }
@@ -54,6 +54,8 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_pipeline
   id: string;
   description: string | null;
   name: string;
+  isJob: boolean;
+  graphName: string;
 }
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository {

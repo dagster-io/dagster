@@ -143,12 +143,12 @@ export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) =>
       buttons={[
         {
           id: 'first-pane',
-          icon: axis === 'vertical' ? 'vertical_align_bottom' : 'vertical_align_bottom',
+          icon: axis === 'vertical' ? 'panel_show_top' : 'panel_show_left',
           tooltip: axis === 'vertical' ? 'Show only top pane' : 'Show only left pane',
         },
         {
           id: 'second-pane',
-          icon: axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top',
+          icon: axis === 'vertical' ? 'panel_show_bottom' : 'panel_show_right',
           tooltip: axis === 'vertical' ? 'Show only bottom pane' : 'Show only right pane',
         },
       ]}
@@ -175,8 +175,13 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
       title="Toggle second pane"
       icon={
         <IconWIP
-          name="vertical_align_top"
-          style={axis === 'horizontal' ? {transform: 'rotate(-90deg)'} : undefined}
+          name={
+            axis === 'horizontal'
+              ? open
+                ? 'panel_hide_right'
+                : 'panel_show_right'
+              : 'panel_show_bottom'
+          }
         />
       }
       onClick={() => {

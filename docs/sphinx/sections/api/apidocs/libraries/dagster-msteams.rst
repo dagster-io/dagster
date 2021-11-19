@@ -1,5 +1,5 @@
 Microsoft Teams (dagster-msteams)
------------------------------
+---------------------------------
 
 .. currentmodule:: dagster_msteams
 

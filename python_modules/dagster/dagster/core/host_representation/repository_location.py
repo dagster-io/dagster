@@ -70,8 +70,8 @@ if TYPE_CHECKING:
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
     )
-    from dagster.core.definitions.schedule import ScheduleExecutionData
-    from dagster.core.definitions.sensor import SensorExecutionData
+    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster.core.definitions.sensor_definition import SensorExecutionData
     from dagster.core.host_representation.external_data import (
         ExternalSensorExecutionErrorData,
     )
@@ -264,7 +264,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     @property
     def executable_path(self) -> Optional[str]:
-        return sys.executable
+        return (
+            self._recon_repo.executable_path if self._recon_repo.executable_path else sys.executable
+        )
 
     @property
     def container_image(self) -> str:
@@ -320,19 +322,18 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
+        execution_plan = create_execution_plan(
+            pipeline=self.get_reconstructable_pipeline(
+                external_pipeline.name
+            ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
+            run_config=run_config,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+        )
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
-                create_execution_plan(
-                    pipeline=self.get_reconstructable_pipeline(
-                        external_pipeline.name
-                    ).subset_for_execution_from_existing_pipeline(
-                        external_pipeline.solids_to_execute
-                    ),
-                    run_config=run_config,
-                    mode=mode,
-                    step_keys_to_execute=step_keys_to_execute,
-                    known_state=known_state,
-                ),
+                execution_plan,
                 external_pipeline.identifying_pipeline_snapshot_id,
             ),
             represented_pipeline=external_pipeline,

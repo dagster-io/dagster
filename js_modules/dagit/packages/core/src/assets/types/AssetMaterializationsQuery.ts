@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetMaterializationsQuery
@@ -19,32 +18,32 @@ export interface AssetMaterializationsQuery_assetOrError_Asset_key {
   path: string[];
 }
 
-export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin {
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   mode: string;
-  repositoryOrigin: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_repositoryOrigin | null;
-  status: PipelineRunStatus;
+  repositoryOrigin: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run_repositoryOrigin | null;
+  status: RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
 }
 
-export type AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
+export type AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError | AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run;
 
 export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

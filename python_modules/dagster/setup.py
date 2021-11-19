@@ -57,7 +57,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             # cli
-            "click>=5.0,<9.0",
+            "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
@@ -118,7 +118,6 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": [
                 "dagster = dagster.cli:main",
-                "dagster-scheduler = dagster.scheduler.cli:main",
                 "dagster-daemon = dagster.daemon.cli:main",
             ]
         },

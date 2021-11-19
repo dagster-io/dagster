@@ -1,0 +1,5 @@
+ops:
+  download_file:
+    config:
+      path: 'iris.data'
+      url: 'https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data'

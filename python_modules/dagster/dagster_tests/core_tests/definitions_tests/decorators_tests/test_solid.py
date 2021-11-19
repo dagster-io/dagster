@@ -103,7 +103,7 @@ def test_solid_with_explicit_empty_outputs():
         result = execute_solid(hello_world)
 
     assert (
-        "Error in solid hello_world: Unexpectedly returned output foo of type "
+        'Error in solid "hello_world": Unexpectedly returned output foo of type '
         "<class 'str'>. Solid is explicitly defined to return no results."
     ) in str(exc_info.value)
 
@@ -376,7 +376,7 @@ def test_solid_yields_single_bare_value():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape("Compute function for solid return_iterator yielded a value of type <")
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -402,7 +402,7 @@ def test_solid_yields_multiple_bare_values():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape("Compute function for solid return_iterator yielded a value of type <")
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -431,7 +431,7 @@ def test_solid_returns_iterator():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape("Compute function for solid return_iterator yielded a value of type <")
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "

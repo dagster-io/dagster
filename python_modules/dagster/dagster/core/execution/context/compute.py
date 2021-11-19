@@ -4,8 +4,8 @@ from typing import Any, Optional
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
 from dagster.core.instance import DagsterInstance
@@ -110,14 +110,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
 
         .. code-block:: python
 
-            @solid
-            def debug_solid(context):
+            @op
+            def debug(context):
                 context.pdb.set_trace()
 
         """
@@ -248,3 +248,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
+
+
+class OpExecutionContext(SolidExecutionContext):
+    pass

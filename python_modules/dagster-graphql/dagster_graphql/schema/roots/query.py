@@ -33,8 +33,9 @@ from ...implementation.fetch_schedules import (
     get_schedules_or_error,
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
+from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
-from ...implementation.utils import pipeline_selector_from_graphql
+from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import GraphenePartitionBackfillOrError, GraphenePartitionBackfillsOrError
 from ..external import (
@@ -44,10 +45,11 @@ from ..external import (
 )
 from ..inputs import (
     GrapheneAssetKeyInput,
+    GrapheneGraphSelector,
     GrapheneInstigationSelector,
-    GraphenePipelineRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneRunsFilter,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
 )
@@ -60,15 +62,15 @@ from ..instigation import (
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
-from ..pipelines.pipeline import GraphenePipelineRunOrError
+from ..pipelines.pipeline import GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
-    GraphenePipelineRuns,
-    GraphenePipelineRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
     GrapheneRunGroupsOrError,
+    GrapheneRuns,
+    GrapheneRunsOrError,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
@@ -76,7 +78,7 @@ from ..tags import GraphenePipelineTagAndValues
 from ..util import non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
-from .pipeline import GraphenePipelineOrError
+from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
 class GrapheneQuery(graphene.ObjectType):
@@ -98,6 +100,11 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineSnapshotOrError),
         snapshotId=graphene.String(),
         activePipelineSelector=graphene.Argument(GraphenePipelineSelector),
+    )
+
+    graphOrError = graphene.Field(
+        graphene.NonNull(GrapheneGraphOrError),
+        selector=graphene.Argument(GrapheneGraphSelector),
     )
 
     scheduler = graphene.Field(graphene.NonNull(GrapheneSchedulerOrError))
@@ -143,16 +150,23 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     pipelineRunsOrError = graphene.Field(
-        graphene.NonNull(GraphenePipelineRunsOrError),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        graphene.NonNull(GrapheneRunsOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
-
     pipelineRunOrError = graphene.Field(
-        graphene.NonNull(GraphenePipelineRunOrError), runId=graphene.NonNull(graphene.ID)
+        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
     )
-
+    runsOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunsOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    runOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
+    )
     pipelineRunTags = non_null_list(GraphenePipelineTagAndValues)
 
     runGroupOrError = graphene.Field(
@@ -161,7 +175,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     runGroupsOrError = graphene.Field(
         graphene.NonNull(GrapheneRunGroupsOrError),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -263,6 +277,10 @@ class GrapheneQuery(graphene.ObjectType):
         else:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
 
+    def resolve_graphOrError(self, graphene_info, **kwargs):
+        graph_selector = graph_selector_from_graphql(kwargs["selector"])
+        return get_graph_or_error(graphene_info, graph_selector)
+
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
 
@@ -309,13 +327,27 @@ class GrapheneQuery(graphene.ObjectType):
         if filters is not None:
             filters = filters.to_selector()
 
-        return GraphenePipelineRuns(
+        return GrapheneRuns(
             filters=filters,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
         )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
+        return get_run_by_id(graphene_info, runId)
+
+    def resolve_runsOrError(self, _graphene_info, **kwargs):
+        filters = kwargs.get("filter")
+        if filters is not None:
+            filters = filters.to_selector()
+
+        return GrapheneRuns(
+            filters=filters,
+            cursor=kwargs.get("cursor"),
+            limit=kwargs.get("limit"),
+        )
+
+    def resolve_runOrError(self, graphene_info, runId):
         return get_run_by_id(graphene_info, runId)
 
     def resolve_runGroupsOrError(self, graphene_info, **kwargs):

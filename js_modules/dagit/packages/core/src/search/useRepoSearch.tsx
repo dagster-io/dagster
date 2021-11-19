@@ -38,9 +38,9 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
-        const {name, partitionSets, pipelines, schedules, sensors} = repo;
+        const {name: repoName, partitionSets, pipelines, schedules, sensors} = repo;
         const {name: locationName} = repoLocation;
-        const repoPath = buildRepoPath(name, locationName);
+        const repoPath = buildRepoPath(repoName, locationName);
 
         const allPipelinesAndJobs = pipelines.reduce((flat, pipelineOrJob) => {
           const {name, isJob} = pipelineOrJob;
@@ -54,7 +54,11 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
                 : isJob
                 ? 'Job'
                 : 'Pipeline',
-              href: workspacePath(name, locationName, `/${isJob ? 'jobs' : 'pipelines'}/${name}`),
+              href: workspacePath(
+                repoName,
+                locationName,
+                `/${isJob ? 'jobs' : 'pipelines'}/${name}`,
+              ),
               type: SearchResultType.Pipeline,
             },
           ];
@@ -64,7 +68,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           key: `${repoPath}-${schedule.name}`,
           label: schedule.name,
           description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
-          href: workspacePath(name, locationName, `/schedules/${schedule.name}`),
+          href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
         }));
 
@@ -72,7 +76,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           key: `${repoPath}-${sensor.name}`,
           label: sensor.name,
           description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
-          href: workspacePath(name, locationName, `/sensors/${sensor.name}`),
+          href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
         }));
 
@@ -81,7 +85,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           label: partitionSet.name,
           description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
           href: workspacePath(
-            name,
+            repoName,
             locationName,
             `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
           ),

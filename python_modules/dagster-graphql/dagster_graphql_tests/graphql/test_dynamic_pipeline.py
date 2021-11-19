@@ -27,7 +27,6 @@ def test_dynamic_resume_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -36,7 +35,7 @@ def test_dynamic_resume_reexecution(graphql_context):
 
     assert not result.errors
     assert result.data
-    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -61,7 +60,6 @@ def test_dynamic_resume_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
@@ -75,7 +73,7 @@ def test_dynamic_resume_reexecution(graphql_context):
     assert not retry_one.errors
     assert retry_one.data
     assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
@@ -105,7 +103,6 @@ def test_dynamic_full_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -114,7 +111,7 @@ def test_dynamic_full_reexecution(graphql_context):
 
     assert not result.errors
     assert result.data
-    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -139,7 +136,6 @@ def test_dynamic_full_reexecution(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
@@ -153,7 +149,7 @@ def test_dynamic_full_reexecution(graphql_context):
     assert not retry_one.errors
     assert retry_one.data
     assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
@@ -183,7 +179,6 @@ def test_dynamic_subset(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                 },
                 "mode": "default",
             }
@@ -192,7 +187,7 @@ def test_dynamic_subset(graphql_context):
 
     assert not result.errors
     assert result.data
-    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     assert result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "dynamic_pipeline"
 
     parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -217,7 +212,6 @@ def test_dynamic_subset(graphql_context):
                 "selector": selector,
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
-                    "storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
@@ -237,7 +231,7 @@ def test_dynamic_subset(graphql_context):
     assert not retry_one.errors
     assert retry_one.data
     assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
     ), retry_one.data["launchPipelineReexecution"].get("message")
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]

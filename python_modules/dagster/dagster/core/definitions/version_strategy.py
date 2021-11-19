@@ -1,3 +1,5 @@
+import hashlib
+import inspect
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import TYPE_CHECKING, Optional
@@ -5,20 +7,20 @@ from typing import TYPE_CHECKING, Optional
 from dagster import check
 
 if TYPE_CHECKING:
-    from .solid import SolidDefinition
-    from .resource import ResourceDefinition
+    from .solid_definition import SolidDefinition
+    from .resource_definition import ResourceDefinition
 
 
 class SolidVersionContext(
     namedtuple(
-        "SolidVersionContext",
+        "_SolidVersionContext",
         "solid_def solid_config",
     )
 ):
     """Version-specific solid context.
     Attributes:
-        solid_def (SolidDefinition): The definition of the versioned solid
-        solid_config (Any): The parsed config received by the versioned solid
+        solid_def (SolidDefinition): The definition of the solid to compute a version for.
+        solid_config (Any): The parsed config to be passed to the solid during execution.
     """
 
     def __new__(
@@ -37,14 +39,15 @@ class SolidVersionContext(
 
 class ResourceVersionContext(
     namedtuple(
-        "SolidVersionContext",
-        "solid_def solid_config",
+        "_ResourceVersionContext",
+        "resource_def resource_config",
     )
 ):
-    """Version-specific solid context.
+    """Version-specific resource context.
+
     Attributes:
-        resource_def (ResourceDefinition): The definition of the versioned resource
-        resource_config (Any): The parsed config received by the versioned resource
+        resource_def (ResourceDefinition): The definition of the resource whose version will be computed.
+        resource_config (Any): The parsed config to be passed to the resource during execution.
     """
 
     def __new__(
@@ -57,7 +60,7 @@ class ResourceVersionContext(
                 resource_def, "resource_def", ResourceDefinition  # pylint: disable=E0601
             )
         return super(ResourceVersionContext, cls).__new__(
-            cls, solid_def=resource_def, solid_config=resource_config
+            cls, resource_def=resource_def, resource_config=resource_config
         )
 
 
@@ -82,3 +85,15 @@ class VersionStrategy(ABC):
         self, context: ResourceVersionContext  # pylint: disable=unused-argument
     ) -> Optional[str]:
         return None
+
+
+class SourceHashVersionStrategy(VersionStrategy):
+    def _get_source_hash(self, fn):
+        code_as_str = inspect.getsource(fn)
+        return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
+
+    def get_solid_version(self, context: SolidVersionContext) -> str:
+        return self._get_source_hash(context.solid_def.compute_fn.decorated_fn)
+
+    def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
+        return self._get_source_hash(context.resource_def.resource_fn)

@@ -70,8 +70,14 @@ export const defaultMocks = {
   PipelineRunStatsOrError: () => ({
     __typename: 'PipelineRunStatsSnapshot',
   }),
+  RunStatsSnapshotOrError: () => ({
+    __typename: 'RunStatsSnapshot',
+  }),
   PipelineRunOrError: () => ({
     __typename: 'PipelineRun',
+  }),
+  RunOrError: () => ({
+    __typename: 'Run',
   }),
   PartitionsOrError: () => ({
     __typename: 'Partitions',
@@ -129,6 +135,9 @@ export const defaultMocks = {
   }),
   PipelineRunsOrError: () => ({
     __typename: 'PipelineRuns',
+  }),
+  RunsOrError: () => ({
+    __typename: 'Runs',
   }),
   RunGroupOrError: () => ({
     __typename: 'RunGroup',

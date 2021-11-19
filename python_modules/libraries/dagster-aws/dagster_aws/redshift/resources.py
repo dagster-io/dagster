@@ -80,7 +80,7 @@ class RedshiftResource(_BaseRedshiftResource):
                     else:
                         self.log.info("Empty result from query")
 
-                except Exception as e:  # pylint: disable=broad-except
+                except Exception as e:
                     # If autocommit is disabled or not set (it is disabled by default), Redshift
                     # will be in the middle of a transaction at exception time, and because of
                     # the failure the current transaction will not accept any further queries.
@@ -141,7 +141,7 @@ class RedshiftResource(_BaseRedshiftResource):
                             results.append([])
                             self.log.info("Empty result from query")
 
-                    except Exception as e:  # pylint: disable=broad-except
+                    except Exception as e:
                         # If autocommit is disabled or not set (it is disabled by default), Redshift
                         # will be in the middle of a transaction at exception time, and because of
                         # the failure the current transaction will not accept any further queries.

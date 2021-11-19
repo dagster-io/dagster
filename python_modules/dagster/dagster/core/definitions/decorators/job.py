@@ -3,19 +3,18 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Un
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
-from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
-from ..graph import GraphDefinition
-from ..hook import HookDefinition
-from ..job import JobDefinition
-from ..logger import LoggerDefinition
-from ..resource import ResourceDefinition
+from ..graph_definition import GraphDefinition
+from ..hook_definition import HookDefinition
+from ..job_definition import JobDefinition
+from ..logger_definition import LoggerDefinition
+from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from ..partition import PartitionedConfig
-    from ..executor import ExecutorDefinition
+    from ..executor_definition import ExecutorDefinition
 
 
 class _Job:
@@ -77,8 +76,8 @@ class _Job:
             positional_inputs=positional_inputs,
             tags=self.tags,
         )
-        update_wrapper(graph_def, fn)
-        return graph_def.to_job(
+
+        job_def = graph_def.to_job(
             description=self.description or format_docstring_for_description(fn),
             resource_defs=self.resource_defs,
             config=self.config,
@@ -88,11 +87,12 @@ class _Job:
             hooks=self.hooks,
             version_strategy=self.version_strategy,
         )
+        update_wrapper(job_def, fn)
+        return job_def
 
 
-@experimental_decorator
 def job(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
@@ -117,7 +117,7 @@ def job(
             Describes how the job is parameterized at runtime.
 
             If no value is provided, then the schema for the job's run config is a standard
-            format based on its solids and resources.
+            format based on its ops and resources.
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
@@ -142,7 +142,7 @@ def job(
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         version_strategy (Optional[VersionStrategy]):
-            Defines how each solid (and optionally, resource) in the job can be versioned. If
+            Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
 
     """

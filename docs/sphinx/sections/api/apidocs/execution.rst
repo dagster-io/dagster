@@ -1,76 +1,28 @@
+.. currentmodule:: dagster
+
 Execution
 =========
 
-.. currentmodule:: dagster
 
-Executing pipelines
--------------------
+Executing Jobs
+--------------
 
-.. autofunction:: execute_pipeline
+.. autoclass:: JobDefinition
+  :noindex:
+  :members: execute_in_process
 
-.. autofunction:: execute_pipeline_iterator
-
-Re-executing pipelines
--------------------
-
-.. autofunction:: reexecute_pipeline
-
-.. autofunction:: reexecute_pipeline_iterator
-
-Executing solids
+Executing Graphs
 ----------------
-.. currentmodule:: dagster
 
-.. autofunction:: execute_solid
+.. autoclass:: GraphDefinition
+  :noindex:
+  :members: execute_in_process
 
-.. autofunction:: execute_solid_within_pipeline
-
-.. autofunction:: execute_solids_within_pipeline
-
-Execution context
+Execution results
 -----------------
 .. currentmodule:: dagster
 
-.. autoclass:: SolidExecutionContext
-   :members:
-   :inherited-members:
-
-.. autofunction:: build_solid_context
-
-Validating Execution
---------------------
-.. currentmodule:: dagster
-
-.. autofunction:: validate_run_config
-
-
-Reconstructable pipelines
--------------------------
-.. currentmodule:: dagster
-
-.. autoclass:: reconstructable
-   :members:
-
-.. currentmodule:: dagster.core.definitions.reconstructable
-
-.. autoclass:: ReeconstructablePipeline
-   :members:
-
-.. autofunction:: build_reconstructable_pipeline
-
-Pipeline and solid results
---------------------------
-.. currentmodule:: dagster
-
-.. autoclass:: PipelineExecutionResult
-   :members:
-   :inherited-members:
-
-.. autoclass:: SolidExecutionResult
-   :members:
-   :inherited-members:
-
-.. autoclass:: CompositeSolidExecutionResult
+.. autoclass:: ExecuteInProcessResult
    :members:
    :inherited-members:
 
@@ -81,15 +33,44 @@ Pipeline and solid results
    :members:
    :undoc-members:
 
-Pipeline configuration
-----------------------
+
+Reconstructable jobs
+--------------------
+.. currentmodule:: dagster
+
+.. autoclass:: reconstructable
+   :members:
+
+Executors
+---------
+.. autodata:: in_process_executor
+  :annotation: ExecutorDefinition
+
+.. autodata:: multiprocess_executor
+  :annotation: ExecutorDefinition
+
+
+Contexts
+--------
+
+.. autoclass:: OpExecutionContext
+  :members:
+  :inherited-members:
+
+.. autofunction:: build_op_context
+
+.. autoclass:: TypeCheckContext
+  :members:
+  :inherited-members:
+
+Job configuration
+-----------------
 
 .. _config_schema:
 
 Run Config Schema
 ^^^^^^^^^^^^^^^^^^^^^^^
-  The ``run_config`` used by :py:func:`execute_pipeline` and
-  :py:func:`execute_pipeline_iterator` has the following schema:
+  The ``run_config`` used for jobs has the following schema:
 
   ::
 
@@ -129,11 +110,11 @@ Run Config Schema
           ...
         },
 
-        # configuration for solids, required if solids require config
-        solids: {
+        # configuration for underlying ops, required if ops require config
+        ops: {
 
-          # these keys align with the names of the solids, or their alias in this pipeline
-          __solid_name__: {
+          # these keys align with the names of the ops, or their alias in this job
+          __op_name__: {
 
             # pass any data that was defined via config_field
             config: ...,
@@ -147,71 +128,7 @@ Run Config Schema
               }
             },
 
-            # configurably materialize output values
-            outputs: {
-              __output_name__: {
-                # if an dagster_type_materializer is specified, that schema must be satisfied
-                # here; pickleable types will generally allow output as follows:
-                pickle: {
-                  path: String
-                }
-              }
-            }
           }
         },
 
-        # optionally use an available system storage for intermediates etc.
-        intermediate_storage: {
-          # the name of one, and only one available system storage, typically 'filesystem' or
-          # 'in_memory'
-          __storage_name__: {
-            config: {
-              ...
-            }
-          }
-        }
       }
-
-
-Intermediate Storage
---------------------
-.. autofunction:: io_manager_from_intermediate_storage
-
-.. autodata:: mem_intermediate_storage
-  :annotation: IntermediateStorageDefinition
-
-.. autodata:: fs_intermediate_storage
-  :annotation: IntermediateStorageDefinition
-
-.. autodata:: default_intermediate_storage_defs
-  :annotation: List[IntermediateStorageDefinition]
-
-  The default intermediate storages available on any :py:class:`ModeDefinition` that does not provide
-  custom intermediate storages. These are currently [:py:class:`mem_intermediate_storage`,
-  :py:class:`fs_intermediate_storage`].
-
-Executors
----------
-.. autodata:: in_process_executor
-  :annotation: ExecutorDefinition
-
-.. autodata:: multiprocess_executor
-  :annotation: ExecutorDefinition
-
-.. autodata:: default_executors
-  :annotation: List[ExecutorDefinition]
-
-  The default executors available on any :py:class:`ModeDefinition` that does not provide custom
-  executors. These are currently [:py:class:`in_process_executor`,
-  :py:class:`multiprocess_executor`].
-
-Contexts
---------
-
-.. autoclass:: SystemComputeExecutionContext
-  :members:
-  :inherited-members:
-
-.. autoclass:: TypeCheckContext
-  :members:
-  :inherited-members:

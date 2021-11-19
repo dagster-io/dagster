@@ -3,7 +3,7 @@ from typing import Optional, Union, cast
 
 from dagster import check
 
-from .job import JobDefinition
+from .job_definition import JobDefinition
 from .partition import (
     Partition,
     PartitionSetDefinition,
@@ -12,11 +12,11 @@ from .partition import (
     ScheduleType,
 )
 from .run_request import SkipReason
-from .schedule import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 
-def schedule_from_partitions(
+def build_schedule_from_partitioned_job(
     job: JobDefinition,
     description: Optional[str] = None,
     name: Optional[str] = None,
@@ -36,7 +36,7 @@ def schedule_from_partitions(
     )
     check.invariant(
         not (day_of_week and day_of_month),
-        "Cannot provide both day_of_month and day_of_week parameter to schedule_from_partitions.",
+        "Cannot provide both day_of_month and day_of_week parameter to build_schedule_from_partitioned_job.",
     )
 
     partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
@@ -86,6 +86,9 @@ def schedule_from_partitions(
     )
 
     return schedule_def
+
+
+schedule_from_partitions = build_schedule_from_partitioned_job
 
 
 def latest_window_partition_selector(

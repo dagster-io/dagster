@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 import graphene
 import yaml
 from dagster import check
@@ -7,7 +5,6 @@ from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
@@ -20,20 +17,17 @@ from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
-from ..errors import (
-    GrapheneDagsterTypeNotFoundError,
-    GraphenePipelineRunNotFoundError,
-    GraphenePythonError,
-)
+from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
-    GraphenePipelineRunEvent,
-    GraphenePipelineRunStepStats,
+    GrapheneDagsterRunEvent,
+    GrapheneRunStepStats,
     GrapheneStepMaterializationEvent,
 )
 from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
+from ..runs import GrapheneRunConfigData
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -47,13 +41,13 @@ from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
-from .pipeline_run_stats import GraphenePipelineRunStatsOrError
-from .status import GraphenePipelineRunStatus
+from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
+from .status import GrapheneRunStatus
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
     materializationEvent = graphene.NonNull(GrapheneStepMaterializationEvent)
-    runOrError = graphene.NonNull(lambda: GraphenePipelineRunOrError)
+    runOrError = graphene.NonNull(lambda: GrapheneRunOrError)
     partition = graphene.Field(graphene.String)
 
     class Meta:
@@ -134,18 +128,19 @@ class GrapheneAsset(graphene.ObjectType):
         return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
-class GraphenePipelineRun(graphene.ObjectType):
+class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
-    status = graphene.NonNull(GraphenePipelineRunStatus)
+    status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
+    jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    stats = graphene.NonNull(GraphenePipelineRunStatsOrError)
-    stepStats = non_null_list(GraphenePipelineRunStepStats)
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
+    stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -156,6 +151,7 @@ class GraphenePipelineRun(graphene.ObjectType):
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
     mode = graphene.NonNull(graphene.String)
     tags = non_null_list(GraphenePipelineTag)
     rootRunId = graphene.Field(graphene.String)
@@ -163,12 +159,53 @@ class GraphenePipelineRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GraphenePipelineRunEvent),
+        non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
 
     class Meta:
         name = "PipelineRun"
+
+
+class GrapheneRun(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    runId = graphene.NonNull(graphene.String)
+    # Nullable because of historical runs
+    pipelineSnapshotId = graphene.String()
+    repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
+    status = graphene.NonNull(GrapheneRunStatus)
+    pipeline = graphene.NonNull(GraphenePipelineReference)
+    pipelineName = graphene.NonNull(graphene.String)
+    jobName = graphene.NonNull(graphene.String)
+    solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
+    stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
+    stepStats = non_null_list(GrapheneRunStepStats)
+    computeLogs = graphene.Field(
+        graphene.NonNull(GrapheneComputeLogs),
+        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="""
+        Compute logs are the stdout/stderr logs for a given solid step computation
+        """,
+    )
+    executionPlan = graphene.Field(GrapheneExecutionPlan)
+    stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
+    runConfigYaml = graphene.NonNull(graphene.String)
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
+    mode = graphene.NonNull(graphene.String)
+    tags = non_null_list(GraphenePipelineTag)
+    rootRunId = graphene.Field(graphene.String)
+    parentRunId = graphene.Field(graphene.String)
+    canTerminate = graphene.NonNull(graphene.Boolean)
+    assets = non_null_list(GrapheneAsset)
+    events = graphene.Field(
+        non_null_list(GrapheneDagsterRunEvent),
+        after=graphene.Argument(GrapheneCursor),
+    )
+
+    class Meta:
+        interfaces = (GraphenePipelineRun,)
+        name = "Run"
 
     def __init__(self, pipeline_run):
         super().__init__(
@@ -196,8 +233,14 @@ class GraphenePipelineRun(graphene.ObjectType):
     def resolve_pipelineName(self, _graphene_info):
         return self._pipeline_run.pipeline_name
 
+    def resolve_jobName(self, _graphene_info):
+        return self._pipeline_run.pipeline_name
+
     def resolve_solidSelection(self, _graphene_info):
         return self._pipeline_run.solid_selection
+
+    def resolve_resolvedOpSelection(self, _graphene_info):
+        return self._pipeline_run.solids_to_execute
 
     def resolve_pipelineSnapshotId(self, _graphene_info):
         return self._pipeline_run.pipeline_snapshot_id
@@ -243,6 +286,9 @@ class GraphenePipelineRun(graphene.ObjectType):
         return yaml.dump(
             self._pipeline_run.run_config, default_flow_style=False, allow_unicode=True
         )
+
+    def resolve_runConfig(self, _graphene_info):
+        return self._pipeline_run.run_config
 
     def resolve_tags(self, _graphene_info):
         return [
@@ -303,7 +349,7 @@ class GrapheneIPipelineSnapshotMixin:
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -379,10 +425,10 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(self.get_represented_pipeline()).get(handleID)
+        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(self.get_represented_pipeline())
+        handles = build_solid_handles(self.get_represented_pipeline())
         parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
@@ -463,7 +509,7 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -547,18 +593,74 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         return self._external_pipeline.is_job
 
 
-@lru_cache(maxsize=32)
-def _get_solid_handles(represented_pipeline):
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
-    return {
-        str(item.handleID): item
-        for item in build_solid_handles(
-            represented_pipeline, represented_pipeline.dep_structure_index
-        )
-    }
-
-
-class GraphenePipelineRunOrError(graphene.Union):
+class GrapheneJob(GraphenePipeline):
     class Meta:
-        types = (GraphenePipelineRun, GraphenePipelineRunNotFoundError, GraphenePythonError)
-        name = "PipelineRunOrError"
+        interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
+        name = "Job"
+
+
+class GrapheneGraph(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneSolidContainer,)
+        name = "Graph"
+
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+    solid_handle = graphene.Field(
+        GrapheneSolidHandle,
+        handleID=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+    solid_handles = graphene.Field(
+        non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
+    )
+    modes = non_null_list(GrapheneMode)
+
+    def __init__(self, external_pipeline, solid_handle_id=None):
+        self._external_pipeline = check.inst_param(
+            external_pipeline, "external_pipeline", ExternalPipeline
+        )
+        self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
+        super().__init__()
+
+    def resolve_id(self, _graphene_info):
+        if self._solid_handle_id:
+            return (
+                f"{self._external_pipeline.get_external_origin_id()}:solid:{self._solid_handle_id}"
+            )
+        return f"graph:{self._external_pipeline.get_external_origin_id()}"
+
+    def resolve_name(self, _graphene_info):
+        return self._external_pipeline.get_graph_name()
+
+    def resolve_description(self, _graphene_info):
+        return self._external_pipeline.description
+
+    def resolve_solid_handle(self, _graphene_info, handleID):
+        return build_solid_handles(self._external_pipeline).get(handleID)
+
+    def resolve_solid_handles(self, _graphene_info, **kwargs):
+        handles = build_solid_handles(self._external_pipeline)
+        parentHandleID = kwargs.get("parentHandleID")
+
+        if parentHandleID == "":
+            handles = {key: handle for key, handle in handles.items() if not handle.parent}
+        elif parentHandleID is not None:
+            handles = {
+                key: handle
+                for key, handle in handles.items()
+                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+            }
+
+        return [handles[key] for key in sorted(handles)]
+
+    def resolve_modes(self, _graphene_info):
+        # returns empty list... graphs don't have modes, this is a vestige of the old
+        # pipeline explorer, which expected all solid containers to be pipelines
+        return []
+
+
+class GrapheneRunOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
+        name = "RunOrError"

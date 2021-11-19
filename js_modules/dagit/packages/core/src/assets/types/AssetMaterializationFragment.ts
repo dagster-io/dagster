@@ -1,41 +1,40 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: AssetMaterializationFragment
 // ====================================================
 
-export interface AssetMaterializationFragment_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
+export interface AssetMaterializationFragment_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface AssetMaterializationFragment_runOrError_PipelineRun_repositoryOrigin {
+export interface AssetMaterializationFragment_runOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface AssetMaterializationFragment_runOrError_PipelineRun {
-  __typename: "PipelineRun";
+export interface AssetMaterializationFragment_runOrError_Run {
+  __typename: "Run";
   id: string;
   runId: string;
   mode: string;
-  repositoryOrigin: AssetMaterializationFragment_runOrError_PipelineRun_repositoryOrigin | null;
-  status: PipelineRunStatus;
+  repositoryOrigin: AssetMaterializationFragment_runOrError_Run_repositoryOrigin | null;
+  status: RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
 }
 
-export type AssetMaterializationFragment_runOrError = AssetMaterializationFragment_runOrError_PipelineRunNotFoundError | AssetMaterializationFragment_runOrError_PipelineRun;
+export type AssetMaterializationFragment_runOrError = AssetMaterializationFragment_runOrError_RunNotFoundError | AssetMaterializationFragment_runOrError_Run;
 
 export interface AssetMaterializationFragment_materializationEvent_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
 }

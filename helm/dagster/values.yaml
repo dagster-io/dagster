@@ -343,7 +343,6 @@ runLauncher:
   config:
     # This configuration will only be used if the K8sRunLauncher is selected
     k8sRunLauncher:
-
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.
@@ -413,7 +412,6 @@ runLauncher:
       #     subPath: test_file.yaml
       volumeMounts: []
 
-
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
@@ -428,6 +426,7 @@ runLauncher:
       nameOverride: "celery-workers"
 
       # Additional config options for Celery, applied to all queues.
+      # These can be overridden per-queue below.
       # For available options, see:
       # https://docs.celeryproject.org/en/stable/userguide/configuration.html
       configSource: {}
@@ -437,11 +436,14 @@ runLauncher:
       #
       # Optionally, labels and node selectors can be set on the Celery queue's workers.
       # Specifying a queue's node selector will override any existing node selector defaults.
+      # configSource will be merged with the shared configSource above.
       workerQueues:
         - name: "dagster"
           replicaCount: 2
           labels: {}
           nodeSelector: {}
+          configSource: {}
+          additionalCeleryArgs: []
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -604,6 +606,9 @@ redis:
   # Note: If `internal` is true, then redis pod will be created regardless of `enabled` flag.
   internal: false
 
+  usePassword: false
+  password: "test"
+
   # Redis host URL
   host: ""
 
@@ -615,6 +620,11 @@ redis:
 
   # Set DB number for Redis backend DB (default 0)
   backendDbNumber: 0
+
+  # If your Redis connection needs configuration options, you can use this field to specific the
+  # exact connection URL needed, rather than letting it be constructed from the Helm values.
+  brokerUrl: ""
+  backendUrl: ""
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
@@ -820,6 +830,19 @@ dagsterDaemon:
     #     module: ~
     #     class: ~
     #     config: {}
+
+  # Experimental feature to add fault tolerance to Dagster runs. The new Monitoring Daemon will
+  # perform health checks on run workers. If a run doesn't start within the timeout, it will be
+  # marked as failed. If a run had started but then the run worker crashed, the daemon will attempt
+  # to resume the run with a new run worker.
+  runMonitoring:
+    enabled: false
+    # Timeout for runs to start (avoids runs hanging in STARTED)
+    startTimeoutSeconds: 180
+    # Max number of times to attempt to resume a run with a new run worker
+    maxResumeRunAttempts: 3
+    # How often to check on in progress runs
+    pollIntervalSeconds: 120
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

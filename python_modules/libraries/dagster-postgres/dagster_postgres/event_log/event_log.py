@@ -296,7 +296,7 @@ def watcher_thread(
                 if callback_with_cursor.start_cursor < index:
                     try:
                         callback_with_cursor.callback(dagster_event)
-                    except Exception:  # pylint: disable=broad-except
+                    except Exception:
                         logging.exception(
                             "Exception in callback for event watch on run %s.", run_id
                         )

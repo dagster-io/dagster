@@ -7,7 +7,7 @@ from dagster.core.decorator_utils import format_docstring_for_description
 from ..composition import do_composition, get_validated_config_mapping
 from ..input import InputDefinition
 from ..output import OutputDefinition
-from ..solid import CompositeSolidDefinition
+from ..solid_definition import CompositeSolidDefinition
 
 
 class _CompositeSolid:

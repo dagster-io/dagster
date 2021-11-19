@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Extra  # pylint: disable=no-name-in-module
 
@@ -77,3 +77,4 @@ class Daemon(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
+    runMonitoring: Dict[str, Any]

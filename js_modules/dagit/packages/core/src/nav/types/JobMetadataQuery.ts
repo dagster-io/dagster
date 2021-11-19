@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunsFilter, InstigationStatus, PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineSelector, RunsFilter, InstigationStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobMetadataQuery
@@ -65,19 +64,19 @@ export interface JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterE
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets_key {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets {
   __typename: "Asset";
   id: string;
-  key: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets_key;
+  key: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -85,35 +84,35 @@ export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats
   endTime: number | null;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+  cause: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
 }
 
-export type JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats = JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
+export type JobMetadataQuery_pipelineRunsOrError_Runs_results_stats = JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | JobMetadataQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results {
-  __typename: "PipelineRun";
+export interface JobMetadataQuery_pipelineRunsOrError_Runs_results {
+  __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
-  assets: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_assets[];
-  stats: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  status: RunStatus;
+  assets: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets[];
+  stats: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats;
 }
 
-export interface JobMetadataQuery_pipelineRunsOrError_PipelineRuns {
-  __typename: "PipelineRuns";
-  results: JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results[];
+export interface JobMetadataQuery_pipelineRunsOrError_Runs {
+  __typename: "Runs";
+  results: JobMetadataQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type JobMetadataQuery_pipelineRunsOrError = JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | JobMetadataQuery_pipelineRunsOrError_PipelineRuns;
+export type JobMetadataQuery_pipelineRunsOrError = JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | JobMetadataQuery_pipelineRunsOrError_Runs;
 
 export interface JobMetadataQuery {
   pipelineOrError: JobMetadataQuery_pipelineOrError;
@@ -122,5 +121,5 @@ export interface JobMetadataQuery {
 
 export interface JobMetadataQueryVariables {
   params: PipelineSelector;
-  runsFilter?: PipelineRunsFilter | null;
+  runsFilter?: RunsFilter | null;
 }

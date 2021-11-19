@@ -78,16 +78,29 @@ class DagsterEventType(Enum):
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
-    PIPELINE_ENQUEUED = "PIPELINE_ENQUEUED"
-    PIPELINE_DEQUEUED = "PIPELINE_DEQUEUED"
-    PIPELINE_STARTING = "PIPELINE_STARTING"  # Launch is happening, execution hasn't started yet
+    # We want to display RUN_* events in dagit and in our LogManager output, but in order to
+    # support backcompat for our storage layer, we need to keep the persisted value to be strings
+    # of the form "PIPELINE_*".  We may have user code that pass in the DagsterEventType
+    # enum values into storage APIs (like get_event_records, which takes in an EventRecordsFilter).
+    RUN_ENQUEUED = "PIPELINE_ENQUEUED"
+    RUN_DEQUEUED = "PIPELINE_DEQUEUED"
+    RUN_STARTING = "PIPELINE_STARTING"  # Launch is happening, execution hasn't started yet
+    RUN_START = "PIPELINE_START"  # Execution has started
+    RUN_SUCCESS = "PIPELINE_SUCCESS"
+    RUN_FAILURE = "PIPELINE_FAILURE"
+    RUN_CANCELING = "PIPELINE_CANCELING"
+    RUN_CANCELED = "PIPELINE_CANCELED"
 
-    PIPELINE_START = "PIPELINE_START"  # Execution has started
-    PIPELINE_SUCCESS = "PIPELINE_SUCCESS"
-    PIPELINE_FAILURE = "PIPELINE_FAILURE"
-
-    PIPELINE_CANCELING = "PIPELINE_CANCELING"
-    PIPELINE_CANCELED = "PIPELINE_CANCELED"
+    # Keep these legacy enum values around, to keep back-compatability for user code that might be
+    # using these constants to filter event records
+    PIPELINE_ENQUEUED = RUN_ENQUEUED
+    PIPELINE_DEQUEUED = RUN_DEQUEUED
+    PIPELINE_STARTING = RUN_STARTING
+    PIPELINE_START = RUN_START
+    PIPELINE_SUCCESS = RUN_SUCCESS
+    PIPELINE_FAILURE = RUN_FAILURE
+    PIPELINE_CANCELING = RUN_CANCELING
+    PIPELINE_CANCELED = RUN_CANCELED
 
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
     ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
@@ -104,6 +117,17 @@ class DagsterEventType(Enum):
     ALERT_SUCCESS = "ALERT_SUCCESS"
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
+
+EVENT_TYPE_VALUE_TO_DISPLAY_STRING = {
+    "PIPELINE_ENQUEUED": "RUN_ENQUEUED",
+    "PIPELINE_DEQUEUED": "RUN_DEQUEUED",
+    "PIPELINE_STARTING": "RUN_STARTING",
+    "PIPELINE_START": "RUN_START",
+    "PIPELINE_SUCCESS": "RUN_SUCCESS",
+    "PIPELINE_FAILURE": "RUN_FAILURE",
+    "PIPELINE_CANCELING": "RUN_CANCELING",
+    "PIPELINE_CANCELED": "RUN_CANCELED",
+}
 
 STEP_EVENTS = {
     DagsterEventType.STEP_INPUT,
@@ -122,20 +146,20 @@ STEP_EVENTS = {
 }
 
 FAILURE_EVENTS = {
-    DagsterEventType.PIPELINE_FAILURE,
+    DagsterEventType.RUN_FAILURE,
     DagsterEventType.STEP_FAILURE,
-    DagsterEventType.PIPELINE_CANCELED,
+    DagsterEventType.RUN_CANCELED,
 }
 
 PIPELINE_EVENTS = {
-    DagsterEventType.PIPELINE_ENQUEUED,
-    DagsterEventType.PIPELINE_DEQUEUED,
-    DagsterEventType.PIPELINE_STARTING,
-    DagsterEventType.PIPELINE_START,
-    DagsterEventType.PIPELINE_SUCCESS,
-    DagsterEventType.PIPELINE_FAILURE,
-    DagsterEventType.PIPELINE_CANCELING,
-    DagsterEventType.PIPELINE_CANCELED,
+    DagsterEventType.RUN_ENQUEUED,
+    DagsterEventType.RUN_DEQUEUED,
+    DagsterEventType.RUN_STARTING,
+    DagsterEventType.RUN_START,
+    DagsterEventType.RUN_SUCCESS,
+    DagsterEventType.RUN_FAILURE,
+    DagsterEventType.RUN_CANCELING,
+    DagsterEventType.RUN_CANCELED,
 }
 
 HOOK_EVENTS = {
@@ -151,13 +175,13 @@ ALERT_EVENTS = {
 
 
 EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
-    DagsterEventType.PIPELINE_START: PipelineRunStatus.STARTED,
-    DagsterEventType.PIPELINE_SUCCESS: PipelineRunStatus.SUCCESS,
-    DagsterEventType.PIPELINE_FAILURE: PipelineRunStatus.FAILURE,
-    DagsterEventType.PIPELINE_ENQUEUED: PipelineRunStatus.QUEUED,
-    DagsterEventType.PIPELINE_STARTING: PipelineRunStatus.STARTING,
-    DagsterEventType.PIPELINE_CANCELING: PipelineRunStatus.CANCELING,
-    DagsterEventType.PIPELINE_CANCELED: PipelineRunStatus.CANCELED,
+    DagsterEventType.RUN_START: PipelineRunStatus.STARTED,
+    DagsterEventType.RUN_SUCCESS: PipelineRunStatus.SUCCESS,
+    DagsterEventType.RUN_FAILURE: PipelineRunStatus.FAILURE,
+    DagsterEventType.RUN_ENQUEUED: PipelineRunStatus.QUEUED,
+    DagsterEventType.RUN_STARTING: PipelineRunStatus.STARTING,
+    DagsterEventType.RUN_CANCELING: PipelineRunStatus.CANCELING,
+    DagsterEventType.RUN_CANCELED: PipelineRunStatus.CANCELED,
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
@@ -254,7 +278,6 @@ class DagsterEvent(
     Attributes:
         event_type_value (str): Value for a DagsterEventType.
         pipeline_name (str)
-        step_key (str)
         solid_handle (NodeHandle)
         step_kind_value (str): Value for a StepKind.
         logging_tags (Dict[str, str])
@@ -437,11 +460,11 @@ class DagsterEvent(
 
     @property
     def is_pipeline_success(self) -> bool:
-        return self.event_type == DagsterEventType.PIPELINE_SUCCESS
+        return self.event_type == DagsterEventType.RUN_SUCCESS
 
     @property
     def is_pipeline_failure(self) -> bool:
-        return self.event_type == DagsterEventType.PIPELINE_FAILURE
+        return self.event_type == DagsterEventType.RUN_FAILURE
 
     @property
     def is_failure(self) -> bool:
@@ -530,7 +553,7 @@ class DagsterEvent(
 
     @property
     def pipeline_failure_data(self) -> "PipelineFailureData":
-        _assert_type("pipeline_failure_data", DagsterEventType.PIPELINE_FAILURE, self.event_type)
+        _assert_type("pipeline_failure_data", DagsterEventType.RUN_FAILURE, self.event_type)
         return cast(PipelineFailureData, self.event_specific_data)
 
     @property
@@ -724,9 +747,9 @@ class DagsterEvent(
     @staticmethod
     def pipeline_start(pipeline_context: IPlanContext) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
-            DagsterEventType.PIPELINE_START,
+            DagsterEventType.RUN_START,
             pipeline_context,
-            message='Started execution of pipeline "{pipeline_name}".'.format(
+            message='Started execution of run for "{pipeline_name}".'.format(
                 pipeline_name=pipeline_context.pipeline_name
             ),
         )
@@ -734,9 +757,9 @@ class DagsterEvent(
     @staticmethod
     def pipeline_success(pipeline_context: IPlanContext) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
             pipeline_context,
-            message='Finished execution of pipeline "{pipeline_name}".'.format(
+            message='Finished execution of run for "{pipeline_name}".'.format(
                 pipeline_name=pipeline_context.pipeline_name
             ),
         )
@@ -750,9 +773,9 @@ class DagsterEvent(
         check.str_param(context_msg, "context_msg")
         if isinstance(pipeline_context_or_name, IPlanContext):
             return DagsterEvent.from_pipeline(
-                DagsterEventType.PIPELINE_FAILURE,
+                DagsterEventType.RUN_FAILURE,
                 pipeline_context_or_name,
-                message='Execution of pipeline "{pipeline_name}" failed. {context_msg}'.format(
+                message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
                     pipeline_name=pipeline_context_or_name.pipeline_name,
                     context_msg=context_msg,
                 ),
@@ -763,10 +786,10 @@ class DagsterEvent(
             # built and so can't use from_pipeline
             check.str_param(pipeline_context_or_name, "pipeline_name")
             event = DagsterEvent(
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                event_type_value=DagsterEventType.RUN_FAILURE.value,
                 pipeline_name=pipeline_context_or_name,
                 event_specific_data=PipelineFailureData(error_info),
-                message='Execution of pipeline "{pipeline_name}" failed. {context_msg}'.format(
+                message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
                     pipeline_name=pipeline_context_or_name,
                     context_msg=context_msg,
                 ),
@@ -779,9 +802,9 @@ class DagsterEvent(
         pipeline_context: IPlanContext, error_info: Optional[SerializableErrorInfo] = None
     ) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
-            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.RUN_CANCELED,
             pipeline_context,
-            message='Execution of pipeline "{pipeline_name}" canceled.'.format(
+            message='Execution of run for "{pipeline_name}" canceled.'.format(
                 pipeline_name=pipeline_context.pipeline_name
             ),
             event_specific_data=PipelineCanceledData(
@@ -1034,7 +1057,7 @@ class DagsterEvent(
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
-                'Finished the execution of hook "{hook_name}" triggered for solid "{solid_name}".'
+                'Finished the execution of hook "{hook_name}" triggered for "{solid_name}".'
             ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
@@ -1084,7 +1107,7 @@ class DagsterEvent(
             logging_tags=step_context.logging_tags,
             message=(
                 'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
-                'condition during the execution of solid "{solid_name}".'
+                'condition during the execution of "{solid_name}".'
             ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
@@ -1098,7 +1121,7 @@ class DagsterEvent(
     def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
         step_keys = [step.key for step in steps]
         if len(step_keys) == 1:
-            message = f"Started capturing logs for solid: {step_keys[0]}."
+            message = f"Started capturing logs for step: {step_keys[0]}."
         else:
             message = f"Started capturing logs in process (pid: {os.getpid()})."
 

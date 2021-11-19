@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -40,6 +39,7 @@ export interface InstanceWarningQuery_instance_daemonHealth {
 export interface InstanceWarningQuery_instance {
   __typename: "Instance";
   daemonHealth: InstanceWarningQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface InstanceWarningQuery {

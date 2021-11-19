@@ -1,5 +1,3 @@
-import os
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -17,8 +15,6 @@ from dagster import (
     dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
-from dagster.core.storage.system_storage import fs_intermediate_storage
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.utils import dict_without_keys
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
@@ -967,124 +963,10 @@ def dataframe_loader(_context, config):
         )
 
 
-class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-    @classmethod
-    def compatible_with_storage_def(cls, intermediate_storage_def):
-        return intermediate_storage_def.required_resource_keys == {"s3"}
-
-    @classmethod
-    def set_intermediate_object(
-        cls, intermediate_storage, context, _dagster_type, step_output_handle, value
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        target_path = intermediate_storage.object_store.key_for_paths(paths)
-        value.write.parquet(
-            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
-        )
-        return target_path
-
-    @classmethod
-    def get_intermediate_object(
-        cls, intermediate_storage, context, _dagster_type, step_output_handle
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        return context.resources.pyspark.spark_session.read.parquet(
-            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
-        )
-
-    @classmethod
-    def required_resource_keys(cls):
-        return frozenset({"pyspark"})
-
-    @staticmethod
-    def protocol(context):
-        # pylint: disable=protected-access
-        hadoopConf = context.resources.pyspark.spark_session.sparkContext._jsc.hadoopConfiguration()
-        # If we're on EMR, s3 is preferred:
-        # https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-file-systems.html
-        # Otherwise, s3a is preferred
-        if hadoopConf.get("fs.s3.impl") == "com.amazon.ws.emr.hadoop.fs.EmrFileSystem":
-            return "s3://"
-        else:
-            return "s3a://"
-
-
-class SparkDataFrameADLS2StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-    @classmethod
-    def compatible_with_storage_def(cls, intermediate_storage_def):
-        try:
-            from dagster_azure.adls2 import adls2_intermediate_storage
-
-            return intermediate_storage_def is adls2_intermediate_storage
-        except ImportError:
-            return False
-
-    @classmethod
-    def set_intermediate_object(
-        cls, intermediate_storage, context, _dagster_type, step_output_handle, value
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        target_path = intermediate_storage.object_store.key_for_paths(paths)
-        value.write.parquet(
-            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
-        )
-        return target_path
-
-    @classmethod
-    def get_intermediate_object(
-        cls, intermediate_storage, context, _dagster_type, step_output_handle
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        return context.resources.pyspark.spark_session.read.parquet(
-            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
-        )
-
-    @classmethod
-    def required_resource_keys(cls):
-        return frozenset({"pyspark"})
-
-    @staticmethod
-    def protocol(_context):
-        return "abfss://"
-
-
-class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
-    @classmethod
-    def compatible_with_storage_def(cls, intermediate_storage_def):
-        return intermediate_storage_def is fs_intermediate_storage
-
-    @classmethod
-    def set_intermediate_object(
-        cls, intermediate_storage, _context, _dagster_type, step_output_handle, value
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        target_path = os.path.join(intermediate_storage.root, *paths)
-        value.write.parquet(intermediate_storage.uri_for_paths(paths))
-        return target_path
-
-    @classmethod
-    def get_intermediate_object(
-        cls, intermediate_storage, context, _dagster_type, step_output_handle
-    ):
-        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
-        return context.resources.pyspark.spark_session.read.parquet(
-            os.path.join(intermediate_storage.root, *paths)
-        )
-
-    @classmethod
-    def required_resource_keys(cls):
-        return frozenset({"pyspark"})
-
-
 DataFrame = PythonObjectDagsterType(
     python_type=NativeSparkDataFrame,
     name="PySparkDataFrame",
     description="A PySpark data frame.",
-    auto_plugins=[
-        SparkDataFrameS3StoragePlugin,
-        SparkDataFrameADLS2StoragePlugin,
-        SparkDataFrameFilesystemStoragePlugin,
-    ],
     loader=dataframe_loader,
     materializer=dataframe_materializer,
 )

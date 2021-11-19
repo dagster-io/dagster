@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from ...decorator_utils import get_function_params, validate_expected_params
 from ..events import HookExecutionResult
-from ..hook import HookDefinition
+from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.hook import HookContext
@@ -129,7 +129,7 @@ def success_hook(
 
             @success_hook(required_resource_keys={'slack'})
             def slack_message_on_success(context):
-                message = 'solid {} succeeded'.format(context.solid.name)
+                message = 'op {} succeeded'.format(context.op.name)
                 context.resources.slack.send_message(message)
 
             @success_hook
@@ -192,7 +192,7 @@ def failure_hook(
 
             @failure_hook(required_resource_keys={'slack'})
             def slack_message_on_failure(context):
-                message = 'solid {} failed'.format(context.solid.name)
+                message = 'op {} failed'.format(context.op.name)
                 context.resources.slack.send_message(message)
 
             @failure_hook

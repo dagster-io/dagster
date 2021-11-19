@@ -13,6 +13,7 @@ from .cli import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
+from .cloud import DbtCloudOutput, DbtCloudResourceV2, dbt_cloud_resource, dbt_cloud_run_op
 from .dbt_resource import DbtResource
 from .errors import (
     DagsterDbtCliFatalRuntimeError,
@@ -23,10 +24,19 @@ from .errors import (
     DagsterDbtError,
     DagsterDbtRpcUnexpectedPollOutputError,
 )
+from .ops import (
+    dbt_compile_op,
+    dbt_docs_generate_op,
+    dbt_ls_op,
+    dbt_run_op,
+    dbt_seed_op,
+    dbt_snapshot_op,
+    dbt_test_op,
+)
 from .rpc import (
-    DbtRpcClient,
     DbtRpcOutput,
-    DbtRpcSyncClient,
+    DbtRpcResource,
+    DbtRpcSyncResource,
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
     dbt_rpc_docs_generate,
@@ -64,7 +74,10 @@ __all__ = [
     "DbtOutput",
     "DbtCliOutput",
     "DbtCliResource",
-    "DbtRpcClient",
+    "DbtCloudOutput",
+    "DbtCloudResourceV2",
+    "DbtRpcResource",
+    "DbtRpcSyncResource",
     "DbtRpcOutput",
     "create_dbt_rpc_run_sql_solid",
     "dbt_cli_resource",
@@ -76,6 +89,8 @@ __all__ = [
     "dbt_cli_snapshot",
     "dbt_cli_snapshot_freshness",
     "dbt_cli_test",
+    "dbt_cloud_resource",
+    "dbt_cloud_run_op",
     "dbt_rpc_compile_sql",
     "dbt_rpc_docs_generate",
     "dbt_rpc_docs_generate_and_wait",

@@ -64,7 +64,7 @@ export const RunTable = (props: RunTableProps) => {
             <NonIdealState
               icon="run"
               title="No runs to display"
-              description="Use the Playground to launch a run."
+              description="Use the Launchpad to launch a run."
             />
           )}
         </Box>
@@ -146,7 +146,7 @@ export const RunTable = (props: RunTableProps) => {
 };
 
 export const RUN_TABLE_RUN_FRAGMENT = gql`
-  fragment RunTableRunFragment on PipelineRun {
+  fragment RunTableRunFragment on Run {
     id
     runId
     status
@@ -155,9 +155,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     mode
     rootRunId
     parentRunId
-    pipeline {
-      name
-    }
     pipelineSnapshotId
     pipelineName
     repositoryOrigin {
@@ -254,7 +251,11 @@ const RunRow: React.FC<{
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
           </Box>
-          <RunTags tags={run.tags} mode={isJob ? null : run.mode} onSetFilter={onSetFilter} />
+          <RunTags
+            tags={run.tags}
+            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
+            onSetFilter={onSetFilter}
+          />
         </Box>
       </td>
       <td>

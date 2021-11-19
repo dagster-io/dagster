@@ -12,7 +12,7 @@ import {TagContainer, TagEditor} from '../execute/TagEditor';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
@@ -32,10 +32,12 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {
+  BOX_SIZE,
   GridColumn,
   GridFloatingContainer,
   GridScrollContainer,
   LeftLabel,
+  topLabelHeightForLabels,
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
@@ -43,6 +45,7 @@ import {LaunchPartitionBackfill} from './types/LaunchPartitionBackfill';
 import {PartitionStatusQuery} from './types/PartitionStatusQuery';
 import {PartitionsBackfillSelectorQuery} from './types/PartitionsBackfillSelectorQuery';
 
+const OVERSCROLL = 200;
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
 interface BackfillOptions {
@@ -141,7 +144,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  const {containerProps} = useViewport({
+  const {containerProps, viewport} = useViewport({
     initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
   });
 
@@ -342,15 +345,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const statuses = partitionStatuses();
 
   const partitionsWithLastRunSuccess = statuses
-    .filter((x) => x.runStatus === PipelineRunStatus.SUCCESS)
+    .filter((x) => x.runStatus === RunStatus.SUCCESS)
     .map((x) => x.partitionName);
 
   const partitionsWithLastRunFailure = statuses
     .filter(
       (x) =>
-        x.runStatus === PipelineRunStatus.FAILURE ||
-        x.runStatus === PipelineRunStatus.CANCELED ||
-        x.runStatus === PipelineRunStatus.CANCELING,
+        x.runStatus === RunStatus.FAILURE ||
+        x.runStatus === RunStatus.CANCELED ||
+        x.runStatus === RunStatus.CANCELING,
     )
     .map((x) => x.partitionName);
 
@@ -408,6 +411,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   };
 
   const selectedString = partitionsToText(selected, partitionNames);
+
+  const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / BOX_SIZE));
+  const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / BOX_SIZE);
+  const visiblePartitionNames = partitionNames.slice(
+    visibleRangeStart,
+    visibleRangeStart + visibleCount,
+  );
+
+  const topLabelHeight = topLabelHeightForLabels(partitionNames);
 
   return (
     <>
@@ -534,7 +546,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>
-                <TopLabel></TopLabel>
+                <TopLabel style={{height: topLabelHeight}} />
                 {stepRows.map((step) => (
                   <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
                     {step.name}
@@ -544,11 +556,25 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             </GridFloatingContainer>
           )}
           <GridScrollContainer {...containerProps}>
-            <div style={{display: 'flex', paddingLeft: 10}}>
-              {partitionNames.map((partitionName, idx) => (
+            <div
+              style={{
+                width: partitionNames.length * BOX_SIZE,
+                position: 'relative',
+                height: query
+                  ? stepRows.length * BOX_SIZE + topLabelHeight
+                  : BOX_SIZE + topLabelHeight + 25,
+              }}
+            >
+              {visiblePartitionNames.map((partitionName, idx) => (
                 <GridColumn
                   key={partitionName}
-                  style={{zIndex: partitionNames.length - idx, userSelect: 'none'}}
+                  style={{
+                    zIndex: partitionNames.length - (idx + visibleRangeStart),
+                    width: BOX_SIZE,
+                    position: 'absolute',
+                    userSelect: 'none',
+                    left: (idx + visibleRangeStart) * BOX_SIZE,
+                  }}
                   disabled={statusesLoading || !selectablePartitions.includes(partitionName)}
                   focused={selected.includes(partitionName)}
                   multiselectFocused={currentRangeSelection.includes(partitionName)}
@@ -556,7 +582,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   onMouseUp={() => onPartitionMouseUp(partitionName)}
                   onMouseOver={() => onPartitionMouseOver(partitionName)}
                 >
-                  <TopLabelTilted label={partitionName} />
+                  <TopLabelTilted $height={topLabelHeight} label={partitionName} />
                   {!options.reexecute ? (
                     <div
                       className={`square ${
@@ -587,51 +613,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
         {!instance.daemonHealth.daemonStatus.healthy ? (
           <div style={{marginTop: 10}}>
-            <Alert
-              intent="warning"
-              title="The backfill daemon is not running."
-              description={
-                <div>
-                  See the{' '}
-                  <a
-                    href="https://docs.dagster.io/overview/daemon"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    dagster-daemon documentation
-                  </a>{' '}
-                  for more information on how to deploy the dagster-daemon process.
-                </div>
-              }
-            />
+            <DaemonNotRunningAlert />
           </div>
         ) : null}
         {usingDefaultRunLauncher && !instance.runQueuingSupported ? (
           <div style={{marginTop: 10}}>
-            <Alert
-              intent="warning"
-              title={
-                <div>
-                  Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for
-                  launching backfills without a queued run coordinator is not advised.
-                </div>
-              }
-              description={
-                <div>
-                  Check your instance configuration in <code>dagster.yaml</code> to either configure{' '}
-                  the{' '}
-                  <a
-                    href="https://docs.dagster.io/overview/pipeline-runs/run-coordinator"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    queued run coordinator
-                  </a>{' '}
-                  or to configure a run launcher more appropriate for launching a large number of
-                  jobs.
-                </div>
-              }
-            />
+            <UsingDefaultLauncherAlert />
           </div>
         ) : null}
       </DialogBody>
@@ -894,7 +881,7 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PipelineRunConflict {
+      ... on RunConflict {
         message
       }
       ... on ConflictingExecutionParamsError {
@@ -903,7 +890,7 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PresetNotFoundError {
         message
       }
-      ... on PipelineConfigValidationInvalid {
+      ... on RunConfigValidationInvalid {
         pipelineName
         errors {
           __typename
@@ -916,3 +903,48 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
 `;
+
+const DaemonNotRunningAlert: React.FC = () => (
+  <Alert
+    intent="warning"
+    title="The backfill daemon is not running."
+    description={
+      <div>
+        See the{' '}
+        <a
+          href="https://docs.dagster.io/deployment/dagster-daemon"
+          target="_blank"
+          rel="noreferrer"
+        >
+          dagster-daemon documentation
+        </a>{' '}
+        for more information on how to deploy the dagster-daemon process.
+      </div>
+    }
+  />
+);
+
+const UsingDefaultLauncherAlert: React.FC = () => (
+  <Alert
+    intent="warning"
+    title={
+      <div>
+        Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
+        backfills without a queued run coordinator is not advised.
+      </div>
+    }
+    description={
+      <div>
+        Check your instance configuration in <code>dagster.yaml</code> to either configure the{' '}
+        <a
+          href="https://docs.dagster.io/deployment/run-coordinator"
+          target="_blank"
+          rel="noreferrer"
+        >
+          queued run coordinator
+        </a>{' '}
+        or to configure a run launcher more appropriate for launching a large number of jobs.
+      </div>
+    }
+  />
+);

@@ -107,8 +107,9 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
             solid_def_version = pipeline_def.version_strategy.get_solid_version(version_context)
 
         if solid_def_version is None:
+            node_label = f"{solid_def.node_type_str} '{solid_def.name}'"
             raise DagsterInvariantViolationError(
-                f"While using memoization, version for solid '{solid_def.name}' was None. Please "
+                f"While using memoization, version for {node_label} was None. Please "
                 "either provide a versioning strategy for your job, or provide a version using the "
                 "solid decorator."
             )

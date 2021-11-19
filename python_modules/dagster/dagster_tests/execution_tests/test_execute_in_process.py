@@ -4,6 +4,8 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     Out,
+    daily_partitioned_config,
+    job,
     op,
     resource,
     solid,
@@ -58,14 +60,19 @@ def test_dynamic_output_values():
         yield DynamicOutput(1, "a")
         yield DynamicOutput(2, "b")
 
+    @op
+    def add_one(x):
+        return x + 1
+
     @graph
     def a():
-        two_outs()
+        two_outs().map(add_one)
 
     result = a.execute_in_process()
 
     assert result.success
     assert result.output_for_node("two_outs") == {"a": 1, "b": 2}
+    assert result.output_for_node("add_one") == {"a": 2, "b": 3}
 
 
 def test_execute_graph():
@@ -123,7 +130,7 @@ def test_executor_config_ignored_by_execute_in_process():
         my_solid()
 
     my_job = my_graph.to_job(
-        config={"execution": {"multiprocess": {"config": {"max_concurrent": 5}}}}
+        config={"execution": {"config": {"multiprocess": {"max_concurrent": 5}}}}
     )
 
     result = my_job.execute_in_process()
@@ -185,7 +192,9 @@ def test_output_for_node_not_found():
     with pytest.raises(KeyError, match="name_doesnt_exist"):
         result.output_for_node("op_exists", "name_doesnt_exist")
 
-    with pytest.raises(CheckError, match="Could not find output mapping name_doesnt_exist"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Could not find top-level output 'name_doesnt_exist'"
+    ):
         result.output_value("name_doesnt_exist")
 
     with pytest.raises(CheckError, match="basic has no solid named op_doesnt_exist"):
@@ -218,3 +227,38 @@ def test_step_events_for_node():
 
     op_events = result.events_for_node("basic.op_exists")
     assert len(_get_step_successes(op_events)) == 1
+
+
+def test_output_value_error():
+    @job
+    def my_job():
+        pass
+
+    result = my_job.execute_in_process()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
+    ):
+        result.output_value()
+
+
+def test_partitions_key():
+    @op
+    def my_op(context):
+        assert (
+            context._step_execution_context.plan_data.pipeline_run.tags[  # pylint: disable=protected-access
+                "partition"
+            ]
+            == "2020-01-01"
+        )
+
+    @daily_partitioned_config(start_date="2020-01-01")
+    def my_partitioned_config(_start, _end):
+        return {}
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    assert my_job.execute_in_process(partition_key="2020-01-01").success

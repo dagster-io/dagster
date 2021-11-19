@@ -6,7 +6,7 @@ from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.storage.input_manager import InputManager
 from dagster.utils.backcompat import experimental
 
@@ -21,7 +21,7 @@ class IInputManagerDefinition:
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of a root input manager resource.
 
-    Root input managers load solid inputs that aren't connected to upstream outputs.
+    Root input managers load op inputs that aren't connected to upstream outputs.
 
     An RootInputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
     :py:class:`RootInputManager`.
@@ -65,7 +65,7 @@ class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
 
 
 class RootInputManager(InputManager):
-    """RootInputManagers are used to load inputs to solids at the root of a pipeline.
+    """RootInputManagers are used to load inputs to ops at the root of a job.
 
     The easiest way to define an RootInputManager is with the
     :py:func:`@root_input_manager <root_input_manager>` decorator.
@@ -93,10 +93,10 @@ def root_input_manager(
 ):
     """Define a root input manager.
 
-    Root input managers load solid inputs that aren't connected to upstream outputs.
+    Root input managers load op inputs that aren't connected to upstream outputs.
 
     The decorated function should accept a :py:class:`InputContext` and resource config, and return
-    a loaded object that will be passed into one of the inputs of a solid.
+    a loaded object that will be passed into one of the inputs of an op.
 
     The decorator produces an :py:class:`RootInputManagerDefinition`.
 
@@ -115,17 +115,19 @@ def root_input_manager(
 
     .. code-block:: python
 
+        from dagster import root_input_manager, op, job, In
+
         @root_input_manager
         def csv_loader(_):
             return read_csv("some/path")
 
-        @solid(input_defs=[InputDefinition("input1", root_manager_key="csv_loader_key")])
-        def my_solid(_, input1):
+        @op(ins={"input1": In(root_manager_key="csv_loader_key")})
+        def my_op(_, input1):
             do_stuff(input1)
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"csv_loader_key": csv_loader})])
-        def my_pipeline():
-            my_solid()
+        @job(resource_defs={"csv_loader_key": csv_loader})
+        def my_job():
+            my_op()
 
         @root_input_manager(config_schema={"base_dir": str})
         def csv_loader(context):

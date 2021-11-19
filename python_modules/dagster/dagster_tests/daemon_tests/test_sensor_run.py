@@ -23,10 +23,14 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
-from dagster.core.definitions.pipeline_sensor import run_status_sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL, RunRequest, SkipReason
+from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
+from dagster.core.definitions.sensor_definition import (
+    DEFAULT_SENSOR_DAEMON_INTERVAL,
+    RunRequest,
+    SkipReason,
+)
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
@@ -62,7 +66,7 @@ def the_pipeline():
     the_solid()
 
 
-@graph
+@graph()
 def the_graph():
     the_solid()
 
@@ -80,7 +84,7 @@ def config_pipeline():
     config_solid()
 
 
-@graph
+@graph()
 def config_graph():
     config_solid()
 
@@ -120,7 +124,7 @@ def failure_pipeline():
     failure_solid()
 
 
-@graph
+@graph()
 def failure_graph():
     failure_solid()
 
@@ -643,11 +647,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
             # Error repeats on subsequent ticks
 
@@ -662,11 +666,11 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 [],
-                "Error in config for pipeline the_pipeline",
+                "Error in config for pipeline",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline the_pipeline") in captured.out
+            assert ("Error in config for pipeline") in captured.out
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

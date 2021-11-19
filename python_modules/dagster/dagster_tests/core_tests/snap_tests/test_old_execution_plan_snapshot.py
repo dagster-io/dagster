@@ -138,3 +138,61 @@ def test_cant_load_old_snapshot():
         match="Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots had enough information to fully reconstruct the ExecutionPlan",
     ):
         ExecutionPlan.rebuild_from_snapshot("noop_pipeline", snapshot)
+
+
+PRE_CACHE_EXECUTION_PLAN_SNAPSHOT = """{
+  "__class__": "ExecutionPlanSnapshot",
+  "artifacts_persisted": true,
+  "initial_known_state": null,
+  "pipeline_snapshot_id": "0965b76124e758660317760c7e9bbc66282f33b0",
+  "snapshot_version": 1,
+  "step_keys_to_execute": [
+    "noop_solid"
+  ],
+  "step_output_versions": [],
+  "steps": [
+    {
+      "__class__": "ExecutionStepSnap",
+      "inputs": [],
+      "key": "noop_solid",
+      "kind": {
+        "__enum__": "StepKind.COMPUTE"
+      },
+      "metadata_items": [],
+      "outputs": [
+        {
+          "__class__": "ExecutionStepOutputSnap",
+          "dagster_type_key": "Any",
+          "name": "result",
+          "properties": {
+            "__class__": "StepOutputProperties",
+            "is_asset": false,
+            "is_dynamic": false,
+            "is_required": true,
+            "should_materialize": false
+          },
+          "solid_handle": {
+            "__class__": "SolidHandle",
+            "name": "noop_solid",
+            "parent": null
+          }
+        }
+      ],
+      "solid_handle_id": "noop_solid",
+      "step_handle": {
+        "__class__": "StepHandle",
+        "solid_handle": {
+          "__class__": "SolidHandle",
+          "name": "noop_solid",
+          "parent": null
+        }
+      },
+      "tags": {}
+    }
+  ]
+}"""
+
+
+def test_rebuild_pre_cached_key_execution_plan_snapshot():
+    snapshot = deserialize_json_to_dagster_namedtuple(PRE_CACHE_EXECUTION_PLAN_SNAPSHOT)
+    ExecutionPlan.rebuild_from_snapshot("noop_pipeline", snapshot)

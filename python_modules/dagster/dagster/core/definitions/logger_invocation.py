@@ -4,7 +4,7 @@ from dagster.core.errors import DagsterInvalidConfigError
 
 from ...config import Shape
 from ..execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
-from .logger import LoggerDefinition
+from .logger_definition import LoggerDefinition
 
 
 def logger_invocation_result(logger_def: LoggerDefinition, init_context: UnboundInitLoggerContext):

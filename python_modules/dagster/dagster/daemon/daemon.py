@@ -8,6 +8,7 @@ import pendulum
 from dagster import DagsterInstance, check
 from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
+from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler import execute_scheduler_iteration
@@ -101,7 +102,7 @@ class DagsterDaemon(AbstractContextManager):
                             heartbeat_interval_seconds,
                             error_interval_seconds,
                         )
-                    except Exception:  # pylint: disable=broad-except
+                    except Exception:
                         self._logger.error(
                             "Failed to add heartbeat: \n{}".format(
                                 serializable_error_info_from_exc_info(sys.exc_info())
@@ -134,7 +135,7 @@ class DagsterDaemon(AbstractContextManager):
                         self._errors.appendleft((result, pendulum.now("UTC")))
                 except StopIteration:
                     break
-                except Exception:  # pylint: disable=broad-except
+                except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     self._logger.error("Caught error:\n{}".format(error_info))
                     self._errors.appendleft((error_info, pendulum.now("UTC")))
@@ -147,7 +148,7 @@ class DagsterDaemon(AbstractContextManager):
                             heartbeat_interval_seconds,
                             error_interval_seconds,
                         )
-                    except Exception:  # pylint: disable=broad-except
+                    except Exception:
                         self._logger.error(
                             "Failed to add heartbeat: \n{}".format(
                                 serializable_error_info_from_exc_info(sys.exc_info())
@@ -245,3 +246,12 @@ class BackfillDaemon(DagsterDaemon):
 
     def run_iteration(self, instance, workspace):
         yield from execute_backfill_iteration(instance, workspace, self._logger)
+
+
+class MonitoringDaemon(DagsterDaemon):
+    @classmethod
+    def daemon_type(cls):
+        return "MONITORING"
+
+    def run_iteration(self, instance, workspace):
+        yield from execute_monitoring_iteration(instance, workspace, self._logger)

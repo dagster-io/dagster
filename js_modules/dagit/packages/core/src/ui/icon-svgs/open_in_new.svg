@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>open_in_new</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <line x1="2.5" y1="2.5" x2="5.5" y2="2.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="2.5" y1="2.8" x2="5.5" y2="2.8" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="2.5" y1="3.5" x2="2.5" y2="11.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="2.8" y1="3.5" x2="2.8" y2="11.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="12.5" y1="2.5" x2="12.5" y2="6.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="8.5" y1="2.5" x2="12.5" y2="2.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="8.5" y1="2.5" x2="11.5" y2="3.5" id="Line" stroke="#000000" stroke-linecap="round"></line>
+        <line x1="12.5" y1="6.5" x2="11.5" y2="3.5" id="Line" stroke="#000000" stroke-linecap="round"></line>
+        <line x1="7" y1="8" x2="12" y2="3" id="Line" stroke="#000000" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="12.5" y1="12.5" x2="2.5" y2="12.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="12.5" y1="12.2" x2="2.5" y2="12.2" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="12.5" y1="11.5" x2="12.5" y2="9.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+        <line x1="12.2" y1="11.5" x2="12.2" y2="9.5" id="Line" stroke="#000000" stroke-linecap="square"></line>
+    </g>
+</svg>

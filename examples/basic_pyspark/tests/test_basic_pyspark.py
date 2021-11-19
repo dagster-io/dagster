@@ -1,8 +1,6 @@
-from dagster import execute_pipeline
-
-from ..repo import my_pipeline
+from ..repo import make_and_filter_data_job
 
 
 def test_basic_pyspark():
-    res = execute_pipeline(my_pipeline)
+    res = make_and_filter_data_job.execute_in_process()
     assert res.success

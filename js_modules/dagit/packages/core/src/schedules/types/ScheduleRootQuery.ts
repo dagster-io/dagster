@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -43,10 +42,10 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSp
 export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData;
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_cause {
@@ -155,6 +154,7 @@ export interface ScheduleRootQuery_instance_daemonHealth {
 export interface ScheduleRootQuery_instance {
   __typename: "Instance";
   daemonHealth: ScheduleRootQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface ScheduleRootQuery {

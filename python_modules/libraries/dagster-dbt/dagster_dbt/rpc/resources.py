@@ -14,7 +14,7 @@ from .types import DbtRpcOutput
 from .utils import is_fatal_code
 
 
-class DbtRpcClient(DbtResource):
+class DbtRpcResource(DbtResource):
     """A client for a dbt RPC server.
 
     To use this as a dagster resource, we recommend using
@@ -153,6 +153,32 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="status")
         return self._post(data=json.dumps(data))
+
+    def ls(
+        self,
+        select: List[str] = None,
+        models: List[str] = None,
+        exclude: List[str] = None,
+        **kwargs,
+    ) -> DbtRpcOutput:
+        """Sends a request with the method ``list`` to the dbt RPC server, and returns the
+        response. For more details, see the dbt docs for `list
+        <https://docs.getdbt.com/reference/commands/rpc/#list>`_.
+
+        Args:
+            select (List[str], optional): the resources to include in the output.
+            models (List[str], optional): the models to include in the output.
+            exclude (List[str]), optional): the resources to exclude from compilation.
+
+        Returns:
+            Response: the HTTP response from the dbt RPC server.
+        """
+
+        explicit_params = dict(models=models, exclude=exclude)
+        params = self._format_params({**explicit_params, **kwargs})
+        data = self._default_request(method="list", params=params)
+
+        return self._get_result(data=json.dumps(data))
 
     def poll(self, request_token: str, logs: bool = False, logs_start: int = 0) -> DbtRpcOutput:
         """Sends a request with the method ``poll`` to the dbt RPC server, and returns the response.
@@ -420,34 +446,7 @@ class DbtRpcClient(DbtResource):
         return self._get_result(data=json.dumps(data))
 
 
-@resource(
-    description="A resource representing a dbt RPC client.",
-    config_schema={
-        "host": Field(StringSource),
-        "port": Field(IntSource, is_required=False, default_value=8580),
-    },
-)
-def dbt_rpc_resource(context) -> DbtRpcClient:
-    """This resource defines a dbt RPC client.
-
-    To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
-
-    Examples:
-
-    .. code-block:: python
-
-        custom_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "80.80.80.80","port": 8080,})
-
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": custom_dbt_rpc_resource})])
-        def dbt_rpc_pipeline():
-            # Run solids with `required_resource_keys={"dbt_rpc", ...}`.
-
-    """
-    return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
-
-
-class DbtRpcSyncClient(DbtRpcClient):
+class DbtRpcSyncResource(DbtRpcResource):
     def __init__(
         self,
         host: str = "0.0.0.0",
@@ -510,6 +509,39 @@ class DbtRpcSyncClient(DbtRpcClient):
 
 
 @resource(
+    description="A resource representing a dbt RPC client.",
+    config_schema={
+        "host": Field(StringSource),
+        "port": Field(IntSource, is_required=False, default_value=8580),
+    },
+)
+def dbt_rpc_resource(context) -> DbtRpcResource:
+    """This resource defines a dbt RPC client.
+
+    To configure this resource, we recommend using the `configured
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+
+    Examples:
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster_dbt import dbt_rpc_resource
+
+        custom_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "80.80.80.80","port": 8080,})
+
+        @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
+        def dbt_rpc_job():
+            # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
+
+    """
+    return DbtRpcResource(
+        host=context.resource_config["host"], port=context.resource_config["port"]
+    )
+
+
+@resource(
     description="A resource representing a synchronous dbt RPC client.",
     config_schema={
         "host": Field(StringSource),
@@ -519,8 +551,9 @@ class DbtRpcSyncClient(DbtRpcClient):
 )
 def dbt_rpc_sync_resource(
     context,
-) -> DbtRpcClient:
-    """This resource defines a synchronous dbt RPC client.
+) -> DbtRpcSyncResource:
+    """This resource defines a synchronous dbt RPC client, which sends requests to a dbt RPC server,
+    and waits for the request to complete before returning.
 
     To configure this resource, we recommend using the `configured
     <https://docs.dagster.io/overview/configuration#configured>`_ method.
@@ -529,14 +562,16 @@ def dbt_rpc_sync_resource(
 
     .. code-block:: python
 
+        from dagster_dbt import dbt_rpc_sync_resource
+
         custom_sync_dbt_rpc_resource = dbt_rpc_sync_resource.configured({"host": "80.80.80.80","port": 8080,})
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})])
-        def dbt_rpc_pipeline():
-            # Run solids with `required_resource_keys={"dbt_rpc", ...}`.
+        @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
+        def dbt_rpc_sync_job():
+            # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
 
     """
-    return DbtRpcSyncClient(
+    return DbtRpcSyncResource(
         host=context.resource_config["host"],
         port=context.resource_config["port"],
         poll_interval=context.resource_config["poll_interval"],

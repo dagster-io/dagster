@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -20,13 +19,13 @@ export interface PartitionRunMatrixRunFragment_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface PartitionRunMatrixRunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PartitionRunMatrixRunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   startTime: number | null;
 }
 
-export type PartitionRunMatrixRunFragment_stats = PartitionRunMatrixRunFragment_stats_PythonError | PartitionRunMatrixRunFragment_stats_PipelineRunStatsSnapshot;
+export type PartitionRunMatrixRunFragment_stats = PartitionRunMatrixRunFragment_stats_PythonError | PartitionRunMatrixRunFragment_stats_RunStatsSnapshot;
 
 export interface PartitionRunMatrixRunFragment_stepStats_materializations {
   __typename: "Materialization";
@@ -38,7 +37,7 @@ export interface PartitionRunMatrixRunFragment_stepStats_expectationResults {
 }
 
 export interface PartitionRunMatrixRunFragment_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   status: StepEventStatus | null;
   materializations: PartitionRunMatrixRunFragment_stepStats_materializations[];
@@ -46,7 +45,7 @@ export interface PartitionRunMatrixRunFragment_stepStats {
 }
 
 export interface PartitionRunMatrixRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
   tags: PartitionRunMatrixRunFragment_tags[];

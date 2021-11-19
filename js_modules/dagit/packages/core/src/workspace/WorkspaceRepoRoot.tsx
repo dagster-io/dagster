@@ -3,9 +3,9 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
+import {OpsRoot} from '../ops/OpsRoot';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
-import {SolidsRoot} from '../solids/SolidsRoot';
 import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
@@ -88,7 +88,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         title={<Heading>{path}</Heading>}
         tags={<TagWIP icon="folder">Repository</TagWIP>}
         tabs={
-          <Tabs large={false} selectedTabId={activeTab()}>
+          <Tabs size="small" selectedTabId={activeTab()}>
             {tabs.map(({href, text}) => (
               <Tab key={text} id={text} title={text} to={href} />
             ))}
@@ -111,9 +111,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           />
           <Route
             path="/workspace/:repoPath/ops/:name?"
-            render={(props) => (
-              <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
-            )}
+            render={(props) => <OpsRoot name={props.match.params.name} repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/solids/:name?"

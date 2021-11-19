@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
 
 if TYPE_CHECKING:
-    from .pipeline import PipelineDefinition
+    from .pipeline_definition import PipelineDefinition
 
 
 class IPipeline(ABC):
@@ -51,9 +51,11 @@ class InMemoryPipeline(IPipeline, object):
         check.list_param(solid_selection, "solid_selection", of_type=str)
         solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
         if len(solids_to_execute) == 0:
+            node_type = "ops" if self._pipeline_def.is_job else "solids"
+            selection_type = "op_selection" if self._pipeline_def.is_job else "solid_selection"
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    node_type=node_type, requested=solid_selection, selection_type=selection_type
                 )
             )
         return solids_to_execute

@@ -11,18 +11,18 @@ from dagster import (
     DependencyDefinition,
     Failure,
     ModeDefinition,
+    NodeInvocation,
     PipelineDefinition,
     RepositoryDefinition,
-    SolidInvocation,
     TypeCheck,
     check,
     execute_pipeline,
     lambda_solid,
 )
-from dagster.core.definitions.logger import LoggerDefinition
+from dagster.core.definitions.logger_definition import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.definitions.solid import NodeDefinition
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster.core.definitions.solid_definition import NodeDefinition
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.context_creation_pipeline import (
@@ -56,8 +56,6 @@ from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
-    from dagster.core.storage.intermediate_storage import build_in_mem_intermediates_storage
-
     loggers = check.opt_dict_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
@@ -81,7 +79,6 @@ def create_test_pipeline_execution_context(logger_defs=None):
         execution_data=create_execution_data(
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,
-            intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
         ),
         log_manager=log_manager,
         output_capture=None,
@@ -89,7 +86,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
 
 
 def _dep_key_of(solid):
-    return SolidInvocation(solid.definition.name, solid.name)
+    return NodeInvocation(solid.definition.name, solid.name)
 
 
 def build_pipeline_with_input_stubs(pipeline_def, inputs):

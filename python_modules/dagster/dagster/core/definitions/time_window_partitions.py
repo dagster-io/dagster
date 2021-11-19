@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
 import pendulum
 from dagster import check
-from dagster.utils.backcompat import experimental_fn_warning
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster.utils.schedules import schedule_execution_time_iterator
 
@@ -120,9 +119,6 @@ def daily_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-
-    experimental_fn_warning("daily_partitioned_config")
-
     _fmt = fmt or DEFAULT_DATE_FORMAT
     _timezone = timezone or "UTC"
 
@@ -174,10 +170,11 @@ def hourly_partitioned_config(
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
     """
-
-    experimental_fn_warning("hourly_partitioned_config")
-
     _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
     _timezone = timezone or "UTC"
 
@@ -234,8 +231,6 @@ def monthly_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-    experimental_fn_warning("monthly_partitioned_config")
-
     _fmt = fmt or DEFAULT_DATE_FORMAT
     _timezone = timezone or "UTC"
 
@@ -292,9 +287,6 @@ def weekly_partitioned_config(
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
     """
-
-    experimental_fn_warning("weekly_partitioned_config")
-
     _fmt = fmt or DEFAULT_DATE_FORMAT
     _timezone = timezone or "UTC"
 

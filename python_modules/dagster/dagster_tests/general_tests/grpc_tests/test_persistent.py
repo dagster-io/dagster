@@ -291,7 +291,7 @@ def test_load_timeout():
                 timeout=0.01,
             )
             assert False, "server should have timed out"
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             timeout_exception = e
 
     finally:

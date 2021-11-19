@@ -148,18 +148,18 @@ function MDXRenderer({ data }: { data: MDXData }) {
         <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
           {/* Start secondary column (hidden on smaller screens) */}
           <div className="flex flex-col justify-between  sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 border px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
-              <div className="uppercase text-sm font-semibold text-gray-500 dark:text-gray-300">
+            <div className="mb-8 border border-gray-100 rounded-lg px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
+              <div className="uppercase text-sm font-semibold text-gable-green">
                 On this page
               </div>
-              <div className="mt-6 ">
+              <div className="mt-4 ">
                 {tableOfContents.items[0].items && (
                   <SidebarNavigation items={tableOfContents.items[0].items} />
                 )}
               </div>
             </div>
 
-            <div className="mb-8 border px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
+            <div className="mb-8 border border-gray-100 rounded-lg px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
               <div className="flex items-center group">
                 <svg
                   className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
@@ -289,7 +289,7 @@ async function getVersionedContent(version: string, asPath: string) {
 async function getContent(version: string, asPath: string) {
   if (version == "master") {
     // render files from the local content folder
-    const basePath = path.resolve("../content-crag");
+    const basePath = path.resolve("../content");
     const pathToFile = path.join(basePath, asPath);
     const buffer = await fs.readFile(pathToFile);
     const contentString = buffer.toString();

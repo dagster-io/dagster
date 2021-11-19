@@ -94,7 +94,7 @@ def copy_searchindex(src_dir, dest_dir, src_file="searchindex.json", dest_file="
 
 def main():
     json_directory = file_relative_path(__file__, "sphinx/_build/json")
-    content_dir = file_relative_path(__file__, "./content-crag/api")
+    content_dir = file_relative_path(__file__, "./content/api")
 
     directories_to_pack = {
         os.path.join(json_directory, "sections"): "sections.json",

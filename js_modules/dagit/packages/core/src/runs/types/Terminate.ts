@@ -1,35 +1,34 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { TerminatePipelinePolicy } from "./../../types/globalTypes";
+import { TerminateRunPolicy } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: Terminate
 // ====================================================
 
-export interface Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure {
-  __typename: "TerminatePipelineExecutionFailure";
+export interface Terminate_terminatePipelineExecution_TerminateRunFailure {
+  __typename: "TerminateRunFailure";
   message: string;
 }
 
-export interface Terminate_terminatePipelineExecution_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError";
+export interface Terminate_terminatePipelineExecution_RunNotFoundError {
+  __typename: "RunNotFoundError";
   message: string;
 }
 
-export interface Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run {
-  __typename: "PipelineRun";
+export interface Terminate_terminatePipelineExecution_TerminateRunSuccess_run {
+  __typename: "Run";
   id: string;
   runId: string;
   canTerminate: boolean;
 }
 
-export interface Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess {
-  __typename: "TerminatePipelineExecutionSuccess";
-  run: Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run;
+export interface Terminate_terminatePipelineExecution_TerminateRunSuccess {
+  __typename: "TerminateRunSuccess";
+  run: Terminate_terminatePipelineExecution_TerminateRunSuccess_run;
 }
 
 export interface Terminate_terminatePipelineExecution_UnauthorizedError {
@@ -42,7 +41,7 @@ export interface Terminate_terminatePipelineExecution_PythonError {
   message: string;
 }
 
-export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure | Terminate_terminatePipelineExecution_PipelineRunNotFoundError | Terminate_terminatePipelineExecution_TerminatePipelineExecutionSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;
+export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminateRunFailure | Terminate_terminatePipelineExecution_RunNotFoundError | Terminate_terminatePipelineExecution_TerminateRunSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;
 
 export interface Terminate {
   terminatePipelineExecution: Terminate_terminatePipelineExecution;
@@ -50,5 +49,5 @@ export interface Terminate {
 
 export interface TerminateVariables {
   runId: string;
-  terminatePolicy?: TerminatePipelinePolicy | null;
+  terminatePolicy?: TerminateRunPolicy | null;
 }

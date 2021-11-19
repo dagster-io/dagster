@@ -13,7 +13,8 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.sensor import RunRequest
+from dagster.core.definitions.sensor_definition import RunRequest
+from dagster.core.test_utils import default_mode_def_for_test
 
 
 @lambda_solid
@@ -26,7 +27,7 @@ def do_input(x):
     return x
 
 
-@pipeline(name="foo")
+@pipeline(name="foo", mode_defs=[default_mode_def_for_test])
 def foo_pipeline():
     do_input(do_something())
 

@@ -5,18 +5,18 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
-from .dependency import DependencyStructure, IDependencyDefinition, Node, SolidInvocation
+from .dependency import DependencyStructure, IDependencyDefinition, Node, NodeInvocation
 
 if TYPE_CHECKING:
-    from .solid import NodeDefinition
-    from .graph import GraphDefinition
+    from .solid_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
 
 def validate_dependency_dict(
-    dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]],
-) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
+    dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
+) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     prelude = (
-        'The expected type for "dependencies" is Dict[Union[str, SolidInvocation], Dict[str, '
+        'The expected type for "dependencies" is Dict[Union[str, NodeInvocation], Dict[str, '
         "DependencyDefinition]]. "
     )
 
@@ -32,7 +32,7 @@ def validate_dependency_dict(
         )
 
     for key, dep_dict in dependencies.items():
-        if not (isinstance(key, str) or isinstance(key, SolidInvocation)):
+        if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 prelude + "Expected str or NodeInvocation key in the top level dict. "
                 "Received value {val} of type {type}".format(val=key, type=type(key))
@@ -73,7 +73,7 @@ def validate_dependency_dict(
 
 def create_execution_structure(
     solid_defs: List["NodeDefinition"],
-    dependencies_dict: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]],
+    dependencies_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Dict[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
@@ -83,20 +83,20 @@ def create_execution_structure(
     For example, for the following dependencies:
 
     dep_dict = {
-            SolidInvocation('giver'): {},
-            SolidInvocation('sleeper', alias='sleeper_1'): {
+            NodeInvocation('giver'): {},
+            NodeInvocation('sleeper', alias='sleeper_1'): {
                 'units': DependencyDefinition('giver', 'out_1')
             },
-            SolidInvocation('sleeper', alias='sleeper_2'): {
+            NodeInvocation('sleeper', alias='sleeper_2'): {
                 'units': DependencyDefinition('giver', 'out_2')
             },
-            SolidInvocation('sleeper', alias='sleeper_3'): {
+            NodeInvocation('sleeper', alias='sleeper_3'): {
                 'units': DependencyDefinition('giver', 'out_3')
             },
-            SolidInvocation('sleeper', alias='sleeper_4'): {
+            NodeInvocation('sleeper', alias='sleeper_4'): {
                 'units': DependencyDefinition('giver', 'out_4')
             },
-            SolidInvocation('total'): {
+            NodeInvocation('total'): {
                 'in_1': DependencyDefinition('sleeper_1', 'total'),
                 'in_2': DependencyDefinition('sleeper_2', 'total'),
                 'in_3': DependencyDefinition('sleeper_3', 'total'),
@@ -117,20 +117,20 @@ def create_execution_structure(
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
     """
-    from .solid import NodeDefinition
-    from .graph import GraphDefinition
+    from .solid_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
     check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(
         dependencies_dict,
         "dependencies_dict",
-        key_type=(str, SolidInvocation),
+        key_type=(str, NodeInvocation),
         value_type=dict,
     )
     # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
-    # Same as dep_dict but with SolidInvocation replaced by alias string
+    # Same as dep_dict but with NodeInvocation replaced by alias string
     aliased_dependencies_dict = {}
 
     # Keep track of solid name -> all aliases used and alias -> name
@@ -140,9 +140,9 @@ def create_execution_structure(
 
     for solid_key, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
-        # Here, we replace 'foo' with SolidInvocation('foo')
-        if not isinstance(solid_key, SolidInvocation):
-            solid_key = SolidInvocation(solid_key)
+        # Here, we replace 'foo' with NodeInvocation('foo')
+        if not isinstance(solid_key, NodeInvocation):
+            solid_key = NodeInvocation(solid_key)
 
         alias = solid_key.alias or solid_key.name
 
@@ -167,7 +167,7 @@ def create_execution_structure(
 def _build_pipeline_solid_dict(
     solid_defs: List["NodeDefinition"],
     name_to_aliases: Dict[str, Set[str]],
-    alias_to_solid_instance: Dict[str, SolidInvocation],
+    alias_to_solid_instance: Dict[str, NodeInvocation],
     graph_definition,
 ) -> Dict[str, Node]:
     pipeline_solids = []
@@ -222,7 +222,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                             ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                         )
                 if not solid_dict[from_solid].definition.has_input(from_input):
-                    from .graph import GraphDefinition
+                    from .graph_definition import GraphDefinition
 
                     input_list = solid_dict[from_solid].definition.input_dict.keys()
                     node_type = (

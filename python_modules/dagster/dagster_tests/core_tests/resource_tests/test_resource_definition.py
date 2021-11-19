@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from unittest import mock
 
 import pytest
@@ -13,17 +14,20 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
+    build_op_context,
     configured,
     execute_pipeline,
     execute_pipeline_iterator,
     fs_io_manager,
+    graph,
+    op,
     reconstructable,
     resource,
     solid,
 )
 from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.resource import make_values_resource
+from dagster.core.definitions.resource_definition import make_values_resource
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
@@ -1189,3 +1193,42 @@ def test_configured_resource_unused():
     execute_pipeline(basic_pipeline)
 
     assert not entered
+
+
+def test_context_manager_resource():
+    event_list = []
+
+    @resource
+    @contextmanager
+    def cm_resource():
+        try:
+            event_list.append("foo")
+            yield "foo"
+        finally:
+            event_list.append("finally")
+
+    @op(required_resource_keys={"cm"})
+    def basic(context):
+        event_list.append("compute")
+        assert context.resources.cm == "foo"
+
+    with build_op_context(resources={"cm": cm_resource}) as context:
+        basic(context)
+
+    assert event_list == ["foo", "compute", "finally"]  # Ensures that we teardown after compute
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="At least one provided resource is a generator, but attempting to access resources "
+        "outside of context manager scope.",
+    ):
+        basic(build_op_context(resources={"cm": cm_resource}))
+
+    @graph
+    def call_basic():
+        basic()
+
+    event_list = []
+
+    assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
+    assert event_list == ["foo", "compute", "finally"]

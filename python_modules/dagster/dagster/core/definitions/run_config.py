@@ -1,10 +1,10 @@
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
-from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
+from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
-from dagster.core.definitions.executor import (
+from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
     in_process_executor,
@@ -14,18 +14,17 @@ from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
-from dagster.core.storage.system_storage import default_intermediate_storage_defs
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
 from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
-from .graph import GraphDefinition
-from .logger import LoggerDefinition
+from .graph_definition import GraphDefinition
+from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
-from .resource import ResourceDefinition
-from .solid import NodeDefinition, SolidDefinition
+from .resource_definition import ResourceDefinition
+from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
@@ -105,42 +104,19 @@ def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
     return Field(selector)
 
 
-def define_storage_field(
-    storage_selector: Selector, storage_names: List[str], defaults: Set[str]
-) -> Field:
-    """Define storage field using default options, if additional storage options have been provided."""
-    # If no custom storage options have been provided,
-    # then users do not need to provide any configuration.
-    if set(storage_names) == defaults:
-        return Field(storage_selector, is_required=False)
-    else:
-        default_storage: Any = FIELD_NO_DEFAULT_PROVIDED
-        if len(storage_names) > 0:
-            def_key = list(storage_names)[0]
-            possible_default = storage_selector.fields[def_key]
-            if all_optional_type(possible_default.config_type):
-                default_storage = {def_key: {}}
-        return Field(storage_selector, default_value=default_storage)
+def define_single_execution_field(executor_def: ExecutorDefinition) -> Field:
+    return def_config_field(executor_def)
 
 
 def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
-    intermediate_storage_field = define_storage_field(
-        selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
-        storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
-        defaults=set([storage.name for storage in default_intermediate_storage_defs]),
-    )
-    # TODO: remove "storage" entry in run_config as part of system storage removal
-    # currently we treat "storage" as an alias to "intermediate_storage" and storage field is optional
-    # tracking https://github.com/dagster-io/dagster/issues/3280
-    storage_field = Field(
-        selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
-        is_required=False,
+    execution_field = (
+        define_execution_field(creation_data.mode_definition.executor_defs)
+        if not creation_data.is_using_graph_job_op_apis
+        else define_single_execution_field(creation_data.mode_definition.executor_defs[0])
     )
 
     fields = {
-        "storage": storage_field,
-        "intermediate_storage": intermediate_storage_field,
-        "execution": define_execution_field(creation_data.mode_definition.executor_defs),
+        "execution": execution_field,
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
         "resources": Field(
             define_resource_dictionary_cls(
@@ -177,7 +153,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
     )
 
 
-# Common pattern for a set of named definitions (e.g. executors, intermediate storage)
+# Common pattern for a set of named definitions (e.g. executors)
 # to build a selector so that one of them is selected
 def selector_for_named_defs(named_defs) -> Selector:
     return Selector({named_def.name: def_config_field(named_def) for named_def in named_defs})

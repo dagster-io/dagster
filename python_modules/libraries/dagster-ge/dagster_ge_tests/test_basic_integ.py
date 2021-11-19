@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import pytest
 from dagster import (
     InputDefinition,

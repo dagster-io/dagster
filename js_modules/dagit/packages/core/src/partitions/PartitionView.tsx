@@ -5,7 +5,7 @@ import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
+import {useQueryPersistedRunFilters} from '../runs/RunsFilterInput';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {CursorHistoryControls} from '../ui/CursorControls';
@@ -46,6 +46,8 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
   const {
     loading,
     error,
@@ -54,7 +56,13 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     paginationProps,
     pageSize,
     setPageSize,
-  } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
+  } = useChunkedPartitionsQuery(
+    partitionSet.name,
+    runTags,
+    repoAddress,
+    // only query by job name if there is only one partition set
+    isJob && partitionSets.length === 1 ? pipelineName : undefined,
+  );
   const {canLaunchPartitionBackfill} = usePermissions();
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
   React.useEffect(() => {
@@ -64,18 +72,6 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
       });
     }
   }, [error]);
-
-  const repo = useRepository(repoAddress);
-  const isJob = isThisThingAJob(repo, pipelineName);
-
-  const allStepKeys = new Set<string>();
-  partitions.forEach((partition) => {
-    partition.runs.forEach((run) => {
-      run.stepStats.forEach((stat) => {
-        allStepKeys.add(stat.stepKey);
-      });
-    });
-  });
 
   const launchButton = () => {
     if (!canLaunchPartitionBackfill) {
@@ -165,11 +161,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
         <OptionsContainer>
           <strong>Run steps</strong>
         </OptionsContainer>
-        <PartitionGraphSet
-          isJob={isJob}
-          partitions={partitions}
-          allStepKeys={Array.from(allStepKeys).sort()}
-        />
+        <PartitionGraphSet isJob={isJob} partitions={partitions} />
       </div>
     </div>
   );

@@ -4,18 +4,20 @@ from collections import defaultdict
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     PipelineDefinition,
     SensorDefinition,
     SolidDefinition,
+    build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
     graph,
+    job,
     lambda_solid,
     op,
     pipeline,
     repository,
     schedule,
-    schedule_from_partitions,
     sensor,
     solid,
 )
@@ -337,7 +339,9 @@ def test_job_with_partitions():
     assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
     assert test.get_partition_set_def("bare_partition_set")
+    assert test.has_pipeline("bare")
     assert test.get_pipeline("bare")
+    assert test.has_job("bare")
     assert test.get_job("bare")
 
 
@@ -389,6 +393,57 @@ def test_dupe_graph_defs():
         get_collision_repo().get_all_jobs()
 
 
+def test_job_pipeline_collision():
+    @solid
+    def noop():
+        pass
+
+    @pipeline(name="foo")
+    def my_pipeline():
+        noop()
+
+    @job(name="foo")
+    def my_job():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate pipeline definition found for pipeline 'foo'",
+    ):
+
+        @repository
+        def _some_repo():
+            return [my_job, my_pipeline]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate job definition found for job 'foo'",
+    ):
+
+        @repository
+        def _some_repo():
+            return [my_pipeline, my_job]
+
+
+def test_job_validation():
+    @solid
+    def noop():
+        pass
+
+    @pipeline
+    def my_pipeline():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Object mapped to my_pipeline is not an instance of JobDefinition or GraphDefinition.",
+    ):
+
+        @repository
+        def my_repo():
+            return {"jobs": {"my_pipeline": my_pipeline}}
+
+
 def test_dict_jobs():
     @graph
     def my_graph():
@@ -405,8 +460,38 @@ def test_dict_jobs():
 
     assert jobs.get_pipeline("my_graph")
     assert jobs.get_pipeline("other_graph")
+    assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
+
+
+def test_list_dupe_graph():
+    @graph
+    def foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Duplicate job definition found for graph 'foo'"
+    ):
+
+        @repository
+        def jobs():
+            return [foo.to_job(name="foo"), foo]
+
+
+def test_job_cannot_select_pipeline():
+    @pipeline
+    def my_pipeline():
+        pass
+
+    @repository
+    def my_repo():
+        return [my_pipeline]
+
+    assert my_repo.get_pipeline("my_pipeline")
+
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."):
+        my_repo.get_job("my_pipeline")
 
 
 def test_job_scheduled_partitions():
@@ -419,7 +504,7 @@ def test_job_scheduled_partitions():
         return {}
 
     my_job = my_graph.to_job(config=daily_schedule_config)
-    my_schedule = schedule_from_partitions(my_job)
+    my_schedule = build_schedule_from_partitioned_job(my_job)
 
     @repository
     def schedule_repo():

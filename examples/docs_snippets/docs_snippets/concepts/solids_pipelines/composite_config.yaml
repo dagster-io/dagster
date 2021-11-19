@@ -1,0 +1,9 @@
+ops:
+  add_n_times_m_graph:
+    ops:
+      add_n:
+        config:
+          n: 3
+      multiply_by_m:
+        config:
+          m: 2

@@ -1,0 +1,9 @@
+resources:
+  io_manager:
+    config:
+      s3_bucket: your_bucket_name
+execution:
+  config:
+    cluster:
+      existing:
+        address: "dask_scheduler.dns_name:8787"

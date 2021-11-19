@@ -1,5 +1,6 @@
 from dagster.core.utils import check_dagster_package_version
 
+from .dagster_job_factory import make_dagster_job_from_airflow_dag
 from .dagster_pipeline_factory import (
     make_dagster_pipeline_from_airflow_dag,
     make_dagster_repo_from_airflow_dag_bag,
@@ -18,4 +19,5 @@ __all__ = [
     "make_dagster_pipeline_from_airflow_dag",
     "make_dagster_repo_from_airflow_dags_path",
     "make_dagster_repo_from_airflow_dag_bag",
+    "make_dagster_job_from_airflow_dag",
 ]

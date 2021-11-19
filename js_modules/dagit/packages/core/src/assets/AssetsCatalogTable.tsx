@@ -32,7 +32,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
       activeItems={new Set([view])}
       buttons={[
         {id: 'flat', icon: 'view_list', tooltip: 'List view'},
-        {id: 'directory', icon: 'folder_open', tooltip: 'Folder view'},
+        {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
       ]}
       onClick={(id) => setIsFlattened(id === 'flat')}
     />

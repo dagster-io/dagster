@@ -1,0 +1,172 @@
+---
+title: Dagster with Spark
+description: Dagster ops can perform computations using Spark.
+---
+
+# Using Dagster with Spark
+
+Dagster ops can perform computations using Spark.
+
+Running computations on Spark presents unique challenges, because, unlike other computations, Spark jobs typically execute on infrastructure that's specialized for Spark - i.e. that can network sets of workers into clusters that Spark can run computations against. Spark applications are typically not containerized or executed on Kubernetes. Running Spark code often requires submitting code to a Databricks or EMR cluster.
+
+There are two approaches to writing Dagster ops that invoke Spark computations:
+
+## Op body submits job
+
+With this approach, the code inside the op submits a Spark job to an external system like Databricks or EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
+
+If you want to use this approach to run a Spark job on Databricks, <PyObject module='dagster_databricks' object='create_databricks_job_op' /> helps create an op that submits a Spark job using the Databricks REST API.
+
+If you want to run a Spark job against YARN or a Spark Standalone cluster, you can use <PyObject module='dagster_shell' object='create_shell_command_op' /> to create an op that invokes `spark-submit`.
+
+This is the easiest approach for migrating existing Spark jobs, and it's the only approach that works for Spark jobs written in Java or Scala. The downside is that it loses out on some of the benefits of Dagster - the implementation of each op is bound to the execution environment, so you can't run your Spark transformations without relying on external infrastructure. Writing unit tests is cumbersome.
+
+## Op accepts and produces DataFrames or RDDs
+
+With this approach, the code inside the op consists of pure logical data transformations on Spark DataFrames or RDDs. The op-decorated function accepts DataFrames as parameters and returns DataFrames when it completes. An [IOManager](/concepts/io-management/io-managers) handles writing and reading the DataFrames to and from persistent storage. The [Running PySpark code in op](#running-pyspark-code-in-ops) example below shows what this looks like.
+
+If you want your Spark driver to run inside a Spark cluster, you use a "step launcher" resource that informs Dagster how to launch the op. The step launcher resource is responsible for invoking `spark-submit` or submitting the job to Databricks or EMR. [Submitting PySpark ops on EMR](#submitting-pyspark-ops-on-emr) shows what this looks like for EMR.
+
+The advantage of this approach is a very clean local testing story. You can run an entire job of Spark ops in a single process. You can use [IOManagers](/concepts/io-management/io-managers) to abstract away IO - storing outputs on the local filesystem during local development and in the cloud in production.
+
+The downside is that this approach only works with PySpark, and setting up a step launcher can be difficult. We currently provide an <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> and a <PyObject module='dagster_databricks' object='databricks_pyspark_step_launcher' />, but if you need to submit your Spark job to a different kind of cluster, writing your own can be time consuming ([here are some tips](https://github.com/dagster-io/dagster/discussions/3201)). You also need to install the Dagster library itself on the cluster.
+
+### Running PySpark code in ops
+
+<CodeReferenceLink filePath="examples/basic_pyspark" />
+
+Passing PySpark DataFrames between ops requires a little bit of extra care, compared to other data types, for a couple reasons:
+
+- Spark has a lazy execution model, which means that PySpark won't process any data until an action like `write` or `collect` is called on a DataFrame.
+- PySpark DataFrames cannot be pickled, which means that [IO Managers](/concepts/io-management/io-managers) like the `fs_io_manager` won't work for them.
+
+In this example, we've defined an <PyObject module='dagster' object='IOManager' /> that knows how to store and retrieve PySpark DataFrames that are produced and consumed by ops.
+
+This example assumes that all the outputs within the dagster job will be PySpark DataFrames and stored in the same way. To learn how to use different IO managers for different outputs within the same dagster job, take a look at the [IO Manager](/concepts/io-management/io-managers) concept page.
+
+This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
+
+```python file=../../basic_pyspark/repo.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
+import os
+
+from dagster import IOManager, graph, io_manager, op, repository
+from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
+
+class LocalParquetStore(IOManager):
+    def _get_path(self, context):
+        return os.path.join(context.run_id, context.step_key, context.name)
+
+    def handle_output(self, context, obj):
+        obj.write.parquet(self._get_path(context))
+
+    def load_input(self, context):
+        spark = SparkSession.builder.getOrCreate()
+        return spark.read.parquet(self._get_path(context.upstream_output))
+
+
+@io_manager
+def local_parquet_store():
+    return LocalParquetStore()
+
+
+@op
+def make_people() -> DataFrame:
+    schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
+    rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(rows, schema)
+
+
+@op
+def filter_over_50(people: DataFrame) -> DataFrame:
+    return people.filter(people["age"] > 50)
+
+
+@graph
+def make_and_filter_data():
+    filter_over_50(make_people())
+
+
+make_and_filter_data_job = make_and_filter_data.to_job(
+    resource_defs={"io_manager": local_parquet_store}
+)
+```
+
+### Submitting PySpark ops on EMR
+
+<CodeReferenceLink filePath="examples/emr_pyspark" />
+
+This example demonstrates how to use the <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> to have an op run as a Spark step on an EMR cluster. In it, each of the three ops will be executed as a separate EMR step on the same EMR cluster.
+
+```python file=../../emr_pyspark/repo.py startafter=start-snippet endbefore=end-snippet
+from pathlib import Path
+
+from dagster import graph, make_python_type_usable_as_dagster_type, op, repository
+from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster_aws.emr import emr_pyspark_step_launcher
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import DataFrame, Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
+# Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
+make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)
+
+
+@op(required_resource_keys={"pyspark", "pyspark_step_launcher"})
+def make_people(context) -> DataFrame:
+    schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
+    rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
+    return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
+
+
+@op(required_resource_keys={"pyspark_step_launcher"})
+def filter_over_50(people: DataFrame) -> DataFrame:
+    return people.filter(people["age"] > 50)
+
+
+@op(required_resource_keys={"pyspark_step_launcher"})
+def count_people(people: DataFrame) -> int:
+    return people.count()
+
+
+emr_resource_defs = {
+    "pyspark_step_launcher": emr_pyspark_step_launcher.configured(
+        {
+            "cluster_id": {"env": "EMR_CLUSTER_ID"},
+            "local_pipeline_package_path": str(Path(__file__).parent),
+            "deploy_local_pipeline_package": True,
+            "region_name": "us-west-1",
+            "staging_bucket": "my_staging_bucket",
+            "wait_for_logs": True,
+        }
+    ),
+    "pyspark": pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "2g"}}),
+    "s3": s3_resource,
+    "io_manager": s3_pickle_io_manager.configured(
+        {"s3_bucket": "my_staging_bucket", "s3_prefix": "simple-pyspark"}
+    ),
+}
+
+local_resource_defs = {
+    "pyspark_step_launcher": no_step_launcher,
+    "pyspark": pyspark_resource.configured({"spark_conf": {"spark.default.parallelism": 1}}),
+}
+
+
+@graph
+def count_people_over_50():
+    count_people(filter_over_50(make_people()))
+
+
+count_people_over_50_local = count_people_over_50.to_job(
+    name="local", resource_defs=local_resource_defs
+)
+
+count_people_over_50_emr = count_people_over_50.to_job(name="prod", resource_defs=emr_resource_defs)
+```
+
+The EMR PySpark step launcher relies on S3 to shuttle config and events to and from EMR.

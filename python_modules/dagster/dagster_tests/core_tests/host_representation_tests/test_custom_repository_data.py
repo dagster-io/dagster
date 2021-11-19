@@ -2,7 +2,7 @@ import sys
 
 import pytest
 from dagster import file_relative_path, lambda_solid, pipeline, repository
-from dagster.core.definitions.repository import RepositoryData
+from dagster.core.definitions.repository_definition import RepositoryData
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
@@ -98,3 +98,7 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
 
     external_pipeline = repo.get_full_external_pipeline("foo_2")
     assert external_pipeline.has_solid_invocation("do_something_2")
+
+
+def test_custom_repo_select_only_job():
+    assert not bar_repo.get_all_jobs()

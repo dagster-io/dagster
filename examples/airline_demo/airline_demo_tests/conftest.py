@@ -27,7 +27,7 @@ def is_postgres_running():
 
         # header, one line for container, trailing \n
         return len(lines) == 3
-    except:  # pylint: disable=bare-except
+    except:
         return False
 
 
@@ -67,7 +67,7 @@ def postgres(pg_hostname):  # pylint: disable=redefined-outer-name
             try:
                 subprocess.check_output(["docker-compose", "stop", "test-postgres-db-airline"])
                 subprocess.check_output(["docker-compose", "rm", "-f", "test-postgres-db-airline"])
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass
             subprocess.check_output(["docker-compose", "up", "-d", "test-postgres-db-airline"])
 

@@ -18,7 +18,11 @@ from dagster.config.snap import (
     ConfigType,
     ConfigTypeSnap,
 )
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.pipeline_definition import (
+    PipelineDefinition,
+    PipelineSubsetDefinition,
+)
 from dagster.core.utils import toposort_flatten
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
@@ -172,6 +176,15 @@ class PipelineSnapshot(
                 ),
                 solid_selection=sorted(pipeline_def.solid_selection),
                 solids_to_execute=pipeline_def.solids_to_execute,
+            )
+        if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
+
+            lineage = PipelineSnapshotLineage(
+                parent_snapshot_id=create_pipeline_snapshot_id(
+                    cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
+                ),
+                solid_selection=sorted(pipeline_def.op_selection_data.op_selection),
+                solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
 
         return PipelineSnapshot(

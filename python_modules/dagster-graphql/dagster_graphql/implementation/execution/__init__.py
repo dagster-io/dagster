@@ -19,8 +19,8 @@ from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecu
 
 
 def _force_mark_as_canceled(graphene_info, run_id):
-    from ...schema.pipelines.pipeline import GraphenePipelineRun
-    from ...schema.roots.mutation import GrapheneTerminatePipelineExecutionSuccess
+    from ...schema.pipelines.pipeline import GrapheneRun
+    from ...schema.roots.mutation import GrapheneTerminateRunSuccess
 
     instance = graphene_info.context.instance
 
@@ -34,17 +34,17 @@ def _force_mark_as_canceled(graphene_info, run_id):
         instance.report_run_canceled(reloaded_run, message=message)
         reloaded_run = instance.get_run_by_id(run_id)
 
-    return GrapheneTerminatePipelineExecutionSuccess(GraphenePipelineRun(reloaded_run))
+    return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_run))
 
 
 @capture_error
 def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
-    from ...schema.errors import GraphenePipelineRunNotFoundError
-    from ...schema.pipelines.pipeline import GraphenePipelineRun
+    from ...schema.errors import GrapheneRunNotFoundError
+    from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
-        GrapheneTerminatePipelineExecutionFailure,
-        GrapheneTerminatePipelineExecutionSuccess,
-        GrapheneTerminatePipelinePolicy,
+        GrapheneTerminateRunFailure,
+        GrapheneTerminateRunSuccess,
+        GrapheneTerminateRunPolicy,
     )
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -54,13 +54,13 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     run = instance.get_run_by_id(run_id)
 
     force_mark_as_canceled = (
-        terminate_policy == GrapheneTerminatePipelinePolicy.MARK_AS_CANCELED_IMMEDIATELY
+        terminate_policy == GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     )
 
     if not run:
-        return GraphenePipelineRunNotFoundError(run_id)
+        return GrapheneRunNotFoundError(run_id)
 
-    pipeline_run = GraphenePipelineRun(run)
+    pipeline_run = GrapheneRun(run)
 
     valid_status = not run.is_finished and (
         force_mark_as_canceled
@@ -68,7 +68,7 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     )
 
     if not valid_status:
-        return GrapheneTerminatePipelineExecutionFailure(
+        return GrapheneTerminateRunFailure(
             run=pipeline_run,
             message="Run {run_id} could not be terminated due to having status {status}.".format(
                 run_id=run.run_id, status=run.status.value
@@ -84,13 +84,13 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
         return (
             _force_mark_as_canceled(graphene_info, run_id)
             if force_mark_as_canceled
-            else GrapheneTerminatePipelineExecutionSuccess(pipeline_run)
+            else GrapheneTerminateRunSuccess(pipeline_run)
         )
 
     return (
         _force_mark_as_canceled(graphene_info, run_id)
         if force_mark_as_canceled
-        else GrapheneTerminatePipelineExecutionFailure(
+        else GrapheneTerminateRunFailure(
             run=pipeline_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
         )
     )
@@ -98,13 +98,13 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
 
 @capture_error
 def delete_pipeline_run(graphene_info, run_id):
-    from ...schema.errors import GraphenePipelineRunNotFoundError
+    from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import GrapheneDeletePipelineRunSuccess
 
     instance = graphene_info.context.instance
 
     if not instance.has_run(run_id):
-        return GraphenePipelineRunNotFoundError(run_id)
+        return GrapheneRunNotFoundError(run_id)
 
     instance.delete_run(run_id)
 
@@ -112,7 +112,7 @@ def delete_pipeline_run(graphene_info, run_id):
 
 
 def get_pipeline_run_observable(graphene_info, run_id, after=None):
-    from ...schema.pipelines.pipeline import GraphenePipelineRun
+    from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionSuccess,
@@ -139,7 +139,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     def _handle_events(payload):
         events, loading_past = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GraphenePipelineRun(run),
+            run=GrapheneRun(run),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
         )

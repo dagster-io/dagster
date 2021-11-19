@@ -13,7 +13,6 @@ export interface SVGViewportInteractor {
   render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
 
-const DEFAULT_ZOOM = 0.75;
 interface SVGViewportProps {
   graphWidth: number;
   graphHeight: number;
@@ -40,7 +39,8 @@ interface Point {
 }
 
 export const DETAIL_ZOOM = 0.75;
-const DEFAULT_MAX_AUTOCENTER_ZOOM = 0.39;
+const DEFAULT_ZOOM = 0.75;
+const DEFAULT_MAX_AUTOCENTER_ZOOM = 1;
 
 const MIN_AUTOCENTER_ZOOM = 0.17;
 const MIN_ZOOM = 0.17;

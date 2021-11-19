@@ -1,4 +1,3 @@
-import {isEqual} from 'lodash';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components/macro';
@@ -18,28 +17,25 @@ interface PartitionGraphProps {
   title?: string;
   yLabel?: string;
   isJob: boolean;
+  hiddenStepKeys: string[];
 }
 
-export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref) => {
-  const {
-    runsByPartitionName,
-    getPipelineDataForRun,
-    getStepDataForRun,
-    title,
-    yLabel,
-    isJob,
-  } = props;
+export const PartitionGraph = ({
+  runsByPartitionName,
+  getPipelineDataForRun,
+  getStepDataForRun,
+  title,
+  yLabel,
+  isJob,
+  hiddenStepKeys,
+}: PartitionGraphProps) => {
   const [hiddenPartitions, setHiddenPartitions] = React.useState<{[name: string]: boolean}>(
     () => ({}),
   );
   const chart = React.useRef<any>(null);
 
-  React.useImperativeHandle(ref, () => ({
-    getChartInstance: () => chart.current?.chartInstance,
-  }));
-
   const onGraphClick = React.useCallback((event: MouseEvent) => {
-    const instance = chart.current?.chartInstance;
+    const instance = chart.current;
     if (!instance) {
       return;
     }
@@ -79,12 +75,14 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
           },
           x: {
             id: 'x',
-            title: {display: true, text: 'Partition'},
+            title: {display: true, text: title},
           },
         }
       : undefined;
+
     return {
       title: titleOptions,
+      animation: false,
       scales,
       plugins: {
         legend: {
@@ -126,6 +124,9 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
 
       const stepDataforRun = getStepDataForRun(run);
       Object.keys(stepDataforRun).forEach((stepKey) => {
+        if (hiddenStepKeys.includes(stepKey)) {
+          return;
+        }
         stepData[stepKey] = [
           ...(stepData[stepKey] || []),
           {x: partitionName, y: !hidden ? stepDataforRun[stepKey] : undefined},
@@ -143,15 +144,20 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
   };
 
   const {pipelineData, stepData} = buildDatasetData();
+  const allLabel = isJob ? 'Total job' : 'Total pipeline';
   const graphData = {
     labels: Object.keys(runsByPartitionName),
     datasets: [
-      {
-        label: isJob ? 'Total job' : 'Total pipeline',
-        data: pipelineData,
-        borderColor: ColorsWIP.Gray500,
-        backgroundColor: 'rgba(0,0,0,0)',
-      },
+      ...(hiddenStepKeys.includes(allLabel)
+        ? []
+        : [
+            {
+              label: allLabel,
+              data: pipelineData,
+              borderColor: ColorsWIP.Gray500,
+              backgroundColor: 'rgba(0,0,0,0)',
+            },
+          ]),
       ...Object.keys(stepData).map((stepKey) => ({
         label: stepKey,
         data: stepData[stepKey],
@@ -161,20 +167,15 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
     ],
   };
 
+  // Passing graphData as a closure prevents ChartJS from trying to isEqual, which is fairly
+  // unlikely to save a render and is time consuming given the size of the data structure.
+  // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
   return (
     <PartitionGraphContainer>
-      <LineMemoized
-        type="line"
-        data={graphData}
-        height={100}
-        options={defaultOptions}
-        ref={chart}
-      />
+      <Line type="line" data={() => graphData} height={100} options={defaultOptions} ref={chart} />
     </PartitionGraphContainer>
   );
-});
-
-const LineMemoized = React.memo(Line, isEqual);
+};
 
 const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   const pointData = {};
@@ -189,10 +190,10 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 };
 
 const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFragment) => {
-  if (!a.stats || a.stats.__typename !== 'PipelineRunStatsSnapshot' || !a.stats.startTime) {
+  if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
     return 1;
   }
-  if (!b.stats || b.stats.__typename !== 'PipelineRunStatsSnapshot' || !b.stats.startTime) {
+  if (!b.stats || b.stats.__typename !== 'RunStatsSnapshot' || !b.stats.startTime) {
     return -1;
   }
   return b.stats.startTime - a.stats.startTime;

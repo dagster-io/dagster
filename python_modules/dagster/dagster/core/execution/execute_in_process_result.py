@@ -62,7 +62,10 @@ class ExecuteInProcessResult:
         return _filter_events_by_handle(self._event_list, NodeHandle.from_string(node_name))
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
-        """Retrieves output of top-level graph, if an output is returned.
+        """Retrieves output of top-level job, if an output is returned.
+
+        If the top-level job has no output, calling this method will result in a
+        DagsterInvariantViolationError.
 
         Args:
             output_name (Optional[str]): The name of the output to retrieve. Defaults to `result`,
@@ -74,8 +77,16 @@ class ExecuteInProcessResult:
 
         check.str_param(output_name, "output_name")
 
-        # Resolve the first layer of mapping
         graph_def = self._node_def.ensure_graph_def()
+        if not graph_def.has_output(output_name) and len(graph_def.output_mappings) == 0:
+            raise DagsterInvariantViolationError(
+                f"Attempted to retrieve top-level outputs for '{graph_def.name}', which has no outputs."
+            )
+        elif not graph_def.has_output(output_name):
+            raise DagsterInvariantViolationError(
+                f"Could not find top-level output '{output_name}' in '{graph_def.name}'."
+            )
+        # Resolve the first layer of mapping
         output_mapping = graph_def.get_output_mapping(output_name)
         mapped_node = graph_def.solid_named(output_mapping.maps_from.solid_name)
         origin_output_def, origin_handle = mapped_node.definition.resolve_output_to_origin(
@@ -138,7 +149,18 @@ def _filter_outputs_by_handle(
     step_key = str(node_handle)
     output_found = False
     for step_output_handle, value in output_dict.items():
-        if (
+
+        # For the mapped output case, where step keys are in the format
+        # "step_key[upstream_mapped_output_name]" within the step output handle.
+        if step_output_handle.step_key.startswith(f"{step_key}["):
+            output_found = True
+            key_start = step_output_handle.step_key.find("[")
+            key_end = step_output_handle.step_key.find("]")
+            upstream_mapped_output_name = step_output_handle.step_key[key_start + 1 : key_end]
+            mapped_outputs[upstream_mapped_output_name] = value
+
+        # For all other cases, search for exact match.
+        elif (
             step_key == step_output_handle.step_key
             and step_output_handle.output_name == output_name
         ):

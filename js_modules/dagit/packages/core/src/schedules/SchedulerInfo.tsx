@@ -26,8 +26,10 @@ export const SchedulerInfo: React.FunctionComponent<{
         description={
           <div>
             See the{' '}
-            <a href="https://docs.dagster.io/overview/daemon">dagster-daemon documentation</a> for
-            more information on how to deploy the dagster-daemon process.
+            <a href="https://docs.dagster.io/deployment/dagster-daemon">
+              dagster-daemon documentation
+            </a>{' '}
+            for more information on how to deploy the dagster-daemon process.
           </div>
         }
       />

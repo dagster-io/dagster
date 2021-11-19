@@ -40,8 +40,8 @@ def _max_rx_bytes():
     if env_set:
         return int(env_set)
 
-    # default 10 MB
-    return 10_485_760
+    # default 50 MB
+    return 50 * (10 ** 6)
 
 
 def client_heartbeat_thread(client, shutdown_event):
@@ -363,7 +363,7 @@ class DagsterGrpcClient:
                 )
                 return res.serialized_start_run_result
 
-            except Exception:  # pylint: disable=bare-except
+            except Exception:
                 pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
                 instance.report_engine_event(
                     message="Unexpected error in IPC client",

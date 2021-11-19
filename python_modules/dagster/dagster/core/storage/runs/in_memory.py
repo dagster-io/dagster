@@ -189,11 +189,15 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
         return pipeline_snapshot_id in self._pipeline_snapshots
 
-    def add_pipeline_snapshot(self, pipeline_snapshot: PipelineSnapshot) -> str:
+    def add_pipeline_snapshot(
+        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-        self._pipeline_snapshots[pipeline_snapshot_id] = pipeline_snapshot
-        return pipeline_snapshot_id
+        check.opt_str_param(snapshot_id, "snapshot_id")
+        if not snapshot_id:
+            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        self._pipeline_snapshots[snapshot_id] = pipeline_snapshot
+        return snapshot_id
 
     def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
@@ -203,11 +207,15 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
         return execution_plan_snapshot_id in self._ep_snapshots
 
-    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
+    def add_execution_plan_snapshot(
+        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
-        self._ep_snapshots[execution_plan_snapshot_id] = execution_plan_snapshot
-        return execution_plan_snapshot_id
+        check.opt_str_param(snapshot_id, "snapshot_id")
+        if not snapshot_id:
+            snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        self._ep_snapshots[snapshot_id] = execution_plan_snapshot
+        return snapshot_id
 
     def get_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> ExecutionPlanSnapshot:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")

@@ -12,7 +12,7 @@ from dagster import (
     io_manager,
     op,
 )
-from dagster.core.definitions.executor import in_process_executor
+from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.utils import segfault
 
 

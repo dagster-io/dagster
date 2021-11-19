@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -11,7 +10,7 @@ import { DagsterEventType, LogLevel, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineStartEvent" | "PipelineEnqueuedEvent" | "PipelineDequeuedEvent" | "PipelineStartingEvent" | "PipelineCancelingEvent" | "PipelineCanceledEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
@@ -121,27 +120,27 @@ export interface LogsRowStructuredFragment_StepMaterializationEvent {
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
 }
 
-export interface LogsRowStructuredFragment_PipelineFailureEvent_pipelineFailureError_cause {
+export interface LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface LogsRowStructuredFragment_PipelineFailureEvent_pipelineFailureError {
+export interface LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: LogsRowStructuredFragment_PipelineFailureEvent_pipelineFailureError_cause | null;
+  cause: LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError_cause | null;
 }
 
-export interface LogsRowStructuredFragment_PipelineFailureEvent {
-  __typename: "PipelineFailureEvent";
+export interface LogsRowStructuredFragment_RunFailureEvent {
+  __typename: "RunFailureEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  pipelineFailureError: LogsRowStructuredFragment_PipelineFailureEvent_pipelineFailureError | null;
+  pipelineFailureError: LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_cause {
@@ -962,4 +961,4 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKeys: string[] | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;

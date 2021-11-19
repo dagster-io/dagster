@@ -1,0 +1,4 @@
+ops:
+  to_fahrenheit:
+    config:
+      from_unit: celsius

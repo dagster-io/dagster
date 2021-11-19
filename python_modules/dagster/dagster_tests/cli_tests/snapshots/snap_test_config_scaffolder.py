@@ -31,16 +31,6 @@ snapshots['test_basic_solids_config 1'] = {
             }
         }
     },
-    'intermediate_storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
-        }
-    },
     'loggers': {
         'console': {
             'config': {
@@ -59,16 +49,6 @@ snapshots['test_basic_solids_config 1'] = {
             'config': {
                 'required_int': 0
             }
-        }
-    },
-    'storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
         }
     }
 }
@@ -101,16 +81,6 @@ snapshots['test_two_modes 2'] = {
             }
         }
     },
-    'intermediate_storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
-        }
-    },
     'loggers': {
         'console': {
             'config': {
@@ -130,16 +100,6 @@ snapshots['test_two_modes 2'] = {
         }
     },
     'solids': {
-    },
-    'storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
-        }
     }
 }
 
@@ -171,16 +131,6 @@ snapshots['test_two_modes 4'] = {
             }
         }
     },
-    'intermediate_storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
-        }
-    },
     'loggers': {
         'console': {
             'config': {
@@ -200,15 +150,5 @@ snapshots['test_two_modes 4'] = {
         }
     },
     'solids': {
-    },
-    'storage': {
-        'filesystem': {
-            'config': {
-                'base_dir': ''
-            }
-        },
-        'in_memory': {
-            'config': 'AnyType'
-        }
     }
 }

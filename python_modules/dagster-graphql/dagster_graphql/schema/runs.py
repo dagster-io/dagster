@@ -20,27 +20,33 @@ class GrapheneStepEventStatus(graphene.Enum):
         name = "StepEventStatus"
 
 
-class GrapheneLaunchPipelineRunSuccess(graphene.ObjectType):
-    run = graphene.Field(
-        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
-    )
+class GrapheneLaunchPipelineRunSuccess(graphene.Interface):
+    run = graphene.Field(graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"))
 
     class Meta:
         name = "LaunchPipelineRunSuccess"
 
 
+class GrapheneLaunchRunSuccess(graphene.ObjectType):
+    run = graphene.Field(graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"))
+
+    class Meta:
+        interfaces = (GrapheneLaunchPipelineRunSuccess,)
+        name = "LaunchRunSuccess"
+
+
 class GrapheneRunGroup(graphene.ObjectType):
     rootRunId = graphene.NonNull(graphene.String)
-    runs = graphene.List("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+    runs = graphene.List("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
 
     class Meta:
         name = "RunGroup"
 
     def __init__(self, root_run_id, runs):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneRun
 
         check.str_param(root_run_id, "root_run_id")
-        check.list_param(runs, "runs", GraphenePipelineRun)
+        check.list_param(runs, "runs", GrapheneRun)
 
         super().__init__(rootRunId=root_run_id, runs=runs)
 
@@ -52,33 +58,42 @@ class GrapheneRunGroups(graphene.ObjectType):
         name = "RunGroups"
 
 
-launch_pipeline_run_result_types = (GrapheneLaunchPipelineRunSuccess,)
+launch_pipeline_run_result_types = (GrapheneLaunchRunSuccess,)
 
 
-class GrapheneLaunchPipelineExecutionResult(graphene.Union):
+class GrapheneLaunchRunResult(graphene.Union):
     class Meta:
         from .backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
-        name = "LaunchPipelineExecutionResult"
+        name = "LaunchRunResult"
 
 
-class GrapheneLaunchPipelineReexecutionResult(graphene.Union):
+class GrapheneLaunchRunReexecutionResult(graphene.Union):
     class Meta:
         from .backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
-        name = "LaunchPipelineReexecutionResult"
+        name = "LaunchRunReexecutionResult"
 
 
-class GraphenePipelineRuns(graphene.ObjectType):
-    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+class GraphenePipelineRuns(graphene.Interface):
+    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     count = graphene.Int()
 
     class Meta:
         name = "PipelineRuns"
+
+
+class GrapheneRuns(graphene.ObjectType):
+    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
+    count = graphene.Int()
+
+    class Meta:
+        interfaces = (GraphenePipelineRuns,)
+        name = "Runs"
 
     def __init__(self, filters, cursor, limit):
         super().__init__()
@@ -94,10 +109,10 @@ class GraphenePipelineRuns(graphene.ObjectType):
         return get_runs_count(graphene_info, self._filters)
 
 
-class GraphenePipelineRunsOrError(graphene.Union):
+class GrapheneRunsOrError(graphene.Union):
     class Meta:
-        types = (GraphenePipelineRuns, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
-        name = "PipelineRunsOrError"
+        types = (GrapheneRuns, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
+        name = "RunsOrError"
 
 
 class GrapheneRunGroupOrError(graphene.Union):
@@ -123,11 +138,12 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 
 
 types = [
-    GrapheneLaunchPipelineExecutionResult,
-    GrapheneLaunchPipelineReexecutionResult,
+    GrapheneLaunchRunResult,
+    GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchPipelineRunSuccess,
-    GraphenePipelineRuns,
-    GraphenePipelineRunsOrError,
+    GrapheneLaunchRunSuccess,
+    GrapheneRuns,
+    GrapheneRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroup,
     GrapheneRunGroupOrError,

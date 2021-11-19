@@ -19,7 +19,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
-from dagster.core.definitions.node import NodeDefinition
+from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -548,7 +548,7 @@ def external_partition_set_data_from_def(partition_set_def):
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
     return ExternalPartitionSetData(
         name=partition_set_def.name,
-        pipeline_name=partition_set_def.pipeline_name,
+        pipeline_name=partition_set_def.pipeline_name or partition_set_def.job_name,
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )

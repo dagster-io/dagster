@@ -5,9 +5,11 @@ from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster.grpc.types import ResumeRunArgs
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -21,9 +23,9 @@ from .utils import delete_job
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
-    """RunLauncher that starts a Kubernetes Job for each pipeline run.
+    """RunLauncher that starts a Kubernetes Job for each Dagster job run.
 
-    Encapsulates each pipeline run in a separate, isolated invocation of ``dagster-graphql``.
+    Encapsulates each run in a separate, isolated invocation of ``dagster-graphql``.
 
     You may configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:
@@ -34,7 +36,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             module: dagster_k8s.launcher
             class: K8sRunLauncher
             config:
-                service_account_name: pipeline_run_service_account
+                service_account_name: your_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret
@@ -267,7 +269,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
 
-        job_name = "dagster-run-{}".format(run.run_id)
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=context.resume_attempt_number
+        )
         pod_name = job_name
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
@@ -286,20 +290,25 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteRunArgs(
+        if not context.resume_from_failure:
+            run_args = ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=None,
-            )
-        )
+            ).get_command_args()
+        else:
+            run_args = ResumeRunArgs(
+                pipeline_origin=pipeline_origin,
+                pipeline_run_id=run.run_id,
+                instance_ref=None,
+            ).get_command_args()
 
         job = construct_dagster_k8s_job(
             job_config=job_config,
-            args=["dagster", "api", "execute_run", input_json],
+            args=run_args,
             job_name=job_name,
             pod_name=pod_name,
-            component="run_coordinator",
+            component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
@@ -351,9 +360,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate pipeline; can_terminate returned {}".format(
-                    can_terminate
-                ),
+                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
                 pipeline_run=run,
                 cls=self.__class__,
             )
@@ -361,31 +368,51 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.report_run_canceling(run)
 
-        job_name = get_job_name_from_run_id(run_id)
+        job_name = get_job_name_from_run_id(
+            run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+        )
 
         try:
             termination_result = delete_job(job_name=job_name, namespace=self.job_namespace)
             if termination_result:
                 self._instance.report_engine_event(
-                    message="Pipeline was terminated successfully.",
+                    message="Run was terminated successfully.",
                     pipeline_run=run,
                     cls=self.__class__,
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Pipeline was not terminated successfully; delete_job returned {}".format(
+                    message="Run was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
                     pipeline_run=run,
                     cls=self.__class__,
                 )
             return termination_result
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._instance.report_engine_event(
-                message="Pipeline was not terminated successfully; encountered error in delete_job",
+                message="Run was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),
                 cls=self.__class__,
             )
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+        )
+        try:
+            job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
+        except Exception:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
+        if job.status.failed:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+        return CheckRunHealthResult(WorkerStatus.RUNNING)

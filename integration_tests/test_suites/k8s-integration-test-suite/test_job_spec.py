@@ -83,7 +83,7 @@ spec:
         {env_from}
         image: {job_image}
         image_pull_policy: {image_pull_policy}
-        name: dagster-run-{run_id}{resources}
+        name: dagster{resources}
         volume_mounts:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
@@ -147,7 +147,7 @@ spec:
         {env_from}
         image: {job_image}
         image_pull_policy: {image_pull_policy}
-        name: dagster-run-{run_id}{resources}
+        name: dagster{resources}
         volume_mounts:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance

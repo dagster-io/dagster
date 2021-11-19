@@ -1,6 +1,7 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import * as qs from 'query-string';
 import * as React from 'react';
+import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -58,7 +59,7 @@ export const RunActionsMenu: React.FC<{
   };
 
   const pipelineRun =
-    data?.pipelineRunOrError?.__typename === 'PipelineRun' ? data?.pipelineRunOrError : null;
+    data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
 
   const repoMatch = useRepositoryForRun(pipelineRun);
@@ -110,7 +111,7 @@ export const RunActionsMenu: React.FC<{
                 targetTagName="div"
               >
                 <MenuItemWIP
-                  text="Open in Playground..."
+                  text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
                   href={playgroundPath()}
@@ -130,9 +131,10 @@ export const RunActionsMenu: React.FC<{
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
+                      const runConfig = yaml.parse(runConfigYaml);
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfigYaml},
+                          run: {...run, runConfig},
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,
@@ -283,17 +285,15 @@ export const RunBulkActionsMenu: React.FC<{
 });
 
 const OPEN_PLAYGROUND_UNKNOWN =
-  'Playground is unavailable because the pipeline is not present in the current repository.';
+  'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
 const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on Run {
         id
-        pipeline {
-          name
-        }
+        pipelineName
         pipelineSnapshotId
         runConfigYaml
         ...RunFragmentForRepositoryMatch

@@ -42,7 +42,7 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-a
     assert len(runmaster_job_list) == 0
 
     run_config_dict = {
-        "storage": {"s3": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}},
+        "resources": {"io_manager": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}},
         "execution": {
             "celery-k8s": {
                 "config": {

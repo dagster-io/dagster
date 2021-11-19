@@ -11,6 +11,7 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
@@ -46,7 +47,9 @@ def spew(_, num):
 
 
 def define_pipeline():
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "io_manager": fs_io_manager})]
+    )
     def spew_pipeline():
         spew(spew(spawn()))
 
@@ -91,7 +94,7 @@ def test_compute_log_to_disk_multiprocess():
         manager = instance.compute_log_manager
         result = execute_pipeline(
             spew_pipeline,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={"execution": {"multiprocess": {}}},
             instance=instance,
         )
         assert result.success

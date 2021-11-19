@@ -1,43 +1,51 @@
 import re
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple
 
 from dagster.core.definitions.dependency import DependencyStructure, Node
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
-MAX_NUM = sys.maxsize
-
-
 if TYPE_CHECKING:
-    from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.definitions.job_definition import JobDefinition
+
+MAX_NUM = sys.maxsize
 
 
 class OpSelectionData(
     NamedTuple(
         "_OpSelectionData",
         [
-            ("resolved_op_selection", Optional[AbstractSet[str]]),
+            ("op_selection", List[str]),
+            ("resolved_op_selection", AbstractSet[str]),
             ("ignored_solids", List[Node]),
+            ("parent_job_def", "JobDefinition"),
         ],
     )
 ):
     """The data about op selection.
 
     Attributes:
-        resolved_op_selection (Optional[AbstractSet[str]])): The names of selected ops.
+        op_selection (List[str]): The queries of op selection.
+        resolved_op_selection (AbstractSet[str]): The names of selected ops.
         ignored_solids (List[Node]): The solids in the original full graph but outside the current
             selection. This is used in run config resolution to handle unsatisfied inputs correctly.
+        parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
+            pipeline snapshot lineage.
     """
 
-    def __new__(cls, resolved_op_selection=None, ignored_solids=None):
+    def __new__(cls, op_selection, resolved_op_selection, ignored_solids, parent_job_def):
+        from dagster.core.definitions.job_definition import JobDefinition
+
         return super(OpSelectionData, cls).__new__(
             cls,
-            resolved_op_selection=check.opt_set_param(
+            op_selection=check.list_param(op_selection, "op_selection", str),
+            resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
-            ignored_solids=check.opt_list_param(ignored_solids, "ignored_solids", Node),
+            ignored_solids=check.list_param(ignored_solids, "ignored_solids", Node),
+            parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
 
@@ -230,8 +238,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
         subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified solids to execute found for solid_selection={requested}".format(
-                    requested=solid_selection
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=solid_selection,
+                    node_type="ops" if pipeline_def.is_job else "solids",
+                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         solids_set.update(subset)

@@ -108,3 +108,28 @@ def test_shell_command_solid_overrides(factory):
         run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
+
+
+@pytest.mark.parametrize("factory", [create_shell_script_op, create_shell_script_solid])
+def test_shell_script_solid_run_time_config(factory, monkeypatch):
+    monkeypatch.setattr(os, "environ", {"MY_ENV_VAR": "foobar"})
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
+    result = execute_solid(solid)
+    assert result.output_values == {"result": "this is a test message: foobar\n"}
+
+
+@pytest.mark.parametrize("factory", [create_shell_script_op, create_shell_script_solid])
+def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
+    monkeypatch.setattr(os, "environ", {"MY_ENV_VAR": "foobar"})
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
+
+    @composite_solid(
+        config_schema={}, config_fn=lambda cfg: {}, output_defs=[OutputDefinition(str, "result")]
+    )
+    def composite():
+        return solid()
+
+    result = execute_solid(composite)
+    assert result.output_values == {"result": "this is a test message: foobar\n"}

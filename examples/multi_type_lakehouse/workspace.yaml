@@ -1,2 +1,0 @@
-load_from:
-  - python_file: multi_type_lakehouse/repo.py

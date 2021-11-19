@@ -8,53 +8,20 @@ import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
+import {
+  GraphExplorer,
+  GraphExplorerOptions,
+  GRAPH_EXPLORER_FRAGMENT,
+  GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
+} from './GraphExplorer';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
-import {
-  PipelineExplorer,
-  PipelineExplorerOptions,
-  PIPELINE_EXPLORER_FRAGMENT,
-  PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from './PipelineExplorer';
-import {
-  PipelineExplorerPath,
-  explorerPathFromString,
-  explorerPathToString,
-} from './PipelinePathUtils';
+import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
 } from './types/PipelineExplorerRootQuery';
-
-export const PipelineExplorerRegexRoot: React.FC<
-  RouteComponentProps & {repoAddress: RepoAddress}
-> = (props) => {
-  const explorerPath = explorerPathFromString(props.match.params['0']);
-  const history = useHistory();
-
-  useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
-
-  return (
-    <PipelineExplorerContainer
-      explorerPath={explorerPath}
-      repoAddress={props.repoAddress}
-      isGraph
-      onChangeExplorerPath={(path, mode) => {
-        const fullPath = workspacePathFromAddress(
-          props.repoAddress,
-          `/graphs/${explorerPathToString(path)}`,
-        );
-        if (mode === 'push') {
-          history.push(fullPath);
-        } else {
-          history.replace(fullPath);
-        }
-      }}
-    />
-  );
-};
 
 export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
@@ -74,21 +41,21 @@ export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (prop
 };
 
 export const PipelineExplorerContainer: React.FC<{
-  explorerPath: PipelineExplorerPath;
-  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
-  const [options, setOptions] = React.useState<PipelineExplorerOptions>({
+  const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
   });
 
-  const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
-  const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
+  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
+  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
 
-  const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
+  const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
       variables: {
@@ -105,7 +72,7 @@ export const PipelineExplorerContainer: React.FC<{
   );
 
   return (
-    <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
+    <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result, repositoryOrError}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
@@ -133,7 +100,7 @@ export const PipelineExplorerContainer: React.FC<{
           onChangeExplorerPath(
             {
               ...explorerPath,
-              pathSolids: explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1),
+              opNames: explorerPath.opNames.slice(0, explorerPath.opNames.length - 1),
             },
             'replace',
           );
@@ -141,7 +108,7 @@ export const PipelineExplorerContainer: React.FC<{
 
         const repositoryAssets =
           repositoryOrError.__typename === 'Repository' ? repositoryOrError.assetNodes : [];
-        const isAssetGraph = result.solidHandles.every((handle) =>
+        const isAssetGraph = result.solidHandles.some((handle) =>
           repositoryAssets.some(
             (asset) =>
               asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
@@ -149,6 +116,20 @@ export const PipelineExplorerContainer: React.FC<{
         );
 
         if (flagAssetGraph && isAssetGraph) {
+          const unrepresentedOps = result.solidHandles.filter(
+            (handle) =>
+              !repositoryAssets.some(
+                (asset) =>
+                  asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
+              ),
+          );
+          if (unrepresentedOps.length) {
+            console.error(
+              `The following ops are not represented in the ${
+                explorerPath.pipelineName
+              } asset graph: ${unrepresentedOps.map((h) => h.solid.name).join(', ')}`,
+            );
+          }
           return (
             <AssetGraphExplorer
               repoAddress={repoAddress!}
@@ -160,12 +141,12 @@ export const PipelineExplorerContainer: React.FC<{
           );
         }
         return (
-          <PipelineExplorer
+          <GraphExplorer
             options={options}
             setOptions={setOptions}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
-            pipeline={result}
+            pipelineOrGraph={result}
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
@@ -211,17 +192,17 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshot {
         id
         name
-        ...PipelineExplorerFragment
+        ...GraphExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {
-          ...PipelineExplorerSolidHandleFragment
+          ...GraphExplorerSolidHandleFragment
         }
         solidHandles(parentHandleID: $requestScopeHandleID) {
           handleID
           solid {
             name
           }
-          ...PipelineExplorerSolidHandleFragment
+          ...GraphExplorerSolidHandleFragment
         }
       }
       ... on PipelineNotFoundError {
@@ -235,6 +216,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       }
     }
   }
-  ${PIPELINE_EXPLORER_FRAGMENT}
-  ${PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${GRAPH_EXPLORER_FRAGMENT}
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;

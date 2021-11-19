@@ -12,6 +12,7 @@ def types():
         GrapheneMissingFieldsConfigError,
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationInvalid,
+        GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationValid,
         GrapheneRuntimeMismatchConfigError,
         GrapheneSelectorTypeConfigError,
@@ -21,8 +22,9 @@ def types():
     from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
     from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
     from .pipeline_run_stats import (
-        GraphenePipelineRunStatsOrError,
         GraphenePipelineRunStatsSnapshot,
+        GrapheneRunStatsSnapshotOrError,
+        GrapheneRunStatsSnapshot,
     )
     from .pipeline import (
         GrapheneAsset,
@@ -31,11 +33,12 @@ def types():
         GraphenePipeline,
         GraphenePipelinePreset,
         GraphenePipelineRun,
-        GraphenePipelineRunOrError,
+        GrapheneRunOrError,
+        GrapheneRun,
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
-    from .status import GraphenePipelineRunStatus
+    from .status import GrapheneRunStatus
     from .subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionPayload,
@@ -62,6 +65,7 @@ def types():
         GraphenePipeline,
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationInvalid,
+        GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationResult,
         GraphenePipelineConfigValidationValid,
         GraphenePipelinePreset,
@@ -70,14 +74,16 @@ def types():
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionPayload,
         GraphenePipelineRunLogsSubscriptionSuccess,
-        GraphenePipelineRunOrError,
-        GraphenePipelineRunStatsOrError,
+        GrapheneRunOrError,
         GraphenePipelineRunStatsSnapshot,
-        GraphenePipelineRunStatus,
+        GrapheneRunStatsSnapshotOrError,
+        GrapheneRunStatsSnapshot,
+        GrapheneRunStatus,
         GraphenePipelineSnapshot,
         GraphenePipelineSnapshotOrError,
         GrapheneResource,
         GrapheneRuntimeMismatchConfigError,
+        GrapheneRun,
         GrapheneSelectorTypeConfigError,
         GrapheneUnknownPipeline,
     ]

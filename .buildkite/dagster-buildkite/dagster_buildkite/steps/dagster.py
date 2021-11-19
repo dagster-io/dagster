@@ -77,7 +77,7 @@ def dbt_example_extra_cmds_fn(_):
 
 def docs_snippets_extra_cmds_fn(_):
     return [
-        "pushd examples/docs_snippets_crag",
+        "pushd examples/docs_snippets",
         # Run the postgres db. We are in docker running docker
         # so this will be a sibling container.
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
@@ -283,7 +283,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
-        "examples/docs_snippets_crag",
+        "examples/docs_snippets",
         extra_cmds_fn=docs_snippets_extra_cmds_fn,
         buildkite_label="docs_snippets",
         upload_coverage=False,
@@ -434,7 +434,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "python_modules/libraries/dagstermill",
         tox_env_suffixes=["-papermill1", "-papermill2"],
     ),
-    ModuleBuildSpec("python_modules/libraries/lakehouse", upload_coverage=False),
 ]
 
 
@@ -459,7 +458,7 @@ def examples_tests():
 
     skip_examples = [
         # Skip these folders because they need custom build config
-        "docs_snippets_crag",
+        "docs_snippets",
         "airline_demo",
         "dbt_example",
         "deploy_docker",
@@ -488,9 +487,10 @@ def pipenv_smoke_tests():
     if is_release:
         return []
 
+    # tempoarily pinned due to issue with 2021.11.5, see https://github.com/dagster-io/dagster/issues/5565
     smoke_test_steps = [
         "pushd /workdir/python_modules",
-        "pip install pipenv",
+        "pip install pipenv==2021.5.29",
         "pipenv install",
     ]
 

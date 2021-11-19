@@ -25,7 +25,13 @@ ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
 
 
 @op(
-    out={"items": Out(io_manager_key="parquet_io_manager", dagster_type=DataFrame)},
+    out={
+        "items": Out(
+            io_manager_key="parquet_io_manager",
+            metadata={"partitioned": True},
+            dagster_type=DataFrame,
+        )
+    },
     required_resource_keys={"hn_client"},
     description="Downloads all of the items for the id range passed in as input and creates a DataFrame with all the entries.",
 )
@@ -45,9 +51,11 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
             context.log.info(f"Downloaded {len(rows)} items!")
 
     non_none_rows = [row for row in rows if row is not None]
+    result = DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"])
+    result.rename(columns={"by": "user_id"}, inplace=True)
 
     return Output(
-        DataFrame(non_none_rows).drop_duplicates(subset=["id"]),
+        result,
         "items",
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
@@ -56,22 +64,22 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
 @op(
     out=Out(
         io_manager_key="warehouse_io_manager",
-        metadata={"table": "hackernews.comments"},
+        metadata={"table": "hackernews.comments", "partitioned": True},
     ),
     description="Creates a dataset of all items that are comments",
 )
 def build_comments(context, items: SparkDF) -> SparkDF:
     context.log.info(str(items.schema))
-    return items.where(items["type"] == "comment").select(ACTION_FIELD_NAMES)
+    return items.where(items["type"] == "comment")
 
 
 @op(
     out=Out(
         io_manager_key="warehouse_io_manager",
-        metadata={"table": "hackernews.stories"},
+        metadata={"table": "hackernews.stories", "partitioned": True},
     ),
     description="Creates a dataset of all items that are stories",
 )
 def build_stories(context, items: SparkDF) -> SparkDF:
     context.log.info(str(items.schema))
-    return items.where(items["type"] == "story").select(ACTION_FIELD_NAMES)
+    return items.where(items["type"] == "story")

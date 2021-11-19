@@ -9,12 +9,10 @@ from dagster.config.config_type import Array
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
-from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
 @whitelist_for_serdes
@@ -63,16 +61,6 @@ class DagsterType:
             this type. As a rule, you should use the
             :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
             decorator to construct these arguments.
-        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
-            inherits from :py:class:`~dagster.SerializationStrategy`. The default strategy for serializing
-            this value when automatically persisting it between execution steps. You should set
-            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
-            for this type.
-        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
         required_resource_keys (Optional[Set[str]]): Resource keys required by the ``type_check_fn``.
         is_builtin (bool): Defaults to False. This is used by tools to display or
             filter built-in types (such as :py:class:`~dagster.String`, :py:class:`~dagster.Int`) to visually distinguish
@@ -92,8 +80,6 @@ class DagsterType:
         description=None,
         loader=None,
         materializer=None,
-        serialization_strategy=None,
-        auto_plugins=None,
         required_resource_keys=None,
         kind=DagsterTypeKind.REGULAR,
         typing_type=None,
@@ -127,12 +113,6 @@ class DagsterType:
             materializer, "materializer", DagsterTypeMaterializer
         )
 
-        self.serialization_strategy = check.opt_inst_param(
-            serialization_strategy,
-            "serialization_strategy",
-            SerializationStrategy,
-            PickleSerializationStrategy(),
-        )
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys,
             "required_resource_keys",
@@ -140,17 +120,6 @@ class DagsterType:
 
         self._type_check_fn = check.callable_param(type_check_fn, "type_check_fn")
         _validate_type_check_fn(self._type_check_fn, self._name)
-
-        auto_plugins = check.opt_list_param(auto_plugins, "auto_plugins", of_type=type)
-
-        check.param_invariant(
-            all(
-                issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins
-            ),
-            "auto_plugins",
-        )
-
-        self.auto_plugins = auto_plugins
 
         self.is_builtin = check.bool_param(is_builtin, "is_builtin")
         check.invariant(
@@ -370,10 +339,8 @@ class Anyish(DagsterType):
         name,
         loader=None,
         materializer=None,
-        serialization_strategy=None,
         is_builtin=False,
         description=None,
-        auto_plugins=None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -381,11 +348,9 @@ class Anyish(DagsterType):
             kind=DagsterTypeKind.ANY,
             loader=loader,
             materializer=materializer,
-            serialization_strategy=serialization_strategy,
             is_builtin=is_builtin,
             type_check_fn=self.type_check_method,
             description=description,
-            auto_plugins=auto_plugins,
             typing_type=typing.Any,
         )
 
@@ -416,9 +381,7 @@ def create_any_type(
     name,
     loader=None,
     materializer=None,
-    serialization_strategy=None,
     description=None,
-    auto_plugins=None,
 ):
     return Anyish(
         key=name,
@@ -426,8 +389,6 @@ def create_any_type(
         description=description,
         loader=loader,
         materializer=materializer,
-        serialization_strategy=serialization_strategy,
-        auto_plugins=auto_plugins,
     )
 
 
@@ -518,17 +479,6 @@ class PythonObjectDagsterType(DagsterType):
             this type. As a rule, you should use the
             :py:func:`@dagster_type_mate <dagster.dagster_type_mate>`
             decorator to construct these arguments.
-        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
-            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
-            this value when automatically persisting it between execution steps. You should set
-            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
-            for this type.
-        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-
     """
 
     def __init__(self, python_type, key=None, name=None, **kwargs):

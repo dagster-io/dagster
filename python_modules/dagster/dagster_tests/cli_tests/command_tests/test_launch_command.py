@@ -362,3 +362,27 @@ def test_launch_using_memoization():
             assert result.exit_code == 0
             run = instance.get_run_by_id("second")
             assert len(run.step_keys_to_execute) == 0
+
+
+def test_job_launch_only_selects_job():
+    job_kwargs = {
+        "workspace": None,
+        "pipeline_or_job": "my_job",
+        "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
+        "module_name": None,
+        "attribute": "my_repo",
+    }
+    pipeline_kwargs = job_kwargs.copy()
+    pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
+
+    runner = CliRunner()
+
+    with default_cli_test_instance() as instance:
+        execute_launch_command(
+            instance,
+            job_kwargs,
+            using_job_op_graph_apis=True,
+        )
+
+        with pytest.raises(Exception, match="not found in repository"):
+            execute_launch_command(instance, pipeline_kwargs, using_job_op_graph_apis=True)

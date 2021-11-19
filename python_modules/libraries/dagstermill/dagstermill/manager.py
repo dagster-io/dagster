@@ -12,13 +12,12 @@ from dagster import (
     SolidDefinition,
     TypeCheck,
     check,
-    seven,
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -28,7 +27,7 @@ from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -37,7 +36,7 @@ from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
-from .serialize import PICKLE_PROTOCOL, read_value
+from .serialize import PICKLE_PROTOCOL
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -137,7 +136,7 @@ class Manager:
         try:
             instance_ref = unpack_value(instance_ref_dict)
             instance = DagsterInstance.from_ref(instance_ref)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
@@ -181,7 +180,6 @@ class Manager:
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
-                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
@@ -238,7 +236,7 @@ class Manager:
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
-        pipeline_run = PipelineRun(
+        pipeline_run = DagsterRun(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,
@@ -274,7 +272,6 @@ class Manager:
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
-                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
                 solid_handle=NodeHandle(solid_def.name, parent=None),
@@ -356,10 +353,6 @@ class Manager:
     def teardown_resources(self):
         if self.resource_manager is not None:
             self.resource_manager.teardown()
-
-    def load_parameter(self, input_name, input_value):
-        input_def = self.solid_def.input_def_named(input_name)
-        return read_value(input_def.dagster_type, seven.json.loads(input_value))
 
     def load_input_parameter(self, input_name: str):
         # load input from source

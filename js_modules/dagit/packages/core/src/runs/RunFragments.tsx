@@ -8,11 +8,9 @@ import {RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
-  fragment RunFragmentForRepositoryMatch on PipelineRun {
+  fragment RunFragmentForRepositoryMatch on Run {
     id
-    pipeline {
-      name
-    }
+    pipelineName
     pipelineSnapshotId
     repositoryOrigin {
       id
@@ -24,9 +22,9 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
 
 export const RunFragments = {
   RunFragment: gql`
-    fragment RunFragment on PipelineRun {
+    fragment RunFragment on Run {
       id
-      runConfigYaml
+      runConfig
       runId
       canTerminate
       status
@@ -37,6 +35,7 @@ export const RunFragments = {
       }
       rootRunId
       parentRunId
+      pipelineName
       pipeline {
         __typename
         ... on PipelineReference {
@@ -46,34 +45,34 @@ export const RunFragments = {
       }
       pipelineSnapshotId
       executionPlan {
-        steps {
-          key
-          inputs {
-            dependsOn {
-              key
-              outputs {
-                name
-                type {
-                  name
-                }
-              }
-            }
-          }
-        }
         artifactsPersisted
         ...ExecutionPlanToGraphFragment
       }
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
       ...RunDetailsFragment
+      stepStats {
+        stepKey
+        status
+        startTime
+        endTime
+        attempts {
+          startTime
+          endTime
+        }
+        markers {
+          startTime
+          endTime
+        }
+      }
     }
 
     ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
     ${RUN_DETAILS_FRAGMENT}
   `,
-  RunPipelineRunEventFragment: gql`
-    fragment RunPipelineRunEventFragment on PipelineRunEvent {
+  RunDagsterRunEventFragment: gql`
+    fragment RunDagsterRunEventFragment on DagsterRunEvent {
       ... on MessageEvent {
         message
         timestamp

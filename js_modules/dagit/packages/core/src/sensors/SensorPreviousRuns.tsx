@@ -59,7 +59,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
           <NonIdealState
             icon="sensors"
             title="No runs to display"
-            description="Sensor does not target a pipeline."
+            description="This sensor does not target a pipeline or job."
           />
         </Box>
       </div>
@@ -68,7 +68,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
 };
 
 const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
-  query PreviousRunsForSensorQuery($filter: PipelineRunsFilter, $limit: Int) {
+  query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
       ...PreviousRunsFragment

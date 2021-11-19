@@ -40,6 +40,10 @@ def assert_correct_bar_repository_output(result):
         "Pipeline: partitioned_scheduled_pipeline\n"
         "Solids: (Execution Order)\n"
         "    do_something\n"
+        "******************\n"
+        "Pipeline: quux_job\n"
+        "Solids: (Execution Order)\n"
+        "    do_something_op\n"
         "*************\n"
         "Pipeline: qux\n"
         "Solids: (Execution Order)\n"
@@ -53,24 +57,9 @@ def assert_correct_job_list_bar_repository_output(result):
     assert result.output == (
         "Repository bar\n"
         "**************\n"
-        "Job: baz\n"
-        "Description:\n"
-        "Not much tbh\n"
+        "Job: quux_job\n"
         "Ops: (Execution Order)\n"
-        "    do_input\n"
-        "********\n"
-        "Job: foo\n"
-        "Ops: (Execution Order)\n"
-        "    do_something\n"
-        "    do_input\n"
-        "***************\n"
-        "Job: memoizable\n"
-        "Ops: (Execution Order)\n"
-        "    my_solid\n"
-        "***********************************\n"
-        "Job: partitioned_scheduled_pipeline\n"
-        "Ops: (Execution Order)\n"
-        "    do_something\n"
+        "    do_something_op\n"
         "********\n"
         "Job: qux\n"
         "Ops: (Execution Order)\n"
@@ -87,6 +76,10 @@ def assert_correct_extra_repository_output(result):
         "Pipeline: extra\n"
         "Solids: (Execution Order)\n"
         "    do_something\n"
+        "*******************\n"
+        "Pipeline: extra_job\n"
+        "Solids: (Execution Order)\n"
+        "    do_something\n"
     )
 
 
@@ -95,7 +88,7 @@ def assert_correct_job_list_extra_repository_output(result):
     assert result.output == (
         "Repository extra\n"
         "****************\n"
-        "Job: extra\n"
+        "Job: extra_job\n"
         "Ops: (Execution Order)\n"
         "    do_something\n"
     )
@@ -362,3 +355,15 @@ def test_list_command():
                 },
                 no_print,
             )
+
+
+def test_job_command_only_selects_job(capsys):
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(
+            job_list_command,
+            ["-f", file_relative_path(__file__, "repo_pipeline_and_job.py"), "-a", "my_repo"],
+        )
+
+        assert "my_job" in result.output
+        assert not "my_pipeline" in result.output

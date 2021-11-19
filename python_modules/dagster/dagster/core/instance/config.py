@@ -110,4 +110,15 @@ def dagster_instance_config_schema():
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
+        "run_monitoring": Field(
+            {
+                "enabled": Field(
+                    Bool,
+                    is_required=False,
+                ),
+                "start_timeout_seconds": Field(int, is_required=False),
+                "max_resume_run_attempts": Field(int, is_required=False),
+                "poll_interval_seconds": Field(int, is_required=False),
+            },
+        ),
     }

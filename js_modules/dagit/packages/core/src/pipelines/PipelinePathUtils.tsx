@@ -3,36 +3,36 @@ import {Link, useHistory} from 'react-router-dom';
 
 import {Mono} from '../ui/Text';
 
-export interface PipelineExplorerPath {
+export interface ExplorerPath {
   pipelineName: string;
   snapshotId?: string;
-  solidsQuery: string;
-  pathSolids: string[];
+  opsQuery: string;
+  opNames: string[];
 }
 
-export function explorerPathToString(path: PipelineExplorerPath) {
+export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
-    path.solidsQuery ? `~${path.solidsQuery}` : ``,
+    path.opsQuery ? `~${path.opsQuery}` : ``,
   ].join('');
 
-  return `${root}/${path.pathSolids.join('/')}`;
+  return `${root}/${path.opNames.join('/')}`;
 }
 
-export function explorerPathFromString(path: string): PipelineExplorerPath {
-  const rootAndSolids = path.split('/');
-  const root = rootAndSolids[0];
-  const pathSolids = rootAndSolids.length === 1 ? [''] : rootAndSolids.slice(1);
+export function explorerPathFromString(path: string): ExplorerPath {
+  const rootAndOps = path.split('/');
+  const root = rootAndOps[0];
+  const opNames = rootAndOps.length === 1 ? [''] : rootAndOps.slice(1);
 
   const match = /^([^:@~]+)@?([^:~]+)?~?(.*)$/.exec(root);
-  const [, pipelineName, snapshotId, solidsQuery] = [...(match || []), '', '', ''];
+  const [, pipelineName, snapshotId, opsQuery] = [...(match || []), '', '', ''];
 
   return {
     pipelineName,
     snapshotId,
-    solidsQuery,
-    pathSolids,
+    opsQuery,
+    opNames,
   };
 }
 
@@ -62,8 +62,8 @@ export const PipelineSnapshotLink: React.FC<{
   const snapshotLink = `/instance/snapshots/${explorerPathToString({
     pipelineName: props.pipelineName,
     snapshotId: props.snapshotId,
-    solidsQuery: '',
-    pathSolids: [],
+    opsQuery: '',
+    opNames: [],
   })}`;
 
   return (

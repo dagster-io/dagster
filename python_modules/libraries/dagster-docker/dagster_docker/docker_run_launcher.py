@@ -1,12 +1,17 @@
-import json
 import os
 
 import docker
 from dagster import check
-from dagster.core.launcher.base import LaunchRunContext, RunLauncher
+from dagster.core.launcher.base import (
+    CheckRunHealthResult,
+    LaunchRunContext,
+    RunLauncher,
+    WorkerStatus,
+)
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.grpc.types import ExecuteRunArgs
-from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
+from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
+from dagster.serdes import ConfigurableClass
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
@@ -98,15 +103,18 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         validate_docker_image(docker_image)
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteRunArgs(
+        if not context.resume_from_failure:
+            command = ExecuteRunArgs(
                 pipeline_origin=pipeline_code_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
-            )
-        )
-
-        command = "dagster api execute_run {}".format(json.dumps(input_json))
+            ).get_command_args()
+        else:
+            command = ResumeRunArgs(
+                pipeline_origin=pipeline_code_origin,
+                pipeline_run_id=run.run_id,
+                instance_ref=self._instance.get_ref(),
+            ).get_command_args()
 
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self.env_vars} if self.env_vars else {}
@@ -167,7 +175,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client().containers.get(container_id)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             return None
 
     def can_terminate(self, run_id):
@@ -191,3 +199,17 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container.stop()
 
         return True
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+        container = self._get_container(run)
+        if container == None:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+        if container.status == "running":
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        return CheckRunHealthResult(
+            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+        )

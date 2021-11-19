@@ -1,0 +1,150 @@
+---
+title: Job Execution | Dagster
+description: Dagster provides several different ways to execute jobs.
+---
+
+# Execution
+
+Dagster provides several different ways to execute jobs.
+
+## Relevant APIs
+
+| Name                                                            | Description                                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process" /> | A method to execute a job synchronously, typically for running scripts or testing. |
+
+## Overview
+
+There are several different ways to execute jobs. This page explains different ways to do one-off execution of jobs: [Dagit](#dagit), [Dagster CLI](#dagster-cli), or [Python APIs](#python-apis).
+
+You can also launch jobs in other ways:
+
+- [Schedules](/concepts/partitions-schedules-sensors/schedules) can be used to launch runs on a fixed interval.
+- [Sensors](/concepts/partitions-schedules-sensors/sensors) allow you to launch runs based on external state changes.
+
+---
+
+## Executing a Job
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import job, op
+
+
+@op
+def return_one():
+    return 1
+
+
+@op
+def add_two(i: int):
+    return i + 2
+
+
+@op
+def multi_three(i: int):
+    return i * 3
+
+
+@job
+def my_job():
+    multi_three(add_two(return_one()))
+```
+
+### Dagit
+
+Dagster comes with a web-based interface for viewing and interacting with jobs and other Dagster objects.
+
+To view your job in Dagit, you can use the [`dagit`](/\_apidocs/cli#dagit) command:
+
+```bash
+dagit -f my_job.py
+```
+
+Then navigate to <http://localhost:3000> to start using Dagit:
+
+<Image
+alt="pipeline-def"
+src="/images/concepts/solids-pipelines/pipeline-def.png"
+width={3808}
+height={2414}
+/>
+
+Click on the "Launchpad" tab, then press the "Launch Run" button to execute the job. You will then see Dagit launch a job run:
+
+<Image
+alt="job-run"
+src="/images/concepts/solids-pipelines/pipeline-run.png"
+width={3808}
+height={2414}
+/>
+
+By default, Dagit will run the job using the multiprocess executor - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
+
+Dagit Launchpad also offers a configuration editor to let you interactively build up the configuration. See details in [Dagit](/concepts/dagit/dagit#launchpad).
+
+### Dagster CLI
+
+The dagster CLI includes both [`dagster job execute`](/\_apidocs/cli#dagster-pipeline-execute) for direct execution and [`dagster job launch`](https://docs.dagster.io/\_apidocs/cli#dagster-pipeline-launch) for launching runs asynchronously using the [run launcher](/deployment/run-launcher) on your instance.
+
+To execute your job directly, you can simply run:
+
+```bash
+dagster job execute -f my_job.py
+```
+
+### Python APIs
+
+Dagster includes Python APIs for execution that are useful when writing tests or scripts.
+
+<PyObject object="JobDefinition" method="execute_in_process" /> executes a job and
+returns an <PyObject object="ExecuteInProcessResult" />.
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_execute_marker endbefore=end_execute_marker
+if __name__ == "__main__":
+    result = my_job.execute_in_process()
+```
+
+You can find the full API documentation in [Execution API](/\_apidocs/execution) and learn more about the testing use cases in [Testing](/concepts/testing).
+
+## Executing Job Subsets
+
+Dagster supports ways to run a subset of a job, called Op Selection.
+
+### Op Selection Syntax
+
+To specify op selection, Dagster supports a simple query syntax.
+
+It works as follows:
+
+- A query includes a list of clauses.
+- A clause can be a op name, in which case that op is selected.
+- A clause can be a op name preceded by `*`, in which case that op and all of its ancestors (upstream dependencies) are selected.
+- A clause can be a op name followed by `*`, in which case that op and all of its descendents (downstream dependencies) are selected.
+- A clause can be a op name followed by any number of `+`s, in which case that op and descendents up to that many hops away are selected.
+- A clause can be a op name preceded by any number of `+`s, in which case that op and ancestors up to that many hops away are selected.
+
+**Clause examples**
+
+- `some_op`: select "some_op" itself
+- `*some_op`: select "some_op" and all ancestors (upstream dependencies).
+- `some_op*`: select "some_op" and all descendants (downstream dependencies).
+- `*some_op*`: select "some_op" and all of its ancestors and descendants.
+- `+some_op`: select "some_op" and its direct parents.
+- `some_op+++`: select "some_op" and its children, its children's children, and its children's children's children.
+
+### Specifying Op Selection
+
+You can use this selection syntax in the `op_selection` argument to the <PyObject object="JobDefinition" method="execute_in_process" />:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_solid_selection_marker endbefore=end_solid_selection_marker
+my_job.execute_in_process(op_selection=["*add_two"])
+```
+
+Similarly, you can specify the same op selection in Dagit Launchpad:
+
+<Image
+alt="op-selection"
+src="/images/concepts/solids-pipelines/solid-selection.png"
+width={3808}
+height={2414}
+/>

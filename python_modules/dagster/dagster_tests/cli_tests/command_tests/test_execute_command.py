@@ -114,7 +114,7 @@ def test_execute_preset_command():
             ],
         )
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         # Can't use --preset with --config
         bad_res = runner.invoke(
@@ -195,6 +195,29 @@ def test_job_execute_command_runner(cli_args):
             ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
             True,
         )
+
+
+def test_job_command_only_selects_job():
+    with instance_for_test() as instance:
+        job_kwargs = {
+            "workspace": None,
+            "pipeline_or_job": "my_job",
+            "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
+            "module_name": None,
+            "attribute": "my_repo",
+        }
+        pipeline_kwargs = job_kwargs.copy()
+        pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
+
+        result = execute_execute_command(
+            kwargs=job_kwargs, instance=instance, using_job_op_graph_apis=True
+        )
+        assert result.success
+
+        with pytest.raises(Exception, match="not found in repository"):
+            execute_execute_command(
+                kwargs=pipeline_kwargs, instance=instance, using_job_op_graph_apis=True
+            )
 
 
 def test_output_execute_log_stdout(capfd):
@@ -366,7 +389,7 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
                 "RepositoryDefinition. Got 123."
             ),
         ):
@@ -387,7 +410,7 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
                 "RepositoryDefinition."
             ),
         ):
@@ -426,65 +449,6 @@ def test_default_memory_run_storage():
         assert result.success
 
 
-def test_override_with_in_memory_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
-def test_override_with_filesystem_storage():
-    with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "foo",
-            "module_name": None,
-            "config": (file_relative_path(__file__, "filesystem_env.yaml"),),
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-        )
-        assert result.success
-
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "pipeline_or_job": "qux",
-            "module_name": None,
-        }
-        result = execute_execute_command(
-            kwargs=cli_args,
-            instance=instance,
-            using_job_op_graph_apis=True,
-        )
-        assert result.success
-
-
 def test_multiproc():
     with instance_for_test():
         runner = CliRunner()
@@ -503,7 +467,7 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
         add_result = runner_pipeline_or_job_execute(
             runner,
@@ -517,11 +481,11 @@ def test_multiproc():
         )
         assert add_result.exit_code == 0
 
-        assert "PIPELINE_SUCCESS" in add_result.output
+        assert "RUN_SUCCESS" in add_result.output
 
 
-def test_multiproc_invalid():
-    # force ephemeral instance by removing out DAGSTER_HOME
+def test_multiproc_ephemeral_directory():
+    # force ephemeral directory by removing out DAGSTER_HOME
     runner = CliRunner(env={"DAGSTER_HOME": None})
     add_result = runner.invoke(
         pipeline_execute_command,
@@ -536,9 +500,10 @@ def test_multiproc_invalid():
             "multi_mode_with_resources",  # pipeline name
         ],
     )
-    # which is invalid for multiproc
-    assert add_result.exit_code != 0
-    assert "DagsterUnmetExecutorRequirementsError" in add_result.output
+    # which is valid for multiproc
+    assert add_result.exit_code == 0
+    # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
+    assert re.match("Using temporary directory", add_result.output)
 
 
 def test_tags_pipeline_or_job():

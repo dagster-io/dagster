@@ -11,7 +11,7 @@ from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
 from dagster.serdes import ConfigurableClass
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster.seven import get_current_datetime_in_utc
 from dagster.utils import mkdir_p
 
 
@@ -84,95 +84,6 @@ class Scheduler(abc.ABC):
 
         instance.add_job_state(schedule_state)
         return schedule_state
-
-    def reconcile_scheduler_state(self, instance, external_repository):
-        """Reconcile the ExternalSchedule list from the repository and ScheduleStorage
-        on the instance to ensure there is a 1-1 correlation between ExternalSchedule and
-        JobStates of type JobType.SCHEDULE, where the ExternalSchedule list is the source of truth.
-
-        If a new ExternalSchedule is introduced, a new JobState is added to storage with status
-        JobStatus.STOPPED.
-
-        For every previously existing ExternalSchedule (where target id is the primary key),
-        any changes to the definition are persisted in the corresponding JobState and the status is
-        left unchanged. The schedule is also restarted to make sure the external artifacts (such
-        as a cron job) are up to date.
-
-        For every ScheduleDefinitions that is removed, the corresponding JobState is removed from
-        the storage and the corresponding job is ended.
-        """
-
-        schedules_to_restart = []
-        for external_schedule in external_repository.get_external_schedules():
-            # If a schedule already exists for schedule_def, overwrite bash script and
-            # metadata file
-            existing_schedule_state = instance.get_job_state(
-                external_schedule.get_external_origin_id()
-            )
-            if existing_schedule_state:
-                new_timestamp = existing_schedule_state.job_specific_data.start_timestamp
-                if not new_timestamp and existing_schedule_state.status == JobStatus.RUNNING:
-                    new_timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
-
-                # Keep the status, update target and cron schedule
-                schedule_state = JobState(
-                    external_schedule.get_external_origin(),
-                    JobType.SCHEDULE,
-                    existing_schedule_state.status,
-                    ScheduleJobData(
-                        external_schedule.cron_schedule,
-                        new_timestamp,
-                        scheduler=self.__class__.__name__,
-                    ),
-                )
-
-                instance.update_job_state(schedule_state)
-                schedules_to_restart.append((existing_schedule_state, external_schedule))
-            else:
-                self._create_new_schedule_state(instance, external_schedule)
-
-        # Delete all existing schedules that are not in external schedules
-        external_schedule_origin_ids = {
-            s.get_external_origin_id() for s in external_repository.get_external_schedules()
-        }
-        existing_schedule_origin_ids = set(
-            [
-                job.job_origin_id
-                for job in instance.all_stored_job_state(
-                    external_repository.get_external_origin_id()
-                )
-                if job.job_type == JobType.SCHEDULE
-            ]
-        )
-        schedule_origin_ids_to_delete = existing_schedule_origin_ids - external_schedule_origin_ids
-
-        schedule_reconciliation_errors = []
-        for schedule_state, external_schedule in schedules_to_restart:
-            # Restart is only needed if the schedule was previously running
-            if schedule_state.status == JobStatus.RUNNING:
-                try:
-                    self.refresh_schedule(instance, external_schedule)
-                except DagsterSchedulerError as e:
-                    schedule_reconciliation_errors.append(e)
-
-            if schedule_state.status == JobStatus.STOPPED:
-                try:
-                    self.stop_schedule(instance, external_schedule.get_external_origin_id())
-                except DagsterSchedulerError as e:
-                    schedule_reconciliation_errors.append(e)
-
-        for schedule_origin_id in schedule_origin_ids_to_delete:
-            try:
-                instance.stop_schedule_and_delete_from_storage(schedule_origin_id)
-            except DagsterSchedulerError as e:
-                schedule_reconciliation_errors.append(e)
-
-        if len(schedule_reconciliation_errors):
-            raise DagsterScheduleReconciliationError(
-                "One or more errors were encountered by the Scheduler while starting or stopping schedules. "
-                "Individual error messages follow:",
-                errors=schedule_reconciliation_errors,
-            )
 
     def start_schedule_and_update_storage_state(self, instance, external_schedule):
         """

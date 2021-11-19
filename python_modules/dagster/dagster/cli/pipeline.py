@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import textwrap
-import warnings
 
 import click
 import pendulum
@@ -37,7 +36,6 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
@@ -51,12 +49,13 @@ from dagster.utils.interrupts import capture_interrupts
 from tabulate import tabulate
 
 from .config_scaffolder import scaffold_pipeline_config
+from .utils import get_instance_for_service
 
 
 @click.group(name="pipeline")
 def pipeline_cli():
     """
-    Commands for working with Dagster pipelines.
+    Commands for working with Dagster pipelines/jobs.
     """
 
 
@@ -68,7 +67,9 @@ def apply_click_params(command, *click_params):
 
 @pipeline_cli.command(
     name="list",
-    help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
+    help="List the pipelines/jobs in a repository. {warning}".format(
+        warning=WORKSPACE_TARGET_WARNING
+    ),
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
@@ -76,7 +77,9 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_service(
+        "``dagster job list``" if using_job_op_graph_apis else "``dagster pipeline list``"
+    ) as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
@@ -84,7 +87,11 @@ def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for pipeline in external_repository.get_all_external_pipelines():
+            for pipeline in (
+                external_repository.get_external_jobs()
+                if using_job_op_graph_apis
+                else external_repository.get_all_external_pipelines()
+            ):
                 pipeline_title = "{pipeline_or_job}: {name}".format(
                     pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                     name=pipeline.name,
@@ -119,7 +126,7 @@ def format_description(desc, indent):
 
 def get_pipeline_in_same_python_env_instructions(command_name):
     return (
-        "This commands targets a pipeline. The pipeline can be specified in a number of ways:"
+        "This commands targets a pipeline/job. The pipeline/job can be specified in a number of ways:"
         "\n\n1. dagster pipeline {command_name} -f /path/to/file.py -a define_some_pipeline"
         "\n\n2. dagster pipeline {command_name} -m a_module.submodule -a define_some_pipeline"
         "\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>"
@@ -141,7 +148,7 @@ def get_pipeline_instructions(command_name):
 
 def get_partitioned_pipeline_instructions(command_name):
     return (
-        "This commands targets a partitioned pipeline. The pipeline and partition set must be "
+        "This commands targets a partitioned pipeline/job. The pipeline/job and partition set must be "
         "defined in a repository, which can be specified in a number of ways:"
         "\n\n1. dagster pipeline {command_name} -p <<pipeline_name>> (works if .{default_filename} exists)"
         "\n\n2. dagster pipeline {command_name} -p <<pipeline_name>> -w path/to/{default_filename}"
@@ -152,7 +159,7 @@ def get_partitioned_pipeline_instructions(command_name):
 
 @pipeline_cli.command(
     name="print",
-    help="Print a pipeline.\n\n{instructions}".format(
+    help="Print a pipeline/job.\n\n{instructions}".format(
         instructions=get_pipeline_instructions("print")
     ),
 )
@@ -324,7 +331,9 @@ def add_step_to_table(memoized_plan):
 @click.option(
     "--mode", type=click.STRING, help="The name of the mode in which to execute the pipeline."
 )
-@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this pipeline run")
+@click.option(
+    "--tags", type=click.STRING, help="JSON string of tags to use for this pipeline/job run"
+)
 @click.option(
     "-s",
     "--solid-selection",
@@ -342,14 +351,8 @@ def add_step_to_table(memoized_plan):
 )
 def pipeline_execute_command(**kwargs):
     with capture_interrupts():
-        if is_dagster_home_set():
-            with DagsterInstance.get() as instance:
-                execute_execute_command(instance, kwargs)
-        else:
-            warnings.warn(
-                "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
-            )
-            execute_execute_command(DagsterInstance.ephemeral(), kwargs)
+        with get_instance_for_service("``dagster pipeline execute``") as instance:
+            execute_execute_command(instance, kwargs)
 
 
 @telemetry_wrapper
@@ -581,7 +584,7 @@ def do_execute_command(
 @click.option(
     "--config-json",
     type=click.STRING,
-    help="JSON string of run config to use for this pipeline run. Cannot be used with -c / --config.",
+    help="JSON string of run config to use for this pipeline/job run. Cannot be used with -c / --config.",
 )
 @click.option(
     "--preset",
@@ -608,14 +611,14 @@ def do_execute_command(
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
-@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
+@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline/job run")
 def pipeline_launch_command(**kwargs):
     with DagsterInstance.get() as instance:
         return execute_launch_command(instance, kwargs)
 
 
 @telemetry_wrapper
-def execute_launch_command(instance, kwargs):
+def execute_launch_command(instance, kwargs, using_job_op_graph_apis=False):
     preset = kwargs.get("preset")
     mode = kwargs.get("mode")
     check.inst_param(instance, "instance", DagsterInstance)
@@ -627,7 +630,7 @@ def execute_launch_command(instance, kwargs):
             repo_location, kwargs.get("repository")
         )
         external_pipeline = get_external_pipeline_or_job_from_external_repo(
-            external_repo, kwargs.get("pipeline_or_job")
+            external_repo, kwargs.get("pipeline_or_job"), using_job_op_graph_apis
         )
 
         log_external_repo_stats(
@@ -672,8 +675,10 @@ def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 
-def execute_scaffold_command(cli_args, print_fn):
-    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(cli_args)
+def execute_scaffold_command(cli_args, print_fn, using_job_op_graph_apis=False):
+    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(
+        cli_args, using_job_op_graph_apis
+    )
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     skip_non_required = cli_args["print_only_required"]
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
@@ -806,7 +811,7 @@ def validate_partition_slice(partition_names, name, value):
 
 @pipeline_cli.command(
     name="backfill",
-    help="Backfill a partitioned pipeline.\n\n{instructions}".format(
+    help="Backfill a partitioned pipeline/job.\n\n{instructions}".format(
         instructions=get_partitioned_pipeline_instructions("backfill")
     ),
 )
@@ -844,7 +849,9 @@ def validate_partition_slice(partition_names, name, value):
         "dagster pipeline backfill log_daily_stats --to 20191201"
     ),
 )
-@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this pipeline run")
+@click.option(
+    "--tags", type=click.STRING, help="JSON string of tags to use for this pipeline/job run"
+)
 @click.option("--noprompt", is_flag=True)
 def pipeline_backfill_command(**kwargs):
     with DagsterInstance.get() as instance:
@@ -912,12 +919,11 @@ def _execute_backfill_command_at_location(
             repo_handle,
             partition_set_name,
         )
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
-            "Failure fetching partition names for {partition_set_name}: {error_message}".format(
-                partition_set_name=partition_set_name,
-                error_message=error_info.message,
+            "Failure fetching partition names: {error_message}".format(
+                error_message=error_info.message
             ),
             serialized_error_info=error_info,
         )
@@ -958,7 +964,7 @@ def _execute_backfill_command_at_location(
                     partition_names=partition_names,
                 )
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             instance.add_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)

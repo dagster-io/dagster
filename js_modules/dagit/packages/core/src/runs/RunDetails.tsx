@@ -1,9 +1,10 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
+import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {PipelineRunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
@@ -18,23 +19,23 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
 
-export const timingStringForStatus = (status?: PipelineRunStatus) => {
+export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
-    case PipelineRunStatus.QUEUED:
+    case RunStatus.QUEUED:
       return 'Queued';
-    case PipelineRunStatus.CANCELED:
+    case RunStatus.CANCELED:
       return 'Canceled';
-    case PipelineRunStatus.CANCELING:
+    case RunStatus.CANCELING:
       return 'Canceling…';
-    case PipelineRunStatus.FAILURE:
+    case RunStatus.FAILURE:
       return 'Failed';
-    case PipelineRunStatus.NOT_STARTED:
+    case RunStatus.NOT_STARTED:
       return 'Waiting to start…';
-    case PipelineRunStatus.STARTED:
+    case RunStatus.STARTED:
       return 'Started…';
-    case PipelineRunStatus.STARTING:
+    case RunStatus.STARTING:
       return 'Starting…';
-    case PipelineRunStatus.SUCCESS:
+    case RunStatus.SUCCESS:
       return 'Succeeded';
     default:
       return 'None';
@@ -62,7 +63,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.startTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
                   return (
                     <TimestampDisplay timestamp={run.stats.startTime} timeFormat={TIME_FORMAT} />
                   );
@@ -79,7 +80,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.endTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.endTime) {
                   return (
                     <TimestampDisplay timestamp={run.stats.endTime} timeFormat={TIME_FORMAT} />
                   );
@@ -96,7 +97,7 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.startTime) {
+                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
                   return (
                     <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
                   );
@@ -116,10 +117,11 @@ export const RunDetails: React.FC<{
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
+  const runConfigYaml = yaml.stringify(run.runConfig) || '';
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <ButtonWIP icon={<IconWIP name="local_offer" />} onClick={() => setShowDialog(true)}>
+        <ButtonWIP icon={<IconWIP name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </ButtonWIP>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
@@ -147,7 +149,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
             </Group>
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Config</div>
-              <HighlightedCodeBlock value={run?.runConfigYaml || ''} language="yaml" />
+              <HighlightedCodeBlock value={runConfigYaml} language="yaml" />
             </Group>
           </Group>
         </DialogBody>
@@ -162,10 +164,10 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 };
 
 export const RUN_DETAILS_FRAGMENT = gql`
-  fragment RunDetailsFragment on PipelineRun {
+  fragment RunDetailsFragment on Run {
     id
     stats {
-      ... on PipelineRunStatsSnapshot {
+      ... on RunStatsSnapshot {
         id
         endTime
         startTime

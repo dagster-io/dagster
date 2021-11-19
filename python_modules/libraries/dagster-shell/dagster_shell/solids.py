@@ -22,10 +22,8 @@ def shell_op_config():
     return {
         "env": Field(
             Noneable(Permissive()),
-            default_value=os.environ.copy(),
             is_required=False,
-            description="An optional dict of environment variables to pass to the subprocess. "
-            "Defaults to using os.environ.copy().",
+            description="An optional dict of environment variables to pass to the subprocess.",
         ),
         "output_logging": Field(
             Enum(
@@ -65,10 +63,10 @@ def core_shell(dagster_decorator, decorator_name):
         config_schema=shell_op_config(),
     )
     def shell_fn(context, shell_command):
-
-        output, return_code = execute(
-            shell_command=shell_command, log=context.log, **context.op_config
-        )
+        op_config = context.op_config.copy()
+        if not op_config.get("env"):
+            op_config["env"] = os.environ.copy()
+        output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
 
         if return_code:
             raise Failure(
@@ -95,9 +93,9 @@ def create_shell_command_op(
 ):
     """This function is a factory that constructs ops to execute a shell command.
 
-    Note that you can only use `shell_command_op` if you know the command you'd like to execute
+    Note that you can only use ``shell_command_op`` if you know the command you'd like to execute
     at pipeline construction time. If you'd like to construct shell commands dynamically during
-    pipeline execution and pass them between ops, you should use `shell_op` instead.
+    pipeline execution and pass them between ops, you should use ``shell_op`` instead.
 
     Examples:
 
@@ -142,9 +140,9 @@ def create_shell_command_solid(
 ):
     """This function is a factory that constructs solids to execute a shell command.
 
-    Note that you can only use `shell_command_solid` if you know the command you'd like to execute
+    Note that you can only use ``shell_command_solid`` if you know the command you'd like to execute
     at pipeline construction time. If you'd like to construct shell commands dynamically during
-    pipeline execution and pass them between solids, you should use `shell_solid` instead.
+    pipeline execution and pass them between solids, you should use ``shell_solid`` instead.
 
     Examples:
 
@@ -201,9 +199,10 @@ def core_create_shell_command(
         tags=tags,
     )
     def _shell_fn(context):
-        output, return_code = execute(
-            shell_command=shell_command, log=context.log, **context.op_config
-        )
+        op_config = context.op_config.copy()
+        if not op_config.get("env"):
+            op_config["env"] = os.environ.copy()
+        output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
 
         if return_code:
             raise Failure(
@@ -328,8 +327,11 @@ def core_create_shell_script(
         **kwargs,
     )
     def _shell_script_fn(context):
+        op_config = context.op_config.copy()
+        if not op_config.get("env"):
+            op_config["env"] = os.environ.copy()
         output, return_code = execute_script_file(
-            shell_script_path=shell_script_path, log=context.log, **context.op_config
+            shell_script_path=shell_script_path, log=context.log, **op_config
         )
 
         if return_code:

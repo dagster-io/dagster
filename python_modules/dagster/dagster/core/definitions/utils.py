@@ -91,7 +91,7 @@ def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
                 )
 
                 valid = seven.json.loads(str_val) == value
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass
 
             if not valid:

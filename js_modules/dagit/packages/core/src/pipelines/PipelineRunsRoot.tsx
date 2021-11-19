@@ -6,13 +6,13 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilter,
+  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-} from '../runs/RunsFilter';
+} from '../runs/RunsFilterInput';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
-import {CursorPaginationControls} from '../ui/CursorControls';
+import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
@@ -63,13 +63,13 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       filter: {...runsFilterForSearchTokens(allTokens), pipelineName, snapshotId},
     },
     nextCursorForResult: (runs) => {
-      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
       return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
-      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+      if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
         return [];
       }
       return data.pipelineRunsOrError.results;
@@ -81,7 +81,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+            if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
                 <Box padding={{vertical: 64}}>
                   <NonIdealState
@@ -112,7 +112,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                   runs={displayed}
                   onSetFilter={setFilterTokens}
                   actionBarComponents={
-                    <RunsFilter
+                    <RunsFilterInput
                       enabledFilters={ENABLED_FILTERS}
                       tokens={filterTokens}
                       onChange={setFilterTokens}
@@ -122,7 +122,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 />
                 {hasNextCursor || hasPrevCursor ? (
                   <div style={{marginTop: '20px'}}>
-                    <CursorPaginationControls {...paginationProps} />
+                    <CursorHistoryControls {...paginationProps} />
                   </div>
                 ) : null}
               </>
@@ -135,9 +135,9 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 };
 
 const PIPELINE_RUNS_ROOT_QUERY = gql`
-  query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
+  query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           ...RunTableRunFragment

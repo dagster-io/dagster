@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -712,7 +711,8 @@ export interface SidebarTabbedContainerPipelineFragment_modes {
 }
 
 export interface SidebarTabbedContainerPipelineFragment {
-  __typename: "Pipeline" | "PipelineSnapshot";
+  __typename: "Pipeline" | "Job" | "PipelineSnapshot" | "Graph" | "CompositeSolidDefinition";
+  id: string;
   name: string;
   description: string | null;
   modes: SidebarTabbedContainerPipelineFragment_modes[];

@@ -67,7 +67,7 @@ const AssetMaterializationRow: React.FC<{
   hasLineage: boolean;
 }> = ({assetMaterialization, isPartitioned, hasLineage}) => {
   const {latest, predecessors} = assetMaterialization;
-  const run = latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : undefined;
+  const run = latest.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)

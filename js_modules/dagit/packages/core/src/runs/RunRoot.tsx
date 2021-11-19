@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -30,8 +29,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
     variables: {runId},
   });
 
-  const run =
-    data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
+  const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
 
   const repoMatch = useRepositoryForRun(run);
@@ -106,13 +104,12 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
 
 const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
-  useDocumentTitle(`Run: ${runId}`);
 
   if (!data || !data.pipelineRunOrError) {
     return <Run run={undefined} runId={runId} />;
   }
 
-  if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
+  if (data.pipelineRunOrError.__typename !== 'Run') {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
@@ -131,7 +128,7 @@ const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
-      ... on PipelineRun {
+      ... on Run {
         id
         pipeline {
           __typename

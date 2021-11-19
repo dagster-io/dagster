@@ -6,13 +6,14 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
+    MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
     get_default_daemon_logger,
@@ -185,7 +186,7 @@ class DagsterDaemonController:
             if is_healthy:
                 self._last_healthy_heartbeat_times[daemon_type] = now
             return is_healthy
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self._logger.warning(
                 "Error attempting to check {daemon_type} heartbeat:".format(
                     daemon_type=daemon_type,
@@ -285,6 +286,8 @@ def create_daemon_of_type(daemon_type, instance):
         )
     elif daemon_type == BackfillDaemon.daemon_type():
         return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+    elif daemon_type == MonitoringDaemon.daemon_type():
+        return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 

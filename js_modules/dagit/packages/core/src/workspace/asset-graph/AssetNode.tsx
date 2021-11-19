@@ -7,8 +7,8 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../execute/showLaunchError';
-import {SolidTags} from '../../graph/SolidTags';
-import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {OpTags} from '../../graph/OpTags';
+import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
   handleLaunchResult,
@@ -31,7 +31,7 @@ import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/A
 
 export const AssetNode: React.FC<{
   definition: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-  handle: PipelineExplorerSolidHandleFragment;
+  handle: GraphExplorerSolidHandleFragment;
   selected: boolean;
   computeStatus: Status;
   repoAddress: RepoAddress;
@@ -106,7 +106,7 @@ export const AssetNode: React.FC<{
           )}
           {event ? (
             <Stats>
-              {runOrError.__typename === 'PipelineRun' && (
+              {runOrError.__typename === 'Run' && (
                 <StatsRow>
                   <Link
                     data-tooltip={`${runOrError.pipelineName}${
@@ -166,7 +166,7 @@ export const AssetNode: React.FC<{
             </Stats>
           )}
           {kind && (
-            <SolidTags
+            <OpTags
               minified={false}
               style={{right: -2, paddingTop: 5}}
               tags={[
@@ -274,6 +274,6 @@ const UpstreamNotice = styled.div`
   margin-top: -4px;
   margin-bottom: -4px;
   padding: 2.5px 5px;
-  margin-right: -8px;
+  margin-right: -6px;
   border-top-right-radius: 3px;
 `;

@@ -1,10 +1,9 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, StepEventStatus } from "./../../types/globalTypes";
+import { RunStatus, StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PartitionSetLoaderRunFragment
@@ -16,8 +15,8 @@ export interface PartitionSetLoaderRunFragment_tags {
   value: string;
 }
 
-export interface PartitionSetLoaderRunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface PartitionSetLoaderRunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   startTime: number | null;
   endTime: number | null;
@@ -37,7 +36,7 @@ export interface PartitionSetLoaderRunFragment_stats_PythonError {
   cause: PartitionSetLoaderRunFragment_stats_PythonError_cause | null;
 }
 
-export type PartitionSetLoaderRunFragment_stats = PartitionSetLoaderRunFragment_stats_PipelineRunStatsSnapshot | PartitionSetLoaderRunFragment_stats_PythonError;
+export type PartitionSetLoaderRunFragment_stats = PartitionSetLoaderRunFragment_stats_RunStatsSnapshot | PartitionSetLoaderRunFragment_stats_PythonError;
 
 export interface PartitionSetLoaderRunFragment_stepStats_materializations {
   __typename: "Materialization";
@@ -49,7 +48,7 @@ export interface PartitionSetLoaderRunFragment_stepStats_expectationResults {
 }
 
 export interface PartitionSetLoaderRunFragment_stepStats {
-  __typename: "PipelineRunStepStats";
+  __typename: "RunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;
@@ -59,9 +58,9 @@ export interface PartitionSetLoaderRunFragment_stepStats {
 }
 
 export interface PartitionSetLoaderRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   tags: PartitionSetLoaderRunFragment_tags[];
   runId: string;
   stats: PartitionSetLoaderRunFragment_stats;

@@ -211,7 +211,7 @@ def test_error_monster_type_error():
 
 def test_composition_job():
     result = composition_job.execute_in_process(
-        run_config={"solids": {"add_four": {"inputs": {"num": 3}}}},
+        run_config={"solids": {"add_four": {"inputs": {"num": {"value": 3}}}}},
     )
 
     assert result.success

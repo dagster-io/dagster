@@ -41,7 +41,7 @@ def _can_connect(origin, endpoint):
             watch_server=False,
         ):
             return True
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return False
 
 

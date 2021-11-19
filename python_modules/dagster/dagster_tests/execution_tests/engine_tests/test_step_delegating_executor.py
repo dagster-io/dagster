@@ -3,14 +3,14 @@ from typing import List
 
 from dagster import executor, pipeline, reconstructable, solid
 from dagster.config.field_utils import Permissive
-from dagster.core.definitions.executor import multiple_process_executor_requirements
+from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import execute_pipeline
+from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating import StepDelegatingExecutor, StepHandler
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import instance_for_test
-from dagster.serdes import serialize_dagster_namedtuple
 
 
 class TestStepHandler(StepHandler):
@@ -34,14 +34,7 @@ class TestStepHandler(StepHandler):
         TestStepHandler.launch_step_count += 1
         print("TestStepHandler Launching Step!")  # pylint: disable=print-call
         TestStepHandler.processes.append(
-            subprocess.Popen(
-                [
-                    "dagster",
-                    "api",
-                    "execute_step",
-                    serialize_dagster_namedtuple(step_handler_context.execute_step_args),
-                ]
-            )
+            subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
         return []
 
@@ -74,6 +67,7 @@ class TestStepHandler(StepHandler):
 def test_step_delegating_executor(exc_init):
     return StepDelegatingExecutor(
         TestStepHandler(),
+        retries=RetryMode.DISABLED,
         sleep_seconds=exc_init.executor_config.get("sleep_seconds"),
         check_step_health_interval_seconds=exc_init.executor_config.get(
             "check_step_health_interval_seconds"
@@ -123,6 +117,58 @@ def test_execute():
     assert any(["STEP_START" in event for event in result.event_list])
     assert result.success
     assert TestStepHandler.saw_baz_solid
+
+
+def test_skip_execute():
+    from .test_jobs import define_dynamic_skipping_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_dynamic_skipping_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+
+
+def test_dynamic_execute():
+    from .test_jobs import define_dynamic_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_dynamic_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+    assert (
+        len(
+            [
+                e
+                for e in result.event_list
+                if e.event_type_value == DagsterEventType.STEP_START.value
+            ]
+        )
+        == 11
+    )
+
+
+def test_skipping():
+    from .test_jobs import define_skpping_job
+
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_skpping_job),
+            instance=instance,
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
 
 
 def test_execute_intervals():

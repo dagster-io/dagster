@@ -4,8 +4,8 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    NodeInvocation,
     PipelineDefinition,
-    SolidInvocation,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -26,10 +26,10 @@ def test_aliased_solids():
         name="test",
         dependencies={
             "not_first": {"prev": DependencyDefinition("first")},
-            SolidInvocation("not_first", alias="second"): {
+            NodeInvocation("not_first", alias="second"): {
                 "prev": DependencyDefinition("not_first")
             },
-            SolidInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
+            NodeInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
         },
     )
 
@@ -52,8 +52,8 @@ def test_only_aliased_solids():
         solid_defs=[first, not_first],
         name="test",
         dependencies={
-            SolidInvocation("first", alias="the_root"): {},
-            SolidInvocation("not_first", alias="the_consequence"): {
+            NodeInvocation("first", alias="the_root"): {},
+            NodeInvocation("not_first", alias="the_consequence"): {
                 "prev": DependencyDefinition("the_root")
             },
         },
@@ -74,8 +74,8 @@ def test_aliased_configs():
         solid_defs=[load_constant],
         name="test",
         dependencies={
-            SolidInvocation(load_constant.name, "load_a"): {},
-            SolidInvocation(load_constant.name, "load_b"): {},
+            NodeInvocation(load_constant.name, "load_a"): {},
+            NodeInvocation(load_constant.name, "load_b"): {},
         },
     )
 
@@ -101,8 +101,8 @@ def test_aliased_solids_context():
         solid_defs=[log_things],
         name="test",
         dependencies={
-            SolidInvocation("log_things", "log_a"): {},
-            SolidInvocation("log_things", "log_b"): {},
+            NodeInvocation("log_things", "log_a"): {},
+            NodeInvocation("log_things", "log_b"): {},
         },
     )
 

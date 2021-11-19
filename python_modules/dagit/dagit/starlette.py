@@ -28,6 +28,9 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon.ico",
     "/favicon.png",
     "/favicon.svg",
+    "/favicon-run-pending.svg",
+    "/favicon-run-failed.svg",
+    "/favicon-run-success.svg",
     "/asset-manifest.json",
     "/robots.txt",
 ]
@@ -67,7 +70,7 @@ class DagitWebserver(GraphQLServer):
         context = self.make_request_context(request)
 
         run = context.instance.get_run_by_id(run_id)
-        debug_payload = DebugRunPayload.build(self._process_context.instance, run)
+        debug_payload = DebugRunPayload.build(context.instance, run)
 
         result = io.BytesIO()
         with gzip.GzipFile(fileobj=result, mode="wb") as file:
@@ -131,6 +134,7 @@ class DagitWebserver(GraphQLServer):
             return Route(
                 file_path,
                 lambda _: FileResponse(path=self.relative_path(f"webapp/build{file_path}")),
+                name="root_static",
             )
 
         return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]

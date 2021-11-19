@@ -65,7 +65,7 @@ export function Search() {
       <Head>
         <link
           rel="preconnect"
-          href="https://CTO1CV9T4R-dsn.algolia.net"
+          href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}-dsn.algolia.net`}
           crossOrigin="true"
         />
       </Head>
@@ -116,9 +116,9 @@ export function Search() {
               distinct: 1,
             }}
             onClose={onClose}
-            indexName="Testing"
-            apiKey="991c27897aafec73e6eff85912eed810"
-            appId="CTO1CV9T4R"
+            indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
+            apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
+            appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
             navigator={{
               navigate({ itemUrl }) {
                 setIsOpen(false);

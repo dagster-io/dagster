@@ -29,6 +29,11 @@ describe('JobMetadata', () => {
       launchTime: () => START_TIME,
       endTime: () => START_TIME + 1,
     }),
+    RunStatsSnapshot: () => ({
+      startTime: () => START_TIME,
+      launchTime: () => START_TIME,
+      endTime: () => START_TIME + 1,
+    }),
     Mode: () => ({
       name: () => 'my_mode',
     }),

@@ -11,6 +11,7 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     graph,
+    job,
     op,
     pipeline,
     resource,
@@ -692,3 +693,28 @@ def test_hook_graph():
     assert result.success
     assert called_hook_to_ops["a_hook"] == {"a_op"}
     assert called_hook_to_ops["b_hook"] == {"a_op", "b_op"}
+
+
+def test_hook_on_job():
+    called_hook_to_ops = defaultdict(set)
+
+    @success_hook
+    def a_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("a_hook")
+
+    @op
+    def basic():
+        return 5
+
+    @a_hook
+    @job
+    def hooked_job():
+        basic()
+        basic()
+        basic()
+
+    assert hooked_job.is_job  # Ensure that it's a job def, not a pipeline def
+    result = hooked_job.execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"basic", "basic_2", "basic_3"}

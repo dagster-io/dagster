@@ -5,9 +5,12 @@ import types
 
 import pytest
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
+from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository, reconstructable
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 
 @lambda_solid
@@ -61,7 +64,7 @@ def test_not_defined_in_module(mocker):
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "reconstructable() can not reconstruct pipelines defined in interactive environments"
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments"
         ),
     ):
         reconstructable(get_the_pipeline)
@@ -88,7 +91,7 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
             "RepositoryDefinition. Got None."
         ),
     ):
@@ -156,3 +159,25 @@ def test_reconstructable_module():
 
     finally:
         sys.path = original_sys_path
+
+
+def test_reconstruct_from_origin():
+    origin = PipelinePythonOrigin(
+        pipeline_name="foo_pipe",
+        repository_origin=RepositoryPythonOrigin(
+            executable_path="my_python",
+            code_pointer=FileCodePointer(
+                python_file="foo.py",
+                fn_name="bar",
+                working_directory="/",
+            ),
+            container_image="my_image",
+        ),
+    )
+
+    recon_pipeline = recon_pipeline_from_origin(origin)
+
+    assert recon_pipeline.pipeline_name == origin.pipeline_name
+    assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
+    assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
+    assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path

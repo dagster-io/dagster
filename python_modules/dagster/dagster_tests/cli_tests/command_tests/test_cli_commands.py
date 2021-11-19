@@ -19,6 +19,7 @@ from dagster import (
     String,
     execute_pipeline,
     graph,
+    job,
     lambda_solid,
     op,
     pipeline,
@@ -31,7 +32,7 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.definitions.sensor import RunRequest
+from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.test_utils import instance_for_test
@@ -75,7 +76,7 @@ def do_input_op(x):
     return x
 
 
-@graph
+@graph()
 def qux():
     do_input_op(do_something_op())
 
@@ -87,6 +88,11 @@ qux_job = qux.to_job(
     ),
     tags={"foo": "bar"},
 )
+
+
+@job
+def quux_job():
+    do_something_op()
 
 
 def define_qux_job():
@@ -191,10 +197,10 @@ def bar():
         "pipelines": {
             "foo": foo_pipeline,
             "baz": baz_pipeline,
-            "qux": qux_job,
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
+        "jobs": {"qux": qux_job, "quux": quux_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
@@ -231,30 +237,28 @@ def fail_op(context):
     raise Exception("FAILURE OP")
 
 
-@graph
+@graph()
 def my_stdout():
     spew_op()
 
 
-@graph
+@graph()
 def my_stderr():
     fail_op()
 
 
-@op(
-    out={"out_1": Out(String), "out_2": Out(String)},
-)
-def root(context):
+@op(out={"out_1": Out(String), "out_2": Out(String)})
+def root():
     yield Output("foo", "out_1")
     yield Output("bar", "out_2")
 
 
 @op
-def branch_op(context, value):
+def branch_op(_value):
     pass
 
 
-@graph
+@graph()
 def multiproc():
     out_1, out_2 = root()
     branch_op(out_1)
@@ -663,7 +667,6 @@ def valid_external_job_target_cli_args():
 
 
 def valid_external_pipeline_target_cli_args_with_preset():
-    run_config = {"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}}
     return valid_external_pipeline_target_cli_args_no_preset() + [
         [
             "-f",
@@ -682,8 +685,6 @@ def valid_external_pipeline_target_cli_args_with_preset():
             os.path.dirname(__file__),
             "-a",
             "define_foo_pipeline",
-            "--config-json",
-            json.dumps(run_config),
         ],
     ]
 

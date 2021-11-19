@@ -17,7 +17,7 @@ from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..policy import RetryPolicy
-from ..solid import SolidDefinition
+from ..solid_definition import SolidDefinition
 
 
 class DecoratedSolidFunction(NamedTuple):

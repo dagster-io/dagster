@@ -1,0 +1,171 @@
+---
+title: Schedules | Dagster
+description: A Dagster schedule submits job runs at a fixed interval.
+---
+
+# Schedules
+
+A Dagster schedule submits job runs at a fixed interval.
+
+## Relevant APIs
+
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
+| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                |
+| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
+| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
+
+## Overview
+
+A _schedule_ is a definition in Dagster that is used to execute a job at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
+
+Each schedule:
+
+- Targets a single job.
+- Optionally defines a function that returns run configuration for the targeted job.
+- Optionally defines tags and an op selection for the targeted job.
+- Optionally defines a `should_execute` function, which can be used to skip some ticks.
+
+Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
+
+---
+
+## Defining schedules
+
+You define a schedule by constructing a <PyObject object="ScheduleDefinition" />.
+
+### A basic schedule
+
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and "@monthly" if your croniter dependency's version is >= 1.0.12.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
+@job
+def my_job():
+    ...
+
+
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+```
+
+### A schedule that provides run config
+
+If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context):
+    context.log.info(context.op_config["scheduled_date"])
+
+
+@job
+def configurable_job():
+    configurable_op()
+
+
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
+```
+
+If you don't need access to the context parameter, you can omit it from the decorated function.
+
+### A schedule from a partitioned job
+
+When you have [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+
+For example, if you have a date-partitioned job that fills in a date-partition of a table each time it runs, you likely want to run that job every day, on the partition for that day.
+
+The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job - callled `do_stuff_partitioned`, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(do_stuff_partitioned)
+```
+
+Note that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to previous day. For example, the schedule would kick off the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the schedule waits until the end of the time window to kick off the run. Kicking off a run at the end of a time window means the run can process data from within that time window.
+
+Similar is true for hourly-, weekly-, and monthly- partitioned jobs.
+
+You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to 30 and `hour_of_day` to 1, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`
+
+### Timezones
+
+You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
+
+For example, the following schedule executes daily at 9AM in US/Pacific time:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
+)
+```
+
+The <PyObject object="schedule" decorator /> decorator accepts the same argument.
+
+### Daylight Savings Time
+
+Because of Daylight Savings Time transitions, it's possible to specify an execution time that does not exist for every scheduled interval. For example, say you have a daily schedule with an execution time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
+
+If you specify such an execution time, Dagster runs your schedule at the next time that exists. In the previous example, the schedule would run at 3:00 AM.
+
+It's also possible to specify an execution time that exists twice on one day every year. For example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute. In this case, Dagster will execute your schedule at the latter of the two possible times.
+
+Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+
+## Running the scheduler
+
+In order for your schedule to run, it must be started. The easiest way to start and stop schedules is in Dagit from the Schedules page. You can also start and stop a schedule with the `dagster schedule start` and `dagster schedule stop` commands.
+
+Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
+
+## Testing Schedules
+
+To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-run-config).
+
+It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule_context endbefore=end_test_cron_schedule_context
+from dagster import build_schedule_context, validate_run_config
+
+
+def test_configurable_job_schedule():
+    context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
+    run_config = configurable_job_schedule(context)
+    assert validate_run_config(configurable_job, run_config)
+```
+
+If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+## Troubleshooting
+
+Try these steps if you're trying to run a schedule and are running into problems.
+
+### Step 1: Is your schedule included in your repository and turned on?
+
+The left-hand navigation bar in Dagit shows all of the schedules for the currently-selected repository, with a green dot next to each schedule that is running. Make sure that your schedule appears in this list with a green dot. To ensure that Dagit has loaded the latest version of your schedule code, you can press the reload button next to your repository name to reload all the code in your repository.
+
+- If Dagit is unable to load the repository containing your schedule (for example, due to a syntax error or a problem with one of your definitions), there should be an error message in the left nav with a link that will give you more information about the error.
+- If the repository is loading, but the schedule doesn't appear in the list of schedules, make sure that your schedule function is included in the list of schedules returned by your repository function.
+- If the schedule appears but doesn't have a green dot next to it, click on the name of the schedule, then toggle the switch at the top of the screen to mark it as running.
+
+### Step 2: Is your schedule interval set up correctly?
+
+When you click on your schedule name in the left-hand nav in Dagit, you'll be take to a page where you can view more information about the schedule. If the schedule is running, there should be a "Next tick" row near the top of the page that tells you when the schedule is expected to run next. Make sure that time is what you expect (including the timezone).
+
+### Step 3: Is the schedule interval configured correctly, but it still isn't creating any runs?
+
+It's possible that the `dagster-daemon` process that submits runs for your schedule is not working correctly. If you haven't set up `dagster-daemon` yet, check the [Deploying Dagster](/deployment) section to find the steps to do so.
+
+First, check that the daemon is running. Click on "Status" in the left nav in Dagit, and examine the "Scheduler" row under the "Daemon statuses" section. The daemon process periodically sends out a heartbeat from the scheduler, so if the scheduler daemon is listed as "Not running", that indicates that there's a problem with your daemon deployment. If the daemon ran into an error that caused it to throw an exception, that error will often appear in this UI as well.
+
+If there isn't a clear error on this page, or if the daemon should be sending heartbeats but isn't, you may need to check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
+
+Finally, it's possible that the daemon is running correctly, but there's a problem with your schedule code. Check the "Latest tick" row on the page for your schedule. If there was an error while trying to submit runs for your schedule, there should be a red "Failure" box next to the time. Clicking on the box should display an error with a stack trace showing you why the schedule couldn't execute. If the schedule is working as expected, it should display a blue box instead with information about any runs that were created by that schedule tick.
+
+### Still stuck?
+
+If these steps didn't help and your schedule still isn't running, reach out in Slack or file an issue and we'll be happy to help investigate.

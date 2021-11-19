@@ -6,17 +6,18 @@ from dagster.core.definitions.decorators.op import op
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
-    SolidInvocation,
+    NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.graph import GraphDefinition
+from dagster.core.definitions.executor_definition import ExecutorDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.job import JobDefinition
-from dagster.core.definitions.node import NodeDefinition
-from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.node_definition import NodeDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context
@@ -36,6 +37,7 @@ def build_assets_job(
     description: Optional[str] = None,
     config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
     tags: Optional[Dict[str, Any]] = None,
+    executor_def: Optional[ExecutorDefinition] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -90,6 +92,7 @@ def build_assets_job(
         resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
         config=config,
         tags=tags,
+        executor_def=executor_def,
     )
 
 
@@ -110,7 +113,7 @@ def build_source_assets_by_key(
 
 def build_op_deps(
     assets: List[OpDefinition], source_paths: AbstractSet[AssetKey]
-) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
+) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
     for asset_op in assets:
         for output_def in asset_op.output_defs:
@@ -124,7 +127,7 @@ def build_op_deps(
 
             op_outputs_by_asset[logical_asset] = (asset_op, output_def.name)
 
-    op_defs: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]] = {}
+    op_defs: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
     for asset_op in assets:
         op_defs[asset_op.name] = {}
         for input_def in asset_op.input_defs:

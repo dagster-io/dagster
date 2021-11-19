@@ -210,44 +210,6 @@ def test_double_add_pipeline():
 
 
 @pytest.mark.notebook_test
-def test_fan_in_notebook_pipeline_legacy():
-    with exec_for_test(
-        "fan_in_notebook_pipeline_legacy",
-        {
-            "execution": {"multiprocess": {}},
-            "solids": {
-                "solid_1": {"inputs": {"obj": "hello"}},
-                "solid_2": {"inputs": {"obj": "world"}},
-            },
-        },
-    ) as result:
-        assert result.success
-        assert result.result_for_solid("solid_1").output_value() == "hello"
-        assert result.result_for_solid("solid_2").output_value() == "world"
-        assert result.result_for_solid("fan_in_legacy").output_value() == "hello world"
-
-
-@pytest.mark.notebook_test
-def test_composite_pipeline_legacy():
-    with exec_for_test(
-        "composite_pipeline_legacy",
-        {
-            "execution": {"multiprocess": {}},
-            "solids": {
-                "outer_legacy": {"solids": {"yield_something_legacy": {"inputs": {"obj": "hello"}}}}
-            },
-        },
-    ) as result:
-        assert result.success
-        assert (
-            result.result_for_solid("outer_legacy")
-            .result_for_solid("yield_something_legacy")
-            .output_value()
-            == "hello"
-        )
-
-
-@pytest.mark.notebook_test
 def test_fan_in_notebook_pipeline():
     with exec_for_test(
         "fan_in_notebook_pipeline",
@@ -572,3 +534,21 @@ def test_failure(capsys):
                 warn_found = True
 
         assert warn_found
+
+
+@pytest.mark.notebook_test
+def test_hello_world_graph():
+    from dagstermill.examples.repository import build_hello_world_job
+    from dagster import reconstructable
+
+    with instance_for_test() as instance:
+        result = None
+        try:
+            result = execute_pipeline(
+                reconstructable(build_hello_world_job),
+                instance=instance,
+            )
+            assert result.success
+        finally:
+            if result:
+                cleanup_result_notebook(result)

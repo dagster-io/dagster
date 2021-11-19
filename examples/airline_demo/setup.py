@@ -32,7 +32,6 @@ setup(
             "google-api-python-client",
             "google-cloud-storage",
             "keras",
-            "lakehouse",
             "matplotlib<3.4.3",
             "mock",
             "moto>=1.3.16",
@@ -44,7 +43,6 @@ setup(
             "seaborn",
             "sqlalchemy-redshift>=0.7.2",
             "SQLAlchemy-Utils==0.33.8",
-            'tensorflow; python_version < "3.9"',
         ],
         "airflow": [
             "dagster_airflow",

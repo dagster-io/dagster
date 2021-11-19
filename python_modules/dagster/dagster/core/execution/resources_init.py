@@ -1,11 +1,12 @@
 import inspect
 from collections import deque
+from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
 from dagster.core.decorator_utils import get_function_params
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import (
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
     is_context_provided,
@@ -292,11 +293,15 @@ def single_resource_event_generator(context, resource_name, resource_def):
                         if is_context_provided(get_function_params(resource_def.resource_fn))
                         else resource_def.resource_fn()
                     )
+
                     # Flag for whether resource is generator. This is used to ensure that teardown
                     # occurs when resources are initialized out of execution.
-                    is_gen = inspect.isgenerator(resource_or_gen)
-                    gen = ensure_gen(resource_or_gen)
-                    resource = next(gen)
+                    is_gen = inspect.isgenerator(resource_or_gen) or isinstance(
+                        resource_or_gen, ContextDecorator
+                    )
+
+                    resource_iter = _wrapped_resource_iterator(resource_or_gen)
+                    resource = next(resource_iter)
                 resource = InitializedResource(
                     resource, format_duration(timer_result.millis), is_gen
                 )
@@ -312,7 +317,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
 
     with user_code_error_boundary(DagsterResourceFunctionError, msg_fn, log_manager=context.log):
         try:
-            next(gen)
+            next(resource_iter)
         except StopIteration:
             pass
         else:
@@ -321,13 +326,8 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(
-    execution_plan, pipeline_def, resolved_run_config, intermediate_storage_def
-):
+def get_required_resource_keys_to_init(execution_plan, pipeline_def, resolved_run_config):
     resource_keys = set()
-
-    if intermediate_storage_def is not None:
-        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
@@ -338,9 +338,7 @@ def get_required_resource_keys_to_init(
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
         resource_keys = resource_keys.union(
-            get_required_resource_keys_for_step(
-                pipeline_def, step, execution_plan, intermediate_storage_def
-            )
+            get_required_resource_keys_for_step(pipeline_def, step, execution_plan)
         )
 
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
@@ -361,14 +359,8 @@ def get_transitive_required_resource_keys(required_resource_keys, resource_defs)
     return transitive_required_resource_keys
 
 
-def get_required_resource_keys_for_step(
-    pipeline_def, execution_step, execution_plan, intermediate_storage_def
-):
+def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_plan):
     resource_keys = set()
-
-    # add all the intermediate storage resource keys
-    if intermediate_storage_def is not None:
-        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     # add all the solid compute resource keys
     solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
@@ -410,11 +402,27 @@ def get_required_resource_keys_for_step(
         if output_def.io_manager_key:
             resource_keys = resource_keys.union([output_def.io_manager_key])
 
-    # add all the storage-compatible plugin resource keys
-    for dagster_type in solid_def.all_dagster_types():
-        for auto_plugin in dagster_type.auto_plugins:
-            if intermediate_storage_def is not None:
-                if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
-                    resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
-
     return frozenset(resource_keys)
+
+
+def _wrapped_resource_iterator(resource_or_gen):
+    """Returns an iterator which yields a single item, which is the resource.
+
+    If the resource is not a context manager, then resource teardown happens following the first yield.
+    If the resource is a context manager, then resource initialization happens as the passed-in
+    context manager opens. Resource teardown happens as the passed-in context manager closes (which will occur after all compute is finished).
+    """
+
+    # Context managers created using contextlib.contextdecorator are not usable as iterators.
+    # Opening context manager and directly yielding preserves initialization/teardown behavior,
+    # while also letting the context manager be used as an iterator.
+    if isinstance(resource_or_gen, ContextDecorator):
+
+        def _gen_resource():
+            with resource_or_gen as resource:
+                yield resource
+
+        return _gen_resource()
+
+    # Otherwise, coerce to generator without opening context manager
+    return ensure_gen(resource_or_gen)

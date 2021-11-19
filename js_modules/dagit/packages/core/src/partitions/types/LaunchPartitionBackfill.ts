@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -9,6 +8,10 @@ import { LaunchBackfillParams, EvaluationErrorReason } from "./../../types/globa
 // ====================================================
 // GraphQL mutation operation: LaunchPartitionBackfill
 // ====================================================
+
+export interface LaunchPartitionBackfill_launchPartitionBackfill_NoModeProvidedError {
+  __typename: "NoModeProvidedError";
+}
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess {
   __typename: "LaunchBackfillSuccess";
@@ -54,8 +57,8 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PipelineNotFoun
   message: string;
 }
 
-export interface LaunchPartitionBackfill_launchPartitionBackfill_PipelineRunConflict {
-  __typename: "PipelineRunConflict";
+export interface LaunchPartitionBackfill_launchPartitionBackfill_RunConflict {
+  __typename: "RunConflict";
   message: string;
 }
 
@@ -69,20 +72,20 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundE
   message: string;
 }
 
-export interface LaunchPartitionBackfill_launchPartitionBackfill_PipelineConfigValidationInvalid_errors {
+export interface LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid_errors {
   __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
   path: string[];
   reason: EvaluationErrorReason;
 }
 
-export interface LaunchPartitionBackfill_launchPartitionBackfill_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
+export interface LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid {
+  __typename: "RunConfigValidationInvalid";
   pipelineName: string;
-  errors: LaunchPartitionBackfill_launchPartitionBackfill_PipelineConfigValidationInvalid_errors[];
+  errors: LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid_errors[];
 }
 
-export type LaunchPartitionBackfill_launchPartitionBackfill = LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess | LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PythonError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidOutputError | LaunchPartitionBackfill_launchPartitionBackfill_UnauthorizedError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineRunConflict | LaunchPartitionBackfill_launchPartitionBackfill_ConflictingExecutionParamsError | LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineConfigValidationInvalid;
+export type LaunchPartitionBackfill_launchPartitionBackfill = LaunchPartitionBackfill_launchPartitionBackfill_NoModeProvidedError | LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess | LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PythonError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidOutputError | LaunchPartitionBackfill_launchPartitionBackfill_UnauthorizedError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConflict | LaunchPartitionBackfill_launchPartitionBackfill_ConflictingExecutionParamsError | LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid;
 
 export interface LaunchPartitionBackfill {
   launchPartitionBackfill: LaunchPartitionBackfill_launchPartitionBackfill;

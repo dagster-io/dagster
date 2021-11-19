@@ -18,8 +18,6 @@
 
 # -- Project information -----------------------------------------------------
 
-from recommonmark.parser import CommonMarkParser
-
 project = "Dagster"
 copyright = " 2019, Elementl, Inc"  # pylint: disable=W0622
 author = "The Dagster Team"
@@ -45,12 +43,48 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx.ext.autosectionlabel",
+    "recommonmark",
 ]
 
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 
 autodoc_typehints = "none"
+
+autodoc_mock_imports = [
+    "airflow",
+    "azure",
+    "celery",
+    "coloredlogs",
+    "croniter",
+    "dask",
+    "databricks_api",
+    "datadog",
+    "docker",
+    "docker_image",
+    "gevent",
+    "great_expectations",
+    "graphql",
+    "grpc_health",
+    "gql",
+    "jwt",
+    "kombu",
+    "kubernetes",
+    "lazy_object_proxy",
+    "mlflow",
+    "mysql",
+    "oauth2client",
+    "prometheus_client",
+    "psycopg2",
+    "pypd",
+    "slack_sdk",
+    "snowflake",
+    "sshtunnel",
+    "toposort",
+    "twilio",
+    "typing_compat",
+    "yaml",
+]
 
 # To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
 # the inv field set to None, e.g.
@@ -80,8 +114,6 @@ templates_path = ["_templates"]
 # source_suffix = ['.rst', '.md']
 source_suffix = [".rst", ".md"]
 
-source_parsers = {".md": CommonMarkParser}
-
 # The master toctree document.
 master_doc = "index"
 
@@ -110,7 +142,7 @@ html_title = "Dagster"
 
 
 def setup(app):
-    app.add_stylesheet("css/custom.css")
+    app.add_css_file("css/custom.css")
 
 
 # Theme options are theme-specific and customize the look and feel of a theme

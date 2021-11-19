@@ -9,7 +9,7 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
   assetNode,
 }) => {
   return (
-    <div>
+    <div style={{paddingTop: 16, paddingLeft: 24}}>
       <Description description={assetNode.description} />
     </div>
   );

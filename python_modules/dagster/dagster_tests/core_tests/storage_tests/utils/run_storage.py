@@ -16,7 +16,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.snap import create_pipeline_snapshot_id
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.runs.migration import RUN_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -82,7 +82,7 @@ class TestRunStorage:
         root_run_id=None,
         pipeline_snapshot_id=None,
     ):
-        return PipelineRun(
+        return DagsterRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             run_config=None,
@@ -134,21 +134,6 @@ class TestRunStorage:
         storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="some_other_pipeline"))
         assert len(storage.get_runs()) == 2
         some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name="some_pipeline"))
-        assert len(some_runs) == 1
-        assert some_runs[0].run_id == one
-
-    def test_fetch_by_mode(self, storage):
-        assert storage
-        one = make_new_run_id()
-        two = make_new_run_id()
-        storage.add_run(
-            TestRunStorage.build_run(run_id=one, pipeline_name="some_pipeline", mode="foo")
-        )
-        storage.add_run(
-            TestRunStorage.build_run(run_id=two, pipeline_name="some_pipeline", mode="bar")
-        )
-        assert len(storage.get_runs()) == 2
-        some_runs = storage.get_runs(PipelineRunsFilter(mode="foo"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -708,7 +693,7 @@ class TestRunStorage:
             pytest.skip("storage cannot delete")
 
         run_id = "some_run_id"
-        run = PipelineRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
+        run = DagsterRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
 
         storage.add_run(run)
 
@@ -723,7 +708,7 @@ class TestRunStorage:
         double_run_id = "double_run_id"
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
 
-        run = PipelineRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
+        run = DagsterRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
@@ -754,7 +739,7 @@ class TestRunStorage:
 
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
-        run_with_snapshot = PipelineRun(
+        run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
             pipeline_name=pipeline_def.name,
             pipeline_snapshot_id=pipeline_snapshot_id,
@@ -783,7 +768,7 @@ class TestRunStorage:
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
 
-        run_with_missing_snapshot = PipelineRun(
+        run_with_missing_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
             pipeline_name=pipeline_def.name,
             pipeline_snapshot_id="nope",
@@ -1150,3 +1135,33 @@ class TestRunStorage:
         )
 
         assert storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+
+    def test_debug_snapshot_import(self, storage):
+        from dagster.core.execution.api import create_execution_plan
+        from dagster.core.snap import (
+            snapshot_from_execution_plan,
+            create_execution_plan_snapshot_id,
+        )
+
+        run_id = make_new_run_id()
+        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        storage.add_run(run_to_add)
+
+        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+
+        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
+
+        storage.add_snapshot(pipeline_snapshot, snapshot_id=new_pipeline_snapshot_id)
+        assert not storage.has_snapshot(pipeline_snapshot_id)
+        assert storage.has_snapshot(new_pipeline_snapshot_id)
+
+        execution_plan = create_execution_plan(pipeline_def)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_pipeline_snapshot_id)
+        ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
+        new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"
+
+        storage.add_snapshot(ep_snapshot, snapshot_id=new_ep_snapshot_id)
+        assert not storage.has_snapshot(ep_snapshot_id)
+        assert storage.has_snapshot(new_ep_snapshot_id)

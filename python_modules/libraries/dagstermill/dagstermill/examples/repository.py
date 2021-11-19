@@ -1,6 +1,5 @@
 import os
 import pickle
-import time
 import uuid
 
 import dagstermill
@@ -16,14 +15,13 @@ from dagster import (
     String,
     composite_solid,
     fs_io_manager,
+    job,
     pipeline,
     repository,
     resource,
     solid,
 )
 from dagster.core.storage.file_manager import local_file_manager
-from dagster.core.types.dagster_type import DagsterType
-from dagster.core.types.marshal import SerializationStrategy
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
 from dagstermill.io_managers import local_output_notebook_io_manager
 
@@ -73,6 +71,18 @@ def test_nb_solid(name, **kwargs):
     )
 
 
+def test_nb_op(name, path, **kwargs):
+    output_defs = kwargs.pop("output_defs", [OutputDefinition(is_required=False)])
+
+    return dagstermill.define_dagstermill_op(
+        name=name,
+        notebook_path=path,
+        output_notebook_name="notebook",
+        output_defs=output_defs,
+        **kwargs,
+    )
+
+
 default_mode_defs = [
     ModeDefinition(
         resource_defs={
@@ -89,6 +99,25 @@ hello_world = test_nb_solid("hello_world", output_defs=[])
 @pipeline(mode_defs=default_mode_defs)
 def hello_world_pipeline():
     hello_world()
+
+
+hello_world_op = test_nb_op(
+    "hello_world_op",
+    nb_test_path("hello_world"),
+    output_defs=[],
+)
+
+
+def build_hello_world_job():
+    @job(
+        resource_defs={
+            "output_notebook_io_manager": local_output_notebook_io_manager,
+        }
+    )
+    def hello_world_job():
+        hello_world_op()
+
+    return hello_world_job
 
 
 hello_world_with_custom_tags_and_description = dagstermill.define_dagstermill_solid(
@@ -531,77 +560,6 @@ def hello_world_with_output_notebook_pipeline_legacy():
     load_notebook_legacy(notebook)
 
 
-class ASerializationStrategy(SerializationStrategy):
-    def __init__(self, name="foo"):
-        super(ASerializationStrategy, self).__init__(name)
-        self.count = 0
-
-    def serialize(self, value, write_file_obj):
-        if self.count % 2 == 0:  # ensure two steps' serdes interleave
-            time.sleep(1)
-        write_file_obj.write(bytes(value.encode("utf-8")))
-
-    def deserialize(self, read_file_obj):
-        if self.count % 2 == 1:  # ensure two steps' serdes interleave
-            time.sleep(1)
-        return read_file_obj.read().decode("utf-8")
-
-
-ADagsterType = DagsterType(
-    name="ADagsterType",
-    type_check_fn=lambda _, value: True,
-    serialization_strategy=ASerializationStrategy(),
-)
-
-yield_something_legacy = dagstermill.define_dagstermill_solid(
-    name="yield_something_legacy",
-    notebook_path=nb_test_path("yield_something"),
-    output_notebook="notebook",
-    input_defs=[InputDefinition("obj", str)],
-    output_defs=[OutputDefinition(ADagsterType)],
-)
-
-
-@solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", ADagsterType)])
-def fan_in_legacy(a, b):
-    return f"{a} {b}"
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
-        )
-    ]
-)
-def fan_in_notebook_pipeline_legacy():
-    a, _ = yield_something_legacy.alias("solid_1")()
-    b, _ = yield_something_legacy.alias("solid_2")()
-    fan_in_legacy(a, b)
-
-
-@composite_solid
-def outer_legacy():
-    yield_something_legacy()
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
-        )
-    ]
-)
-def composite_pipeline_legacy():
-    outer_legacy()
-
-
 @repository
 def notebook_repo():
     pipelines = [
@@ -627,7 +585,6 @@ def notebook_repo():
         fan_in_notebook_pipeline,
         hello_world_no_output_notebook_no_file_manager_pipeline,
         hello_world_with_output_notebook_pipeline_legacy,
-        fan_in_notebook_pipeline_legacy,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]

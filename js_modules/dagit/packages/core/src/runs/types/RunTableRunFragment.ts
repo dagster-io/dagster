@@ -1,19 +1,13 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunTableRunFragment
 // ====================================================
-
-export interface RunTableRunFragment_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
 
 export interface RunTableRunFragment_repositoryOrigin {
   __typename: "RepositoryOrigin";
@@ -28,8 +22,8 @@ export interface RunTableRunFragment_tags {
   value: string;
 }
 
-export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
-  __typename: "PipelineRunStatsSnapshot";
+export interface RunTableRunFragment_stats_RunStatsSnapshot {
+  __typename: "RunStatsSnapshot";
   id: string;
   enqueuedTime: number | null;
   launchTime: number | null;
@@ -50,19 +44,18 @@ export interface RunTableRunFragment_stats_PythonError {
   cause: RunTableRunFragment_stats_PythonError_cause | null;
 }
 
-export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
+export type RunTableRunFragment_stats = RunTableRunFragment_stats_RunStatsSnapshot | RunTableRunFragment_stats_PythonError;
 
 export interface RunTableRunFragment {
-  __typename: "PipelineRun";
+  __typename: "Run";
   id: string;
   runId: string;
-  status: PipelineRunStatus;
+  status: RunStatus;
   stepKeysToExecute: string[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: RunTableRunFragment_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: RunTableRunFragment_repositoryOrigin | null;

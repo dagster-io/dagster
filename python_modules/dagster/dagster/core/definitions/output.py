@@ -311,7 +311,7 @@ class Out(
     """
     Defines an output from an op's compute function.
 
-    Solids can have multiple outputs, in which case outputs cannot be anonymous.
+    Ops can have multiple outputs, in which case outputs cannot be anonymous.
 
     Many ops have only one output, in which case the user can provide a single output definition
     that will be given the default name, "result".
@@ -360,6 +360,18 @@ class Out(
             asset_partitions=asset_partitions,
         )
 
+    @staticmethod
+    def from_definition(output_def: "OutputDefinition"):
+        return Out(
+            dagster_type=output_def.dagster_type,
+            description=output_def.description,
+            is_required=output_def.is_required,
+            io_manager_key=output_def.io_manager_key,
+            metadata=output_def.metadata,
+            asset_key=output_def._asset_key,  # pylint: disable=protected-access
+            asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
+        )
+
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
@@ -385,7 +397,7 @@ class DynamicOut(Out):
     When using in a composition function such as :py:func:`@graph <dagster.graph>`,
     dynamic outputs must be used with either
 
-    * ``map`` - clone downstream solids for each separate :py:class:`DynamicOut`
+    * ``map`` - clone downstream ops for each separate :py:class:`DynamicOut`
     * ``collect`` - gather across all :py:class:`DynamicOut` in to a list
 
     Uses the same constructor as :py:class:`Out <dagster.Out>`
@@ -408,7 +420,7 @@ class DynamicOut(Out):
             def process_directory():
                 files = files_in_directory()
 
-                # use map to invoke a solid on each dynamic output
+                # use map to invoke an op on each dynamic output
                 file_results = files.map(process_file)
 
                 # use collect to gather the results in to a list

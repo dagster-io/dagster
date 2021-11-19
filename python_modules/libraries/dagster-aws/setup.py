@@ -36,10 +36,10 @@ if __name__ == "__main__":
             "boto3",
             f"dagster{pin}",
             "packaging",
-            "psycopg2-binary",
             "requests",
         ],
         extras_require={
+            "redshift": ["psycopg2-binary"],
             "pyspark": ["dagster-pyspark"],
             "test": ["moto==1.3.16", "requests-mock"],
         },

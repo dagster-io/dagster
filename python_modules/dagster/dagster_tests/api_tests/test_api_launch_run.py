@@ -66,19 +66,19 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             assert finished_pipeline_run.status == PipelineRunStatus.FAILURE
 
             poll_for_event(
-                instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"
+                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
             )
             event_records = instance.all_logs(run_id)
             _check_event_log_contains(
                 event_records,
                 [
-                    ("ENGINE_EVENT", "Started process for pipeline"),
+                    ("ENGINE_EVENT", "Started process for run"),
                     ("ENGINE_EVENT", "Could not load pipeline definition"),
                     (
                         "PIPELINE_FAILURE",
-                        "This pipeline run has been marked as failed from outside the execution context",
+                        "This run has been marked as failed from outside the execution context",
                     ),
-                    ("ENGINE_EVENT", "Process for pipeline exited"),
+                    ("ENGINE_EVENT", "Process for run exited"),
                 ],
             )
 
@@ -126,7 +126,7 @@ def test_launch_run_grpc():
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             poll_for_event(
-                instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"
+                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
             )
             event_records = instance.all_logs(run_id)
             _check_event_log_contains(
@@ -134,10 +134,10 @@ def test_launch_run_grpc():
                 [
                     ("ENGINE_EVENT", msg)
                     for msg in [
-                        "Started process for pipeline",
+                        "Started process for run",
                         "Executing steps in process",
                         "Finished steps in process",
-                        "Process for pipeline exited",
+                        "Process for run exited",
                     ]
                 ],
             )
