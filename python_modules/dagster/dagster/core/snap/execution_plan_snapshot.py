@@ -54,6 +54,7 @@ class ExecutionPlanSnapshot(
     # added snapshot_version (if >=1, can be used to fully reconstruct the ExecutionPlan -
     #   can be used to track breaking changes to snapshot execution format if needed)
     # added step_output_versions
+    # removed step_output_versions
     def __new__(
         cls,
         steps: List[str],
