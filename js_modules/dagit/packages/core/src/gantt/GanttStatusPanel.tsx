@@ -100,21 +100,21 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
           )}
         </div>
       </SidebarSection>
-      <SidebarSection title={`Succeeded (${succeeded.length})`}>
-        <div>
-          {succeeded.length === 0 ? (
-            <EmptyNotice>No steps have succeeded</EmptyNotice>
-          ) : (
-            succeeded.map(renderStepItem)
-          )}
-        </div>
-      </SidebarSection>
       <SidebarSection title={`Errored (${errored.length})`}>
         <div>
           {errored.length === 0 ? (
             <EmptyNotice>No steps have errored</EmptyNotice>
           ) : (
             errored.map(renderStepItem)
+          )}
+        </div>
+      </SidebarSection>
+      <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
+        <div>
+          {succeeded.length === 0 ? (
+            <EmptyNotice>No steps have succeeded</EmptyNotice>
+          ) : (
+            succeeded.map(renderStepItem)
           )}
         </div>
       </SidebarSection>
