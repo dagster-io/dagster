@@ -174,6 +174,21 @@ computeLogManager:
   #     class: ~
   #     config: {}
 
+pythonLogs: {}
+## The names of python loggers that will be captured as Dagster logs
+#  managedPythonLoggers:
+#    - foo_logger
+## The log level for the instance. Logs emitted below this severity will be ignored.
+## One of [NOTSET, DEBUG, INFO, WARNING, WARN, ERROR, FATAL, CRITICAL]
+#  pythonLogLevel: INFO
+## Python log handlers that will be applied to all Dagster logs
+#  dagsterHandlerConfig:
+#    handlers:
+#      myHandler:
+#        class: logging.FileHandler
+#        filename: "/logs/my_dagster_logs.log"
+#        mode: "a"
+
 ####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
 # each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
