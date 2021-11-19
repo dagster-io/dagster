@@ -161,6 +161,15 @@ pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.p
 {{- end -}}
 {{- end -}}
 
+{{- define "dagster.redis.secretName" -}}
+{{- if .Values.global.redisSecretName }}
+{{- .Values.global.redisSecretName }}
+{{- else }}
+{{- printf "%s-redis-secret" (include "dagster.fullname" .) }}
+{{- end }}
+{{- end }}
+
+
 {{- define "dagster.celery.backend_url" -}}
 {{- if .Values.rabbitmq.enabled -}}
 rpc://
@@ -170,6 +179,14 @@ rpc://
 {{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
 {{- end -}}
 {{- end -}}
+
+{{- define "dagster.rabbitmq.secretName" -}}
+{{- if .Values.global.rabbitmqSecretName }}
+{{- .Values.global.rabbitmqSecretName }}
+{{- else }}
+{{- printf "%s-rabbitmq-secret" (include "dagster.fullname" .) }}
+{{- end }}
+{{- end }}
 
 {{- define "dagster.rabbitmq.alivenessTest" -}}
 until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.managerPort }}/api/aliveness-test/%2F; do echo waiting for rabbitmq; sleep 2; done;

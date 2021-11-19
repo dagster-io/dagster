@@ -6,6 +6,11 @@
 ---
 global:
   postgresqlSecretName: "dagster-postgresql-secret"
+
+  # Use only one of RabbitMQ and Redis
+  rabbitmqSecretName: "dagster-postgresql-secret"
+  redisSecretName: "dagster-postgresql-secret"
+
   # The DAGSTER_HOME env var is set by default on all nodes from this value
   dagsterHome: "/opt/dagster/dagster_home"
 
@@ -610,8 +615,12 @@ rabbitmq:
       tag: stretch
       pullPolicy: IfNotPresent
 
+# Whether to generate a secret resource for the RabbitMQ password. Useful if
+# global.rabbitmqSecretName is managed outside of this helm chart.
+generateRabbitmqPasswordSecret: true
+
 ####################################################################################################
-# Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
+# Redis: Configuration values for Redis. Only one of RabbitMQ / Redis should be enabled.
 ####################################################################################################
 redis:
   # To use redis instead of rabbitmq, set `enabled` to true.
@@ -640,6 +649,10 @@ redis:
   # exact connection URL needed, rather than letting it be constructed from the Helm values.
   brokerUrl: ""
   backendUrl: ""
+
+# Whether to generate a secret resource for the Redis password. Useful if
+# global.redisSecretName is managed outside of this helm chart.
+generateRedisPasswordSecret: true
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
