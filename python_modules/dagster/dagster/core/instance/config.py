@@ -2,7 +2,7 @@ import os
 import warnings
 
 from dagster import Array, Bool, check
-from dagster.config import Field, Permissive, Selector
+from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.serdes import class_from_code_pointer
@@ -107,13 +107,12 @@ def dagster_instance_config_schema():
         "scheduler": config_field_for_configurable_class(),
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
-        "telemetry": Selector(
+        "telemetry": Field(
             {
                 "enabled": Field(Bool, is_required=False),
                 "experimental_dagit": Field(Bool, is_required=False, default_value=False),
-            }
+            },
         ),
-        # "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(
