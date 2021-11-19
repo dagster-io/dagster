@@ -27,7 +27,7 @@ from dagster.utils.error import SerializableErrorInfo
 CURRENT_SNAPSHOT_VERSION = 1
 
 
-def create_execution_plan_snapshot_id(execution_plan_snapshot):
+def create_execution_plan_snapshot_id(execution_plan_snapshot) -> str:
     check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
     return create_snapshot_id(execution_plan_snapshot)
 

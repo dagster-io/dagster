@@ -662,6 +662,9 @@ class DagsterInstance:
     def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
+    def has_snapshot(self, snapshot_id: str) -> bool:
+        return self._run_storage.has_snapshot(snapshot_id)
+
     def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
         from dagster.core.host_representation import HistoricalPipeline
 
@@ -1017,6 +1020,9 @@ class DagsterInstance:
     def add_run(self, pipeline_run: PipelineRun):
         return self._run_storage.add_run(pipeline_run)
 
+    def add_snapshot(self, snapshot, snapshot_id=None):
+        return self._run_storage.add_snapshot(snapshot, snapshot_id)
+
     def handle_run_event(self, run_id: str, event: "DagsterEvent"):
         return self._run_storage.handle_run_event(run_id, event)
 
@@ -1221,6 +1227,9 @@ records = instance.get_event_records(
         handlers = [self._get_event_log_handler()]
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
+
+    def store_event(self, event):
+        self._event_storage.store_event(event)
 
     def handle_new_event(self, event):
         run_id = event.run_id

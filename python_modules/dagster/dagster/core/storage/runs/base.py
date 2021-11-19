@@ -183,6 +183,30 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
             bool
         """
 
+    def add_snapshot(
+        self,
+        snapshot: Union[PipelineSnapshot, ExecutionPlanSnapshot],
+        snapshot_id: Optional[str] = None,
+    ):
+        """Add a snapshot to the storage.
+
+        Args:
+            snapshot (Union[PipelineSnapshot, ExecutionPlanSnapshot])
+            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
+                snapshot id will be generated from a hash of the snapshot. This should only be used
+                in debugging, where we might want to import a historical run whose snapshots were
+                calculated using a different hash function than the current code.
+        """
+        if isinstance(snapshot, PipelineSnapshot):
+            self.add_pipeline_snapshot(snapshot, snapshot_id)
+        else:
+            self.add_execution_plan_snapshot(snapshot, snapshot_id)
+
+    def has_snapshot(self, snapshot_id: str):
+        return self.has_pipeline_snapshot(snapshot_id) or self.has_execution_plan_snapshot(
+            snapshot_id
+        )
+
     @abstractmethod
     def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
         """Check to see if storage contains a pipeline snapshot.
@@ -195,7 +219,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def add_pipeline_snapshot(self, pipeline_snapshot: PipelineSnapshot) -> str:
+    def add_pipeline_snapshot(
+        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -205,6 +231,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             pipeline_snapshot (PipelineSnapshot)
+            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
+                snapshot id will be generated from a hash of the snapshot. This should only be used
+                in debugging, where we might want to import a historical run whose snapshots were
+                calculated using a different hash function than the current code.
 
         Return:
             str: The pipeline_snapshot_id
@@ -233,7 +263,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
+    def add_execution_plan_snapshot(
+        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         """Add an execution plan snapshot to the run store.
 
         Execution plan snapshots are content-addressable, meaning
@@ -243,6 +275,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             execution_plan_snapshot (ExecutionPlanSnapshot)
+            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
+                snapshot id will be generated from a hash of the snapshot. This should only be used
+                in debugging, where we might want to import a historical run whose snapshots were
+                calculated using a different hash function than the current code.
 
         Return:
             str: The execution_plan_snapshot_id
