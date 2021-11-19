@@ -306,6 +306,15 @@ class StubbedEcs:
                 if not vpc_configuration:
                     raise StubbedEcsError
 
+            # emulate ECS API behaviour for `propagateTags`
+            # parameter in case old/new ARN schema is used
+            if not (self._long_arn_enabled()):
+                if "propagateTags" in kwargs:
+                    raise self.client.exceptions.InvalidParameterException({}, "run_task")
+            else:
+                if ("propagateTags" in kwargs) and kwargs.get("propagateTags") != "TASK_DEFINITION":
+                    raise self.client.exceptions.InvalidParameterException({}, "run_task")
+
             cluster = self._cluster(kwargs.get("cluster"))
             count = kwargs.get("count", 1)
             tasks = []

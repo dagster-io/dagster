@@ -107,20 +107,30 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # Run a task using the same network configuration as this processes's
         # task.
 
-        response = self.ecs.run_task(
-            taskDefinition=task_definition,
-            cluster=metadata.cluster,
-            overrides={"containerOverrides": [{"name": self.container_name, "command": command}]},
-            networkConfiguration={
+        ecs_run_task_args = {
+            "taskDefinition": task_definition,
+            "cluster": metadata.cluster,
+            "overrides": {
+                "containerOverrides": [{"name": self.container_name, "command": command}]
+            },
+            "networkConfiguration": {
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
                     "assignPublicIp": "ENABLED",
                     "securityGroups": metadata.security_groups,
                 }
             },
-            launchType="FARGATE",
-            propagateTags="TASK_DEFINITION",
-        )
+            "launchType": "FARGATE",
+        }
+
+        try:
+            response = self.ecs.run_task(
+                **ecs_run_task_args,
+                propagateTags="TASK_DEFINITION",
+            )
+        # In case an old ARN format is used for ECS, setting `propagateTags` parameter would fail.
+        except ClientError:
+            response = self.ecs.run_task(**ecs_run_task_args)
 
         arn = response["tasks"][0]["taskArn"]
         self._set_run_tags(run.run_id, task_arn=arn)
