@@ -1143,10 +1143,6 @@ class TestRunStorage:
             create_execution_plan_snapshot_id,
         )
 
-        run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
-        storage.add_run(run_to_add)
-
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
 
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
