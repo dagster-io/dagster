@@ -133,7 +133,9 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
       <ShortcutHandler
         onShortcut={() => dispatch({type: 'show-dialog'})}
         shortcutLabel="/"
-        shortcutFilter={(e) => e.key === '/'}
+        shortcutFilter={(e) =>
+          e.key === '/' && !e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey
+        }
       >
         <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
