@@ -1790,3 +1790,14 @@ records = instance.get_event_records(
 
     def update_backfill(self, partition_backfill):
         return self._run_storage.update_backfill(partition_backfill)
+
+
+def is_dagit_telemetry_enabled(instance):
+    telemetry_settings = instance.get_settings("telemetry")
+    if not telemetry_settings:
+        return False
+
+    if "experimental_dagit" in telemetry_settings:
+        return telemetry_settings["experimental_dagit"]
+    else:
+        return False

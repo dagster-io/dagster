@@ -1491,6 +1491,7 @@ type Instance {
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
+  dagitTelemetryEnabled: Boolean!
 }
 
 type RunLauncher {

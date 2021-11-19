@@ -1,9 +1,18 @@
-import {gql, useMutation} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 
+import {DagitTelemetryEnabledQuery} from './types/DagitTelemetryEnabledQuery';
 
 export enum TelemetryAction {
-  LAUNCH_RUN="LAUNCH_RUN",
+  LAUNCH_RUN = 'LAUNCH_RUN',
 }
+
+const TELEMETRY_ENABLED_QUERY = gql`
+  query DagitTelemetryEnabledQuery {
+    instance {
+      dagitTelemetryEnabled
+    }
+  }
+`;
 
 const LOG_TELEMETRY_MUTATION = gql`
   mutation LogTelemetryMutation($action: String!, $metadata: String!, $clientTime: String!) {
@@ -19,13 +28,20 @@ const LOG_TELEMETRY_MUTATION = gql`
   }
 `;
 
-export const useTelemetryAction = (action: TelemetryAction, metadata: {[key: string]: string | null | undefined}={}) => {
-    const clientTime = Date.now()
-    const metadataString = JSON.stringify(metadata)
-    const telemetryRequest = useMutation(LOG_TELEMETRY_MUTATION, {
-        variables: {action: action.toString(), metadata: metadataString, clientTime: clientTime},
-      });
+export const useTelemetryAction = (action: TelemetryAction) => {
+  const clientTime = Date.now();
+  const [telemetryRequest] = useMutation(LOG_TELEMETRY_MUTATION);
+  const {data} = useQuery<DagitTelemetryEnabledQuery>(TELEMETRY_ENABLED_QUERY);
 
-    const [loggedAction] = telemetryRequest;
-    return loggedAction;
-}
+  return (metadata: {[key: string]: string | null | undefined} = {}) => {
+    if (data && data.instance.dagitTelemetryEnabled) {
+      telemetryRequest({
+        variables: {
+          action: action.toString(),
+          metadata: JSON.stringify(metadata),
+          clientTime: clientTime,
+        },
+      });
+    }
+  };
+};
