@@ -1,3 +1,4 @@
+import json
 from typing import Any, Optional
 from dagster.core.definitions.configurable import ConfigurableDefinition
 from sphinx.ext.autodoc import DataDocumenter
@@ -5,7 +6,7 @@ from sphinx.ext.autodoc import DataDocumenter
 
 def config_field_to_dict(field):
     d = {}
-    if hasattr(field, "fields"):
+    if hasattr(field.config_type, "fields"):
         for name, subfield in field.config_type.fields.items():
             d[name] = config_field_to_dict(subfield)
     if field.description:
@@ -29,11 +30,23 @@ class ConfigurableDocumenter(DataDocumenter):
         source_name = self.get_sourcename()
         self.add_line("", source_name)
 
+        self.add_line("Config Schema:", source_name)
+        self.add_line("", source_name)
+        self.add_line(".. code-block:: json", source_name)
+
+        json_config = json.dumps(
+            config_field_to_dict(self.object.config_schema.as_field()), indent=4
+        )
+        for line in json_config.split("\n"):
+            self.add_line("\t" + line, source_name)
+        """
         self.add_line(repr(self.object.config_schema.as_field().config_type.fields), source_name)
         config_type = self.object.config_schema.as_field().config_type
         for name, field in config_type.fields.items():
             self.add_line(f"**{name}** ({field.config_type})", source_name)
+        """
 
+        self.add_line("\t", source_name)
         self.add_line("", source_name)
 
 
@@ -50,10 +63,11 @@ def setup(app):
 
 def foo():
     import json
-    from dagster_dbt import dbt_cli_resource
+    from dagster_dbt import dbt_cloud_resource, dbt_cli_resource, dbt_rpc_sync_resource
 
+    x = config_field_to_dict(dbt_cloud_resource.config_schema.as_field())
+    print(json.dumps(x, indent=4))
     x = config_field_to_dict(dbt_cli_resource.config_schema.as_field())
     print(json.dumps(x, indent=4))
-
-
-foo()
+    x = config_field_to_dict(dbt_rpc_sync_resource.config_schema.as_field())
+    print(json.dumps(x, indent=4))
