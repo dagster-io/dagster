@@ -14,7 +14,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.selector import parse_step_selection
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -718,7 +718,7 @@ def _get_execution_plan_from_run(
         run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
-        instance=instance,
+        instance_ref=instance.get_ref(),
     )
 
 
@@ -728,7 +728,7 @@ def create_execution_plan(
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: KnownExecutionState = None,
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Dict[str, str]] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
@@ -737,7 +737,7 @@ def create_execution_plan(
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-    check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
     tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
@@ -747,7 +747,7 @@ def create_execution_plan(
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
-        instance=instance,
+        instance_ref=instance_ref,
         tags=tags,
     )
 

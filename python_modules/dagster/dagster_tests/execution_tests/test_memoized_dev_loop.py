@@ -24,7 +24,7 @@ from .memoized_dev_loop_pipeline import asset_pipeline
 
 def get_step_keys_to_execute(pipeline, run_config, mode, instance):
     return create_execution_plan(
-        pipeline, run_config, mode, instance=instance, tags={MEMOIZED_RUN_TAG: "true"}
+        pipeline, run_config, mode, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "true"}
     ).step_keys_to_execute
 
 
@@ -118,14 +118,14 @@ def test_memoization_with_default_strategy():
                     "my_resource": my_resource,
                 },
             )
-            unmemoized_plan = create_execution_plan(my_job, instance=instance)
+            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
-            execution_plan = create_execution_plan(my_job, instance=instance)
+            execution_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(execution_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
@@ -161,7 +161,7 @@ def test_memoization_with_default_strategy_overriden():
                 },
             )
 
-            unmemoized_plan = create_execution_plan(my_job, instance=instance)
+            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
@@ -172,7 +172,7 @@ def test_memoization_with_default_strategy_overriden():
             version.remove("foo")
             version.append("bar")
 
-            memoized_plan = create_execution_plan(my_job, instance=instance)
+            memoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(memoized_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
@@ -183,7 +183,7 @@ def test_memoization_with_default_strategy_overriden():
             # Ensure that after switching memoization tag off, that the plan recognizes every step
             # should be run.
             unmemoized_plan = create_execution_plan(
-                my_job, instance=instance, tags={MEMOIZED_RUN_TAG: "false"}
+                my_job, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "false"}
             )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
@@ -256,7 +256,7 @@ def test_version_strategy_depends_from_context():
             # Ensure that after switching memoization tag off, that the plan recognizes every step
             # should be run.
             unmemoized_plan = create_execution_plan(
-                my_job, instance=instance, tags={MEMOIZED_RUN_TAG: "false"}
+                my_job, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "false"}
             )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
@@ -292,7 +292,7 @@ def test_version_strategy_root_input_manager():
             )
             result = my_job.execute_in_process(instance=instance)
             assert result.success
-            post_memoization_plan = create_execution_plan(my_job, instance=instance)
+            post_memoization_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(post_memoization_plan.step_keys_to_execute) == 0
 
 

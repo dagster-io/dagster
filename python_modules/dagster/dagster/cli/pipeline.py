@@ -286,7 +286,7 @@ def execute_list_versions_command(instance, kwargs):
         pipeline,
         run_config=run_config,
         mode=mode,
-        instance=instance,
+        instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     add_step_to_table(memoized_plan)

@@ -39,7 +39,7 @@ from dagster.core.execution.plan.handle import (
     UnresolvedStepHandle,
 )
 from dagster.core.execution.retries import RetryMode, RetryState
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import InstanceRef, DagsterInstance
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -99,7 +99,7 @@ class _PlanBuilder:
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]],
         known_state,
-        instance: Optional[DagsterInstance],
+        instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
     ):
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
@@ -118,7 +118,7 @@ class _PlanBuilder:
             SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
         self.known_state = known_state
-        self._instance = instance
+        self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
 
@@ -214,12 +214,13 @@ class _PlanBuilder:
                 raise DagsterInvariantViolationError(
                     "Cannot use both memoization and re-execution at this time."
                 )
-            if self._instance is None:
+            if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
-                    "Attempted to build memoized execution plan without providing a "
+                    "Attempted to build memoized execution plan without providing a persistent"
                     "DagsterInstance to create_execution_plan."
                 )
-            plan = plan.build_memoized_plan(pipeline_def, self.resolved_run_config, self._instance)
+            instance = DagsterInstance.from_ref(self._instance_ref)
+            plan = plan.build_memoized_plan(pipeline_def, self.resolved_run_config, instance)
 
         return plan
 
@@ -899,7 +900,7 @@ class ExecutionPlan(
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]] = None,
         known_state=None,
-        instance=None,
+        instance_ref=None,
         tags=None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
@@ -921,7 +922,7 @@ class ExecutionPlan(
             resolved_run_config=resolved_run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
-            instance=instance,
+            instance_ref=instance_ref,
             tags=tags,
         )
 

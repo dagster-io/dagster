@@ -333,7 +333,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
-            instance=instance,
+            instance_ref=instance.get_ref() if instance else None,
         )
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(

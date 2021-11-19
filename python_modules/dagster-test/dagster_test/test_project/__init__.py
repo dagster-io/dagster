@@ -38,7 +38,7 @@ def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
     from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
 
     execution_plan = create_execution_plan(
-        pipeline_def, run_config=run_config, instance=instance, mode=mode_str
+        pipeline_def, run_config=run_config, instance_ref=instance.get_ref(), mode=mode_str
     )
 
     with build_resources(

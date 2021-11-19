@@ -352,8 +352,6 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
             else recon_pipeline
         )
 
-        instance = DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else None
-
         return snapshot_from_execution_plan(
             create_execution_plan(
                 pipeline=pipeline,
@@ -361,7 +359,7 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
                 mode=args.mode,
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
-                instance=instance,
+                instance_ref=args.instance_ref,
             ),
             args.pipeline_snapshot_id,
         )

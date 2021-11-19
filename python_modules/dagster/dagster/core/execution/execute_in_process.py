@@ -35,7 +35,7 @@ def core_execute_in_process(
         pipeline,
         run_config=run_config,
         mode=mode_def.name,
-        instance=instance,
+        instance_ref=instance.get_ref() if instance else None,
     )
 
     output_capture: Dict[StepOutputHandle, Any] = {}
