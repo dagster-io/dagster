@@ -3,6 +3,19 @@ from dagster.core.definitions.configurable import ConfigurableDefinition
 from sphinx.ext.autodoc import DataDocumenter
 
 
+def config_field_to_dict(field):
+    d = {}
+    if hasattr(field, "fields"):
+        for name, subfield in field.config_type.fields.items():
+            d[name] = config_field_to_dict(subfield)
+    if field.description:
+        d["description"] = field.description
+    if field.default_provided:
+        d["default_value"] = field.default_value
+
+    return d
+
+
 class ConfigurableDocumenter(DataDocumenter):
     objtype = "configurable"
     directivetype = "data"
@@ -33,3 +46,14 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
+
+
+def foo():
+    import json
+    from dagster_dbt import dbt_cli_resource
+
+    x = config_field_to_dict(dbt_cli_resource.config_schema.as_field())
+    print(json.dumps(x, indent=4))
+
+
+foo()
