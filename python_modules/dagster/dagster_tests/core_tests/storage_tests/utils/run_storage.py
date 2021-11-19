@@ -1135,3 +1135,33 @@ class TestRunStorage:
         )
 
         assert storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+
+    def test_debug_snapshot_import(self, storage):
+        from dagster.core.execution.api import create_execution_plan
+        from dagster.core.snap import (
+            snapshot_from_execution_plan,
+            create_execution_plan_snapshot_id,
+        )
+
+        run_id = make_new_run_id()
+        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        storage.add_run(run_to_add)
+
+        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+
+        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
+
+        storage.add_snapshot(pipeline_snapshot, snapshot_id=new_pipeline_snapshot_id)
+        assert not storage.has_snapshot(pipeline_snapshot_id)
+        assert storage.has_snapshot(new_pipeline_snapshot_id)
+
+        execution_plan = create_execution_plan(pipeline_def)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_pipeline_snapshot_id)
+        ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
+        new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"
+
+        storage.add_snapshot(ep_snapshot, snapshot_id=new_ep_snapshot_id)
+        assert not storage.has_snapshot(ep_snapshot_id)
+        assert storage.has_snapshot(new_ep_snapshot_id)
