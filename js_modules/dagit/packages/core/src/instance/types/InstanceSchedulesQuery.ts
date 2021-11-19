@@ -41,6 +41,7 @@ export interface InstanceSchedulesQuery_instance_daemonHealth {
 export interface InstanceSchedulesQuery_instance {
   __typename: "Instance";
   daemonHealth: InstanceSchedulesQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_location {

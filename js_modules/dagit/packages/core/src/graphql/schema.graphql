@@ -1485,11 +1485,12 @@ type ModeNotFoundError implements Error {
 }
 
 type Instance {
-  info: String!
+  info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
+  hasInfo: Boolean!
 }
 
 type RunLauncher {
