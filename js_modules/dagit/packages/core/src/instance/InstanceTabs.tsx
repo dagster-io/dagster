@@ -21,7 +21,9 @@ export const InstanceTabs: React.FC<Props> = (props) => {
         <Tab id="schedules" title="Schedules" to="/instance/schedules" />
         <Tab id="sensors" title="Sensors" to="/instance/sensors" />
         <Tab id="backfills" title="Backfills" to="/instance/backfills" />
-        <Tab id="config" title="Configuration" to="/instance/config" />
+        {queryData?.data?.instance.hasInfo ? (
+          <Tab id="config" title="Configuration" to="/instance/config" />
+        ) : null}
       </Tabs>
       {queryData ? (
         <Box padding={{bottom: 8}}>

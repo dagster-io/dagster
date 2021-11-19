@@ -8,6 +8,7 @@ export const INSTANCE_HEALTH_FRAGMENT = gql`
       id
       ...DaemonHealthFragment
     }
+    hasInfo
   }
   ${DAEMON_HEALTH_FRAGMENT}
 `;

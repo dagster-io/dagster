@@ -1121,7 +1121,7 @@ class DagsterEvent(
     def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
         step_keys = [step.key for step in steps]
         if len(step_keys) == 1:
-            message = f"Started capturing logs for solid: {step_keys[0]}."
+            message = f"Started capturing logs for step: {step_keys[0]}."
         else:
             message = f"Started capturing logs in process (pid: {os.getpid()})."
 

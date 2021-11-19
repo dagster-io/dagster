@@ -39,4 +39,5 @@ export interface InstanceHealthFragment_daemonHealth {
 export interface InstanceHealthFragment {
   __typename: "Instance";
   daemonHealth: InstanceHealthFragment_daemonHealth;
+  hasInfo: boolean;
 }

@@ -45,20 +45,6 @@ export const RunFragments = {
       }
       pipelineSnapshotId
       executionPlan {
-        steps {
-          key
-          inputs {
-            dependsOn {
-              key
-              outputs {
-                name
-                type {
-                  name
-                }
-              }
-            }
-          }
-        }
         artifactsPersisted
         ...ExecutionPlanToGraphFragment
       }

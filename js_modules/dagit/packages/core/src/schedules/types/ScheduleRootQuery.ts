@@ -154,6 +154,7 @@ export interface ScheduleRootQuery_instance_daemonHealth {
 export interface ScheduleRootQuery_instance {
   __typename: "Instance";
   daemonHealth: ScheduleRootQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface ScheduleRootQuery {
