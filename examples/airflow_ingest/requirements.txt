@@ -2,4 +2,4 @@ dagster
 dagster_airflow
 dagit
 # See https://github.com/dagster-io/dagster/issues/2701
-apache-airflow==1.10.10
+apache-airflow==2.1.2
