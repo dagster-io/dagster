@@ -87,7 +87,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
       const statsA = a?.stats;
       const statsB = b?.stats;
       if (statsA?.__typename === 'RunStatsSnapshot' && statsB?.__typename === 'RunStatsSnapshot') {
-        return (statsB.startTime || 0) - (statsA.startTime || 0);
+        return (statsA.startTime || 0) - (statsB.startTime || 0);
       }
 
       return 0;
@@ -118,7 +118,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
                   <RunTitle>
                     {g.runId.split('-')[0]}
-                    {idx === runs.length - 1 && RootTag}
+                    {idx === 0 && RootTag}
                   </RunTitle>
                   <RunTime run={g} />
                 </div>
