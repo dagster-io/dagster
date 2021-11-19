@@ -189,7 +189,10 @@ def test_register_task_definition(ecs):
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
 
-def test_run_task(ecs, subnet):
+@pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
+def test_run_task(ecs, subnet, task_long_arn_format):
+    ecs.put_account_setting(name="taskLongArnFormat", value=task_long_arn_format)
+
     with pytest.raises(ParamValidationError):
         # The task doesn't exist
         ecs.run_task()
@@ -271,6 +274,14 @@ def test_run_task(ecs, subnet):
         overrides={"containerOverrides": [{"name": "hello_world", "command": ["ls"]}]},
     )
     assert response["tasks"][0]["overrides"]["containerOverrides"][0]["command"] == ["ls"]
+
+    # fails if old ARN schema is used and `propagateTags` parameter is set
+    if task_long_arn_format == "disabled":
+        with pytest.raises(ClientError):
+            ecs.run_task(taskDefinition="container", propagateTags="TASK_DEFINITION")
+    else:
+        with pytest.raises(ClientError):
+            ecs.run_task(taskDefinition="container", propagateTags="WRONG_PARAMETER")
 
 
 def test_stop_task(ecs):
