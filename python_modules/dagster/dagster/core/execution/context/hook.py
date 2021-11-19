@@ -77,11 +77,11 @@ class HookContext:
 
     @property
     def pipeline_name(self) -> str:
-        return self._step_execution_context.pipeline_name
+        return self.job_name
 
     @property
     def job_name(self) -> str:
-        return self.pipeline_name
+        return self._step_execution_context.job_name
 
     @property
     def run_id(self) -> str:
@@ -93,11 +93,11 @@ class HookContext:
 
     @property
     def solid(self) -> Node:
-        return self._step_execution_context.solid
+        return self.op
 
     @property
     def op(self) -> Node:
-        return self.solid
+        return self._step_execution_context.solid
 
     @property
     def step(self) -> ExecutionStep:
@@ -148,12 +148,11 @@ class HookContext:
         Returns:
             Optional[BaseException]: the exception object, None if the solid execution succeeds.
         """
-
-        return self._step_execution_context.step_exception
+        return self.op_exception
 
     @property
     def op_exception(self):
-        return self.solid_exception
+        return self._step_execution_context.step_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -233,10 +232,6 @@ class UnboundHookContext(HookContext):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
-    @property
     def job_name(self) -> str:
         return self.pipeline_name
 
@@ -249,12 +244,6 @@ class UnboundHookContext(HookContext):
     @property
     def hook_def(self) -> HookDefinition:
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
-
-    @property
-    def solid(self) -> Node:
-        return _check_property_on_test_context(
-            self, attr_str="_op", user_facing_name="solid", param_on_builder="solid"
-        )
 
     @property
     def op(self) -> Node:
@@ -297,16 +286,6 @@ class UnboundHookContext(HookContext):
         return self._log
 
     @property
-    def solid_exception(self) -> Optional[BaseException]:
-        """The thrown exception in a failed solid.
-
-        Returns:
-            Optional[BaseException]: the exception object, None if the solid execution succeeds.
-        """
-
-        return self.op_exception
-
-    @property
     def op_exception(self) -> Optional[BaseException]:
         return self._op_exception
 
@@ -343,10 +322,6 @@ class BoundHookContext(HookContext):
         self._op_exception = op_exception
 
     @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
-    @property
     def job_name(self) -> str:
         return _check_property_on_test_context(
             self, attr_str="_job_name", user_facing_name="job_name", param_on_builder="job_name"
@@ -361,12 +336,6 @@ class BoundHookContext(HookContext):
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
-
-    @property
-    def solid(self) -> Node:
-        return _check_property_on_test_context(
-            self, attr_str="_op", user_facing_name="solid", param_on_builder="solid"
-        )
 
     @property
     def op(self) -> Node:
@@ -401,16 +370,6 @@ class BoundHookContext(HookContext):
     @property
     def log(self) -> DagsterLogManager:
         return self._log_manager
-
-    @property
-    def solid_exception(self) -> Optional[BaseException]:
-        """The thrown exception in a failed solid.
-
-        Returns:
-            Optional[BaseException]: the exception object, None if the solid execution succeeds.
-        """
-
-        return self.op_exception
 
     @property
     def op_exception(self):
