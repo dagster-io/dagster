@@ -41,6 +41,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth {
 export interface SchedulerInfoQuery_instance {
   __typename: "Instance";
   daemonHealth: SchedulerInfoQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_location {

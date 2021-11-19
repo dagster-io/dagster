@@ -73,7 +73,7 @@ export const InstanceConfig = React.memo(() => {
   }
 
   // Split by top-level yaml keys
-  const sections = data.instance.info.split(/\n(?=\w)/g);
+  const sections = data.instance.info ? data.instance.info.split(/\n(?=\w)/g) : [];
 
   return (
     <>

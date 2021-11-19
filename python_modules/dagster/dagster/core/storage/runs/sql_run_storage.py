@@ -580,10 +580,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
         return self._has_snapshot_id(pipeline_snapshot_id)
 
-    def add_pipeline_snapshot(self, pipeline_snapshot: PipelineSnapshot) -> str:
+    def add_pipeline_snapshot(
+        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_str_param(snapshot_id, "snapshot_id")
+
+        if not snapshot_id:
+            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+
         return self._add_snapshot(
-            snapshot_id=create_pipeline_snapshot_id(pipeline_snapshot),
+            snapshot_id=snapshot_id,
             snapshot_obj=pipeline_snapshot,
             snapshot_type=SnapshotType.PIPELINE,
         )
@@ -596,11 +603,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
         return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
 
-    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
+    def add_execution_plan_snapshot(
+        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+    ) -> str:
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        check.opt_str_param(snapshot_id, "snapshot_id")
+
+        if not snapshot_id:
+            snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+
         return self._add_snapshot(
-            snapshot_id=execution_plan_snapshot_id,
+            snapshot_id=snapshot_id,
             snapshot_obj=execution_plan_snapshot,
             snapshot_type=SnapshotType.EXECUTION_PLAN,
         )

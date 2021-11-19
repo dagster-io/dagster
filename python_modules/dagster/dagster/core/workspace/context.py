@@ -90,6 +90,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def has_permission(self, permission: str) -> bool:
         pass
 
+    @property
+    def show_instance_config(self) -> bool:
+        return True
+
     def get_location(self, origin):
         location_name = origin.location_name
         location_entry = self.get_location_entry(location_name)
