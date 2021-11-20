@@ -50,6 +50,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "recommonmark",
     "autodoc_configurable",
+    "sphinx_toolbox.collapse",
 ]
 
 # https://stackoverflow.com/a/54843636/324449

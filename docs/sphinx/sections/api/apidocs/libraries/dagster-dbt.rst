@@ -14,7 +14,7 @@ dbt Core Ops
 ``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
 more advanced use cases, we suggest building your own ops which directly interact with these resources.
 
-.. autofunction:: dbt_run_op
+.. autoconfigurable:: dbt_run_op
 
 .. autofunction:: dbt_compile_op
 
@@ -45,7 +45,7 @@ CLI Resources
 .. autoclass:: DbtCliOutput
     :members:
 
-.. autodata:: dbt_cli_resource
+.. autoconfigurable:: dbt_cli_resource
     :annotation: ResourceDefinition
 
 
