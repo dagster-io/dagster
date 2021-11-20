@@ -5,8 +5,11 @@ import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    RunRequest,
     ScheduleDefinition,
     build_schedule_context,
+    job,
+    op,
     pipeline,
     schedule,
     solid,
@@ -16,6 +19,7 @@ from dagster.core.definitions.decorators import (
     daily_schedule,
     hourly_schedule,
     monthly_schedule,
+    request_based_schedule,
     weekly_schedule,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -732,7 +736,7 @@ def test_schedule_decorators_bad():
 
 
 def test_scheduled_jobs():
-    from dagster import job, op, Field, String
+    from dagster import Field, String
 
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
@@ -754,3 +758,28 @@ def test_scheduled_jobs():
     assert len(execution_data.run_requests) == 1
 
     validate_run_config(foo_job, execution_data.run_requests[0].run_config)
+
+
+def test_request_based_schedule():
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op
+    def foo_op():
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    @request_based_schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+    )
+    def foo_schedule(context):
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1

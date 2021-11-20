@@ -1,7 +1,7 @@
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.partition import (
@@ -22,6 +22,7 @@ from dagster.utils.partitions import (
 from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
 from ..pipeline_definition import PipelineDefinition
+from ..run_request import RunRequest, SkipReason
 from ..schedule_definition import ScheduleDefinition
 
 if TYPE_CHECKING:
@@ -29,6 +30,11 @@ if TYPE_CHECKING:
 
 # Error messages are long
 # pylint: disable=C0301
+
+ScheduleEvaluationFn = Callable[
+    ["ScheduleEvaluationContext"],
+    Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+]
 
 
 def schedule(
@@ -99,6 +105,63 @@ def schedule(
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
+            description=description,
+            job=job,
+        )
+
+        update_wrapper(schedule_def, wrapped=fn)
+
+        return schedule_def
+
+    return inner
+
+
+config_based_schedule = schedule
+
+
+def request_based_schedule(
+    cron_schedule: str,
+    job: Union[PipelineDefinition, GraphDefinition],
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    op_selection: Optional[List[str]] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[ScheduleEvaluationFn], ScheduleDefinition]:
+    """Create a schedule.
+
+    The decorated function will be called as the evaluation function of the underlying
+    :py:class:`~dagster.ScheduleDefinition` and should take a
+    :py:class:`~dagster.ScheduleEvaluationContext` as its only argument. The decorated function may:
+    1. Return a `RunRequest` object.
+    2. Yield multiple of `RunRequest` objects.
+    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
+       requested.
+    4. Return or yield nothing (skipping without providing a reason)
+
+    Args:
+        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
+            ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
+        job (Union[PipelineDefinition, GraphDefinition]): The job to execute when the schedule runs.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        name (Optional[str]): The name of the schedule to create.
+        description (Optional[str]): A human-readable description of the schedule.
+        op_selection (Optional[List[str]]): A list of op subselection (including single op names) to
+            execute when the schedule runs. e.g. ``['*some_op+', 'other_op']``
+    """
+
+    def inner(fn: ScheduleEvaluationFn) -> ScheduleDefinition:
+        check.callable_param(fn, "fn")
+
+        schedule_name = name or fn.__name__
+
+        schedule_def = ScheduleDefinition(
+            name=schedule_name,
+            cron_schedule=cron_schedule,
+            solid_selection=op_selection,
+            execution_timezone=execution_timezone,
+            execution_fn=fn,
             description=description,
             job=job,
         )
