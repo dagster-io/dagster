@@ -19,6 +19,7 @@ import sys
 import uuid
 from collections import namedtuple
 from functools import wraps
+from inspect import isfunction
 from logging.handlers import RotatingFileHandler
 
 import click
@@ -51,7 +52,7 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
 # end_TELEMETRY_WHITELISTED_FUNCTIONS
 
 
-def telemetry_wrapper(f):
+def telemetry_wrapper(whitelist=TELEMETRY_WHITELISTED_FUNCTIONS):
     """
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
@@ -59,12 +60,21 @@ def telemetry_wrapper(f):
     Wrapped function must be in the list of whitelisted function, and must have a DagsterInstance
     parameter named 'instance' in the signature.
     """
-    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
+    # Bare decorator case
+    if not isinstance(whitelist, set) and isfunction(whitelist):
+        return _wrap_for_telemetry(f=whitelist, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS)
+
+    def _inner(f):
+        return _wrap_for_telemetry(f, whitelist=whitelist)
+
+    return _inner
+
+
+def _wrap_for_telemetry(f, whitelist):
+    if f.__name__ not in whitelist:
         raise DagsterInvariantViolationError(
             "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
-            "functions list: {whitelist}.".format(
-                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
-            )
+            "functions list: {whitelist}.".format(name=f.__name__, whitelist=whitelist)
         )
 
     var_names = f.__code__.co_varnames
