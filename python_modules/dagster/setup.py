@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 "pytest-xdist==2.1.0",
                 "pytest==6.1.1",
                 "responses==0.10.*",
-                "scikit-learn<=1.0.0",  # scikit-learn 1.0 requires python 3.7
+                "scikit-learn<1.0.0",  # scikit-learn 1.0 requires python 3.7
                 "snapshottest==0.6.0",
                 "tox==3.14.2",
                 "tox-pip-version==0.0.7",
