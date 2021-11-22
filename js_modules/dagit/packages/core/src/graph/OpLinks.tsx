@@ -3,7 +3,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
 
 import {IFullPipelineLayout, IFullOpLayout, ILayoutConnection} from './getFullOpLayout';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
