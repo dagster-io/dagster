@@ -5,7 +5,6 @@ import {useHistory} from 'react-router-dom';
 import {SearchResults} from '../search/SearchResults';
 import {SearchResult} from '../search/types';
 import {useAssetSearch} from '../search/useRepoSearch';
-import {MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {TextInput} from '../ui/TextInput';
@@ -29,7 +28,7 @@ const reducer = (state: State, action: Action) => {
     case 'open':
       return {...state, open: true};
     case 'close':
-      return {...state, open: false, queryString: '', highlight: 0};
+      return {...state, open: false, highlight: 0};
     case 'highlight':
       return {...state, highlight: action.highlight};
     case 'change-query':
@@ -82,10 +81,15 @@ export const AssetSearch = () => {
       return;
     }
 
-    // Escape closes the options. The options re-open if you type another char or click.
+    // Escape closes the options. The options re-open if you press a key.
     if (e.key === 'Escape') {
       dispatch({type: 'close'});
       return;
+    }
+
+    // If the options are not open, open them back up since the user is interacting with the input.
+    if (!open) {
+      dispatch({type: 'open'});
     }
 
     const lastResult = results.length - 1;
@@ -106,7 +110,7 @@ export const AssetSearch = () => {
         isOpen={open && results.length > 0}
         position={'bottom-left'}
         content={
-          <MenuWIP style={{maxWidth: 600, minWidth: 600}}>
+          <div style={{maxWidth: 600, minWidth: 600}}>
             {loading ? <Spinner purpose="body-text" /> : null}
             <SearchResults
               highlight={highlight}
@@ -114,7 +118,7 @@ export const AssetSearch = () => {
               results={results.slice(0, 10)}
               onClickResult={onSelect}
             />
-          </MenuWIP>
+          </div>
         }
       >
         <TextInput
