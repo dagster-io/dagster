@@ -18,6 +18,10 @@ from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
 from .util import non_null_list
+from .pipelines.pipeline import GrapheneInProgressRunsByStep
+from dagster_graphql.implementation.fetch_runs import (
+    get_in_progress_runs_by_in_progress_step,
+)
 
 
 class GrapheneLocationStateChangeEventType(graphene.Enum):
@@ -157,6 +161,7 @@ class GrapheneRepository(graphene.ObjectType):
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
+    inProgressRunsByStep = non_null_list(GrapheneInProgressRunsByStep)
 
     class Meta:
         name = "Repository"
@@ -236,6 +241,10 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetNode(self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
+
+    def resolve_inProgressRunsByStep(self, _graphene_info):
+        asset_node_keys = [node.op_name for node in self._repository.get_external_asset_nodes()]
+        return get_in_progress_runs_by_in_progress_step(_graphene_info, asset_node_keys)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

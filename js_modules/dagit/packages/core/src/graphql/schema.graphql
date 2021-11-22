@@ -55,6 +55,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  inProgressRunsByStep: [InProgressRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -618,7 +619,6 @@ type AssetNode {
   jobName: String
   dependencies: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
-  inProgressRuns: [Run!]!
 }
 
 type AssetDependency {
@@ -1205,6 +1205,11 @@ type UsedSolid {
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type InProgressRunsByStep {
+  stepKey: String!
+  runs: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

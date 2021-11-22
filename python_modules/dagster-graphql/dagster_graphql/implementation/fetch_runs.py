@@ -107,11 +107,10 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [GrapheneRun(run) for run in runs]
 
 
-def get_in_progress_runs(graphene_info, job_name: str):
+def get_in_progress_runs(graphene_info):
     instance = graphene_info.context.instance
 
     in_progress_runs_filter = PipelineRunsFilter(
-        pipeline_name=job_name,
         statuses=[
             PipelineRunStatus.STARTING,
             PipelineRunStatus.MANAGED,
@@ -125,16 +124,25 @@ def get_in_progress_runs(graphene_info, job_name: str):
     return instance.get_runs(in_progress_runs_filter)
 
 
-def get_in_progress_runs_with_in_progress_step(graphene_info, job_name: str, op_name: str):
-    runs = get_in_progress_runs(graphene_info, job_name)
-    runs_with_step = []
+def get_in_progress_runs_by_in_progress_step(graphene_info, step_keys):
+    from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
 
-    for run in runs:
-        step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, [op_name])
-        if step_stats and step_stats[0].status == StepEventStatus.IN_PROGRESS:
-            runs_with_step.append(run)
+    in_progress_runs = get_in_progress_runs(graphene_info)
 
-    return runs_with_step
+    runs_by_step = {}
+    for run in in_progress_runs:
+        step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, step_keys)
+        for step_stat in step_stats:
+            if step_stat.status == StepEventStatus.IN_PROGRESS:
+                if step_stat.step_key not in runs_by_step:
+                    runs_by_step[step_stat.step_key] = []
+                runs_by_step[step_stat.step_key].append(GrapheneRun(run))
+
+    step_runs = []
+    for key in runs_by_step.keys():
+        step_runs.append(GrapheneInProgressRunsByStep(key, runs_by_step[key]))
+
+    return step_runs
 
 
 def get_runs_count(graphene_info, filters):

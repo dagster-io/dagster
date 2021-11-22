@@ -2,7 +2,6 @@ import graphene
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalAssetNode
-from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_with_in_progress_step
 
 from ..schema.pipelines.pipeline import GrapheneRun
 from .asset_key import GrapheneAssetKey
@@ -47,7 +46,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    inProgressRuns = non_null_list(GrapheneRun)
 
     class Meta:
         name = "AssetNode"
@@ -76,19 +74,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             for dep in self._external_asset_node.dependencies
         ]
-
-    def resolve_inProgressRuns(self, _graphene_info):
-        runs = []
-        for job_name in self._external_asset_node.job_names:
-            runs.extend(
-                [
-                    GrapheneRun(run)
-                    for run in get_in_progress_runs_with_in_progress_step(
-                        _graphene_info, job_name, self._external_asset_node.op_name
-                    )
-                ]
-            )
-        return runs
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
