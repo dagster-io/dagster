@@ -718,7 +718,7 @@ def _get_execution_plan_from_run(
         run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
-        instance_ref=instance.get_ref(),
+        instance_ref=instance.get_ref() if instance.is_persistent else None,
     )
 
 
