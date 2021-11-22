@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Optional, Set, Union, cast
+from typing import Any, Dict, Optional, Set, Union
 
 from dagster import check
 
@@ -22,6 +22,24 @@ def _property_msg(prop_name: str, method_name: str) -> str:
         f"The {prop_name} {method_name} is not set when a `HookContext` is constructed from "
         "`build_hook_context`."
     )
+
+
+def _check_property_on_test_context(
+    context: "HookContext", attr_str: str, user_facing_name: str, param_on_builder: str
+):
+    """Check if attribute is not None on context. If none, error, and point user in direction of
+    how to specify the parameter on the context object."""
+
+    value = getattr(context, attr_str)
+    if value is None:
+        raise DagsterInvalidPropertyError(
+            f"Attribute '{user_facing_name}' was not provided when "
+            f"constructing context. Provide a value for the '{param_on_builder}' parameter on "
+            "'build_hook_context'. To learn more, check out the testing hooks section of Dagster's "
+            "concepts docs: https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#testing-hooks"
+        )
+    else:
+        return value
 
 
 class HookContext:
@@ -59,11 +77,11 @@ class HookContext:
 
     @property
     def pipeline_name(self) -> str:
-        return self._step_execution_context.pipeline_name
+        return self.job_name
 
     @property
     def job_name(self) -> str:
-        return self.pipeline_name
+        return self._step_execution_context.job_name
 
     @property
     def run_id(self) -> str:
@@ -75,11 +93,11 @@ class HookContext:
 
     @property
     def solid(self) -> Node:
-        return self._step_execution_context.solid
+        return self.op
 
     @property
     def op(self) -> Node:
-        return self.solid
+        return self._step_execution_context.solid
 
     @property
     def step(self) -> ExecutionStep:
@@ -130,12 +148,11 @@ class HookContext:
         Returns:
             Optional[BaseException]: the exception object, None if the solid execution succeeds.
         """
-
-        return self._step_execution_context.step_exception
+        return self.op_exception
 
     @property
     def op_exception(self):
-        return self.solid_exception
+        return self._step_execution_context.step_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -171,26 +188,33 @@ class UnboundHookContext(HookContext):
         self,
         resources: Dict[str, Any],
         mode_def: Optional[ModeDefinition],
-        solid: Optional[Union[SolidDefinition, PendingNodeInvocation]],
+        op: Optional[Union[SolidDefinition, PendingNodeInvocation]],
+        run_id: Optional[str],
+        job_name: Optional[str],
+        op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
         from ..context_creation_pipeline import initialize_console_manager
         from ..build_resources import build_resources
 
         self._mode_def = mode_def
 
-        self._solid = None
-        if solid is not None:
+        self._op = None
+        if op is not None:
 
             @graph(name="hook_context_container")
             def temp_graph():
-                solid()
+                op()
 
-            self._solid = temp_graph.solids[0]
+            self._op = temp_graph.solids[0]
 
         # Open resource context manager
         self._resources_cm = build_resources(resources)
         self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+
+        self._run_id = run_id
+        self._job_name = job_name
+        self._op_exception = op_exception
 
         self._log = initialize_console_manager(None)
 
@@ -208,24 +232,24 @@ class UnboundHookContext(HookContext):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
-    def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+    def job_name(self) -> str:
+        return self.pipeline_name
 
     @property
     def run_id(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("run_id", "property"))
+        return _check_property_on_test_context(
+            self, attr_str="_run_id", user_facing_name="run_id", param_on_builder="run_id"
+        )
 
     @property
     def hook_def(self) -> HookDefinition:
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
     @property
-    def solid(self) -> Node:
-        check.invariant(
-            self._solid is not None,
-            "solid property was not provided when constructing the context.",
+    def op(self) -> Node:
+        return _check_property_on_test_context(
+            self, attr_str="_op", user_facing_name="op", param_on_builder="op"
         )
-        return cast(Node, self._solid)
 
     @property
     def step(self) -> ExecutionStep:
@@ -262,14 +286,8 @@ class UnboundHookContext(HookContext):
         return self._log
 
     @property
-    def solid_exception(self) -> Optional[BaseException]:
-        """The thrown exception in a failed solid.
-
-        Returns:
-            Optional[BaseException]: the exception object, None if the solid execution succeeds.
-        """
-
-        raise DagsterInvalidPropertyError(_property_msg("solid_exception", "property"))
+    def op_exception(self) -> Optional[BaseException]:
+        return self._op_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -287,35 +305,43 @@ class BoundHookContext(HookContext):
         self,
         hook_def: HookDefinition,
         resources: Resources,
-        solid: Optional[Node],
+        op: Optional[Node],
         mode_def: Optional[ModeDefinition],
         log_manager: DagsterLogManager,
+        run_id: Optional[str],
+        job_name: Optional[str],
+        op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
         self._hook_def = hook_def
         self._resources = resources
-        self._solid = solid
+        self._op = op
         self._mode_def = mode_def
         self._log_manager = log_manager
+        self._run_id = run_id
+        self._job_name = job_name
+        self._op_exception = op_exception
 
     @property
-    def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+    def job_name(self) -> str:
+        return _check_property_on_test_context(
+            self, attr_str="_job_name", user_facing_name="job_name", param_on_builder="job_name"
+        )
 
     @property
     def run_id(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("run_id", "property"))
+        return _check_property_on_test_context(
+            self, attr_str="_run_id", user_facing_name="run_id", param_on_builder="run_id"
+        )
 
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
 
     @property
-    def solid(self) -> Node:
-        check.invariant(
-            self._solid is not None,
-            "solid property was not provided when constructing the context.",
+    def op(self) -> Node:
+        return _check_property_on_test_context(
+            self, attr_str="_op", user_facing_name="op", param_on_builder="op"
         )
-        return cast(Node, self._solid)
 
     @property
     def step(self) -> ExecutionStep:
@@ -346,14 +372,8 @@ class BoundHookContext(HookContext):
         return self._log_manager
 
     @property
-    def solid_exception(self) -> Optional[BaseException]:
-        """The thrown exception in a failed solid.
-
-        Returns:
-            Optional[BaseException]: the exception object, None if the solid execution succeeds.
-        """
-
-        raise DagsterInvalidPropertyError(_property_msg("solid_exception", "property"))
+    def op_exception(self):
+        return self._op_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -371,6 +391,9 @@ def build_hook_context(
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
+    run_id: Optional[str] = None,
+    job_name: Optional[str] = None,
+    op_exception: Optional[Exception] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -387,6 +410,9 @@ def build_hook_context(
             hook may be associated with.
         solid (Optional[SolidDefinition, PendingNodeInvocation]): (legacy) The solid definition which the
             hook may be associated with.
+        run_id (Optional[str]): The id of the run in which the hook is invoked (provided for mocking purposes).
+        job_name (Optional[str]): The name of the job in which the hook is used (provided for mocking purposes).
+        op_exception (Optional[Exception]): The exception that caused the hook to be triggered.
 
     Examples:
         .. code-block:: python
@@ -398,14 +424,16 @@ def build_hook_context(
                 hook_to_invoke(context)
     """
     check.invariant(not (solid and op), "cannot set both `solid` and `op` on `build_hook_context`.")
-    if op:
-        return UnboundHookContext(
-            resources=check.opt_dict_param(resources, "resources", key_type=str),
-            mode_def=None,
-            solid=check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation)),
-        )
+
+    op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
+    solid = check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation))
+    op = op or solid
+
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
-        solid=check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation)),
+        op=op,
+        run_id=check.opt_str_param(run_id, "run_id"),
+        job_name=check.opt_str_param(job_name, "job_name"),
+        op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),
     )

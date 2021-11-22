@@ -212,3 +212,14 @@ def test_hook_invocation_with_solid():
 
     basic_hook(build_hook_context(solid=foo))
     basic_hook(build_hook_context(solid=not_foo.alias("foo")))
+
+
+def test_properties_on_hook_context():
+    @success_hook
+    def basic_hook(context):
+        assert isinstance(context.job_name, str)
+        assert isinstance(context.run_id, str)
+        assert isinstance(context.op_exception, BaseException)
+
+    error = DagsterInvariantViolationError("blah")
+    basic_hook(build_hook_context(run_id="blah", job_name="blah", op_exception=error))
