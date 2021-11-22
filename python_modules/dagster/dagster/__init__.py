@@ -3,6 +3,7 @@ from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
+    AnyAssetSensorDefinition,
     AssetKey,
     AssetMaterialization,
     AssetSensorDefinition,
@@ -33,6 +34,7 @@ from dagster.core.definitions import (
     MarkdownMetadataEntryData,
     Materialization,
     ModeDefinition,
+    MultiAssetSensorDefinition,
     MultiDependencyDefinition,
     NodeInvocation,
     OpDefinition,
@@ -69,6 +71,7 @@ from dagster.core.definitions import (
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
+    any_asset_sensor,
     asset_sensor,
     build_init_logger_context,
     build_schedule_from_partitioned_job,
@@ -90,6 +93,7 @@ from dagster.core.definitions import (
     make_values_resource,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_asset_sensor,
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,

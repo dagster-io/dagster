@@ -1,5 +1,6 @@
 from .config import ConfigMapping
 from .decorators import (
+    any_asset_sensor,
     asset_sensor,
     composite_solid,
     config_mapping,
@@ -11,6 +12,7 @@ from .decorators import (
     job,
     lambda_solid,
     monthly_schedule,
+    multi_asset_sensor,
     op,
     pipeline,
     repository,
@@ -113,7 +115,9 @@ from .schedule_definition import (
     ScheduleExecutionContext,
 )
 from .sensor_definition import (
+    AnyAssetSensorDefinition,
     AssetSensorDefinition,
+    MultiAssetSensorDefinition,
     SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,

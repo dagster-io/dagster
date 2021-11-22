@@ -22,7 +22,7 @@ from dagster.core.errors import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
-from dagster.seven import funcsigs
+from dagster.seven import funcsigs, json
 from dagster.utils import ensure_gen
 
 from ..decorator_utils import get_function_params
@@ -602,3 +602,231 @@ class AssetSensorDefinition(SensorDefinition):
     @property
     def asset_key(self):
         return self._asset_key
+
+
+class MultiAssetSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs whenever all of a set of assets
+    have been materialized.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (List[AssetKey]): The asset keys this sensor monitors.
+        asset_materialization_fn (Callable[[SensorEvaluationContext, List[EventLogEntry]], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
+            a list of :py:class:`~dagster.core.storage.event_log.EventLogEntry` corresponding to
+            :py:class:`~dagster.AssetMaterialization` events for all of the asset keys monitored
+            by this sensor.
+
+            This function must return a generator, which must yield either a single
+            :py:class:`~dagster.SkipReason` or one or more :py:class:`~dagster.RunRequest` objects.
+        job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this
+            sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of
+            jobs to be executed when the sensor fires.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+
+    """
+
+    def __init__(
+        self,
+        name: str,
+        asset_keys: List[AssetKey],
+        asset_materialization_fn: Callable[
+            ["SensorExecutionContext", List["EventLogEntry"]],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ],
+        job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+    ):
+        check.invariant(
+            asset_keys != [], "Must not provide empty asset_keys when defining a multi asset sensor"
+        )
+        self._asset_keys = check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+
+        from dagster.core.events import DagsterEventType
+        from dagster.core.events.log import EventLogEntry
+        from dagster.core.storage.event_log.base import EventRecordsFilter
+
+        def _wrap_asset_fn(
+            materialization_fn: Callable[
+                [SensorEvaluationContext, List[EventLogEntry]],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ):
+            def _fn(context: SensorEvaluationContext):
+                after_cursor = [None for _ in self.asset_keys]
+
+                if context.cursor:
+                    try:
+                        after_cursor = json.loads(context.cursor)
+                    except ValueError:
+                        pass
+
+                # TODO: This won't be performant for large numbers of assets (we'll be doing N
+                # roundtrips to the database, so will want to extend the EventRecordsFilter API or
+                # add an additional method on the instance)
+                event_records = [
+                    context.instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=asset_key,
+                            after_cursor=after_cursor[i],
+                        ),
+                        ascending=False,
+                        limit=1,
+                    )
+                    for i, asset_key in enumerate(self._asset_keys)
+                ]
+
+                event_log_entries = []
+                cursor = []
+
+                for records in event_records:
+                    if not records:
+                        # Short circuit if any of the asset keys have not been updated
+                        return
+
+                    event_log_entries.append(records[0].event_log_entry)
+                    cursor.append(records[0].storage_id)
+
+                yield from materialization_fn(context, event_log_entries)
+                context.update_cursor(json.dumps(cursor))
+
+            return _fn
+
+        super(MultiAssetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+        )
+
+    @property
+    def asset_keys(self):
+        return self._asset_keys
+
+
+class AnyAssetSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs whenever any of a set of assets
+    has been materialized.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (List[AssetKey]): The asset keys this sensor monitors.
+        asset_materialization_fn (Callable[[SensorEvaluationContext, List[EventLogEntry]], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
+            a list of :py:class:`~dagster.core.storage.event_log.EventLogEntry` corresponding to
+            :py:class:`~dagster.AssetMaterialization` events for all of the asset keys monitored
+            by this sensor.
+
+            This function must return a generator, which must yield either a single
+            :py:class:`~dagster.SkipReason` or one or more :py:class:`~dagster.RunRequest` objects.
+        job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this
+            sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of
+            jobs to be executed when the sensor fires.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+
+    """
+
+    def __init__(
+        self,
+        name: str,
+        asset_keys: List[AssetKey],
+        asset_materialization_fn: Callable[
+            ["SensorExecutionContext", List["EventLogEntry"]],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ],
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    ):
+        check.invariant(
+            asset_keys != [], "Must not provide empty asset_keys when defining an any asset sensor"
+        )
+        self._asset_keys = check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+
+        from dagster.core.events import DagsterEventType
+        from dagster.core.storage.event_log.base import EventRecordsFilter
+        from dagster.core.events.log import EventLogEntry
+
+        def _wrap_asset_fn(
+            materialization_fn: Callable[
+                [SensorEvaluationContext, List[EventLogEntry]],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ):
+            def _fn(context: SensorEvaluationContext):
+                after_cursor = [None for _ in self.asset_keys]
+
+                if context.cursor:
+                    try:
+                        after_cursor = json.loads(context.cursor)
+                    except ValueError:
+                        pass
+
+                # TODO: This won't be performant for large numbers of assets (we'll be doing N
+                # roundtrips to the database, so will want to extend the EventRecordsFilter API or
+                # add an additional method on the instance)
+                event_records = [
+                    context.instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=asset_key,
+                            after_cursor=after_cursor[i],
+                        ),
+                        ascending=False,
+                        limit=1,
+                    )
+                    for i, asset_key in enumerate(self._asset_keys)
+                ]
+
+                event_log_entries = []
+                cursor = []
+
+                execute_cursor = False
+
+                for i, records in enumerate(event_records):
+                    if not records:
+                        cursor.append(after_cursor[i])
+                        continue
+
+                    event_log_entries.append(records[0].event_log_entry)
+                    cursor.append(records[0].storage_id)
+                    execute_cursor = True
+
+                if not execute_cursor:
+                    return
+
+                yield from materialization_fn(context, event_log_entries)
+                context.update_cursor(json.dumps(cursor))
+
+            return _fn
+
+        super(AnyAssetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+        )
+
+    @property
+    def asset_keys(self):
+        return self._asset_keys
