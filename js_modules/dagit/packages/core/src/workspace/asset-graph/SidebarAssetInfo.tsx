@@ -14,11 +14,11 @@ import {IconWIP} from '../../ui/Icon';
 import {RepoAddress} from '../types';
 
 import {assetKeyToString} from './Utils';
-import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/AssetGraphQuery';
+import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  node: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
   definition: GraphExplorerSolidHandleFragment_solid_definition;
+  node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
   repoAddress: RepoAddress;
 }> = ({node, definition, repoAddress}) => {
   const Plugin = pluginForMetadata(definition.metadata);
