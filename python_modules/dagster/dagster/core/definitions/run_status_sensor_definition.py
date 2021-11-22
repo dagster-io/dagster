@@ -1,4 +1,5 @@
 from datetime import datetime
+import warnings
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -15,9 +16,9 @@ from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
     DagsterRun,
+    PipelineRun,
     PipelineRunStatus,
     PipelineRunsFilter,
-    PipelineRun,
 )
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -114,6 +115,10 @@ class RunStatusSensorContext(
 
     @property
     def pipeline_run(self) -> PipelineRun:
+        warnings.warn(
+            "`RunStatusSensorContext.pipeline_run` is deprecated as of 0.13.0; use "
+            "`RunStatusSensorContext.dagster_run` instead."
+        )
         return self.dagster_run
 
 
