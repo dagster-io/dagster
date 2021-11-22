@@ -31,7 +31,7 @@ more advanced use cases, we suggest building your own ops which directly interac
 dbt Cloud Ops
 ~~~~~~~~~~~~~
 
-.. autofunction:: dbt_cloud_run_op
+.. autoconfigurable:: dbt_cloud_run_op
 
 Resources
 =========
@@ -64,10 +64,10 @@ RPC Resources
 .. autodata:: local_dbt_rpc_resource
     :annotation: ResourceDefinition
 
-.. autodata:: dbt_rpc_resource
+.. autoconfigurable:: dbt_rpc_resource
     :annotation: ResourceDefinition
 
-.. autodata:: dbt_rpc_sync_resource
+.. autoconfigurable:: dbt_rpc_sync_resource
     :annotation: ResourceDefinition
 
 dbt Cloud Resources
@@ -76,7 +76,7 @@ dbt Cloud Resources
 .. autoclass:: DbtCloudResourceV2
     :members:
 
-.. autodata:: dbt_cloud_resource
+.. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
 
 
@@ -123,41 +123,41 @@ CLI Solids
 
 .. currentmodule:: dagster_dbt
 
-.. autofunction:: dbt_cli_compile
+.. autoconfigurable:: dbt_cli_compile
 
-.. autofunction:: dbt_cli_run
+.. autoconfigurable:: dbt_cli_run
 
-.. autofunction:: dbt_cli_run_operation
+.. autoconfigurable:: dbt_cli_run_operation
 
-.. autofunction:: dbt_cli_snapshot
+.. autoconfigurable:: dbt_cli_snapshot
 
-.. autofunction:: dbt_cli_snapshot_freshness
+.. autoconfigurable:: dbt_cli_snapshot_freshness
 
-.. autofunction:: dbt_cli_test
+.. autoconfigurable:: dbt_cli_test
 
 RPC Solids
 ~~~~~~~~~~
 
 .. autofunction:: create_dbt_rpc_run_sql_solid
 
-.. autofunction:: dbt_rpc_compile_sql
+.. autoconfigurable:: dbt_rpc_compile_sql
 
-.. autofunction:: dbt_rpc_run
+.. autoconfigurable:: dbt_rpc_run
 
-.. autofunction:: dbt_rpc_run_and_wait
+.. autoconfigurable:: dbt_rpc_run_and_wait
 
-.. autofunction:: dbt_rpc_run_operation
+.. autoconfigurable:: dbt_rpc_run_operation
 
-.. autofunction:: dbt_rpc_run_operation_and_wait
+.. autoconfigurable:: dbt_rpc_run_operation_and_wait
 
-.. autofunction:: dbt_rpc_snapshot
+.. autoconfigurable:: dbt_rpc_snapshot
 
-.. autofunction:: dbt_rpc_snapshot_and_wait
+.. autoconfigurable:: dbt_rpc_snapshot_and_wait
 
-.. autofunction:: dbt_rpc_snapshot_freshness
+.. autoconfigurable:: dbt_rpc_snapshot_freshness
 
-.. autofunction:: dbt_rpc_snapshot_freshness_and_wait
+.. autoconfigurable:: dbt_rpc_snapshot_freshness_and_wait
 
-.. autofunction:: dbt_rpc_test
+.. autoconfigurable:: dbt_rpc_test
 
-.. autofunction:: dbt_rpc_test_and_wait
+.. autoconfigurable:: dbt_rpc_test_and_wait

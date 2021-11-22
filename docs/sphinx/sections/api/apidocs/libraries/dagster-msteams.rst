@@ -3,7 +3,7 @@ Microsoft Teams (dagster-msteams)
 
 .. currentmodule:: dagster_msteams
 
-.. autodata:: msteams_resource
+.. autoconfigurable:: msteams_resource
   :annotation: ResourceDefinition
 
 .. autodata:: teams_on_failure

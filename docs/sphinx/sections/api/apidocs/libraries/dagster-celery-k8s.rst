@@ -8,5 +8,5 @@ APIs
 
 .. autoclass:: CeleryK8sRunLauncher
 
-.. autodata:: celery_k8s_job_executor
+.. autoconfigurable:: celery_k8s_job_executor
   :annotation: ExecutorDefinition

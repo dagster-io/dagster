@@ -49,8 +49,8 @@ extensions = [
     "nbsphinx",
     "sphinx.ext.autosectionlabel",
     "recommonmark",
-    "autodoc_configurable",
     "sphinx_toolbox.collapse",
+    "autodoc_configurable",
 ]
 
 # https://stackoverflow.com/a/54843636/324449

@@ -12,10 +12,10 @@ def type_repr(config_type):
         return config_type.given_name
     if config_type == StringSource:
         return "dagster.StringSource"
-    if config_type == StringSource:
-        return "dagster.BoolSource"
     if config_type == BoolSource:
         return "dagster.BoolSource"
+    if config_type == IntSource:
+        return "dagster.IntSource"
     if config_type.kind == ConfigTypeKind.ANY:
         return "Any"
     elif config_type.kind == ConfigTypeKind.SCALAR:
@@ -23,7 +23,7 @@ def type_repr(config_type):
     elif config_type.kind == ConfigTypeKind.ENUM:
         return "Enum{" + ", ".join(str(val) for val in config_type.config_values) + "}"
     elif config_type.kind == ConfigTypeKind.ARRAY:
-        return "[{}]".format(type_repr(config_type.inner_type))
+        return "List[{}]".format(type_repr(config_type.inner_type))
     # TODO not sure what to do for this one
     elif config_type.kind == ConfigTypeKind.SELECTOR:
         return "selector"
@@ -32,7 +32,6 @@ def type_repr(config_type):
     elif config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE:
         return "permissive dict"
     elif config_type.kind == ConfigTypeKind.SCALAR_UNION:
-        # TODO: not sure what to do for the `non_scalar_schema` here-- why not a non scalar type?
         return (
             f"Union[{type_repr(config_type.scalar_type)}, {type_repr(config_type.non_scalar_type)}]"
         )
@@ -49,26 +48,21 @@ def config_field_to_lines(field, name=None):
             type_str += ", optional"
         lines.append(f":{name} ({type_str}):")
         if field.description:
-            lines.append(f"    {field.description}")
+            for l in field.description.split("\n"):
+                lines.append(" " * 4 + textwrap.dedent(l.replace("*", "\\*")))
+            lines.append("")
+
         if field.default_provided:
             val = field.default_value
             if isinstance(val, dict):
                 ls = json.dumps(val, indent=4).split("\n")
                 lines.append("")
-                if len(ls) > 0:
-                    lines.append("    .. collapse:: Default Value:")
-                    lines.append("")
-                    lines.append(" " * 8 + ".. code-block:: javascript")
-                    lines.append("")
-                    for l in ls:
-                        lines.append(" " * 12 + l)
-                else:
-                    lines.append("    **Default Value:**")
-                    lines.append("")
-                    lines.append(" " * 4 + ".. code-block:: javascript")
-                    lines.append("")
-                    for l in ls:
-                        lines.append(" " * 8 + l)
+                lines.append("    .. collapse:: Default Value:")
+                lines.append("")
+                lines.append("        .. code-block:: javascript")
+                lines.append("")
+                for l in ls:
+                    lines.append(" " * 12 + l)
             else:
                 lines.append("")
                 lines.append(f"    **Default Value:** {repr(val)}")
@@ -91,20 +85,18 @@ class ConfigurableDocumenter(DataDocumenter):
         return isinstance(member, ConfigurableDefinition)
 
     def add_content(self, more_content, no_docstring: bool = False) -> None:
-        super().add_content(more_content, no_docstring)
         source_name = self.get_sourcename()
         self.add_line("", source_name)
 
         lines = config_field_to_lines(self.object.config_schema.as_field())
         lines = textwrap.dedent("\n".join(lines)).split("\n")
-        for line in lines[:300]:
-            print(line)
 
         for line in lines:
-            self.add_line(line, source_name)
+            self.add_line(line.replace('"', ""), source_name)
 
         self.add_line("", source_name)
         self.add_line("", source_name)
+        super().add_content(more_content, no_docstring)
 
 
 def setup(app):
@@ -116,15 +108,3 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-
-
-def foo():
-    import json
-    from dagster_dbt import dbt_cloud_resource, dbt_cli_resource, dbt_rpc_sync_resource
-
-    x = config_field_to_dict(dbt_cloud_resource.config_schema.as_field())
-    print(json.dumps(x, indent=4))
-    x = config_field_to_dict(dbt_cli_resource.config_schema.as_field())
-    print(json.dumps(x, indent=4))
-    x = config_field_to_dict(dbt_rpc_sync_resource.config_schema.as_field())
-    print(json.dumps(x, indent=4))
