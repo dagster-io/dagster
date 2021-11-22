@@ -89,7 +89,7 @@ export const SectionItemContainer = styled.div`
   }
 `;
 
-export const CollapsingHeaderBar = styled.div`
+const CollapsingHeaderBar = styled.div`
   height: 32px;
   padding-left: 24px;
   padding-right: 8px;

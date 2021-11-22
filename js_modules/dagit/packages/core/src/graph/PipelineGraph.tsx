@@ -84,7 +84,7 @@ function computeOpPrefixBoundingBoxes(layout: IFullPipelineLayout) {
   return boxes;
 }
 
-export class PipelineGraphContents extends React.PureComponent<
+class PipelineGraphContents extends React.PureComponent<
   IPipelineContentsProps,
   IPipelineContentsState
 > {

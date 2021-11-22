@@ -44,7 +44,7 @@ export const InstanceHealthPage = () => {
   );
 };
 
-export const INSTANCE_HEALTH_QUERY = gql`
+const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
     instance {
       ...InstanceHealthFragment
