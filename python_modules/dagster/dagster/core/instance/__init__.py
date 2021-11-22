@@ -756,7 +756,7 @@ class DagsterInstance:
                 pipeline=InMemoryPipeline(pipeline_def),
                 run_config=run_config,
                 mode=mode,
-                instance_ref=self.get_ref(),
+                instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
             )
 

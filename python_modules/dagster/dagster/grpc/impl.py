@@ -143,8 +143,6 @@ def _run_in_subprocess(
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
-        if instance:
-            instance.dispose()
         return
 
     subprocess_status_handler(StartRunInSubprocessSuccessful())

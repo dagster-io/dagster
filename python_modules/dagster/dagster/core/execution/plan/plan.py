@@ -39,7 +39,7 @@ from dagster.core.execution.plan.handle import (
     UnresolvedStepHandle,
 )
 from dagster.core.execution.retries import RetryMode, RetryState
-from dagster.core.instance import InstanceRef, DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterTypeKind

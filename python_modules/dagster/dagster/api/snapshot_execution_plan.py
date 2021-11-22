@@ -45,7 +45,9 @@ def sync_get_external_execution_plan_grpc(
                     step_keys_to_execute=step_keys_to_execute,
                     pipeline_snapshot_id=pipeline_snapshot_id,
                     known_state=known_state,
-                    instance_ref=instance.get_ref() if instance else None,
+                    instance_ref=instance.get_ref()
+                    if instance and instance.is_persistent
+                    else None,
                 )
             ),
         ),
