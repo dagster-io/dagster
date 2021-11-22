@@ -27,7 +27,7 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 
 interface Props {
   assetKey: AssetKey;
-  asOf: string | null;
+  asOf?: string | null;
   asSidebarSection?: boolean;
 }
 

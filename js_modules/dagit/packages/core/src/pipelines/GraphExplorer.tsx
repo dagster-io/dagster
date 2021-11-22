@@ -138,10 +138,10 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   );
 
   const {all} = queryResultOps;
-  const highlightedOps = React.useMemo(() => all.filter((s) => s.name.includes(nameMatch)), [
-    nameMatch,
-    all,
-  ]);
+  const highlightedOps = React.useMemo(
+    () => all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
+    [nameMatch, all],
+  );
 
   const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();

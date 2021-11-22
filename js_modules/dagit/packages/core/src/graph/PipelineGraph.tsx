@@ -353,17 +353,15 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         onDoubleClick={this.unfocus}
       >
         {({scale}, bounds) => (
-          <>
-            <SVGContainer width={layout.width} height={layout.height + 200}>
-              <PipelineGraphContents
-                {...this.props}
-                layout={layout}
-                minified={scale < DETAIL_ZOOM - 0.01}
-                onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
-                bounds={bounds}
-              />
-            </SVGContainer>
-          </>
+          <SVGContainer width={layout.width} height={layout.height + 200}>
+            <PipelineGraphContents
+              {...this.props}
+              layout={layout}
+              minified={scale < DETAIL_ZOOM - 0.01}
+              onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
+              bounds={bounds}
+            />
+          </SVGContainer>
         )}
       </SVGViewport>
     );

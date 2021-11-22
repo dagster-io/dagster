@@ -33,7 +33,7 @@ interface IPoint {
   x: number;
   y: number;
 }
-type IEdge = {
+export type IEdge = {
   from: IPoint;
   to: IPoint;
   dashed: boolean;
