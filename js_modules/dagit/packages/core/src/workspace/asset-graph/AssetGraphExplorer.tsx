@@ -47,7 +47,8 @@ interface Props {
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const repositorySelector = repoAddressToSelector(props.repoAddress);
+  const {repoAddress, explorerPath} = props;
+  const repositorySelector = repoAddressToSelector(repoAddress);
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {repositorySelector},
     notifyOnNetworkStatusChange: true,
@@ -55,14 +56,23 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
   useDocumentTitle('Assets');
 
+  const graphData = React.useMemo(() => {
+    const repositoryOrError =
+      queryResult.data?.repositoryOrError.__typename === 'Repository'
+        ? queryResult.data?.repositoryOrError
+        : null;
+    if (!repositoryOrError) {
+      return null;
+    }
+    return buildGraphData(repositoryOrError, explorerPath.pipelineName);
+  }, [queryResult, explorerPath.pipelineName]);
+
   return (
     <Loading allowStaleData queryResult={queryResult}>
       {({repositoryOrError}) => {
-        if (repositoryOrError.__typename !== 'Repository') {
+        if (repositoryOrError.__typename !== 'Repository' || !graphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
-
-        const graphData = buildGraphData(repositoryOrError, props.explorerPath.pipelineName);
 
         if (graphHasCycles(graphData)) {
           return (
@@ -153,8 +163,8 @@ const AssetGraphExplorerWithData: React.FC<
     [explorerPath.opsQuery, handles],
   );
 
-  const layout = layoutGraph(graphData);
-  const computeStatuses = buildGraphComputeStatuses(graphData);
+  const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
+  const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
 
   return (
     <SplitPanelContainer

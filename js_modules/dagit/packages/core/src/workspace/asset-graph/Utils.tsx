@@ -1,8 +1,7 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
-import memoize from 'lodash/memoize';
 
-import {AssetNode, getNodeDimensions} from './AssetNode';
+import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
 import {
   AssetGraphQuery_repositoryOrError_Repository,
@@ -51,8 +50,8 @@ export const buildGraphData = (repository: Repository, jobName?: string) => {
 
   repository.assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({asset, inputName}) => {
-      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+    definition.dependencies.forEach(({upstreamAsset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(upstreamAsset.assetKey.path);
       downstream[upstreamAssetKeyJson] = {
         ...(downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: inputName,
@@ -94,7 +93,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const _layoutGraph = (graphData: GraphData, margin = 100) => {
+export const layoutGraph = (graphData: GraphData, margin = 100) => {
   const g = new dagre.graphlib.Graph();
 
   g.setGraph({rankdir: 'TB', marginx: margin, marginy: margin});
@@ -204,12 +203,6 @@ export function buildGraphComputeStatuses(graphData: GraphData) {
   }
   return statuses;
 }
-
-const _layoutCacheKey = (data: GraphData) => {
-  return Object.keys(data.nodes).join('|');
-};
-
-export const layoutGraph = memoize(_layoutGraph, _layoutCacheKey);
 
 export type Status = 'good' | 'old' | 'none';
 
