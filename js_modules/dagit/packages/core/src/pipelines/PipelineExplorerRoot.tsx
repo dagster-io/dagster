@@ -100,13 +100,12 @@ export const PipelineExplorerContainer: React.FC<{
           );
         }
 
-        const jobAssets =
-          pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
-        const isAssetGraph = jobAssets.length > 0;
+        const isAssetJob = pipelineOrError.__typename === 'Pipeline' && pipelineOrError.isAssetJob;
 
-        if (flagAssetGraph && isAssetGraph) {
+        if (flagAssetGraph && isAssetJob) {
           const unrepresentedOps = result.solidHandles.filter(
-            (handle) => !jobAssets.some((asset) => asset.opName === handle.handleID),
+            (handle) =>
+              !pipelineOrError.assetNodes.some((asset) => asset.opName === handle.handleID),
           );
           if (unrepresentedOps.length) {
             console.error(
