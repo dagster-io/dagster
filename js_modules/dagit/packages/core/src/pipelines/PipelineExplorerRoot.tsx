@@ -59,26 +59,20 @@ export const PipelineExplorerContainer: React.FC<{
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
       variables: {
-        pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
+        pipelineSelector: pipelineSelector,
+        snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
         snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
         rootHandleID: parentNames.join('.'),
         requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
-        repositorySelector: {
-          repositoryName: pipelineSelector.repositoryName,
-          repositoryLocationName: pipelineSelector.repositoryLocationName,
-        },
       },
     },
   );
 
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
-      {({pipelineSnapshotOrError: result, repositoryOrError}) => {
+      {({pipelineSnapshotOrError: result, pipelineOrError}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
-        }
-        if (repositoryOrError.__typename !== 'Repository' && !explorerPath.snapshotId) {
-          return <NonIdealPipelineQueryResult isGraph={isGraph} result={repositoryOrError} />;
         }
 
         const parentHandle = result.solidHandle;
@@ -106,22 +100,13 @@ export const PipelineExplorerContainer: React.FC<{
           );
         }
 
-        const repositoryAssets =
-          repositoryOrError.__typename === 'Repository' ? repositoryOrError.assetNodes : [];
-        const isAssetGraph = result.solidHandles.some((handle) =>
-          repositoryAssets.some(
-            (asset) =>
-              asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
-          ),
-        );
+        const jobAssets =
+          pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
+        const isAssetGraph = jobAssets.length > 0;
 
         if (flagAssetGraph && isAssetGraph) {
           const unrepresentedOps = result.solidHandles.filter(
-            (handle) =>
-              !repositoryAssets.some(
-                (asset) =>
-                  asset.opName === handle.handleID && asset.jobName === explorerPath.pipelineName,
-              ),
+            (handle) => !jobAssets.some((asset) => asset.opName === handle.handleID),
           );
           if (unrepresentedOps.length) {
             console.error(
@@ -166,29 +151,26 @@ export const PipelineExplorerContainer: React.FC<{
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $repositorySelector: RepositorySelector!
-    $pipelineSelector: PipelineSelector
+    $pipelineSelector: PipelineSelector!
+    $snapshotPipelineSelector: PipelineSelector
     $snapshotId: String
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      ... on Repository {
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
         id
+        isAssetJob
         assetNodes {
           id
           opName
-          jobName
         }
       }
-      ... on RepositoryNotFoundError {
-        message
-      }
-      ... on PythonError {
-        message
-      }
     }
-    pipelineSnapshotOrError(snapshotId: $snapshotId, activePipelineSelector: $pipelineSelector) {
+    pipelineSnapshotOrError(
+      snapshotId: $snapshotId
+      activePipelineSelector: $snapshotPipelineSelector
+    ) {
       ... on PipelineSnapshot {
         id
         name

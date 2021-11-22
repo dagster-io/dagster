@@ -4,14 +4,12 @@ import * as dagre from 'dagre';
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
 import {
-  AssetGraphQuery_repositoryOrError_Repository,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 
-type Repository = AssetGraphQuery_repositoryOrError_Repository;
-type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
 
 export interface Node {
   id: string;
@@ -43,12 +41,12 @@ export function assetKeyToString(key: {path: string[]}) {
   return key.path.join('>');
 }
 
-export const buildGraphData = (repository: Repository, jobName?: string) => {
+export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
   const nodes: {[id: string]: Node} = {};
   const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
   const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
 
-  repository.assetNodes.forEach((definition: AssetNode) => {
+  assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     definition.dependencies.forEach(({upstreamAsset, inputName}) => {
       const upstreamAssetKeyJson = JSON.stringify(upstreamAsset.assetKey.path);
@@ -112,9 +110,9 @@ export const layoutGraph = (graphData: GraphData, margin = 100) => {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-      if (graphData.nodes[downstreamId].hidden) {
+      if (!graphData.nodes[downstreamId] || graphData.nodes[downstreamId].hidden) {
         foreignNodes[downstreamId] = true;
-      } else if (graphData.nodes[upstreamId].hidden) {
+      } else if (!graphData.nodes[upstreamId] || graphData.nodes[upstreamId].hidden) {
         foreignNodes[upstreamId] = true;
       }
     });

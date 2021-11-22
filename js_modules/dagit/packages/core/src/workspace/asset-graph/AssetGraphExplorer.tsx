@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {uniq, without} from 'lodash';
 import React from 'react';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
@@ -15,6 +16,7 @@ import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
 import {NonIdealState} from '../../ui/NonIdealState';
 import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
+import {buildPipelineSelector} from '../WorkspaceContext';
 import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
@@ -33,10 +35,10 @@ import {
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
 } from './types/AssetGraphQuery';
 
-type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
+type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 
 interface Props {
   repoAddress: RepoAddress;
@@ -48,33 +50,31 @@ interface Props {
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {repoAddress, explorerPath} = props;
-  const repositorySelector = repoAddressToSelector(repoAddress);
+  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
-    variables: {repositorySelector},
+    variables: {pipelineSelector},
     notifyOnNetworkStatusChange: true,
   });
 
   useDocumentTitle('Assets');
 
   const graphData = React.useMemo(() => {
-    const repositoryOrError =
-      queryResult.data?.repositoryOrError.__typename === 'Repository'
-        ? queryResult.data?.repositoryOrError
-        : null;
-    if (!repositoryOrError) {
+    if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
       return null;
     }
-    return buildGraphData(repositoryOrError, explorerPath.pipelineName);
+    return buildGraphData(queryResult.data.pipelineOrError.assetNodes, explorerPath.pipelineName);
   }, [queryResult, explorerPath.pipelineName]);
 
   return (
     <Loading allowStaleData queryResult={queryResult}>
-      {({repositoryOrError}) => {
-        if (repositoryOrError.__typename !== 'Repository' || !graphData) {
+      {({pipelineOrError}) => {
+        if (pipelineOrError.__typename !== 'Pipeline' || !graphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
-        if (graphHasCycles(graphData)) {
+        const hasCycles = graphHasCycles(graphData);
+
+        if (hasCycles) {
           return (
             <NonIdealState
               icon="error"
@@ -111,6 +111,7 @@ const AssetGraphExplorerWithData: React.FC<
     graphData,
   } = props;
 
+  const history = useHistory();
   const selectedDefinition = selectedHandle?.solid.definition;
   const selectedGraphNode =
     selectedDefinition &&
@@ -119,8 +120,13 @@ const AssetGraphExplorerWithData: React.FC<
     );
 
   const onSelectNode = React.useCallback(
-    (e: React.MouseEvent<any>, node: Node) => {
+    (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node) => {
       e.stopPropagation();
+
+      if (!node) {
+        history.push(`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`);
+        return;
+      }
 
       const {opName, jobName} = node.definition;
       if (!opName) {
@@ -151,7 +157,7 @@ const AssetGraphExplorerWithData: React.FC<
         'replace',
       );
     },
-    [explorerPath, selectedGraphNode, graphData, onChangeExplorerPath],
+    [explorerPath, selectedGraphNode, graphData, onChangeExplorerPath, history],
   );
 
   const {all: highlighted} = React.useMemo(
@@ -165,6 +171,7 @@ const AssetGraphExplorerWithData: React.FC<
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
   const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
+  console.log(layout);
 
   return (
     <SplitPanelContainer
@@ -198,10 +205,12 @@ const AssetGraphExplorerWithData: React.FC<
 
                 {layout.nodes.map((layoutNode) => {
                   const graphNode = graphData.nodes[layoutNode.id];
-                  const {width, height} = graphNode.hidden
-                    ? getForeignNodeDimensions(layoutNode.id)
-                    : getNodeDimensions(graphNode.definition);
+                  const {width, height} =
+                    !graphNode || graphNode.hidden
+                      ? getForeignNodeDimensions(layoutNode.id)
+                      : getNodeDimensions(graphNode.definition);
 
+                  const path = JSON.parse(layoutNode.id);
                   if (
                     layoutNode.x + width < bounds.left ||
                     layoutNode.y + height < bounds.top ||
@@ -218,11 +227,11 @@ const AssetGraphExplorerWithData: React.FC<
                       y={layoutNode.y}
                       width={width}
                       height={height}
-                      onClick={(e) => onSelectNode(e, graphNode)}
+                      onClick={(e) => onSelectNode(e, {path}, graphNode)}
                       style={{overflow: 'visible'}}
                     >
-                      {graphNode.hidden ? (
-                        <ForeignNode assetKey={graphNode.assetKey} />
+                      {!graphNode || graphNode.hidden ? (
+                        <ForeignNode assetKey={{path}} />
                       ) : (
                         <AssetNode
                           definition={graphNode.definition}
@@ -291,15 +300,10 @@ const AssetGraphExplorerWithData: React.FC<
 };
 
 const ASSETS_GRAPH_QUERY = gql`
-  query AssetGraphQuery($repositorySelector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      ... on Repository {
+  query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
         id
-        name
-        location {
-          id
-          name
-        }
         assetNodes {
           ...AssetNodeFragment
           id
@@ -314,14 +318,6 @@ const ASSETS_GRAPH_QUERY = gql`
                 path
               }
             }
-          }
-        }
-        pipelines {
-          id
-          name
-          modes {
-            id
-            name
           }
         }
       }

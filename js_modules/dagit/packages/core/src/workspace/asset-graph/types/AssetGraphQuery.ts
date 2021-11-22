@@ -3,94 +3,88 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, RunStatus } from "./../../../types/globalTypes";
+import { PipelineSelector, RunStatus } from "./../../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphQuery
 // ====================================================
 
-export interface AssetGraphQuery_repositoryOrError_PythonError {
-  __typename: "PythonError" | "RepositoryNotFoundError";
+export interface AssetGraphQuery_pipelineOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_Run {
   __typename: "Run";
   id: string;
   runId: string;
   mode: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
-  repositoryOrigin: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin | null;
+  repositoryOrigin: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_Run_repositoryOrigin | null;
   status: RunStatus;
 }
 
-export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_Run;
+export type AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError_Run;
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_stepStats {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_stepStats {
   __typename: "RunStepStats";
   endTime: number | null;
   startTime: number | null;
   stepKey: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
   __typename: "EventJsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventUrlMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventUrlMetadataEntry {
   __typename: "EventUrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventTextMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventTextMetadataEntry {
   __typename: "EventTextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry {
   __typename: "EventMarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry {
   __typename: "EventPythonArtifactMetadataEntry";
   label: string;
   description: string | null;
@@ -98,14 +92,14 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   name: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
   __typename: "EventIntMetadataEntry";
   label: string;
   description: string | null;
@@ -113,116 +107,100 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   intRepr: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry {
   __typename: "EventPipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry {
   __typename: "EventAssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-export type AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPathMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventJsonMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventUrlMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventTextMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventFloatMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventIntMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry | AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry;
+export type AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPathMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventJsonMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventUrlMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventTextMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventFloatMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventIntMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry | AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries_EventAssetMetadataEntry;
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization {
   __typename: "Materialization";
-  metadataEntries: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries[];
+  metadataEntries: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization_metadataEntries[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_assetLineage_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_assetLineage_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_assetLineage {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_assetLineage {
   __typename: "AssetLineageInfo";
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_assetLineage_assetKey;
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_assetLineage_assetKey;
   partitions: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent {
   __typename: "StepMaterializationEvent";
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_stepStats;
-  materialization: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_materialization;
-  assetLineage: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent_assetLineage[];
+  stepStats: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_stepStats;
+  materialization: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_materialization;
+  assetLineage: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent_assetLineage[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations {
   __typename: "AssetMaterialization";
   partition: string | null;
-  runOrError: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError;
-  materializationEvent: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent;
+  runOrError: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_runOrError;
+  materializationEvent: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations_materializationEvent;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset {
   __typename: "AssetNode";
   id: string;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey;
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset_assetKey;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies {
   __typename: "AssetDependency";
   inputName: string;
-  upstreamAsset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset;
+  upstreamAsset: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
   description: string | null;
   jobName: string | null;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
-  assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations[];
-  dependencies: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies[];
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
+  assetMaterializations: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations[];
+  dependencies: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_pipelines_modes {
-  __typename: "Mode";
-  id: string;
-  name: string;
-}
-
-export interface AssetGraphQuery_repositoryOrError_Repository_pipelines {
+export interface AssetGraphQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
-  name: string;
-  modes: AssetGraphQuery_repositoryOrError_Repository_pipelines_modes[];
+  assetNodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetGraphQuery_repositoryOrError_Repository_location;
-  assetNodes: AssetGraphQuery_repositoryOrError_Repository_assetNodes[];
-  pipelines: AssetGraphQuery_repositoryOrError_Repository_pipelines[];
-}
-
-export type AssetGraphQuery_repositoryOrError = AssetGraphQuery_repositoryOrError_PythonError | AssetGraphQuery_repositoryOrError_Repository;
+export type AssetGraphQuery_pipelineOrError = AssetGraphQuery_pipelineOrError_PipelineNotFoundError | AssetGraphQuery_pipelineOrError_Pipeline;
 
 export interface AssetGraphQuery {
-  repositoryOrError: AssetGraphQuery_repositoryOrError;
+  pipelineOrError: AssetGraphQuery_pipelineOrError;
 }
 
 export interface AssetGraphQueryVariables {
-  repositorySelector: RepositorySelector;
+  pipelineSelector: PipelineSelector;
 }
