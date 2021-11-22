@@ -16,8 +16,6 @@ import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
-export const LAST_REPO_KEY = 'dagit.last-repo';
-// export const REPO_KEYS = 'dagit.repo-keys';
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
 const buildDetails = memoize((option: DagsterRepoOption) => ({

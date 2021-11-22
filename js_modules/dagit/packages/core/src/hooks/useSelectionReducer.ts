@@ -76,5 +76,3 @@ export function useSelectionReducer(allIds: string[]) {
 
   return [state, {onToggleFactory, onToggleAll}] as const;
 }
-
-export type SelectionStateAndActions = ReturnType<typeof useSelectionReducer>;

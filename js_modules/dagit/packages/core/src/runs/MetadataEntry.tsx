@@ -283,7 +283,7 @@ export const MetadataEntryLink = styled(Link)`
   }
 `;
 
-export const StructuredContentTable = styled.table`
+const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
