@@ -50,8 +50,8 @@ export const buildGraphData = (repository: Repository, jobName?: string) => {
 
   repository.assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({upstreamAsset, inputName}) => {
-      const upstreamAssetKeyJson = JSON.stringify(upstreamAsset.assetKey.path);
+    definition.dependencies.forEach(({asset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
       downstream[upstreamAssetKeyJson] = {
         ...(downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: inputName,

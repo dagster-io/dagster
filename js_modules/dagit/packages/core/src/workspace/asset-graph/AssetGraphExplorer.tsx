@@ -4,7 +4,6 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -308,7 +307,7 @@ const ASSETS_GRAPH_QUERY = gql`
           }
           dependencies {
             inputName
-            upstreamAsset {
+            asset {
               id
               assetKey {
                 path
@@ -328,7 +327,6 @@ const ASSETS_GRAPH_QUERY = gql`
     }
   }
   ${ASSET_NODE_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`

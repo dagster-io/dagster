@@ -1,3 +1,4 @@
+import {isEqual} from 'lodash';
 import React from 'react';
 import styled from 'styled-components/macro';
 

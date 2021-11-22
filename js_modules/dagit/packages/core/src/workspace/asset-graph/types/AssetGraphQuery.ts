@@ -167,21 +167,21 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   materializationEvent: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent;
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey {
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_asset_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset {
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_asset {
   __typename: "AssetNode";
   id: string;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey;
+  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_asset_assetKey;
 }
 
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies {
   __typename: "AssetDependency";
   inputName: string;
-  upstreamAsset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset;
+  asset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_asset;
 }
 
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes {

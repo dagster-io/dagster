@@ -10,11 +10,9 @@ import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
-import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMaterializationMatrix';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
 import {AssetKey, AssetNumericHistoricalData} from './types';
@@ -27,45 +25,39 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 
 interface Props {
   assetKey: AssetKey;
-  asOf: string | null;
   asSidebarSection?: boolean;
 }
+const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
-export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
-  const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
+export const AssetMaterializations: React.FC<Props> = ({assetKey, asSidebarSection}) => {
   const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
     ASSET_MATERIALIZATIONS_QUERY,
     {
       variables: {
         assetKey: {path: assetKey.path},
         limit: 200,
-        before,
       },
     },
   );
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
   const assetMaterializations = asset?.assetMaterializations || [];
-
-  const [activeTab = 'graphs', setActiveTab] = useQueryPersistedState<'graphs' | 'list'>({
-    queryKey: 'tab',
-  });
-
-  const isPartitioned = assetMaterializations.some((m) => m.partition);
-  const [xAxis = isPartitioned ? 'partition' : 'time', setXAxis] = useQueryPersistedState<
-    'partition' | 'time'
-  >({
-    queryKey: 'axis',
-  });
-
+  const hasPartitions = assetMaterializations.some((m) => m.partition);
   const hasLineage = assetMaterializations.some(
     (m) => m.materializationEvent.assetLineage.length > 0,
   );
 
+  const [{xAxis, asOf}, setParams] = useQueryPersistedState<{
+    xAxis: 'partition' | 'time';
+    asOf: string;
+  }>({
+    defaults: {xAxis: hasPartitions ? 'partition' : 'time'},
+  });
+
   const bucketed = useMaterializationBuckets({
     materializations: assetMaterializations,
-    isPartitioned,
-    shouldBucketPartitions: true,
+    hasPartitions,
+    shouldBucketPartitions: xAxis === 'partition',
   });
 
   const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
@@ -75,93 +67,82 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
     return <span />; // chartjs and our useViewport hook don't play nicely with jest
   }
 
-  const content = () => {
-    if (loading) {
-      return (
-        <Box padding={{vertical: 20}}>
-          <Spinner purpose="section" />
-        </Box>
-      );
-    }
-
-    if (!reversed.length) {
-      return (
-        <Box padding={{vertical: 20}}>
-          <NonIdealState
-            icon="asset"
-            title="No materializations"
-            description="No materializations were found for this asset."
-          />
-        </Box>
-      );
-    }
-
-    if (activeTab === 'list') {
-      return (
-        <AssetMaterializationTable
-          isPartitioned={isPartitioned}
-          hasLineage={hasLineage}
-          materializations={bucketed}
-        />
-      );
-    }
-
+  if (loading) {
     return (
-      <AssetMaterializationMatrixAndGraph
-        assetMaterializations={reversed}
-        isPartitioned={isPartitioned}
-        xAxis={xAxis}
-        asSidebarSection={asSidebarSection}
-      />
+      <Box padding={{vertical: 20}}>
+        <Spinner purpose="section" />
+      </Box>
     );
-  };
+  }
+
+  if (!reversed.length) {
+    return (
+      <Box padding={{vertical: 20}}>
+        <NonIdealState
+          icon="asset"
+          title="No materializations"
+          description="No materializations were found for this asset."
+        />
+      </Box>
+    );
+  }
 
   if (asSidebarSection) {
-    return content();
+    return (
+      <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection assetMaterializations={reversed} />
+    );
   }
 
   return (
-    <div>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-      >
-        <Subheading>Materializations over time</Subheading>
-        {isPartitioned ? (
-          <ButtonGroup
-            activeItems={activeItems}
-            buttons={[
-              {id: 'partition', label: 'By partition'},
-              {id: 'time', label: 'By timestamp'},
-            ]}
-            onClick={(id: string) => setXAxis(id as 'partition' | 'time')}
-          />
-        ) : null}
-      </Box>
-      {reversed.length ? (
+    <Box style={{display: 'flex'}}>
+      <Box style={{flex: 1}}>
         <Box
-          padding={{horizontal: 24}}
+          flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{vertical: 16, horizontal: 24}}
           border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
-            <Tab id="graphs" title="Graphs" />
-            <Tab id="list" title="List" />
-          </Tabs>
+          <Subheading>Materializations</Subheading>
+          {hasPartitions ? (
+            <div style={{margin: '-6px 0 '}}>
+              <ButtonGroup
+                activeItems={activeItems}
+                buttons={[
+                  {id: 'partition', label: 'By partition'},
+                  {id: 'time', label: 'By timestamp'},
+                ]}
+                onClick={(id: string) => setParams({xAxis: id as 'partition' | 'time', asOf: asOf})}
+              />
+            </div>
+          ) : null}
         </Box>
-      ) : null}
-      {content()}
-    </div>
+        <AssetMaterializationTable
+          hasPartitions={hasPartitions}
+          hasLineage={hasLineage}
+          materializations={bucketed}
+          focused={
+            bucketed.find((b) => Number(b.latest.materializationEvent.timestamp) <= Number(asOf))
+              ?.latest.materializationEvent.timestamp
+          }
+          setFocused={(asOf) => setParams({xAxis, asOf: asOf})}
+        />
+      </Box>
+      <Box style={{width: '40%'}} border={{side: 'left', color: ColorsWIP.KeylineGray, width: 1}}>
+        <AssetMaterializationGraphs
+          xAxis={xAxis}
+          asSidebarSection={asSidebarSection}
+          assetMaterializations={reversed}
+        />
+      </Box>
+    </Box>
   );
 };
 
-const AssetMaterializationMatrixAndGraph: React.FC<{
+const AssetMaterializationGraphs: React.FC<{
   assetMaterializations: HistoricalMaterialization[];
-  isPartitioned: boolean;
   xAxis: 'partition' | 'time';
   asSidebarSection?: boolean;
 }> = (props) => {
-  const {assetMaterializations, isPartitioned, xAxis} = props;
+  const {assetMaterializations, xAxis} = props;
   const [xHover, setXHover] = React.useState<string | number | null>(null);
   const latest = assetMaterializations.map((m) => m.latest);
 
@@ -172,32 +153,19 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
 
   return (
     <>
-      {!props.asSidebarSection && (
-        <AssetMaterializationMatrix
-          isPartitioned={isPartitioned}
-          materializations={assetMaterializations}
-          xAxis={xAxis}
-          xHover={xHover}
-          onHoverX={(x) => x !== xHover && setXHover(x)}
-          graphDataByMetadataLabel={graphDataByMetadataLabel}
-          graphedLabels={graphedLabels}
-          setGraphedLabels={setGraphedLabels}
-        />
-      )}
       <div
         style={{
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'stretch',
-          flexDirection: props.asSidebarSection ? 'column' : 'row',
-          marginTop: props.asSidebarSection ? 0 : 30,
+          flexDirection: 'column',
         }}
       >
         {[...graphedLabels].sort().map((label) => (
           <AssetValueGraph
             key={label}
             label={label}
-            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '50%'}
+            width={'100%'}
             data={graphDataByMetadataLabel[label]}
             xHover={xHover}
             onHoverX={(x) => x !== xHover && setXHover(x)}
