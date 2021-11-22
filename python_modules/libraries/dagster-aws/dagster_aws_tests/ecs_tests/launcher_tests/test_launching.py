@@ -169,3 +169,20 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
     with pytest.raises(Exception, match="boom"):
         monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", exploding_describe_tasks)
         instance.launch_run(run.run_id, workspace)
+
+
+@pytest.mark.parametrize("assign_public_ip", [True, False])
+def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_ip):
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+    attachment = task.get("attachments")[0]
+    details = dict([(detail.get("name"), detail.get("value")) for detail in attachment["details"]])
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    attributes = eni.association_attribute or {}
+
+    assert bool(attributes.get("PublicIp")) == assign_public_ip

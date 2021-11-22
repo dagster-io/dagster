@@ -40,11 +40,17 @@ def task_definition(ecs, image, environment):
 
 
 @pytest.fixture
-def task(ecs, subnet, security_group, task_definition):
+def assign_public_ip():
+    return True
+
+
+@pytest.fixture
+def task(ecs, subnet, security_group, task_definition, assign_public_ip):
     return ecs.run_task(
         taskDefinition=task_definition["family"],
         networkConfiguration={
             "awsvpcConfiguration": {
+                "assignPublicIp": "ENABLED" if assign_public_ip else "DISABLED",
                 "subnets": [subnet.id],
                 "securityGroups": [security_group.id],
             },
