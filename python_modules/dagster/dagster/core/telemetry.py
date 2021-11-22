@@ -12,15 +12,17 @@ For local development:
 
 import datetime
 import hashlib
+import inspect
 import json
 import logging
 import os
 import sys
 import uuid
 from collections import namedtuple
+from contextlib import ContextDecorator, contextmanager
 from functools import wraps
-from inspect import isfunction
 from logging.handlers import RotatingFileHandler
+from typing import Callable, Dict, List, NamedTuple, Optional, cast
 
 import click
 import yaml
@@ -43,40 +45,85 @@ UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
 TELEMETRY_VERSION = "0.2"
 
+
+class TelemetryRegistry(
+    NamedTuple(
+        "_TelemetryRegistry",
+        [
+            ("registry_map", Dict[str, List[str]]),
+        ],
+    )
+):
+    def __new__(cls, registry_map: Optional[Dict[str, List[str]]] = None):
+        return super(TelemetryRegistry, cls).__new__(
+            cls, registry_map=check.opt_dict_param(registry_map, "registry_map")
+        )
+
+    def get_human_readable_format(self) -> List[str]:
+        result = []
+        for klassname, method_names in self.registry_map.items():
+            for method_name in method_names:
+                if klassname == "object":
+                    result.append(method_name)
+                else:
+                    result.append(f"{klassname}.{method_name}")
+        return result
+
+    def register(self, f: Callable) -> None:
+        klassname = _get_klassname_for_method(f)
+        if not klassname in self.registry_map:
+            self.registry_map[klassname] = []
+        self.registry_map[klassname].append(f.__name__)
+
+
+def _get_klassname_for_method(f: Callable) -> str:
+    if not hasattr(f, "im_class"):  # for the non-method case
+        return "object"
+    for klass in inspect.getmro(f.im_class):  # type: ignore[attr-defined]
+        if hasattr(klass, f.__name__):
+            return klass.__name__
+    raise DagsterInvariantViolationError(
+        f"An unexpected error occurred when registering method '{f.__name__}'. Could not find "
+        "class for method."
+    )
+
+
+TELEMETRY_REGISTRY = TelemetryRegistry()
+
+
 # start_TELEMETRY_WHITELISTED_FUNCTIONS
-TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "_logged_execute_pipeline",
-    "execute_execute_command",
-    "execute_launch_command",
-}
+# TELEMETRY_WHITELISTED_FUNCTIONS = {
+#     "_logged_execute_pipeline",
+#     "execute_execute_command",
+#     "execute_launch_command",
+# }
 # end_TELEMETRY_WHITELISTED_FUNCTIONS
 
 
-def telemetry_wrapper(whitelist=TELEMETRY_WHITELISTED_FUNCTIONS):
+def telemetry_wrapper(registry: TelemetryRegistry = TELEMETRY_REGISTRY) -> Callable:
     """
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
 
-    Wrapped function must be in the list of whitelisted function, and must have a DagsterInstance
+    Wrapped function must be in the list of registered function, and must have a DagsterInstance
     parameter named 'instance' in the signature.
     """
     # Bare decorator case
-    if not isinstance(whitelist, set) and isfunction(whitelist):
-        return _wrap_for_telemetry(f=whitelist, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS)
+    if not isinstance(registry, set) and inspect.isfunction(registry):
+        f = cast(Callable, registry)
+        TELEMETRY_REGISTRY.register(f)
+        return _wrap_for_telemetry(f)
 
     def _inner(f):
-        return _wrap_for_telemetry(f, whitelist=whitelist)
+        registry.register(f)
+        return _wrap_for_telemetry(f)
 
     return _inner
 
 
-def _wrap_for_telemetry(f, whitelist):
-    if f.__name__ not in whitelist:
-        raise DagsterInvariantViolationError(
-            "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
-            "functions list: {whitelist}.".format(name=f.__name__, whitelist=whitelist)
-        )
+def _wrap_for_telemetry(f: Callable) -> Callable:
 
+    # Verify that f has an instance parameter
     var_names = f.__code__.co_varnames
     try:
         instance_index = var_names.index("instance")
@@ -86,16 +133,51 @@ def _wrap_for_telemetry(f, whitelist):
             "in a parameter called 'instance'"
         )
 
+    if isinstance(f, ContextDecorator):
+        return wrap_contextmanager_for_telemetry(f, instance_index)
+    else:
+        return wrap_function_for_telemetry(f, instance_index)
+
+
+def wrap_contextmanager_for_telemetry(f: Callable, instance_index: int):
+    @contextmanager
     @wraps(f)
     def wrap(*args, **kwargs):
         instance = _check_telemetry_instance_param(args, kwargs, instance_index)
+        klassname = _get_klassname_for_method(f)
+        fn_name = f"{klassname}.{f.__name__}" if klassname != "object" else f.__name__
         start_time = datetime.datetime.now()
-        log_action(instance=instance, action=f.__name__ + "_started", client_time=start_time)
+        log_action(instance=instance, action=f"{fn_name}_started", client_time=start_time)
+
+        try:
+            with f(*args, **kwargs) as result:
+                yield result
+        finally:
+            end_time = datetime.datetime.now()
+            log_action(
+                instance=instance,
+                action=f"{fn_name}_ended",
+                client_time=end_time,
+                elapsed_time=end_time - start_time,
+                metadata={"success": getattr(result, "success", None)},
+            )
+
+    return wrap
+
+
+def wrap_function_for_telemetry(f, instance_index: int):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        instance = _check_telemetry_instance_param(args, kwargs, instance_index)
+        klassname = _get_klassname_for_method(f)
+        fn_name = f"{klassname}.{f.__name__}" if klassname != "object" else f.__name__
+        start_time = datetime.datetime.now()
+        log_action(instance=instance, action=f"{fn_name}_started", client_time=start_time)
         result = f(*args, **kwargs)
         end_time = datetime.datetime.now()
         log_action(
             instance=instance,
-            action=f.__name__ + "_ended",
+            action=f"{fn_name}_ended",
             client_time=end_time,
             elapsed_time=end_time - start_time,
             metadata={"success": getattr(result, "success", None)},

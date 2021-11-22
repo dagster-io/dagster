@@ -1,25 +1,14 @@
 import json
 import logging
 
-import pytest
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.telemetry import telemetry_wrapper
+from dagster.core.telemetry import TelemetryRegistry, telemetry_wrapper
 from dagster.core.test_utils import instance_for_test
 
 
-def test_telemetry_on_function_not_in_whitelist():
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Attempted to log telemetry for function _my_func that is not in telemetry whitelisted functions list: {'foo'}",
-    ):
-
-        @telemetry_wrapper(whitelist={"foo"})
-        def _my_func(instance):  # pylint: disable=unused-argument
-            pass
-
-
 def test_telemetry_instance_logger():
-    @telemetry_wrapper(whitelist={"my_func"})
+    registry = TelemetryRegistry()
+
+    @telemetry_wrapper(registry=registry)
     def my_func(instance):  # pylint: disable=unused-argument
         pass
 
