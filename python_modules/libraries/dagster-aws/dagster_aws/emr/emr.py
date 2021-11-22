@@ -189,7 +189,8 @@ class EmrJobRunner:
         log.info("Created new cluster %s" % cluster_id)
 
         # set EMR tags for the cluster
-        tags = cluster_config.get("Tags", {})
+        tags_items = cluster_config.get("Tags", [])
+        tags = {k: v for k, v in tags_items}
         tags["__dagster_version"] = dagster.__version__
         self.add_tags(log, tags, cluster_id)
         return cluster_id
