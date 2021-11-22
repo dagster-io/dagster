@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -9,11 +8,6 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 // ====================================================
 // GraphQL query operation: RunsRootQuery
 // ====================================================
-
-export interface RunsRootQuery_pipelineRunsOrError_Runs_results_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
 
 export interface RunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
@@ -62,7 +56,6 @@ export interface RunsRootQuery_pipelineRunsOrError_Runs_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: RunsRootQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: RunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;

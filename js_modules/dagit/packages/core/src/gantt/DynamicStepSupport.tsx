@@ -1,5 +1,5 @@
 /**
- * Solids with dynamic outputs yield execution plans like step_a => step_b[?] => step_c[?],
+ * Ops with dynamic outputs yield execution plans like step_a => step_b[?] => step_c[?],
  * where the index syntax indicates that step_b and step_c may be invoked an arbitrary number
  * of times. At runtime, Dagit replaces and duplicates these "planned dynamic steps" as it
  * observes invocations in the logs.

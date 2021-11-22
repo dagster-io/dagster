@@ -16,7 +16,7 @@ from dagster import (
     op,
     solid,
 )
-from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.types.dagster_type import Int, String
 
 

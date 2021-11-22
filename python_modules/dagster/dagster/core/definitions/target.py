@@ -2,8 +2,8 @@ from typing import List, NamedTuple, Optional, Union
 
 from dagster import check
 
-from .graph import GraphDefinition
-from .pipeline import PipelineDefinition
+from .graph_definition import GraphDefinition
+from .pipeline_definition import PipelineDefinition
 
 
 class RepoRelativeTarget(NamedTuple):

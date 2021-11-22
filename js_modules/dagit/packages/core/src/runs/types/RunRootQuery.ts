@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -26,21 +25,9 @@ export interface RunRootQuery_pipelineRunOrError_Run_tags {
   value: string;
 }
 
-export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
-  name: string | null;
-}
-
-export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn_outputs_type;
-}
-
 export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
-  outputs: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn_outputs[];
   kind: StepKind;
 }
 
@@ -52,14 +39,14 @@ export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs 
 export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps {
   __typename: "ExecutionStep";
   key: string;
-  inputs: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs[];
   kind: StepKind;
+  inputs: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs[];
 }
 
 export interface RunRootQuery_pipelineRunOrError_Run_executionPlan {
   __typename: "ExecutionPlan";
-  steps: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps[];
   artifactsPersisted: boolean;
+  steps: RunRootQuery_pipelineRunOrError_Run_executionPlan_steps[];
 }
 
 export interface RunRootQuery_pipelineRunOrError_Run_repositoryOrigin {
@@ -108,7 +95,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
   pipeline: RunRootQuery_pipelineRunOrError_Run_pipeline;
-  runConfigYaml: string;
+  runConfig: any;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;
@@ -116,6 +103,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   tags: RunRootQuery_pipelineRunOrError_Run_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;

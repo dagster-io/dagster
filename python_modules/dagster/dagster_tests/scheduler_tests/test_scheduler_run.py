@@ -17,6 +17,8 @@ from dagster import (
     ScheduleDefinition,
     daily_schedule,
     hourly_schedule,
+    job,
+    op,
     pipeline,
     repository,
     schedule,
@@ -30,8 +32,19 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.scheduler.job import (
+    JobState,
+    JobStatus,
+    JobTickData,
+    JobTickStatus,
+    JobType,
+    ScheduleJobData,
+)
+from dagster.core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+)
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
     create_test_daemon_workspace,
@@ -331,6 +344,23 @@ manual_partition_schedule = manual_partition.create_schedule_definition(
 )
 
 
+def define_default_config_job():
+    @op(config_schema=str)
+    def my_op(context):
+        assert context.op_config == "foo"
+
+    @job(config={"ops": {"my_op": {"config": "foo"}}})
+    def default_config_job():
+        my_op()
+
+    return default_config_job
+
+
+default_config_schedule = ScheduleDefinition(
+    name="default_config_schedule", cron_schedule="* * * * *", job=define_default_config_job()
+)
+
+
 @repository
 def the_repo():
     return [
@@ -357,6 +387,7 @@ def the_repo():
         large_schedule,
         two_step_pipeline,
         manual_partition_schedule,
+        default_config_schedule,
     ]
 
 
@@ -623,6 +654,53 @@ def test_simple_schedule(external_repo_context, capfd):
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
+def test_old_tick_schedule(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+
+            # Create an old tick from several days ago
+            instance.create_job_tick(
+                JobTickData(
+                    job_origin_id=external_schedule.get_external_origin_id(),
+                    job_name="simple_schedule",
+                    job_type=JobType.SCHEDULE,
+                    status=JobTickStatus.STARTED,
+                    timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
+                )
+            )
+
+            schedule_origin = external_schedule.get_external_origin()
+
+            # the start time is what determines the number of runs, not the last tick
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            list(
+                launch_scheduled_runs(
+                    instance,
+                    workspace,
+                    logger(),
+                    pendulum.now("UTC"),
+                )
+            )
+
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 2
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_no_started_schedules(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
@@ -885,6 +963,55 @@ def test_wrong_config(external_repo_context, capfd):
             assert "Failed to fetch execution plan for wrong_config_schedule" in captured.out
             assert "Error in config for pipeline" in captured.out
             assert 'Missing required config entry "solids" at the root.' in captured.out
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_schedule_run_default_config(external_repo_context):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_schedule = external_repo.get_external_schedule("default_config_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum.test(initial_datetime):
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+
+            assert instance.get_runs_count() == 1
+
+            wait_for_all_runs_to_start(instance)
+
+            run = instance.get_runs()[0]
+
+            validate_run_started(
+                run,
+                execution_time=initial_datetime,
+                expected_success=True,
+            )
+
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
+            )
+
+            # wait for run to complete
+            run = instance.get_run_by_id(run.run_id)
+
+            while run.status in IN_PROGRESS_RUN_STATUSES:
+                time.sleep(1)
+                run = instance.get_run_by_id(run.run_id)
+
+            assert run.status == PipelineRunStatus.SUCCESS
 
 
 def _get_unloadable_schedule_origin():

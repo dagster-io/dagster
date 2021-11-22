@@ -1,8 +1,12 @@
 from typing import Any, Dict, Optional, Union
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import IContainsGenerator, ResourceDefinition, Resources
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import (
+    IContainsGenerator,
+    ResourceDefinition,
+    Resources,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -18,13 +22,16 @@ class InitResourceContext:
             :py:class:`ResourceDefinition`.
         resource_def (ResourceDefinition): The definition of the resource currently being
             constructed.
-        log_manager (DagsterLogManager): The log manager for this run of the pipeline
+        log_manager (DagsterLogManager): The log manager for this run of the job or pipeline
         resources (ScopedResources): The resources that are available to the resource that we are
             initalizing.
-        pipeline_run (Optional[PipelineRun]): The pipeline run to use. When initializing resources
+        dagster_run (Optional[PipelineRun]): The dagster run to use. When initializing resources
             outside of execution context, this will be None.
-        run_id (Optional[str]): The id for this run of the pipeline. When initializing resources
+        run_id (Optional[str]): The id for this run of the job or pipeline. When initializing resources
             outside of execution context, this will be None.
+        pipeline_run (Optional[PipelineRun]): (legacy) The dagster run to use. When initializing resources
+            outside of execution context, this will be None.
+
     """
 
     def __init__(
@@ -33,11 +40,17 @@ class InitResourceContext:
         resources: Resources,
         resource_def: Optional[ResourceDefinition] = None,
         instance: Optional[DagsterInstance] = None,
+        dagster_run: Optional[PipelineRun] = None,
         pipeline_run: Optional[PipelineRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
         pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):
 
+        if dagster_run and pipeline_run:
+            raise DagsterInvariantViolationError(
+                "Provided both ``dagster_run`` and ``pipeline_run`` to InitResourceContext "
+                "initialization. Please provide one or the other."
+            )
         self._resource_config = resource_config
         self._resource_def = resource_def
         self._log_manager = log_manager
@@ -45,7 +58,7 @@ class InitResourceContext:
         self._resources = resources
 
         self._pipeline_def_for_backwards_compat = pipeline_def_for_backwards_compat
-        self._pipeline_run = pipeline_run
+        self._dagster_run = dagster_run or pipeline_run
 
     @property
     def resource_config(self) -> Any:
@@ -68,8 +81,12 @@ class InitResourceContext:
         return self._pipeline_def_for_backwards_compat
 
     @property
+    def dagster_run(self) -> Optional[PipelineRun]:
+        return self._dagster_run
+
+    @property
     def pipeline_run(self) -> Optional[PipelineRun]:
-        return self._pipeline_run
+        return self.dagster_run
 
     @property
     def log(self) -> Optional[DagsterLogManager]:

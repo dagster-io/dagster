@@ -262,6 +262,7 @@ mutation($executionParams: ExecutionParams!) {
         status
         runConfigYaml
         mode
+        resolvedOpSelection
       }
     }
     ... on ConflictingExecutionParamsError {

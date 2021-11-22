@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -22,21 +21,9 @@ export interface RunFragment_pipeline {
   solidSelection: string[] | null;
 }
 
-export interface RunFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
-  name: string | null;
-}
-
-export interface RunFragment_executionPlan_steps_inputs_dependsOn_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: RunFragment_executionPlan_steps_inputs_dependsOn_outputs_type;
-}
-
 export interface RunFragment_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
-  outputs: RunFragment_executionPlan_steps_inputs_dependsOn_outputs[];
   kind: StepKind;
 }
 
@@ -48,14 +35,14 @@ export interface RunFragment_executionPlan_steps_inputs {
 export interface RunFragment_executionPlan_steps {
   __typename: "ExecutionStep";
   key: string;
-  inputs: RunFragment_executionPlan_steps_inputs[];
   kind: StepKind;
+  inputs: RunFragment_executionPlan_steps_inputs[];
 }
 
 export interface RunFragment_executionPlan {
   __typename: "ExecutionPlan";
-  steps: RunFragment_executionPlan_steps[];
   artifactsPersisted: boolean;
+  steps: RunFragment_executionPlan_steps[];
 }
 
 export interface RunFragment_repositoryOrigin {
@@ -103,7 +90,7 @@ export interface RunFragment_stepStats {
 export interface RunFragment {
   __typename: "Run";
   id: string;
-  runConfigYaml: string;
+  runConfig: any;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;
@@ -111,6 +98,7 @@ export interface RunFragment {
   tags: RunFragment_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineName: string;
   pipeline: RunFragment_pipeline;
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;

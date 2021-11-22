@@ -5,16 +5,16 @@ from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping
-from ..graph import GraphDefinition
-from ..hook import HookDefinition
-from ..job import JobDefinition
-from ..logger import LoggerDefinition
-from ..resource import ResourceDefinition
+from ..graph_definition import GraphDefinition
+from ..hook_definition import HookDefinition
+from ..job_definition import JobDefinition
+from ..logger_definition import LoggerDefinition
+from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from ..partition import PartitionedConfig
-    from ..executor import ExecutorDefinition
+    from ..executor_definition import ExecutorDefinition
 
 
 class _Job:
@@ -76,8 +76,8 @@ class _Job:
             positional_inputs=positional_inputs,
             tags=self.tags,
         )
-        update_wrapper(graph_def, fn)
-        return graph_def.to_job(
+
+        job_def = graph_def.to_job(
             description=self.description or format_docstring_for_description(fn),
             resource_defs=self.resource_defs,
             config=self.config,
@@ -87,6 +87,8 @@ class _Job:
             hooks=self.hooks,
             version_strategy=self.version_strategy,
         )
+        update_wrapper(job_def, fn)
+        return job_def
 
 
 def job(

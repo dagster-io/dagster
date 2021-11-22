@@ -111,6 +111,34 @@ def db_resource(init_context):
     return DatabaseConnection(connection)
 ```
 
+## Context Manager Resources
+
+Dagster resources can serve as context managers, for scenarios where it is necessary to perform some sort of cleanup of the resource after execution. Let’s take the example of a database connection. We might want to clean up the connection once we are done using it. We can incorporate this into our resource like so:
+
+```python file=/concepts/resources/resources.py startafter=start_cm_resource endbefore=end_cm_resource
+@resource
+@contextmanager
+def db_connection():
+    try:
+        db_conn = get_db_connection()
+        yield db_conn
+    finally:
+        cleanup_db_connection(db_conn)
+```
+
+At spinup time, Dagster will run the code within the try block, and be expecting a single yield. Having more than one yield will cause an error. The yielded object will be available to code that requires the resource:
+
+```python file=/concepts/resources/resources.py startafter=start_cm_resource_op endbefore=end_cm_resource_op
+@op(required_resource_keys={"db_connection"})
+def use_db_connection(context):
+    db_conn = context.resources.db_connection
+    ...
+```
+
+Once execution finishes, the finally block of the resource init function will run. In the case of our db_connection resource, this will run the cleanup function.
+
+An important nuance is that resources are initialized (and torn down) once per process. This means that if using the in-process executor, which runs all steps in a single process, resources will be initialized at the beginning of execution, and torn down after every single step is finished executing. In contrast, when using the multiprocess executor (or other out-of-process executors), where there is a single process for each step, at the beginning of each step execution, the resource will be initialized, and at the end of that step’s execution, the finally block will be run.
+
 ## Testing Resource Initialization
 
 You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
@@ -148,7 +176,7 @@ def test_my_resource_with_context():
 
 If your resource is a context manager, then you can open it as one using python's `with` syntax.
 
-```python file=/concepts/resources/resources.py startafter=start_cm_resource_testing endbefore=end_cm_resource_testing
+```python file=/concepts/resources/resources.py startafter=start_test_cm_resource endbefore=end_test_cm_resource
 from contextlib import contextmanager
 from dagster import resource
 

@@ -2,6 +2,7 @@ from dagster import build_init_resource_context, build_op_context
 from docs_snippets.concepts.resources.resources import (
     cereal_fetcher,
     connect,
+    db_connection,
     db_resource,
     do_database_stuff_dev,
     do_database_stuff_job,
@@ -10,6 +11,7 @@ from docs_snippets.concepts.resources.resources import (
     test_cm_resource,
     test_my_resource,
     test_my_resource_with_context,
+    use_db_connection,
 )
 
 
@@ -45,3 +47,13 @@ def test_jobs():
     assert do_database_stuff_job.execute_in_process().success
     assert do_database_stuff_dev.execute_in_process().success
     assert do_database_stuff_prod.execute_in_process().success
+
+
+def test_cm_resource_example():
+    with db_connection() as db_conn:
+        assert db_conn
+
+
+def test_cm_resource_op():
+    with build_op_context(resources={"db_connection": db_connection}) as context:
+        use_db_connection(context)

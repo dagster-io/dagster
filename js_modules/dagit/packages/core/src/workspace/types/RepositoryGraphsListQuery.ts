@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -20,6 +19,7 @@ export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSoli
 
 export interface RepositoryGraphsListQuery_repositoryOrError_Repository_usedSolids_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
+  id: string;
   name: string;
   description: string | null;
 }

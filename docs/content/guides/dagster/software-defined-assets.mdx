@@ -5,7 +5,7 @@ description: The "software-defined asset" APIs sit atop of the graph/job/op APIs
 
 # Software-Defined Assets <Experimental />
 
-<CodeReferenceLink filePath="examples/simple_software_defined_asset" />
+<CodeReferenceLink filePath="examples/software_defined_assets" />
 
 The "Software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront. As a reminder, to Dagster, an "asset" is a data product: an object produced by a data pipeline, e.g. a table, ML model, or report.
 
@@ -13,7 +13,7 @@ Conceptually, software-defined assets invert the typical relationship between as
 
 Taking a software-defined asset approach has a few main benefits:
 
-- **Write less code** - because each asset knows about the assets it depends on, you don't need to use @graph / @pipeline to wire up dependencies between your ops.
+- **Write less code** - because each asset knows about the assets it depends on, you don't need to use `@graph` / `@job` to wire up dependencies between your ops.
 - **Track cross-job dependencies via asset lineage** - Dagit allows you to find the parents and children of any asset, even if they live in different jobs. This is useful for finding the sources of problems and for understanding the consequences of changing or removing an asset.
 - **Know when you need to take action on an asset** - In a unified view, Dagster compares the assets you've defined in code to the assets you've materialized in storage. You can catch that you've deployed code for generating a new table, but that you haven't yet materialized it. Or that you've deployed code that adds a column to a table, but that your stored table is still missing that column. Or that you've removed an asset definition, but the table still exists in storage.
 

@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -11,7 +10,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError" | "RunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
+  __typename: "InvalidStepError" | "InvalidOutputError" | "RunConflict" | "UnauthorizedError" | "PresetNotFoundError" | "ConflictingExecutionParamsError" | "NoModeProvidedError";
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess_run {

@@ -22,7 +22,7 @@ setup(
         "dagster-slack",
         "dagster-postgres",
         "dagstermill",
-        "dbt==0.19.0",
+        "dbt>=0.19.0",
         "mock",
         "pandas",
         "pyarrow>=4.0.0",

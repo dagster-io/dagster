@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -12,11 +11,6 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
-}
-
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
 }
 
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
@@ -66,7 +60,6 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
-  pipeline: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;

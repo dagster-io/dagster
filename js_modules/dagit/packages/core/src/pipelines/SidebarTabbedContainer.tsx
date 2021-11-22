@@ -1,19 +1,18 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Tab, Tabs} from '../ui/Tabs';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
-import {PipelineExplorerPath} from './PipelinePathUtils';
-import {SidebarPipelineInfo, SIDEBAR_PIPELINE_INFO_FRAGMENT} from './SidebarPipelineInfo';
-import {SidebarSolidContainer} from './SidebarSolidContainer';
+import {GraphExplorerJobContext} from './GraphExplorerJobContext';
+import {ExplorerPath} from './PipelinePathUtils';
+import {SidebarOpContainer} from './SidebarOpContainer';
+import {SidebarOpContainerInfo, SIDEBAR_OP_CONTAINER_INFO_FRAGMENT} from './SidebarPipelineInfo';
 import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
 
 type TabKey = 'types' | 'info';
@@ -28,13 +27,14 @@ interface ISidebarTabbedContainerProps {
   tab?: TabKey;
   typeName?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
-  explorerPath: PipelineExplorerPath;
-  solidHandleID?: string;
-  parentSolidHandleID?: string;
+  explorerPath: ExplorerPath;
+  opHandleID?: string;
+  parentOpHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];
-  onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
-  onClickSolid: (arg: SolidNameOrPath) => void;
+  onEnterSubgraph: (arg: OpNameOrPath) => void;
+  onClickOp: (arg: OpNameOrPath) => void;
   repoAddress?: RepoAddress;
+  isGraph: boolean;
 }
 
 export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (props) => {
@@ -43,18 +43,16 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     typeName,
     pipeline,
     explorerPath,
-    solidHandleID,
+    opHandleID,
     getInvocations,
-    parentSolidHandleID,
-    onEnterCompositeSolid,
-    onClickSolid,
+    parentOpHandleID,
+    onEnterSubgraph,
+    onClickOp,
     repoAddress,
+    isGraph,
   } = props;
 
-  const jobContext = React.useContext(PipelineExplorerJobContext);
-
-  const repo = useRepository(repoAddress || null);
-  const isJob = isThisThingAJob(repo, pipeline.name);
+  const jobContext = React.useContext(GraphExplorerJobContext);
 
   const activeTab = tab || 'info';
 
@@ -63,32 +61,34 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
       name: 'Info',
       key: 'info',
       content: () =>
-        solidHandleID ? (
-          <SidebarSolidContainer
-            key={solidHandleID}
+        opHandleID ? (
+          <SidebarOpContainer
+            key={opHandleID}
             explorerPath={explorerPath}
-            handleID={solidHandleID}
-            showingSubsolids={false}
+            handleID={opHandleID}
+            showingSubgraph={false}
             getInvocations={getInvocations}
-            onEnterCompositeSolid={onEnterCompositeSolid}
-            onClickSolid={onClickSolid}
+            onEnterSubgraph={onEnterSubgraph}
+            onClickOp={onClickOp}
             repoAddress={repoAddress}
+            isGraph={isGraph}
           />
-        ) : parentSolidHandleID ? (
-          <SidebarSolidContainer
-            key={parentSolidHandleID}
+        ) : parentOpHandleID ? (
+          <SidebarOpContainer
+            key={parentOpHandleID}
             explorerPath={explorerPath}
-            handleID={parentSolidHandleID}
-            showingSubsolids={true}
+            handleID={parentOpHandleID}
+            showingSubgraph={true}
             getInvocations={getInvocations}
-            onEnterCompositeSolid={onEnterCompositeSolid}
-            onClickSolid={onClickSolid}
+            onEnterSubgraph={onEnterSubgraph}
+            onClickOp={onClickOp}
             repoAddress={repoAddress}
+            isGraph={isGraph}
           />
         ) : jobContext ? (
           jobContext.sidebarTab
         ) : (
-          <SidebarPipelineInfo isGraph={isJob} pipeline={pipeline} key={pipeline.name} />
+          <SidebarOpContainerInfo isGraph={!!isGraph} pipeline={pipeline} key={pipeline.name} />
         ),
     },
     {
@@ -125,10 +125,11 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
 };
 
 export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
+  fragment SidebarTabbedContainerPipelineFragment on SolidContainer {
+    id
     name
-    ...SidebarPipelineInfoFragment
+    ...SidebarOpContainerInfoFragment
   }
 
-  ${SIDEBAR_PIPELINE_INFO_FRAGMENT}
+  ${SIDEBAR_OP_CONTAINER_INFO_FRAGMENT}
 `;

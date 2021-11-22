@@ -11,7 +11,7 @@ import {CellTruncationProvider} from './CellTruncationProvider';
 import {
   EventTypeColumn,
   Row,
-  SolidColumn,
+  OpColumn,
   StructuredContent,
   TimestampColumn,
 } from './LogsRowComponents';
@@ -216,7 +216,7 @@ const StructuredMemoizedContent: React.FC<{
     onMouseLeave={() => setHighlightedGanttChartTime(null)}
     highlighted={highlighted}
   >
-    <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
+    <OpColumn stepKey={'stepKey' in node && node.stepKey} />
     <StructuredContent>
       <LogsRowStructuredContent node={node} metadata={metadata} />
     </StructuredContent>
@@ -271,7 +271,7 @@ const UnstructuredMemoizedContent: React.FC<{
     onMouseLeave={() => setHighlightedGanttChartTime(null)}
     highlighted={highlighted}
   >
-    <SolidColumn stepKey={node.stepKey} />
+    <OpColumn stepKey={node.stepKey} />
     <EventTypeColumn>
       <span style={{marginLeft: 8}}>{node.level}</span>
     </EventTypeColumn>

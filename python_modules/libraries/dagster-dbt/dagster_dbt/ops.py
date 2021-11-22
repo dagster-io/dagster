@@ -1,32 +1,13 @@
-from dagster import Array, Bool, Field, In, Nothing, OpDefinition, Out, Output, op
+from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
 
 from .types import DbtOutput
 from .utils import generate_materializations
-
-
-def _get_dbt_cli_op(
-    command_name: str, doc: str, has_materializations: bool = False
-) -> OpDefinition:
-    @op(
-        name=f"dbt_cli_{command_name}",
-        required_resource_keys={"dbt"},
-        config_schema={"yield_materializations": Field(str, default_value=True)},
-    )
-    def _op(context):
-        result = context.resources.dbt.run()
-        if has_materializations and context.op_config["yield_materializations"]:
-            for mat in generate_materializations(result):
-                yield mat
-        yield Output(result)
-
-    _op.__doc__ = doc
-    return _op
-
 
 _DEFAULT_OP_PROPS = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
+    tags={"kind": "dbt"},
 )
 
 
@@ -77,10 +58,9 @@ Examples:
 def dbt_run_op(context):
     dbt_output = context.resources.dbt.run()
     if context.op_config["yield_materializations"] and "results" in dbt_output.result:
-        for materialization in generate_materializations(
+        yield from generate_materializations(
             dbt_output, asset_key_prefix=context.op_config["asset_key_prefix"]
-        ):
-            yield materialization
+        )
     yield Output(dbt_output)
 
 
@@ -117,7 +97,7 @@ def dbt_docs_generate_op(context):
 for op, cmd in [
     (dbt_run_op, "run"),
     (dbt_compile_op, "compile"),
-    (dbt_compile_op, "ls"),
+    (dbt_ls_op, "ls"),
     (dbt_test_op, "test"),
     (dbt_snapshot_op, "snapshot"),
     (dbt_seed_op, "seed"),

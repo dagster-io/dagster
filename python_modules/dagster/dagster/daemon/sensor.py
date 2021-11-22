@@ -6,7 +6,7 @@ from collections import namedtuple
 import pendulum
 from dagster import check, seven
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import SensorExecutionData
+from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
 from dagster.core.instance import DagsterInstance

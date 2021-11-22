@@ -8,7 +8,7 @@ import {IconName, IconWIP} from './Icon';
 
 export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
-export interface Props {
+interface Props {
   intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;

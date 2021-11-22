@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.sensor import SensorExecutionData
+from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle

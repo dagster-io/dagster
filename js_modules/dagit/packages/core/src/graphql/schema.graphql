@@ -5,6 +5,7 @@ type Query {
   workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
+  graphOrError(selector: GraphSelector): GraphOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
@@ -66,28 +67,34 @@ type RepositoryLocation {
 }
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
-  solids: [Solid!]!
+  id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
-  id: ID!
   presets: [PipelinePreset!]!
   isJob: Boolean!
 }
 
 interface SolidContainer {
+  id: ID!
+  name: String!
+  description: String
   solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
 }
 
 type Solid {
@@ -183,6 +190,32 @@ type Output {
   dependedBy: [Input!]!
 }
 
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: SolidHandle
+}
+
+type Mode {
+  id: String!
+  name: String!
+  description: String
+  resources: [Resource!]!
+  loggers: [Logger!]!
+}
+
+type Resource {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
 interface IPipelineSnapshot {
   name: String!
   description: String
@@ -240,32 +273,6 @@ type PythonError implements Error {
   cause: PythonError
 }
 
-type Mode {
-  id: String!
-  name: String!
-  description: String
-  resources: [Resource!]!
-  loggers: [Logger!]!
-}
-
-type Resource {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-type Logger {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-type SolidHandle {
-  handleID: String!
-  solid: Solid!
-  parent: SolidHandle
-}
-
 type PipelineTag {
   key: String!
   value: String!
@@ -287,6 +294,7 @@ type Run implements PipelineRun {
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
+  runConfig: RunConfigData!
   mode: String!
   tags: [PipelineTag!]!
   rootRunId: String
@@ -294,6 +302,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
+  resolvedOpSelection: [String!]
 }
 
 interface PipelineRun {
@@ -312,6 +321,7 @@ interface PipelineRun {
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
+  runConfig: RunConfigData!
   mode: String!
   tags: [PipelineTag!]!
   rootRunId: String
@@ -485,6 +495,8 @@ enum StepKind {
   UNRESOLVED_MAPPED
   UNRESOLVED_COLLECT
 }
+
+scalar RunConfigData
 
 type Asset {
   id: String!
@@ -1164,22 +1176,22 @@ type PipelinePreset {
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
-  solids: [Solid!]!
+  id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
-  id: ID!
   presets: [PipelinePreset!]!
   isJob: Boolean!
 }
@@ -1245,16 +1257,17 @@ input PipelineSelector {
 
 union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
-type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
+type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineReference {
+  id: ID!
   name: String!
   description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  solids: [Solid!]!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
@@ -1262,12 +1275,36 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   parentSnapshotId: String
   graphName: String!
   solidSelection: [String!]
-  id: ID!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
   message: String!
   snapshotId: String!
+}
+
+union GraphOrError = Graph | GraphNotFoundError | PythonError
+
+type Graph implements SolidContainer {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+}
+
+type GraphNotFoundError implements Error {
+  message: String!
+  graphName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+input GraphSelector {
+  graphName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
@@ -1432,8 +1469,6 @@ enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR
 }
 
-scalar RunConfigData
-
 union ExecutionPlanOrError = ExecutionPlan | RunConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
@@ -1450,11 +1485,13 @@ type ModeNotFoundError implements Error {
 }
 
 type Instance {
-  info: String!
+  info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
+  hasInfo: Boolean!
+  dagitTelemetryEnabled: Boolean!
 }
 
 type RunLauncher {
@@ -1548,9 +1585,10 @@ type Mutation {
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
-union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 type LaunchRunSuccess implements LaunchPipelineRunSuccess {
   run: Run!
@@ -1586,6 +1624,11 @@ type ConflictingExecutionParamsError implements Error {
   message: String!
 }
 
+type NoModeProvidedError implements Error {
+  message: String!
+  pipelineName: String!
+}
+
 input ExecutionParams {
   selector: JobOrPipelineSelector!
   runConfigData: RunConfigData
@@ -1610,7 +1653,7 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
@@ -1679,7 +1722,7 @@ type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1710,6 +1753,12 @@ union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonE
 
 type CancelBackfillSuccess {
   backfillId: String!
+}
+
+union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
+
+type LogTelemetrySuccess {
+  action: String!
 }
 
 type Subscription {
@@ -2087,7 +2136,11 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  id: ID!
   solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
   inputMappings: [InputMapping!]!
   outputMappings: [OutputMapping!]!
 }

@@ -4,8 +4,8 @@ import graphene
 import pendulum
 import yaml
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleExecutionData
-from dagster.core.definitions.sensor import RunRequest
+from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.job import (
     JobState,
     JobStatus,

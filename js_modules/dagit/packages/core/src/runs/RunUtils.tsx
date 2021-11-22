@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -106,7 +105,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
+  run: (RunFragment | RunTableRunFragment) & {runConfig: any};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -119,12 +118,12 @@ export function getReexecutionVariables(input: {
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
-    runConfigData: yaml.parse(run.runConfigYaml),
+    runConfigData: run.runConfig,
     executionMetadata: getBaseExecutionMetadata(run),
     selector: {
       repositoryLocationName,
       repositoryName,
-      pipelineName: 'pipelineName' in run ? run.pipelineName : run.pipeline.name,
+      pipelineName: run.pipelineName,
       solidSelection: 'solidSelection' in run ? run.solidSelection : run.pipeline.solidSelection,
     },
   };

@@ -4,6 +4,7 @@ import * as React from 'react';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
 interface AssetKey {
   path: string[];
@@ -30,19 +31,22 @@ export const AssetWipeDialog: React.FC<{
   };
 
   return (
-    <DialogWIP isOpen={isOpen} title="Wipe assets?" onClose={onClose} style={{width: 400}}>
+    <DialogWIP
+      isOpen={isOpen}
+      title={`Wipe materializations of ${
+        assetKeys.length === 1 ? assetKeyToString(assetKeys[0]) : 'selected assets'
+      }?`}
+      onClose={onClose}
+      style={{width: 400}}
+    >
       <DialogBody>
         <Group direction="column" spacing={8}>
           <div>
-            {assetKeys.length === 1 ? (
-              <>
-                The asset <code>{assetKeys[0].path.join(' > ')}</code> will be wiped.
-              </>
-            ) : (
-              <>{assetKeys.length} assets will be wiped.</>
-            )}
+            Assets defined only by their historical materializations will disappear from the Asset
+            Catalog. Software-defined assets will remain unless their definition is also deleted
+            from the repository.
           </div>
-          <strong>Wiping assets cannot be undone.</strong>
+          <strong>This action cannot be undone.</strong>
         </Group>
       </DialogBody>
       <DialogFooter>

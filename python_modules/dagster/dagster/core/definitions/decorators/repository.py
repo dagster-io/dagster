@@ -4,17 +4,17 @@ from typing import Any, Callable, Optional, Union
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from ..graph import GraphDefinition
+from ..graph_definition import GraphDefinition
 from ..partition import PartitionSetDefinition
-from ..pipeline import PipelineDefinition
-from ..repository import (
+from ..pipeline_definition import PipelineDefinition
+from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
     RepositoryData,
     RepositoryDefinition,
 )
-from ..schedule import ScheduleDefinition
-from ..sensor import SensorDefinition
+from ..schedule_definition import ScheduleDefinition
+from ..sensor_definition import SensorDefinition
 
 
 class _Repository:

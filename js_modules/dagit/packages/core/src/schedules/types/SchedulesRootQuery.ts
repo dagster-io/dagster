@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -271,6 +270,7 @@ export interface SchedulesRootQuery_instance_daemonHealth {
 export interface SchedulesRootQuery_instance {
   __typename: "Instance";
   daemonHealth: SchedulesRootQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface SchedulesRootQuery {

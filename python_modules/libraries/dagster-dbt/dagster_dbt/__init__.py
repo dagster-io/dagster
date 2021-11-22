@@ -13,6 +13,7 @@ from .cli import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
+from .cloud import DbtCloudOutput, DbtCloudResourceV2, dbt_cloud_resource, dbt_cloud_run_op
 from .dbt_resource import DbtResource
 from .errors import (
     DagsterDbtCliFatalRuntimeError,
@@ -73,6 +74,8 @@ __all__ = [
     "DbtOutput",
     "DbtCliOutput",
     "DbtCliResource",
+    "DbtCloudOutput",
+    "DbtCloudResourceV2",
     "DbtRpcResource",
     "DbtRpcSyncResource",
     "DbtRpcOutput",
@@ -86,6 +89,8 @@ __all__ = [
     "dbt_cli_snapshot",
     "dbt_cli_snapshot_freshness",
     "dbt_cli_test",
+    "dbt_cloud_resource",
+    "dbt_cloud_run_op",
     "dbt_rpc_compile_sql",
     "dbt_rpc_docs_generate",
     "dbt_rpc_docs_generate_and_wait",

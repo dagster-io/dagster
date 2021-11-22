@@ -5,9 +5,9 @@ import styled from 'styled-components/macro';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {PipelineExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
-import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {ColorsWIP} from '../../ui/Colors';
 import {Loading} from '../../ui/Loading';
@@ -37,10 +37,10 @@ type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
 
 interface Props {
   repoAddress: RepoAddress;
-  explorerPath: PipelineExplorerPath;
-  handles: PipelineExplorerSolidHandleFragment[];
-  selectedHandle?: PipelineExplorerSolidHandleFragment;
-  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
+  explorerPath: ExplorerPath;
+  handles: GraphExplorerSolidHandleFragment[];
+  selectedHandle?: GraphExplorerSolidHandleFragment;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
@@ -56,7 +56,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       onChangeExplorerPath(
         {
           ...explorerPath,
-          pathSolids: node ? [node.definition.opName!] : [],
+          opNames: node ? [node.definition.opName!] : [],
           pipelineName: node?.definition.jobName || explorerPath.pipelineName,
         },
         'replace',

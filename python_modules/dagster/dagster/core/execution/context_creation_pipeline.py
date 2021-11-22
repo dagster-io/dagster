@@ -22,9 +22,9 @@ from typing import (
 
 from dagster import check
 from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
-from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster.core.definitions.executor_definition import check_cross_process_constraints
 from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.memoization import validate_reexecution_memoization
@@ -411,7 +411,7 @@ def _validate_plan_with_context(
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
     init_context = InitExecutorContext(
-        pipeline=context_creation_data.pipeline,
+        job=context_creation_data.pipeline,
         executor_def=context_creation_data.executor_def,
         executor_config=context_creation_data.resolved_run_config.execution.execution_engine_config,
         instance=context_creation_data.instance,

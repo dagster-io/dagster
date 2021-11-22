@@ -6,7 +6,7 @@ import {AssetMaterializations} from '../../assets/AssetMaterializations';
 import {LatestMaterializationMetadata} from '../../assets/LastMaterializationMetadata';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
-import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
@@ -18,7 +18,7 @@ import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/A
 
 export const SidebarAssetInfo: React.FC<{
   node: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-  handle: PipelineExplorerSolidHandleFragment;
+  handle: GraphExplorerSolidHandleFragment;
   repoAddress: RepoAddress;
 }> = ({node, handle, repoAddress}) => {
   const definition = handle.solid.definition;

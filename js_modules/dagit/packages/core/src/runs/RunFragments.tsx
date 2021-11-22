@@ -10,9 +10,7 @@ import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on Run {
     id
-    pipeline {
-      name
-    }
+    pipelineName
     pipelineSnapshotId
     repositoryOrigin {
       id
@@ -26,7 +24,7 @@ export const RunFragments = {
   RunFragment: gql`
     fragment RunFragment on Run {
       id
-      runConfigYaml
+      runConfig
       runId
       canTerminate
       status
@@ -37,6 +35,7 @@ export const RunFragments = {
       }
       rootRunId
       parentRunId
+      pipelineName
       pipeline {
         __typename
         ... on PipelineReference {
@@ -46,20 +45,6 @@ export const RunFragments = {
       }
       pipelineSnapshotId
       executionPlan {
-        steps {
-          key
-          inputs {
-            dependsOn {
-              key
-              outputs {
-                name
-                type {
-                  name
-                }
-              }
-            }
-          }
-        }
         artifactsPersisted
         ...ExecutionPlanToGraphFragment
       }

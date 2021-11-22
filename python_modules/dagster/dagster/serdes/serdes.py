@@ -75,10 +75,11 @@ class WhitelistMap(NamedTuple):
 
     def register_enum(
         self,
+        name: str,
         enum: Type[Enum],
         serializer: Optional[Type["EnumSerializer"]],
     ):
-        self.enums[enum.__name__] = (enum, serializer or DefaultEnumSerializer)
+        self.enums[name] = (enum, serializer or DefaultEnumSerializer)
 
     def has_enum_entry(self, name: str) -> bool:
         return name in self.enums
@@ -116,7 +117,7 @@ def _whitelist_for_serdes(
 ):
     def __whitelist_for_serdes(klass):
         if issubclass(klass, Enum):
-            whitelist_map.register_enum(klass, serializer)
+            whitelist_map.register_enum(klass.__name__, klass, serializer)
         elif issubclass(klass, tuple):
             sig_params = signature(klass.__new__).parameters
             _check_serdes_tuple_class_invariants(klass, sig_params)
@@ -139,11 +140,24 @@ class EnumSerializer(Serializer):
     def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def value_to_storage_str(
+        cls, value: Enum, whitelist_map: WhitelistMap, descent_path: str
+    ) -> str:
+        raise NotImplementedError()
+
 
 class DefaultEnumSerializer(EnumSerializer):
     @classmethod
     def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
         return getattr(klass, storage_str)
+
+    @classmethod
+    def value_to_storage_str(
+        cls, value: Enum, whitelist_map: WhitelistMap, descent_path: str
+    ) -> str:
+        return str(value)
 
 
 class NamedTupleSerializer(Serializer):
@@ -261,10 +275,10 @@ def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json
     return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 
-def serialize_value(val: Any) -> str:
+def serialize_value(val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> str:
     """Serialize a value to a json encoded string."""
     return seven.json.dumps(
-        pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+        pack_inner_value(val, whitelist_map=whitelist_map, descent_path=_root(val))
     )
 
 
@@ -300,7 +314,8 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
             raise SerializationError(
                 f"Can only serialize whitelisted Enums, received {klass_name}.{_path_msg(descent_path)}",
             )
-        return {"__enum__": str(val)}
+        _, enum_serializer = whitelist_map.get_enum_entry(klass_name)
+        return {"__enum__": enum_serializer.value_to_storage_str(val, whitelist_map, descent_path)}
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
@@ -357,16 +372,21 @@ def deserialize_as(json_str: str, cls: Type[T]) -> T:
     check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
 
 
+def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
+    """Optionally deserialize a json encoded string to a specific namedtuple class."""
+    return deserialize_as(json_str, cls) if json_str else None
+
+
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
     value = seven.json.loads(json_str)
     return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
 
 
-def deserialize_value(val: str) -> Any:
+def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> Any:
     """Deserialize a json encoded string in to its original value"""
     return unpack_inner_value(
         seven.json.loads(check.str_param(val, "val")),
-        whitelist_map=_WHITELIST_MAP,
+        whitelist_map=whitelist_map,
         descent_path="",
     )
 
@@ -439,7 +459,7 @@ def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str)
 def register_serdes_tuple_fallbacks(
     fallback_map: Dict[str, Optional[Type]],
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-):
+) -> None:
     """
     Manually provide remappings for named tuples.
     Used to manage loading previously types that no longer exist.
@@ -452,6 +472,26 @@ def register_serdes_tuple_fallbacks(
             DefaultNamedTupleSerializer,
             signature(klass.__new__).parameters,
         )
+
+
+def register_serdes_enum_fallbacks(
+    fallback_map: Dict[str, Optional[Type[Enum]]],
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> None:
+    """
+    Manually provide remappings for named tuples.
+    Used to manage loading previously types that no longer exist.
+    """
+
+    serializer: Type[EnumSerializer] = DefaultEnumSerializer
+    for class_name, klass in fallback_map.items():
+        if not klass or not issubclass(klass, Enum):
+            raise SerdesUsageError(
+                f"Cannot register {klass} as an enum, because it does not have enum type."
+            )
+        if klass and whitelist_map.has_enum_entry(klass.__name__):
+            _, serializer = whitelist_map.get_enum_entry(klass.__name__)
+        whitelist_map.register_enum(class_name, klass, serializer)
 
 
 ###################################################################################################

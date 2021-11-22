@@ -107,7 +107,7 @@ class ReconstructablePipeline(
 
     @lru_cache(maxsize=1)
     def get_definition(self):
-        from dagster.core.definitions.job import JobDefinition
+        from dagster.core.definitions.job_definition import JobDefinition
 
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
@@ -472,9 +472,9 @@ def bootstrap_standalone_recon_pipeline(pointer):
 
 
 def _check_is_loadable(definition):
-    from .pipeline import PipelineDefinition
-    from .repository import RepositoryDefinition
-    from .graph import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .repository_definition import RepositoryDefinition
+    from .graph_definition import GraphDefinition
 
     if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
         raise DagsterInvariantViolationError(
@@ -501,9 +501,9 @@ def load_def_in_python_file(python_file, attribute, working_directory):
 def def_from_pointer(pointer):
     target = pointer.load_target()
 
-    from .pipeline import PipelineDefinition
-    from .repository import RepositoryDefinition
-    from .graph import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .repository_definition import RepositoryDefinition
+    from .graph_definition import GraphDefinition
 
     if isinstance(
         target, (PipelineDefinition, RepositoryDefinition, GraphDefinition)
@@ -525,7 +525,7 @@ def def_from_pointer(pointer):
 
 
 def pipeline_def_from_pointer(pointer):
-    from .pipeline import PipelineDefinition
+    from .pipeline_definition import PipelineDefinition
 
     target = def_from_pointer(pointer)
 
@@ -539,9 +539,9 @@ def pipeline_def_from_pointer(pointer):
 
 
 def repository_def_from_target_def(target):
-    from .pipeline import PipelineDefinition
-    from .graph import GraphDefinition
-    from .repository import CachingRepositoryData, RepositoryDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .graph_definition import GraphDefinition
+    from .repository_definition import CachingRepositoryData, RepositoryDefinition
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):

@@ -168,17 +168,22 @@ def host_dagit_ui_with_workspace_process_context(
 
 
 @contextmanager
-def uploading_logging_thread():
+def uploading_logging_thread(instance):
+    from dagster.core.instance import is_dagit_telemetry_enabled
+
     stop_event = threading.Event()
     logging_thread = threading.Thread(
         target=upload_logs, args=([stop_event]), name="telemetry-upload"
     )
     try:
-        logging_thread.start()
+        # Telemetry data is still experimental, so don't upload if telemetry flags are enabled.
+        if not is_dagit_telemetry_enabled(instance):
+            logging_thread.start()
         yield
     finally:
-        stop_event.set()
-        logging_thread.join()
+        if not is_dagit_telemetry_enabled(instance):
+            stop_event.set()
+            logging_thread.join()
 
 
 def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
@@ -191,7 +196,7 @@ def start_server(instance, host, port, path_prefix, app, port_lookup, port_looku
     )
 
     log_action(instance, START_DAGIT_WEBSERVER)
-    with uploading_logging_thread():
+    with uploading_logging_thread(instance):
         try:
             server.serve_forever()
         except OSError as os_error:

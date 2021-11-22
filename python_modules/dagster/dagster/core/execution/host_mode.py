@@ -5,7 +5,7 @@ from typing import List, Optional
 from dagster import check
 from dagster.config import Field
 from dagster.config.validate import process_config
-from dagster.core.definitions.executor import (
+from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     check_cross_process_constraints,
     default_executors,
@@ -55,7 +55,7 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
     executor_def = executor_defs_by_name[executor_name]
 
     init_context = InitExecutorContext(
-        pipeline=recon_pipeline,
+        job=recon_pipeline,
         executor_def=executor_def,
         executor_config=executor_config["config"],
         instance=instance,

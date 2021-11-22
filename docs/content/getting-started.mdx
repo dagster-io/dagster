@@ -1,36 +1,12 @@
 # Getting Started with Dagster
 
 <p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">
-  Dagster is a data orchestrator for machine learning, analytics, and ETL
+  Dagster is the data orchestration platform built for productivity.
 </p>
 
-<div className="md:col-span-3 flex flex-wrap md:flex-nowrap items-center bg-gable-green rounded-2xl py-6 md:py-2 px-6 md:pr-5 space-y-4 md:space-y-0 md:space-x-8">
-  <p className="flex-auto text-gray-100 text-lg">
-    {" "}
-    New to Dagster? Learn all about it in a short tutorial.
-  </p>
-  <a
-    href="/tutorial"
-    className="flex-none border border-1 bg-gable-green hover:no-underline border-gray-100 hover:bg-white hover:text-gable-green shadow-none transition-colors duration-200 text-white font-semibold rounded-full py-3 px-4 no-underline"
-  >
-    Take the Tutorial
-  </a>
-</div>
+## Installing Dagster
 
-Or read about:
-
-- Dagster’s [Concepts](/concepts)
-- [How to deploy Dagster](/deployment)
-- [How to integrate Dagster with other tools](/integrations)
-- [Best practices guides](/guides)
-- Dagster’s full [API Reference](/\_apidocs)
-- Dagster's open source [Community](/community)
-
-## Quick Start
-
-### Installing Dagster
-
-To install Dagster and Dagit into an existing Python environment, run:
+To install Dagster into an existing Python environment, run:
 
 ```bash
 pip install dagster
@@ -38,7 +14,7 @@ pip install dagster
 
 This will install the latest stable version of the core Dagster packages in your current Python environment.
 
-### Writing a Job
+## Writing a Job
 
 Let's get your first job up and running.
 
@@ -65,9 +41,9 @@ Save the code above in a file named `hello_world.py`.
 
 You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
 
-### Running the Job in Dagit
+## Running the Job in Dagit
 
-It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and interacting with Dagster objects.
+Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
 ```bash
 pip install dagit
@@ -88,7 +64,7 @@ width={4032}
 height={2454}
 />
 
-Click on the "Launchpad" tab, then press the "Launch Run" button to execute the job. You will then see Dagit launches a job run:
+Click on the "Launchpad" tab, then press the "Launch Run" button to launch the job.
 
 <Image
 alt="dagit-run"
@@ -97,9 +73,9 @@ width={4032}
 height={2454}
 />
 
-### Other Options to Run Dagster Jobs
+## Running the Job Programmatically
 
-You can also execute the job without the UI in the following methods:
+You can also execute the job without the UI.
 
 **Dagster Python API**
 
@@ -114,9 +90,9 @@ if __name__ == "__main__":
 dagster job execute -f hello_world.py
 ```
 
-## If You Get Stuck
+---
 
-If you have questions on getting started, we'd love to hear from you:
+To learn more about Dagster, head over to the [Tutorial](/tutorial). And if you get stuck or have any other questions, we'd love to hear from you on Slack:
 
 <p align="center">
   <a href="https://dagster-slackin.herokuapp.com/" target="_blank">

@@ -3,17 +3,22 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
 from dagster import check
-from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
-from ..graph import GraphDefinition
-from ..job import JobDefinition
-from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipReason
+from ..graph_definition import GraphDefinition
+from ..job_definition import JobDefinition
+from ..sensor_definition import (
+    AssetSensorDefinition,
+    RunRequest,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SkipReason,
+)
 
 if TYPE_CHECKING:
-    from ..sensor import SensorEvaluationContext
     from ...events.log import EventLogEntry
 
 
@@ -29,7 +34,7 @@ def sensor(
 ) -> Callable[
     [
         Callable[
-            ["SensorEvaluationContext"],
+            [SensorEvaluationContext],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ]
     ],

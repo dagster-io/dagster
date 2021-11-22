@@ -45,9 +45,11 @@ from dagster import (
     daily_schedule,
     graph,
     hourly_schedule,
+    job,
     lambda_solid,
     logger,
     monthly_schedule,
+    op,
     pipeline,
     repository,
     resource,
@@ -57,7 +59,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
@@ -1238,6 +1240,32 @@ def composed_graph():
     simple_graph()
 
 
+@job(config={"ops": {"a_solid_with_config": {"config": {"one": "hullo"}}}})
+def job_with_default_config():
+    @op(config_schema={"one": Field(String)})
+    def a_solid_with_config(context):
+        return context.op_config["one"]
+
+    a_solid_with_config()
+
+
+@job
+def two_ins_job():
+    @op
+    def op_1():
+        return 1
+
+    @op
+    def op_2():
+        return 1
+
+    @op
+    def op_with_2_ins(in_1, in_2):
+        return in_1 + in_2
+
+    op_with_2_ins(op_1(), op_2())
+
+
 @repository
 def empty_repo():
     return []
@@ -1286,6 +1314,8 @@ def define_pipelines():
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
+        job_with_default_config,
+        two_ins_job,
     ]
 
 

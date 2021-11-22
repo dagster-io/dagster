@@ -481,6 +481,10 @@
             "path": "/_apidocs/memoization"
           },
           {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },
@@ -561,6 +565,10 @@
           {
             "title": "Docker (dagster-docker)",
             "path": "/_apidocs/libraries/dagster-docker"
+          },
+          {
+            "title": "Fivetran (dagster-fivetran)",
+            "path": "/_apidocs/libraries/dagster-fivetran"
           },
           {
             "title": "GCP (dagster-gcp)",

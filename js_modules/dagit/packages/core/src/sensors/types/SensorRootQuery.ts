@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -148,6 +147,7 @@ export interface SensorRootQuery_instance_daemonHealth {
 export interface SensorRootQuery_instance {
   __typename: "Instance";
   daemonHealth: SensorRootQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface SensorRootQuery {

@@ -26,15 +26,15 @@ from dagster.serdes.serdes import (
 )
 from dagster.utils import frozentags
 
-from .hook import HookDefinition
+from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 if TYPE_CHECKING:
     from .composition import MappedInputPlaceholder
-    from .graph import GraphDefinition
-    from .solid import NodeDefinition
+    from .graph_definition import GraphDefinition
+    from .node_definition import NodeDefinition
 
 
 class NodeInvocation(
@@ -113,8 +113,8 @@ class Node:
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .graph import GraphDefinition
-        from .solid import NodeDefinition
+        from .graph_definition import GraphDefinition
+        from .solid_definition import NodeDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)
@@ -167,13 +167,13 @@ class Node:
 
     @property
     def is_graph(self) -> bool:
-        from .graph import GraphDefinition
+        from .graph_definition import GraphDefinition
 
         return isinstance(self.definition, GraphDefinition)
 
     def describe_node(self) -> str:
-        from .solid import CompositeSolidDefinition, SolidDefinition
-        from .op_def import OpDefinition
+        from .solid_definition import CompositeSolidDefinition, SolidDefinition
+        from .op_definition import OpDefinition
 
         if isinstance(self.definition, CompositeSolidDefinition):
             return f"composite solid '{self.name}'"

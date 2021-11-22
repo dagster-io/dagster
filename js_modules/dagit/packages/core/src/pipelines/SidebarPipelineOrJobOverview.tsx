@@ -8,7 +8,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
-import {PipelineExplorerPath} from './PipelinePathUtils';
+import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarSection} from './SidebarComponents';
 import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
 import {
@@ -18,7 +18,7 @@ import {
 
 export const SidebarPipelineOrJobOverview: React.FC<{
   repoAddress: RepoAddress;
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
 }> = (props) => {
   const {explorerPath, repoAddress} = props;
   const {pipelineName} = explorerPath;

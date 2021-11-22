@@ -43,9 +43,9 @@ import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {ExecutionTabs} from './ExecutionTabs';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {LoadingOverlay} from './LoadingOverlay';
+import {OpSelector} from './OpSelector';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
-import {SolidSelector} from './SolidSelector';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
@@ -194,7 +194,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     });
   };
 
-  const onSolidSelectionChange = (
+  const onOpSelectionChange = (
     solidSelection: string[] | null,
     solidSelectionQuery: string | null,
   ) => {
@@ -540,7 +540,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 repoAddress={repoAddress}
               />
               <SessionSettingsSpacer />
-              <SolidSelector
+              <OpSelector
                 serverProvidedSubsetError={
                   preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
                     ? preview.isPipelineConfigValid
@@ -549,7 +549,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 pipelineName={pipeline.name}
                 value={currentSession.solidSelection || null}
                 query={currentSession.solidSelectionQuery || null}
-                onChange={onSolidSelectionChange}
+                onChange={onOpSelectionChange}
                 repoAddress={repoAddress}
               />
               {isJob ? (

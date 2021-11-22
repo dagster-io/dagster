@@ -32,10 +32,6 @@ export const errorLink = onError((response: ErrorResponse) => {
     graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
   }
   if (response.networkError) {
-    ErrorToaster.show({
-      message: `[Network error] ${response.networkError.message}`,
-      intent: 'danger',
-    });
     console.error('[Network error]', response.networkError);
   }
 });

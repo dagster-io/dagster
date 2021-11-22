@@ -33,16 +33,11 @@ interface IPoint {
   x: number;
   y: number;
 }
-export type IEdge = {
+type IEdge = {
   from: IPoint;
   to: IPoint;
   dashed: boolean;
 };
-
-export function runForDisplay(d: AssetNode) {
-  const run = d.assetMaterializations[0]?.runOrError;
-  return run && run.__typename === 'Run' ? run : null;
-}
 
 export function assetKeyToString(key: {path: string[]}) {
   return key.path.join('>');
@@ -213,7 +208,7 @@ export function buildGraphComputeStatuses(graphData: GraphData) {
 
 export type Status = 'good' | 'old' | 'none';
 
-export function findComputeStatusForId(
+function findComputeStatusForId(
   timestamps: {[key: string]: number},
   statuses: {[key: string]: Status},
   upstream: {[key: string]: string[]},

@@ -3,8 +3,7 @@ resources:
     config:
       s3_bucket: your_bucket_name
 execution:
-  dask:
-    config:
-      cluster:
-        existing:
-          address: "dask_scheduler.dns_name:8787"
+  config:
+    cluster:
+      existing:
+        address: "dask_scheduler.dns_name:8787"

@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -9,6 +8,10 @@ import { LaunchBackfillParams, EvaluationErrorReason } from "./../../types/globa
 // ====================================================
 // GraphQL mutation operation: LaunchPartitionBackfill
 // ====================================================
+
+export interface LaunchPartitionBackfill_launchPartitionBackfill_NoModeProvidedError {
+  __typename: "NoModeProvidedError";
+}
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess {
   __typename: "LaunchBackfillSuccess";
@@ -82,7 +85,7 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValida
   errors: LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid_errors[];
 }
 
-export type LaunchPartitionBackfill_launchPartitionBackfill = LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess | LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PythonError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidOutputError | LaunchPartitionBackfill_launchPartitionBackfill_UnauthorizedError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConflict | LaunchPartitionBackfill_launchPartitionBackfill_ConflictingExecutionParamsError | LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid;
+export type LaunchPartitionBackfill_launchPartitionBackfill = LaunchPartitionBackfill_launchPartitionBackfill_NoModeProvidedError | LaunchPartitionBackfill_launchPartitionBackfill_LaunchBackfillSuccess | LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_PythonError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError | LaunchPartitionBackfill_launchPartitionBackfill_InvalidOutputError | LaunchPartitionBackfill_launchPartitionBackfill_UnauthorizedError | LaunchPartitionBackfill_launchPartitionBackfill_PipelineNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConflict | LaunchPartitionBackfill_launchPartitionBackfill_ConflictingExecutionParamsError | LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundError | LaunchPartitionBackfill_launchPartitionBackfill_RunConfigValidationInvalid;
 
 export interface LaunchPartitionBackfill {
   launchPartitionBackfill: LaunchPartitionBackfill_launchPartitionBackfill;

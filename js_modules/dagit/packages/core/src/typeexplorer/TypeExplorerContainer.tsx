@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -13,7 +13,7 @@ import {
 } from './types/TypeExplorerContainerQuery';
 
 interface ITypeExplorerContainerProps {
-  explorerPath: PipelineExplorerPath;
+  explorerPath: ExplorerPath;
   typeName: string;
   repoAddress?: RepoAddress;
 }

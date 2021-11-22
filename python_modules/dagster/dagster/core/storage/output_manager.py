@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 
 
 class IOutputManagerDefinition:

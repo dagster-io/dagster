@@ -7,16 +7,19 @@ import {Box} from '../ui/Box';
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
 import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
-import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
+import {SidebarOpContainerInfoFragment} from './types/SidebarOpContainerInfoFragment';
 
 const NO_DESCRIPTION = '';
 
-interface ISidebarPipelineInfoProps {
+interface ISidebarOpContainerInfoProps {
   isGraph: boolean;
-  pipeline: SidebarPipelineInfoFragment;
+  pipeline: SidebarOpContainerInfoFragment;
 }
 
-export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({isGraph, pipeline}) => {
+export const SidebarOpContainerInfo: React.FC<ISidebarOpContainerInfoProps> = ({
+  isGraph,
+  pipeline,
+}) => {
   return (
     <div>
       <Box padding={{vertical: 16, horizontal: 24}}>
@@ -41,8 +44,9 @@ export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({isGrap
   );
 };
 
-export const SIDEBAR_PIPELINE_INFO_FRAGMENT = gql`
-  fragment SidebarPipelineInfoFragment on IPipelineSnapshot {
+export const SIDEBAR_OP_CONTAINER_INFO_FRAGMENT = gql`
+  fragment SidebarOpContainerInfoFragment on SolidContainer {
+    id
     name
     description
     modes {

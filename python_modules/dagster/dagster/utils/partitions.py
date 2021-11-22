@@ -5,7 +5,7 @@ import pendulum
 from dagster import check
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.run_request import SkipReason
-from dagster.core.definitions.schedule import ScheduleEvaluationContext
+from dagster.core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 

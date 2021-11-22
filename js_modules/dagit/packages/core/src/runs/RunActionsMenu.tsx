@@ -1,6 +1,7 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import * as qs from 'query-string';
 import * as React from 'react';
+import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -130,9 +131,10 @@ export const RunActionsMenu: React.FC<{
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
+                      const runConfig = yaml.parse(runConfigYaml);
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfigYaml},
+                          run: {...run, runConfig},
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,
@@ -291,9 +293,7 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
-        pipeline {
-          name
-        }
+        pipelineName
         pipelineSnapshotId
         runConfigYaml
         ...RunFragmentForRepositoryMatch

@@ -9,14 +9,14 @@ from ...config import Shape
 from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.resource import ResourceDefinition
+    from dagster.core.definitions.resource_definition import ResourceDefinition
     from dagster.core.execution.context.init import InitResourceContext, UnboundInitResourceContext
 
 
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
 ) -> Any:
-    from .resource import is_context_provided
+    from .resource_definition import is_context_provided
 
     if not resource_def.resource_fn:
         return None

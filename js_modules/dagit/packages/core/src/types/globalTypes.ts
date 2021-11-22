@@ -1,4 +1,3 @@
-// @generated
 /* tslint:disable */
 /* eslint-disable */
 // @generated
@@ -172,6 +171,12 @@ export interface ExecutionParams {
 export interface ExecutionTag {
   key: string;
   value: string;
+}
+
+export interface GraphSelector {
+  graphName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
 }
 
 export interface InstigationSelector {

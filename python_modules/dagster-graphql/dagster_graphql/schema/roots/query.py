@@ -33,8 +33,9 @@ from ...implementation.fetch_schedules import (
     get_schedules_or_error,
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
+from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
-from ...implementation.utils import pipeline_selector_from_graphql
+from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import GraphenePartitionBackfillOrError, GraphenePartitionBackfillsOrError
 from ..external import (
@@ -44,6 +45,7 @@ from ..external import (
 )
 from ..inputs import (
     GrapheneAssetKeyInput,
+    GrapheneGraphSelector,
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
@@ -76,7 +78,7 @@ from ..tags import GraphenePipelineTagAndValues
 from ..util import non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
-from .pipeline import GraphenePipelineOrError
+from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
 class GrapheneQuery(graphene.ObjectType):
@@ -98,6 +100,11 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineSnapshotOrError),
         snapshotId=graphene.String(),
         activePipelineSelector=graphene.Argument(GraphenePipelineSelector),
+    )
+
+    graphOrError = graphene.Field(
+        graphene.NonNull(GrapheneGraphOrError),
+        selector=graphene.Argument(GrapheneGraphSelector),
     )
 
     scheduler = graphene.Field(graphene.NonNull(GrapheneSchedulerOrError))
@@ -269,6 +276,10 @@ class GrapheneQuery(graphene.ObjectType):
             )
         else:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
+
+    def resolve_graphOrError(self, graphene_info, **kwargs):
+        graph_selector = graph_selector_from_graphql(kwargs["selector"])
+        return get_graph_or_error(graphene_info, graph_selector)
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version
