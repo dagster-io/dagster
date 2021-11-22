@@ -35,8 +35,3 @@ def subnet(vpc):
 @pytest.fixture
 def security_group(vpc):
     return vpc.create_security_group(Description="test", GroupName="test")
-
-
-@pytest.fixture
-def network_interface(subnet, security_group):
-    return subnet.create_network_interface(Groups=[security_group.id])

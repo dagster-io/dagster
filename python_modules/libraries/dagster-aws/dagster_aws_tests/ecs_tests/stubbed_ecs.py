@@ -327,10 +327,17 @@ class StubbedEcs:
                         subnet = ec2.Subnet(subnet)
                         # The provided subnet doesn't exist
                         subnet.load()
-                        network_interfaces = list(subnet.network_interfaces.all())
-                        # There's no Network Interface associated with the subnet
-                        if not network_interfaces:
-                            raise StubbedEcsError
+
+                        eni = subnet.create_network_interface()
+                        if vpc_configuration.get("assignPublicIp") == "ENABLED":
+                            allocation_id = subnet.meta.client.allocate_address(Domain="vpc").get(
+                                "AllocationId",
+                            )
+                            subnet.meta.client.associate_address(
+                                NetworkInterfaceId=eni.id,
+                                AllocationId=allocation_id,
+                            )
+                            eni.load()
 
                         task["attachments"].append(
                             {
@@ -339,7 +346,7 @@ class StubbedEcs:
                                     {"name": "subnetId", "value": subnet.id},
                                     {
                                         "name": "networkInterfaceId",
-                                        "value": network_interfaces[0].id,
+                                        "value": eni.id,
                                     },
                                 ],
                             }

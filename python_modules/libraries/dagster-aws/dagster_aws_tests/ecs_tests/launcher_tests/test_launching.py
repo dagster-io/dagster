@@ -12,7 +12,6 @@ def test_default_launcher(
     workspace,
     run,
     subnet,
-    network_interface,
     image,
     environment,
     task_long_arn_format,
@@ -48,7 +47,6 @@ def test_default_launcher(
     task_arn = list(set(tasks).difference(initial_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
     assert subnet.id in str(task)
-    assert network_interface.id in str(task)
     assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
     # The run is tagged with info about the ECS task

@@ -40,12 +40,12 @@ def task_definition(ecs, image, environment):
 
 
 @pytest.fixture
-def task(ecs, network_interface, security_group, task_definition):
+def task(ecs, subnet, security_group, task_definition):
     return ecs.run_task(
         taskDefinition=task_definition["family"],
         networkConfiguration={
             "awsvpcConfiguration": {
-                "subnets": [network_interface.subnet_id],
+                "subnets": [subnet.id],
                 "securityGroups": [security_group.id],
             },
         },
