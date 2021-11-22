@@ -24,23 +24,6 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKe
   path: string[];
 }
 
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset {
-  __typename: "AssetNode";
-  id: string;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey;
-}
-
-export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies {
-  __typename: "AssetDependency";
-  inputName: string;
-  upstreamAsset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset;
-}
-
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -184,15 +167,32 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMa
   materializationEvent: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations_materializationEvent;
 }
 
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset_assetKey;
+}
+
+export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies {
+  __typename: "AssetDependency";
+  inputName: string;
+  upstreamAsset: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies_upstreamAsset;
+}
+
 export interface AssetGraphQuery_repositoryOrError_Repository_assetNodes {
   __typename: "AssetNode";
   id: string;
-  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
   opName: string | null;
   description: string | null;
   jobName: string | null;
-  dependencies: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies[];
+  assetKey: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
   assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetMaterializations[];
+  dependencies: AssetGraphQuery_repositoryOrError_Repository_assetNodes_dependencies[];
 }
 
 export interface AssetGraphQuery_repositoryOrError_Repository_pipelines_modes {

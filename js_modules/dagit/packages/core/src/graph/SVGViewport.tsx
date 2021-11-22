@@ -23,7 +23,10 @@ interface SVGViewportProps {
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDoubleClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
-  children: (state: SVGViewportState) => React.ReactNode;
+  children: (
+    state: SVGViewportState,
+    bounds: {top: number; left: number; bottom: number; right: number},
+  ) => React.ReactNode;
 }
 
 interface SVGViewportState {
@@ -347,6 +350,18 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const {children, onKeyDown, onClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
+    let viewport = {top: 0, left: 0, right: 0, bottom: 0};
+    if (this.element.current) {
+      const el = this.element.current!;
+      const {width, height} = el.getBoundingClientRect();
+      viewport = {
+        left: -this.state.x / this.state.scale,
+        top: -this.state.y / this.state.scale,
+        right: (-this.state.x + width) / this.state.scale,
+        bottom: (-this.state.y + height) / this.state.scale,
+      };
+    }
+
     return (
       <div
         ref={this.element}
@@ -364,7 +379,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
             transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
           }}
         >
-          {children(this.state)}
+          {children(this.state, viewport)}
         </div>
         {interactor.render && interactor.render(this)}
       </div>
