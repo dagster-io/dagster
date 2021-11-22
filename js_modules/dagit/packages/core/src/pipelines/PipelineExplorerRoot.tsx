@@ -134,9 +134,9 @@ export const PipelineExplorerContainer: React.FC<{
             <AssetGraphExplorer
               repoAddress={repoAddress!}
               handles={displayedHandles}
-              selectedHandle={selectedHandle}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
+              selectedHandle={selectedHandle}
             />
           );
         }

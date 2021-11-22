@@ -1,3 +1,4 @@
+import {isEqual} from 'lodash';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -7,12 +8,12 @@ import {FontFamily} from '../../ui/styles';
 
 import {assetKeyToString} from './Utils';
 
-export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = ({assetKey}) => (
+export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>
     <span className="label">{assetKeyToString(assetKey)}</span>
     <IconWIP name="open_in_new" color={ColorsWIP.Gray500} />
   </ForeignNodeLink>
-);
+));
 
 const ForeignNodeLink = styled.div`
   display: flex;

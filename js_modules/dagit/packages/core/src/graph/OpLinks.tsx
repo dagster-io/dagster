@@ -66,13 +66,13 @@ const inputIsDynamicCollect = (
 
 export const OpLinks = React.memo(
   (props: {
-    opacity: number;
+    color: string;
     ops: PipelineGraphOpFragment[];
     layout: IFullPipelineLayout;
     connections: ILayoutConnection[];
     onHighlight: (arr: Edge[]) => void;
   }) => (
-    <g opacity={props.opacity}>
+    <g>
       {buildSVGPaths(props.connections, props.layout.ops).map(
         ({path, from, sourceOutput, targetInput, to}, idx) => (
           <g
@@ -80,9 +80,10 @@ export const OpLinks = React.memo(
             onMouseLeave={() => props.onHighlight([])}
             onMouseEnter={() => props.onHighlight([{a: from.opName, b: to.opName}])}
           >
-            <StyledPath d={path} />
+            <StyledPath d={path} style={{stroke: props.color}} />
             {outputIsDynamic(props.ops, from) && (
               <DynamicMarker
+                color={props.color}
                 x={sourceOutput.layout.x}
                 y={sourceOutput.layout.y}
                 direction={'output'}
@@ -90,6 +91,7 @@ export const OpLinks = React.memo(
             )}
             {inputIsDynamicCollect(props.ops, to) && (
               <DynamicMarker
+                color={props.color}
                 x={targetInput.layout.x}
                 y={targetInput.layout.y}
                 direction={'collect'}
@@ -108,9 +110,10 @@ const DynamicMarker: React.FunctionComponent<{
   x: number;
   y: number;
   direction: 'output' | 'collect';
-}> = ({x, y, direction}) => (
+  color: string;
+}> = ({x, y, direction, color}) => (
   <g
-    fill={ColorsWIP.Gray700}
+    fill={color}
     transform={`translate(${x - 35}, ${y})${
       direction === 'collect' ? ',rotate(180),translate(-20, -40)' : ''
     }`}
@@ -123,6 +126,5 @@ const DynamicMarker: React.FunctionComponent<{
 
 const StyledPath = styled('path')`
   stroke-width: 4;
-  stroke: ${ColorsWIP.Gray600};
   fill: none;
 `;

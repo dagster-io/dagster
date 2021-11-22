@@ -1,5 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
+import memoize from 'lodash/memoize';
 
 import {AssetNode, getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
@@ -24,7 +25,7 @@ interface LayoutNode {
   x: number;
   y: number;
 }
-interface GraphData {
+export interface GraphData {
   nodes: {[id: string]: Node};
   downstream: {[upstream: string]: {[downstream: string]: string}};
   upstream: {[downstream: string]: {[upstream: string]: boolean}};
@@ -50,11 +51,11 @@ export const buildGraphData = (repository: Repository, jobName?: string) => {
 
   repository.assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach((dependency) => {
-      const upstreamAssetKeyJson = JSON.stringify(dependency.upstreamAsset.assetKey.path);
+    definition.dependencies.forEach(({asset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
       downstream[upstreamAssetKeyJson] = {
         ...(downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: dependency.inputName,
+        [assetKeyJson]: inputName,
       };
       upstream[assetKeyJson] = {
         ...(upstream[assetKeyJson] || {}),
@@ -93,12 +94,10 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const layoutGraph = (graphData: GraphData) => {
+export const _layoutGraph = (graphData: GraphData, margin = 100) => {
   const g = new dagre.graphlib.Graph();
-  const marginBase = 100;
-  const marginy = marginBase;
-  const marginx = marginBase;
-  g.setGraph({rankdir: 'TB', marginx, marginy});
+
+  g.setGraph({rankdir: 'TB', marginx: margin, marginy: margin});
   g.setDefaultEdgeLabel(() => ({}));
 
   Object.values(graphData.nodes)
@@ -147,8 +146,8 @@ export const layoutGraph = (graphData: GraphData) => {
       x: dagreNode.x - dagreNode.width / 2,
       y: dagreNode.y - dagreNode.height / 2,
     });
-    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width);
-    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height);
+    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
+    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
   const edges: IEdge[] = [];
@@ -164,8 +163,8 @@ export const layoutGraph = (graphData: GraphData) => {
   return {
     nodes,
     edges,
-    width: maxWidth,
-    height: maxHeight + marginBase,
+    width: maxWidth + margin,
+    height: maxHeight + margin,
   };
 };
 
@@ -205,6 +204,12 @@ export function buildGraphComputeStatuses(graphData: GraphData) {
   }
   return statuses;
 }
+
+const _layoutCacheKey = (data: GraphData) => {
+  return Object.keys(data.nodes).join('|');
+};
+
+export const layoutGraph = memoize(_layoutGraph, _layoutCacheKey);
 
 export type Status = 'good' | 'old' | 'none';
 

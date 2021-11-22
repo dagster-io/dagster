@@ -37,6 +37,7 @@ interface IPipelineGraphProps {
 interface IPipelineContentsProps extends IPipelineGraphProps {
   minified: boolean;
   layout: IFullPipelineLayout;
+  bounds: {top: number; left: number; right: number; bottom: number};
 }
 
 interface IPipelineContentsState {
@@ -101,6 +102,7 @@ class PipelineGraphContents extends React.PureComponent<
       layout,
       minified,
       ops,
+      bounds,
       focusOps,
       parentOp,
       parentHandleID,
@@ -151,14 +153,14 @@ class PipelineGraphContents extends React.PureComponent<
         <OpLinks
           ops={ops}
           layout={layout}
-          opacity={0.2}
+          color={ColorsWIP.KeylineGray}
           connections={layout.connections}
           onHighlight={this.onHighlightEdges}
         />
         <OpLinks
           ops={ops}
           layout={layout}
-          opacity={0.55}
+          color={ColorsWIP.Gray500}
           onHighlight={this.onHighlightEdges}
           connections={layout.connections.filter(({from, to}) =>
             isHighlighted(this.state.highlighted, {
@@ -176,28 +178,38 @@ class PipelineGraphContents extends React.PureComponent<
             strokeWidth={2}
           />
         ))}
-        <foreignObject width={layout.width} height={layout.height}>
-          {ops.map((op) => (
-            <OpNode
-              key={op.name}
-              invocation={op}
-              definition={op.definition}
-              minified={minified}
-              onClick={() => onClickOp({name: op.name})}
-              onDoubleClick={() => onDoubleClickOp({name: op.name})}
-              onEnterComposite={() => onEnterSubgraph({name: op.name})}
-              onHighlightEdges={this.onHighlightEdges}
-              layout={layout.ops[op.name]}
-              selected={selectedOp === op}
-              focused={focusOps.includes(op)}
-              highlightedEdges={
-                isOpHighlighted(this.state.highlighted, op.name)
-                  ? this.state.highlighted
-                  : EmptyHighlightedArray
-              }
-              dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
-            />
-          ))}
+        <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
+          {ops
+            .filter((op) => {
+              const box = layout.ops[op.name].boundingBox;
+              return (
+                box.x + box.width >= bounds.left &&
+                box.y + box.height >= bounds.top &&
+                box.x < bounds.right &&
+                box.y < bounds.bottom
+              );
+            })
+            .map((op) => (
+              <OpNode
+                key={op.name}
+                invocation={op}
+                definition={op.definition}
+                minified={minified}
+                onClick={() => onClickOp({name: op.name})}
+                onDoubleClick={() => onDoubleClickOp({name: op.name})}
+                onEnterComposite={() => onEnterSubgraph({name: op.name})}
+                onHighlightEdges={this.onHighlightEdges}
+                layout={layout.ops[op.name]}
+                selected={selectedOp === op}
+                focused={focusOps.includes(op)}
+                highlightedEdges={
+                  isOpHighlighted(this.state.highlighted, op.name)
+                    ? this.state.highlighted
+                    : EmptyHighlightedArray
+                }
+                dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
+              />
+            ))}
         </foreignObject>
       </>
     );
@@ -340,7 +352,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         onClick={onClickBackground}
         onDoubleClick={this.unfocus}
       >
-        {({scale}: any) => (
+        {({scale}, bounds) => (
           <>
             <SVGContainer width={layout.width} height={layout.height + 200}>
               <PipelineGraphContents
@@ -348,6 +360,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
                 layout={layout}
                 minified={scale < DETAIL_ZOOM - 0.01}
                 onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
+                bounds={bounds}
               />
             </SVGContainer>
           </>
