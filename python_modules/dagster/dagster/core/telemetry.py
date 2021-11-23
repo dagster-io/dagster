@@ -19,10 +19,9 @@ import os
 import sys
 import uuid
 from collections import namedtuple
-from contextlib import ContextDecorator, contextmanager
 from functools import wraps
 from logging.handlers import RotatingFileHandler
-from typing import Callable, Dict, List, NamedTuple, Optional, cast
+from typing import Callable, Dict, NamedTuple, Optional, Union
 
 import click
 import yaml
@@ -35,6 +34,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
+from dagster.seven import funcsigs
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
@@ -46,61 +46,52 @@ START_DAGIT_WEBSERVER = "start_dagit_webserver"
 TELEMETRY_VERSION = "0.2"
 
 
+class TelemetryRegisteredFunction(NamedTuple):
+    instance_index: int
+
+
 class TelemetryRegistry(
     NamedTuple(
         "_TelemetryRegistry",
         [
-            ("registry_map", Dict[str, List[str]]),
+            ("registry", Dict[str, TelemetryRegisteredFunction]),
         ],
     )
 ):
-    def __new__(cls, registry_map: Optional[Dict[str, List[str]]] = None):
+    def __new__(cls, registry: Optional[Dict[str, TelemetryRegisteredFunction]] = None):
         return super(TelemetryRegistry, cls).__new__(
-            cls, registry_map=check.opt_dict_param(registry_map, "registry_map")
+            cls, registry=check.opt_dict_param(registry, "registry")
         )
 
-    def get_human_readable_format(self) -> List[str]:
-        result = []
-        for klassname, method_names in self.registry_map.items():
-            for method_name in method_names:
-                if klassname == "object":
-                    result.append(method_name)
-                else:
-                    result.append(f"{klassname}.{method_name}")
-        return result
-
     def register(self, f: Callable) -> None:
-        klassname = _get_klassname_for_method(f)
-        if not klassname in self.registry_map:
-            self.registry_map[klassname] = []
-        self.registry_map[klassname].append(f.__name__)
+        if "<locals>" in f.__qualname__:
+            raise DagsterInvariantViolationError(
+                f"Attempted to register local function '{f.__name__}' for telemetry. Only "
+                "module-scoped functions and methods should be registered for telemetry."
+            )
 
+        # Verify that f has an instance parameter
+        params = [param.name for param in funcsigs.signature(f).parameters.values()]
+        if not "instance" in params:
+            raise DagsterInvariantViolationError(
+                f"Attempted to log telemetry for function '{f.__qualname__}' that does not take a "
+                "DagsterInstance in a parameter called 'instance'."
+            )
+        instance_index = params.index("instance")
+        self.registry[f.__qualname__] = TelemetryRegisteredFunction(instance_index=instance_index)
 
-def _get_klassname_for_method(f: Callable) -> str:
-    if not hasattr(f, "im_class"):  # for the non-method case
-        return "object"
-    for klass in inspect.getmro(f.im_class):  # type: ignore[attr-defined]
-        if hasattr(klass, f.__name__):
-            return klass.__name__
-    raise DagsterInvariantViolationError(
-        f"An unexpected error occurred when registering method '{f.__name__}'. Could not find "
-        "class for method."
-    )
+    def get_instance_index(self, fn_name: str) -> int:
+        if not fn_name in self.registry:
+            raise DagsterInvariantViolationError(f"Could not find {fn_name} in telemetry registry.")
+        return self.registry[fn_name].instance_index
 
 
 TELEMETRY_REGISTRY = TelemetryRegistry()
 
 
-# start_TELEMETRY_WHITELISTED_FUNCTIONS
-# TELEMETRY_WHITELISTED_FUNCTIONS = {
-#     "_logged_execute_pipeline",
-#     "execute_execute_command",
-#     "execute_launch_command",
-# }
-# end_TELEMETRY_WHITELISTED_FUNCTIONS
-
-
-def telemetry_wrapper(registry: TelemetryRegistry = TELEMETRY_REGISTRY) -> Callable:
+def telemetry_wrapper(
+    registry: Union[TelemetryRegistry, Callable] = TELEMETRY_REGISTRY
+) -> Callable:
     """
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
@@ -109,49 +100,39 @@ def telemetry_wrapper(registry: TelemetryRegistry = TELEMETRY_REGISTRY) -> Calla
     parameter named 'instance' in the signature.
     """
     # Bare decorator case
-    if not isinstance(registry, set) and inspect.isfunction(registry):
-        f = cast(Callable, registry)
+    if not isinstance(registry, TelemetryRegistry) and inspect.isfunction(registry):
+        f = registry
         TELEMETRY_REGISTRY.register(f)
-        return _wrap_for_telemetry(f)
+        return _wrap_for_telemetry(f, TELEMETRY_REGISTRY)
 
     def _inner(f):
         registry.register(f)
-        return _wrap_for_telemetry(f)
+        return _wrap_for_telemetry(f, registry)
 
     return _inner
 
 
-def _wrap_for_telemetry(f: Callable) -> Callable:
+def _wrap_for_telemetry(f: Callable, registry: TelemetryRegistry) -> Callable:
 
-    # Verify that f has an instance parameter
-    var_names = f.__code__.co_varnames
-    try:
-        instance_index = var_names.index("instance")
-    except ValueError:
-        raise DagsterInvariantViolationError(
-            "Attempted to log telemetry for function {name} that does not take a DagsterInstance "
-            "in a parameter called 'instance'"
-        )
-
-    if isinstance(f, ContextDecorator):
-        return wrap_contextmanager_for_telemetry(f, instance_index)
+    if inspect.isgeneratorfunction(f):
+        return wrap_generator_fn_for_telemetry(f, registry)
     else:
-        return wrap_function_for_telemetry(f, instance_index)
+        return wrap_function_for_telemetry(f, registry)
 
 
-def wrap_contextmanager_for_telemetry(f: Callable, instance_index: int):
-    @contextmanager
+def wrap_generator_fn_for_telemetry(f: Callable, registry: TelemetryRegistry):
     @wraps(f)
     def wrap(*args, **kwargs):
+        fn_name = f.__qualname__
+
+        instance_index = registry.get_instance_index(fn_name)
         instance = _check_telemetry_instance_param(args, kwargs, instance_index)
-        klassname = _get_klassname_for_method(f)
-        fn_name = f"{klassname}.{f.__name__}" if klassname != "object" else f.__name__
+
         start_time = datetime.datetime.now()
         log_action(instance=instance, action=f"{fn_name}_started", client_time=start_time)
 
         try:
-            with f(*args, **kwargs) as result:
-                yield result
+            yield from f(*args, **kwargs)
         finally:
             end_time = datetime.datetime.now()
             log_action(
@@ -159,20 +140,23 @@ def wrap_contextmanager_for_telemetry(f: Callable, instance_index: int):
                 action=f"{fn_name}_ended",
                 client_time=end_time,
                 elapsed_time=end_time - start_time,
-                metadata={"success": getattr(result, "success", None)},
+                metadata=None,
             )
 
     return wrap
 
 
-def wrap_function_for_telemetry(f, instance_index: int):
+def wrap_function_for_telemetry(f, registry: TelemetryRegistry):
     @wraps(f)
     def wrap(*args, **kwargs):
+        fn_name = f.__qualname__
+
+        instance_index = registry.get_instance_index(fn_name)
         instance = _check_telemetry_instance_param(args, kwargs, instance_index)
-        klassname = _get_klassname_for_method(f)
-        fn_name = f"{klassname}.{f.__name__}" if klassname != "object" else f.__name__
+
         start_time = datetime.datetime.now()
         log_action(instance=instance, action=f"{fn_name}_started", client_time=start_time)
+
         result = f(*args, **kwargs)
         end_time = datetime.datetime.now()
         log_action(
