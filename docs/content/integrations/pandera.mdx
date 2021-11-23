@@ -1,0 +1,66 @@
+---
+title: Dagster with Pandera
+description: Generate Dagster types for dataframes with Pandera.
+---
+
+# Using Dagster with Pandera
+
+The `dagster-pandera` integration library provides an API for generating [Dagster Types](/concepts/types) from [Pandera](https://github.com/pandera-dev/pandera) dataframe schemas. Like all Dagster types, `dagster-pandera` types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows [Dagit](/concepts/dagit/dagit) to display information about a dataframe's structure.
+
+## Usage
+
+`dagster-pandera` currently exposes only a single public function: `pandera_schema_to_dagster_type`. This function generates Dagster types from Pandera schemas.
+
+```python
+import pandera as pa
+from dagster import op, job, Field, Out
+from dagster_pandera import pandera_schema_to_dagster_type
+
+schema = pa.DataFrameSchema(
+    columns={
+        # ge (le): greater (less) than or equal to
+        "a": pa.Column(int, checks=[pa.Check.ge(0), pa.Check.le(10)]),
+        "b": pa.Column(int, checks=[pa.Check.ge(10), pa.Check.le(20)]),
+    },
+)
+df_type = pandera_schema_to_dagster_type(
+    schema,
+    "MyDataframeType",
+    "Type that expects two columns `a` and `b`, 10 <= a <= 10, 10 <= b <= 20.",
+)
+
+@op(out=Out(df_type), config_schema={"dirty": Field(bool, False)})
+def create_dataframe(context):
+    df = pd.DataFrame({
+        'a': list(range(10)),
+        'b': list(range(10, 20)),
+    })
+    if context.op_config['dirty']:
+        df['a'].iloc[5] = 15
+        df['b'].iloc[5] = 5
+    return df
+
+
+@job
+def get_dataframe():
+    create_dataframe()
+```
+
+The above job `get_dataframe` contains a single op `create_dataframe`. The sole output of `create_dataframe` is annotated with a type created via `pandera_schema_to_dagster_type`. Using this type yields several benefits:
+
+- Schema information about the dataframe output from `create_dataframe` is visible in `dagit`. This includes column names, datatypes and descriptions.
+- The output of `create_dataframe` will be validated against the provided dataframe schema at runtime. If validation fails, an event containing a rich record of all constraint violations will be returned in a <PyObject name="TypeCheck" /> object. This is also visible in `dagit`.
+
+
+get_dataframe.execute_in_process()
+# => ...
+# => 2021-11-11 19:54:26 - dagster - DEBUG - generate_trip_plots - 3e00e9e3-27f3-490e-b1bd-ec17b92e5599 - 28168 - RUN_SUCCESS - Finished execution of run for "generate_trip_plots".
+
+get_dataframe.execute_in_process(
+    run_config={"ops": {"load_trips": {"config": {"dirty": True}}}}
+)
+# => ...
+# => dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "MyDataframeType".
+```
+
+
