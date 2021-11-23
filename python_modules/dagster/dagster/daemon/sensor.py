@@ -275,10 +275,6 @@ def _evaluate_sensor(
         if sensor_runtime_data.pipeline_run_reactions:
             for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
                 origin_run_id = pipeline_run_reaction.pipeline_run.run_id
-                message = (
-                    f'Sensor "{external_sensor.name}" processed failure of run {origin_run_id}.'
-                )
-
                 if pipeline_run_reaction.error:
                     context.logger.error(
                         f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
@@ -290,6 +286,10 @@ def _evaluate_sensor(
                     )
                 else:
                     # log to the original pipeline run
+                    message = (
+                        f'Sensor "{external_sensor.name}" acted on run status '
+                        f"{pipeline_run_reaction.pipeline_run.status.value} of run {origin_run_id}."
+                    )
                     instance.report_engine_event(
                         message=message, pipeline_run=pipeline_run_reaction.pipeline_run
                     )
