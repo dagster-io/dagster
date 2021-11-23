@@ -9,15 +9,13 @@ A Dagster schedule submits job runs at a fixed interval.
 
 ## Relevant APIs
 
-| Name                                                      | Description                                                                                                   |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="config_based_schedule" decorator />     | Decorator that defines a schedule that executes runs on a given cron schedule, using the provided run config. |
-| <PyObject object="request_based_schedule" decorator />    | Decorator that defines a schedule that executes runs on a given cron schedule, using `RunRequest` objects.    |
-| <PyObject object="schedule" decorator />                  | Decorator that is an alias of `config_based_schedule` .                                                       |
-| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                          |
-| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job.           |
-| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                              |
-| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.                         |
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
+| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                |
+| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
+| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
 
 ## Overview
 

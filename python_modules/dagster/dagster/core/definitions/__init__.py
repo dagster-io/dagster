@@ -2,7 +2,6 @@ from .config import ConfigMapping
 from .decorators import (
     asset_sensor,
     composite_solid,
-    config_based_schedule,
     config_mapping,
     daily_schedule,
     failure_hook,
@@ -15,7 +14,6 @@ from .decorators import (
     op,
     pipeline,
     repository,
-    request_based_schedule,
     schedule,
     sensor,
     solid,
