@@ -84,7 +84,7 @@ function buildMatrixData(
         }))
         .filter(
           (s): s is {runIdx: number; status: StepEventStatus} =>
-            !!s.status && s.status != StepEventStatus.IN_PROGRESS,
+            !!s.status && s.status !== StepEventStatus.IN_PROGRESS,
         )
         .reverse();
       if (datapoints.length === 0) {

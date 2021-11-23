@@ -1,5 +1,5 @@
-import time
 import os
+import time
 
 from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
