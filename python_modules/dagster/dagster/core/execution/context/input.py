@@ -211,6 +211,19 @@ class InputContext:
 
         return self._step_context
 
+    @property
+    def has_partition_key(self) -> bool:
+        """Whether the current run is a partitioned run"""
+        return self.step_context.has_partition_key
+
+    @property
+    def partition_key(self) -> str:
+        """The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+        """
+        return self.step_context.partition_key
+
 
 def build_input_context(
     name: Optional[str] = None,
