@@ -1,5 +1,4 @@
 import inspect
-
 from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
@@ -492,6 +491,11 @@ def _store_output(
 
     manager_materializations = []
     manager_metadata_entries = []
+
+    # output_manager.handle_output is either a generator function, or a normal function with or
+    # without a return value. In the case that handle_output is a normal function, we need to
+    # catch errors should they be raised before a return value. We can do this by wrapping
+    # handle_output in a generator so that errors will be caught within iterate_with_context.
 
     if not inspect.isgeneratorfunction(output_manager.handle_output):
 
