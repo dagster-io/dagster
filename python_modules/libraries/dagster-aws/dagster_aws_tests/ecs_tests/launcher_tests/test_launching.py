@@ -79,6 +79,8 @@ def test_launching_custom_task_definition(
         family="override",
         containerDefinitions=[{"name": container_name, "image": "hello_world:latest"}],
         networkMode="bridge",
+        memory="512",
+        cpu="256",
     )["taskDefinition"]
     task_definition_arn = task_definition["taskDefinitionArn"]
     family = task_definition["family"]
