@@ -28,7 +28,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     <div>
       <div>
         {loading && (
-          <Box padding={{vertical: 20}}>
+          <Box
+            style={{height: 390}}
+            flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+          >
             <Spinner purpose="section" />
           </Box>
         )}
