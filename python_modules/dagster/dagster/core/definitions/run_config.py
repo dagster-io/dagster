@@ -115,6 +115,12 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         else define_single_execution_field(creation_data.mode_definition.executor_defs[0])
     )
 
+    top_level_node = Node(
+        name=creation_data.graph_def.name,
+        definition=creation_data.graph_def,
+        graph_definition=creation_data.graph_def,
+    )
+
     fields = {
         "execution": execution_field,
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
@@ -123,6 +129,12 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 creation_data.mode_definition.resource_defs,
                 creation_data.required_resources,
             )
+        ),
+        "inputs": get_inputs_field(
+            solid=top_level_node,
+            dependency_structure=creation_data.dependency_structure,
+            resource_defs=creation_data.mode_definition.resource_defs,
+            solid_ignored=False,
         ),
     }
 

@@ -23,11 +23,7 @@ from dagster.core.definitions.definition_config_schema import IDefinitionConfigS
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -577,11 +573,6 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.instance import DagsterInstance
         from .job_definition import JobDefinition
         from .executor_definition import execute_in_process_executor
-
-        if len(self.input_defs) > 0:
-            raise DagsterInvariantViolationError(
-                "Graphs with inputs cannot be used with execute_in_process at this time."
-            )
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
