@@ -3,7 +3,6 @@ from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalAssetNode
 
-from ..schema.pipelines.pipeline import GrapheneRun
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization

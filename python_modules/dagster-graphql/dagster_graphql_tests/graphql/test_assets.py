@@ -104,7 +104,10 @@ GET_ASSET_IN_PROGRESS_RUNS = """
                     opName
                     description
                     jobName
-                    inProgressRuns {
+                }
+                inProgressRunsByStep {
+                    stepKey
+                    runs {
                         runId
                     }
                 }
@@ -334,12 +337,11 @@ class TestPersistentInstanceAssetInProgress(
 
             assert result.data
             assert result.data["repositoryOrError"]
-            asset_nodes = [
-                node
-                for node in result.data["repositoryOrError"]["assetNodes"]
-                if node["jobName"] == "hanging_job"
-            ]
+            assert result.data["repositoryOrError"]["inProgressRunsByStep"]
 
-            assert len(asset_nodes) == 1
-            assert len(asset_nodes[0]["inProgressRuns"]) == 1
-            assert asset_nodes[0]["inProgressRuns"][0]["runId"] == run_id
+            in_progress_runs_by_step = result.data["repositoryOrError"]["inProgressRunsByStep"]
+
+            assert len(in_progress_runs_by_step) == 1
+            assert in_progress_runs_by_step[0]["stepKey"] == "hanging_asset"
+            assert len(in_progress_runs_by_step[0]["runs"]) == 1
+            assert in_progress_runs_by_step[0]["runs"][0]["runId"] == run_id

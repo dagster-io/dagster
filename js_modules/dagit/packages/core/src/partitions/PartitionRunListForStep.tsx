@@ -102,7 +102,7 @@ const StepStatsColumn: React.FunctionComponent<{
               style={{
                 width: 17,
                 height: 17,
-                background: stats.status && stats.status != StepEventStatus.IN_PROGRESS ? STEP_STATUS_COLORS[stats.status] : '#eee',
+                background: stats.status ? STEP_STATUS_COLORS[stats.status] : '#eee',
               }}
             />
             <Tooltip content="Expectation Results">
