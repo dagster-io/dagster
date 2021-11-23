@@ -2,7 +2,7 @@
 import csv
 
 import requests
-from dagster import job, op
+from dagster import get_dagster_logger, job, op
 
 
 @op
@@ -13,12 +13,14 @@ def download_csv(context):
 
 
 @op
-def sort_by_calories(context, cereals):
+def sort_by_calories(cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
     )
 
-    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+    get_dagster_logger().info(
+        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
+    )
 
 
 @job
