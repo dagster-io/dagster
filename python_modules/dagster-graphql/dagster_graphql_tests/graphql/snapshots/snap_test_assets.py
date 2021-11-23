@@ -30,6 +30,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_pr
                         'c'
                     ]
                 }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_asset'
+                    ]
+                }
             }
         ]
     }
@@ -59,6 +66,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                         'c'
                     ]
                 }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_asset'
+                    ]
+                }
             }
         ]
     }
@@ -86,6 +100,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'c'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_asset'
                     ]
                 }
             }

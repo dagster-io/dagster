@@ -55,6 +55,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  inProgressRunsByStep: [InProgressRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -416,6 +417,7 @@ enum StepEventStatus {
   SKIPPED
   SUCCESS
   FAILURE
+  IN_PROGRESS
 }
 
 type Materialization implements DisplayableEvent {
@@ -1208,6 +1210,11 @@ type UsedSolid {
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type InProgressRunsByStep {
+  stepKey: String!
+  runs: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

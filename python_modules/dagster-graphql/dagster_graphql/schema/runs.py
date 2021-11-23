@@ -15,6 +15,7 @@ class GrapheneStepEventStatus(graphene.Enum):
     SKIPPED = "SKIPPED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    IN_PROGRESS = "IN_PROGRESS"
 
     class Meta:
         name = "StepEventStatus"
@@ -142,7 +143,6 @@ types = [
     GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchPipelineRunSuccess,
     GrapheneLaunchRunSuccess,
-    GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroup,
