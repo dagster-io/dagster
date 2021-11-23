@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
@@ -15,8 +15,8 @@ def _build_slack_blocks_and_text(
     text_fn: Callable[[RunFailureSensorContext], str],
     blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]],
     dagit_base_url: Optional[str],
-):
-    blocks = [
+) -> Tuple[List[Dict[str, Any]], str]:
+    blocks: List[Dict[str, Any]] = [
         {
             "type": "section",
             "text": {
