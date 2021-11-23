@@ -24,6 +24,6 @@ def test_user_story_matrix(comment_stories, expected):
     comment_stories_df = DataFrame(
         comment_stories, columns=["comment_id", "story_id", "commenter_id"]
     )
-    indexed_matrix = user_story_matrix(comment_stories=comment_stories_df)
+    indexed_matrix = user_story_matrix.op(comment_stories=comment_stories_df)
 
     assert indexed_matrix.matrix.toarray().tolist() == expected
