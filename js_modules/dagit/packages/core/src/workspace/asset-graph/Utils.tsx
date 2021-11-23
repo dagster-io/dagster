@@ -4,14 +4,12 @@ import * as dagre from 'dagre';
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
 import {
-  AssetGraphQuery_repositoryOrError_Repository,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 
-type Repository = AssetGraphQuery_repositoryOrError_Repository;
-type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
 
 export interface Node {
   id: string;
@@ -33,7 +31,7 @@ interface IPoint {
   x: number;
   y: number;
 }
-type IEdge = {
+export type IEdge = {
   from: IPoint;
   to: IPoint;
   dashed: boolean;
@@ -43,12 +41,12 @@ export function assetKeyToString(key: {path: string[]}) {
   return key.path.join('>');
 }
 
-export const buildGraphData = (repository: Repository, jobName?: string) => {
+export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
   const nodes: {[id: string]: Node} = {};
   const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
   const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
 
-  repository.assetNodes.forEach((definition: AssetNode) => {
+  assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     definition.dependencies.forEach(({asset, inputName}) => {
       const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
@@ -59,6 +57,17 @@ export const buildGraphData = (repository: Repository, jobName?: string) => {
       upstream[assetKeyJson] = {
         ...(upstream[assetKeyJson] || {}),
         [upstreamAssetKeyJson]: true,
+      };
+    });
+    definition.dependedBy.forEach(({asset, inputName}) => {
+      const downstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      upstream[downstreamAssetKeyJson] = {
+        ...(upstream[downstreamAssetKeyJson] || {}),
+        [assetKeyJson]: true,
+      };
+      downstream[assetKeyJson] = {
+        ...(downstream[assetKeyJson] || {}),
+        [downstreamAssetKeyJson]: inputName,
       };
     });
     nodes[assetKeyJson] = {
@@ -108,13 +117,17 @@ export const layoutGraph = (graphData: GraphData, margin = 100) => {
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
-      if (graphData.nodes[downstreamId].hidden && graphData.nodes[upstreamId].hidden) {
+      if (
+        graphData.nodes[downstreamId] &&
+        graphData.nodes[downstreamId].hidden &&
+        graphData.nodes[upstreamId].hidden
+      ) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-      if (graphData.nodes[downstreamId].hidden) {
+      if (!graphData.nodes[downstreamId] || graphData.nodes[downstreamId].hidden) {
         foreignNodes[downstreamId] = true;
-      } else if (graphData.nodes[upstreamId].hidden) {
+      } else if (!graphData.nodes[upstreamId] || graphData.nodes[upstreamId].hidden) {
         foreignNodes[upstreamId] = true;
       }
     });

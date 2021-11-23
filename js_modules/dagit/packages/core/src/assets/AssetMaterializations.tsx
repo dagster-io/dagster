@@ -25,6 +25,7 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 
 interface Props {
   assetKey: AssetKey;
+  asOf?: string | null;
   asSidebarSection?: boolean;
 }
 const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';

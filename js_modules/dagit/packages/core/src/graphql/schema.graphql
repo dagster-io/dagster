@@ -85,6 +85,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -1195,6 +1197,8 @@ type Job implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 type UsedSolid {

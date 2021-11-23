@@ -243,6 +243,19 @@ class OutputContext:
 
         return self._step_context
 
+    @property
+    def has_partition_key(self) -> bool:
+        """Whether the current run is a partitioned run"""
+        return self.step_context.has_partition_key
+
+    @property
+    def partition_key(self) -> str:
+        """The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+        """
+        return self.step_context.partition_key
+
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
