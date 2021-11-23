@@ -44,7 +44,7 @@ def _build_slack_blocks_and_text(
                 "elements": [
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "View Dagit"},
+                        "text": {"type": "plain_text", "text": "View in Dagit"},
                         "url": f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}",
                     }
                 ],
