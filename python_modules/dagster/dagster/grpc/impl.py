@@ -10,7 +10,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.definitions.sensor import SensorEvaluationContext
+from dagster.core.definitions.sensor_definition import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvalidSubsetError,

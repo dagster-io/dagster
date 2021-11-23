@@ -8,15 +8,15 @@ from abc import ABC, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
 from dagster import check
-from dagster.core.definitions.hook import HookDefinition
+from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op_def import OpDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
-    from dagster.core.definitions.resource import Resources
+    from dagster.core.definitions.resource_definition import Resources
     from .hook import HookContext
 
 
@@ -285,6 +285,18 @@ class PlanExecutionContext(IPlanContext):
     def log(self) -> DagsterLogManager:
         return self._log_manager
 
+    @property
+    def partition_key(self) -> str:
+        tags = self._plan_data.pipeline_run.tags
+        check.invariant(
+            "partition" in tags, "Tried to access partition_key for a non-partitioned run"
+        )
+        return tags["partition"]
+
+    @property
+    def has_partition_key(self) -> bool:
+        return "partition" in self._plan_data.pipeline_run.tags
+
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
             self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
@@ -457,8 +469,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
                 return True
 
-        # can load from a previous run
-        if self._get_source_run_id_from_logs(step_output_handle):
+        if (
+            self._should_load_from_previous_runs(step_output_handle)
+            # should and can load from a previous run
+            and self._get_source_run_id_from_logs(step_output_handle)
+        ):
             return True
 
         return False
@@ -481,33 +496,39 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
-            if [
-                r
-                for r in step_output_record
-                if r.dagster_event.step_key == step_output_handle.step_key
-                and r.dagster_event.step_output_data.output_name == step_output_handle.output_name
-            ]:
-                return source_run_id
-            else:
-                # else, keep looking backwards
-                source_run_id = run_id_to_parent_run_id.get(source_run_id)
+            for r in step_output_record:
+                if r.dagster_event.step_output_data.step_output_handle == step_output_handle:
+                    return source_run_id
+            # else, keep looking backwards
+            source_run_id = run_id_to_parent_run_id.get(source_run_id)
 
-        # when a fixed path is provided via io manager, it's able to run step subset using an execution
+        # When a fixed path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations. for example, in backfills, with fixed path io manager, we allow users to
         # "re-execute" runs with steps where the outputs weren't previously stored by dagster.
+
+        # Warn about this special case because it will also reach here when all previous runs have
+        # skipped yielding this output. From the logs, we have no easy way to differentiate the fixed
+        # path case and the skipping case, until we record the skipping info in KnownExecutionState,
+        # i.e. resolve https://github.com/dagster-io/dagster/issues/3511
+        self.log.warn(
+            f"No previously stored outputs found for source {step_output_handle}. "
+            "This is either because you are using an IO Manager that does not depend on run ID, "
+            "or because all the previous runs have skipped the output in conditional execution."
+        )
         return None
 
-    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
-        # determine if the step is not selected and
-        if (
-            # this is re-execution
+    def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
+        return (  # this is re-execution
             self.pipeline_run.parent_run_id
             # we are not re-executing the entire pipeline
             and self.pipeline_run.step_keys_to_execute is not None
             # this step is not being executed
             and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
-        ):
+        )
+
+    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        if self._should_load_from_previous_runs(step_output_handle):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:
             return self.pipeline_run.run_id

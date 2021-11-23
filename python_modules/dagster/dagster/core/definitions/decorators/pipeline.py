@@ -6,12 +6,12 @@ from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils.backcompat import experimental_arg_warning
 
-from ..graph import GraphDefinition
-from ..hook import HookDefinition
+from ..graph_definition import GraphDefinition
+from ..hook_definition import HookDefinition
 from ..input import InputDefinition
 from ..mode import ModeDefinition
 from ..output import OutputDefinition
-from ..pipeline import PipelineDefinition
+from ..pipeline_definition import PipelineDefinition
 from ..preset import PresetDefinition
 from ..version_strategy import VersionStrategy
 

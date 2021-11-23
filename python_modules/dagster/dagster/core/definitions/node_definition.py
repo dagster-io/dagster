@@ -1,17 +1,19 @@
 from abc import abstractmethod, abstractproperty
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 from dagster import check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils import frozendict, frozenlist
 
-from .hook import HookDefinition
+from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
-    from .graph import GraphDefinition
-    from .solid import SolidDefinition
+    from .graph_definition import GraphDefinition
+    from .input import InputDefinition
+    from .output import OutputDefinition
+    from .solid_definition import SolidDefinition
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
@@ -71,11 +73,11 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._positional_inputs
 
     @property
-    def input_defs(self):
+    def input_defs(self) -> Sequence["InputDefinition"]:
         return self._input_defs
 
     @property
-    def input_dict(self):
+    def input_dict(self) -> Mapping[str, "InputDefinition"]:
         return self._input_dict
 
     def resolve_input_name_at_position(self, idx):
@@ -96,11 +98,11 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._positional_inputs[idx]
 
     @property
-    def output_defs(self):
+    def output_defs(self) -> Sequence["OutputDefinition"]:
         return self._output_defs
 
     @property
-    def output_dict(self):
+    def output_dict(self) -> Mapping[str, "OutputDefinition"]:
         return self._output_dict
 
     def has_input(self, name):
@@ -212,7 +214,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         )
 
     def ensure_graph_def(self) -> "GraphDefinition":
-        from .graph import GraphDefinition
+        from .graph_definition import GraphDefinition
 
         if isinstance(self, GraphDefinition):
             return self
@@ -220,7 +222,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         check.failed(f"{self.name} is not a GraphDefinition")
 
     def ensure_solid_def(self) -> "SolidDefinition":
-        from .solid import SolidDefinition
+        from .solid_definition import SolidDefinition
 
         if isinstance(self, SolidDefinition):
             return self

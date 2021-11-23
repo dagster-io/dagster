@@ -295,6 +295,7 @@ const NodeContainer = styled.div<{
   $dim: boolean;
 }>`
   opacity: ${({$dim}) => ($dim ? 0.3 : 1)};
+  pointer-events: auto;
 
   .highlight-box {
     border: ${(p) =>

@@ -66,7 +66,7 @@ def test_my_resource_with_context():
 
 # end_resource_testing_with_context
 
-# start_cm_resource_testing
+# start_test_cm_resource
 from contextlib import contextmanager
 from dagster import resource
 
@@ -82,7 +82,7 @@ def test_cm_resource():
         assert initialized_resource == "foo"
 
 
-# end_cm_resource_testing
+# end_test_cm_resource
 
 database_resource = ResourceDefinition.mock_resource()
 database_resource_a = ResourceDefinition.mock_resource()
@@ -171,3 +171,35 @@ def db_resource(init_context):
 
 
 # end_resource_config
+
+
+def get_db_connection():
+    return "foo"
+
+
+def cleanup_db_connection(_db_conn):
+    pass
+
+
+# start_cm_resource
+@resource
+@contextmanager
+def db_connection():
+    try:
+        db_conn = get_db_connection()
+        yield db_conn
+    finally:
+        cleanup_db_connection(db_conn)
+
+
+# end_cm_resource
+
+# pylint: disable=unused-variable
+# start_cm_resource_op
+@op(required_resource_keys={"db_connection"})
+def use_db_connection(context):
+    db_conn = context.resources.db_connection
+    ...
+
+
+# end_cm_resource_op

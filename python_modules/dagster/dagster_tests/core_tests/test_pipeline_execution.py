@@ -26,7 +26,7 @@ from dagster import (
 )
 from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.graph import _create_adjacency_lists
+from dagster.core.definitions.graph_definition import _create_adjacency_lists
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance

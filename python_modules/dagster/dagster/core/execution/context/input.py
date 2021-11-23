@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.op_def import OpDefinition
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from .output import OutputContext
-    from dagster.core.definitions.resource import Resources
+    from dagster.core.definitions.resource_definition import Resources
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context.system import StepExecutionContext
@@ -52,7 +52,7 @@ class InputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
     ):
-        from dagster.core.definitions.resource import Resources, IContainsGenerator
+        from dagster.core.definitions.resource_definition import Resources, IContainsGenerator
         from dagster.core.execution.build_resources import build_resources
 
         self._name = name
@@ -210,6 +210,19 @@ class InputContext:
             )
 
         return self._step_context
+
+    @property
+    def has_partition_key(self) -> bool:
+        """Whether the current run is a partitioned run"""
+        return self.step_context.has_partition_key
+
+    @property
+    def partition_key(self) -> str:
+        """The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+        """
+        return self.step_context.partition_key
 
 
 def build_input_context(

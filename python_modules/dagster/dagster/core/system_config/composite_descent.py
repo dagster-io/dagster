@@ -4,11 +4,11 @@ from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.graph import GraphDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.run_config import define_solid_dictionary_cls
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -124,7 +124,7 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
             )
             if not config_mapped_solid_config.success:
                 raise DagsterInvalidConfigError(
-                    f"Error in config for {solid.describe_node()()}".format(solid.name),
+                    f"Error in config for {solid.describe_node()}".format(solid.name),
                     config_mapped_solid_config.errors,
                     config_mapped_solid_config,
                 )

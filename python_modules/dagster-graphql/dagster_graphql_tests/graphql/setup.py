@@ -60,7 +60,7 @@ from dagster import (
 from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
@@ -1275,6 +1275,23 @@ hanging_job = build_assets_job(
 )
 
 
+@job
+def two_ins_job():
+    @op
+    def op_1():
+        return 1
+
+    @op
+    def op_2():
+        return 1
+
+    @op
+    def op_with_2_ins(in_1, in_2):
+        return in_1 + in_2
+
+    op_with_2_ins(op_1(), op_2())
+
+
 @repository
 def empty_repo():
     return []
@@ -1325,6 +1342,7 @@ def define_pipelines():
         composed_graph.to_job(),
         job_with_default_config,
         hanging_job,
+        two_ins_job,
     ]
 
 

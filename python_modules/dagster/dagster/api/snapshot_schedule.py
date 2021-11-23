@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleExecutionData
+from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle

@@ -8,10 +8,7 @@ import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 
 import {DaemonHealth} from './DaemonHealth';
-import {
-  DaemonHealthFragment,
-  DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
-} from './types/DaemonHealthFragment';
+import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
 
 interface DaemonLabelProps {
   daemon: DaemonStatus;
@@ -38,15 +35,15 @@ const DaemonLabel = (props: DaemonLabelProps) => {
 };
 
 interface Props {
-  daemonHealth: DaemonHealthFragment | undefined;
+  daemonStatuses: DaemonStatus[] | undefined;
 }
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
 export const DaemonList = (props: Props) => {
-  const {daemonHealth} = props;
+  const {daemonStatuses} = props;
 
-  if (!daemonHealth) {
+  if (!daemonStatuses?.length) {
     return null;
   }
 
@@ -60,7 +57,7 @@ export const DaemonList = (props: Props) => {
         </tr>
       </thead>
       <tbody>
-        {daemonHealth.allDaemonStatuses
+        {daemonStatuses
           .filter((daemon) => daemon.required)
           .map((daemon) => {
             return (

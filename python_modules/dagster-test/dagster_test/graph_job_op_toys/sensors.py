@@ -2,7 +2,10 @@ import os
 
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
 from dagster.core.definitions.decorators.sensor import asset_sensor
-from dagster.core.definitions.pipeline_sensor import RunFailureSensorContext, run_failure_sensor
+from dagster.core.definitions.run_status_sensor_definition import (
+    RunFailureSensorContext,
+    run_failure_sensor,
+)
 from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job

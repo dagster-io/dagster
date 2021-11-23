@@ -24,7 +24,7 @@ from .outputs import StepOutput
 
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
-    from dagster.core.definitions.hook import HookDefinition
+    from dagster.core.definitions.hook_definition import HookDefinition
 
 
 class StepKindSerializer(DefaultEnumSerializer):

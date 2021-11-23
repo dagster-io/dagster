@@ -44,6 +44,9 @@
         "runLauncher": {
             "$ref": "#/definitions/RunLauncher"
         },
+        "pythonLogs": {
+            "$ref": "#/definitions/PythonLogs"
+        },
         "dagsterDaemon": {
             "$ref": "#/definitions/Daemon"
         },
@@ -73,6 +76,7 @@
         "computeLogManager",
         "scheduler",
         "runLauncher",
+        "pythonLogs",
         "dagsterDaemon",
         "busybox",
         "migrate",
@@ -1796,6 +1800,41 @@
                     }
                 }
             ]
+        },
+        "PythonLogLevel": {
+            "title": "PythonLogLevel",
+            "description": "An enumeration.",
+            "enum": [
+                "CRITICAL",
+                "FATAL",
+                "ERROR",
+                "WARN",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET"
+            ],
+            "type": "string"
+        },
+        "PythonLogs": {
+            "title": "PythonLogs",
+            "type": "object",
+            "properties": {
+                "pythonLogLevel": {
+                    "$ref": "#/definitions/PythonLogLevel"
+                },
+                "managedPythonLoggers": {
+                    "title": "Managedpythonloggers",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dagsterHandlerConfig": {
+                    "title": "Dagsterhandlerconfig",
+                    "type": "object"
+                }
+            }
         },
         "RunCoordinatorType": {
             "title": "RunCoordinatorType",

@@ -94,7 +94,7 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
 };
 
 const fromTimestamp = (ts: number | null) => (ts ? ts * 1000 : undefined);
-export function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
+function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,

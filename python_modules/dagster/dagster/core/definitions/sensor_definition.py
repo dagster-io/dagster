@@ -27,8 +27,8 @@ from dagster.utils import ensure_gen
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
-from .graph import GraphDefinition
-from .job import JobDefinition
+from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget

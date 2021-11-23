@@ -33,11 +33,12 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
   onDoubleClickStep,
   onHighlightStep,
 }) => {
-  const {preparing, executing, errored} = React.useMemo(() => {
+  const {preparing, executing, errored, succeeded} = React.useMemo(() => {
     const keys = Object.keys(metadata.steps);
     const preparing = [];
     const executing = [];
     const errored = [];
+    const succeeded = [];
     for (const key of keys) {
       const state = metadata.steps[key].state;
       switch (state) {
@@ -50,9 +51,12 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
           break;
         case IStepState.FAILED:
           errored.push(key);
+          break;
+        case IStepState.SUCCEEDED:
+          succeeded.push(key);
       }
     }
-    return {preparing, executing, errored};
+    return {preparing, executing, errored, succeeded};
   }, [metadata]);
 
   const renderStepItem = (stepName: string) => (
@@ -78,7 +82,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
           metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
         }
       />
-      <SidebarSection title={`${isFinished ? 'Not Executed' : 'Preparing'} (${preparing.length})`}>
+      <SidebarSection title={`${isFinished ? 'Not executed' : 'Preparing'} (${preparing.length})`}>
         <div>
           {preparing.length === 0 ? (
             <EmptyNotice>No steps are waiting to execute</EmptyNotice>
@@ -102,6 +106,15 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
             <EmptyNotice>No steps have errored</EmptyNotice>
           ) : (
             errored.map(renderStepItem)
+          )}
+        </div>
+      </SidebarSection>
+      <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
+        <div>
+          {succeeded.length === 0 ? (
+            <EmptyNotice>No steps have succeeded</EmptyNotice>
+          ) : (
+            succeeded.map(renderStepItem)
           )}
         </div>
       </SidebarSection>
@@ -169,10 +182,10 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   display: flex;
   line-height: 32px;
   height: 32px;
-  padding: 0 6px;
+  padding: 0 14px 0 6px;
   gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${ColorsWIP.Gray200};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   font-size: 12px;
   ${({selected}) => selected && `background: ${ColorsWIP.Gray100};`}
 

@@ -17,7 +17,7 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.definitions.executor import default_executors
+from dagster.core.definitions.executor_definition import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline

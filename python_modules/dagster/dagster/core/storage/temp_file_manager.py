@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 
-from dagster.core.definitions.resource import resource
+from dagster.core.definitions.resource_definition import resource
 
 
 class TempfileManager:

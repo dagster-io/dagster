@@ -19,10 +19,10 @@ from dagster.utils.partitions import (
     create_offset_partition_selector,
 )
 
-from ..graph import GraphDefinition
+from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
-from ..pipeline import PipelineDefinition
-from ..schedule import ScheduleDefinition
+from ..pipeline_definition import PipelineDefinition
+from ..schedule_definition import ScheduleDefinition
 
 if TYPE_CHECKING:
     from dagster import ScheduleEvaluationContext, Partition

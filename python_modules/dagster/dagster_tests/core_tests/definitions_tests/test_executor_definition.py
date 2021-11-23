@@ -14,7 +14,7 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.definitions.executor import executor
+from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,

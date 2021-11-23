@@ -21,7 +21,7 @@ from dagster.config.validate import process_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -45,10 +45,10 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
-from .hook import HookDefinition
+from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
-from .logger import LoggerDefinition
-from .node import NodeDefinition
+from .logger_definition import LoggerDefinition
+from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
@@ -56,10 +56,10 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
-    from .solid import SolidDefinition
+    from .solid_definition import SolidDefinition
     from .partition import PartitionedConfig
-    from .executor import ExecutorDefinition
-    from .job import JobDefinition
+    from .executor_definition import ExecutorDefinition
+    from .job_definition import JobDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
@@ -433,7 +433,7 @@ class GraphDefinition(NodeDefinition):
                 configuration in the standard format to configure the job.
 
                 If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
-                values that can parameterize the pipeline, as well as a function for mapping those
+                values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
             tags (Optional[Dict[str, Any]]):
@@ -454,9 +454,9 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
-        from .job import JobDefinition
+        from .job_definition import JobDefinition
         from .partition import PartitionedConfig
-        from .executor import ExecutorDefinition, multi_or_in_process_executor
+        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
 
@@ -531,7 +531,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: "ExecutorDefinition",
         logger_defs: Optional[Dict[str, LoggerDefinition]],
     ) -> ConfigType:
-        from .job import JobDefinition
+        from .job_definition import JobDefinition
 
         return (
             JobDefinition(
@@ -575,8 +575,8 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from .job import JobDefinition
-        from .executor import execute_in_process_executor
+        from .job_definition import JobDefinition
+        from .executor_definition import execute_in_process_executor
 
         if len(self.input_defs) > 0:
             raise DagsterInvariantViolationError(

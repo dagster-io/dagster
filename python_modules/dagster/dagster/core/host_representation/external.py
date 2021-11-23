@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
@@ -71,6 +71,14 @@ class ExternalRepository:
             (external_partition_set_data.name, external_partition_set_data)
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
+
+        self._asset_jobs = OrderedDict()
+        for asset_node in external_repository_data.external_asset_graph_data:
+            for job_name in asset_node.job_names:
+                if job_name not in self._asset_jobs:
+                    self._asset_jobs[job_name] = [asset_node]
+                else:
+                    self._asset_jobs[job_name].append(asset_node)
 
     @property
     def name(self):
@@ -177,8 +185,12 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
-    def get_external_asset_nodes(self) -> Sequence[ExternalAssetNode]:
-        return self.external_repository_data.external_asset_graph_data
+    def get_external_asset_nodes(self, job_name=None) -> Sequence[ExternalAssetNode]:
+        return (
+            self.external_repository_data.external_asset_graph_data
+            if job_name is None
+            else self._asset_jobs.get(job_name)
+        )
 
     def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
         matching = [

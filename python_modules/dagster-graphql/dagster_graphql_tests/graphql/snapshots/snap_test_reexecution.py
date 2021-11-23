@@ -14,6 +14,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[postgres_wi
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -31,6 +32,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[postgres_wi
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -48,6 +50,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -65,6 +68,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -82,6 +86,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[post
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -99,6 +104,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[post
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -116,6 +122,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',
@@ -133,6 +140,7 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
             'pipeline': {
                 'name': 'csv_hello_world'
             },
+            'resolvedOpSelection': None,
             'runConfigYaml': '<runConfigYaml dummy value>',
             'runId': '<runId dummy value>',
             'status': 'STARTING',

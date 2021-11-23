@@ -16,9 +16,6 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.graph import GraphDefinition
-from dagster.core.definitions.input import InputDefinition, InputMapping
-from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -39,20 +36,23 @@ from .dependency import (
     MultiDependencyDefinition,
     NodeInvocation,
 )
-from .hook import HookDefinition
+from .graph_definition import GraphDefinition
+from .hook_definition import HookDefinition
 from .inference import infer_output_props
-from .logger import LoggerDefinition
+from .input import InputDefinition, InputMapping
+from .logger_definition import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
-from .resource import ResourceDefinition
-from .solid import NodeDefinition, SolidDefinition
+from .policy import RetryPolicy
+from .resource_definition import ResourceDefinition
+from .solid_definition import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from .partition import PartitionedConfig
-    from .executor import ExecutorDefinition
-    from .job import JobDefinition
+    from .executor_definition import ExecutorDefinition
+    from .job_definition import JobDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -607,8 +607,8 @@ class PendingNodeInvocation:
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from .mode import ModeDefinition
-        from .job import JobDefinition
-        from .executor import execute_in_process_executor
+        from .job_definition import JobDefinition
+        from .executor_definition import execute_in_process_executor
 
         if len(self.node_def.input_defs) > 0:
             raise DagsterInvariantViolationError(
@@ -659,7 +659,7 @@ class InvokedSolidOutputHandle:
     def __iter__(self):
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the output "{out}" '
-            'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
+            'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
             "different parts of this output to different solids.".format(
                 cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
             )
@@ -668,7 +668,7 @@ class InvokedSolidOutputHandle:
     def __getitem__(self, idx):
         raise DagsterInvariantViolationError(
             'Attempted to index in to an {cls}. This object represents the output "{out}" '
-            "from the {described_node}. Consider yielding multiple Outputs if you seek to pass "
+            "from the {described_node}. Consider defining multiple Outs if you seek to pass "
             "different parts of this output to different {node_type}s.".format(
                 cls=self.__class__.__name__,
                 out=self.output_name,

@@ -178,6 +178,7 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
     computeLogs = graphene.Field(
@@ -237,6 +238,9 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_solidSelection(self, _graphene_info):
         return self._pipeline_run.solid_selection
+
+    def resolve_resolvedOpSelection(self, _graphene_info):
+        return self._pipeline_run.solids_to_execute
 
     def resolve_pipelineSnapshotId(self, _graphene_info):
         return self._pipeline_run.pipeline_snapshot_id
@@ -562,6 +566,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     presets = non_null_list(GraphenePipelinePreset)
     isJob = graphene.NonNull(graphene.Boolean)
+    isAssetJob = graphene.NonNull(graphene.Boolean)
+    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -587,6 +593,24 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_isJob(self, _graphene_info):
         return self._external_pipeline.is_job
+
+    def resolve_isAssetJob(self, graphene_info):
+        handle = self._external_pipeline.repository_handle
+        location = graphene_info.context.get_repository_location(handle.location_name)
+        repository = location.get_repository(handle.repository_name)
+        return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
+
+    def resolve_assetNodes(self, graphene_info):
+        from ..asset_graph import GrapheneAssetNode
+
+        handle = self._external_pipeline.repository_handle
+        location = graphene_info.context.get_repository_location(handle.location_name)
+        repository = location.get_repository(handle.repository_name)
+        asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
+        return [
+            GrapheneAssetNode(repository, external_asset_node)
+            for external_asset_node in asset_nodes or []
+        ]
 
 
 class GrapheneJob(GraphenePipeline):

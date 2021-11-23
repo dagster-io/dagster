@@ -1,7 +1,8 @@
 import sys
 
 import graphene
-from dagster import DagsterInstance, check
+from dagster import check
+from dagster.core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster.core.launcher.base import RunLauncher
 from dagster.daemon.controller import get_daemon_status
 from dagster.daemon.types import DaemonStatus
@@ -87,11 +88,13 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 
 
 class GrapheneInstance(graphene.ObjectType):
-    info = graphene.NonNull(graphene.String)
+    info = graphene.Field(graphene.String)
     runLauncher = graphene.Field(GrapheneRunLauncher)
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
+    hasInfo = graphene.NonNull(graphene.Boolean)
+    dagitTelemetryEnabled = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Instance"
@@ -100,8 +103,11 @@ class GrapheneInstance(graphene.ObjectType):
         super().__init__()
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
 
-    def resolve_info(self, _graphene_info):
-        return self._instance.info_str()
+    def resolve_hasInfo(self, graphene_info) -> bool:
+        return graphene_info.context.show_instance_config
+
+    def resolve_info(self, graphene_info):
+        return self._instance.info_str() if graphene_info.context.show_instance_config else None
 
     def resolve_runLauncher(self, _graphene_info):
         return (
@@ -120,3 +126,6 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_daemonHealth(self, _graphene_info):
         return GrapheneDaemonHealth(instance=self._instance)
+
+    def resolve_dagitTelemetryEnabled(self, _graphene_info):
+        return is_dagit_telemetry_enabled(self._instance)

@@ -144,8 +144,8 @@ def job_execute_command(**kwargs):
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
 def job_launch_command(**kwargs):
-    with get_instance_for_service("``dagster job launch``") as instance:
-        return execute_launch_command(instance, kwargs, using_job_op_graph_apis=True)
+    with DagsterInstance.get() as instance:
+        return execute_launch_command(instance, kwargs)
 
 
 @job_cli.command(

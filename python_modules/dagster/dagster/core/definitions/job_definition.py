@@ -5,19 +5,20 @@ from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
-from .executor import ExecutorDefinition
-from .graph import GraphDefinition
-from .hook import HookDefinition
+from .executor_definition import ExecutorDefinition
+from .graph_definition import GraphDefinition
+from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
-from .pipeline import PipelineDefinition
+from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .resource import ResourceDefinition
+from .resource_definition import ResourceDefinition
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.snap import PipelineSnapshot
 
 
 class JobDefinition(PipelineDefinition):
@@ -104,7 +105,7 @@ class JobDefinition(PipelineDefinition):
             :py:class:`~dagster.ExecuteInProcessResult`
 
         """
-        from dagster.core.definitions.executor import execute_in_process_executor
+        from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
@@ -155,6 +156,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_tags={"partition": partition_key} if partition_key else None,
         )
 
     @property
@@ -201,7 +203,10 @@ class JobDefinition(PipelineDefinition):
             graph_def=subset_pipeline_def.graph,
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
-                resolved_op_selection=solids_to_execute, ignored_solids=ignored_solids
+                op_selection=op_selection,
+                resolved_op_selection=solids_to_execute,
+                ignored_solids=ignored_solids,
+                parent_job_def=self,
             ),
         )
 
@@ -246,6 +251,13 @@ class JobDefinition(PipelineDefinition):
 
         return job_def
 
+    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
+        return (
+            self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+            if self.op_selection_data
+            else None
+        )
+
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
     """
@@ -253,7 +265,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
-    from .graph import default_job_io_manager
+    from .graph_definition import default_job_io_manager
 
     if (
         # pylint: disable=comparison-with-callable

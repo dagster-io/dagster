@@ -86,6 +86,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -303,6 +305,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
+  resolvedOpSelection: [String!]
 }
 
 interface PipelineRun {
@@ -1195,6 +1198,8 @@ type Job implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1491,11 +1496,13 @@ type ModeNotFoundError implements Error {
 }
 
 type Instance {
-  info: String!
+  info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
+  hasInfo: Boolean!
+  dagitTelemetryEnabled: Boolean!
 }
 
 type RunLauncher {
@@ -1589,6 +1596,7 @@ type Mutation {
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
 union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
@@ -1756,6 +1764,12 @@ union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonE
 
 type CancelBackfillSuccess {
   backfillId: String!
+}
+
+union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
+
+type LogTelemetrySuccess {
+  action: String!
 }
 
 type Subscription {

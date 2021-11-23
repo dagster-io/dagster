@@ -6,11 +6,12 @@ from dagster.core.decorator_utils import get_function_params, get_valid_name_per
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
-from dagster.core.definitions.op_def import OpDefinition
 from dagster.core.definitions.output import Out
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_decorator
 
+from .asset import AssetsDefinition
 from .asset_in import AssetIn
 
 
@@ -24,13 +25,14 @@ def asset(
     required_resource_keys: Optional[Set[str]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
-) -> Callable[[Callable[..., Any]], OpDefinition]:
+    dagster_type: Optional[DagsterType] = None,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
-    * An asset key, e.g. the name of a table.
-    * A function, which can be run to compute the contents of the asset.
-    * A set of upstream assets that are provided as inputs to the function when computing the asset.
+    1. An asset key, e.g. the name of a table.
+    2. A function, which can be run to compute the contents of the asset.
+    3. A set of upstream assets that are provided as inputs to the function when computing the asset.
 
     Unlike an op, whose dependencies are determined by the graph it lives inside, an asset knows
     about the upstream assets it depends on. The upstream assets are inferred from the arguments
@@ -50,6 +52,9 @@ def asset(
             (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+        dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
+            will be executed on the output of the decorated function after it runs.
+
 
     Examples:
 
@@ -62,7 +67,7 @@ def asset(
     if callable(name):
         return _Asset()(name)
 
-    def inner(fn: Callable[..., Any]) -> OpDefinition:
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         return _Asset(
             name=name,
             namespace=namespace,
@@ -72,6 +77,7 @@ def asset(
             required_resource_keys=required_resource_keys,
             io_manager_key=io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            dagster_type=dagster_type,
         )(fn)
 
     return inner
@@ -88,6 +94,7 @@ class _Asset:
         required_resource_keys: Optional[Set[str]] = None,
         io_manager_key: Optional[str] = None,
         compute_kind: Optional[str] = None,
+        dagster_type: Optional[DagsterType] = None,
     ):
         self.name = name
         self.namespace = namespace
@@ -97,34 +104,50 @@ class _Asset:
         self.required_resource_keys = required_resource_keys
         self.io_manager_key = io_manager_key
         self.compute_kind = compute_kind
+        self.dagster_type = dagster_type
 
-    def __call__(self, fn: Callable):
+    def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
+
+        ins_by_asset_key: Mapping[AssetKey, In] = build_asset_ins(
+            fn, self.namespace, self.ins or {}
+        )
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
+            dagster_type=self.dagster_type,
         )
-        return _Op(
+        op = _Op(
             name=asset_name,
             description=self.description,
-            ins=build_asset_ins(fn, self.namespace, self.ins),
+            ins={asset_key.path[-1]: in_def for asset_key, in_def in ins_by_asset_key.items()},
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
         )(fn)
 
+        out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
+        return AssetsDefinition(
+            input_names_by_asset_key={
+                in_asset_key: in_asset_key.path[-1] for in_asset_key in ins_by_asset_key.keys()
+            },
+            output_names_by_asset_key={out_asset_key: "result"},
+            op=op,
+        )
+
 
 @experimental_decorator
 def multi_asset(
+    outs: Dict[str, Out],
     name: Optional[str] = None,
-    outs: Optional[Dict[str, Out]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
-) -> Callable[[Callable[..., Any]], OpDefinition]:
-    """Create an op that computes multiple assets.
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    """Create a combined definition of multiple assets that are computed using the same op and same
+    upstream assets.
 
     Each argument to the decorated function references an upstream asset that this asset depends on.
     The name of the argument designates the name of the upstream asset.
@@ -140,53 +163,32 @@ def multi_asset(
             (default: "io_manager").
     """
 
-    if callable(name):
-        return _Asset()(name)
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        asset_name = name or fn.__name__
+        ins_by_asset_key: Mapping[AssetKey, In] = build_asset_ins(fn, None, ins or {})
 
-    def inner(fn: Callable[..., Any]) -> OpDefinition:
-        return _MultiAsset(
-            name=name,
-            outs=outs,
-            ins=ins,
+        op = _Op(
+            name=asset_name,
             description=description,
+            ins={asset_key.path[-1]: in_def for asset_key, in_def in ins_by_asset_key.items()},
+            out=outs,
             required_resource_keys=required_resource_keys,
         )(fn)
+
+        return AssetsDefinition(
+            input_names_by_asset_key={
+                in_asset_key: in_asset_key.path[-1] for in_asset_key in ins_by_asset_key.keys()
+            },
+            output_names_by_asset_key={AssetKey([name]): name for name in outs.keys()},
+            op=op,
+        )
 
     return inner
 
 
-class _MultiAsset:
-    def __init__(
-        self,
-        name: Optional[str] = None,
-        outs: Optional[Dict[str, Out]] = None,
-        ins: Optional[Mapping[str, AssetIn]] = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
-        io_manager_key: Optional[str] = None,
-    ):
-        self.name = name
-        self.ins = ins or {}
-        self.outs = outs
-        self.description = description
-        self.required_resource_keys = required_resource_keys
-        self.io_manager_key = io_manager_key
-
-    def __call__(self, fn: Callable):
-        asset_name = self.name or fn.__name__
-
-        return _Op(
-            name=asset_name,
-            description=self.description,
-            ins=build_asset_ins(fn, None, self.ins),
-            out=self.outs,
-            required_resource_keys=self.required_resource_keys,
-        )(fn)
-
-
 def build_asset_ins(
     fn: Callable, asset_namespace: Optional[str], asset_ins: Mapping[str, AssetIn]
-) -> Dict[str, In]:
+) -> Mapping[AssetKey, In]:
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
@@ -204,7 +206,7 @@ def build_asset_ins(
                 "of the arguments to the decorated function"
             )
 
-    ins: Dict[str, In] = {}
+    ins: Dict[AssetKey, In] = {}
     for input_name in all_input_names:
         if input_name in asset_ins:
             metadata = asset_ins[input_name].metadata or {}
@@ -217,7 +219,7 @@ def build_asset_ins(
 
         asset_key = AssetKey(list(filter(None, [namespace or asset_namespace, input_name])))
 
-        ins[input_name] = In(
+        ins[asset_key] = In(
             metadata=metadata,
             root_manager_key="root_manager",
             asset_key=asset_key,

@@ -9,15 +9,13 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.executor import ExecutorDefinition
-from dagster.core.definitions.graph import GraphDefinition
-from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.job import JobDefinition
-from dagster.core.definitions.node import NodeDefinition
-from dagster.core.definitions.op_def import OpDefinition
+from dagster.core.definitions.executor_definition import ExecutorDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
+from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig
-from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context
@@ -25,14 +23,15 @@ from dagster.core.storage.root_input_manager import RootInputManagerDefinition, 
 from dagster.utils.backcompat import experimental
 from dagster.utils.merger import merge_dicts
 
+from .asset import AssetsDefinition
 from .foreign_asset import ForeignAsset
 
 
 @experimental
 def build_assets_job(
     name: str,
-    assets: List[OpDefinition],
-    source_assets: Optional[Sequence[Union[ForeignAsset, OpDefinition]]] = None,
+    assets: List[AssetsDefinition],
+    source_assets: Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
@@ -46,10 +45,11 @@ def build_assets_job(
 
     Args:
         name (str): The name of the job.
-        assets (List[OpDefinition]): A list of assets or multi-assets - usually constructed using
-            the :py:func:`@asset` or :py:func:`@multi_asset` decorator.
-        source_assets (Optional[Sequence[Union[ForeignAsset, OpDefinition]]]): A list of assets
-            that are not materialized by this job, but that assets in this job depend on.
+        assets (List[AssetsDefinition]): A list of assets or
+            multi-assets - usually constructed using the :py:func:`@asset` or :py:func:`@multi_asset`
+            decorator.
+        source_assets (Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]]): A list of
+            assets that are not materialized by this job, but that assets in this job depend on.
         resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
@@ -72,8 +72,8 @@ def build_assets_job(
         JobDefinition: A job that materializes the given assets.
     """
     check.str_param(name, "name")
-    check.list_param(assets, "assets", of_type=OpDefinition)
-    check.opt_list_param(source_assets, "source_assets", of_type=(ForeignAsset, OpDefinition))
+    check.list_param(assets, "assets", of_type=AssetsDefinition)
+    check.opt_list_param(source_assets, "source_assets", of_type=(ForeignAsset, AssetsDefinition))
     check.opt_str_param(description, "description")
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
@@ -82,7 +82,7 @@ def build_assets_job(
 
     return GraphDefinition(
         name=name,
-        node_defs=cast(List[NodeDefinition], assets),
+        node_defs=[asset.op for asset in assets],
         dependencies=op_defs,
         description=description,
         input_mappings=None,
@@ -97,57 +97,49 @@ def build_assets_job(
 
 
 def build_source_assets_by_key(
-    source_assets: Optional[Sequence[Union[ForeignAsset, OpDefinition]]]
+    source_assets: Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]]
 ) -> Mapping[AssetKey, Union[ForeignAsset, OutputDefinition]]:
     source_assets_by_key: Dict[AssetKey, Union[ForeignAsset, OutputDefinition]] = {}
     for asset_source in source_assets or []:
         if isinstance(asset_source, ForeignAsset):
             source_assets_by_key[asset_source.key] = asset_source
-        elif isinstance(asset_source, OpDefinition):
-            for output_def in asset_source.output_defs:
-                if output_def.get_asset_key(None):
-                    source_assets_by_key[output_def.get_asset_key(None)] = output_def
+        elif isinstance(asset_source, AssetsDefinition):
+            for asset_key, output_def in asset_source.output_defs_by_asset_key.items():
+                if asset_key:
+                    source_assets_by_key[asset_key] = output_def
 
     return source_assets_by_key
 
 
 def build_op_deps(
-    assets: List[OpDefinition], source_paths: AbstractSet[AssetKey]
+    multi_asset_defs: List[AssetsDefinition], source_paths: AbstractSet[AssetKey]
 ) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
-    for asset_op in assets:
-        for output_def in asset_op.output_defs:
-            logical_asset = get_asset_key(output_def, f"Output of asset '{asset_op.name}'")
-
-            if logical_asset in op_outputs_by_asset:
-                prev_op = op_outputs_by_asset[logical_asset][0].name
+    for multi_asset_def in multi_asset_defs:
+        for asset_key, output_def in multi_asset_def.output_defs_by_asset_key.items():
+            if asset_key in op_outputs_by_asset:
                 raise DagsterInvalidDefinitionError(
-                    f"Two ops produce the same logical asset: '{asset_op.name}' and '{prev_op.name}"
+                    f"The same asset key was included for two definitions: '{asset_key.to_string()}'"
                 )
 
-            op_outputs_by_asset[logical_asset] = (asset_op, output_def.name)
+            op_outputs_by_asset[asset_key] = (multi_asset_def.op, output_def.name)
 
-    op_defs: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
-    for asset_op in assets:
-        op_defs[asset_op.name] = {}
-        for input_def in asset_op.input_defs:
-            logical_asset = get_asset_key(
-                input_def, f"Input '{input_def.name}' of asset '{asset_op.name}'"
-            )
-
-            if logical_asset in op_outputs_by_asset:
-                op_def, output_name = op_outputs_by_asset[logical_asset]
-                op_defs[asset_op.name][input_def.name] = DependencyDefinition(
-                    op_def.name, output_name
-                )
-            elif logical_asset not in source_paths and not input_def.dagster_type.is_nothing:
+    op_deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
+    for multi_asset_def in multi_asset_defs:
+        op_name = multi_asset_def.op.name
+        op_deps[op_name] = {}
+        for asset_key, input_def in multi_asset_def.input_defs_by_asset_key.items():
+            if asset_key in op_outputs_by_asset:
+                op_def, output_name = op_outputs_by_asset[asset_key]
+                op_deps[op_name][input_def.name] = DependencyDefinition(op_def.name, output_name)
+            elif asset_key not in source_paths and not input_def.dagster_type.is_nothing:
                 raise DagsterInvalidDefinitionError(
-                    f"Input asset '{logical_asset.to_string()}' for asset '{asset_op.name}' is not "
+                    f"Input asset '{asset_key.to_string()}' for asset '{op_name}' is not "
                     "produced by any of the provided asset ops and is not one of the provided "
                     "sources"
                 )
 
-    return op_defs
+    return op_deps
 
 
 def build_root_manager(
@@ -187,13 +179,3 @@ def build_root_manager(
         return io_manager.load_input(input_context_with_upstream)
 
     return _root_manager
-
-
-def get_asset_key(
-    input_or_output: Union[InputDefinition, OutputDefinition], error_prefix: str
-) -> AssetKey:
-    asset_key = input_or_output.get_asset_key(None)
-    if asset_key is None:
-        raise DagsterInvalidDefinitionError(f"{error_prefix}' is missing asset_key")
-    else:
-        return asset_key

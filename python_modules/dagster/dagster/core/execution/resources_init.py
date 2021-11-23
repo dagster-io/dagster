@@ -5,8 +5,8 @@ from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
 from dagster.core.decorator_utils import get_function_params
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import (
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
     is_context_provided,

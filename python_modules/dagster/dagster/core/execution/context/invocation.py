@@ -5,12 +5,16 @@ from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle
-from dagster.core.definitions.hook import HookDefinition
+from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op_def import OpDefinition
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.pipeline_definition import PipelineDefinition
+from dagster.core.definitions.resource_definition import (
+    IContainsGenerator,
+    Resources,
+    ScopedResourcesBuilder,
+)
+from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -47,6 +51,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         resources_dict: Optional[Dict[str, Any]],
         resources_config: Dict[str, Any],
         instance: Optional[DagsterInstance],
+        partition_key: Optional[str],
     ):  # pylint: disable=super-init-not-called
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
         from dagster.core.execution.api import ephemeral_instance_if_missing
@@ -76,6 +81,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
+        self._partition_key = partition_key
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -173,6 +179,17 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     @property
     def solid_def(self) -> SolidDefinition:
         raise DagsterInvalidPropertyError(_property_msg("solid_def", "property"))
+
+    @property
+    def has_partition_key(self) -> bool:
+        return self._partition_key is not None
+
+    @property
+    def partition_key(self) -> str:
+        if self._partition_key:
+            return self._partition_key
+        else:
+            check.failed("Tried to access partition_key for a non-partitioned run")
 
     def has_tag(self, key: str) -> bool:
         raise DagsterInvalidPropertyError(_property_msg("has_tag", "method"))
@@ -405,6 +422,7 @@ def build_op_context(
     resources_config: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
+    partition_key: Optional[str] = None,
 ) -> OpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -443,6 +461,7 @@ def build_op_context(
         resources_config=resources_config,
         solid_config=op_config,
         instance=instance,
+        partition_key=partition_key,
     )
 
 
@@ -452,6 +471,7 @@ def build_solid_context(
     resources_config: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
+    partition_key: Optional[str] = None,
 ) -> UnboundSolidExecutionContext:
     """Builds solid execution context from provided parameters.
 
@@ -494,4 +514,5 @@ def build_solid_context(
         resources_config=check.opt_dict_param(resources_config, "resources_config", key_type=str),
         solid_config=solid_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
+        partition_key=check.opt_str_param(partition_key, "partition_key"),
     )

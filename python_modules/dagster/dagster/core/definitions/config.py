@@ -12,7 +12,7 @@ from dagster.primitive_mapping import is_supported_config_python_builtin
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 if TYPE_CHECKING:
-    from .pipeline import PipelineDefinition
+    from .pipeline_definition import PipelineDefinition
 
 
 def is_callable_valid_config_arg(config: Union[Callable[..., Any], Dict[str, Any]]) -> bool:

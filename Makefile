@@ -34,7 +34,10 @@ sanity_check:
 	@! (pip list --exclude-editable | grep -e dagster -e dagit)
 
 rebuild_dagit: sanity_check
-	cd js_modules/dagit/; yarn install && yarn build-for-python
+	cd js_modules/dagit/; yarn install && yarn build
+
+rebuild_dagit_with_profiling: sanity_check
+	cd js_modules/dagit/; yarn install && yarn build-with-profiling
 
 dev_install: install_dev_python_modules_verbose rebuild_dagit
 
