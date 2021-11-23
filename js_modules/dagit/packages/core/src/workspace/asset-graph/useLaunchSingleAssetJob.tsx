@@ -15,7 +15,10 @@ export const useLaunchSingleAssetJob = () => {
   );
 
   return React.useCallback(
-    async (repoAddress: RepoAddress, definition: {jobName: string | null; opName: string}) => {
+    async (
+      repoAddress: RepoAddress,
+      definition: {jobName: string | null; opName: string | null},
+    ) => {
       if (!definition.jobName) {
         return;
       }

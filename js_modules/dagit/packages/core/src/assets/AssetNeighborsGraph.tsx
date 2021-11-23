@@ -39,7 +39,7 @@ const buildGraphFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: []},
+      definition: {...asset, dependencies: [], dependedBy: []},
       hidden: false,
     };
   }
@@ -49,7 +49,7 @@ const buildGraphFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: []},
+      definition: {...asset, dependencies: [], dependedBy: []},
       hidden: false,
     };
   }
