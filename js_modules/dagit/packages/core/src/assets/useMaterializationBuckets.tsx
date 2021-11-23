@@ -6,6 +6,7 @@ const NO_PARTITION_KEY = '__NO_PARTITION__';
 
 export type HistoricalMaterialization = {
   latest: AssetMaterializationFragment;
+  timestamp: string;
   predecessors?: AssetMaterializationFragment[];
 };
 
@@ -25,6 +26,7 @@ export const useMaterializationBuckets = (config: Config): HistoricalMaterializa
     if (!hasPartitions || !shouldBucketPartitions) {
       return materializations.map((materialization) => ({
         latest: materialization,
+        timestamp: materialization.materializationEvent.timestamp,
       }));
     }
 
@@ -44,7 +46,7 @@ export const useMaterializationBuckets = (config: Config): HistoricalMaterializa
           Number(b.materializationEvent?.timestamp) - Number(a.materializationEvent?.timestamp),
       );
       const [latest, ...predecessors] = materializationsForKey;
-      return {latest, predecessors};
+      return {latest, predecessors, timestamp: latest.materializationEvent.timestamp};
     };
 
     return Object.keys(buckets)

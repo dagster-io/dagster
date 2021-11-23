@@ -80,27 +80,33 @@ const AssetMaterializationRow: React.FC<{
   const isFocused = focused === timestamp;
 
   const focusCss = isFocused
-    ? {borderLeft: `5px solid ${ColorsWIP.HighlightGreen}`}
-    : {paddingLeft: 29};
+    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
+    : {paddingLeft: 8};
 
   return (
     <>
-      <tr onClick={() => setFocused?.(timestamp)}>
+      <ClickableRow onClick={() => setFocused?.(timestamp)}>
         {hasPartitions && (
-          <td style={{...focusCss, whiteSpace: 'nowrap'}}>
-            {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+          <td style={{whiteSpace: 'nowrap', ...focusCss}}>
+            <Group direction="row" spacing={2}>
+              <DisclosureTriangle $open={isFocused} />
+              {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+            </Group>
           </td>
         )}
         <td style={hasPartitions ? {} : focusCss}>
-          <Group direction="column" spacing={4}>
-            <Timestamp timestamp={{ms: Number(timestamp)}} />
-            {predecessors?.length ? (
-              <AssetPredecessorLink
-                hasPartitions={hasPartitions}
-                hasLineage={hasLineage}
-                predecessors={predecessors}
-              />
-            ) : null}
+          <Group direction="row" spacing={4}>
+            {!hasPartitions && <DisclosureTriangle $open={isFocused} />}
+            <Group direction="column" spacing={4}>
+              <Timestamp timestamp={{ms: Number(timestamp)}} />
+              {predecessors?.length ? (
+                <AssetPredecessorLink
+                  hasPartitions={hasPartitions}
+                  hasLineage={hasLineage}
+                  predecessors={predecessors}
+                />
+              ) : null}
+            </Group>
           </Group>
         </td>
         <td>
@@ -135,7 +141,7 @@ const AssetMaterializationRow: React.FC<{
             </Link>
           </Box>
         </td>
-      </tr>
+      </ClickableRow>
       {isFocused && (
         <tr style={{background: ColorsWIP.Gray50}}>
           <td colSpan={6} style={{fontSize: 14, padding: 0}}>
@@ -171,6 +177,11 @@ const AssetMaterializationRow: React.FC<{
   );
 };
 
+const ClickableRow = styled.tr`
+  &:hover {
+    background: ${ColorsWIP.Gray10};
+  }
+`;
 const DetailsTable = styled.table`
   margin: -2px -2px -3px;
   tr td {
@@ -216,7 +227,10 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
           <AssetMaterializationTable
             hasLineage={hasLineage}
             hasPartitions={hasPartitions}
-            materializations={predecessors.map((p) => ({latest: p}))}
+            materializations={predecessors.map((p) => ({
+              latest: p,
+              timestamp: p.materializationEvent.timestamp,
+            }))}
           />
         </Box>
         <DialogFooter>
@@ -228,3 +242,15 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
     </>
   );
 };
+
+const DisclosureTriangle: React.FC<{$open: boolean}> = ({$open}) => (
+  <IconWIP
+    name="arrow_drop_down"
+    size={24}
+    style={{
+      margin: '-2px -5px',
+      transform: $open ? 'rotate(0deg)' : 'rotate(-90deg)',
+      opacity: 0.25,
+    }}
+  />
+);

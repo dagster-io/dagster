@@ -156,7 +156,14 @@ const AssetGraphExplorerWithData: React.FC<
         'replace',
       );
     },
-    [explorerPath, selectedGraphNode, graphData, onChangeExplorerPath, history],
+    [
+      fetchAssetDefinitionLocation,
+      explorerPath,
+      onChangeExplorerPath,
+      history,
+      selectedGraphNode,
+      graphData,
+    ],
   );
 
   const {all: highlighted} = React.useMemo(

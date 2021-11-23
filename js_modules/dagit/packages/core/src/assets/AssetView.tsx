@@ -1,8 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
@@ -15,6 +20,11 @@ interface Props {
   assetKey: AssetKey;
 }
 
+export interface AssetViewParams {
+  xAxis?: 'partition' | 'time';
+  asOf?: string;
+}
+
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   useDocumentTitle(`Asset: ${assetKeyToString(assetKey)}`);
 
@@ -24,28 +34,62 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     },
   });
 
+  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [navigatedDirectlyToTime, setNavigatedDirectlyToTime] = React.useState(() =>
+    Boolean(params.asOf),
+  );
+
+  const definition =
+    data?.assetOrError && data.assetOrError.__typename === 'Asset' && data.assetOrError.definition;
+
   return (
     <div>
       <div>
-        {loading && (
+        {loading ? (
           <Box
             style={{height: 390}}
             flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
           >
             <Spinner purpose="section" />
           </Box>
-        )}
-
-        {/* {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
-          <SnapshotWarning asset={data.assetOrError} asOf={asOf} />
-        )} */}
-        {data?.assetOrError &&
-          data.assetOrError.__typename === 'Asset' &&
-          data.assetOrError.definition && (
-            <AssetNodeDefinition assetNode={data.assetOrError.definition} />
-          )}
+        ) : navigatedDirectlyToTime ? (
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Alert
+              intent="info"
+              title={
+                <span>
+                  This is a historical view of materializations as of{' '}
+                  <span style={{fontWeight: 600}}>
+                    <Timestamp
+                      timestamp={{ms: Number(params.asOf)}}
+                      timeFormat={{showSeconds: true, showTimezone: true}}
+                    />
+                  </span>
+                  .
+                </span>
+              }
+              description={
+                <ButtonLink onClick={() => setNavigatedDirectlyToTime(false)} underline="always">
+                  {definition
+                    ? 'Show definition and latest materializations'
+                    : 'Show latest materializations'}
+                </ButtonLink>
+              }
+            />
+          </Box>
+        ) : definition ? (
+          <AssetNodeDefinition assetNode={definition} />
+        ) : undefined}
       </div>
-      <AssetMaterializations assetKey={assetKey} />
+      <AssetMaterializations
+        assetKey={assetKey}
+        params={params}
+        paramsTimeWindowOnly={navigatedDirectlyToTime}
+        setParams={setParams}
+      />
     </div>
   );
 };

@@ -18,7 +18,7 @@ import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
 import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
-import {workspacePath} from '../workspacePath';
+import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
 import {assetKeyToString, Status} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
@@ -94,11 +94,19 @@ export const AssetNode: React.FC<{
                       }`}
                       data-tooltip-style={RunLinkTooltipStyle}
                       style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                      to={workspacePath(
-                        repoAddress.name,
-                        repoAddress.location,
-                        `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
-                      )}
+                      to={
+                        repoAddress.name
+                          ? workspacePath(
+                              repoAddress.name,
+                              repoAddress.location,
+                              `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                            )
+                          : workspacePipelinePathGuessRepo(
+                              `${runOrError.pipelineName}:${runOrError.mode}`,
+                              true,
+                              '',
+                            )
+                      }
                     >
                       {`${runOrError.pipelineName}${
                         runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''

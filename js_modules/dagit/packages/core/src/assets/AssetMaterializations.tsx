@@ -3,7 +3,6 @@ import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {ButtonGroup} from '../ui/ButtonGroup';
@@ -15,6 +14,7 @@ import {Subheading} from '../ui/Text';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
+import {AssetViewParams} from './AssetView';
 import {AssetKey, AssetNumericHistoricalData} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
@@ -25,40 +25,41 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 
 interface Props {
   assetKey: AssetKey;
-  asOf?: string | null;
   asSidebarSection?: boolean;
+  params: AssetViewParams;
+  paramsTimeWindowOnly: boolean;
+  setParams: (params: AssetViewParams) => void;
 }
 const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
-export const AssetMaterializations: React.FC<Props> = ({assetKey, asSidebarSection}) => {
+export const AssetMaterializations: React.FC<Props> = ({
+  assetKey,
+  asSidebarSection,
+  params,
+  setParams,
+  paramsTimeWindowOnly,
+}) => {
   const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
     ASSET_MATERIALIZATIONS_QUERY,
     {
       variables: {
         assetKey: {path: assetKey.path},
+        before: paramsTimeWindowOnly && params.asOf ? `${Number(params.asOf) + 1}` : undefined,
         limit: 200,
       },
     },
   );
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-  const assetMaterializations = asset?.assetMaterializations || [];
-  const hasPartitions = assetMaterializations.some((m) => m.partition);
-  const hasLineage = assetMaterializations.some(
-    (m) => m.materializationEvent.assetLineage.length > 0,
-  );
+  const materializations = asset?.assetMaterializations || [];
+  const hasPartitions = materializations.some((m) => m.partition);
+  const hasLineage = materializations.some((m) => m.materializationEvent.assetLineage.length > 0);
 
-  const [{xAxis, asOf}, setParams] = useQueryPersistedState<{
-    xAxis: 'partition' | 'time';
-    asOf: string;
-  }>({
-    defaults: {xAxis: hasPartitions ? 'partition' : 'time'},
-  });
-
+  const {xAxis = hasPartitions ? 'partition' : 'time', asOf} = params;
   const bucketed = useMaterializationBuckets({
-    materializations: assetMaterializations,
-    hasPartitions,
     shouldBucketPartitions: xAxis === 'partition',
+    materializations,
+    hasPartitions,
   });
 
   const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
@@ -111,7 +112,7 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asSidebarSecti
                   {id: 'partition', label: 'By partition'},
                   {id: 'time', label: 'By timestamp'},
                 ]}
-                onClick={(id: string) => setParams({xAxis: id as 'partition' | 'time', asOf: asOf})}
+                onClick={(id: string) => setParams({...params, xAxis: id as 'partition' | 'time'})}
               />
             </div>
           ) : null}
@@ -121,10 +122,14 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asSidebarSecti
           hasLineage={hasLineage}
           materializations={bucketed}
           focused={
-            bucketed.find((b) => Number(b.latest.materializationEvent.timestamp) <= Number(asOf))
-              ?.latest.materializationEvent.timestamp
+            (bucketed.find((b) => Number(b.timestamp) <= Number(asOf)) || bucketed[0])?.timestamp
           }
-          setFocused={(asOf) => setParams({xAxis, asOf: asOf})}
+          setFocused={(asOf) =>
+            setParams({
+              ...params,
+              asOf: paramsTimeWindowOnly || asOf !== bucketed[0]?.timestamp ? asOf : undefined,
+            })
+          }
         />
       </Box>
       <Box style={{width: '40%'}} border={{side: 'left', color: ColorsWIP.KeylineGray, width: 1}}>
@@ -148,9 +153,7 @@ const AssetMaterializationGraphs: React.FC<{
   const latest = assetMaterializations.map((m) => m.latest);
 
   const graphDataByMetadataLabel = extractNumericData(latest, xAxis);
-  const [graphedLabels, setGraphedLabels] = React.useState(() =>
-    Object.keys(graphDataByMetadataLabel).slice(0, 4),
-  );
+  const [graphedLabels] = React.useState(() => Object.keys(graphDataByMetadataLabel).slice(0, 4));
 
   return (
     <>
