@@ -89,6 +89,7 @@ def schedule(
 
     The decorated function takes in a :py:class:`~dagster.ScheduleEvaluationContext` as its only
     argument, and does one of the following:
+
     1. Return a `RunRequest` object.
     2. Yield multiple of `RunRequest` objects.
     3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
