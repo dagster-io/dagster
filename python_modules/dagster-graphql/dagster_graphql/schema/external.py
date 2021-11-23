@@ -21,6 +21,7 @@ from .util import non_null_list
 from .pipelines.pipeline import GrapheneInProgressRunsByStep
 from dagster_graphql.implementation.fetch_runs import (
     get_in_progress_runs_by_in_progress_step,
+    get_in_progress_runs_for_job,
 )
 
 
@@ -243,8 +244,18 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_inProgressRunsByStep(self, _graphene_info):
+        job_names = [
+            job.name for job in self._repository.get_all_external_pipelines() if job.is_job
+        ]
+
+        in_progress_runs = []
+        for job_name in job_names:
+            in_progress_runs.extend(get_in_progress_runs_for_job(_graphene_info, job_name))
+
         asset_node_keys = [node.op_name for node in self._repository.get_external_asset_nodes()]
-        return get_in_progress_runs_by_in_progress_step(_graphene_info, asset_node_keys)
+        return get_in_progress_runs_by_in_progress_step(
+            _graphene_info, in_progress_runs, asset_node_keys
+        )
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

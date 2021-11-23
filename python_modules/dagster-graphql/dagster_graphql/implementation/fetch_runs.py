@@ -107,10 +107,11 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [GrapheneRun(run) for run in runs]
 
 
-def get_in_progress_runs(graphene_info):
+def get_in_progress_runs_for_job(graphene_info, job_name):
     instance = graphene_info.context.instance
 
     in_progress_runs_filter = PipelineRunsFilter(
+        pipeline_name=job_name,
         statuses=[
             PipelineRunStatus.STARTING,
             PipelineRunStatus.MANAGED,
@@ -124,10 +125,8 @@ def get_in_progress_runs(graphene_info):
     return instance.get_runs(in_progress_runs_filter)
 
 
-def get_in_progress_runs_by_in_progress_step(graphene_info, step_keys):
+def get_in_progress_runs_by_in_progress_step(graphene_info, in_progress_runs, step_keys):
     from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
-
-    in_progress_runs = get_in_progress_runs(graphene_info)
 
     runs_by_step = {}
     for run in in_progress_runs:
