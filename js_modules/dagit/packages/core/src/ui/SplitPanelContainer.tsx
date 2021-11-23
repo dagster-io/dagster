@@ -137,7 +137,16 @@ interface PanelToggleProps {
 }
 
 export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) => {
-  // todo dish/bengotow: Fix these icons.
+  const onClick = (id: string) => {
+    let size = 50;
+    if (id === 'first-pane') {
+      size = 100;
+    } else if (id === 'second-pane') {
+      size = 0;
+    }
+    container.current?.onChangeSize(size);
+  };
+
   return (
     <ButtonGroup
       buttons={[
@@ -147,12 +156,17 @@ export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) =>
           tooltip: axis === 'vertical' ? 'Show only top pane' : 'Show only left pane',
         },
         {
+          id: 'split',
+          icon: 'panel_show_both_horizontal',
+          tooltip: 'Show both panels',
+        },
+        {
           id: 'second-pane',
           icon: axis === 'vertical' ? 'panel_show_bottom' : 'panel_show_right',
           tooltip: axis === 'vertical' ? 'Show only bottom pane' : 'Show only right pane',
         },
       ]}
-      onClick={(id) => container.current?.onChangeSize(id === 'first-pane' ? 100 : 0)}
+      onClick={onClick}
     />
   );
 };
