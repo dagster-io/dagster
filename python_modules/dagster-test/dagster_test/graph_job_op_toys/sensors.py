@@ -6,6 +6,7 @@ from dagster.core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
+from dagster_slack import make_slack_on_run_failure_sensor
 from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
@@ -95,11 +96,10 @@ def get_toys_sensors():
 
         base_url = "http://localhost:3000"
 
-        # TBD: support resources?
-        slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+        slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
         run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
-        channel = "#yuhan-test"
+        channel = "#toy-test"
         message = "\n".join(
             [
                 f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
@@ -113,6 +113,14 @@ def get_toys_sensors():
             channel=channel,
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
         )
+
+    built_in_slack_on_run_failure_sensor = make_slack_on_run_failure_sensor(
+        name="built_in_slack_on_run_failure_sensor",
+        channel="#toy-test",
+        slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
+        job_selection=[error_monster_failing_job],
+        dagit_base_url="http://localhost:3000",
+    )
 
     @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)
     def toy_asset_sensor(context, asset_event):
@@ -132,4 +140,5 @@ def get_toys_sensors():
         toy_asset_sensor,
         toy_s3_sensor,
         custom_slack_on_job_failure,
+        built_in_slack_on_run_failure_sensor,
     ]
