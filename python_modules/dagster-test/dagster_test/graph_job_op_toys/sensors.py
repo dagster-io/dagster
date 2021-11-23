@@ -96,8 +96,7 @@ def get_toys_sensors():
 
         base_url = "http://localhost:3000"
 
-        # TBD: support resources?
-        slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+        slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
         run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
         channel = "#toy-test"
@@ -115,9 +114,10 @@ def get_toys_sensors():
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
         )
 
-    built_in_slack_sensor = make_slack_on_run_failure_sensor(
+    built_in_slack_on_run_failure_sensor = make_slack_on_run_failure_sensor(
+        name="built_in_slack_on_run_failure_sensor",
         channel="#toy-test",
-        slack_token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"],
+        slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
         job_selection=[error_monster_failing_job],
         dagit_base_url="http://localhost:3000",
     )
@@ -140,5 +140,5 @@ def get_toys_sensors():
         toy_asset_sensor,
         toy_s3_sensor,
         custom_slack_on_job_failure,
-        built_in_slack_sensor,
+        built_in_slack_on_run_failure_sensor,
     ]
