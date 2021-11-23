@@ -1,7 +1,7 @@
 import copy
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 from croniter import croniter
@@ -28,6 +28,9 @@ from .pipeline_definition import PipelineDefinition
 from .run_request import JobType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
+
+if TYPE_CHECKING:
+    from .decorators.schedule import DecoratedScheduleFunction
 
 
 class ScheduleEvaluationContext:
@@ -184,10 +187,14 @@ class ScheduleDefinition:
         should_execute: Optional[Callable[..., bool]] = None,
         environment_vars: Optional[Dict[str, str]] = None,
         execution_timezone: Optional[str] = None,
-        execution_fn: Optional[Callable[[ScheduleEvaluationContext], Any]] = None,
+        execution_fn: Optional[
+            Union[Callable[[ScheduleEvaluationContext], Any], "DecoratedScheduleFunction"]
+        ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
     ):
+        from .decorators.schedule import DecoratedScheduleFunction
+
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
         if not croniter.is_valid(self._cron_schedule):
@@ -226,7 +233,12 @@ class ScheduleDefinition:
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+            if isinstance(execution_fn, DecoratedScheduleFunction):
+                self._execution_fn: Union[
+                    Callable[..., Any], DecoratedScheduleFunction
+                ] = execution_fn
+            else:
+                self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
             self._run_config_fn = None
         else:
 
@@ -305,12 +317,15 @@ class ScheduleDefinition:
                 )
 
     def __call__(self, *args, **kwargs):
-        if not self._run_config_fn:
+        from .decorators.schedule import DecoratedScheduleFunction
+
+        if not isinstance(self._execution_fn, DecoratedScheduleFunction):
             raise DagsterInvalidInvocationError(
                 "Schedule invocation is only supported for schedules created via the schedule "
                 "decorators."
             )
-        if is_context_provided(get_function_params(self._run_config_fn)):
+        result = None
+        if self._execution_fn.has_context_arg:
             if len(args) == 0 and len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Schedule decorated function has context argument, but no context argument was "
@@ -322,7 +337,7 @@ class ScheduleDefinition:
                     "positional context parameter should be provided when invoking."
                 )
 
-            context_param_name = get_function_params(self._run_config_fn)[0].name
+            context_param_name = get_function_params(self._execution_fn.decorated_fn)[0].name
 
             if args:
                 context = check.opt_inst_param(
@@ -339,13 +354,18 @@ class ScheduleDefinition:
 
             context = context if context else build_schedule_context()
 
-            return copy.deepcopy(self._run_config_fn(context))
+            result = self._execution_fn.decorated_fn(context)
         else:
             if len(args) + len(kwargs) > 0:
                 raise DagsterInvalidInvocationError(
                     "Decorated schedule function takes no arguments, but arguments were provided."
                 )
-            return copy.deepcopy(self._run_config_fn())
+            result = self._execution_fn.decorated_fn()
+
+        if isinstance(result, dict):
+            return copy.deepcopy(result)
+        else:
+            return result
 
     @property
     def name(self) -> str:
@@ -393,8 +413,13 @@ class ScheduleDefinition:
 
         """
 
+        from .decorators.schedule import DecoratedScheduleFunction
+
         check.inst_param(context, "context", ScheduleEvaluationContext)
-        execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
+        if isinstance(self._execution_fn, DecoratedScheduleFunction):
+            execution_fn = self._execution_fn.wrapped_fn
+        else:
+            execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
 
         if not result or result == [None]:

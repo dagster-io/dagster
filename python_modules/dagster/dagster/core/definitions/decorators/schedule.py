@@ -2,7 +2,18 @@ import copy
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.partition import (
@@ -41,9 +52,14 @@ if TYPE_CHECKING:
 
 RunConfig = Dict[str, Any]
 RunRequestGenerator = Generator[Union[RunRequest, SkipReason], None, None]
-ScheduleEvaluationFn = Callable[
-    ["ScheduleEvaluationContext"], Union[RunRequest, SkipReason, RunConfig, RunRequestGenerator]
-]
+
+
+class DecoratedScheduleFunction(NamedTuple):
+    """Wrapper around the decorated schedule function"""
+
+    decorated_fn: Callable[..., Union[RunRequest, SkipReason, RunConfig, RunRequestGenerator]]
+    wrapped_fn: Callable[["ScheduleEvaluationContext"], RunRequestGenerator]
+    has_context_arg: bool
 
 
 def schedule(
@@ -59,7 +75,15 @@ def schedule(
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
     job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
-) -> Callable[[ScheduleEvaluationFn], ScheduleDefinition]:
+) -> Callable[
+    [
+        Callable[
+            ...,
+            Union[RunRequest, SkipReason, RunConfig, RunRequestGenerator],
+        ]
+    ],
+    ScheduleDefinition,
+]:
     """
     Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -106,7 +130,7 @@ def schedule(
 
     def inner(
         fn: Callable[
-            ["ScheduleEvaluationContext"],
+            ...,
             Union[RunRequest, SkipReason, RunConfig, RunRequestGenerator],
         ]
     ) -> ScheduleDefinition:
@@ -115,6 +139,7 @@ def schedule(
         schedule_name = name or fn.__name__
 
         # perform upfront validation of schedule tags
+        _tags_fn: Optional[Callable[["ScheduleEvaluationContext"], Dict[str, str]]] = None
         if tags_fn and tags:
             raise DagsterInvalidDefinitionError(
                 "Attempted to provide both tags_fn and tags as arguments"
@@ -122,8 +147,14 @@ def schedule(
             )
         elif tags:
             check_tags(tags, "tags")
+            _tags_fn = cast(Callable[["ScheduleEvaluationContext"], Dict[str, str]], lambda _: tags)
+        elif tags_fn:
+            _tags_fn = cast(
+                Callable[["ScheduleEvaluationContext"], Dict[str, str]],
+                lambda context: tags_fn(context) or {},
+            )
 
-        def _execution_fn(context):
+        def _wrapped_fn(context: "ScheduleEvaluationContext"):
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -131,9 +162,7 @@ def schedule(
                 ):
                     if not should_execute(context):
                         yield SkipReason(
-                            "should_execute function for {schedule_name} returned false.".format(
-                                schedule_name=name
-                            )
+                            f"should_execute function for {schedule_name} returned false."
                         )
                         return
 
@@ -141,16 +170,12 @@ def schedule(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
+                result = fn(context) if has_context_arg else fn()
                 if isinstance(result, dict):
                     # this is the run-config based decorated function, wrap the evaluated run config
                     # and tags in a RunRequest
                     evaluated_run_config = copy.deepcopy(result)
-                    evaluated_tags: Optional[Dict[str, str]] = None
-                    if tags:
-                        evaluated_tags = tags
-                    elif tags_fn:
-                        evaluated_tags = tags_fn(context)
+                    evaluated_tags = _tags_fn(context) if _tags_fn else None
                     yield RunRequest(
                         run_key=None,
                         run_config=evaluated_run_config,
@@ -159,6 +184,13 @@ def schedule(
                 else:
                     # this is a run-request based decorated function
                     yield from ensure_gen(result)
+
+        has_context_arg = is_context_provided(get_function_params(fn))
+        evaluation_fn = DecoratedScheduleFunction(
+            decorated_fn=fn,
+            wrapped_fn=_wrapped_fn,
+            has_context_arg=has_context_arg,
+        )
 
         schedule_def = ScheduleDefinition(
             name=schedule_name,
@@ -169,7 +201,7 @@ def schedule(
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
             description=description,
-            execution_fn=_execution_fn,
+            execution_fn=evaluation_fn,
             job=job,
         )
 
