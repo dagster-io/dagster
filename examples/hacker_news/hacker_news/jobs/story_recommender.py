@@ -1,4 +1,4 @@
-from dagster import ResourceDefinition, graph
+from dagster import ResourceDefinition, SourceHashVersionStrategy, graph
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
     build_component_top_stories,
@@ -35,12 +35,14 @@ story_recommender_staging_job = story_recommender.to_job(
     resource_defs={
         **RESOURCES_STAGING,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
+    },
+    version_strategy=SourceHashVersionStrategy(),
 )
 
 story_recommender_local_job = story_recommender.to_job(
     resource_defs={
         **RESOURCES_LOCAL,
         **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
+    },
+    version_strategy=SourceHashVersionStrategy(),
 )
