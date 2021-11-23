@@ -3,6 +3,7 @@
 import datetime
 import os
 import time
+import uuid
 
 import boto3
 import pytest
@@ -582,15 +583,14 @@ def _get_step_events(event_logs):
 def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
+    ephemeral_prefix = str(uuid.uuid4())
     run_config = merge_dicts(
         merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
+        {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_prefix}}}},
     )
-
-    # Clean up any residual outputs that may have been left by failed runs.
-    cleanup_memoized_results(define_memoization_pipeline(), "celery", dagster_instance, run_config)
 
     try:
         pipeline_name = "memoization_pipeline"

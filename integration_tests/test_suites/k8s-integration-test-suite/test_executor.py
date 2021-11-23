@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import uuid
 
 import pytest
 from dagster import check
@@ -541,6 +542,7 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
 def test_memoization_k8s_executor(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
 ):
+    ephemeral_path = str(uuid.uuid4())
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
@@ -556,11 +558,7 @@ def test_memoization_k8s_executor(
                 }
             },
         },
-    )
-
-    # Clean up any residual outputs that may have been left by failed runs.
-    cleanup_memoized_results(
-        define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+        {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_path}}}},
     )
 
     # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket

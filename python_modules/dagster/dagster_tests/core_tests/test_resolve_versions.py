@@ -901,6 +901,7 @@ def test_code_versioning_strategy():
         result = call_the_op.execute_in_process(instance=instance)
         assert result.success
         memoized_plan = create_execution_plan(call_the_op, instance_ref=instance.get_ref())
+        assert len(memoized_plan.step_keys_to_execute) == 0
 
 
 def test_memoization_multiprocess_execution():
