@@ -158,7 +158,7 @@ export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) =>
         {
           id: 'split',
           icon: 'panel_show_both_horizontal',
-          tooltip: 'Show both panels',
+          tooltip: 'Show both panes',
         },
         {
           id: 'second-pane',
