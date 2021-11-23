@@ -31,7 +31,7 @@ const Icons = {
   panel_show_right: require('./icon-svgs/panel_show_right.svg'),
   panel_hide_right: require('./icon-svgs/panel_hide_right.svg'),
   panel_show_bottom: require('./icon-svgs/panel_show_bottom.svg'),
-  panel_show_both_horizontal: require('./icon-svgs/panel_show_both_horizontal.svg'),
+  panel_show_both: require('./icon-svgs/panel_show_both.svg'),
   copy_to_clipboard: require('./icon-svgs/assignment.svg'),
   copy_to_clipboard_done: require('./icon-svgs/assignment_turned_in.svg'),
   open_in_new: require('./icon-svgs/open_in_new.svg'),
