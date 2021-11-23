@@ -233,10 +233,11 @@ class ScheduleDefinition:
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
+            self._execution_fn: Optional[
+                Union[Callable[..., Any], DecoratedScheduleFunction]
+            ] = None
             if isinstance(execution_fn, DecoratedScheduleFunction):
-                self._execution_fn: Union[
-                    Callable[..., Any], DecoratedScheduleFunction
-                ] = execution_fn
+                self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
             self._run_config_fn = None
