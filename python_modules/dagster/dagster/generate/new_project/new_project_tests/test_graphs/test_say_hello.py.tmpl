@@ -11,4 +11,4 @@ def test_say_hello():
     result = say_hello.execute_in_process()
 
     assert result.success
-    assert result.result_for_node("hello").output_values == {"result": "Hello, Dagster!"}
+    assert result.output_for_node("hello") == "Hello, Dagster!"
