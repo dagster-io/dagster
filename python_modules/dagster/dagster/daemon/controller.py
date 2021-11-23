@@ -9,6 +9,7 @@ from dagster import check
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon.daemon import (
     BackfillDaemon,
@@ -65,6 +66,7 @@ def create_daemon_grpc_server_registry():
 
 
 @contextmanager
+@telemetry_wrapper
 def daemon_controller_from_instance(
     instance,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
@@ -102,6 +104,7 @@ def daemon_controller_from_instance(
 
 
 class DagsterDaemonController:
+    @telemetry_wrapper
     def __init__(
         self,
         instance,
