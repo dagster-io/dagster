@@ -1,3 +1,5 @@
+import inspect
+
 from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
@@ -490,31 +492,44 @@ def _store_output(
 
     manager_materializations = []
     manager_metadata_entries = []
-    with user_code_error_boundary(
-        DagsterExecutionHandleOutputError,
-        msg_fn=lambda: (
-            f'Error occurred while handling output "{output_context.name}" of '
-            f'step "{step_context.step.key}":'
+
+    if not inspect.isgeneratorfunction(output_manager.handle_output):
+
+        def _gen_fn():
+            gen_output = output_manager.handle_output(output_context, output.value)
+            if gen_output:
+                yield gen_output
+
+        handle_output_gen = _gen_fn()
+    else:
+        handle_output_gen = output_manager.handle_output(output_context, output.value)
+
+    for elt in iterate_with_context(
+        lambda: solid_execution_error_boundary(
+            DagsterExecutionHandleOutputError,
+            msg_fn=lambda: (
+                f'Error occurred while handling output "{output_context.name}" of '
+                f'step "{step_context.step.key}":'
+            ),
+            step_context=step_context,
+            step_key=step_context.step.key,
+            output_name=output_context.name,
         ),
-        step_key=step_context.step.key,
-        output_name=output_context.name,
+        handle_output_gen,
     ):
-        handle_output_res = output_manager.handle_output(output_context, output.value)
-        if handle_output_res is not None:
-            for elt in ensure_gen(handle_output_res):
-                if isinstance(elt, AssetMaterialization):
-                    manager_materializations.append(elt)
-                elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
-                    experimental_functionality_warning(
-                        "Yielding metadata from an IOManager's handle_output() function"
-                    )
-                    manager_metadata_entries.append(elt)
-                else:
-                    raise DagsterInvariantViolationError(
-                        f"IO manager on output {output_def.name} has returned "
-                        f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                        "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
-                    )
+        if isinstance(elt, AssetMaterialization):
+            manager_materializations.append(elt)
+        elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
+            experimental_functionality_warning(
+                "Yielding metadata from an IOManager's handle_output() function"
+            )
+            manager_metadata_entries.append(elt)
+        else:
+            raise DagsterInvariantViolationError(
+                f"IO manager on output {output_def.name} has returned "
+                f"value {elt} of type {type(elt).__name__}. The return type can only be "
+                "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
+            )
 
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
