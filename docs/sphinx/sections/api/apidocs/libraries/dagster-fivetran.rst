@@ -8,13 +8,13 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 Ops
 ===
 
-.. autofunction:: fivetran_sync_op
+.. autoconfigurable:: fivetran_sync_op
 
 
 Resources
 =========
 
-.. autodata:: fivetran_resource
+.. autoconfigurable:: fivetran_resource
     :annotation: ResourceDefinition
 
 .. autoclass:: FivetranResource

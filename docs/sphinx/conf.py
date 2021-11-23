@@ -36,6 +36,11 @@ release = ""
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+import os
+import sys
+
+sys.path.append(os.path.abspath("./_ext"))
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.ifconfig",
@@ -44,6 +49,8 @@ extensions = [
     "nbsphinx",
     "sphinx.ext.autosectionlabel",
     "recommonmark",
+    "sphinx_toolbox.collapse",
+    "autodoc_configurable",
 ]
 
 # https://stackoverflow.com/a/54843636/324449
