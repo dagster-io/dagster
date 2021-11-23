@@ -17,6 +17,7 @@ from dagster import (
     RetryRequested,
     execute_pipeline,
     execute_pipeline_iterator,
+    graph,
     job,
     lambda_solid,
     op,
@@ -24,7 +25,9 @@ from dagster import (
     reconstructable,
     reexecute_pipeline,
     solid,
+    success_hook,
 )
+from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.events import DagsterEvent
@@ -504,3 +507,78 @@ def test_basic_op_retry_policy_subset():
     result = policy_test.execute_in_process(raise_on_error=False, op_selection=["throws"])
     assert not result.success
     assert len(_get_retry_events(result.events_for_node("throws"))) == 1
+
+
+def test_retry_policy_rules_on_graph_to_job():
+    @op(retry_policy=RetryPolicy(max_retries=2))
+    def throw_with_policy():
+        raise Exception("I throw")
+
+    @op
+    def throw_no_policy():
+        raise Exception("I throw")
+
+    @op
+    def fail_no_policy():
+        raise Failure("I fail")
+
+    @graph
+    def policy_test():
+        throw_with_policy()
+        throw_no_policy()
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
+        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+
+    my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
+    result = my_job.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("throw_no_policy"))) == 3
+    assert len(_get_retry_events(result.events_for_node("throw_with_policy"))) == 2
+    assert len(_get_retry_events(result.events_for_node("override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_with"))) == 1
+    assert len(_get_retry_events(result.events_for_node("config_override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_fail"))) == 1
+
+
+def test_retry_policy_rules_on_pending_node_invocation_to_job():
+    @success_hook
+    def a_hook(_):
+        return HookExecutionResult("a_hook")
+
+    @op(retry_policy=RetryPolicy(max_retries=2))
+    def throw_with_policy():
+        raise Exception("I throw")
+
+    @op
+    def throw_no_policy():
+        raise Exception("I throw")
+
+    @op
+    def fail_no_policy():
+        raise Failure("I fail")
+
+    @a_hook  # turn policy_test into a PendingNodeInvocation
+    @graph
+    def policy_test():
+        throw_with_policy()
+        throw_no_policy()
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
+        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+
+    my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
+    result = my_job.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("throw_no_policy"))) == 3
+    assert len(_get_retry_events(result.events_for_node("throw_with_policy"))) == 2
+    assert len(_get_retry_events(result.events_for_node("override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_with"))) == 1
+    assert len(_get_retry_events(result.events_for_node("config_override_no"))) == 1
+    assert len(_get_retry_events(result.events_for_node("override_fail"))) == 1
