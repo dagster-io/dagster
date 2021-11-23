@@ -113,7 +113,7 @@ def build_schedule_context(
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     return ScheduleEvaluationContext(
-        instance_ref=instance.get_ref() if instance else None,
+        instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),

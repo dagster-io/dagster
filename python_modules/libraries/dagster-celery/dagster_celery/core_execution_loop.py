@@ -31,12 +31,14 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
 
     executor = pipeline_context.executor
 
-    # https://github.com/dagster-io/dagster/issues/2440
-    check.invariant(
-        execution_plan.artifacts_persisted,
-        "Cannot use in-memory storage with Celery, use filesystem (on top of NFS or "
-        "similar system that allows files to be available to all nodes), S3, or GCS",
-    )
+    # If there are no step keys to execute, then any io managers will not be used.
+    if len(execution_plan.step_keys_to_execute) > 0:
+        # https://github.com/dagster-io/dagster/issues/2440
+        check.invariant(
+            execution_plan.artifacts_persisted,
+            "Cannot use in-memory storage with Celery, use filesystem (on top of NFS or "
+            "similar system that allows files to be available to all nodes), S3, or GCS",
+        )
 
     app = make_app(executor.app_args())
 
