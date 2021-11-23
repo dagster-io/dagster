@@ -11,7 +11,7 @@ from dagster.utils.backcompat import experimental
 
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 
-Tags = namedtuple("tags", ["arn", "cluster", "cpu", "memory"])
+Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
 @experimental
