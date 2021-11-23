@@ -244,7 +244,7 @@ class DagsterExecutionLoadInputError(DagsterUserCodeExecutionError):
 
 
 class DagsterExecutionHandleOutputError(DagsterUserCodeExecutionError):
-    """Indicates an error occurred while loading an input for a step."""
+    """Indicates an error occurred while handling an output for a step."""
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
