@@ -29,7 +29,6 @@ const LOG_TELEMETRY_MUTATION = gql`
 `;
 
 export const useTelemetryAction = (action: TelemetryAction) => {
-  const clientTime = Date.now();
   const [telemetryRequest] = useMutation(LOG_TELEMETRY_MUTATION);
   const {data} = useQuery<DagitTelemetryEnabledQuery>(TELEMETRY_ENABLED_QUERY);
 
@@ -39,7 +38,7 @@ export const useTelemetryAction = (action: TelemetryAction) => {
         variables: {
           action: action.toString(),
           metadata: JSON.stringify(metadata),
-          clientTime: clientTime,
+          clientTime: Date.now(),
         },
       });
     }
