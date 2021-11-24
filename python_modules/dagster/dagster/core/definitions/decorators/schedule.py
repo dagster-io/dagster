@@ -56,7 +56,7 @@ RunRequestGenerator = Generator[Union[RunRequest, SkipReason], None, None]
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function """
+    optimal return value for direct invocation of the evaluation function"""
 
     decorated_fn: Callable[..., Union[RunRequest, SkipReason, RunConfig, RunRequestGenerator]]
     wrapped_fn: Callable[["ScheduleEvaluationContext"], RunRequestGenerator]
