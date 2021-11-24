@@ -3,6 +3,7 @@
 import datetime
 import os
 import time
+import uuid
 
 import boto3
 import pytest
@@ -10,7 +11,7 @@ from dagster import DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
-from dagster.utils import merge_dicts
+from dagster.utils.merger import deep_merge_dicts, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -582,15 +583,17 @@ def _get_step_events(event_logs):
 def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
-    run_config = merge_dicts(
+    ephemeral_prefix = str(uuid.uuid4())
+    run_config = deep_merge_dicts(
         merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
     )
-
-    # Clean up any residual outputs that may have been left by failed runs.
-    cleanup_memoized_results(define_memoization_pipeline(), "celery", dagster_instance, run_config)
+    run_config = deep_merge_dicts(
+        run_config,
+        {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_prefix}}}},
+    )
 
     try:
         pipeline_name = "memoization_pipeline"
