@@ -50,7 +50,7 @@ def test_graphql_get(empty_app):
         "/graphql?query={__typename}",
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "Query"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
 
 def test_graphql_post(empty_app):
@@ -59,14 +59,14 @@ def test_graphql_post(empty_app):
         "/graphql?query={__typename}",
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "Query"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
     response = client.post(
         "/graphql",
         json={"query": "{__typename}"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "Query"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
 
 def test_graphql_ws_error(empty_app):
