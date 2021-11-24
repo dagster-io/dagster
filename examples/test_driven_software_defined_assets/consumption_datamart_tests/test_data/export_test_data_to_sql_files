@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+basedir="$(dirname "${BASH_SOURCE[0]}")/../../"
+pushd $basedir
+  echo "Exporting acme_lake..."
+  sqlite3 consumption_datamart_tests/test_data/acme_lake.db .dump > consumption_datamart_tests/test_data/acme_lake.sqlite3.sql
+  echo "Exporting consumption_datamart..."
+  sqlite3 consumption_datamart_tests/test_data/consumption_datamart.db .dump > consumption_datamart_tests/test_data/consumption_datamart.sqlite3.sql
+
+  echo "DONE.  Resulting *.sqlite3.sql files are:"
+  ls -lah consumption_datamart_tests/test_data/*.sqlite3.sql
+popd
