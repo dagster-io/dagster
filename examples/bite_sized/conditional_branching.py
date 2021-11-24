@@ -21,7 +21,7 @@ ARTICLES_LINK = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
 
 
 class DataframeToCSVIOManager(IOManager):
-    def __init__(self, base_dir):
+    def __init__(self, base_dir: str):
         self.base_dir = base_dir
 
     def _get_path(self, output_context: OutputContext):
@@ -30,7 +30,7 @@ class DataframeToCSVIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
         obj.to_csv(self._get_path(context), index=False)
 
-    def load_input(self, context: InputContext):
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         return pd.read_csv(self._get_path(context.upstream_output))
 
 
