@@ -53,6 +53,7 @@ def test_fs_stores():
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
             )
 
             result = execute_pipeline(simple, instance=instance)
