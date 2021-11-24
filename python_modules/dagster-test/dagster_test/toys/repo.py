@@ -16,7 +16,7 @@ from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
-
+from dagster_test.toys.hanging_asset import hanging_asset_job
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -55,6 +55,7 @@ def toys_repository():
             asset_lineage_partition_set,
             model_pipeline,
             hello_world_notebook_pipeline,
+            hanging_asset_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
