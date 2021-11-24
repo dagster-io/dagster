@@ -10,6 +10,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
+from dagster.utils.merger import deep_merge_dicts
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.launcher import K8sRunLauncher
@@ -543,7 +544,7 @@ def test_memoization_k8s_executor(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
 ):
     ephemeral_path = str(uuid.uuid4())
-    run_config = merge_dicts(
+    run_config = deep_merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
@@ -558,6 +559,10 @@ def test_memoization_k8s_executor(
                 }
             },
         },
+    )
+
+    run_config = deep_merge_dicts(
+        run_config,
         {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_path}}}},
     )
 
