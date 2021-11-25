@@ -9,9 +9,10 @@ config:
     env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
   postgres_password_secret:
     env: DAGSTER_K8S_PG_PASSWORD_SECRET
-  broker: {{ include "dagster.celery.broker_url" . | quote }}
-  backend: {{ include "dagster.celery.backend_url" . | quote}}
-
+  broker:
+    env: DAGSTER_K8S_CELERY_BROKER
+  backend:
+    env: DAGSTER_K8S_CELERY_BACKEND
   {{- if $celeryK8sRunLauncherConfig.configSource }}
   config_source: {{- $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 4 }}
   {{- end }}

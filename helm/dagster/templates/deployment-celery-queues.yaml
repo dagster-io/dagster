@@ -92,7 +92,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - celery -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" $ }} status | grep "${HOSTNAME}:.*OK"
+                - dagster-celery status -A dagster_celery_k8s.app -y {{ $.Values.global.dagsterHome }}/celery-config.yaml | grep "${HOSTNAME}:.*OK"
             {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "initialDelaySeconds" }}
             initialDelaySeconds:
               {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.initialDelaySeconds | nindent 14 }}
