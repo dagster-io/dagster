@@ -89,9 +89,9 @@ def test_workspace_renders_from_helm_user_deployments(template: HelmTemplate):
 
 def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
     servers = [
-        Server(host="another-deployment-one", port=4000),
-        Server(host="another-deployment-two", port=4001),
-        Server(host="another-deployment-three", port=4002),
+        Server(host="another-deployment-one", port=4000, name="deployment one"),
+        Server(host="another-deployment-two", port=4001, name="deployment two"),
+        Server(host="another-deployment-three", port=4002, name="deployment three"),
     ]
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
@@ -119,7 +119,7 @@ def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
     for grpc_server, server in zip(grpc_servers, servers):
         assert grpc_server["grpc_server"]["host"] == server.host
         assert grpc_server["grpc_server"]["port"] == server.port
-        assert grpc_server["grpc_server"]["location_name"] == server.host
+        assert grpc_server["grpc_server"]["location_name"] == server.name
 
 
 def test_workspace_renders_empty(template: HelmTemplate):
