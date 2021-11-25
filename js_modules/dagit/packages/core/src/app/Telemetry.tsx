@@ -6,6 +6,7 @@ import {DagitTelemetryEnabledQuery} from './types/DagitTelemetryEnabledQuery';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',
+  GRAPHQL_QUERY_COMPLETED = 'GRAPHQL_QUERY_COMPLETED',
 }
 
 const TELEMETRY_ENABLED_QUERY = gql`
