@@ -1,15 +1,15 @@
 from datetime import datetime
 
 import pendulum
-from dagster.core.definitions.time_window_partitions import (
-    TimeWindow,
+from dagster import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MonthlyPartitionsDefinition,
     daily_partitioned_config,
-    daily_partitions_def,
     hourly_partitioned_config,
-    hourly_partitions_def,
     monthly_partitioned_config,
-    monthly_partitions_def,
 )
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -25,7 +25,7 @@ def test_daily_partitions():
         return {}
 
     partitions_def = my_partitioned_config.partitions_def
-    assert partitions_def == daily_partitions_def(start_date="2021-05-05")
+    assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
 
     assert [
         partition.value
@@ -64,7 +64,7 @@ def test_monthly_partitions():
         return {}
 
     partitions_def = my_partitioned_config.partitions_def
-    assert partitions_def == monthly_partitions_def(start_date="2021-05-01")
+    assert partitions_def == MonthlyPartitionsDefinition(start_date="2021-05-01")
 
     assert [
         partition.value
@@ -103,7 +103,7 @@ def test_hourly_partitions():
         return {}
 
     partitions_def = my_partitioned_config.partitions_def
-    assert partitions_def == hourly_partitions_def(start_date="2021-05-05-01:00")
+    assert partitions_def == HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
 
     partitions = partitions_def.get_partitions(
         datetime.strptime("2021-05-05-03:00", DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE)

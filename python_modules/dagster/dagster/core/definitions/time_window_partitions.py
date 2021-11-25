@@ -113,43 +113,41 @@ class TimeWindowPartitionsDefinition(
         return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
 
 
-def daily_partitions_def(
-    start_date: Union[datetime, str],
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
-    end_offset: int = 0,
-) -> PartitionsDefinition:
-    """Defines a set of daily partitions.
+class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    def __new__(
+        cls,
+        start_date: Union[datetime, str],
+        timezone: Optional[str] = None,
+        fmt: Optional[str] = None,
+        end_offset: int = 0,
+    ):
+        """A set of daily partitions.
 
-    The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+        The first partition in the set will start at the start_date. The last partition in the set will
+        end before the current time, unless the end_offset argument is set to a positive number.
 
-    Args:
-        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-            provide in either a datetime or string format.
-        timezone (Optional[str]): The timezone in which each date should exist.
-            Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-        end_offset (int): Extends the partition set by a number of partitions equal to the value
-            passed. If end_offset is 0 (the default), the last partition ends before the current
-            time. If end_offset is 1, the second-to-last partition ends before the current time,
-            and so on.
-    """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
+        Args:
+            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+                provide in either a datetime or string format.
+            timezone (Optional[str]): The timezone in which each date should exist.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+            end_offset (int): Extends the partition set by a number of partitions equal to the value
+                passed. If end_offset is 0 (the default), the last partition ends before the current
+                time. If end_offset is 1, the second-to-last partition ends before the current time,
+                and so on.
+        """
+        _fmt = fmt or DEFAULT_DATE_FORMAT
 
-    if isinstance(start_date, str):
-        _start_date = datetime.strptime(start_date, _fmt)
-    else:
-        _start_date = start_date
-
-    return TimeWindowPartitionsDefinition(
-        schedule_type=ScheduleType.DAILY,
-        start=_start_date,
-        timezone=timezone,
-        fmt=_fmt,
-        end_offset=end_offset,
-    )
+        return super(DailyPartitionsDefinition, cls).__new__(
+            cls,
+            schedule_type=ScheduleType.DAILY,
+            start=start_date,
+            timezone=timezone,
+            fmt=_fmt,
+            end_offset=end_offset,
+        )
 
 
 def daily_partitioned_config(
@@ -189,49 +187,49 @@ def daily_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=daily_partitions_def(
-                start_date=start_date,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
+            partitions_def=DailyPartitionsDefinition(
+                start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
         )
 
     return inner
 
 
-def hourly_partitions_def(
-    start_date: Union[datetime, str],
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
-    end_offset: int = 0,
-) -> PartitionsDefinition:
-    """Defines a set of hourly partitions.
+class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    def __new__(
+        cls,
+        start_date: Union[datetime, str],
+        timezone: Optional[str] = None,
+        fmt: Optional[str] = None,
+        end_offset: int = 0,
+    ):
+        """A set of hourly partitions.
 
-    The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+        The first partition in the set will start at the start_date. The last partition in the set will
+        end before the current time, unless the end_offset argument is set to a positive number.
 
-    Args:
-        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-            provide in either a datetime or string format.
-        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-        timezone (Optional[str]): The timezone in which each date should exist.
-            Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-        end_offset (int): Extends the partition set by a number of partitions equal to the value
-            passed. If end_offset is 0 (the default), the last partition ends before the current
-            time. If end_offset is 1, the second-to-last partition ends before the current time,
-            and so on.
-    """
-    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+        Args:
+            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+                provide in either a datetime or string format.
+            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+            timezone (Optional[str]): The timezone in which each date should exist.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            end_offset (int): Extends the partition set by a number of partitions equal to the value
+                passed. If end_offset is 0 (the default), the last partition ends before the current
+                time. If end_offset is 1, the second-to-last partition ends before the current time,
+                and so on.
+        """
+        _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
-    return TimeWindowPartitionsDefinition(
-        schedule_type=ScheduleType.HOURLY,
-        start=start_date,
-        timezone=timezone,
-        fmt=_fmt,
-        end_offset=end_offset,
-    )
+        return super(HourlyPartitionsDefinition, cls).__new__(
+            cls,
+            schedule_type=ScheduleType.HOURLY,
+            start=start_date,
+            timezone=timezone,
+            fmt=_fmt,
+            end_offset=end_offset,
+        )
 
 
 def hourly_partitioned_config(
@@ -271,49 +269,49 @@ def hourly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=hourly_partitions_def(
-                start_date=start_date,
-                timezone=timezone,
-                fmt=fmt,
-                end_offset=end_offset,
+            partitions_def=HourlyPartitionsDefinition(
+                start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
         )
 
     return inner
 
 
-def monthly_partitions_def(
-    start_date: Union[datetime, str],
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
-    end_offset: int = 0,
-) -> PartitionsDefinition:
-    """Defines a set of monthly partitions.
+class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    def __new__(
+        cls,
+        start_date: Union[datetime, str],
+        timezone: Optional[str] = None,
+        fmt: Optional[str] = None,
+        end_offset: int = 0,
+    ):
+        """A set of monthly partitions.
 
-    The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+        The first partition in the set will start at the start_date. The last partition in the set will
+        end before the current time, unless the end_offset argument is set to a positive number.
 
-    Args:
-        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-            provide in either a datetime or string format.
-        timezone (Optional[str]): The timezone in which each date should exist.
-            Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-        end_offset (int): Extends the partition set by a number of partitions equal to the value
-            passed. If end_offset is 0 (the default), the last partition ends before the current
-            time. If end_offset is 1, the second-to-last partition ends before the current time,
-            and so on.
-    """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
+        Args:
+            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+                provide in either a datetime or string format.
+            timezone (Optional[str]): The timezone in which each date should exist.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+            end_offset (int): Extends the partition set by a number of partitions equal to the value
+                passed. If end_offset is 0 (the default), the last partition ends before the current
+                time. If end_offset is 1, the second-to-last partition ends before the current time,
+                and so on.
+        """
+        _fmt = fmt or DEFAULT_DATE_FORMAT
 
-    return TimeWindowPartitionsDefinition(
-        schedule_type=ScheduleType.MONTHLY,
-        start=start_date,
-        timezone=timezone,
-        fmt=_fmt,
-        end_offset=end_offset,
-    )
+        return super(MonthlyPartitionsDefinition, cls).__new__(
+            cls,
+            schedule_type=ScheduleType.MONTHLY,
+            start=start_date,
+            timezone=timezone,
+            fmt=_fmt,
+            end_offset=end_offset,
+        )
 
 
 def monthly_partitioned_config(
@@ -353,7 +351,7 @@ def monthly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=monthly_partitions_def(
+            partitions_def=MonthlyPartitionsDefinition(
                 start_date=start_date,
                 timezone=timezone,
                 fmt=fmt,
@@ -364,38 +362,41 @@ def monthly_partitioned_config(
     return inner
 
 
-def weekly_partitions_def(
-    start_date: Union[datetime, str],
-    timezone: Optional[str] = None,
-    fmt: Optional[str] = None,
-    end_offset: int = 0,
-) -> PartitionsDefinition:
-    """Defines a set of weekly partitions.
+class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    def __new__(
+        cls,
+        start_date: Union[datetime, str],
+        timezone: Optional[str] = None,
+        fmt: Optional[str] = None,
+        end_offset: int = 0,
+    ):
+        """Defines a set of weekly partitions.
 
-    The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+        The first partition in the set will start at the start_date. The last partition in the set will
+        end before the current time, unless the end_offset argument is set to a positive number.
 
-    Args:
-        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-            provide in either a datetime or string format.
-        timezone (Optional[str]): The timezone in which each date should exist.
-            Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-        end_offset (int): Extends the partition set by a number of partitions equal to the value
-            passed. If end_offset is 0 (the default), the last partition ends before the current
-            time. If end_offset is 1, the second-to-last partition ends before the current time,
-            and so on.
-    """
-    _fmt = fmt or DEFAULT_DATE_FORMAT
+        Args:
+            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+                provide in either a datetime or string format.
+            timezone (Optional[str]): The timezone in which each date should exist.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+            end_offset (int): Extends the partition set by a number of partitions equal to the value
+                passed. If end_offset is 0 (the default), the last partition ends before the current
+                time. If end_offset is 1, the second-to-last partition ends before the current time,
+                and so on.
+        """
+        _fmt = fmt or DEFAULT_DATE_FORMAT
 
-    return TimeWindowPartitionsDefinition(
-        schedule_type=ScheduleType.WEEKLY,
-        start=start_date,
-        timezone=timezone,
-        fmt=_fmt,
-        end_offset=end_offset,
-    )
+        return super(WeeklyPartitionsDefinition, cls).__new__(
+            cls,
+            schedule_type=ScheduleType.WEEKLY,
+            start=start_date,
+            timezone=timezone,
+            fmt=_fmt,
+            end_offset=end_offset,
+        )
 
 
 def weekly_partitioned_config(
@@ -435,7 +436,7 @@ def weekly_partitioned_config(
             run_config_for_partition_fn=lambda partition: fn(
                 partition.value[0], partition.value[1]
             ),
-            partitions_def=weekly_partitions_def(
+            partitions_def=WeeklyPartitionsDefinition(
                 start_date=start_date,
                 timezone=timezone,
                 fmt=fmt,

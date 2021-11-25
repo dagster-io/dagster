@@ -3,13 +3,12 @@ from typing import Callable, List, Optional
 
 import pendulum
 import pytest
+from dagster import DynamicPartitionsDefinition, StaticPartitionsDefinition
 from dagster.check import CheckError
 from dagster.core.definitions.partition import (
-    DynamicPartitionsDefinition,
     Partition,
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
-    StaticPartitionsDefinition,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
@@ -29,15 +28,16 @@ def assert_expected_partitions(
 
 
 @pytest.mark.parametrize(
-    argnames=["partitions"],
-    argvalues=[([Partition("a_partition")],), ([Partition(x) for x in range(10)],)],
+    argnames=["partition_keys"],
+    argvalues=[(["a_partition"],), ([str(x) for x in range(10)],)],
 )
-def test_static_partitions(partitions: List[Partition]):
-    static_partitions = StaticPartitionsDefinition(partitions)
+def test_static_partitions(partition_keys: List[str]):
+    static_partitions = StaticPartitionsDefinition(partition_keys)
 
     assert [(p.name, p.value) for p in static_partitions.get_partitions()] == [
-        (p.name, p.value) for p in partitions
+        (p, p) for p in partition_keys
     ]
+    assert static_partitions.get_partition_keys() == partition_keys
 
 
 @pytest.mark.parametrize(
@@ -671,9 +671,30 @@ def test_time_partitions_hourly_partitions(
         (lambda _current_time: [Partition(x) for x in range(10)],),
     ],
 )
-def test_dynamic_partitions(partition_fn: Callable[[Optional[datetime]], List[Partition]]):
+def test_dynamic_partitions_partitions(
+    partition_fn: Callable[[Optional[datetime]], List[Partition]]
+):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
     assert [(p.name, p.value) for p in partitions.get_partitions()] == [
         (p.name, p.value) for p in partition_fn(None)
     ]
+
+    assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
+
+
+@pytest.mark.parametrize(
+    argnames=["partition_fn"],
+    argvalues=[
+        (lambda _current_time: ["a_partition"],),
+        (lambda _current_time: [str(x) for x in range(10)],),
+    ],
+)
+def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], List[str]]):
+    partitions = DynamicPartitionsDefinition(partition_fn)
+
+    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
+        (p, p) for p in partition_fn(None)
+    ]
+
+    assert partitions.get_partition_keys() == partition_fn(None)
