@@ -1,13 +1,40 @@
 import warnings
-from textwrap import dedent
 
-import pandas
+from sqlalchemy import Column, String, Date, Numeric, Integer
 
 import dagster
-from dagster import Output, EventMetadata
+from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
+from dagster import Output
 from dagster.core.asset_defs import asset
 
 warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
+
+
+class InvoiceOrderItemsDataFrameSchema:
+    invoice_id = Column(
+        'invoice_id', String, nullable=False,
+        comment="Id of the invoice")
+    order_date = Column(
+        'order_date', Date, nullable=False,
+        comment="Date the Order was place (and the subscription started")
+    customer_id = Column(
+        'customer_id', String, nullable=False,
+        comment="Customer Identifier")
+    subscription_sku = Column(
+        'subscription_sku', String, nullable=False,
+        comment="SKU the subscription order is for")
+    subscription_sku_name = Column(
+        'subscription_sku_name', String, nullable=False,
+        comment="SKU the subscription order is for")
+    subscription_quantity = Column(
+        'subscription_quantity', Numeric(12, 2), nullable=False,
+        comment="Quantity of subscription")
+    subscription_term = Column(
+        'subscription_term', Integer, nullable=False,
+        comment="subscription_term")
+
+
+InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type("InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema)
 
 
 @asset(
@@ -15,7 +42,7 @@ warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
     compute_kind='lake',
     required_resource_keys={"datawarehouse"},
 )
-def invoice_order_lines(context) -> pandas.DataFrame:
+def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
     """An immutable snapshot containing all customer invoice line items"""
 
     df = context.resources.datawarehouse.read_sql_query('''
@@ -31,21 +58,6 @@ def invoice_order_lines(context) -> pandas.DataFrame:
         FROM acme_lake.invoice_line_items
     ''')
 
-    yield Output(
-        df,
-        metadata={
-            "Data Dictionary": EventMetadata.md(dedent(f"""
-                | Column              	         | Type   	| Description                                            |
-                |--------------------------------|----------|--------------------------------------------------------|
-                | invoice_id        	         | String 	| Id of the invoice                                      |
-                | order_date          	         | String 	| Date the Order was place (and the subscription started |
-                | customer_id          	         | String 	| Customer Identifier                                    |
-                | subscription_sku   	         | String 	| SKU the subscription order is for                      |
-                | subscription_sku_name       	 | String 	| Name of SKU                                            |
-                | subscription_quantity          | Decimal 	| Quantity of subscription                               |
-                | subscription_term              | Int   	| Length of the subscription (in months)                 |                
-            """)),
-            "n_rows": EventMetadata.int(len(df)),
-            "tail(5)": EventMetadata.md(df.tail(5).to_markdown()),
-        },
-    )
+    typed_df = InvoiceOrderItemsDataFrameType.convert_dtypes(df)
+
+    return Output(typed_df, metadata=InvoiceOrderItemsDataFrameType.extract_event_metadata(df))
