@@ -7,6 +7,7 @@ from ...utils.utils import BaseModel
 class Server(BaseModel):
     host: str
     port: int
+    name: str
 
 
 class Workspace(BaseModel):

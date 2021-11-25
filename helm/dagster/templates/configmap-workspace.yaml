@@ -25,7 +25,7 @@ data:
       - grpc_server:
           host: {{ $deploymentHost }}
           port: {{ $deployment.port }}
-          location_name: {{ $deploymentHost }}
+          location_name: {{ $deployment.name }}
       {{- end }}
     {{- else }}
     load_from: []
