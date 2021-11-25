@@ -25,11 +25,11 @@ class BuildkiteQueue(Enum):
 
 
 class StepBuilder:
-    def __init__(self, label, key=None):
+    def __init__(self, label, key=None, timeout_in_minutes=None):
         self._step = {
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
             "label": label,
-            "timeout_in_minutes": TIMEOUT_IN_MIN,
+            "timeout_in_minutes": timeout_in_minutes or TIMEOUT_IN_MIN,
             "retry": {
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost

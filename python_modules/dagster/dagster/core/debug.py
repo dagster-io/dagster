@@ -27,10 +27,10 @@ class DebugRunPayload(
             version=check.str_param(version, "version"),
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
             event_list=check.list_param(event_list, "event_list", EventLogEntry),
-            pipeline_snapshot=check.inst_param(
+            pipeline_snapshot=check.opt_inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
             ),
-            execution_plan_snapshot=check.inst_param(
+            execution_plan_snapshot=check.opt_inst_param(
                 execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
             ),
         )
@@ -43,10 +43,14 @@ class DebugRunPayload(
             version=dagster_version,
             pipeline_run=run,
             event_list=instance.all_logs(run.run_id),
-            pipeline_snapshot=instance.get_pipeline_snapshot(run.pipeline_snapshot_id),
+            pipeline_snapshot=instance.get_pipeline_snapshot(run.pipeline_snapshot_id)
+            if run.pipeline_snapshot_id
+            else None,
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
-            ),
+            )
+            if run.execution_plan_snapshot_id
+            else None,
         )
 
     def write(self, output_file):

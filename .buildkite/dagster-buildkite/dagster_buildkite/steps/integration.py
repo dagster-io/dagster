@@ -169,6 +169,7 @@ def build_steps_integration_suite(
         depends_on_fn=test_image_depends_fn,
         tox_env_suffixes=tox_env_suffixes,
         retries=2,
+        timeout_in_minutes=30,
     ).get_tox_build_steps()
 
 

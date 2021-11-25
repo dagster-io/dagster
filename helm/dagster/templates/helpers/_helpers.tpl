@@ -178,7 +178,7 @@ until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.r
 {{/*
 This environment shared across all containers.
 
-This includes Dagit, Celery Workers, Run Master, and Step Execution containers.
+This includes Dagit, Celery Workers, Run Worker, and Step Worker containers.
 */}}
 {{- define "dagster.shared_env" -}}
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
