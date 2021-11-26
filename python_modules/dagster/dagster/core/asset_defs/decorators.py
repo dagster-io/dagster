@@ -7,12 +7,14 @@ from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_decorator
 
 from .asset import AssetsDefinition
 from .asset_in import AssetIn
+from .partition_mapping import PartitionMapping
 
 
 @experimental_decorator
@@ -27,6 +29,8 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
@@ -55,7 +59,14 @@ def asset(
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
-
+        partitions_def (Optional[PartitionsDefiniition]): Defines the set of partition keys that
+            compose the asset.
+        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+            keys for this asset to partition keys of upstream assets. Each key in the dictionary
+            correponds to one of the input assets, and each value is a PartitionMapping.
+            If no entry is provided for a particular asset dependency, the partition mapping defaults
+            to the default partition mapping for the partitions definition, which is typically maps
+            partition keys to the same partition keys in upstream assets.
 
     Examples:
 
@@ -80,6 +91,8 @@ def asset(
             io_manager_key=io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
+            partitions_def=partitions_def,
+            partition_mappings=partition_mappings,
         )(fn)
 
     return inner
@@ -98,6 +111,8 @@ class _Asset:
         io_manager_key: Optional[str] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ):
         self.name = name
         self.namespace = namespace
@@ -109,6 +124,8 @@ class _Asset:
         self.io_manager_key = io_manager_key
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
+        self.partitions_def = partitions_def
+        self.partition_mappings = partition_mappings
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -142,6 +159,13 @@ class _Asset:
             },
             output_names_by_asset_key={out_asset_key: "result"},
             op=op,
+            partitions_def=self.partitions_def,
+            partition_mappings={
+                ins_by_input_names[input_name].asset_key: partition_mapping
+                for input_name, partition_mapping in self.partition_mappings.items()
+            }
+            if self.partition_mappings
+            else None,
         )
 
 
