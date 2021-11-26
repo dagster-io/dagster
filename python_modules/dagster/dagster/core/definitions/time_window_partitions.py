@@ -112,6 +112,11 @@ class TimeWindowPartitionsDefinition(
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
 
+    def get_default_partition_mapping(self):
+        from dagster.core.asset_defs.time_window_partition_mapping import TimeWindowPartitionMapping
+
+        return TimeWindowPartitionMapping()
+
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
