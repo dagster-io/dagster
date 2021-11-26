@@ -16,6 +16,10 @@
             "title": "Generatepostgresqlpasswordsecret",
             "type": "boolean"
         },
+        "generateCeleryConfigSecret": {
+            "title": "Generateceleryconfigsecret",
+            "type": "boolean"
+        },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
         },
@@ -68,6 +72,7 @@
         "dagster-user-deployments",
         "postgresql",
         "generatePostgresqlPasswordSecret",
+        "generateCeleryConfigSecret",
         "rabbitmq",
         "redis",
         "flower",
@@ -2182,12 +2187,17 @@
                 "serviceAccountName": {
                     "title": "Serviceaccountname",
                     "type": "string"
+                },
+                "celeryConfigSecretName": {
+                    "title": "Celeryconfigsecretname",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
-                "serviceAccountName"
+                "serviceAccountName",
+                "celeryConfigSecretName"
             ]
         }
     }

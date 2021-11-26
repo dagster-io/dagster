@@ -11,6 +11,10 @@
             "title": "Postgresqlsecretname",
             "type": "string"
         },
+        "celeryConfigSecretName": {
+            "title": "Celeryconfigsecretname",
+            "type": "string"
+        },
         "deployments": {
             "title": "Deployments",
             "type": "array",
@@ -35,6 +39,7 @@
     "required": [
         "dagsterHome",
         "postgresqlSecretName",
+        "celeryConfigSecretName",
         "deployments",
         "imagePullSecrets",
         "serviceAccount",
@@ -312,12 +317,17 @@
                 "serviceAccountName": {
                     "title": "Serviceaccountname",
                     "type": "string"
+                },
+                "celeryConfigSecretName": {
+                    "title": "Celeryconfigsecretname",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
-                "serviceAccountName"
+                "serviceAccountName",
+                "celeryConfigSecretName"
             ]
         }
     }

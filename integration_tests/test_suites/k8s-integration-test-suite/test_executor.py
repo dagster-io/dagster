@@ -17,7 +17,6 @@ from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s.utils import get_pods_in_job, wait_for_job
 from dagster_k8s_test_infra.helm import (
-    TEST_AWS_CONFIGMAP_NAME,
     TEST_CONFIGMAP_NAME,
     TEST_IMAGE_PULL_SECRET_NAME,
     TEST_OTHER_CONFIGMAP_NAME,
@@ -27,7 +26,6 @@ from dagster_k8s_test_infra.helm import (
 )
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
-    IS_BUILDKITE,
     ReOriginatedExternalPipelineForTest,
     cleanup_memoized_results,
     get_test_project_docker_image,
@@ -64,8 +62,6 @@ def test_k8s_run_launcher_default(
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -91,8 +87,6 @@ def test_k8s_run_launcher_volume_mounts(
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -269,8 +263,6 @@ def test_k8s_run_launcher_image_from_origin(
                     "config": {
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -333,8 +325,6 @@ def test_k8s_run_launcher_terminate(
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -419,8 +409,6 @@ def test_k8s_executor_resource_requirements(
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -477,8 +465,6 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },
@@ -553,8 +539,6 @@ def test_memoization_k8s_executor(
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },

@@ -302,6 +302,20 @@ class DagsterK8sJobConfig(
                 "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
                 "Defaults to /opt/dagster/dagster_home.",
             ),
+            "env_config_maps": Field(
+                Noneable(Array(StringSource)),
+                is_required=False,
+                description="A list of custom ConfigMapEnvSource names from which to draw "
+                "environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                "https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container",
+            ),
+            "env_secrets": Field(
+                Noneable(Array(StringSource)),
+                is_required=False,
+                description="A list of custom Secret names from which to draw environment "
+                "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
+            ),
         }
 
     @classmethod

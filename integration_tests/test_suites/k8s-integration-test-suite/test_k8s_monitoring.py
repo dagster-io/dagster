@@ -7,10 +7,8 @@ from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster_k8s.job import get_job_name_from_run_id
 from dagster_k8s.utils import delete_job
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
-    IS_BUILDKITE,
     ReOriginatedExternalPipelineForTest,
     get_test_project_environments_path,
     get_test_project_external_pipeline_hierarchy,
@@ -36,8 +34,6 @@ def test_k8s_run_monitoring(
                     "config": {
                         "job_namespace": helm_namespace_for_k8s_run_launcher,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     }
                 }
             },

@@ -193,9 +193,9 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["config_source"] == configSource
 
-    assert run_launcher_config["config"]["broker"] == {"env": "DAGSTER_K8S_CELERY_BROKER"}
+    assert run_launcher_config["config"]["broker"] == {"env": "DAGSTER_CELERY_BROKER_URL"}
 
-    assert run_launcher_config["config"]["backend"] == {"env": "DAGSTER_K8S_CELERY_BACKEND"}
+    assert run_launcher_config["config"]["backend"] == {"env": "DAGSTER_CELERY_BACKEND_URL"}
 
 
 @pytest.mark.parametrize("enabled", [True, False])
