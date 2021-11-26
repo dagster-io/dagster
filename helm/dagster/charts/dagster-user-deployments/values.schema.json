@@ -312,12 +312,17 @@
                 "serviceAccountName": {
                     "title": "Serviceaccountname",
                     "type": "string"
+                },
+                "celeryConfigSecretName": {
+                    "title": "Celeryconfigsecretname",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
-                "serviceAccountName"
+                "serviceAccountName",
+                "celeryConfigSecretName"
             ]
         }
     }

@@ -10,11 +10,29 @@ config:
   postgres_password_secret:
     env: DAGSTER_K8S_PG_PASSWORD_SECRET
   broker:
-    env: DAGSTER_K8S_CELERY_BROKER
+    env: DAGSTER_CELERY_BROKER_URL
   backend:
-    env: DAGSTER_K8S_CELERY_BACKEND
+    env: DAGSTER_CELERY_BACKEND_URL
   {{- if $celeryK8sRunLauncherConfig.configSource }}
   config_source: {{- $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 4 }}
+  {{- end }}
+  env_config_maps:
+    - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
+    {{- range $envConfigMap := $celeryK8sRunLauncherConfig.envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    - {{ $envConfigMap.name }}
+    {{- end }}
+    {{- end }}
+  {{- if or $celeryK8sRunLauncherConfig.envSecrets .Values.global.celeryConfigSecretName }}
+  env_secrets:
+    {{- range $envSecret := $celeryK8sRunLauncherConfig.envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.global.celeryConfigSecretName }}
+    - {{ .Values.global.celeryConfigSecretName }}
+    {{- end }}
   {{- end }}
 {{- end }}
 

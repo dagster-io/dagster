@@ -201,20 +201,6 @@ def dagster_instance_with_k8s_scheduler(
 
 
 @pytest.fixture(scope="session")
-def helm_postgres_url_for_user_deployments(
-    helm_namespace_for_user_deployments,
-):  # pylint: disable=unused-argument, redefined-outer-name
-    with local_port_forward_postgres(
-        namespace=helm_namespace_for_user_deployments
-    ) as local_forward_port:
-        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
-            local_forward_port=local_forward_port
-        )
-        print("Local Postgres forwarding URL: ", postgres_url)
-        yield postgres_url
-
-
-@pytest.fixture(scope="session")
 def helm_postgres_url_for_user_deployments_subchart_disabled(
     helm_namespace_for_user_deployments_subchart_disabled,
 ):  # pylint: disable=unused-argument, redefined-outer-name
@@ -226,26 +212,6 @@ def helm_postgres_url_for_user_deployments_subchart_disabled(
         )
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
-
-
-@pytest.fixture(scope="function")
-def dagster_instance_for_user_deployments(
-    helm_postgres_url_for_user_deployments, run_launcher
-):  # pylint: disable=redefined-outer-name
-    tempdir = DagsterInstance.temp_storage()
-
-    with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=PostgresRunStorage(helm_postgres_url_for_user_deployments),
-        event_storage=PostgresEventLogStorage(helm_postgres_url_for_user_deployments),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=run_launcher,
-    ) as instance:
-        yield instance
-
-        check_export_runs(instance)
 
 
 @pytest.fixture(scope="function")

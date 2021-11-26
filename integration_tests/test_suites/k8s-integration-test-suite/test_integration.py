@@ -13,7 +13,6 @@ from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s.utils import wait_for_job
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
@@ -84,8 +83,6 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
                     "job_image": dagster_docker_image,
                     "job_namespace": job_namespace,
                     "image_pull_policy": image_pull_policy(),
-                    "env_config_maps": ["dagster-pipeline-env"]
-                    + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                 }
             }
         },

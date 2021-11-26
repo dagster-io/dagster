@@ -112,18 +112,8 @@ def celery_k8s_job_executor(init_context):
             "CeleryK8sRunLauncher on your instance to use it.",
         )
 
-    job_config = DagsterK8sJobConfig(
-        dagster_home=run_launcher.dagster_home,
-        instance_config_map=run_launcher.instance_config_map,
-        postgres_password_secret=run_launcher.postgres_password_secret,
-        job_image=exc_cfg.get("job_image") or os.getenv("DAGSTER_CURRENT_IMAGE"),
-        image_pull_policy=exc_cfg.get("image_pull_policy"),
-        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
-        service_account_name=exc_cfg.get("service_account_name"),
-        env_config_maps=exc_cfg.get("env_config_maps"),
-        env_secrets=exc_cfg.get("env_secrets"),
-        volume_mounts=exc_cfg.get("volume_mounts"),
-        volumes=exc_cfg.get("volumes"),
+    job_config = run_launcher.get_k8s_job_config(
+        job_image=exc_cfg.get("job_image") or os.getenv("DAGSTER_CURRENT_IMAGE"), exc_config=exc_cfg
     )
 
     # Set on the instance but overrideable here

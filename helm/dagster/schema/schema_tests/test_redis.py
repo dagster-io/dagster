@@ -36,8 +36,8 @@ def test_celery_backend_with_redis_without_password(template: HelmTemplate):
     expected_celery_broker = f"redis://{redis_host}:{redis_port}/{broker_db_number}"
     expected_celery_backend = f"redis://{redis_host}:{redis_port}/{backend_db_number}"
 
-    assert configmap.data["DAGSTER_K8S_CELERY_BROKER"] == expected_celery_broker
-    assert configmap.data["DAGSTER_K8S_CELERY_BACKEND"] == expected_celery_backend
+    assert configmap.data["DAGSTER_CELERY_BROKER_URL"] == expected_celery_broker
+    assert configmap.data["DAGSTER_CELERY_BACKEND_URL"] == expected_celery_backend
 
 
 def test_celery_backend_with_redis_with_password(template: HelmTemplate):
@@ -67,8 +67,8 @@ def test_celery_backend_with_redis_with_password(template: HelmTemplate):
         f"redis://:{redis_password}@{redis_host}:{redis_port}/{backend_db_number}"
     )
 
-    assert configmap.data["DAGSTER_K8S_CELERY_BROKER"] == expected_celery_broker
-    assert configmap.data["DAGSTER_K8S_CELERY_BACKEND"] == expected_celery_backend
+    assert configmap.data["DAGSTER_CELERY_BROKER_URL"] == expected_celery_broker
+    assert configmap.data["DAGSTER_CELERY_BACKEND_URL"] == expected_celery_backend
 
 
 def test_celery_backend_override_connection_string(template: HelmTemplate):
@@ -84,5 +84,5 @@ def test_celery_backend_override_connection_string(template: HelmTemplate):
 
     [configmap] = template.render(helm_values)
 
-    assert configmap.data["DAGSTER_K8S_CELERY_BROKER"] == broker_url
-    assert configmap.data["DAGSTER_K8S_CELERY_BACKEND"] == backend_url
+    assert configmap.data["DAGSTER_CELERY_BROKER_URL"] == broker_url
+    assert configmap.data["DAGSTER_CELERY_BACKEND_URL"] == backend_url

@@ -76,6 +76,10 @@ spec:
             {{- range $envSecret := .Values.dagit.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
+            {{- if $.Values.global.celeryConfigSecretName }}
+            - secretRef:
+                name: {{ $.Values.global.celeryConfigSecretName }}
+            {{- end }}
           volumeMounts:
             - name: dagster-instance
               mountPath: "{{ .Values.global.dagsterHome }}/dagster.yaml"

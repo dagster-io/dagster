@@ -59,6 +59,10 @@ spec:
             {{- range $envSecret := $deployment.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
+            {{- if $.Values.global.celeryConfigSecretName }}
+            - secretRef:
+                name: {{ $.Values.global.celeryConfigSecretName }}
+            {{- end }}
           resources: {{ $deployment.resources | toYaml | nindent 12 }}
         {{- if $deployment.livenessProbe }}
           {{- if not $deployment.livenessProbe.exec }}

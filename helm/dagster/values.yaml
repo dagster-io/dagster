@@ -14,6 +14,10 @@ global:
   # dagster subcharts will not create their own service accounts.
   serviceAccountName: ""
 
+  # You can specify a secret name that supplies the broker URL (in a
+  # DAGSTER_CELERY_BROKER_URL key) and backend URL (in a DAGSTER_CELERY_BACKEND_URL key)
+  celeryConfigSecretName: ""
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
@@ -641,6 +645,7 @@ redis:
   # exact connection URL needed, rather than letting it be constructed from the Helm values.
   brokerUrl: ""
   backendUrl: ""
+
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
