@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -325,7 +326,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             event_records = context.instance.get_event_records(
                 EventRecordsFilter(
                     after_cursor=RunShardedEventsCursor(
-                        id=record_id, run_updated_after=pendulum.parse(update_timestamp)
+                        id=record_id,
+                        run_updated_after=cast(datetime, pendulum.parse(update_timestamp)),
                     ),
                     event_type=PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status],
                 ),
