@@ -10,11 +10,9 @@ from dagster_test.test_project import build_and_tag_test_image, get_test_project
 
 from dagster_k8s_test_infra.cluster import (  # isort:skip
     dagster_instance,
-    dagster_instance_for_user_deployments_subchart_disabled,
     dagster_instance_for_daemon,
     define_cluster_provider_fixture,
     helm_postgres_url,
-    helm_postgres_url_for_user_deployments_subchart_disabled,
     helm_postgres_url_for_daemon,
 )
 

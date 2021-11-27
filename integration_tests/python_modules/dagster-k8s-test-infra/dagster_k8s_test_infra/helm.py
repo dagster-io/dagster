@@ -235,39 +235,6 @@ def secrets(namespace, should_cleanup):
 
 
 @pytest.fixture(scope="session")
-def helm_namespace_for_user_deployments_subchart_disabled(
-    dagster_docker_image,
-    cluster_provider,
-    helm_namespace_for_user_deployments_subchart,
-    should_cleanup,
-    configmaps,
-    aws_configmap,
-    secrets,
-):  # pylint: disable=unused-argument
-    namespace = helm_namespace_for_user_deployments_subchart
-
-    with helm_chart_for_user_deployments_subchart_disabled(
-        namespace, dagster_docker_image, should_cleanup
-    ):
-        print("Helm chart successfully installed in namespace %s" % namespace)
-        yield namespace
-
-
-@pytest.fixture(scope="session")
-def helm_namespace_for_user_deployments_subchart(
-    dagster_docker_image,
-    cluster_provider,
-    namespace,
-    should_cleanup,
-    configmaps,
-    aws_configmap,
-    secrets,
-):  # pylint: disable=unused-argument
-    with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
-        yield namespace
-
-
-@pytest.fixture(scope="session")
 def helm_namespace_for_daemon(
     dagster_docker_image,
     cluster_provider,
@@ -286,6 +253,7 @@ def helm_namespace_for_daemon(
     params=[
         pytest.param("rabbitmq", marks=pytest.mark.mark_rabbitmq),
         pytest.param("redis", marks=pytest.mark.mark_redis),
+        pytest.param("subchart", marks=pytest.mark.mark_user_code_deployment_subchart),
     ],
 )
 def celery_backend(request):
@@ -303,8 +271,18 @@ def helm_namespace(
     secrets,
     celery_backend,
 ):  # pylint: disable=unused-argument
-    with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
-        yield namespace
+    if celery_backend == "subchart":
+        with helm_chart_for_user_deployments_subchart(
+            namespace, dagster_docker_image, should_cleanup
+        ):
+            with helm_chart_for_user_deployments_subchart_disabled(
+                namespace, dagster_docker_image, should_cleanup
+            ):
+                print("Helm chart successfully installed in namespace %s" % namespace)
+                yield namespace
+    else:
+        with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
+            yield namespace
 
 
 @pytest.fixture(scope="session")
