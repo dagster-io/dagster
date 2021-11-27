@@ -215,12 +215,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         from dagster.cli.api import ExecuteRunArgs
 
-        # depends on DagsterInstance.get() returning the same instance
-        # https://github.com/dagster-io/dagster/issues/2757
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
-            instance_ref=None,
+            instance_ref=self._instance.get_ref(),
         )
 
         job = construct_dagster_k8s_job(

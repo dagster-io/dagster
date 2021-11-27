@@ -294,13 +294,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run_args = ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
-                instance_ref=None,
+                instance_ref=self._instance.get_ref(),
             ).get_command_args()
         else:
             run_args = ResumeRunArgs(
                 pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
-                instance_ref=None,
+                instance_ref=self._instance.get_ref(),
             ).get_command_args()
 
         job = construct_dagster_k8s_job(

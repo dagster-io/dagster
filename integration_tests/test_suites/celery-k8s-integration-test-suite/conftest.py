@@ -43,20 +43,6 @@ def dagster_docker_image():
     return docker_image
 
 
-@pytest.fixture(scope="function")
-def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unused-argument
-    return CeleryK8sRunLauncher(
-        instance_config_map="dagster-instance",
-        postgres_password_secret="dagster-postgresql-secret",
-        dagster_home="/opt/dagster/dagster_home",
-        load_incluster_config=False,
-        kubeconfig_file=cluster_provider.kubeconfig_file,
-        env_config_maps=["dagster-pipeline-env"]
-        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
-        env_secrets=["dagster-celery-config-secret"],
-    )
-
-
 # See: https://stackoverflow.com/a/31526934/324449
 def pytest_addoption(parser):
     # We catch the ValueError to support cases where we are loading multiple test suites, e.g., in

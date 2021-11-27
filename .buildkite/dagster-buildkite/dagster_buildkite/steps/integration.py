@@ -152,7 +152,11 @@ def build_spec_k8s_suite():
 
 
 def build_steps_integration_suite(
-    directory, tox_env_suffixes, upload_coverage, extra_commands_fn=integration_suite_extra_cmds_fn
+    directory,
+    tox_env_suffixes,
+    upload_coverage,
+    extra_commands_fn=integration_suite_extra_cmds_fn,
+    queue=None,
 ):
     return ModuleBuildSpec(
         directory,
@@ -170,6 +174,7 @@ def build_steps_integration_suite(
         tox_env_suffixes=tox_env_suffixes,
         retries=2,
         timeout_in_minutes=30,
+        queue=queue,
     ).get_tox_build_steps()
 
 
