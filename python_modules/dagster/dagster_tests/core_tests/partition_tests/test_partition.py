@@ -40,6 +40,11 @@ def test_static_partitions(partition_keys: List[str]):
     assert static_partitions.get_partition_keys() == partition_keys
 
 
+def test_static_partitions_partition_keys_in_range():
+    static_partitions = StaticPartitionsDefinition([str(x) for x in range(10)])
+    assert static_partitions.get_partition_keys_in_range("3", "6") == ["3", "4", "5", "6"]
+
+
 @pytest.mark.parametrize(
     argnames=["schedule_type", "start", "execution_day", "end", "error_message_regex"],
     ids=[

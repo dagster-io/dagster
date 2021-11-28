@@ -162,6 +162,15 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
+    def get_partition_keys_in_range(self, start: str, end: str) -> List[str]:
+        """Returns partitions keys that fall within the given range, inclusive"""
+        if start == end:
+            return [start]
+        else:
+            raise NotImplementedError(
+                "Getting partition keys in a range is not implemented for this PartitionsDefinition"
+            )
+
     def get_default_partition_mapping(self):
         from dagster.core.asset_defs.partition_mapping import IdentityPartitionMapping
 
@@ -179,6 +188,32 @@ class StaticPartitionsDefinition(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
     ) -> List[Partition[str]]:
         return self._partitions
+
+    def get_partition_keys_in_range(self, start: str, end: str) -> List[str]:
+        if start == end:
+            return [start]
+        else:
+            start_pos = end_pos = None
+            for i, partition in enumerate(self._partitions):
+                if partition.name == start:
+                    start_pos = i
+
+                if partition.name == end:
+                    end_pos = i
+
+                if start_pos is not None and end_pos is not None:
+                    break
+
+            if start_pos is None:
+                raise ValueError(f"Could not find start partition key '{start}'")
+            elif end_pos is None:
+                raise ValueError(f"Could not find end partition key '{end}'")
+            elif end_pos < start_pos:
+                raise ValueError(
+                    f"End partition key '{end}' appears before start partition key '{start}'"
+                )
+            else:
+                return [partition.name for partition in self._partitions[start_pos : end_pos + 1]]
 
 
 class ScheduleTimeBasedPartitionsDefinition(
