@@ -1,3 +1,4 @@
+{{- $celeryConfigSecretName := .Values.global.celeryConfigSecretName | default .Values.celeryConfigSecretName }}
 {{ range $deployment := .Values.deployments }}
 apiVersion: apps/v1
 kind: Deployment
@@ -59,9 +60,10 @@ spec:
             {{- range $envSecret := $deployment.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
-            {{- if $.Values.global.celeryConfigSecretName }}
+            {{- if $celeryConfigSecretName }}
             - secretRef:
-                name: {{ $.Values.global.celeryConfigSecretName }}
+                name: {{ $celeryConfigSecretName }}
+                optional: true
             {{- end }}
           resources: {{ $deployment.resources | toYaml | nindent 12 }}
         {{- if $deployment.livenessProbe }}

@@ -182,10 +182,6 @@ This includes Dagit, Celery Workers, Run Worker, and Step Worker containers.
 */}}
 {{- define "dagster.shared_env" -}}
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
-{{- if not .Values.global.celeryConfigSecretName }}
-DAGSTER_CELERY_BROKER_URL: "{{ template "dagster.celery.broker_url" . }}"
-DAGSTER_CELERY_BACKEND_URL: "{{ template "dagster.celery.backend_url" . }}"
-{{- end }}
 DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagster.postgresql.secretName" . | quote }}
 DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"

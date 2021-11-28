@@ -30,9 +30,7 @@ config:
     - {{ $envSecret.name }}
     {{- end }}
     {{- end }}
-    {{- if .Values.global.celeryConfigSecretName }}
     - {{ .Values.global.celeryConfigSecretName }}
-    {{- end }}
   {{- end }}
 {{- end }}
 

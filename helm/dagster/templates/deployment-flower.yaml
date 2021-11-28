@@ -54,23 +54,13 @@ spec:
           env:
             - name: CELERY_BROKER_URL
               valueFrom:
-                {{- if $.Values.global.celeryConfigSecretName }}
                 secretKeyRef:
                   name: {{ $.Values.global.celeryConfigSecretName }}
-                {{- else }}
-                configMapKeyRef:
-                  name: {{ template "dagster.fullname" . }}-flower-env
-                {{- end }}
                   key: DAGSTER_CELERY_BROKER_URL
             - name: CELERY_RESULT_BACKEND
               valueFrom:
-                {{- if $.Values.global.celeryConfigSecretName }}
                 secretKeyRef:
                   name: {{ $.Values.global.celeryConfigSecretName }}
-                {{- else }}
-                configMapKeyRef:
-                  name: {{ template "dagster.fullname" . }}-flower-env
-                {{- end }}
                   key: DAGSTER_CELERY_BACKEND_URL
           volumeMounts: []
           ports:

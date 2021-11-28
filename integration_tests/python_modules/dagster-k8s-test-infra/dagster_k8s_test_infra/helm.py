@@ -551,6 +551,7 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
         }
     elif celery_backend == "redis_secret":
         additional_config = {
+            "generateCeleryConfigSecret": False,
             "rabbitmq": {
                 "enabled": False,
             },
