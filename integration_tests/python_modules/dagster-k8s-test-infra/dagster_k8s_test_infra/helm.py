@@ -307,6 +307,11 @@ def helm_namespace_for_daemon(
         pytest.param("redis_secret", marks=pytest.mark.mark_redis_secret),
     ],
 )
+def celery_backend(request):
+    return request.param
+
+
+@pytest.fixture(scope="session")
 def helm_namespace(
     dagster_docker_image,
     cluster_provider,
@@ -315,9 +320,9 @@ def helm_namespace(
     configmaps,
     aws_configmap,
     secrets,
-    request,
+    celery_backend,
 ):  # pylint: disable=unused-argument
-    with helm_chart(namespace, dagster_docker_image, request.param, should_cleanup):
+    with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
         yield namespace
 
 
@@ -394,6 +399,7 @@ def _helm_chart_helper(
             print("Waiting for daemon pod to be ready...")
             start_time = time.time()
             while True:
+
                 if time.time() - start_time > 120:
                     raise Exception("No daemon pod after 2 minutes")
 
@@ -485,11 +491,10 @@ def _helm_chart_helper(
                         pod_names = [
                             p.metadata.name for p in pods.items if "redis" in p.metadata.name
                         ]
-                        if pod_names and len(pod_names) > 1:  # At least one master and non-master
+                        if pod_names and len(pod_names) >= 1:
                             for pod_name in pod_names:
                                 print("Waiting for redis pod to be ready: " + str(pod_name))
                                 wait_for_pod(pod_name, namespace=namespace)
-
                             break
                         time.sleep(5)
 
@@ -547,6 +552,7 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
                 "enabled": True,
                 "internal": True,
                 "host": "dagster-redis-master",
+                "cluster": {"enabled": False},
             },
         }
     elif celery_backend == "redis_secret":
@@ -555,10 +561,7 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
             "rabbitmq": {
                 "enabled": False,
             },
-            "redis": {
-                "enabled": True,
-                "internal": True,
-            },
+            "redis": {"enabled": True, "internal": True, "cluster": {"enabled": False}},
             "global": {
                 "postgresqlSecretName": "dagster-postgresql-secret",
                 "dagsterHome": "/opt/dagster/dagster_home",
@@ -636,6 +639,16 @@ def helm_chart_for_k8s_run_launcher(
         "dagsterDaemon": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5} if run_monitoring else {},
+            "startupProbe": {
+                "periodSeconds": 10,
+                "failureThreshold": 12,
+                "timeoutSeconds": 12,
+            },
+            "livenessProbe": {
+                "periodSeconds": 30,
+                "failureThreshold": 12,
+                "timeoutSeconds": 12,
+            },
         },
     }
 
@@ -865,6 +878,16 @@ def _base_helm_config(docker_image):
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
+            "startupProbe": {
+                "periodSeconds": 10,
+                "failureThreshold": 12,
+                "timeoutSeconds": 12,
+            },
+            "livenessProbe": {
+                "periodSeconds": 30,
+                "failureThreshold": 12,
+                "timeoutSeconds": 12,
+            },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
         "pipelineRun": {"image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}},
@@ -892,6 +915,16 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
                 "envSecrets": [{"name": TEST_SECRET_NAME}],
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
+                "startupProbe": {
+                    "periodSeconds": 10,
+                    "failureThreshold": 12,
+                    "timeoutSeconds": 12,
+                },
+                "livenessProbe": {
+                    "periodSeconds": 30,
+                    "failureThreshold": 12,
+                    "timeoutSeconds": 12,
+                },
             },
         },
     )

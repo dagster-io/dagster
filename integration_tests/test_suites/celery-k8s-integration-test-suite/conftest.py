@@ -44,7 +44,15 @@ def dagster_docker_image():
 
 
 @pytest.fixture(scope="function")
-def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unused-argument
+def run_launcher(
+    cluster_provider, celery_backend
+):  # pylint: disable=redefined-outer-name,unused-argument
+
+    if celery_backend == "redis_secret":
+        env_secrets = [TEST_CELERY_CONFIG_SECRET_NAME]
+    else:
+        env_secrets = ["dagster-celery-config-secret"]  # default value
+
     return CeleryK8sRunLauncher(
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
@@ -53,7 +61,7 @@ def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unus
         kubeconfig_file=cluster_provider.kubeconfig_file,
         env_config_maps=["dagster-pipeline-env"]
         + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
-        env_secrets=[TEST_CELERY_CONFIG_SECRET_NAME],
+        env_secrets=env_secrets,
     )
 
 
