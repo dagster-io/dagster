@@ -14,6 +14,7 @@ class TaskMetadata:
     security_groups: typing.List[str]
     task_definition: typing.Dict[str, typing.Any]
     container_definition: typing.Dict[str, typing.Any]
+    assign_public_ip: bool
 
 
 # 9 retries polls for up to 51.1 seconds with exponential backoff.
@@ -129,8 +130,11 @@ def default_ecs_task_metadata(ec2, ecs):
                 if detail["name"] == "networkInterfaceId":
                     enis.append(ec2.NetworkInterface(detail["value"]))
 
+    public_ip = False
     security_groups = []
     for eni in enis:
+        if (eni.association_attribute or {}).get("PublicIp"):
+            public_ip = True
         for group in eni.groups:
             security_groups.append(group["GroupId"])
 
@@ -155,4 +159,5 @@ def default_ecs_task_metadata(ec2, ecs):
         security_groups=security_groups,
         task_definition=task_definition,
         container_definition=container_definition,
+        assign_public_ip="ENABLED" if public_ip else "DISABLED",
     )
