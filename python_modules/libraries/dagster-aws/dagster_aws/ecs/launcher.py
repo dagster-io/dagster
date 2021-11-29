@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import boto3
 import dagster
 from botocore.exceptions import ClientError
@@ -8,6 +10,8 @@ from dagster.serdes import ConfigurableClass
 from dagster.utils.backcompat import experimental
 
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
+
+Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
 @experimental
@@ -80,8 +84,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         tags = run.tags if run else {}
         arn = tags.get("ecs/task_arn")
         cluster = tags.get("ecs/cluster")
+        cpu = tags.get("ecs/cpu")
+        memory = tags.get("ecs/memory")
 
-        return (arn, cluster)
+        return Tags(arn, cluster, cpu, memory)
 
     def launch_run(self, context: LaunchRunContext) -> None:
 
@@ -104,13 +110,25 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             instance_ref=self._instance.get_ref(),
         )
         command = args.get_command_args()
+
+        # Set cpu or memory overrides
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+        overrides = {}
+        tags = self._get_run_tags(run.run_id)
+        if tags.cpu:
+            overrides["cpu"] = tags.cpu
+        if tags.memory:
+            overrides["memory"] = tags.memory
+
         # Run a task using the same network configuration as this processes's
         # task.
-
         response = self.ecs.run_task(
             taskDefinition=task_definition,
             cluster=metadata.cluster,
-            overrides={"containerOverrides": [{"name": self.container_name, "command": command}]},
+            overrides={
+                "containerOverrides": [{"name": self.container_name, "command": command}],
+                **overrides,
+            },
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -131,12 +149,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def can_terminate(self, run_id):
-        arn, cluster = self._get_run_tags(run_id)
+        tags = self._get_run_tags(run_id)
 
-        if not (arn and cluster):
+        if not (tags.arn and tags.cluster):
             return False
 
-        tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
             return False
 
@@ -147,12 +165,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return False
 
     def terminate(self, run_id):
-        arn, cluster = self._get_run_tags(run_id)
+        tags = self._get_run_tags(run_id)
 
-        if not (arn and cluster):
+        if not (tags.arn and tags.cluster):
             return False
 
-        tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
             return False
 
@@ -160,7 +178,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if status == "STOPPED":
             return False
 
-        self.ecs.stop_task(task=arn, cluster=cluster)
+        self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
         return True
 
     def _task_definition(self, metadata, image):

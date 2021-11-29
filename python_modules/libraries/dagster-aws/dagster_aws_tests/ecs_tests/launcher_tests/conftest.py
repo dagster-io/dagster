@@ -36,6 +36,8 @@ def task_definition(ecs, image, environment):
             {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]}
         ],
         networkMode="awsvpc",
+        memory="512",
+        cpu="256",
     )["taskDefinition"]
 
 

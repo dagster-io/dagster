@@ -262,20 +262,28 @@ class StubbedEcs:
         revision = len(self.task_definitions[family]) + 1
         arn = self._task_definition_arn(family, revision)
 
-        task_definition = {
-            "family": family,
-            "revision": revision,
-            "taskDefinitionArn": arn,
-            **kwargs,
-        }
+        memory = kwargs.get("memory")
+        cpu = kwargs.get("cpu")
 
-        self.task_definitions[family].append(task_definition)
+        if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
+            task_definition = {
+                "family": family,
+                "revision": revision,
+                "taskDefinitionArn": arn,
+                **kwargs,
+            }
 
-        self.stubber.add_response(
-            method="register_task_definition",
-            service_response={"taskDefinition": task_definition},
-            expected_params={**kwargs},
-        )
+            self.task_definitions[family].append(task_definition)
+            self.stubber.add_response(
+                method="register_task_definition",
+                service_response={"taskDefinition": task_definition},
+                expected_params={**kwargs},
+            )
+        else:
+            self.stubber.add_client_error(
+                method="register_task_definition", expected_params={**kwargs}
+            )
+
         return self.client.register_task_definition(**kwargs)
 
     @stubbed
@@ -298,13 +306,18 @@ class StubbedEcs:
 
             network_configuration = kwargs.get("networkConfiguration", {})
             vpc_configuration = network_configuration.get("awsvpcConfiguration")
-            container_overrides = kwargs.get("overrides", {}).get("containerOverrides", [])
 
             if is_awsvpc:
                 if not network_configuration:
                     raise StubbedEcsError
                 if not vpc_configuration:
                     raise StubbedEcsError
+
+            overrides = kwargs.get("overrides", {})
+            cpu = overrides.get("cpu") or task_definition.get("cpu")
+            memory = overrides.get("memory") or task_definition.get("memory")
+            if not self._valid_cpu_and_memory(cpu=cpu, memory=memory):
+                raise StubbedEcsError
 
             cluster = self._cluster(kwargs.get("cluster"))
             count = kwargs.get("count", 1)
@@ -316,9 +329,11 @@ class StubbedEcs:
                     "clusterArn": self._cluster_arn(cluster),
                     "containers": containers,
                     "lastStatus": "RUNNING",
-                    "overrides": {"containerOverrides": container_overrides},
+                    "overrides": kwargs.get("overrides", {}),
                     "taskArn": arn,
                     "taskDefinitionArn": task_definition["taskDefinitionArn"],
+                    "cpu": task_definition["cpu"],
+                    "memory": task_definition["memory"],
                 }
 
                 if vpc_configuration:
@@ -435,3 +450,15 @@ class StubbedEcs:
             setting for setting in settings if setting["name"] == "taskLongArnFormat"
         ][0]
         return task_arn_format_setting["value"] != "disabled"
+
+    def _valid_cpu_and_memory(self, cpu, memory):
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+        # {cpu: [memory]}
+        constraints = {
+            "256": ["512", "1024", "2048"],
+            "512": [str(i) for i in range(1024, 4096 + 1, 1024)],
+            "1024": [str(i) for i in range(2048, 8192 + 1, 1024)],
+            "2048": [str(i) for i in range(4096, 16384 + 1, 1024)],
+            "4096": [str(i) for i in range(8192, 30720 + 1, 1024)],
+        }
+        return bool(memory in constraints.get(cpu, []))
