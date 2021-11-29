@@ -661,6 +661,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
             def _fn(context: SensorEvaluationContext):
                 after_cursor = [None for _ in self.asset_keys]
 
+                # This may be overly defensive
                 if context.cursor:
                     try:
                         after_cursor = json.loads(context.cursor)

@@ -7,6 +7,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     DagsterEvent,
+    DagsterInvariantViolationError,
     RunRequest,
     any_asset_sensor,
     build_sensor_context,
@@ -43,6 +44,28 @@ def foo_bar_multi_asset_sensor(_context, _event):
 @any_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")], job=foo_job)
 def foo_bar_any_asset_sensor(_context, _event):
     return RunRequest("unique")
+
+
+@multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")], job=foo_job)
+def foo_bar_multi_asset_sensor_yields(_context, _event):
+    yield RunRequest("unique_0")
+    yield RunRequest("unique_1")
+
+
+@any_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")], job=foo_job)
+def foo_bar_any_asset_sensor_yields(_context, _event):
+    yield RunRequest("unique_0")
+    yield RunRequest("unique_1")
+
+
+@multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")], job=foo_job)
+def foo_bar_multi_asset_sensor_errors(_context, _event):
+    return "bad"
+
+
+@any_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")], job=foo_job)
+def foo_bar_any_asset_sensor_errors(_context, _event):
+    return "bad"
 
 
 execution_plan = create_execution_plan(foo_job)
@@ -162,7 +185,7 @@ def test_any_asset_sensor_partial_match():
         assert len(res.run_requests) == 1
         assert res.run_requests[0] == RunRequest(run_key="unique", run_config={}, tags={})
         assert res.skip_message == None
-        assert res.cursor == json.dumps([2, 4])
+        assert res.cursor == json.dumps([2, None])
 
 
 def test_any_asset_sensor_match():
@@ -175,3 +198,45 @@ def test_any_asset_sensor_match():
         assert res.run_requests[0] == RunRequest(run_key="unique", run_config={}, tags={})
         assert res.skip_message == None
         assert res.cursor == json.dumps([2, 4])
+
+
+def test_multi_asset_sensor_yields_match():
+    with sensor_context_for_test(
+        updated_asset_keys=[AssetKey("foo"), AssetKey("bar")], cursor=[None, None]
+    ) as sensor_context:
+        res = foo_bar_multi_asset_sensor_yields.evaluate_tick(sensor_context)
+        assert isinstance(res.run_requests, list)
+        assert len(res.run_requests) == 2
+        assert res.run_requests[0] == RunRequest(run_key="unique_0", run_config={}, tags={})
+        assert res.run_requests[1] == RunRequest(run_key="unique_1", run_config={}, tags={})
+        assert res.skip_message == None
+        assert res.cursor == json.dumps([2, 4])
+
+
+def test_any_asset_sensor_yields_match():
+    with sensor_context_for_test(
+        updated_asset_keys=[AssetKey("foo"), AssetKey("bar")], cursor=[None, None]
+    ) as sensor_context:
+        res = foo_bar_any_asset_sensor_yields.evaluate_tick(sensor_context)
+        assert isinstance(res.run_requests, list)
+        assert len(res.run_requests) == 2
+        assert res.run_requests[0] == RunRequest(run_key="unique_0", run_config={}, tags={})
+        assert res.run_requests[1] == RunRequest(run_key="unique_1", run_config={}, tags={})
+        assert res.skip_message == None
+        assert res.cursor == json.dumps([2, 4])
+
+
+def test_multi_asset_sensor_errors_match():
+    with sensor_context_for_test(
+        updated_asset_keys=[AssetKey("foo"), AssetKey("bar")], cursor=[None, None]
+    ) as sensor_context:
+        with raises(DagsterInvariantViolationError, match="Sensor unexpectedly returned output"):
+            foo_bar_multi_asset_sensor_errors.evaluate_tick(sensor_context)
+
+
+def test_any_asset_sensor_errors_match():
+    with sensor_context_for_test(
+        updated_asset_keys=[AssetKey("foo"), AssetKey("bar")], cursor=[None, None]
+    ) as sensor_context:
+        with raises(DagsterInvariantViolationError, match="Sensor unexpectedly returned output"):
+            foo_bar_any_asset_sensor_errors.evaluate_tick(sensor_context)
