@@ -64,6 +64,23 @@ class TimeWindowPartitionsDefinition(
         ).timestamp()
 
         start_timestamp = pendulum.instance(self.start, tz=self.timezone).timestamp()
+
+        return self._get_partitions_in_range(start_timestamp, current_timestamp)
+
+    def get_partition_keys_in_range(self, start: str, end: str) -> List[str]:
+        start_timestamp = pendulum.instance(
+            datetime.strptime(start, self.fmt), tz=self.timezone
+        ).timestamp()
+        end_timestamp = pendulum.instance(
+            datetime.strptime(end, self.fmt), tz=self.timezone
+        ).timestamp()
+
+        return [
+            partition.name
+            for partition in self._get_partitions_in_range(start_timestamp, end_timestamp)
+        ]
+
+    def _get_partitions_in_range(self, start_timestamp: int, end_timestamp: int) -> List[Partition]:
         iterator = schedule_execution_time_iterator(
             start_timestamp=start_timestamp,
             cron_schedule=get_cron_schedule(schedule_type=self.schedule_type),
@@ -79,10 +96,7 @@ class TimeWindowPartitionsDefinition(
         partitions_past_current_time = 0
         while True:
             next_time = next(iterator)
-            if (
-                next_time.timestamp() <= current_timestamp
-                or partitions_past_current_time < end_offset
-            ):
+            if next_time.timestamp() <= end_timestamp or partitions_past_current_time < end_offset:
                 partitions.append(
                     Partition(
                         value=TimeWindow(prev_time, next_time),
@@ -90,7 +104,7 @@ class TimeWindowPartitionsDefinition(
                     )
                 )
 
-                if next_time.timestamp() > current_timestamp:
+                if next_time.timestamp() > end_timestamp:
                     partitions_past_current_time += 1
             else:
                 break
