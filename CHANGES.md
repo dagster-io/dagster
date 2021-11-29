@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.13.9
+
+### New
+
+- Memoization can now be used with the multiprocess, k8s, celery-k8s, and dask executors.
+
 # 0.13.8
 
 ### New
