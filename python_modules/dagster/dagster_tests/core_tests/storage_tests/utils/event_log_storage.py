@@ -1048,9 +1048,6 @@ class TestEventLogStorage:
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
 
-    # After adding the IN_PROGRESS field to the StepEventStatus enum, tests in internal fail
-    # Temporarily skipping this test
-    @pytest.mark.skip
     def test_run_step_stats_with_in_progress(self, storage):
         def _in_progress_run_records(run_id):
             now = time.time()
