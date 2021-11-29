@@ -1,6 +1,0 @@
-load_from:
-  - python_file: step_two.py
-  - python_file: step_three.py
-  - python_file: step_four.py
-  - python_file: step_five.py
-  - python_file: step_six.py

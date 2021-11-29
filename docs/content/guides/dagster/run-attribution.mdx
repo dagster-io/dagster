@@ -5,7 +5,7 @@ description: How to perform Run Attribution by using the Run Coordinator.
 
 # Run Attribution <Experimental />
 
-<CodeReferenceLink filePath="examples/run_attribution_example" />
+<CodeReferenceLink filePath="examples/dagster-run-attribution" />
 
 ## Run Coordinator
 
@@ -43,7 +43,7 @@ desired_header = request.headers.get(CUSTOM_HEADER_NAME) if has_request_context(
 
 Then we can parse the relevant header (in this case, called the `jwt_claims_header`) with any custom hook. In the following example, we're decoding a JWT header which contains the user's email.
 
-```python file=../../run_attribution_example/run_attribution_example/custom_run_coordinator.py startafter=start_email_marker endbefore=end_email_marker dedent=4
+```python file=../../dagster-run-attribution/run_attribution_example/custom_run_coordinator.py startafter=start_email_marker endbefore=end_email_marker dedent=4
 def get_email(self, jwt_claims_header: Optional[str]) -> Optional[str]:
     if not jwt_claims_header:
         return None
@@ -64,7 +64,7 @@ The above is just an example - you can write any hook which would be useful to y
 
 Putting this all together, we can use these hooks to dynamically attach tags to submitted pipeline runs. In the following example, we'd read the user's email from the `X-Amzn-Oidc-Data` header by using the `get_email` hook defined above, and then attach the email as a tag to the pipeline run.
 
-```python file=../../run_attribution_example/run_attribution_example/custom_run_coordinator.py startafter=start_submit_marker endbefore=end_submit_marker dedent=4
+```python file=../../dagster-run-attribution/run_attribution_example/custom_run_coordinator.py startafter=start_submit_marker endbefore=end_submit_marker dedent=4
 def submit_run(self, context: SubmitRunContext) -> PipelineRun:
     pipeline_run = context.pipeline_run
     jwt_claims_header = (
