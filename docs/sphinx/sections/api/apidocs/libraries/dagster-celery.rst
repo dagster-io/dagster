@@ -96,7 +96,7 @@ API
 
 .. currentmodule:: dagster_celery
 
-.. autodata:: celery_executor
+.. autoconfigurable:: celery_executor
   :annotation: ExecutorDefinition
 
 

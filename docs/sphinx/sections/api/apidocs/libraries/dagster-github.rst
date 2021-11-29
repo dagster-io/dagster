@@ -129,5 +129,5 @@ Executing GraphQL queries
 
 .. currentmodule:: dagster_github
 
-.. autodata:: github_resource
+.. autoconfigurable:: github_resource
   :annotation: ResourceDefinition

@@ -18,5 +18,5 @@ to ensure the datadog agent is running on the host you're sending metrics from.
 
 .. currentmodule:: dagster_datadog
 
-.. autodata:: datadog_resource
+.. autoconfigurable:: datadog_resource
   :annotation: ResourceDefinition

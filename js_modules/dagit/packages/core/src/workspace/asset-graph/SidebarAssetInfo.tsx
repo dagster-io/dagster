@@ -6,7 +6,7 @@ import {AssetMaterializations} from '../../assets/AssetMaterializations';
 import {LatestMaterializationMetadata} from '../../assets/LastMaterializationMetadata';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
-import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
@@ -14,14 +14,13 @@ import {IconWIP} from '../../ui/Icon';
 import {RepoAddress} from '../types';
 
 import {assetKeyToString} from './Utils';
-import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/AssetGraphQuery';
+import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  node: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-  handle: GraphExplorerSolidHandleFragment;
+  definition: GraphExplorerSolidHandleFragment_solid_definition;
+  node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
   repoAddress: RepoAddress;
-}> = ({node, handle, repoAddress}) => {
-  const definition = handle.solid.definition;
+}> = ({node, definition, repoAddress}) => {
   const Plugin = pluginForMetadata(definition.metadata);
 
   return (
@@ -39,14 +38,17 @@ export const SidebarAssetInfo: React.FC<{
       <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
       <SidebarSection title={'Materialization in Last Run'}>
         {node.assetMaterializations.length ? (
-          <Box margin={12}>
-            <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
-
-            <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
-              {'View All in Asset Catalog '}
-              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
-            </AssetCatalogLink>
-          </Box>
+          <>
+            <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+              <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
+            </div>
+            <Box margin={{bottom: 12, horizontal: 12, top: 8}}>
+              <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
+                {'View All in Asset Catalog '}
+                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+              </AssetCatalogLink>
+            </Box>
+          </>
         ) : (
           <Box margin={12}>&mdash;</Box>
         )}
@@ -54,9 +56,7 @@ export const SidebarAssetInfo: React.FC<{
 
       {node.assetMaterializations.length ? (
         <SidebarSection title={'Materialization Plots'}>
-          <Box margin={12}>
-            <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
-          </Box>
+          <AssetMaterializations assetKey={node.assetKey} asSidebarSection />
         </SidebarSection>
       ) : null}
     </div>

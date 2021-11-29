@@ -3,6 +3,7 @@
 import datetime
 import os
 import time
+import uuid
 
 import boto3
 import pytest
@@ -10,7 +11,7 @@ from dagster import DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
-from dagster.utils import merge_dicts
+from dagster.utils.merger import deep_merge_dicts, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -18,9 +19,11 @@ from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
+    cleanup_memoized_results,
     get_test_project_environments_path,
     get_test_project_workspace_and_external_pipeline,
 )
+from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -567,3 +570,69 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
                         break
             time.sleep(5)
         assert step_failure_found
+
+
+def _get_step_events(event_logs):
+    return [
+        event_log.dagster_event
+        for event_log in event_logs
+        if event_log.dagster_event is not None and event_log.dagster_event.is_step_event
+    ]
+
+
+def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
+    dagster_docker_image, dagster_instance, helm_namespace
+):
+    ephemeral_prefix = str(uuid.uuid4())
+    run_config = deep_merge_dicts(
+        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
+        get_celery_engine_config(
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
+        ),
+    )
+    run_config = deep_merge_dicts(
+        run_config,
+        {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_prefix}}}},
+    )
+
+    try:
+        pipeline_name = "memoization_pipeline"
+        with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+            workspace,
+            external_pipeline,
+        ):
+            reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+
+            runs = []
+            for _ in range(2):
+                run = create_run_for_test(
+                    dagster_instance,
+                    pipeline_name=pipeline_name,
+                    run_config=run_config,
+                    mode="celery",
+                    external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+                    pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+                )
+
+                dagster_instance.launch_run(run.run_id, workspace)
+
+                result = wait_for_job_and_get_raw_logs(
+                    job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
+                )
+
+                assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+                runs.append(run)
+
+            unmemoized_run = runs[0]
+            step_events = _get_step_events(dagster_instance.all_logs(unmemoized_run.run_id))
+            assert len(step_events) == 4
+
+            memoized_run = runs[1]
+            step_events = _get_step_events(dagster_instance.all_logs(memoized_run.run_id))
+            assert len(step_events) == 0
+
+    finally:
+        cleanup_memoized_results(
+            define_memoization_pipeline(), "celery", dagster_instance, run_config
+        )

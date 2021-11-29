@@ -6,7 +6,6 @@ import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading, Subheading} from '../ui/Text';
-import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -24,9 +23,15 @@ export const InstanceHealthPage = () => {
 
   const daemonContent = () => {
     if (loading && !data?.instance) {
-      return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
+      return (
+        <Box padding={{horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+          Loading…
+        </Box>
+      );
     }
-    return data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null;
+    return data?.instance ? (
+      <DaemonList daemonStatuses={data.instance.daemonHealth.allDaemonStatuses} />
+    ) : null;
   };
 
   return (
@@ -48,11 +53,7 @@ const INSTANCE_HEALTH_QUERY = gql`
     instance {
       ...InstanceHealthFragment
     }
-    workspaceOrError {
-      ...RepositoryLocationsFragment
-    }
   }
 
   ${INSTANCE_HEALTH_FRAGMENT}
-  ${REPOSITORY_LOCATIONS_FRAGMENT}
 `;

@@ -562,6 +562,8 @@ class DagsterInstance:
 
         if "enabled" in telemetry_settings:
             return telemetry_settings["enabled"]
+        elif "experimental_dagit" in telemetry_settings:
+            return telemetry_settings["experimental_dagit"]
         else:
             return dagster_telemetry_enabled_default
 
@@ -662,6 +664,9 @@ class DagsterInstance:
     def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
+    def has_snapshot(self, snapshot_id: str) -> bool:
+        return self._run_storage.has_snapshot(snapshot_id)
+
     def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
         from dagster.core.host_representation import HistoricalPipeline
 
@@ -710,6 +715,7 @@ class DagsterInstance:
         pipeline_code_origin=None,
     ):
         from dagster.core.execution.plan.plan import ExecutionPlan
+        from dagster.core.execution.api import create_execution_plan
         from dagster.core.snap import snapshot_from_execution_plan
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -746,10 +752,11 @@ class DagsterInstance:
             step_keys_to_execute = execution_plan.step_keys_to_execute
 
         else:
-            resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
-            execution_plan = ExecutionPlan.build(
-                InMemoryPipeline(pipeline_def),
-                resolved_run_config,
+            execution_plan = create_execution_plan(
+                pipeline=InMemoryPipeline(pipeline_def),
+                run_config=run_config,
+                mode=mode,
+                instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
             )
 
@@ -1017,6 +1024,9 @@ class DagsterInstance:
     def add_run(self, pipeline_run: PipelineRun):
         return self._run_storage.add_run(pipeline_run)
 
+    def add_snapshot(self, snapshot, snapshot_id=None):
+        return self._run_storage.add_snapshot(snapshot, snapshot_id)
+
     def handle_run_event(self, run_id: str, event: "DagsterEvent"):
         return self._run_storage.handle_run_event(run_id, event)
 
@@ -1221,6 +1231,9 @@ records = instance.get_event_records(
         handlers = [self._get_event_log_handler()]
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
+
+    def store_event(self, event):
+        self._event_storage.store_event(event)
 
     def handle_new_event(self, event):
         run_id = event.run_id
@@ -1779,3 +1792,14 @@ records = instance.get_event_records(
 
     def update_backfill(self, partition_backfill):
         return self._run_storage.update_backfill(partition_backfill)
+
+
+def is_dagit_telemetry_enabled(instance):
+    telemetry_settings = instance.get_settings("telemetry")
+    if not telemetry_settings:
+        return False
+
+    if "experimental_dagit" in telemetry_settings:
+        return telemetry_settings["experimental_dagit"]
+    else:
+        return False

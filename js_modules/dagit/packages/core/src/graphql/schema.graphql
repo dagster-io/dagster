@@ -1,4 +1,10 @@
-type Query {
+schema {
+  query: DagitQuery
+  mutation: DagitMutation
+  subscription: DagitSubscription
+}
+
+type DagitQuery {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
@@ -55,6 +61,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  inProgressRunsByStep: [InProgressRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -85,6 +92,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -414,6 +423,7 @@ enum StepEventStatus {
   SKIPPED
   SUCCESS
   FAILURE
+  IN_PROGRESS
 }
 
 type Materialization implements DisplayableEvent {
@@ -1194,6 +1204,8 @@ type Job implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  assetNodes: [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1204,6 +1216,11 @@ type UsedSolid {
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type InProgressRunsByStep {
+  stepKey: String!
+  runs: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -1485,11 +1502,13 @@ type ModeNotFoundError implements Error {
 }
 
 type Instance {
-  info: String!
+  info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
+  hasInfo: Boolean!
+  dagitTelemetryEnabled: Boolean!
 }
 
 type RunLauncher {
@@ -1563,7 +1582,7 @@ type GraphenePermission {
   value: Boolean!
 }
 
-type Mutation {
+type DagitMutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
@@ -1583,6 +1602,7 @@ type Mutation {
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
 union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
@@ -1752,7 +1772,13 @@ type CancelBackfillSuccess {
   backfillId: String!
 }
 
-type Subscription {
+union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
+
+type LogTelemetrySuccess {
+  action: String!
+}
+
+type DagitSubscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!

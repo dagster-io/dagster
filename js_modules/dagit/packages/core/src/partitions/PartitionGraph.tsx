@@ -199,7 +199,7 @@ const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFrag
   return b.stats.startTime - a.stats.startTime;
 };
 
-export const PartitionGraphContainer = styled.div`
+const PartitionGraphContainer = styled.div`
   display: flex;
   color: ${ColorsWIP.Gray700};
   border-left: 1px solid ${ColorsWIP.KeylineGray};

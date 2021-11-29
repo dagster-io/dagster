@@ -566,6 +566,7 @@ class PendingNodeInvocation:
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
@@ -576,6 +577,7 @@ class PendingNodeInvocation:
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
+        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
         job_hooks: Set[HookDefinition] = set()
         job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
         job_hooks.update(self.hook_defs)
@@ -588,6 +590,7 @@ class PendingNodeInvocation:
             logger_defs=logger_defs,
             executor_def=executor_def,
             hooks=job_hooks,
+            op_retry_policy=op_retry_policy,
             version_strategy=version_strategy,
         )
 
@@ -624,7 +627,7 @@ class PendingNodeInvocation:
             ),
             tags=self.tags,
             hook_defs=self.hook_defs,
-            solid_retry_policy=self.retry_policy,
+            op_retry_policy=self.retry_policy,
         )
 
         return core_execute_in_process(

@@ -21,13 +21,10 @@ from dagster.config.validate import process_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -405,6 +402,7 @@ class GraphDefinition(NodeDefinition):
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":
@@ -447,6 +445,8 @@ class GraphDefinition(NodeDefinition):
                 How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
                 which can be switched between multi-process and in-process modes of execution. The
                 default mode of execution is multi-process.
+            op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
+                Only used if retry policy is not defined on the op definition or op invocation.
             version_strategy (Optional[VersionStrategy]):
                 Defines how each solid (and optionally, resource) in the job can be versioned. If
                 provided, memoizaton will be enabled for this job.
@@ -473,6 +473,7 @@ class GraphDefinition(NodeDefinition):
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
         op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
         presets = []
         config_mapping = None
@@ -513,6 +514,7 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             hook_defs=hooks,
             version_strategy=version_strategy,
+            op_retry_policy=op_retry_policy,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
@@ -577,11 +579,6 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.instance import DagsterInstance
         from .job_definition import JobDefinition
         from .executor_definition import execute_in_process_executor
-
-        if len(self.input_defs) > 0:
-            raise DagsterInvariantViolationError(
-                "Graphs with inputs cannot be used with execute_in_process at this time."
-            )
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)

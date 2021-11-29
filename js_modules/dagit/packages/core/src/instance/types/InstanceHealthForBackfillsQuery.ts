@@ -39,6 +39,7 @@ export interface InstanceHealthForBackfillsQuery_instance_daemonHealth {
 export interface InstanceHealthForBackfillsQuery_instance {
   __typename: "Instance";
   daemonHealth: InstanceHealthForBackfillsQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface InstanceHealthForBackfillsQuery {

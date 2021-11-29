@@ -26,6 +26,7 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
+from dagster.core.test_utils import environ
 
 
 def test_fs_stores():
@@ -39,31 +40,34 @@ def test_fs_stores():
         easy()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        run_store = SqliteRunStorage.from_local(temp_dir)
-        event_store = SqliteEventLogStorage(temp_dir)
-        compute_log_manager = LocalComputeLogManager(temp_dir)
-        instance = DagsterInstance(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=run_store,
-            event_storage=event_store,
-            compute_log_manager=compute_log_manager,
-            run_coordinator=DefaultRunCoordinator(),
-            run_launcher=DefaultRunLauncher(),
-        )
+        with environ({"DAGSTER_HOME": temp_dir}):
+            run_store = SqliteRunStorage.from_local(temp_dir)
+            event_store = SqliteEventLogStorage(temp_dir)
+            compute_log_manager = LocalComputeLogManager(temp_dir)
+            instance = DagsterInstance(
+                instance_type=InstanceType.PERSISTENT,
+                local_artifact_storage=LocalArtifactStorage(temp_dir),
+                run_storage=run_store,
+                event_storage=event_store,
+                compute_log_manager=compute_log_manager,
+                run_coordinator=DefaultRunCoordinator(),
+                run_launcher=DefaultRunLauncher(),
+                ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
+            )
 
-        result = execute_pipeline(simple, instance=instance)
+            result = execute_pipeline(simple, instance=instance)
 
-        assert run_store.has_run(result.run_id)
-        assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
-        assert DagsterEventType.PIPELINE_SUCCESS in [
-            event.dagster_event.event_type
-            for event in event_store.get_logs_for_run(result.run_id)
-            if event.is_dagster_event
-        ]
-        stats = event_store.get_stats_for_run(result.run_id)
-        assert stats.steps_succeeded == 1
-        assert stats.end_time is not None
+            assert run_store.has_run(result.run_id)
+            assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
+            assert DagsterEventType.PIPELINE_SUCCESS in [
+                event.dagster_event.event_type
+                for event in event_store.get_logs_for_run(result.run_id)
+                if event.is_dagster_event
+            ]
+            stats = event_store.get_stats_for_run(result.run_id)
+            assert stats.steps_succeeded == 1
+            assert stats.end_time is not None
 
 
 def test_init_compute_log_with_bad_config():

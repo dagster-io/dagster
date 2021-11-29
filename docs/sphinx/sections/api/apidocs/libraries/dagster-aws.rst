@@ -14,10 +14,10 @@ S3
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
 
-.. autodata:: dagster_aws.s3.s3_file_manager
+.. autoconfigurable:: dagster_aws.s3.s3_file_manager
   :annotation: ResourceDefinition
 
-.. autodata:: dagster_aws.s3.s3_resource
+.. autoconfigurable:: dagster_aws.s3.s3_resource
   :annotation: ResourceDefinition
 
 .. autodata:: dagster_aws.s3.S3Coordinate
@@ -36,27 +36,27 @@ S3
             bucket: my-bucket
             key: my-key
 
-.. autodata:: dagster_aws.s3.s3_pickle_io_manager
+.. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
   :annotation: IOManagerDefinition
 
 
 Redshift
 --------
-.. autodata:: dagster_aws.redshift.redshift_resource
+.. autoconfigurable:: dagster_aws.redshift.redshift_resource
   :annotation: ResourceDefinition
 
 
 Testing
 ^^^^^^^
 
-.. autodata:: dagster_aws.redshift.fake_redshift_resource
+.. autoconfigurable:: dagster_aws.redshift.fake_redshift_resource
   :annotation: ResourceDefinition
 
 
 EMR
 ---
 
-.. autodata:: dagster_aws.emr.emr_pyspark_step_launcher
+.. autoconfigurable:: dagster_aws.emr.emr_pyspark_step_launcher
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_aws.emr.EmrJobRunner
@@ -71,5 +71,5 @@ EMR
 CloudWatch
 ----------
 
-.. autodata:: dagster_aws.cloudwatch.cloudwatch_logger
+.. autoconfigurable:: dagster_aws.cloudwatch.cloudwatch_logger
   :annotation: LoggerDefinition

@@ -339,23 +339,6 @@ def fivetran_resource(context) -> FivetranResource:
     To configure this resource, we recommend using the `configured
     <https://docs.dagster.io/overview/configuration#configured>`_ method.
 
-    **Config Options:**
-
-    api_key (StringSource)
-        Fivetran API Key. You can find this value on the Fivetran settings page:
-        https://fivetran.com/account/settings.
-    api_secret (StringSource)
-        Fivetran API Key. You can find this value on the Fivetran settings page:
-        https://fivetran.com/account/settings.
-    disable_schedule_on_trigger (bool)
-        Specifies if you would like any connector that is sync'd using this resource to be
-        automatically taken off its Fivetran schedule. Defaults to ``True``.
-    request_max_retries (int)
-        The maximum number of times requests to the Fivetran API should be retried before
-        failing. Defaults to ``3``.
-    request_retry_delay (float)
-        Time (in seconds) to wait between each request retry.  Defaults to ``0.25``.
-
     **Examples:**
 
     .. code-block:: python

@@ -106,7 +106,7 @@ def execute_list_versions_command(instance, kwargs):
         job,
         run_config=run_config,
         mode="default",
-        instance=instance,
+        instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     )
 

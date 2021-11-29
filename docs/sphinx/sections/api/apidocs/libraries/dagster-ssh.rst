@@ -7,5 +7,5 @@ This library provides an integration with SSH and SFTP.
 
 .. autoclass:: SSHResource
 
-.. autodata:: ssh_resource
+.. autoconfigurable:: ssh_resource
   :annotation: ResourceDefinition

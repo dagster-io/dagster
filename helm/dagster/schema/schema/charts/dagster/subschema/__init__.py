@@ -9,6 +9,7 @@ from .global_ import Global
 from .ingress import Ingress
 from .migrate import Migrate
 from .postgresql import PostgreSQL
+from .python_logs import PythonLogs
 from .rabbitmq import RabbitMQ
 from .redis import Redis
 from .run_launcher import RunLauncher

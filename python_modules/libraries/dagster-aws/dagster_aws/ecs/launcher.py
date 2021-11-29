@@ -114,7 +114,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
-                    "assignPublicIp": "ENABLED",
+                    "assignPublicIp": metadata.assign_public_ip,
                     "securityGroups": metadata.security_groups,
                 }
             },

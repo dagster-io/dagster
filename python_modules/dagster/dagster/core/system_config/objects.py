@@ -93,6 +93,7 @@ class ResolvedRunConfig(
             ("loggers", Dict[str, dict]),
             ("original_config_dict", Any),
             ("mode", str),
+            ("inputs", Dict[str, Any]),
         ],
     )
 ):
@@ -104,11 +105,13 @@ class ResolvedRunConfig(
         loggers=None,
         original_config_dict=None,
         mode=None,
+        inputs=None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_dict_param(original_config_dict, "original_config_dict")
         check.opt_dict_param(resources, "resources", key_type=str)
         check.opt_str_param(mode, "mode")
+        check.opt_dict_param(inputs, "inputs", key_type=str)
 
         if execution is None:
             execution = ExecutionConfig(None, None)
@@ -121,6 +124,7 @@ class ResolvedRunConfig(
             loggers=check.opt_dict_param(loggers, "loggers", key_type=str, value_type=dict),
             original_config_dict=original_config_dict,
             mode=mode,
+            inputs=inputs,
         )
 
     @staticmethod
@@ -194,6 +198,7 @@ class ResolvedRunConfig(
         solid_config_dict = composite_descent(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
+        input_configs = config_value.get("inputs", {})
 
         return ResolvedRunConfig(
             solids=solid_config_dict,
@@ -202,6 +207,7 @@ class ResolvedRunConfig(
             original_config_dict=run_config,
             resources=config_mapped_resource_configs,
             mode=mode,
+            inputs=input_configs,
         )
 
     def to_dict(self) -> Dict[str, Any]:

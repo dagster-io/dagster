@@ -41,7 +41,7 @@ if __name__ == "__main__":
         extras_require={
             "redshift": ["psycopg2-binary"],
             "pyspark": ["dagster-pyspark"],
-            "test": ["moto==1.3.16", "requests-mock"],
+            "test": ["moto>=2.2.8", "requests-mock"],
         },
         zip_safe=False,
     )

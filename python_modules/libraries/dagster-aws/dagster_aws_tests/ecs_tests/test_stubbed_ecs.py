@@ -189,7 +189,7 @@ def test_register_task_definition(ecs):
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
 
-def test_run_task(ecs, subnet):
+def test_run_task(ecs, ec2, subnet):
     with pytest.raises(ParamValidationError):
         # The task doesn't exist
         ecs.run_task()
@@ -228,14 +228,7 @@ def test_run_task(ecs, subnet):
             networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
         )
 
-    #  The subnet exists but there's no network interface
-    with pytest.raises(ClientError):
-        ecs.run_task(
-            taskDefinition="awsvpc",
-            networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
-        )
-
-    network_interface = subnet.create_network_interface()
+    # With a real subnet
     response = ecs.run_task(
         taskDefinition="awsvpc",
         networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
@@ -245,8 +238,22 @@ def test_run_task(ecs, subnet):
     assert "awsvpc" in response["tasks"][0]["taskDefinitionArn"]
     attachment = response["tasks"][0]["attachments"][0]
     assert attachment["type"] == "ElasticNetworkInterface"
-    assert {"name": "subnetId", "value": subnet.id} in attachment["details"]
-    assert {"name": "networkInterfaceId", "value": network_interface.id} in attachment["details"]
+    details = dict(detail.values() for detail in attachment["details"])
+    assert details["subnetId"] == subnet.id
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    assert not eni.association_attribute
+
+    # When assigning a public IP
+    response = ecs.run_task(
+        taskDefinition="awsvpc",
+        networkConfiguration={
+            "awsvpcConfiguration": {"subnets": [subnet.id], "assignPublicIp": "ENABLED"}
+        },
+    )
+    details = dict(detail.values() for detail in response["tasks"][0]["attachments"][0]["details"])
+    assert details["subnetId"] == subnet.id
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    assert eni.association_attribute.get("PublicIp")
 
     # containers and overrides are included
     ecs.register_task_definition(

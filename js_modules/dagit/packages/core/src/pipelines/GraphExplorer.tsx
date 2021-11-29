@@ -60,7 +60,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     repoAddress,
     isGraph,
   } = props;
-  const [highlighted, setHighlighted] = React.useState('');
+  const [nameMatch, setNameMatch] = React.useState('');
 
   const handleQueryChange = (opsQuery: string) => {
     onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
@@ -138,10 +138,10 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   );
 
   const {all} = queryResultOps;
-  const highlightedOps = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
-    highlighted,
-    all,
-  ]);
+  const highlightedOps = React.useMemo(
+    () => all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
+    [nameMatch, all],
+  );
 
   const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
@@ -188,9 +188,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <TextInput
               name="highlighted"
               icon="search"
-              value={highlighted}
+              value={nameMatch}
               placeholder="Highlight…"
-              onChange={(e) => setHighlighted(e.target.value)}
+              onChange={(e) => setNameMatch(e.target.value)}
             />
           </SearchOverlay>
           {explodeCompositesEnabled && (
@@ -294,7 +294,7 @@ const OptionsOverlay = styled.div`
   left: 0;
 `;
 
-const SearchOverlay = styled.div`
+export const SearchOverlay = styled.div`
   z-index: 2;
   padding: 12px 12px 0 0;
   display: inline-flex;

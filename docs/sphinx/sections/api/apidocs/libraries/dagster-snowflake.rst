@@ -14,7 +14,7 @@ your data warehouse.
 
 .. currentmodule:: dagster_snowflake
 
-.. autodata:: snowflake_resource
+.. autoconfigurable:: snowflake_resource
   :annotation: ResourceDefinition
 
 .. autoclass:: SnowflakeConnection

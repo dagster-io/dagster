@@ -81,7 +81,10 @@ from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
-class GrapheneQuery(graphene.ObjectType):
+class GrapheneDagitQuery(graphene.ObjectType):
+    class Meta:
+        name = "DagitQuery"
+
     version = graphene.NonNull(graphene.String)
 
     repositoriesOrError = graphene.NonNull(GrapheneRepositoriesOrError)
@@ -241,9 +244,6 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
-
-    class Meta:
-        name = "Query"
 
     def resolve_repositoriesOrError(self, graphene_info):
         return fetch_repositories(graphene_info)

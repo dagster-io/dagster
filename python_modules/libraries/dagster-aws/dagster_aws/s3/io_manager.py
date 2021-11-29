@@ -1,11 +1,11 @@
 import io
 import pickle
 
-from dagster import Field, IOManager, StringSource, check, io_manager
+from dagster import Field, MemoizableIOManager, StringSource, check, io_manager
 from dagster.utils import PICKLE_PROTOCOL
 
 
-class PickledObjectS3IOManager(IOManager):
+class PickledObjectS3IOManager(MemoizableIOManager):
     def __init__(
         self,
         s3_bucket,
@@ -19,6 +19,10 @@ class PickledObjectS3IOManager(IOManager):
 
     def _get_path(self, context):
         return "/".join([self.s3_prefix, "storage", *context.get_output_identifier()])
+
+    def has_output(self, context):
+        key = self._get_path(context)
+        return self._has_object(key)
 
     def _rm_object(self, key):
         check.str_param(key, "key")

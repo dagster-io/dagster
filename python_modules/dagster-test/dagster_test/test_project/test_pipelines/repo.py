@@ -21,6 +21,7 @@ from dagster import (
     OutputDefinition,
     RetryRequested,
     String,
+    VersionStrategy,
     default_executors,
     file_relative_path,
     fs_io_manager,
@@ -42,12 +43,15 @@ from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 
-def celery_mode_defs(resources=None):
+def celery_mode_defs(resources=None, name="default"):
     from dagster_celery import celery_executor
     from dagster_celery_k8s import celery_k8s_job_executor
 
+    resources = resources if resources else {"s3": s3_resource}
+    resources = merge_dicts(resources, {"io_manager": s3_pickle_io_manager})
     return [
         ModeDefinition(
+            name=name,
             resource_defs=resources
             if resources
             else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
@@ -58,6 +62,9 @@ def celery_mode_defs(resources=None):
 
 def k8s_mode_defs(resources=None, name="default"):
     from dagster_k8s.executor import k8s_job_executor
+
+    resources = resources if resources else {"s3": s3_resource}
+    resources = merge_dicts(resources, {"io_manager": s3_pickle_io_manager})
 
     return [
         ModeDefinition(
@@ -647,6 +654,25 @@ def define_volume_mount_pipeline():
     return volume_mount_pipeline
 
 
+def define_memoization_pipeline():
+    @solid
+    def foo_solid():
+        return "foo"
+
+    class BasicVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+    @pipeline(
+        mode_defs=k8s_mode_defs(name="k8s") + celery_mode_defs(name="celery"),
+        version_strategy=BasicVersionStrategy(),
+    )
+    def memoization_pipeline():
+        foo_solid()
+
+    return memoization_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -676,6 +702,7 @@ def define_demo_execution_repo():
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
                 "volume_mount_pipeline": define_volume_mount_pipeline,
+                "memoization_pipeline": define_memoization_pipeline,
             },
             "jobs": {
                 "demo_error_job": demo_error_job,

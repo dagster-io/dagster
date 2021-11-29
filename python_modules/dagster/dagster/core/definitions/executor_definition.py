@@ -91,8 +91,8 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def config_schema(self):
         return self._config_schema
 
-    def get_requirements(self, init_context):
-        return self._requirements_fn(init_context)
+    def get_requirements(self, executor_config: Dict[str, Any]):
+        return self._requirements_fn(executor_config)
 
     @property
     def executor_creation_fn(self):

@@ -46,12 +46,12 @@ export const SchedulesTable: React.FC<{
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>
-          <th style={{minWidth: '300px'}}>Schedule Name</th>
+          <th style={{minWidth: '300px'}}>Schedule name</th>
           <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{minWidth: '170px'}}>Next Tick</th>
+          <th style={{minWidth: '170px'}}>Next tick</th>
           <th style={{width: '120px'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
-              Last Tick
+              Last tick
               <Tooltip position="top" content={lastTick}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
@@ -59,7 +59,7 @@ export const SchedulesTable: React.FC<{
           </th>
           <th>
             <Box flex={{gap: 8, alignItems: 'end'}}>
-              Last Run
+              Last run
               <Tooltip position="top" content={lastRun}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
@@ -185,6 +185,7 @@ const ScheduleRow: React.FC<{
           <TimestampDisplay
             timestamp={futureTicks.results[0].timestamp}
             timezone={executionTimezone}
+            timeFormat={{showSeconds: false, showTimezone: true}}
           />
         ) : (
           <span style={{color: ColorsWIP.Gray300}}>None</span>

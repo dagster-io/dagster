@@ -77,5 +77,23 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     );
   }
 
+  if (!pipelinesForTable.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="job"
+          title={display === 'jobs' ? 'No jobs found' : 'No pipelines found'}
+          description={
+            <div>
+              {display === 'jobs'
+                ? 'This repository does not have any jobs defined.'
+                : 'This repository does not have any pipelines defined.'}
+            </div>
+          }
+        />
+      </Box>
+    );
+  }
+
   return <PipelineTable pipelinesOrJobs={pipelinesForTable} showRepo={false} />;
 };

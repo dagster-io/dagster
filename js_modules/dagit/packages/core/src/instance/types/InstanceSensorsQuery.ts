@@ -41,6 +41,7 @@ export interface InstanceSensorsQuery_instance_daemonHealth {
 export interface InstanceSensorsQuery_instance {
   __typename: "Instance";
   daemonHealth: InstanceSensorsQuery_instance_daemonHealth;
+  hasInfo: boolean;
 }
 
 export interface InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_displayMetadata {

@@ -11,5 +11,5 @@ Spark (dagster-spark)
 
 .. autofunction:: construct_spark_shell_command
 
-.. autodata:: spark_resource
+.. autoconfigurable:: spark_resource
   :annotation: ResourceDefinition

@@ -80,21 +80,21 @@ def test_fs_io_manager_memoization():
         my_op()
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, solid_def):
+        def get_solid_version(self, _):
             return "foo"
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir) as instance:
             my_job = my_graph.to_job(version_strategy=MyVersionStrategy())
 
-            unmemoized_plan = create_execution_plan(my_job, instance=instance)
+            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
-            execution_plan = create_execution_plan(my_job, instance=instance)
+            execution_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
             assert len(execution_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
