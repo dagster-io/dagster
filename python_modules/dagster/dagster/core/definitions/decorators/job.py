@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, overload
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -93,6 +93,26 @@ class _Job:
         )
         update_wrapper(job_def, fn)
         return job_def
+
+
+@overload
+def job(name: Callable[..., Any]) -> JobDefinition:
+    ...
+
+
+@overload
+def job(
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+    executor_def: Optional["ExecutorDefinition"] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
+    version_strategy: Optional[VersionStrategy] = None,
+) -> _Job:
+    ...
 
 
 def job(
