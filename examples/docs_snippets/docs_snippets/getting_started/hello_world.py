@@ -11,8 +11,8 @@ def get_name():
 
 
 @op
-def hello(context, name: str):
-    context.log.info(f"Hello, {name}!")
+def hello(name: str):
+    print(f"Hello, {name}!")
 
 
 @job

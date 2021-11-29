@@ -3,7 +3,7 @@ import csv
 from datetime import datetime
 
 import requests
-from dagster import job, op, repository, schedule
+from dagster import get_dagster_logger, job, op, repository, schedule
 
 
 @op
@@ -12,7 +12,9 @@ def hello_cereal(context):
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
     date = context.op_config["date"]
-    context.log.info(f"Today is {date}. Found {len(cereals)} cereals.")
+    get_dagster_logger().info(
+        f"Today is {date}. Found {len(cereals)} cereals."
+    )
 
 
 @job

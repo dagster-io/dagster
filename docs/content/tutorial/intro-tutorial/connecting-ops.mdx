@@ -30,7 +30,7 @@ This will allow us to re-run the code that finds the sugariest cereal without re
 import csv
 
 import requests
-from dagster import job, op
+from dagster import get_dagster_logger, job, op
 
 
 @op
@@ -41,9 +41,11 @@ def download_cereals():
 
 
 @op
-def find_sugariest(context, cereals):
+def find_sugariest(cereals):
     sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
-    context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
+    get_dagster_logger().info(
+        f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal'
+    )
 
 
 @job
@@ -51,10 +53,9 @@ def serial():
     find_sugariest(download_cereals())
 ```
 
-You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset. We no longer log from this op, so we no longer need the context argument here.
+You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset.
 
-We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject object="OpExecutionContext"
-displayText="context" /> object.
+We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`.
 
 We can use inputs and outputs to connect ops to each other. Here we tell Dagster that:
 
@@ -86,7 +87,7 @@ Ops don't need to be wired together serially. The output of one op can be consum
 import csv
 
 import requests
-from dagster import job, op
+from dagster import get_dagster_logger, job, op
 
 
 @op
@@ -113,9 +114,10 @@ def find_highest_protein_cereal(cereals):
 
 
 @op
-def display_results(context, most_calories, most_protein):
-    context.log.info(f"Most caloric cereal: {most_calories}")
-    context.log.info(f"Most protein-rich cereal: {most_protein}")
+def display_results(most_calories, most_protein):
+    logger = get_dagster_logger()
+    logger.info(f"Most caloric cereal: {most_calories}")
+    logger.info(f"Most protein-rich cereal: {most_protein}")
 
 
 @job

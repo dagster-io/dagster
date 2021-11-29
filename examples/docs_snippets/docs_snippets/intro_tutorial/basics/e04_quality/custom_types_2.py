@@ -1,5 +1,5 @@
 import requests
-from dagster import DagsterType, In, Out, job, op
+from dagster import DagsterType, In, Out, get_dagster_logger, job, op
 
 
 # start_custom_types_2_marker_0
@@ -18,10 +18,10 @@ SimpleDataFrame = DagsterType(
 
 # start_custom_types_2_marker_1
 @op(out=Out(SimpleDataFrame))
-def bad_download_csv(context):
+def bad_download_csv():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    get_dagster_logger().info(f"Read {len(lines)} lines")
     return ["not_a_dict"]
 
 
@@ -29,9 +29,11 @@ def bad_download_csv(context):
 
 
 @op(ins={"cereals": In(SimpleDataFrame)})
-def sort_by_calories(context, cereals):
+def sort_by_calories(cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
-    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+    get_dagster_logger().info(
+        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
+    )
 
 
 @job
