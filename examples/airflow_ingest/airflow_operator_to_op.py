@@ -19,7 +19,7 @@ def my_http_job():
 # end_operator_to_op_1
 
 # start_operator_to_op_2
-s3_conn = Connection(conn_id=f's3_conn', conn_type="s3")
+s3_conn = Connection(conn_id=f"s3_conn", conn_type="s3")
 s3_conn.set_extra(
     json.dumps(
         {

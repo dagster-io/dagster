@@ -124,7 +124,7 @@ If you want your containerized job to be available to Airflow operators running 
 
 ## Ingesting Airflow operators
 
-Dagster can convert Airflow operators to Dagster ops, for any Airflow operator that requires no instance-wide configuration via `airflow.cfg`. Using <PyObject module="dagster_airflow" object="airflow_operator_to_op"/>, you can convert instantiated Airflow operators to be executed within a Dagster op. Optionally, you can pass in a list of Airflow connection objects utilized by the operator.
+Dagster can convert Airflow operators to Dagster ops, for any Airflow operators that require no instance-wide configuration via `airflow.cfg`. Using <PyObject module="dagster_airflow" object="airflow_operator_to_op"/>, you can convert instantiated Airflow operators to be executed within a Dagster op. Optionally, you can pass in a list of Airflow connection objects utilized by the operator.
 
 ```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_1 endbefore=end_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", endpoint="foo")
