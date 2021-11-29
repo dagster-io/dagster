@@ -1,7 +1,6 @@
 import boto3
-import dagster
 from botocore.exceptions import ClientError
-from dagster import Field, check
+from dagster import Array, Field, StringSource, check
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
@@ -51,7 +50,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {
             "task_definition": Field(
-                dagster.StringSource,
+                StringSource,
                 is_required=False,
                 description=(
                     "The task definition to use when launching new tasks. "
@@ -60,7 +59,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "container_name": Field(
-                dagster.StringSource,
+                StringSource,
                 is_required=False,
                 default_value="run",
                 description=(
@@ -68,7 +67,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets": Field(
-                dagster.Array(dagster.String),
+                Array(StringSource),
                 is_required=False,
                 description=(
                     "An array of AWS Secrets Manager secrets arns. These secrets will "
@@ -76,7 +75,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets_tag": Field(
-                dagster.StringSource,
+                StringSource,
                 is_required=False,
                 default_value="dagster",
                 description=(
