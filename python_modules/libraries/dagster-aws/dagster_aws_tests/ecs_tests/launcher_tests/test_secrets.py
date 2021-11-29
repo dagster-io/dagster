@@ -35,7 +35,7 @@ def other_secret(secrets_manager):
 
 @pytest.fixture
 def configured_secret(secrets_manager):
-    # A secret explicilty included in the launcher config
+    # A secret explicitly included in the launcher config
     name = "configured_secret"
     arn = secrets_manager.create_secret(
         Name=name,
