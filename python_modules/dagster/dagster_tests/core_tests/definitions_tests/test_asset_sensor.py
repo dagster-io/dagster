@@ -1,7 +1,7 @@
 import logging
 import time
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from dagster import (
     AssetKey,
@@ -21,6 +21,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import scoped_pipeline_context
+from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.test_utils import instance_for_test
 from dagster.seven import json
 from pytest import raises
@@ -86,7 +87,9 @@ def sensor_context_for_test(
         with scoped_pipeline_context(
             execution_plan, InMemoryPipeline(foo_job), {}, pipeline_run, instance
         ) as pipeline_context:
-            step_context = pipeline_context.for_step(execution_plan.get_step_by_key("foo_op"))
+            step_context = pipeline_context.for_step(
+                cast(ExecutionStep, execution_plan.get_step_by_key("foo_op"))
+            )
             for updated_asset_key in updated_asset_keys:
                 asset_event = DagsterEvent.asset_materialization(
                     step_context=step_context,

@@ -672,14 +672,16 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 # roundtrips to the database, so will want to extend the EventRecordsFilter API or
                 # add an additional method on the instance)
                 event_records = [
-                    context.instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=asset_key,
-                            after_cursor=after_cursor[i],
-                        ),
-                        ascending=False,
-                        limit=1,
+                    list(
+                        context.instance.get_event_records(
+                            EventRecordsFilter(
+                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                                asset_key=asset_key,
+                                after_cursor=after_cursor[i],
+                            ),
+                            ascending=False,
+                            limit=1,
+                        )
                     )
                     for i, asset_key in enumerate(self._asset_keys)
                 ]
@@ -783,20 +785,22 @@ class AnyAssetSensorDefinition(SensorDefinition):
                 # roundtrips to the database, so will want to extend the EventRecordsFilter API or
                 # add an additional method on the instance)
                 event_records = [
-                    context.instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=asset_key,
-                            after_cursor=after_cursor[i],
-                        ),
-                        ascending=False,
-                        limit=1,
+                    list(
+                        context.instance.get_event_records(
+                            EventRecordsFilter(
+                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                                asset_key=asset_key,
+                                after_cursor=after_cursor[i],
+                            ),
+                            ascending=False,
+                            limit=1,
+                        )
                     )
                     for i, asset_key in enumerate(self._asset_keys)
                 ]
 
                 event_log_entries = []
-                cursor = []
+                cursor: List[Optional[int]] = []
 
                 execute_cursor = False
 
