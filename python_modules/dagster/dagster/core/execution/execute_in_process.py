@@ -26,7 +26,7 @@ def core_execute_in_process(
     output_capturing_enabled: bool,
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
-):
+) -> ExecuteInProcessResult:
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)

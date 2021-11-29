@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from .partition import PartitionedConfig
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -600,7 +601,7 @@ class PendingNodeInvocation:
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
-    ):
+    ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
                 "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
