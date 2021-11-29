@@ -15,7 +15,19 @@ class LaunchRunContext(NamedTuple):
 
     pipeline_run: PipelineRun
     workspace: Optional[IWorkspace]
-    resume_from_failure: bool = False
+
+    @property
+    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
+        return self.pipeline_run.pipeline_code_origin
+
+
+class ResumeRunContext(NamedTuple):
+    """
+    Context available within a run launcher's resume_run call.
+    """
+
+    pipeline_run: PipelineRun
+    workspace: Optional[IWorkspace]
     resume_attempt_number: Optional[int] = None
 
     @property
@@ -92,4 +104,12 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         return False
 
     def check_run_worker_health(self, run: PipelineRun) -> CheckRunHealthResult:
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "This run launcher does not support run monitoring. Please disable it on your instance."
+        )
+
+    def resume_run(self, context: ResumeRunContext) -> None:
+        raise NotImplementedError(
+            "This run launcher does not support resuming runs. If using "
+            "run monitoring, set max_resume_run_attempts to 0."
+        )
