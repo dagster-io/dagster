@@ -603,6 +603,12 @@ class DagsterInstance:
     def run_monitoring_poll_interval_seconds(self) -> int:
         return self.run_monitoring_settings.get("poll_interval_seconds", 120)
 
+    @property
+    def cancellation_thread_poll_interval_seconds(self) -> int:
+        return self.get_settings("run_monitoring").get(
+            "cancellation_thread_poll_interval_seconds", 10
+        )
+
     # python logs
 
     @property
@@ -1792,6 +1798,13 @@ records = instance.get_event_records(
 
     def update_backfill(self, partition_backfill):
         return self._run_storage.update_backfill(partition_backfill)
+
+    @property
+    def should_start_background_run_thread(self) -> bool:
+        """
+        Gate on an experimental feature to start a thread that monitors for if the run should be canceled.
+        """
+        return False
 
 
 def is_dagit_telemetry_enabled(instance):
