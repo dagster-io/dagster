@@ -39,6 +39,12 @@ def test_daily_partitions():
         "2021-05-08", "2021-05-09"
     )
 
+    assert partitions_def.get_partition_keys_in_range("2021-05-01", "2021-05-03") == [
+        "2021-05-01",
+        "2021-05-02",
+        "2021-05-03",
+    ]
+
 
 def test_daily_partitions_with_end_offset():
     @daily_partitioned_config(start_date="2021-05-05", end_offset=2)
@@ -77,6 +83,12 @@ def test_monthly_partitions():
     assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
         "2021-05-01", "2021-06-01"
     )
+
+    assert partitions_def.get_partition_keys_in_range("2021-05-01", "2021-07-01") == [
+        "2021-05-01",
+        "2021-06-01",
+        "2021-07-01",
+    ]
 
 
 def test_monthly_partitions_with_end_offset():
@@ -122,3 +134,9 @@ def test_hourly_partitions():
     assert partitions_def.time_window_for_partition_key("2021-05-05-01:00") == time_window(
         "2021-05-05T01:00:00", "2021-05-05T02:00:00"
     )
+
+    assert partitions_def.get_partition_keys_in_range("2021-05-05-01:00", "2021-05-05-03:00") == [
+        "2021-05-05-01:00",
+        "2021-05-05-02:00",
+        "2021-05-05-03:00",
+    ]
