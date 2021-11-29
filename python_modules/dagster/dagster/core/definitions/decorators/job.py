@@ -110,6 +110,7 @@ def job(
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
 ) -> _Job:
     ...
