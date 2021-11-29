@@ -225,6 +225,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 __all__ = [
     # Definition
+    "AnyAssetSensorDefinition",
     "AssetKey",
     "AssetMaterialization",
     "AssetSensorDefinition",
@@ -254,6 +255,7 @@ __all__ = [
     "FloatMetadataEntryData",
     "Materialization",
     "ModeDefinition",
+    "MultiAssetSensorDefinition",
     "MultiDependencyDefinition",
     "OpDefinition",
     "Out",
@@ -281,6 +283,7 @@ __all__ = [
     "DynamicOut",
     "DynamicOutputDefinition",
     # Decorators
+    "any_asset_sensor",
     "asset_sensor",
     "composite_solid",
     "config_mapping",
@@ -289,6 +292,7 @@ __all__ = [
     "job",
     "lambda_solid",
     "logger",
+    "multi_asset_sensor",
     "op",
     "pipeline",
     "repository",
