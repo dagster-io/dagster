@@ -61,13 +61,14 @@ def task(ecs, subnet, security_group, task_definition, assign_public_ip):
 
 
 @pytest.fixture
-def stub_aws(ecs, ec2, monkeypatch):
-    # Any call to boto3.client() will return ecs.
-    # Any call to boto3.resource() will return ec2.
-    # This only works because our launcher happens to use a client for ecs and
-    # a resource for ec2 - if that were to change or if new aws objects were to
-    # be introduced, this fixture would need to be refactored.
-    monkeypatch.setattr(boto3, "client", lambda *args, **kwargs: ecs)
+def stub_aws(ecs, ec2, secrets_manager, monkeypatch):
+    def mock_client(*args, **kwargs):
+        if "ecs" in args:
+            return ecs
+        if "secretsmanager" in args:
+            return secrets_manager
+
+    monkeypatch.setattr(boto3, "client", mock_client)
     monkeypatch.setattr(boto3, "resource", lambda *args, **kwargs: ec2)
 
 

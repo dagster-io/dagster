@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+# pylint: disable=unused-variable
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
