@@ -33,8 +33,8 @@ export const RefreshableCountdown = (props: Props) => {
 const RefreshButton = styled.button`
   border: none;
   cursor: pointer;
-  padding: 0;
-  margin: 0;
+  padding: 8px;
+  margin: -8px;
   outline: none;
   background-color: transparent;
   position: relative;
