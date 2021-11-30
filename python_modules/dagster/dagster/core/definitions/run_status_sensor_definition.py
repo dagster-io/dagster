@@ -1,5 +1,5 @@
-from datetime import datetime
 import warnings
+from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -100,7 +100,7 @@ class RunStatusSensorContext(
     def for_pipeline_failure(self):
         return PipelineFailureSensorContext(
             sensor_name=self.sensor_name,
-            pipeline_run=self.pipeline_run,
+            dagster_run=self.dagster_run,
             dagster_event=self.dagster_event,
             instance=self.instance,
         )
@@ -108,7 +108,7 @@ class RunStatusSensorContext(
     def for_run_failure(self):
         return RunFailureSensorContext(
             sensor_name=self.sensor_name,
-            pipeline_run=self.pipeline_run,
+            dagster_run=self.dagster_run,
             dagster_event=self.dagster_event,
             instance=self.instance,
         )
