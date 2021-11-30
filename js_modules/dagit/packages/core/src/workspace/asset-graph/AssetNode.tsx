@@ -1,37 +1,28 @@
-import {gql, useMutation} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import {isEqual} from 'lodash';
 import qs from 'query-string';
 import React, {CSSProperties} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../../app/AppContext';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {showLaunchError} from '../../execute/showLaunchError';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
-import {
-  LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  handleLaunchResult,
-  titleForRun,
-} from '../../runs/RunUtils';
+import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
-import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
-import {Spinner} from '../../ui/Spinner';
-import {Tooltip} from '../../ui/Tooltip';
 import {FontFamily} from '../../ui/styles';
-import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
-import {workspacePath} from '../workspacePath';
+import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
 import {assetKeyToString, LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
@@ -40,43 +31,19 @@ export const AssetNode: React.FC<{
   selected: boolean;
   repoAddress: RepoAddress;
   secondaryHighlight: boolean;
-}> = React.memo(({definition, metadata, selected, repoAddress, secondaryHighlight, liveData}) => {
-  const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
-    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  );
-  const {basePath} = React.useContext(AppContext);
+}> = React.memo(({definition, metadata, selected, liveData, repoAddress, secondaryHighlight}) => {
+  const launch = useLaunchSingleAssetJob();
+  const history = useHistory();
   const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
   const kind = metadata.find((m) => m.key === 'kind')?.value;
-
-  const onLaunch = async () => {
-    if (!definition.jobName) {
-      return;
-    }
-
-    try {
-      const result = await launchPipelineExecution({
-        variables: {
-          executionParams: {
-            selector: {
-              pipelineName: definition.jobName,
-              ...repoAddressToSelector(repoAddress),
-            },
-            mode: 'default',
-            stepKeys: [definition.opName],
-          },
-        },
-      });
-      handleLaunchResult(basePath, definition.jobName, result, true);
-    } catch (error) {
-      showLaunchError(error as Error);
-    }
-  };
 
   return (
     <ContextMenu
       content={
         <MenuWIP>
           <MenuItemWIP
+            icon="open_in_new"
+            onClick={() => launch(repoAddress, definition)}
             text={
               <span>
                 Launch run to build{' '}
@@ -85,8 +52,14 @@ export const AssetNode: React.FC<{
                 </span>
               </span>
             }
-            icon="open_in_new"
-            onClick={onLaunch}
+          />
+          <MenuItemWIP
+            icon="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
+            }}
+            text="View in Asset Catalog"
           />
         </MenuWIP>
       }
@@ -97,22 +70,6 @@ export const AssetNode: React.FC<{
             <IconWIP name="asset" />
             {assetKeyToString(definition.assetKey)}
             <div style={{flex: 1}} />
-            {liveData && liveData.inProgressRunIds.length > 0 && (
-              <Tooltip
-                content={
-                  <div>
-                    Run ID:{' '}
-                    {liveData.inProgressRunIds.map((runId) => (
-                      <Link to={`/instance/runs/${runId}`} key={runId}>
-                        {runId}
-                      </Link>
-                    ))}
-                  </div>
-                }
-              >
-                <Spinner purpose="body-text" />
-              </Tooltip>
-            )}
             {liveData?.computeStatus === 'old' && (
               <UpstreamNotice>
                 upstream
@@ -134,11 +91,19 @@ export const AssetNode: React.FC<{
                     }`}
                     data-tooltip-style={RunLinkTooltipStyle}
                     style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                    to={workspacePath(
-                      repoAddress.name,
-                      repoAddress.location,
-                      `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
-                    )}
+                    to={
+                      repoAddress.name
+                        ? workspacePath(
+                            repoAddress.name,
+                            repoAddress.location,
+                            `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                          )
+                        : workspacePipelinePathGuessRepo(
+                            `${runOrError.pipelineName}:${runOrError.mode}`,
+                            true,
+                            '',
+                          )
+                    }
                   >
                     {`${runOrError.pipelineName}${
                       runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''

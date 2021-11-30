@@ -1,90 +1,104 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
 import {AssetMaterializations} from './AssetMaterializations';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
-import {
-  LatestMaterializationMetadata,
-  LATEST_MATERIALIZATION_METADATA_FRAGMENT,
-} from './LastMaterializationMetadata';
-import {SnapshotWarning, SNAPSHOT_WARNING_ASSET_FRAGMENT} from './SnapshotWarning';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
   assetKey: AssetKey;
-  asOf: string | null;
 }
 
-export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
+export interface AssetViewParams {
+  xAxis?: 'partition' | 'time';
+  asOf?: string;
+}
+
+export const AssetView: React.FC<Props> = ({assetKey}) => {
   useDocumentTitle(`Asset: ${assetKeyToString(assetKey)}`);
-  const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
+
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {
-      assetKey: {path: assetKey.path},
-      limit: 1,
-      before,
-    },
+    variables: {assetKey: {path: assetKey.path}},
   });
 
-  const isPartitioned = !!(
-    data?.assetOrError?.__typename === 'Asset' &&
-    data?.assetOrError?.assetMaterializations[0]?.partition
+  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [navigatedDirectlyToTime, setNavigatedDirectlyToTime] = React.useState(() =>
+    Boolean(params.asOf),
   );
+
+  const definition =
+    data?.assetOrError && data.assetOrError.__typename === 'Asset' && data.assetOrError.definition;
 
   return (
     <div>
       <div>
-        {loading && (
-          <Box padding={{vertical: 20}}>
+        {loading ? (
+          <Box
+            style={{height: 390}}
+            flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+          >
             <Spinner purpose="section" />
           </Box>
-        )}
-
-        {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
-          <SnapshotWarning asset={data.assetOrError} asOf={asOf} />
-        )}
-        {data?.assetOrError &&
-          data.assetOrError.__typename === 'Asset' &&
-          data.assetOrError.definition && (
-            <AssetNodeDefinition assetNode={data.assetOrError.definition} />
-          )}
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Subheading>
-            {isPartitioned ? 'Latest materialized partition' : 'Latest materialization'}
-          </Subheading>
-        </Box>
-        {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
-          <LatestMaterializationMetadata
-            latest={data.assetOrError.assetMaterializations[0]}
-            asOf={asOf}
-          />
-        )}
+        ) : navigatedDirectlyToTime ? (
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Alert
+              intent="info"
+              title={
+                <span>
+                  This is a historical view of materializations as of{' '}
+                  <span style={{fontWeight: 600}}>
+                    <Timestamp
+                      timestamp={{ms: Number(params.asOf)}}
+                      timeFormat={{showSeconds: true, showTimezone: true}}
+                    />
+                  </span>
+                  .
+                </span>
+              }
+              description={
+                <ButtonLink onClick={() => setNavigatedDirectlyToTime(false)} underline="always">
+                  {definition
+                    ? 'Show definition and latest materializations'
+                    : 'Show latest materializations'}
+                </ButtonLink>
+              }
+            />
+          </Box>
+        ) : definition ? (
+          <AssetNodeDefinition assetNode={definition} />
+        ) : undefined}
       </div>
-      <AssetMaterializations assetKey={assetKey} asOf={asOf} />
+      <AssetMaterializations
+        assetKey={assetKey}
+        params={params}
+        paramsTimeWindowOnly={navigatedDirectlyToTime}
+        setParams={setParams}
+      />
     </div>
   );
 };
 
 const ASSET_QUERY = gql`
-  query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
+  query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
         key {
           path
-        }
-        ...SnapshotWarningAssetFragment
-
-        assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
-          ...LatestMaterializationMetadataFragment
         }
 
         definition {
@@ -98,8 +112,5 @@ const ASSET_QUERY = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
-  ${SNAPSHOT_WARNING_ASSET_FRAGMENT}
 `;

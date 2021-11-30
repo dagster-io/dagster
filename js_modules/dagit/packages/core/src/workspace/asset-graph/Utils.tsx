@@ -1,16 +1,16 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 
+import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
+
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations,
-} from './types/AssetGraphLiveQuery';
+import {AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
+import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 
 type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
@@ -27,9 +27,9 @@ interface LayoutNode {
   y: number;
 }
 export interface GraphData {
-  nodes: {[id: string]: Node};
-  downstream: {[upstream: string]: {[downstream: string]: string}};
-  upstream: {[downstream: string]: {[upstream: string]: boolean}};
+  nodes: {[assetId: string]: Node};
+  downstream: {[assetId: string]: {[childAssetId: string]: string}};
+  upstream: {[assetId: string]: {[parentAssetId: string]: boolean}};
 }
 interface IPoint {
   x: number;
@@ -46,24 +46,37 @@ export function assetKeyToString(key: {path: string[]}) {
 }
 
 export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
-  const nodes: {[id: string]: Node} = {};
-  const downstream: {[id: string]: {[childAssetId: string]: string}} = {};
-  const upstream: {[id: string]: {[parentAssetId: string]: boolean}} = {};
+  const data: GraphData = {
+    nodes: {},
+    downstream: {},
+    upstream: {},
+  };
 
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({upstreamAsset, inputName}) => {
-      const upstreamAssetKeyJson = JSON.stringify(upstreamAsset.assetKey.path);
-      downstream[upstreamAssetKeyJson] = {
-        ...(downstream[upstreamAssetKeyJson] || {}),
+    definition.dependencies.forEach(({asset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      data.downstream[upstreamAssetKeyJson] = {
+        ...(data.downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: inputName,
       };
-      upstream[assetKeyJson] = {
-        ...(upstream[assetKeyJson] || {}),
+      data.upstream[assetKeyJson] = {
+        ...(data.upstream[assetKeyJson] || {}),
         [upstreamAssetKeyJson]: true,
       };
     });
-    nodes[assetKeyJson] = {
+    definition.dependedBy.forEach(({asset, inputName}) => {
+      const downstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      data.upstream[downstreamAssetKeyJson] = {
+        ...(data.upstream[downstreamAssetKeyJson] || {}),
+        [assetKeyJson]: true,
+      };
+      data.downstream[assetKeyJson] = {
+        ...(data.downstream[assetKeyJson] || {}),
+        [downstreamAssetKeyJson]: inputName,
+      };
+    });
+    data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
       hidden: !!jobName && definition.jobName !== jobName,
@@ -71,7 +84,48 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
     };
   });
 
-  return {nodes, downstream, upstream};
+  return data;
+};
+
+export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
+  const graphData: GraphData = {
+    downstream: {
+      [assetNode.id]: {},
+    },
+    nodes: {
+      [assetNode.id]: {
+        id: assetNode.id,
+        assetKey: assetNode.assetKey,
+        definition: {...assetNode, dependencies: [], dependedBy: []},
+        hidden: false,
+      },
+    },
+    upstream: {
+      [assetNode.id]: {},
+    },
+  };
+
+  for (const {asset} of assetNode.dependencies) {
+    graphData.upstream[assetNode.id][asset.id] = true;
+    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: 'a'};
+    graphData.nodes[asset.id] = {
+      id: asset.id,
+      assetKey: asset.assetKey,
+      definition: {...asset, dependencies: [], dependedBy: []},
+      hidden: false,
+    };
+  }
+  for (const {asset} of assetNode.dependedBy) {
+    graphData.upstream[asset.id] = {...graphData.upstream[asset.id], [assetNode.id]: true};
+    graphData.downstream[assetNode.id][asset.id] = 'a';
+    graphData.nodes[asset.id] = {
+      id: asset.id,
+      assetKey: asset.assetKey,
+      definition: {...asset, dependencies: [], dependedBy: []},
+      hidden: false,
+    };
+  }
+  return graphData;
 };
 
 export const graphHasCycles = (graphData: GraphData) => {
@@ -110,7 +164,11 @@ export const layoutGraph = (graphData: GraphData, margin = 100) => {
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
-      if (graphData.nodes[downstreamId].hidden && graphData.nodes[upstreamId].hidden) {
+      if (
+        graphData.nodes[downstreamId] &&
+        graphData.nodes[downstreamId].hidden &&
+        graphData.nodes[upstreamId].hidden
+      ) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
@@ -190,19 +248,10 @@ export interface LiveData {
 
 export const buildLiveData = (
   graph: ReturnType<typeof buildGraphData>,
-  queryResult?: AssetGraphLiveQuery,
+  nodes: AssetNodeLiveFragment[],
+  inProgressRunsByStep: {stepKey: string; runs: {runId: string}[]}[],
 ) => {
   const data: LiveData = {};
-
-  if (!queryResult) {
-    return data;
-  }
-
-  const {repositoryOrError, pipelineOrError} = queryResult;
-
-  const nodes = pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
-  const inProgressRunsByStep =
-    repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
 
   for (const node of nodes) {
     const lastMaterialization = node.assetMaterializations[0];

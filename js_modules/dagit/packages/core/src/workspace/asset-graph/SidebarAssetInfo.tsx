@@ -85,7 +85,13 @@ export const SidebarAssetInfo: React.FC<{
 
       {lastMaterialization ? (
         <SidebarSection title={'Materialization Plots'}>
-          <AssetMaterializations assetKey={node.assetKey} asSidebarSection />
+          <AssetMaterializations
+            assetKey={node.assetKey}
+            asSidebarSection
+            paramsTimeWindowOnly={false}
+            params={{}}
+            setParams={() => {}}
+          />
         </SidebarSection>
       ) : null}
     </div>

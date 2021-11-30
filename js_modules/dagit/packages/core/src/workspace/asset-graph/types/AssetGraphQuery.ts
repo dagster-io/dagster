@@ -18,21 +18,38 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey {
   path: string[];
 }
 
-export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy_asset_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
-  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset_assetKey;
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy_asset_assetKey;
+}
+
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy {
+  __typename: "AssetDependency";
+  inputName: string;
+  asset: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy_asset;
+}
+
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset_assetKey;
 }
 
 export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies {
   __typename: "AssetDependency";
   inputName: string;
-  upstreamAsset: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_upstreamAsset;
+  asset: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset;
 }
 
 export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
@@ -42,6 +59,7 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   description: string | null;
   jobName: string | null;
   assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
+  dependedBy: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedBy[];
   dependencies: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies[];
 }
 

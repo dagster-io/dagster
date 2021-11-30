@@ -24,6 +24,7 @@ describe('PipelineRoot', () => {
     Pipeline: () => ({
       id: () => PIPELINE_NAME,
       modes: () => new MockList(1),
+      isAssetJob: () => false,
     }),
     PipelineSnapshot: () => ({
       runs: () => new MockList(0),

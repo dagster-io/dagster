@@ -1,10 +1,11 @@
+import qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {MetadataEntries} from '../runs/MetadataEntry';
+import {MetadataEntry} from '../runs/MetadataEntry';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Box} from '../ui/Box';
@@ -13,6 +14,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -23,37 +25,31 @@ import {AssetMaterializationFragment} from './types/AssetMaterializationFragment
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
-  isPartitioned: boolean;
+  hasPartitions: boolean;
   hasLineage: boolean;
   materializations: HistoricalMaterialization[];
-  shouldBucketPartitions?: boolean;
-}> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
-  const list = React.useMemo(() => {
-    if (shouldBucketPartitions) {
-      return materializations;
-    }
-    return materializations.map((m) => ({latest: m.latest}));
-  }, [materializations, shouldBucketPartitions]);
-
+  focused?: string;
+  setFocused?: (timestamp: string) => void;
+}> = ({hasPartitions, hasLineage, materializations, focused, setFocused}) => {
   return (
     <Table>
       <thead>
         <tr>
-          {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
-          <th style={{minWidth: 240}}>Materialization Metadata</th>
-          {hasLineage && <th>Parent Materializations</th>}
+          {hasPartitions && <th style={{minWidth: 100}}>Partition</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
           <th style={{minWidth: 150}}>Job / Pipeline</th>
           <th style={{width: 100}}>Run</th>
         </tr>
       </thead>
       <tbody>
-        {list.map((m) => (
+        {materializations.map((m) => (
           <AssetMaterializationRow
             key={m.latest.materializationEvent.timestamp}
-            isPartitioned={isPartitioned}
+            hasPartitions={hasPartitions}
             hasLineage={hasLineage}
             assetMaterialization={m}
+            focused={focused}
+            setFocused={setFocused}
           />
         ))}
       </tbody>
@@ -63,9 +59,11 @@ export const AssetMaterializationTable: React.FC<{
 
 const AssetMaterializationRow: React.FC<{
   assetMaterialization: HistoricalMaterialization;
-  isPartitioned: boolean;
+  hasPartitions: boolean;
   hasLineage: boolean;
-}> = ({assetMaterialization, isPartitioned, hasLineage}) => {
+  focused?: string;
+  setFocused?: (timestamp: string) => void;
+}> = ({assetMaterialization, hasPartitions, hasLineage, focused, setFocused}) => {
   const {latest, predecessors} = assetMaterialization;
   const run = latest.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
   const repositoryOrigin = run?.repositoryOrigin;
@@ -77,85 +75,135 @@ const AssetMaterializationRow: React.FC<{
   if (!run) {
     return <span />;
   }
-  const {materialization, assetLineage, timestamp} = latest.materializationEvent;
+  const {materialization, assetLineage, timestamp, stepKey} = latest.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
+  const isFocused = focused === timestamp;
+
+  const focusCss = isFocused
+    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
+    : {paddingLeft: 8};
 
   return (
-    <tr>
-      {isPartitioned && (
-        <td style={{whiteSpace: 'nowrap'}}>
-          {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+    <>
+      <ClickableRow onClick={() => setFocused?.(timestamp)}>
+        {hasPartitions && (
+          <td style={{whiteSpace: 'nowrap', ...focusCss}}>
+            <Group direction="row" spacing={2}>
+              <DisclosureTriangle $open={isFocused} />
+              {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+            </Group>
+          </td>
+        )}
+        <td style={hasPartitions ? {} : focusCss}>
+          <Group direction="row" spacing={4}>
+            {!hasPartitions && <DisclosureTriangle $open={isFocused} />}
+            <Group direction="column" spacing={4}>
+              <Timestamp timestamp={{ms: Number(timestamp)}} />
+              {predecessors?.length ? (
+                <AssetPredecessorLink
+                  hasPartitions={hasPartitions}
+                  hasLineage={hasLineage}
+                  predecessors={predecessors}
+                />
+              ) : null}
+            </Group>
+          </Group>
         </td>
+        <td>
+          <Box margin={{bottom: 4}}>
+            <Box padding={{left: 8}}>
+              <PipelineReference
+                showIcon
+                pipelineName={run.pipelineName}
+                pipelineHrefContext={repoAddress || 'repo-unknown'}
+                snapshotId={run.pipelineSnapshotId}
+                isJob={isThisThingAJob(repo, run.pipelineName)}
+              />
+            </Box>
+            <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+              <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+              <Link
+                to={`/instance/runs/${run.runId}?${qs.stringify({
+                  selection: stepKey,
+                  logs: `step:${stepKey}`,
+                })}`}
+              >
+                {stepKey}
+              </Link>
+            </Group>
+          </Box>
+        </td>
+        <td>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <RunStatusWithStats runId={run.runId} status={run.status} />
+            <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
+              <Mono>{titleForRun(run)}</Mono>
+            </Link>
+          </Box>
+        </td>
+      </ClickableRow>
+      {isFocused && (
+        <tr style={{background: ColorsWIP.Gray50}}>
+          <td colSpan={6} style={{fontSize: 14, padding: 0}}>
+            {materialization.description && (
+              <Box padding={{horizontal: 24, vertical: 12}}>{materialization.description}</Box>
+            )}
+            {metadataEntries.length || hasLineage ? (
+              <DetailsTable>
+                {(metadataEntries || []).map((entry) => (
+                  <tr key={`metadata-${entry.label}`}>
+                    <td>{entry.label}</td>
+                    <td>
+                      <MetadataEntry entry={entry} expandSmallValues={true} />
+                    </td>
+                  </tr>
+                ))}
+                {hasLineage && (
+                  <tr>
+                    <td>Parent Materializations</td>
+                    <td>
+                      <AssetLineageElements elements={assetLineage} timestamp={timestamp} />
+                    </td>
+                  </tr>
+                )}
+              </DetailsTable>
+            ) : (
+              <Box padding={{horizontal: 24, vertical: 12}}>No materialization event metadata</Box>
+            )}
+          </td>
+        </tr>
       )}
-      <td style={{fontSize: 12}}>
-        {materialization.description ? (
-          <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
-        ) : null}
-        {metadataEntries && metadataEntries.length ? (
-          <MetadataTableContainer>
-            <MetadataEntries entries={metadataEntries} />
-          </MetadataTableContainer>
-        ) : null}
-      </td>
-      {hasLineage && (
-        <td>{<AssetLineageElements elements={assetLineage} timestamp={timestamp} />}</td>
-      )}
-      <td>
-        <Group direction="column" spacing={4}>
-          <Timestamp timestamp={{ms: Number(timestamp)}} />
-          {predecessors?.length ? (
-            <AssetPredecessorLink
-              isPartitioned={isPartitioned}
-              hasLineage={hasLineage}
-              predecessors={predecessors}
-            />
-          ) : null}
-        </Group>
-      </td>
-      <td>
-        <PipelineReference
-          pipelineName={run.pipelineName}
-          pipelineHrefContext={repoAddress || 'repo-unknown'}
-          snapshotId={run.pipelineSnapshotId}
-          isJob={!!repo && isThisThingAJob(repo, run.pipelineName)}
-        />
-      </td>
-      <td>
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <RunStatusWithStats runId={run.runId} status={run.status} />
-          <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
-            <Mono>{titleForRun(run)}</Mono>
-          </Link>
-        </Box>
-      </td>
-    </tr>
+    </>
   );
 };
 
-const MetadataTableContainer = styled.div`
-  margin-top: -4px;
-  margin-bottom: -10px;
-
-  & tbody > tr > td {
-    font-size: 13px;
+const ClickableRow = styled.tr`
+  &:hover {
+    background: ${ColorsWIP.Gray10};
+  }
+`;
+const DetailsTable = styled.table`
+  margin: -2px -2px -3px;
+  tr td {
+    font-size: 14px;
   }
 `;
 
 interface PredecessorDialogProps {
   hasLineage: boolean;
-  isPartitioned: boolean;
+  hasPartitions: boolean;
   predecessors: AssetMaterializationFragment[];
 }
 
 export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   hasLineage,
-  isPartitioned,
+  hasPartitions,
   predecessors,
 }) => {
   const [open, setOpen] = React.useState(false);
   const count = predecessors.length;
   const title = () => {
-    if (isPartitioned) {
+    if (hasPartitions) {
       const partition = predecessors[0].partition;
       if (partition) {
         return `Previous materializations for ${partition}`;
@@ -178,9 +226,11 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
         <Box padding={{bottom: 8}}>
           <AssetMaterializationTable
             hasLineage={hasLineage}
-            isPartitioned={isPartitioned}
-            materializations={predecessors.map((p) => ({latest: p}))}
-            shouldBucketPartitions={false}
+            hasPartitions={hasPartitions}
+            materializations={predecessors.map((p) => ({
+              latest: p,
+              timestamp: p.materializationEvent.timestamp,
+            }))}
           />
         </Box>
         <DialogFooter>
@@ -192,3 +242,15 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
     </>
   );
 };
+
+const DisclosureTriangle: React.FC<{$open: boolean}> = ({$open}) => (
+  <IconWIP
+    name="arrow_drop_down"
+    size={24}
+    style={{
+      margin: '-2px -5px',
+      transform: $open ? 'rotate(0deg)' : 'rotate(-90deg)',
+      opacity: 0.25,
+    }}
+  />
+);

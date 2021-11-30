@@ -627,12 +627,13 @@ type AssetNode {
   opName: String
   jobName: String
   dependencies: [AssetDependency!]!
+  dependedBy: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
 }
 
 type AssetDependency {
   inputName: String!
-  upstreamAsset: AssetNode!
+  asset: AssetNode!
 }
 
 union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent

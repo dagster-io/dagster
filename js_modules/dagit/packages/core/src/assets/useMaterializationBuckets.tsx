@@ -6,12 +6,13 @@ const NO_PARTITION_KEY = '__NO_PARTITION__';
 
 export type HistoricalMaterialization = {
   latest: AssetMaterializationFragment;
+  timestamp: string;
   predecessors?: AssetMaterializationFragment[];
 };
 
 type Config = {
   materializations: AssetMaterializationFragment[];
-  isPartitioned: boolean;
+  hasPartitions: boolean;
   shouldBucketPartitions: boolean;
 };
 
@@ -20,11 +21,12 @@ type Config = {
  * materialization separated from predecessor materializations.
  */
 export const useMaterializationBuckets = (config: Config): HistoricalMaterialization[] => {
-  const {isPartitioned, materializations, shouldBucketPartitions} = config;
+  const {hasPartitions, materializations, shouldBucketPartitions} = config;
   return React.useMemo(() => {
-    if (!isPartitioned || !shouldBucketPartitions) {
+    if (!hasPartitions || !shouldBucketPartitions) {
       return materializations.map((materialization) => ({
         latest: materialization,
+        timestamp: materialization.materializationEvent.timestamp,
       }));
     }
 
@@ -44,7 +46,7 @@ export const useMaterializationBuckets = (config: Config): HistoricalMaterializa
           Number(b.materializationEvent?.timestamp) - Number(a.materializationEvent?.timestamp),
       );
       const [latest, ...predecessors] = materializationsForKey;
-      return {latest, predecessors};
+      return {latest, predecessors, timestamp: latest.materializationEvent.timestamp};
     };
 
     return Object.keys(buckets)
@@ -53,5 +55,5 @@ export const useMaterializationBuckets = (config: Config): HistoricalMaterializa
       .filter((key) => key !== NO_PARTITION_KEY)
       .map(separate)
       .concat(buckets.hasOwnProperty(NO_PARTITION_KEY) ? [separate(NO_PARTITION_KEY)] : []);
-  }, [isPartitioned, materializations, shouldBucketPartitions]);
+  }, [hasPartitions, materializations, shouldBucketPartitions]);
 };

@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
@@ -17,26 +17,11 @@ import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
 import {useAssetView} from './useAssetView';
 
-// Jan 1, 2015 at 00:00 GMT
-const EARLIEST_TIME = 1420070400000;
-
-export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match}) => {
+export const AssetEntryRoot: React.FC<RouteComponentProps> = ({match}) => {
   const currentPath: string[] = (match.params['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
-
-  const {pathname, search} = location;
-  const asOf = React.useMemo(() => {
-    const params = new URLSearchParams(search);
-    return params.get('asOf');
-  }, [search]);
-
-  // Validate the `asOf` time, since it's user-specified.
-  const invalidTime = React.useMemo(() => {
-    const asOfNumber = Number(asOf);
-    return asOfNumber && (asOfNumber < EARLIEST_TIME || asOfNumber > Date.now());
-  }, [asOf]);
 
   const [view] = useAssetView();
 
@@ -58,11 +43,6 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
 
     return list;
   }, [currentPath, view]);
-
-  // If the asOf timestamp is invalid, discard it via redirect.
-  if (invalidTime) {
-    return <Redirect to={pathname} />;
-  }
 
   return (
     <Page>
@@ -95,7 +75,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
             return <AssetsCatalogTable prefixPath={currentPath} />;
           }
 
-          return <AssetView assetKey={{path: currentPath}} asOf={asOf} />;
+          return <AssetView assetKey={{path: currentPath}} />;
         }}
       </Loading>
     </Page>
