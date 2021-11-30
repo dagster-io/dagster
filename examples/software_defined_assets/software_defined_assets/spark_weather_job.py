@@ -83,8 +83,8 @@ class LocalFileSystemIOManager(IOManager):
 
 # build_assets_job_start
 
-weather_job = build_assets_job(
-    "weather",
+spark_weather_job = build_assets_job(
+    "spark_weather",
     assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
     source_assets=[sfo_q2_weather_sample],
     resource_defs={
