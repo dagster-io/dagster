@@ -38,7 +38,7 @@ interface Props {
   daemonStatuses: DaemonStatus[] | undefined;
 }
 
-const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 export const DaemonList = (props: Props) => {
   const {daemonStatuses} = props;
@@ -75,7 +75,7 @@ export const DaemonList = (props: Props) => {
                         timestamp={{unix: daemon.lastHeartbeatTime}}
                         timeFormat={TIME_FORMAT}
                       />
-                      <span>({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
+                      <span>&nbsp;({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
                     </Group>
                   ) : (
                     'Never'
