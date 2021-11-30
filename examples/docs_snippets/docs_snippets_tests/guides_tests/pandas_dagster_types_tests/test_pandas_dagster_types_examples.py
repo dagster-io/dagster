@@ -3,7 +3,12 @@ import shutil
 
 import docs_snippets.guides.dagster.pandas_dagster_types as example_root
 import pytest
+from dagster import check_dagster_type
 from dagster.core.errors import DagsterTypeCheckDidNotPass
+from docs_snippets.guides.dagster.pandas_dagster_types.simple_example import (
+    set_containing_1,
+    set_has_element_type_factory,
+)
 from docs_snippets.guides.dagster.pandas_dagster_types.job_1 import (
     generate_trip_distribution_plot as job_1,
 )
@@ -12,6 +17,15 @@ from docs_snippets.guides.dagster.pandas_dagster_types.job_2 import (
 )
 
 EBIKE_TRIPS_PATH = os.path.join(example_root.__path__[0], "ebike_trips.csv")
+
+
+def test_simple_example_one_off():
+    assert check_dagster_type(set_containing_1, {1, 2}).success
+
+
+def test_simple_example_factory():
+    set_containing_2 = set_has_element_type_factory(2)
+    assert check_dagster_type(set_containing_2, {1, 2}).success
 
 
 @pytest.fixture(scope="function")
@@ -38,4 +52,4 @@ def test_job_2_no_clean_succeeds():
     assert job_2.execute_in_process(
         run_config={"ops": {"load_trips": {"config": {"clean": True}}}}
     ).success
-    assert os.path.exists('./trip_lengths.png')
+    assert os.path.exists("./trip_lengths.png")
