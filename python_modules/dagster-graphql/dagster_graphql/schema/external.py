@@ -252,10 +252,9 @@ class GrapheneRepository(graphene.ObjectType):
         for job_name in job_names:
             in_progress_runs.extend(get_in_progress_runs_for_job(_graphene_info, job_name))
 
+        # We exclude foreign assets from the search. Foreign assets do not contain an op_name.
         asset_node_keys = [
-            node.op_name
-            for node in self._repository.get_external_asset_nodes()
-            if not isinstance(node, ForeignAsset)
+            node.op_name for node in self._repository.get_external_asset_nodes() if node.op_name
         ]
         return get_in_progress_runs_by_in_progress_step(
             _graphene_info, in_progress_runs, asset_node_keys
