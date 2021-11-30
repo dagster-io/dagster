@@ -140,7 +140,7 @@ We are now facing a common situation in data science-- dirty data. This can caus
 
 We can prevent these situations by validating our data before passing it downstream. There are several ways to solve this problem in Dagster. We could inline the schema and validation call in our `load_trips` op. Alternatively, we could break validation into a dedicated op that sits in between `load_trips` and any downstream computations. However, both of these approaches complicate our logic at either the graph or single op level. If this validation strategy were scaled up across all present and future analysis jobs, it could quickly become a headache.
 
-[Dagster Types](/concepts/dagster-types) offer a more robust and elegant solution. Every op input and output can have a Dagster type that encapsulates runtime validation checks. Dagster automatically runs these checks during job execution. So if we can wrap our trip dataframe schema in a Dagster type, then we won't need to further complicate our graphs or individual ops with explicit validation calls and error handling-- Dagster's machinery will take care of this for us.
+[Dagster Types](/concepts/types) offer a more robust and elegant solution. Every op input and output can have a Dagster type that encapsulates runtime validation checks. Dagster automatically runs these checks during job execution. So if we can wrap our trip dataframe schema in a Dagster type, then we won't need to further complicate our graphs or individual ops with explicit validation calls and error handling-- Dagster's machinery will take care of this for us.
 
 Fortunately, it's easy to write a factory function that will wrap any Pandera schema in a unique Dagster type:
 
@@ -182,7 +182,7 @@ Let's unpack the above code. Our factory function is `pandera_schema_to_dagster_
 
 Inside `type_check_fn`, we let `pandera` do the heavy lifting. After confirming `value` is in fact a `DataFrame`, we call `schema.validate` and tack the message of any resulting `SchemaErrors` instance onto our returned `TypeCheck` instance. `TypeCheck` is an optional rich return type for Dagster type check functions (it is also possible to return a boolean indicating a simple pass/fail). A `TypeCheck` is appropriate here because we want to capture specific information about any validation failures.
 
-Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [Dagit](/concepts/dagit) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
+Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [Dagit](/concepts/dagit/dagit) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
 
 ## Annotate our job with Dagster types
 
@@ -282,4 +282,4 @@ height={360}
 
 In this guide, we saw how to use Dagster type factories to generate collections of Dagster types sharing a common validation pattern. We further saw how a factory can smoothly integrate a third-party data validation library with Dagster.
 
-We used [Pandas](https://pandas.pydata.org/) and [Pandera](https://pandera.readthedocs.io/en/stable/) as an example, but the same technique can be used for any data validation library or logic of your own. The basic pattern is to wrap validation entities in [Dagster Types](/concepts/dagster-types). Use of a factory function achieves this with little boilerplate. Inside the factory, you are free to translate validation results into `TypeCheck` objects however you like. In sum, Dagster type factories can imbue your jobs with arbitrary runtime data validation at the cost of very little code.
+We used [Pandas](https://pandas.pydata.org/) and [Pandera](https://pandera.readthedocs.io/en/stable/) as an example, but the same technique can be used for any data validation library or logic of your own. The basic pattern is to wrap validation entities in [Dagster Types](/concepts/types). Use of a factory function achieves this with little boilerplate. Inside the factory, you are free to translate validation results into `TypeCheck` objects however you like. In sum, Dagster type factories can imbue your jobs with arbitrary runtime data validation at the cost of very little code.
