@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {useTelemetryAction, TelemetryAction} from '../app/Telemetry';
+import {logTelemetry, TelemetryAction} from '../app/Telemetry';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -22,7 +22,6 @@ interface LaunchRootExecutionButtonProps {
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
   props,
 ) => {
-  const logLaunch = useTelemetryAction(TelemetryAction.LAUNCH_RUN);
   const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -45,7 +44,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
 
     try {
       const result = await launchPipelineExecution({variables});
-      logLaunch(metadata);
+      logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
       handleLaunchResult(basePath, props.pipelineName, result);
     } catch (error) {
       showLaunchError(error as Error);
