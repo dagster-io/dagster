@@ -5,7 +5,6 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -37,6 +36,7 @@ import {
   AssetGraphQueryVariables,
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
 } from './types/AssetGraphQuery';
+import {useFetchAssetDefinitionLocation} from './useFetchAssetDefinitionLocation';
 
 type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 
@@ -112,6 +112,7 @@ const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const history = useHistory();
+  const fetchAssetDefinitionLocation = useFetchAssetDefinitionLocation();
   const selectedDefinition = selectedHandle?.solid.definition;
   const selectedGraphNode =
     selectedDefinition &&
@@ -120,44 +121,49 @@ const AssetGraphExplorerWithData: React.FC<
     );
 
   const onSelectNode = React.useCallback(
-    (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node) => {
+    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node) => {
       e.stopPropagation();
 
-      if (!node) {
+      const def = (node && node.definition) || (await fetchAssetDefinitionLocation(assetKey));
+      if (!def || !def.jobName || !def.opName) {
         history.push(`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`);
         return;
       }
 
-      const {opName, jobName} = node.definition;
-      if (!opName) {
-        return;
+      const {opName, jobName} = def;
+      let nextOpsQuery = `${opName}`;
+
+      if (jobName === explorerPath.pipelineName && (e.shiftKey || e.metaKey)) {
+        const existing = explorerPath.opsQuery.split(',');
+        const added =
+          e.shiftKey && selectedGraphNode
+            ? opsInRange({graph: graphData, from: selectedGraphNode, to: node})
+            : [opName];
+
+        nextOpsQuery = (existing.includes(opName)
+          ? without(existing, opName)
+          : uniq([...existing, ...added])
+        ).join(',');
       }
-
-      const append = jobName === explorerPath.pipelineName && (e.shiftKey || e.metaKey);
-      const existing = explorerPath.opsQuery.split(',');
-      const added =
-        e.shiftKey && selectedGraphNode
-          ? opsInRange({graph: graphData, from: selectedGraphNode, to: node})
-          : [opName];
-
-      const next = append
-        ? (existing.includes(opName)
-            ? without(existing, opName)
-            : uniq([...existing, ...added])
-          ).join(',')
-        : `${opName}`;
 
       onChangeExplorerPath(
         {
           ...explorerPath,
           opNames: [opName],
-          opsQuery: next,
+          opsQuery: nextOpsQuery,
           pipelineName: jobName || explorerPath.pipelineName,
         },
         'replace',
       );
     },
-    [explorerPath, selectedGraphNode, graphData, onChangeExplorerPath, history],
+    [
+      fetchAssetDefinitionLocation,
+      explorerPath,
+      onChangeExplorerPath,
+      history,
+      selectedGraphNode,
+      graphData,
+    ],
   );
 
   const {all: highlighted} = React.useMemo(
@@ -171,7 +177,6 @@ const AssetGraphExplorerWithData: React.FC<
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
   const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
-  console.log(layout);
 
   return (
     <SplitPanelContainer
@@ -298,7 +303,6 @@ const AssetGraphExplorerWithData: React.FC<
     />
   );
 };
-
 const ASSETS_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
@@ -310,9 +314,18 @@ const ASSETS_GRAPH_QUERY = gql`
           assetKey {
             path
           }
+          dependedBy {
+            inputName
+            asset {
+              id
+              assetKey {
+                path
+              }
+            }
+          }
           dependencies {
             inputName
-            upstreamAsset {
+            asset {
               id
               assetKey {
                 path
@@ -324,7 +337,6 @@ const ASSETS_GRAPH_QUERY = gql`
     }
   }
   ${ASSET_NODE_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`
@@ -342,6 +354,22 @@ const AssetQueryInputContainer = styled.div`
   display: flex;
 `;
 
+const graphDirectionOf = ({graph, from, to}: {graph: GraphData; from: Node; to: Node}) => {
+  const stack = [from];
+  while (stack.length) {
+    const node = stack.pop()!;
+
+    const downstream = [...Object.keys(graph.downstream[node.id] || {})]
+      .map((n) => graph.nodes[n])
+      .filter(Boolean);
+    if (downstream.some((d) => d.id === to.id)) {
+      return 'downstream';
+    }
+    stack.push(...downstream);
+  }
+  return 'upstream';
+};
+
 const opsInRange = (
   {graph, from, to}: {graph: GraphData; from: Node; to: Node},
   seen: string[] = [],
@@ -352,21 +380,25 @@ const opsInRange = (
   if (from.id === to.id) {
     return [to.definition.opName!];
   }
-  const adjacent = [
-    ...Object.keys(graph.upstream[from.id] || {}),
-    ...Object.keys(graph.downstream[from.id] || {}),
-  ].map((n) => graph.nodes[n]);
 
-  let best: string[] = [];
+  if (seen.length === 0 && graphDirectionOf({graph, from, to}) === 'upstream') {
+    [from, to] = [to, from];
+  }
 
-  for (const node of adjacent) {
+  const downstream = [...Object.keys(graph.downstream[from.id] || {})]
+    .map((n) => graph.nodes[n])
+    .filter(Boolean);
+
+  const ledToTarget: string[] = [];
+
+  for (const node of downstream) {
     if (seen.includes(node.id)) {
       continue;
     }
     const result: string[] = opsInRange({graph, from: node, to}, [...seen, from.id]);
-    if (result.length && (best.length === 0 || result.length < best.length)) {
-      best = [from.definition.opName!, ...result];
+    if (result.length) {
+      ledToTarget.push(from.definition.opName!, ...result);
     }
   }
-  return best;
+  return uniq(ledToTarget);
 };

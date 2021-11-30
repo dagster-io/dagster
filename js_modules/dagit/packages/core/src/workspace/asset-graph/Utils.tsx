@@ -21,6 +21,8 @@ interface LayoutNode {
   id: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 export interface GraphData {
   nodes: {[id: string]: Node};
@@ -48,8 +50,8 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
 
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({upstreamAsset, inputName}) => {
-      const upstreamAssetKeyJson = JSON.stringify(upstreamAsset.assetKey.path);
+    definition.dependencies.forEach(({asset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
       downstream[upstreamAssetKeyJson] = {
         ...(downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: inputName,
@@ -57,6 +59,17 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
       upstream[assetKeyJson] = {
         ...(upstream[assetKeyJson] || {}),
         [upstreamAssetKeyJson]: true,
+      };
+    });
+    definition.dependedBy.forEach(({asset, inputName}) => {
+      const downstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      upstream[downstreamAssetKeyJson] = {
+        ...(upstream[downstreamAssetKeyJson] || {}),
+        [assetKeyJson]: true,
+      };
+      downstream[assetKeyJson] = {
+        ...(downstream[assetKeyJson] || {}),
+        [downstreamAssetKeyJson]: inputName,
       };
     });
     nodes[assetKeyJson] = {
@@ -91,22 +104,41 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const layoutGraph = (graphData: GraphData, margin = 100) => {
+export const layoutGraph = (
+  graphData: GraphData,
+  opts: {margin: number; mini: boolean} = {
+    margin: 100,
+    mini: false,
+  },
+) => {
   const g = new dagre.graphlib.Graph();
 
-  g.setGraph({rankdir: 'TB', marginx: margin, marginy: margin});
+  g.setGraph({
+    rankdir: 'TB',
+    marginx: opts.margin,
+    marginy: opts.margin,
+    nodesep: opts.mini ? 20 : 50,
+    edgesep: opts.mini ? 10 : 10,
+    ranksep: opts.mini ? 20 : 50,
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   Object.values(graphData.nodes)
     .filter((x) => !x.hidden)
     .forEach((node) => {
-      g.setNode(node.id, getNodeDimensions(node.definition));
+      const {width, height} = getNodeDimensions(node.definition);
+      g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
+
   const foreignNodes = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
-      if (graphData.nodes[downstreamId].hidden && graphData.nodes[upstreamId].hidden) {
+      if (
+        graphData.nodes[downstreamId] &&
+        graphData.nodes[downstreamId].hidden &&
+        graphData.nodes[upstreamId].hidden
+      ) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
@@ -142,6 +174,8 @@ export const layoutGraph = (graphData: GraphData, margin = 100) => {
       id,
       x: dagreNode.x - dagreNode.width / 2,
       y: dagreNode.y - dagreNode.height / 2,
+      width: dagreNode.width,
+      height: dagreNode.height,
     });
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
@@ -160,8 +194,8 @@ export const layoutGraph = (graphData: GraphData, margin = 100) => {
   return {
     nodes,
     edges,
-    width: maxWidth + margin,
-    height: maxHeight + margin,
+    width: maxWidth + opts.margin,
+    height: maxHeight + opts.margin,
   };
 };
 

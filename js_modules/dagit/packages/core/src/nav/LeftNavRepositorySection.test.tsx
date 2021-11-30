@@ -34,6 +34,7 @@ describe('Repository options', () => {
         id: () => 'my_pipeline',
         name: () => 'my_pipeline',
         modes: () => new MockList(1),
+        isAssetJob: () => false,
       }),
     };
 
