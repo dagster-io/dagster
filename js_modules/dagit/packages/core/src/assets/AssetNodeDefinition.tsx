@@ -11,6 +11,7 @@ import {AssetNode, ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 import {AssetNodeFragment} from '../workspace/asset-graph/types/AssetNodeFragment';
 
+import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragment}> = ({
@@ -45,24 +46,19 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
         </Box>
       </Box>
       <Box
-        style={{width: '40%', height: 350, minWidth: 0}}
-        flex={{direction: 'column'}}
         border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+        style={{width: '40%', height: 500}}
+        flex={{direction: 'column'}}
       >
         <Box
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
+          <Subheading>Related Assets</Subheading>
         </Box>
-        <AssetList items={assetNode.dependencies} />
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
+        <Box margin={{vertical: 16, horizontal: 24}} style={{minHeight: 0, height: '100%'}}>
+          <AssetNeighborsGraph assetNode={assetNode} />
         </Box>
-        <AssetList items={assetNode.dependedBy} />
       </Box>
     </Box>
   );

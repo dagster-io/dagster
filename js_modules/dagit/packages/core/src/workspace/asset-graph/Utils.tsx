@@ -105,7 +105,14 @@ export const graphHasCycles = (graphData: GraphData) => {
 export const layoutGraph = (graphData: GraphData, margin = 100) => {
   const g = new dagre.graphlib.Graph();
 
-  g.setGraph({rankdir: 'TB', marginx: margin, marginy: margin});
+  g.setGraph({
+    rankdir: 'TB',
+    marginx: margin,
+    marginy: margin,
+    edgesep: 20,
+    ranksep: 25,
+    nodesep: 20,
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   Object.values(graphData.nodes)
