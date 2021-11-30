@@ -551,6 +551,7 @@ class AssetSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        last_event_only: bool = True,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -573,15 +574,15 @@ class AssetSensorDefinition(SensorDefinition):
                         after_cursor=after_cursor,
                     ),
                     ascending=False,
-                    limit=1,
+                    limit=1 if last_event_only else None,
                 )
 
                 if not event_records:
                     return
 
-                event_record = event_records[0]
-                yield from materialization_fn(context, event_record.event_log_entry)
-                context.update_cursor(str(event_record.storage_id))
+                for event_record in event_records:
+                    yield from materialization_fn(context, event_record.event_log_entry)
+                    context.update_cursor(str(event_record.storage_id))
 
             return _fn
 

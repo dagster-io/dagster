@@ -110,6 +110,7 @@ def asset_sensor(
     description: Optional[str] = None,
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    last_event_only: bool = True,
 ) -> Callable[
     [
         Callable[
@@ -197,6 +198,7 @@ def asset_sensor(
             description=description,
             job=job,
             jobs=jobs,
+            last_event_only=last_event_only,
         )
 
     return inner

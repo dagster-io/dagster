@@ -43,7 +43,7 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
@@ -217,6 +217,11 @@ def asset_job_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
 
+@asset_sensor(asset_key=AssetKey("foo"), job=the_job, last_event_only=False)
+def every_asset_sensor(context, _event):
+    return RunRequest(run_key=context.cursor, run_config={})
+
+
 @pipeline_failure_sensor
 def my_pipeline_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
@@ -283,6 +288,7 @@ def the_repo():
         run_cursor_sensor,
         asset_foo_sensor,
         asset_job_sensor,
+        every_asset_sensor,
         my_pipeline_failure_sensor,
         my_run_failure_sensor_filtered,
         my_pipeline_success_sensor,
@@ -1150,7 +1156,9 @@ def test_asset_sensor(external_repo_context):
                 freeze_datetime,
                 JobTickStatus.SUCCESS,
             )
-            run = instance.get_runs()[0]
+            runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="the_pipeline"))
+            assert len(runs) == 1
+            run = runs[0]
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
@@ -1198,7 +1206,9 @@ def test_asset_job_sensor(external_repo_context):
                 freeze_datetime,
                 JobTickStatus.SUCCESS,
             )
-            run = instance.get_runs()[0]
+            runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="the_graph"))
+            assert len(runs) == 1
+            run = runs[0]
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
@@ -1773,3 +1783,37 @@ def test_bad_run_request_unspecified(external_repo_context):
                     "['the_graph', 'config_graph']"
                 ),
             )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_every_asset_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("every_asset_sensor")
+            instance.start_sensor(job_sensor)
+
+            # should generate the foo asset
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            # should generate the foo asset again
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="the_graph"))
+            assert len(runs) == 2
