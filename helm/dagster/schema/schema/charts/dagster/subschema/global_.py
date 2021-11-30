@@ -5,3 +5,4 @@ class Global(BaseModel):
     postgresqlSecretName: str
     dagsterHome: str
     serviceAccountName: str
+    celeryConfigSecretName: str

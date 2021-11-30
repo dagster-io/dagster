@@ -13,3 +13,9 @@ data:
   {{- range $name, $value := .Values.pipelineRun.env }}
   {{ $name }}: {{ $value | quote }}
   {{- end }}
+
+  {{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
+  {{- range $name, $value := .Values.runLauncher.config.celeryK8sRunLauncher.env }}
+  {{ $name }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}

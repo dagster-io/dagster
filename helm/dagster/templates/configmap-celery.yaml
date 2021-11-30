@@ -18,9 +18,9 @@ data:
     execution:
       celery:
         broker:
-          env: DAGSTER_K8S_CELERY_BROKER
+          env: DAGSTER_CELERY_BROKER_URL
         backend:
-          env: DAGSTER_K8S_CELERY_BACKEND
+          env: DAGSTER_CELERY_BACKEND_URL
         config_source: {{ merge $individualConfig $sharedConfig | toYaml | nindent 10 }}
 ---
 {{- end }}

@@ -15,7 +15,6 @@ from dagster.utils.merger import deep_merge_dicts, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
@@ -43,8 +42,6 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
                     {
                         "job_namespace": job_namespace,
                         "image_pull_policy": image_pull_policy(),
-                        "env_config_maps": ["dagster-pipeline-env"]
-                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     },
                 )
             }
@@ -66,8 +63,6 @@ def get_celery_job_engine_config(dagster_docker_image, job_namespace):
                 {
                     "job_namespace": job_namespace,
                     "image_pull_policy": image_pull_policy(),
-                    "env_config_maps": ["dagster-pipeline-env"]
-                    + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                 },
             )
         },

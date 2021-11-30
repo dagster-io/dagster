@@ -111,9 +111,9 @@ def build_spec_backcompat_suite():
 def build_spec_celery_k8s_suite():
     tox_env_suffixes = [
         "-default",
-        "-markusercodedeployment",
         "-markusercodedeploymentsubchart",
         "-markdaemon",
+        "-markredis",
     ]
     directory = os.path.join(
         "integration_tests", "test_suites", "celery-k8s-integration-test-suite"

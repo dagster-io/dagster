@@ -163,8 +163,8 @@ def test_celery_queue_inherit_config_source(
     dagster_celery = yaml.full_load(celery_queue_configmaps[0].data["celery.yaml"])
     extra_queue_celery = yaml.full_load(celery_queue_configmaps[1].data["celery.yaml"])
 
-    assert dagster_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_K8S_CELERY_BROKER"
-    assert dagster_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_K8S_CELERY_BACKEND"
+    assert dagster_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_CELERY_BROKER_URL"
+    assert dagster_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_CELERY_BACKEND_URL"
 
     assert dagster_celery["execution"]["celery"]["config_source"] == configSource
 
@@ -173,9 +173,9 @@ def test_celery_queue_inherit_config_source(
         "worker_concurrency": 4,
     }
 
-    assert extra_queue_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_K8S_CELERY_BROKER"
+    assert extra_queue_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_CELERY_BROKER_URL"
     assert (
-        extra_queue_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_K8S_CELERY_BACKEND"
+        extra_queue_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_CELERY_BACKEND_URL"
     )
 
 

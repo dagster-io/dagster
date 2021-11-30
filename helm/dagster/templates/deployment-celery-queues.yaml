@@ -73,6 +73,8 @@ spec:
             {{- range $envConfigMap := $celeryK8sRunLauncherConfig.envConfigMaps }}
             - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
+            - secretRef:
+                name: {{ $.Values.global.celeryConfigSecretName }}
             {{- range $envSecret := $celeryK8sRunLauncherConfig.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
