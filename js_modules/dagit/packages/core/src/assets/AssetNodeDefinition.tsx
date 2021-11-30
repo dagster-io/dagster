@@ -7,11 +7,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Subheading} from '../ui/Text';
-import {
-  AssetNode,
-  ASSET_NODE_FRAGMENT,
-  getNodeDimensions,
-} from '../workspace/asset-graph/AssetNode';
+import {AssetNode, ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 import {AssetNodeFragment} from '../workspace/asset-graph/types/AssetNodeFragment';
 
@@ -109,7 +105,8 @@ const AssetList: React.FC<{
             position: 'relative',
             display: 'inline-block',
             verticalAlign: 'top',
-            ...getNodeDimensions({...dep.asset, description: ''}),
+            height: 95,
+            width: 215,
           }}
           key={assetKeyToString(dep.asset.assetKey)}
           onClick={(e) => {
