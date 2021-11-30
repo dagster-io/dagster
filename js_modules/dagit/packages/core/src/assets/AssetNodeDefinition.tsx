@@ -41,7 +41,7 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
         <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
           <Description
             description={assetNode.description || 'No description provided.'}
-            maxHeight={278}
+            maxHeight={318}
           />
         </Box>
       </Box>
