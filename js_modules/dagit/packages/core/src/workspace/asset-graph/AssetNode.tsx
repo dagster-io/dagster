@@ -36,8 +36,12 @@ export const AssetNode: React.FC<{
 }> = React.memo(({definition, metadata, selected, liveData, repoAddress, secondaryHighlight}) => {
   const launch = useLaunchSingleAssetJob();
   const history = useHistory();
+
   const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
   const kind = metadata.find((m) => m.key === 'kind')?.value;
+  const notYetMaterializedRunIds = (liveData?.inProgressRunIds || []).filter(
+    (runId) => (runOrError?.__typename === 'Run' ? runOrError.runId : '') !== runId,
+  );
 
   return (
     <ContextMenu
@@ -70,14 +74,16 @@ export const AssetNode: React.FC<{
         <AssetNodeBox>
           <Name>
             <IconWIP name="asset" />
-            {assetKeyToString(definition.assetKey)}
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+              {assetKeyToString(definition.assetKey)}
+            </div>
             <div style={{flex: 1}} />
-            {liveData && liveData.inProgressRunIds.length > 0 && (
+            {notYetMaterializedRunIds.length > 0 && (
               <Tooltip
                 content={
                   <div>
                     Run ID:{' '}
-                    {liveData.inProgressRunIds.map((runId) => (
+                    {notYetMaterializedRunIds.map((runId) => (
                       <Link to={`/instance/runs/${runId}`} key={runId}>
                         {runId}
                       </Link>

@@ -34,15 +34,15 @@ export interface AssetViewParams {
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   useDocumentTitle(`Asset: ${assetKeyToString(assetKey)}`);
 
-  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {assetKey: {path: assetKey.path}},
-    pollInterval: 5 * 1000,
-  });
-
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const [navigatedDirectlyToTime, setNavigatedDirectlyToTime] = React.useState(() =>
     Boolean(params.asOf),
   );
+
+  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
+    variables: {assetKey: {path: assetKey.path}},
+    pollInterval: 5 * 1000,
+  });
 
   const definition =
     data?.assetOrError && data.assetOrError.__typename === 'Asset'
@@ -67,25 +67,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     },
   );
 
-  let inProgressRuns =
+  const inProgressRuns =
     liveResult.data?.repositoryOrError.__typename === 'Repository'
       ? liveResult.data.repositoryOrError.inProgressRunsByStep
       : [];
-
-  inProgressRuns = [
-    {
-      __typename: 'InProgressRunsByStep',
-      stepKey: 'comment_daily_stats',
-      runs: [
-        {
-          __typename: 'Run',
-          id: 'd8998e43-b99c-4ce2-8796-17e50cbb9d2f',
-          runId: 'd8998e43-b99c-4ce2-8796-17e50cbb9d2f',
-        },
-      ],
-    },
-  ];
-  console.log(inProgressRuns);
 
   return (
     <div>

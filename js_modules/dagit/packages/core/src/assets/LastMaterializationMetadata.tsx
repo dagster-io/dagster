@@ -69,86 +69,84 @@ export const LatestMaterializationMetadata: React.FC<{
   const latestAssetLineage = latestEvent?.assetLineage;
 
   return (
-    <Box padding={{bottom: 16}}>
-      <MetadataTable>
-        <tbody>
+    <MetadataTable>
+      <tbody>
+        <tr>
+          <td>Run</td>
+          <td>
+            {latestRun ? (
+              <div>
+                <Box margin={{bottom: 4}}>
+                  {'Run '}
+                  <Link
+                    to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
+                  >
+                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
+                  </Link>
+                </Box>
+                <Box padding={{left: 8}}>
+                  <PipelineReference
+                    showIcon
+                    pipelineName={latestRun.pipelineName}
+                    pipelineHrefContext={repoAddress || 'repo-unknown'}
+                    snapshotId={latestRun.pipelineSnapshotId}
+                    isJob={isThisThingAJob(repo, latestRun.pipelineName)}
+                  />
+                </Box>
+                <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+                  <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+                  <Link
+                    to={`/instance/runs/${latestRun.runId}?${qs.stringify({
+                      selection: latestEvent.stepKey,
+                      logs: `step:${latestEvent.stepKey}`,
+                    })}`}
+                  >
+                    {latestEvent.stepKey}
+                  </Link>
+                </Group>
+              </div>
+            ) : (
+              'No materialization events'
+            )}
+          </td>
+        </tr>
+        {latest?.partition ? (
           <tr>
-            <td>Run</td>
+            <td>Latest partition</td>
+            <td>{latest ? latest.partition : 'No materialization events'}</td>
+          </tr>
+        ) : null}
+        <tr>
+          <td>Timestamp</td>
+          <td>
+            {latestEvent ? (
+              <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
+            ) : (
+              'No materialization events'
+            )}
+          </td>
+        </tr>
+        {latestAssetLineage?.length ? (
+          <tr>
+            <td>Parent assets</td>
             <td>
-              {latestRun ? (
-                <div>
-                  <Box margin={{bottom: 4}}>
-                    {'Run '}
-                    <Link
-                      to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
-                    >
-                      <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
-                    </Link>
-                  </Box>
-                  <Box padding={{left: 8}}>
-                    <PipelineReference
-                      showIcon
-                      pipelineName={latestRun.pipelineName}
-                      pipelineHrefContext={repoAddress || 'repo-unknown'}
-                      snapshotId={latestRun.pipelineSnapshotId}
-                      isJob={isThisThingAJob(repo, latestRun.pipelineName)}
-                    />
-                  </Box>
-                  <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                    <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-                    <Link
-                      to={`/instance/runs/${latestRun.runId}?${qs.stringify({
-                        selection: latestEvent.stepKey,
-                        logs: `step:${latestEvent.stepKey}`,
-                      })}`}
-                    >
-                      {latestEvent.stepKey}
-                    </Link>
-                  </Group>
-                </div>
-              ) : (
-                'No materialization events'
-              )}
+              <AssetLineageElements
+                elements={latestAssetLineage}
+                timestamp={latestEvent.timestamp}
+              />
             </td>
           </tr>
-          {latest?.partition ? (
-            <tr>
-              <td>Latest partition</td>
-              <td>{latest ? latest.partition : 'No materialization events'}</td>
-            </tr>
-          ) : null}
-          <tr>
-            <td>Timestamp</td>
+        ) : null}
+        {latestEvent?.materialization.metadataEntries.map((entry) => (
+          <tr key={`metadata-${entry.label}`}>
+            <td>{entry.label}</td>
             <td>
-              {latestEvent ? (
-                <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
-              ) : (
-                'No materialization events'
-              )}
+              <MetadataEntry entry={entry} expandSmallValues={true} />
             </td>
           </tr>
-          {latestAssetLineage?.length ? (
-            <tr>
-              <td>Parent assets</td>
-              <td>
-                <AssetLineageElements
-                  elements={latestAssetLineage}
-                  timestamp={latestEvent.timestamp}
-                />
-              </td>
-            </tr>
-          ) : null}
-          {latestEvent?.materialization.metadataEntries.map((entry) => (
-            <tr key={`metadata-${entry.label}`}>
-              <td>{entry.label}</td>
-              <td>
-                <MetadataEntry entry={entry} expandSmallValues={true} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </MetadataTable>
-    </Box>
+        ))}
+      </tbody>
+    </MetadataTable>
   );
 };
 

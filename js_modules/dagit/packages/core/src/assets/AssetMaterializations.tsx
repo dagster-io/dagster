@@ -1,22 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
+import styled from '@emotion/styled-base';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
+import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 import {InProgressRunsBanner} from '../workspace/asset-graph/InProgressRunsBanner';
-import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
 import {AssetViewParams} from './AssetView';
+import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetKey, AssetNumericHistoricalData} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
@@ -39,8 +43,8 @@ export const AssetMaterializations: React.FC<Props> = ({
   assetKey,
   asSidebarSection,
   params,
-  setParams,
   paramsTimeWindowOnly,
+  setParams,
   inProgressRunIds,
 }) => {
   const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
@@ -93,9 +97,43 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
+  const notYetMaterializedRunIds = (inProgressRunIds || []).filter(
+    (runId) =>
+      !materializations.some(
+        (m) => m.runOrError.__typename === 'Run' && m.runOrError.runId === runId,
+      ),
+  );
+
   if (asSidebarSection) {
+    const latest = materializations[0];
     return (
-      <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection assetMaterializations={reversed} />
+      <>
+        <InProgressRunsBanner runIds={inProgressRunIds || []} />
+        <SidebarSection title={'Materialization in Last Run'}>
+          {latest ? (
+            <>
+              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+                <LatestMaterializationMetadata latest={latest} asOf={null} />
+              </div>
+              <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
+                <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
+                  {'View All in Asset Catalog '}
+                  <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+                </AssetCatalogLink>
+              </Box>
+            </>
+          ) : (
+            <Box margin={12}>&mdash;</Box>
+          )}
+        </SidebarSection>
+        <SidebarSection title={'Materialization Plots'}>
+          <AssetMaterializationGraphs
+            xAxis={xAxis}
+            asSidebarSection
+            assetMaterializations={reversed}
+          />
+        </SidebarSection>
+      </>
     );
   }
 
@@ -121,7 +159,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </div>
           ) : null}
         </Box>
-        {inProgressRunIds && <InProgressRunsBanner runIds={inProgressRunIds} />}
+        <InProgressRunsBanner runIds={notYetMaterializedRunIds} />
         <AssetMaterializationTable
           hasPartitions={hasPartitions}
           hasLineage={hasLineage}
@@ -345,4 +383,12 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
   }
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+const AssetCatalogLink = styled(Link)`
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: -10px;
 `;
