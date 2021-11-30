@@ -38,5 +38,6 @@ def security_group(vpc):
 
 
 @pytest.fixture
-def network_interface(subnet, security_group):
-    return subnet.create_network_interface(Groups=[security_group.id])
+def secrets_manager(region):
+    with moto.mock_secretsmanager():
+        yield boto3.client("secretsmanager", region_name=region)

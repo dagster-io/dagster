@@ -45,19 +45,19 @@ def test_runtime_metadata_fn():
     for asset in assets:
         materializations = [
             event.event_specific_data.materialization
-            for event in result.events_for_node(asset.name)
+            for event in result.events_for_node(asset.op.name)
             if event.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(materializations) == 1
         assert materializations[0].metadata_entries == [
-            EventMetadataEntry.text(asset.name, label="op_name"),
-            EventMetadataEntry.text(asset.name, label="dbt_model"),
+            EventMetadataEntry.text(asset.op.name, label="op_name"),
+            EventMetadataEntry.text(asset.op.name, label="dbt_model"),
         ]
 
 
 def assert_assets_match_project(assets):
     assert len(assets) == 4
-    assets_by_name = {asset.name: asset for asset in assets}
+    assets_by_name = {asset.op.name: asset for asset in assets}
     assert assets_by_name.keys() == {
         "sort_hot_cereals_by_calories",
         "sort_by_calories",
@@ -65,10 +65,10 @@ def assert_assets_match_project(assets):
         "sort_cold_cereals_by_calories",
     }
     for name, asset in assets_by_name.items():
-        assert name == asset.name
-        assert len(asset.output_defs) == 1
-        assert f'["{name}"]' == asset.output_defs[0].hardcoded_asset_key.to_string()
-        assert asset.tags == {"kind": "dbt"}
+        assert name == asset.op.name
+        assert len(asset.op.output_defs) == 1
+        assert f'["{name}"]' == asset.op.output_defs[0].hardcoded_asset_key.to_string()
+        assert asset.op.tags == {"kind": "dbt"}
 
     job = build_assets_job(
         "jarb", assets, resource_defs={"dbt": ResourceDefinition.none_resource()}

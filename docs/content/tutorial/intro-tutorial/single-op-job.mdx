@@ -30,21 +30,20 @@ Our first op does three things: downloads a CSV of cereal data, reads it into a 
 ```python file=/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py startafter=start_solid_marker endbefore=end_solid_marker
 import requests
 import csv
-from dagster import job, op
+from dagster import job, op, get_dagster_logger
 
 
 @op
-def hello_cereal(context):
+def hello_cereal():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
-    context.log.info(f"Found {len(cereals)} cereals")
+    get_dagster_logger().info(f"Found {len(cereals)} cereals")
 
     return cereals
 ```
 
-In this simple case, our op takes no arguments except for the <PyObject module="dagster"
-object="OpExecutionContext" displayText="context" /> in which it executes (provided by the Dagster framework as the first argument to ops who specify it), and also returns no outputs. Don't worry, we'll soon encounter ops that are much more dynamic.
+In this simple case, our op takes no arguments, and also returns no outputs. Don't worry, we'll soon encounter ops that are much more dynamic.
 
 ## Hello, Job!
 

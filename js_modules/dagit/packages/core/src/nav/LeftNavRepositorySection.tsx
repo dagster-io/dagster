@@ -53,6 +53,11 @@ const useNavVisibleRepos = (
   // Collect hidden keys from localStorage and remove them from the visible repo key list.
   React.useEffect(() => {
     setVisibleKeys(() => {
+      // If there's only one key, skip the local storage check -- we have to show this one.
+      if (allKeys.length === 1) {
+        return new Set(allKeys);
+      }
+
       const hiddenKeys = hiddenKeysFromLocalStorage();
       const visible = allKeys.filter((key) => !hiddenKeys.has(key));
 

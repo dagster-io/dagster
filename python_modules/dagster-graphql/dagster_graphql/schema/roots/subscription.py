@@ -9,7 +9,10 @@ from ..paging import GrapheneCursor
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
 
-class GrapheneSubscription(graphene.ObjectType):
+class GrapheneDagitSubscription(graphene.ObjectType):
+    class Meta:
+        name = "DagitSubscription"
+
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
@@ -27,9 +30,6 @@ class GrapheneSubscription(graphene.ObjectType):
     locationStateChangeEvents = graphene.Field(
         graphene.NonNull(GrapheneLocationStateChangeSubscription)
     )
-
-    class Meta:
-        name = "Subscription"
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
         return get_pipeline_run_observable(graphene_info, runId, after)

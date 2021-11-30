@@ -129,6 +129,23 @@ describe('Repository options', () => {
       });
     });
 
+    it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      await waitFor(() => {
+        // Three links. One for repo, two for pipelines.
+        expect(screen.getAllByRole('link')).toHaveLength(3);
+      });
+    });
+
     it('initializes empty, if multiple options and no localStorage', async () => {
       render(
         <TestProvider

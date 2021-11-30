@@ -684,3 +684,11 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
+
+
+class GrapheneInProgressRunsByStep(graphene.ObjectType):
+    stepKey = graphene.NonNull(graphene.String)
+    runs = non_null_list(GrapheneRun)
+
+    class Meta:
+        name = "InProgressRunsByStep"

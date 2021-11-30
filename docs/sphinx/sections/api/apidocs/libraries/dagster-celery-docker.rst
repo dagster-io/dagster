@@ -6,5 +6,5 @@ APIs
 
 .. currentmodule:: dagster_celery_docker
 
-.. autodata:: celery_docker_executor
+.. autoconfigurable:: celery_docker_executor
   :annotation: ExecutorDefinition

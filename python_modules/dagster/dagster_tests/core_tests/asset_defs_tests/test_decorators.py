@@ -1,6 +1,6 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, SolidDefinition, String
-from dagster.core.asset_defs import AssetIn, asset
+from dagster import AssetKey, DagsterInvalidDefinitionError, String
+from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset
 
 
 def test_asset_no_decorator_args():
@@ -8,9 +8,9 @@ def test_asset_no_decorator_args():
     def my_asset():
         return 1
 
-    assert isinstance(my_asset, SolidDefinition)
-    assert len(my_asset.output_defs) == 1
-    assert len(my_asset.input_defs) == 0
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 0
 
 
 def test_asset_with_inputs():
@@ -18,10 +18,10 @@ def test_asset_with_inputs():
     def my_asset(arg1):
         return arg1
 
-    assert isinstance(my_asset, SolidDefinition)
-    assert len(my_asset.output_defs) == 1
-    assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
 def test_asset_with_compute_kind():
@@ -29,7 +29,7 @@ def test_asset_with_compute_kind():
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.tags == {"kind": "sql"}
+    assert my_asset.op.tags == {"kind": "sql"}
 
 
 def test_asset_with_dagster_type():
@@ -37,7 +37,7 @@ def test_asset_with_dagster_type():
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.output_defs[0].dagster_type.display_name == "String"
+    assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
 def test_asset_with_inputs_and_namespace():
@@ -45,10 +45,10 @@ def test_asset_with_inputs_and_namespace():
     def my_asset(arg1):
         return arg1
 
-    assert isinstance(my_asset, SolidDefinition)
-    assert len(my_asset.output_defs) == 1
-    assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey(["my_namespace", "arg1"])
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["my_namespace", "arg1"])
 
 
 def test_asset_with_context_arg():
@@ -56,8 +56,8 @@ def test_asset_with_context_arg():
     def my_asset(context):
         context.log("hello")
 
-    assert isinstance(my_asset, SolidDefinition)
-    assert len(my_asset.input_defs) == 0
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.input_defs) == 0
 
 
 def test_asset_with_context_arg_and_dep():
@@ -66,9 +66,9 @@ def test_asset_with_context_arg_and_dep():
         context.log("hello")
         assert arg1
 
-    assert isinstance(my_asset, SolidDefinition)
-    assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.input_defs) == 1
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
 def test_input_namespace():
@@ -76,7 +76,7 @@ def test_input_namespace():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
 
 
 def test_input_metadata():
@@ -84,7 +84,7 @@ def test_input_metadata():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.input_defs[0].metadata == {"abc": 123}
+    assert my_asset.op.input_defs[0].metadata == {"abc": 123}
 
 
 def test_unknown_in():
@@ -105,10 +105,10 @@ def test_all_fields():
     def my_asset():
         pass
 
-    assert my_asset.required_resource_keys == {"abc", "123"}
-    assert my_asset.description == "some description"
-    assert len(my_asset.output_defs) == 1
-    output_def = my_asset.output_defs[0]
+    assert my_asset.op.required_resource_keys == {"abc", "123"}
+    assert my_asset.op.description == "some description"
+    assert len(my_asset.op.output_defs) == 1
+    output_def = my_asset.op.output_defs[0]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
 
@@ -118,4 +118,4 @@ def test_infer_input_dagster_type():
     def my_asset(_input1: str):
         pass
 
-    assert my_asset.input_defs[0].dagster_type.display_name == "String"
+    assert my_asset.op.input_defs[0].dagster_type.display_name == "String"

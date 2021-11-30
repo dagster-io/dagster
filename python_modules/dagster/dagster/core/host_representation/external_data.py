@@ -494,7 +494,8 @@ def external_asset_graph_from_defs(
 
     source_asset_keys = all_upstream_asset_keys.difference(node_defs_by_asset_key.keys())
     asset_nodes = [
-        ExternalAssetNode(asset_key=asset_key, dependencies=[]) for asset_key in source_asset_keys
+        ExternalAssetNode(asset_key=asset_key, dependencies=[], job_names=[])
+        for asset_key in source_asset_keys
     ]
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():

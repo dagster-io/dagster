@@ -1,4 +1,10 @@
-type Query {
+schema {
+  query: DagitQuery
+  mutation: DagitMutation
+  subscription: DagitSubscription
+}
+
+type DagitQuery {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
@@ -55,6 +61,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  inProgressRunsByStep: [InProgressRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -416,6 +423,7 @@ enum StepEventStatus {
   SKIPPED
   SUCCESS
   FAILURE
+  IN_PROGRESS
 }
 
 type Materialization implements DisplayableEvent {
@@ -1211,6 +1219,11 @@ type NodeInvocationSite {
   solidHandle: SolidHandle!
 }
 
+type InProgressRunsByStep {
+  stepKey: String!
+  runs: [Run!]!
+}
+
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 type RepositoryNotFoundError implements Error {
@@ -1570,7 +1583,7 @@ type GraphenePermission {
   value: Boolean!
 }
 
-type Mutation {
+type DagitMutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
@@ -1766,7 +1779,7 @@ type LogTelemetrySuccess {
   action: String!
 }
 
-type Subscription {
+type DagitSubscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!

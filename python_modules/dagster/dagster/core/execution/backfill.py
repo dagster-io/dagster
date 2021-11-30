@@ -245,6 +245,7 @@ def create_backfill_run(
         external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        instance=instance,
     )
 
     return instance.create_run(

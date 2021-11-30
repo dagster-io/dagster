@@ -973,3 +973,27 @@ def test_job_partitions_def():
         config=daily_partitioned_config(start_date="2020-01-01")(lambda s, e: {})
     )
     assert my_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_graph_top_level_input():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    result = my_graph.execute_in_process(
+        run_config={"inputs": {"x": {"value": 2}, "y": {"value": 3}}}
+    )
+    assert result.success
+    assert result.output_for_node("my_op") == 5
+
+    @graph
+    def my_graph_with_nesting(x):
+        my_graph(x, x)
+
+    result = my_graph_with_nesting.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
+    assert result.success
+    assert result.output_for_node("my_graph.my_op") == 4

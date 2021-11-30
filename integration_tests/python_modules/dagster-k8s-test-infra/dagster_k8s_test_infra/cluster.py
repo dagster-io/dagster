@@ -1,6 +1,7 @@
 # pylint: disable=print-call
 import os
 import subprocess
+import tempfile
 import time
 from collections import namedtuple
 from contextlib import contextmanager
@@ -12,12 +13,14 @@ import pytest
 from dagster import check
 from dagster.cli.debug import export_run
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.instance.ref import InstanceRef
 from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
+from dagster.core.test_utils import environ
 from dagster.utils import find_free_port
 from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
@@ -305,8 +308,10 @@ def dagster_instance_for_k8s_run_launcher(
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
+    instance_ref = InstanceRef.from_dir(tempdir)
+
     with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
+        instance_type=InstanceType.PERSISTENT,
         local_artifact_storage=LocalArtifactStorage(tempdir),
         run_storage=PostgresRunStorage(helm_postgres_url_for_k8s_run_launcher),
         event_storage=PostgresEventLogStorage(helm_postgres_url_for_k8s_run_launcher),
@@ -315,6 +320,7 @@ def dagster_instance_for_k8s_run_launcher(
         run_coordinator=DefaultRunCoordinator(),
         run_launcher=run_launcher,
         settings={"run_monitoring": {"enabled": True}},
+        ref=instance_ref,
     ) as instance:
         yield instance
 
@@ -333,20 +339,23 @@ def helm_postgres_url(helm_namespace):
 
 @pytest.fixture(scope="function")
 def dagster_instance(helm_postgres_url, run_launcher):  # pylint: disable=redefined-outer-name
-    tempdir = DagsterInstance.temp_storage()
 
-    with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=PostgresRunStorage(helm_postgres_url),
-        event_storage=PostgresEventLogStorage(helm_postgres_url),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=run_launcher,
-    ) as instance:
-        yield instance
+    with tempfile.TemporaryDirectory() as tempdir:
+        with environ({"DAGSTER_HOME": tempdir}):
 
-        check_export_runs(instance)
+            with DagsterInstance(
+                instance_type=InstanceType.PERSISTENT,
+                local_artifact_storage=LocalArtifactStorage(tempdir),
+                run_storage=PostgresRunStorage(helm_postgres_url),
+                event_storage=PostgresEventLogStorage(helm_postgres_url),
+                compute_log_manager=NoOpComputeLogManager(),
+                run_coordinator=DefaultRunCoordinator(),
+                run_launcher=run_launcher,
+                ref=InstanceRef.from_dir(tempdir),
+            ) as instance:
+                yield instance
+
+                check_export_runs(instance)
 
 
 def check_export_runs(instance):

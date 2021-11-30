@@ -65,7 +65,8 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   cursor: pointer;
   font-size: inherit;
   line-height: 1;
-  padding: 0;
+  padding: 8px;
+  margin: -8px;
   text-align: left;
 
   &:active,

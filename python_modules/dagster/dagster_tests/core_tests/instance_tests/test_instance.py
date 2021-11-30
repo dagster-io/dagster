@@ -204,6 +204,18 @@ def test_run_monitoring():
         assert instance.run_monitoring_max_resume_run_attempts == 5
 
 
+def test_cancellation_thread():
+    with instance_for_test(
+        overrides={
+            "run_monitoring": {"cancellation_thread_poll_interval_seconds": 300},
+        }
+    ) as instance:
+        assert instance.cancellation_thread_poll_interval_seconds == 300
+
+    with instance_for_test() as instance:
+        assert instance.cancellation_thread_poll_interval_seconds == 10
+
+
 def test_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         with pytest.raises(

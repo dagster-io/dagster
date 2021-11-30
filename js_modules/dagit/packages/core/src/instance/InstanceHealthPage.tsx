@@ -23,7 +23,11 @@ export const InstanceHealthPage = () => {
 
   const daemonContent = () => {
     if (loading && !data?.instance) {
-      return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
+      return (
+        <Box padding={{horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+          Loading…
+        </Box>
+      );
     }
     return data?.instance ? (
       <DaemonList daemonStatuses={data.instance.daemonHealth.allDaemonStatuses} />

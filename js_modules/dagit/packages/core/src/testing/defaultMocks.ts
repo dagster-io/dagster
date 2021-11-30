@@ -32,7 +32,7 @@ export const defaultMocks = {
     solids: () => new MockList(2),
     modes: () => new MockList(1),
   }),
-  Query: () => ({
+  DagitQuery: () => ({
     version: () => 'x.y.z',
   }),
   Repository: () => ({

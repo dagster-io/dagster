@@ -25,10 +25,7 @@ In this example, we'll define some tables and generate a Dagster job that update
 
 Here are our asset (aka table) definitions.
 
-```python file=../../software_defined_assets/software_defined_assets/assets.py
-# pylint: disable=redefined-outer-name
-
-# start_marker
+```python file=../../software_defined_assets/software_defined_assets/assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
 from dagster import AssetKey
 from dagster.core.asset_defs import ForeignAsset, asset
@@ -48,9 +45,6 @@ def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     """Computes the 10 hottest dates"""
     return daily_temperature_highs.nlargest(10, "max_tmpf")
-
-
-# end_marker
 ```
 
 `sfo_q2_weather_sample` represents our base temperature table. It's a `ForeignAsset`, meaning that it's generated outside Dagster.

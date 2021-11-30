@@ -9,7 +9,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import PlanOrchestrationContext
-from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.execution.plan.state import KnownExecutionState, StepOutputVersionData
 from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils.interrupts import pop_captured_interrupt
@@ -32,6 +32,7 @@ class ActiveExecution:
         retry_mode: RetryMode,
         retry_state: RetryState,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        step_output_versions: Optional[List[StepOutputVersionData]] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
@@ -45,6 +46,10 @@ class ActiveExecution:
                 "sort_key_fn",
             )
             or _default_sort_key
+        )
+
+        self._step_output_versions = check.opt_list_param(
+            step_output_versions, "step_output_versions", of_type=StepOutputVersionData
         )
 
         self._context_guard: bool = False  # Prevent accidental direct use
@@ -462,6 +467,7 @@ class ActiveExecution:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._successful_dynamic_outputs),
+            step_output_versions=self._step_output_versions,
         )
 
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):

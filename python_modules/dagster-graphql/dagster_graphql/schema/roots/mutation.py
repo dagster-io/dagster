@@ -512,7 +512,10 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
         return action
 
 
-class GrapheneMutation(graphene.ObjectType):
+class GrapheneDagitMutation(graphene.ObjectType):
+    class Meta:
+        name = "DagitMutation"
+
     launch_pipeline_execution = GrapheneLaunchRunMutation.Field()
     launch_run = GrapheneLaunchRunMutation.Field()
     launch_pipeline_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
@@ -533,6 +536,3 @@ class GrapheneMutation(graphene.ObjectType):
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
     log_telemetry = GrapheneLogTelemetryMutation.Field()
-
-    class Meta:
-        name = "Mutation"

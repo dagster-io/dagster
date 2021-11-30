@@ -662,6 +662,33 @@ def test_error_boundary_with_gen():
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
+def test_handle_output_exception_raised():
+    class ErrorIOManager(IOManager):
+        def load_input(self, context):
+            pass
+
+        def handle_output(self, context, obj):
+            raise ValueError("handle output error")
+
+    @io_manager
+    def error_io_manager(_):
+        return ErrorIOManager()
+
+    @op
+    def basic_op():
+        return 5
+
+    @job(resource_defs={"io_manager": error_io_manager})
+    def single_op_job():
+        basic_op()
+
+    result = single_op_job.execute_in_process(raise_on_error=False)
+    step_failure = [
+        event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
+    ][0]
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+
+
 def test_output_identifier_dynamic_memoization():
     context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
 

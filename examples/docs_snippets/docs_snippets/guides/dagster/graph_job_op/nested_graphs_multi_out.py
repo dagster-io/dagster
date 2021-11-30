@@ -1,4 +1,4 @@
-from dagster import Out, Output, graph, op
+from dagster import Out, graph, op
 from dagster.core.definitions.output import GraphOut
 
 
@@ -9,8 +9,7 @@ def do_something():
 
 @op(out={"one": Out(int), "two": Out(int)})
 def return_multi():
-    yield Output(1, "one")
-    yield Output(2, "two")
+    return 1, 2
 
 
 @graph(out={"one": GraphOut(), "two": GraphOut()})

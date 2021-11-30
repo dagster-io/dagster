@@ -9,6 +9,7 @@ export const STEP_STATUS_COLORS = {
   SUCCESS: ColorsWIP.Green500,
   FAILURE: ColorsWIP.Red500,
   SKIPPED: ColorsWIP.Yellow500,
+  IN_PROGRESS: '#eee',
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
