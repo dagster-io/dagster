@@ -5,15 +5,15 @@ import docs_snippets.guides.dagster.dagster_type_factories as example_root
 import pytest
 from dagster import check_dagster_type
 from dagster.core.errors import DagsterTypeCheckDidNotPass
-from docs_snippets.guides.dagster.dagster_type_factories.simple_example import (
-    set_containing_1,
-    set_has_element_type_factory,
-)
 from docs_snippets.guides.dagster.dagster_type_factories.job_1 import (
     generate_trip_distribution_plot as job_1,
 )
 from docs_snippets.guides.dagster.dagster_type_factories.job_2 import (
     generate_trip_distribution_plot as job_2,
+)
+from docs_snippets.guides.dagster.dagster_type_factories.simple_example import (
+    set_containing_1,
+    set_has_element_type_factory,
 )
 
 EBIKE_TRIPS_PATH = os.path.join(example_root.__path__[0], "ebike_trips.csv")
