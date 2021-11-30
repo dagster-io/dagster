@@ -3,6 +3,7 @@ import decimal
 import numpy
 import pandas
 from sqlalchemy import Column, String, Date, DateTime, Boolean, Integer, Float, Numeric
+from sqlalchemy.ext.mutable import MutableList
 
 from dagster import EventMetadata
 from dagster_pandas import PandasColumn
@@ -97,6 +98,9 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
         if isinstance(field_value, Column):
             columns.append(field_value)
 
+    # Add standard columns
+    columns.append(Column('meta__warnings', String, nullable=True, comment="Semi-colon seperated list of data warnings detected in this rows data"))
+
     def _extract_event_metadata(df: pandas.DataFrame):
         return {
             "Row count": EventMetadata.int(len(df)),
@@ -105,6 +109,7 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
                 "Type": [column.type for column in columns],
                 "Description": [column.description for column in columns]
             }).to_markdown(index=False)),
+            "Warnings": len(df.meta__warnings.dropna().str.split(";").sum()),
             "Tail(5)": EventMetadata.md(df.tail(5).to_markdown()),
         }
 

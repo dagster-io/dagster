@@ -12,6 +12,7 @@ CREATE TABLE invoice_line_items
 , subscription_term INTEGER default 1 not null);
 INSERT INTO invoice_line_items VALUES('INV-001',1635724800000,'CUST-001','Alpha Corp','100_VCPU_BUNDLE','100 VCPUs across any product',1,12);
 INSERT INTO invoice_line_items VALUES('INV-002',1635984000000,'CUST-002','Beta Corp','100_VCPU_CLOUD','100 VCPUs for Cloud product',1,24);
+INSERT INTO invoice_line_items VALUES('INV-003-invalid-order',1635984000000,'003','Invalid Customer Id','NEW_SKU','Unknown SKU',1,12);
 CREATE TABLE cloud_deployment_heartbeats
 (
 	ts TIMESTAMP not null,

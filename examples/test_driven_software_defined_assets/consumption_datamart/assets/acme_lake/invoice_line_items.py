@@ -1,5 +1,7 @@
 import warnings
 
+import numpy
+import pandas
 from sqlalchemy import Column, String, Date, Numeric, Integer
 
 import dagster
@@ -36,6 +38,11 @@ class InvoiceOrderItemsDataFrameSchema:
 
 InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type("InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema)
 
+def list_to_str(values: list):
+    s = ';'.join(str(v) for v in values if pandas.notna(v))
+    if s == '':
+        return numpy.NaN
+    return s
 
 @asset(
     namespace='acme_lake',
@@ -57,6 +64,16 @@ def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
         ,   subscription_term
         FROM acme_lake.invoice_line_items
     ''')
+
+    df['meta__warnings'] = numpy.empty((df.shape[0], 0)).tolist()
+
+    has_invalid_customer_id = ~df.customer_id.str.match(r'^CUST-\d+$')
+    df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id']) 
+
+    non_vcpu_sku = ~df.subscription_sku.str.contains('VCPU')
+    df.loc[non_vcpu_sku, 'meta__warnings'] = df.loc[non_vcpu_sku, 'meta__warnings'].apply(lambda w: w + ['non_vcpu_sku'])
+
+    df.loc[:, 'meta__warnings'] = df['meta__warnings'].apply(list_to_str)
 
     typed_df = InvoiceOrderItemsDataFrameType.convert_dtypes(df)
 

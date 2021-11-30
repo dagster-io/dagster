@@ -28,10 +28,16 @@ def invoice_order_asset_job_results():
 @pytest.mark.usefixtures("invoice_order_asset_job_results")
 class Test_invoice_line_items:
 
-    def test_it_should_be_defined_as_a_dagster_asset(self, invoice_order_asset_job_results):
+    @staticmethod
+    def get_invoice_order_lines_materialization(invoice_order_asset_job_results):
         # TODO compute the asset materialization step number
         ASSET_MATERIALIZATION_STEP = 2
-        asset_materialization = invoice_order_asset_job_results.events_for_node('invoice_order_lines')[ASSET_MATERIALIZATION_STEP].step_materialization_data.materialization
+        asset_materialization = invoice_order_asset_job_results.events_for_node('invoice_order_lines')[
+            ASSET_MATERIALIZATION_STEP].step_materialization_data.materialization
+        return asset_materialization
+
+    def test_it_should_be_defined_as_a_dagster_asset(self, invoice_order_asset_job_results):
+        asset_materialization = self.get_invoice_order_lines_materialization(invoice_order_asset_job_results)
 
         assert asset_materialization.asset_key.path[0] == "acme_lake"
         assert asset_materialization.asset_key.path[1] == "invoice_order_lines"
@@ -40,3 +46,13 @@ class Test_invoice_line_items:
         typed_df = invoice_order_asset_job_results.output_for_node('invoice_order_lines')
         type_check_result = InvoiceOrderItemsDataFrameType.type_check(context=None, value=typed_df)
         assert type_check_result.success, type_check_result.description
+
+    def test_rows_with_missing_customer_information_should_have_warnings(self, invoice_order_asset_job_results):
+        typed_df = invoice_order_asset_job_results.output_for_node('invoice_order_lines')
+
+        assert typed_df[typed_df['invoice_id'] == 'INV-003-invalid-order'].meta__warnings.item() == 'invalid_customer_id;non_vcpu_sku'
+
+    def test_asset_materialization_should_contain_a_warnings_count(self, invoice_order_asset_job_results):
+        asset_materialization = self.get_invoice_order_lines_materialization(invoice_order_asset_job_results)
+
+        assert asset_materialization.metadata_entries[2].entry_data.value == 2

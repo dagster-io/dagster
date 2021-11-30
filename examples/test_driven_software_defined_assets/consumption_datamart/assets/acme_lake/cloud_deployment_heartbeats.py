@@ -1,5 +1,6 @@
 import warnings
 
+import numpy
 from sqlalchemy import Column, String, Numeric, DateTime
 
 import dagster
@@ -52,6 +53,8 @@ def cloud_deployment_heartbeats(context) -> CloudDeploymentHeartbeatsDataFrameTy
         ,   memory_usage
         FROM acme_lake.cloud_deployment_heartbeats
     ''')
+
+    df['meta__warnings'] = ''
 
     typed_df = CloudDeploymentHeartbeatsDataFrameType.convert_dtypes(df)
 
