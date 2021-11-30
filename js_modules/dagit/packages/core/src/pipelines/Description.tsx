@@ -5,6 +5,7 @@ import {Markdown} from '../ui/Markdown';
 
 interface IDescriptionProps {
   description: string | null;
+  maxHeight?: number;
 }
 
 interface IDescriptionState {
@@ -12,7 +13,7 @@ interface IDescriptionState {
   expanded: boolean;
 }
 
-const MaxHeight = 320;
+const DEFAULT_MAX_HEIGHT = 320;
 
 /*
 If `input` begins with whitespace and every line contains at least that whitespace,
@@ -52,7 +53,8 @@ export class Description extends React.Component<IDescriptionProps, IDescription
     if (!this._container.current) {
       return;
     }
-    const hasMore = this._container.current.clientHeight > MaxHeight;
+    const hasMore =
+      this._container.current.clientHeight > (this.props.maxHeight || DEFAULT_MAX_HEIGHT);
     if (hasMore !== this.state.hasMore) {
       this.setState({hasMore});
     }
@@ -77,7 +79,7 @@ export class Description extends React.Component<IDescriptionProps, IDescription
           sel.addRange(range);
         }}
         style={{
-          maxHeight: expanded ? undefined : MaxHeight,
+          maxHeight: expanded ? undefined : this.props.maxHeight || DEFAULT_MAX_HEIGHT,
         }}
       >
         {!expanded && hasMore && <Mask />}

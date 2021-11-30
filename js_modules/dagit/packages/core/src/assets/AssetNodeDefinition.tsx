@@ -25,23 +25,7 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
       flex={{direction: 'row'}}
       border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
     >
-      <Box style={{flex: 1, height: 350, minWidth: 0}} flex={{direction: 'column'}}>
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Parent Assets ({assetNode.dependencies.length})</Subheading>
-        </Box>
-        <AssetList items={assetNode.dependencies} />
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Child Assets ({assetNode.dependedBy.length})</Subheading>
-        </Box>
-        <AssetList items={assetNode.dependedBy} />
-      </Box>
-      <Box style={{width: '40%'}} border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}>
+      <Box style={{flex: 1}}>
         <Box
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
@@ -58,8 +42,31 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
           )}
         </Box>
         <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
-          <Description description={assetNode.description || 'No description provided.'} />
+          <Description
+            description={assetNode.description || 'No description provided.'}
+            maxHeight={278}
+          />
         </Box>
+      </Box>
+      <Box
+        style={{width: '40%', height: 350, minWidth: 0}}
+        flex={{direction: 'column'}}
+        border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        >
+          <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
+        </Box>
+        <AssetList items={assetNode.dependencies} />
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        >
+          <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
+        </Box>
+        <AssetList items={assetNode.dependedBy} />
       </Box>
     </Box>
   );
