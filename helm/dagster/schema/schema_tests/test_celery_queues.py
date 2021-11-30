@@ -131,6 +131,17 @@ def test_celery_queue_inherit_config_source(
         "16",
     ]
 
+    liveness_command = [
+        "/bin/sh",
+        "-c",
+        'dagster-celery status -A dagster_celery_k8s.app -y /opt/dagster/dagster_home/celery-config.yaml | grep "${HOSTNAME}:.*OK"',
+    ]
+
+    assert (
+        dagster_container_spec.liveness_probe._exec.command  # pylint: disable=protected-access
+        == liveness_command
+    )
+
     extra_queue_container_spec = celery_queue_deployments[1].spec.template.spec.containers[0]
     assert extra_queue_container_spec.command == ["dagster-celery"]
     assert extra_queue_container_spec.args == [
@@ -144,8 +155,16 @@ def test_celery_queue_inherit_config_source(
         "extra-queue-1",
     ]
 
+    assert (
+        extra_queue_container_spec.liveness_probe._exec.command  # pylint: disable=protected-access
+        == liveness_command
+    )
+
     dagster_celery = yaml.full_load(celery_queue_configmaps[0].data["celery.yaml"])
     extra_queue_celery = yaml.full_load(celery_queue_configmaps[1].data["celery.yaml"])
+
+    assert dagster_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_K8S_CELERY_BROKER"
+    assert dagster_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_K8S_CELERY_BACKEND"
 
     assert dagster_celery["execution"]["celery"]["config_source"] == configSource
 
@@ -153,6 +172,11 @@ def test_celery_queue_inherit_config_source(
         "broker_transport_options": {"priority_steps": [9]},
         "worker_concurrency": 4,
     }
+
+    assert extra_queue_celery["execution"]["celery"]["broker"]["env"] == "DAGSTER_K8S_CELERY_BROKER"
+    assert (
+        extra_queue_celery["execution"]["celery"]["backend"]["env"] == "DAGSTER_K8S_CELERY_BACKEND"
+    )
 
 
 def test_celery_queue_empty_run_launcher_config_source(

@@ -1,3 +1,4 @@
+# yamllint disable rule:line-length
 # README:
 # - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
 #   will use a cached/stale image.
@@ -522,7 +523,7 @@ runLauncher:
       #   command:
       #     - /bin/sh
       #     - -c
-      #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+      #     - dagster-celery status -A dagster_celery_k8s.app -y {{ $.Values.global.dagsterHome }}/celery-config.yaml | grep "${HOSTNAME}:.*OK"
       livenessProbe:
         initialDelaySeconds: 15
         periodSeconds: 10
