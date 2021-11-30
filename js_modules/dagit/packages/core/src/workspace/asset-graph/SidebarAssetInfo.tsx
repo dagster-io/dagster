@@ -50,19 +50,18 @@ export const SidebarAssetInfo: React.FC<{
         >
           <span>This asset may be materialized soon by </span>
 
-          {['12341514'].map((runId) => (
-            <Link to={`/instance/runs/${runId}`} key={runId}>
-              <BaseTag
-                textColor={ColorsWIP.Blue700}
-                fillColor={ColorsWIP.Blue50}
-                label={
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    <Spinner purpose="caption-text" />
-                    {`Run: ${runId.slice(0, 8)}`}
-                  </Box>
-                }
-              />
-            </Link>
+          {inProgressRunIds.map((runId) => (
+            <BaseTag
+              key={runId}
+              textColor={ColorsWIP.Blue700}
+              fillColor={ColorsWIP.Blue50}
+              label={
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  <Spinner purpose="caption-text" />
+                  <Link to={`/instance/runs/${runId}`}>{`Run: ${runId.slice(0, 8)}`}</Link>
+                </Box>
+              }
+            />
           ))}
         </Box>
       )}
