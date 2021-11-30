@@ -47,7 +47,7 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
       </Box>
       <Box
         border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-        style={{width: '40%', height: 500}}
+        style={{width: '40%', height: 390}}
         flex={{direction: 'column'}}
       >
         <Box
