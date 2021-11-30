@@ -4,6 +4,10 @@ import * as dagre from 'dagre';
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
 import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations,
+} from './types/AssetGraphLiveQuery';
+import {
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
@@ -43,8 +47,8 @@ export function assetKeyToString(key: {path: string[]}) {
 
 export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
   const nodes: {[id: string]: Node} = {};
-  const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
-  const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
+  const downstream: {[id: string]: {[childAssetId: string]: string}} = {};
+  const upstream: {[id: string]: {[parentAssetId: string]: boolean}} = {};
 
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
@@ -172,57 +176,73 @@ export const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-export function buildGraphComputeStatuses(graphData: GraphData) {
-  const timestamps: {[key: string]: number} = {};
-  for (const node of Object.values(graphData.nodes)) {
-    timestamps[node.id] =
-      node.definition.assetMaterializations[0]?.materializationEvent.stepStats?.startTime || 0;
-  }
-  const upstream: {[key: string]: string[]} = {};
-  Object.keys(graphData.downstream).forEach((upstreamId) => {
-    const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
+export type Status = 'good' | 'old' | 'none' | 'unknown';
 
-    downstreamIds.forEach((downstreamId) => {
-      upstream[downstreamId] = upstream[downstreamId] || [];
-      upstream[downstreamId].push(upstreamId);
-    });
-  });
-
-  const statuses: {[key: string]: Status} = {};
-
-  for (const asset of Object.values(graphData.nodes)) {
-    if (asset.definition.assetMaterializations.length === 0) {
-      statuses[asset.id] = 'none';
-    }
-  }
-  for (const asset of Object.values(graphData.nodes)) {
-    const id = JSON.stringify(asset.assetKey.path);
-    statuses[id] = findComputeStatusForId(timestamps, statuses, upstream, id);
-  }
-  return statuses;
+export interface LiveDataForNode {
+  computeStatus: Status;
+  inProgressRunIds: string[];
+  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations;
+  lastStepStart: number;
+}
+export interface LiveData {
+  [assetId: string]: LiveDataForNode;
 }
 
-export type Status = 'good' | 'old' | 'none';
+export const buildLiveData = (
+  graph: ReturnType<typeof buildGraphData>,
+  queryResult?: AssetGraphLiveQuery,
+) => {
+  const data: LiveData = {};
 
-function findComputeStatusForId(
-  timestamps: {[key: string]: number},
-  statuses: {[key: string]: Status},
-  upstream: {[key: string]: string[]},
-  id: string,
-): Status {
-  const ts = timestamps[id];
-  const upstreamIds = upstream[id] || [];
-  if (id in statuses) {
-    return statuses[id];
+  if (!queryResult) {
+    return data;
   }
 
-  statuses[id] = upstreamIds.some((uid) => timestamps[uid] > ts)
+  const {repositoryOrError, pipelineOrError} = queryResult;
+
+  const nodes = pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
+  const inProgressRunsByStep =
+    repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
+
+  for (const node of nodes) {
+    const lastMaterialization = node.assetMaterializations[0];
+    const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
+
+    data[node.id] = {
+      lastStepStart,
+      lastMaterialization,
+      inProgressRunIds:
+        inProgressRunsByStep.find((r) => r.stepKey === node.opName)?.runs.map((r) => r.runId) || [],
+      computeStatus: lastMaterialization ? 'unknown' : 'none',
+    };
+  }
+
+  for (const asset of nodes) {
+    data[asset.id].computeStatus = findComputeStatusForId(data, graph.upstream, asset.id);
+  }
+
+  return data;
+};
+
+function findComputeStatusForId(
+  data: LiveData,
+  upstream: {[assetId: string]: {[upstreamAssetId: string]: boolean}},
+  assetId: string,
+): Status {
+  if (!data[assetId]) {
+    // Currently compute status assumes foreign nodes are up to date
+    // and only shows "upstream changed" for upstreams in the same job
+    return 'good';
+  }
+  const ts = data[assetId].lastStepStart;
+  const upstreamIds = Object.keys(upstream[assetId] || {});
+  if (data[assetId].computeStatus !== 'unknown') {
+    return data[assetId].computeStatus;
+  }
+
+  return upstreamIds.some((uid) => data[uid]?.lastStepStart > ts)
     ? 'old'
-    : upstreamIds.some(
-        (uid) => findComputeStatusForId(timestamps, statuses, upstream, uid) !== 'good',
-      )
+    : upstreamIds.some((uid) => findComputeStatusForId(data, upstream, uid) !== 'good')
     ? 'old'
     : 'good';
-
-  return statuses[id];
 }

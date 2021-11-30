@@ -23,186 +23,194 @@ import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
+import {Spinner} from '../../ui/Spinner';
+import {Tooltip} from '../../ui/Tooltip';
 import {FontFamily} from '../../ui/styles';
 import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 import {workspacePath} from '../workspacePath';
 
-import {assetKeyToString, Status} from './Utils';
+import {assetKeyToString, LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
+  liveData?: LiveDataForNode;
   metadata: {key: string; value: string}[];
   selected: boolean;
-  computeStatus: Status;
   repoAddress: RepoAddress;
   secondaryHighlight: boolean;
-}> = React.memo(
-  ({definition, metadata, selected, computeStatus, repoAddress, secondaryHighlight}) => {
-    const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
-      LAUNCH_PIPELINE_EXECUTION_MUTATION,
-    );
-    const {basePath} = React.useContext(AppContext);
-    const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
-    const kind = metadata.find((m) => m.key === 'kind')?.value;
+}> = React.memo(({definition, metadata, selected, repoAddress, secondaryHighlight, liveData}) => {
+  const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  );
+  const {basePath} = React.useContext(AppContext);
+  const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
+  const kind = metadata.find((m) => m.key === 'kind')?.value;
 
-    const onLaunch = async () => {
-      if (!definition.jobName) {
-        return;
-      }
+  const onLaunch = async () => {
+    if (!definition.jobName) {
+      return;
+    }
 
-      try {
-        const result = await launchPipelineExecution({
-          variables: {
-            executionParams: {
-              selector: {
-                pipelineName: definition.jobName,
-                ...repoAddressToSelector(repoAddress),
-              },
-              mode: 'default',
-              stepKeys: [definition.opName],
+    try {
+      const result = await launchPipelineExecution({
+        variables: {
+          executionParams: {
+            selector: {
+              pipelineName: definition.jobName,
+              ...repoAddressToSelector(repoAddress),
             },
+            mode: 'default',
+            stepKeys: [definition.opName],
           },
-        });
-        handleLaunchResult(basePath, definition.jobName, result, true);
-      } catch (error) {
-        showLaunchError(error as Error);
-      }
-    };
+        },
+      });
+      handleLaunchResult(basePath, definition.jobName, result, true);
+    } catch (error) {
+      showLaunchError(error as Error);
+    }
+  };
 
-    return (
-      <ContextMenu
-        content={
-          <MenuWIP>
-            <MenuItemWIP
-              text={
-                <span>
-                  Launch run to build{' '}
-                  <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                    {assetKeyToString(definition.assetKey)}
-                  </span>
+  return (
+    <ContextMenu
+      content={
+        <MenuWIP>
+          <MenuItemWIP
+            text={
+              <span>
+                Launch run to build{' '}
+                <span style={{fontFamily: 'monospace', fontWeight: 600}}>
+                  {assetKeyToString(definition.assetKey)}
                 </span>
-              }
-              icon="open_in_new"
-              onClick={onLaunch}
-            />
-          </MenuWIP>
-        }
-      >
-        <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
-          <AssetNodeBox>
-            <Name>
-              <IconWIP name="asset" style={{marginRight: 4}} />
-              {assetKeyToString(definition.assetKey)}
-              <div style={{flex: 1}} />
-              {computeStatus === 'old' && (
-                <UpstreamNotice>
-                  upstream
-                  <br />
-                  changed
-                </UpstreamNotice>
-              )}
-            </Name>
-            {definition.description && (
-              <Description>
-                {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+              </span>
+            }
+            icon="open_in_new"
+            onClick={onLaunch}
+          />
+        </MenuWIP>
+      }
+    >
+      <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
+        <AssetNodeBox>
+          <Name>
+            <IconWIP name="asset" />
+            {assetKeyToString(definition.assetKey)}
+            <div style={{flex: 1}} />
+            {liveData && liveData.inProgressRunIds.length > 0 && (
+              <Tooltip
+                content={
+                  <div>
+                    Run ID:{' '}
+                    {liveData.inProgressRunIds.map((runId) => (
+                      <Link to={`/instance/runs/${runId}`} key={runId}>
+                        {runId}
+                      </Link>
+                    ))}
+                  </div>
+                }
+              >
+                <Spinner purpose="body-text" />
+              </Tooltip>
             )}
-            {event ? (
-              <Stats>
-                {runOrError.__typename === 'Run' && (
-                  <StatsRow>
-                    <Link
-                      data-tooltip={`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
-                      data-tooltip-style={RunLinkTooltipStyle}
-                      style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                      to={workspacePath(
-                        repoAddress.name,
-                        repoAddress.location,
-                        `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
-                      )}
-                    >
-                      {`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
-                    </Link>
-                    <Link
-                      style={{fontFamily: FontFamily.monospace, fontSize: 14}}
-                      to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                        timestamp: event.stepStats.endTime,
-                        selection: event.stepStats.stepKey,
-                        logs: `step:${event.stepStats.stepKey}`,
-                      })}`}
-                      target="_blank"
-                    >
-                      {titleForRun({runId: runOrError.runId})}
-                    </Link>
-                  </StatsRow>
-                )}
-
+            {liveData?.computeStatus === 'old' && (
+              <UpstreamNotice>
+                upstream
+                <br />
+                changed
+              </UpstreamNotice>
+            )}
+          </Name>
+          {definition.description && (
+            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+          )}
+          {event ? (
+            <Stats>
+              {runOrError?.__typename === 'Run' && (
                 <StatsRow>
-                  {event.stepStats.endTime ? (
-                    <TimestampDisplay
-                      timestamp={event.stepStats.endTime}
-                      timeFormat={{showSeconds: false, showTimezone: false}}
-                    />
-                  ) : (
-                    'Never'
-                  )}
-                  <TimeElapsed
-                    startUnix={event.stepStats.startTime}
-                    endUnix={event.stepStats.endTime}
-                  />
+                  <Link
+                    data-tooltip={`${runOrError.pipelineName}${
+                      runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                    }`}
+                    data-tooltip-style={RunLinkTooltipStyle}
+                    style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                    to={workspacePath(
+                      repoAddress.name,
+                      repoAddress.location,
+                      `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                    )}
+                  >
+                    {`${runOrError.pipelineName}${
+                      runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                    }`}
+                  </Link>
+                  <Link
+                    style={{fontFamily: FontFamily.monospace, fontSize: 14}}
+                    to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                      timestamp: event.stepStats.endTime,
+                      selection: event.stepStats.stepKey,
+                      logs: `step:${event.stepStats.stepKey}`,
+                    })}`}
+                    target="_blank"
+                  >
+                    {titleForRun({runId: runOrError.runId})}
+                  </Link>
                 </StatsRow>
-              </Stats>
-            ) : (
-              <Stats>
-                <StatsRow style={{opacity: 0.5}}>
-                  <span>No materializations</span>
-                  <span>—</span>
-                </StatsRow>
-                <StatsRow style={{opacity: 0.5}}>
-                  <span>—</span>
-                  <span>—</span>
-                </StatsRow>
-              </Stats>
-            )}
-            {kind && (
-              <OpTags
-                minified={false}
-                style={{right: -2, paddingTop: 5}}
-                tags={[
-                  {
-                    label: kind,
-                    onClick: () => {
-                      window.requestAnimationFrame(() =>
-                        document.dispatchEvent(new Event('show-kind-info')),
-                      );
-                    },
-                  },
-                ]}
-              />
-            )}
-          </AssetNodeBox>
-        </AssetNodeContainer>
-      </ContextMenu>
-    );
-  },
-  isEqual,
-);
+              )}
 
-export const ASSET_NODE_FRAGMENT = gql`
-  fragment AssetNodeFragment on AssetNode {
+              <StatsRow>
+                {event.stepStats.endTime ? (
+                  <TimestampDisplay
+                    timestamp={event.stepStats.endTime}
+                    timeFormat={{showSeconds: false, showTimezone: false}}
+                  />
+                ) : (
+                  'Never'
+                )}
+                <TimeElapsed
+                  startUnix={event.stepStats.startTime}
+                  endUnix={event.stepStats.endTime}
+                />
+              </StatsRow>
+            </Stats>
+          ) : (
+            <Stats>
+              <StatsRow style={{opacity: 0.5}}>
+                <span>No materializations</span>
+                <span>—</span>
+              </StatsRow>
+              <StatsRow style={{opacity: 0.5}}>
+                <span>—</span>
+                <span>—</span>
+              </StatsRow>
+            </Stats>
+          )}
+          {kind && (
+            <OpTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
+                  label: kind,
+                  onClick: () => {
+                    window.requestAnimationFrame(() =>
+                      document.dispatchEvent(new Event('show-kind-info')),
+                    );
+                  },
+                },
+              ]}
+            />
+          )}
+        </AssetNodeBox>
+      </AssetNodeContainer>
+    </ContextMenu>
+  );
+}, isEqual);
+
+export const ASSET_NODE_LIVE_FRAGMENT = gql`
+  fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
-    description
-    jobName
-    assetKey {
-      path
-    }
 
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
@@ -235,7 +243,22 @@ export const ASSET_NODE_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
-export const getNodeDimensions = (def: AssetNodeFragment) => {
+export const ASSET_NODE_FRAGMENT = gql`
+  fragment AssetNodeFragment on AssetNode {
+    id
+    opName
+    description
+    jobName
+    assetKey {
+      path
+    }
+  }
+`;
+
+export const getNodeDimensions = (def: {
+  assetKey: {path: string[]};
+  description?: string | null;
+}) => {
   let height = 95;
   if (def.description) {
     height += 25;
@@ -283,10 +306,12 @@ const AssetNodeBox = styled.div`
 const Name = styled.div`
   display: flex;
   padding: 4px 6px;
+  align-items: center;
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   font-weight: 600;
+  gap: 4px;
 `;
 
 const Description = styled.div`

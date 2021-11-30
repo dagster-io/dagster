@@ -1,11 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, QueryResult, useQuery} from '@apollo/client';
 import {uniq, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
+import {QueryCountdown} from '../../app/QueryCountdown';
 import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
@@ -21,17 +21,24 @@ import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
-import {AssetNode, ASSET_NODE_FRAGMENT, getNodeDimensions} from './AssetNode';
+import {
+  AssetNode,
+  ASSET_NODE_FRAGMENT,
+  ASSET_NODE_LIVE_FRAGMENT,
+  getNodeDimensions,
+} from './AssetNode';
 import {ForeignNode, getForeignNodeDimensions} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
-  buildGraphComputeStatuses,
   buildGraphData,
+  buildLiveData,
   GraphData,
   graphHasCycles,
   layoutGraph,
+  LiveData,
   Node,
 } from './Utils';
+import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
@@ -51,10 +58,24 @@ interface Props {
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {repoAddress, explorerPath} = props;
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const repositorySelector = {
+    repositoryLocationName: repoAddress.location,
+    repositoryName: repoAddress.name,
+  };
+
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {pipelineSelector},
     notifyOnNetworkStatusChange: true,
   });
+
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      variables: {pipelineSelector, repositorySelector},
+      notifyOnNetworkStatusChange: true,
+      pollInterval: 5 * 1000,
+    },
+  );
 
   useDocumentTitle('Assets');
 
@@ -64,6 +85,10 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     }
     return buildGraphData(queryResult.data.pipelineOrError.assetNodes, explorerPath.pipelineName);
   }, [queryResult, explorerPath.pipelineName]);
+
+  const liveDataByNode = React.useMemo(() => {
+    return graphData ? buildLiveData(graphData, liveResult.data) : {};
+  }, [graphData, liveResult]);
 
   return (
     <Loading allowStaleData queryResult={queryResult}>
@@ -93,14 +118,25 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           );
         }
 
-        return <AssetGraphExplorerWithData graphData={graphData} {...props} />;
+        return (
+          <AssetGraphExplorerWithData
+            graphData={graphData}
+            liveDataQueryResult={liveResult}
+            liveDataByNode={liveDataByNode}
+            {...props}
+          />
+        );
       }}
     </Loading>
   );
 };
 
 const AssetGraphExplorerWithData: React.FC<
-  {graphData: ReturnType<typeof buildGraphData>} & Props
+  {
+    graphData: ReturnType<typeof buildGraphData>;
+    liveDataByNode: LiveData;
+    liveDataQueryResult: QueryResult<any>;
+  } & Props
 > = (props) => {
   const {
     repoAddress,
@@ -108,6 +144,8 @@ const AssetGraphExplorerWithData: React.FC<
     selectedHandle,
     explorerPath,
     onChangeExplorerPath,
+    liveDataQueryResult,
+    liveDataByNode,
     graphData,
   } = props;
 
@@ -170,8 +208,6 @@ const AssetGraphExplorerWithData: React.FC<
   );
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
-  const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
-  console.log(layout);
 
   return (
     <SplitPanelContainer
@@ -235,12 +271,12 @@ const AssetGraphExplorerWithData: React.FC<
                       ) : (
                         <AssetNode
                           definition={graphNode.definition}
+                          liveData={liveDataByNode[graphNode.id]}
                           metadata={
                             handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
                               .definition.metadata
                           }
                           selected={selectedGraphNode === graphNode}
-                          computeStatus={computeStatuses[graphNode.id]}
                           repoAddress={repoAddress}
                           secondaryHighlight={
                             explorerPath.opsQuery
@@ -258,6 +294,9 @@ const AssetGraphExplorerWithData: React.FC<
             )}
           </SVGViewport>
 
+          <div style={{position: 'absolute', right: 8, top: 6}}>
+            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+          </div>
           <AssetQueryInputContainer>
             <GraphQueryInput
               items={handles.map((h) => h.solid)}
@@ -288,6 +327,7 @@ const AssetGraphExplorerWithData: React.FC<
         selectedGraphNode && selectedDefinition ? (
           <SidebarAssetInfo
             node={selectedGraphNode.definition}
+            liveData={liveDataByNode[selectedGraphNode.id]}
             definition={selectedDefinition}
             repoAddress={repoAddress}
           />
@@ -299,17 +339,47 @@ const AssetGraphExplorerWithData: React.FC<
   );
 };
 
+const ASSETS_GRAPH_LIVE_QUERY = gql`
+  query AssetGraphLiveQuery(
+    $pipelineSelector: PipelineSelector!
+    $repositorySelector: RepositorySelector!
+  ) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      __typename
+      ... on Repository {
+        id
+        name
+        inProgressRunsByStep {
+          stepKey
+          runs {
+            id
+            runId
+          }
+        }
+      }
+    }
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
+        id
+        assetNodes {
+          id
+          ...AssetNodeLiveFragment
+        }
+      }
+    }
+  }
+  ${ASSET_NODE_LIVE_FRAGMENT}
+`;
+
 const ASSETS_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
       ... on Pipeline {
         id
         assetNodes {
-          ...AssetNodeFragment
           id
-          assetKey {
-            path
-          }
+          ...AssetNodeFragment
+
           dependencies {
             inputName
             upstreamAsset {
@@ -324,7 +394,6 @@ const ASSETS_GRAPH_QUERY = gql`
     }
   }
   ${ASSET_NODE_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`
