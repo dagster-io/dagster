@@ -1,15 +1,12 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Subheading} from '../ui/Text';
-import {AssetNode, ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {assetKeyToString} from '../workspace/asset-graph/Utils';
-import {AssetNodeFragment} from '../workspace/asset-graph/types/AssetNodeFragment';
+import {ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 
 import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
@@ -84,44 +81,3 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   }
   ${ASSET_NODE_FRAGMENT}
 `;
-
-const AssetList: React.FC<{
-  items: {asset: AssetNodeFragment}[];
-}> = ({items}) => {
-  const history = useHistory();
-
-  return (
-    <Box
-      padding={{horizontal: 16}}
-      style={{overflowX: 'auto', whiteSpace: 'nowrap', height: 120, minWidth: 0}}
-    >
-      {items.map((dep) => (
-        <div
-          style={{
-            position: 'relative',
-            display: 'inline-block',
-            verticalAlign: 'top',
-            height: 95,
-            width: 215,
-          }}
-          key={assetKeyToString(dep.asset.assetKey)}
-          onClick={(e) => {
-            if (e.isDefaultPrevented()) {
-              return;
-            }
-            history.push(`/instance/assets/${assetKeyToString(dep.asset.assetKey)}`);
-          }}
-        >
-          <AssetNode
-            definition={{...dep.asset, description: ''}}
-            metadata={[]}
-            selected={false}
-            computeStatus={'none'}
-            secondaryHighlight={false}
-            repoAddress={{name: '', location: ''}}
-          />
-        </div>
-      ))}
-    </Box>
-  );
-};

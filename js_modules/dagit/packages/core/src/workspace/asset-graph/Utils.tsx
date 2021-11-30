@@ -21,6 +21,8 @@ interface LayoutNode {
   id: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 export interface GraphData {
   nodes: {[id: string]: Node};
@@ -102,24 +104,32 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const layoutGraph = (graphData: GraphData, margin = 100, spacing = 1) => {
+export const layoutGraph = (
+  graphData: GraphData,
+  opts: {margin: number; mini: boolean} = {
+    margin: 100,
+    mini: false,
+  },
+) => {
   const g = new dagre.graphlib.Graph();
 
   g.setGraph({
     rankdir: 'TB',
-    marginx: margin,
-    marginy: margin,
-    nodesep: 50 * spacing,
-    edgesep: 10 * spacing,
-    ranksep: 50 * spacing,
+    marginx: opts.margin,
+    marginy: opts.margin,
+    nodesep: opts.mini ? 20 : 50,
+    edgesep: opts.mini ? 10 : 10,
+    ranksep: opts.mini ? 20 : 50,
   });
   g.setDefaultEdgeLabel(() => ({}));
 
   Object.values(graphData.nodes)
     .filter((x) => !x.hidden)
     .forEach((node) => {
-      g.setNode(node.id, getNodeDimensions(node.definition));
+      const {width, height} = getNodeDimensions(node.definition);
+      g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
+
   const foreignNodes = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
@@ -164,6 +174,8 @@ export const layoutGraph = (graphData: GraphData, margin = 100, spacing = 1) => 
       id,
       x: dagreNode.x - dagreNode.width / 2,
       y: dagreNode.y - dagreNode.height / 2,
+      width: dagreNode.width,
+      height: dagreNode.height,
     });
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
@@ -182,8 +194,8 @@ export const layoutGraph = (graphData: GraphData, margin = 100, spacing = 1) => 
   return {
     nodes,
     edges,
-    width: maxWidth + margin,
-    height: maxHeight + margin,
+    width: maxWidth + opts.margin,
+    height: maxHeight + opts.margin,
   };
 };
 

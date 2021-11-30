@@ -4,8 +4,8 @@ import styled from 'styled-components/macro';
 
 import {SVGViewport} from '../graph/SVGViewport';
 import {AssetLinks} from '../workspace/asset-graph/AssetLinks';
-import {AssetNode, getNodeDimensions} from '../workspace/asset-graph/AssetNode';
-import {getForeignNodeDimensions, ForeignNode} from '../workspace/asset-graph/ForeignNode';
+import {AssetNode} from '../workspace/asset-graph/AssetNode';
+import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
 import {
   layoutGraph,
   buildGraphComputeStatuses,
@@ -61,7 +61,7 @@ export const AssetNeighborsGraph: React.FC<{assetNode: AssetNodeDefinitionFragme
 }) => {
   const history = useHistory();
   const graphData = buildGraphFromSingleNode(assetNode);
-  const layout = layoutGraph(graphData, 0, 0.3);
+  const layout = layoutGraph(graphData, {margin: 0, mini: true});
   const computeStatuses = buildGraphComputeStatuses(graphData);
 
   return (
@@ -80,16 +80,13 @@ export const AssetNeighborsGraph: React.FC<{assetNode: AssetNodeDefinitionFragme
           <AssetLinks edges={layout.edges} />
           {layout.nodes.map((layoutNode) => {
             const graphNode = graphData.nodes[layoutNode.id];
-            const {width, height} = graphNode.hidden
-              ? getForeignNodeDimensions(layoutNode.id)
-              : getNodeDimensions(graphNode.definition);
             return (
               <foreignObject
                 key={layoutNode.id}
                 x={layoutNode.x}
                 y={layoutNode.y}
-                width={width}
-                height={height}
+                width={layoutNode.width}
+                height={layoutNode.height}
                 onClick={(e) => {
                   e.stopPropagation();
                   history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
