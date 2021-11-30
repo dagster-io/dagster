@@ -186,6 +186,7 @@ export const layoutGraph = (
       if (
         graphData.nodes[downstreamId] &&
         graphData.nodes[downstreamId].hidden &&
+        graphData.nodes[upstreamId] &&
         graphData.nodes[upstreamId].hidden
       ) {
         return;
@@ -260,7 +261,7 @@ export type Status = 'good' | 'old' | 'none' | 'unknown';
 export interface LiveDataForNode {
   computeStatus: Status;
   inProgressRunIds: string[];
-  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations;
+  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
 export interface LiveData {
@@ -275,15 +276,16 @@ export const buildLiveData = (
   const data: LiveData = {};
 
   for (const node of nodes) {
-    const lastMaterialization = node.assetMaterializations[0];
+    const lastMaterialization = node.assetMaterializations[0] || null;
     const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
+    const isForeignNode = !node.opName;
 
     data[node.id] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds:
         inProgressRunsByStep.find((r) => r.stepKey === node.opName)?.runs.map((r) => r.runId) || [],
-      computeStatus: lastMaterialization ? 'unknown' : 'none',
+      computeStatus: isForeignNode ? 'good' : lastMaterialization ? 'unknown' : 'none',
     };
   }
 
