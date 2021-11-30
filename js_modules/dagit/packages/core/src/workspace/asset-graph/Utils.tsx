@@ -1,5 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
+import {gql} from 'graphql.macro';
 
 import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
 
@@ -11,6 +12,7 @@ import {
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
+import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 
 type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
@@ -268,7 +270,7 @@ export interface LiveData {
 export const buildLiveData = (
   graph: ReturnType<typeof buildGraphData>,
   nodes: AssetNodeLiveFragment[],
-  inProgressRunsByStep: {stepKey: string; runs: {runId: string}[]}[],
+  inProgressRunsByStep: InProgressRunsFragment[],
 ) => {
   const data: LiveData = {};
 
@@ -314,3 +316,13 @@ function findComputeStatusForId(
     ? 'old'
     : 'good';
 }
+
+export const IN_PROGRESS_RUNS_FRAGMENT = gql`
+  fragment InProgressRunsFragment on InProgressRunsByStep {
+    stepKey
+    runs {
+      id
+      runId
+    }
+  }
+`;

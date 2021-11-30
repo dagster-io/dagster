@@ -16,6 +16,8 @@ import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
+import {Spinner} from '../../ui/Spinner';
+import {Tooltip} from '../../ui/Tooltip';
 import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
@@ -70,6 +72,23 @@ export const AssetNode: React.FC<{
             <IconWIP name="asset" />
             {assetKeyToString(definition.assetKey)}
             <div style={{flex: 1}} />
+            {liveData && liveData.inProgressRunIds.length > 0 && (
+              <Tooltip
+                content={
+                  <div>
+                    Run ID:{' '}
+                    {liveData.inProgressRunIds.map((runId) => (
+                      <Link to={`/instance/runs/${runId}`} key={runId}>
+                        {runId}
+                      </Link>
+                    ))}
+                  </div>
+                }
+              >
+                <Spinner purpose="body-text" />
+              </Tooltip>
+            )}
+
             {liveData?.computeStatus === 'old' && (
               <UpstreamNotice>
                 upstream

@@ -1,68 +1,27 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Subheading} from '../ui/Text';
-<<<<<<< HEAD
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
-import {
-  AssetNode,
-  ASSET_NODE_FRAGMENT,
-  ASSET_NODE_LIVE_FRAGMENT,
-} from '../workspace/asset-graph/AssetNode';
-import {
-  assetKeyToString,
-  buildGraphDataFromSingleNode,
-  buildLiveData,
-  LiveData,
-} from '../workspace/asset-graph/Utils';
-import {AssetNodeFragment} from '../workspace/asset-graph/types/AssetNodeFragment';
+import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
+import {buildGraphDataFromSingleNode, buildLiveData} from '../workspace/asset-graph/Utils';
+import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
-=======
-import {ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 
 import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
-import {
-  AssetNodeDefinitionRunsQuery,
-  AssetNodeDefinitionRunsQueryVariables,
-} from './types/AssetNodeDefinitionRunsQuery';
 
-export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragment}> = ({
-  assetNode,
-}) => {
+export const AssetNodeDefinition: React.FC<{
+  assetNode: AssetNodeDefinitionFragment;
+  inProgressRuns: InProgressRunsFragment[];
+}> = ({assetNode, inProgressRuns}) => {
   const {options} = useRepositoryOptions();
-  const repos = assetNode.jobName ? findRepoContainingPipeline(options, assetNode.jobName) : [];
+  const [repo] = assetNode?.jobName ? findRepoContainingPipeline(options, assetNode.jobName) : [];
 
-  const liveResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
-    ASSET_NODE_DEFINITION_RUNS_QUERY,
-    {
-      skip: !assetNode.jobName || !repos.length,
-      variables: {
-        pipelineSelector: {
-          pipelineName: assetNode.jobName || '',
-          repositoryLocationName: repos[0].repositoryLocation.name,
-          repositoryName: repos[0].repository.name,
-        },
-        repositorySelector: {
-          repositoryLocationName: repos[0].repositoryLocation.name,
-          repositoryName: repos[0].repository.name,
-        },
-      },
-      notifyOnNetworkStatusChange: true,
-      pollInterval: 5 * 1000,
-    },
-  );
-
-  const inProgress =
-    liveResult.data?.repositoryOrError.__typename === 'Repository'
-      ? liveResult.data.repositoryOrError.inProgressRunsByStep
-      : [];
   const nodesWithLatestMaterialization = [
     assetNode,
     ...assetNode.dependencies.map((d) => d.asset),
@@ -71,8 +30,9 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
   const liveDataByNode = buildLiveData(
     buildGraphDataFromSingleNode(assetNode),
     nodesWithLatestMaterialization,
-    inProgress,
+    inProgressRuns,
   );
+  console.log(liveDataByNode);
 
   return (
     <Box
@@ -98,153 +58,56 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
         <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
           <Description
             description={assetNode.description || 'No description provided.'}
-<<<<<<< HEAD
-            maxHeight={278}
-=======
             maxHeight={318}
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
           />
         </Box>
       </Box>
       <Box
-<<<<<<< HEAD
-        style={{width: '40%', height: 350, minWidth: 0}}
-        flex={{direction: 'column'}}
-        border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-=======
         border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
         style={{width: '40%', height: 390}}
         flex={{direction: 'column'}}
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       >
         <Box
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
-<<<<<<< HEAD
-          <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
-        </Box>
-        <AssetList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
-        </Box>
-        <AssetList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
-=======
           <Subheading>Related Assets</Subheading>
         </Box>
         <Box margin={{vertical: 16, horizontal: 24}} style={{minHeight: 0, height: '100%'}}>
-          <AssetNeighborsGraph assetNode={assetNode} />
+          <AssetNeighborsGraph
+            assetNode={assetNode}
+            liveDataByNode={liveDataByNode}
+            repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
+          />
         </Box>
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       </Box>
     </Box>
   );
 };
 
-const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
-  query AssetNodeDefinitionRunsQuery(
-    $pipelineSelector: PipelineSelector!
-    $repositorySelector: RepositorySelector!
-  ) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on Repository {
-        id
-        name
-        inProgressRunsByStep {
-          stepKey
-          runs {
-            id
-            runId
-          }
-        }
-      }
-    }
-  }
-`;
-
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     ...AssetNodeFragment
-<<<<<<< HEAD
     ...AssetNodeLiveFragment
-=======
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 
     dependencies {
       asset {
         id
-<<<<<<< HEAD
         opName
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
-=======
-        ...AssetNodeFragment
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       }
     }
     dependedBy {
       asset {
         id
-<<<<<<< HEAD
         opName
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
-=======
-        ...AssetNodeFragment
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       }
     }
   }
   ${ASSET_NODE_FRAGMENT}
-<<<<<<< HEAD
   ${ASSET_NODE_LIVE_FRAGMENT}
-=======
->>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 `;
-
-const AssetList: React.FC<{
-  items: {asset: AssetNodeFragment}[];
-  liveDataByNode: LiveData;
-}> = ({items, liveDataByNode}) => {
-  const history = useHistory();
-
-  return (
-    <Box
-      padding={{horizontal: 16}}
-      style={{overflowX: 'auto', whiteSpace: 'nowrap', height: 120, minWidth: 0}}
-    >
-      {items.map((dep) => (
-        <div
-          style={{
-            position: 'relative',
-            display: 'inline-block',
-            verticalAlign: 'top',
-            height: 95,
-            width: 215,
-          }}
-          key={assetKeyToString(dep.asset.assetKey)}
-          onClick={(e) => {
-            if (e.isDefaultPrevented()) {
-              return;
-            }
-            history.push(`/instance/assets/${assetKeyToString(dep.asset.assetKey)}`);
-          }}
-        >
-          <AssetNode
-            definition={{...dep.asset, description: ''}}
-            liveData={liveDataByNode[dep.asset.id]}
-            metadata={[]}
-            selected={false}
-            secondaryHighlight={false}
-            repoAddress={{name: '', location: ''}}
-          />
-        </div>
-      ))}
-    </Box>
-  );
-};

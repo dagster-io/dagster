@@ -34,6 +34,7 @@ import {
   buildLiveData,
   GraphData,
   graphHasCycles,
+  IN_PROGRESS_RUNS_FRAGMENT,
   layoutGraph,
   LiveData,
   Node,
@@ -366,11 +367,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
         id
         name
         inProgressRunsByStep {
-          stepKey
-          runs {
-            id
-            runId
-          }
+          ...InProgressRunsFragment
         }
       }
     }
@@ -384,6 +381,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       }
     }
   }
+  ${IN_PROGRESS_RUNS_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
 `;
 

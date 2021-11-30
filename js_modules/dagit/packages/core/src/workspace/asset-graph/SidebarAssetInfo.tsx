@@ -8,13 +8,12 @@ import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
-import {BaseTag} from '../../ui/BaseTag';
 import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
-import {Spinner} from '../../ui/Spinner';
 import {RepoAddress} from '../types';
 
+import {InProgressRunsBanner} from './InProgressRunsBanner';
 import {assetKeyToString, LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
@@ -40,31 +39,8 @@ export const SidebarAssetInfo: React.FC<{
       </SidebarSection>
 
       <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
-      {inProgressRunIds?.length > 0 && (
-        <Box
-          background={ColorsWIP.Blue50}
-          flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.Blue100}}
-          padding={{vertical: 12, left: 24, right: 12}}
-          style={{color: ColorsWIP.Blue700, fontSize: 12, fontWeight: 700}}
-        >
-          <span>This asset may be materialized soon by </span>
+      <InProgressRunsBanner runIds={inProgressRunIds || []} />
 
-          {inProgressRunIds.map((runId) => (
-            <BaseTag
-              key={runId}
-              textColor={ColorsWIP.Blue700}
-              fillColor={ColorsWIP.Blue50}
-              label={
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Spinner purpose="caption-text" />
-                  <Link to={`/instance/runs/${runId}`}>{`Run: ${runId.slice(0, 8)}`}</Link>
-                </Box>
-              }
-            />
-          ))}
-        </Box>
-      )}
       <SidebarSection title={'Materialization in Last Run'}>
         {lastMaterialization ? (
           <>

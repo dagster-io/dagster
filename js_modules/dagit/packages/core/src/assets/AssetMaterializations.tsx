@@ -10,6 +10,8 @@ import {ColorsWIP} from '../ui/Colors';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
+import {InProgressRunsBanner} from '../workspace/asset-graph/InProgressRunsBanner';
+import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
@@ -26,6 +28,7 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 interface Props {
   assetKey: AssetKey;
   asSidebarSection?: boolean;
+  inProgressRunIds?: string[];
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
@@ -38,6 +41,7 @@ export const AssetMaterializations: React.FC<Props> = ({
   params,
   setParams,
   paramsTimeWindowOnly,
+  inProgressRunIds,
 }) => {
   const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
     ASSET_MATERIALIZATIONS_QUERY,
@@ -117,6 +121,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </div>
           ) : null}
         </Box>
+        {inProgressRunIds && <InProgressRunsBanner runIds={inProgressRunIds} />}
         <AssetMaterializationTable
           hasPartitions={hasPartitions}
           hasLineage={hasLineage}
@@ -294,6 +299,7 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         key {
           path
         }
+
         assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
           ...AssetMaterializationFragment
         }

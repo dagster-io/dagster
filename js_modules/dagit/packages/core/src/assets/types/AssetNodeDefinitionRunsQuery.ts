@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, RepositorySelector } from "./../../types/globalTypes";
+import { RepositorySelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetNodeDefinitionRunsQuery
@@ -39,6 +39,5 @@ export interface AssetNodeDefinitionRunsQuery {
 }
 
 export interface AssetNodeDefinitionRunsQueryVariables {
-  pipelineSelector: PipelineSelector;
   repositorySelector: RepositorySelector;
 }
