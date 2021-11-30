@@ -1,6 +1,5 @@
 import graphene
 from dagster import check
-from dagster.core.asset_defs import ForeignAsset
 from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
