@@ -401,8 +401,8 @@
             "path": "/guides/dagster/example_project"
           },
           {
-            "title": "Validating Pandas Dataframes with Dagster Types",
-            "path": "/guides/dagster/pandas_dagster_types"
+            "title": "Validating Data with Dagster Type Factories",
+            "path": "/guides/dagster/dagster_type_factories"
           }
         ]
       }

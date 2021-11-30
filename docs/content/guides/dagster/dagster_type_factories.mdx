@@ -9,7 +9,7 @@ Dagster is designed to interoperate easily with other components of your stack. 
 
 Dagster types perform arbitrary runtime validation on data as it flows between ops. If we apply standard Python type annotations to an op compute function, Dagster will [infer corresponding Dagster types](/concepts/types#using-dagster-types-with-pep-484-type-annotations). However, standard Python type annotations are of limited expressiveness. To specify arbitrary validation logic, we must define custom Dagster types. Here is a type that asserts an object is a `set` containing the number `1` (this is not expressible with standard Python types):
 
-```python file=/guides/dagster/pandas_dagster_types/simple_example.py startafter=one_off_type_start endbefore=one_off_type_end
+```python file=/guides/dagster/dagster_type_factories/simple_example.py startafter=one_off_type_start endbefore=one_off_type_end
 from dagster import DagsterType, check_dagster_type
 
 set_containing_1 = DagsterType(
@@ -23,7 +23,7 @@ check_dagster_type(set_containing_1, {1, 2}).success  # => True
 
 Sometimes, we may even need to define an entire suite of related types. Factory functions are an efficient solution to this problem. Here is a factory function that generalizes the set-membership-check pattern for arbitrary values:
 
-```python file=/guides/dagster/pandas_dagster_types/simple_example.py startafter=type_factory_start endbefore=type_factory_end
+```python file=/guides/dagster/dagster_type_factories/simple_example.py startafter=type_factory_start endbefore=type_factory_end
 def set_has_element_type_factory(x):
     return DagsterType(
         name=f"set_containing_{x}",
@@ -40,7 +40,7 @@ Factories are particularly powerful when interfacing with external data validati
 
 ## Setup
 
-Suppose we are data scientists working for an e-bike rental company. We've been tasked with setting up some pipelines to analyze trip data, and have been experimenting with implementing them in Dagster. We're currently looking at the distribution of trip lengths, so we've exported a slice of trips from October into a simple <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/dagster/pandas_dagster_types/ebike_trips.csv" isInline>CSV file</CodeReferenceLink> with 3 columns: `bike_id`, `start_time`, and `end_time`.
+Suppose we are data scientists working for an e-bike rental company. We've been tasked with setting up some pipelines to analyze trip data, and have been experimenting with implementing them in Dagster. We're currently looking at the distribution of trip lengths, so we've exported a slice of trips from October into a simple <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/dagster/dagster_type_factories/ebike_trips.csv" isInline>CSV file</CodeReferenceLink> with 3 columns: `bike_id`, `start_time`, and `end_time`.
 
      bike_id            start_time              end_time
            9   2021-10-20 10:39:00   2021-10-20 12:29:00
@@ -52,7 +52,7 @@ Suppose we are data scientists working for an e-bike rental company. We've been 
 
 The first thing we want to do is visualize the distribution of trip lengths. We set up a simple Dagster job with two ops: `load_trips` reads a CSV with our data, and `generate_plot` creates a plot of the distribution using the [Matplotlib](https://matplotlib.org/) plotting library.
 
-```python file=/guides/dagster/pandas_dagster_types/job_1.py
+```python file=/guides/dagster/dagster_type_factories/job_1.py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -88,7 +88,7 @@ def generate_trip_distribution_plot():
 
 If we try running this job, our `np.histogram_bin_edges` call in `generate_plot` throws an error:
 
-```python file=/guides/dagster/pandas_dagster_types/job_1_execution.py
+```python file=/guides/dagster/dagster_type_factories/job_1_execution.py
 from .job_1 import generate_trip_distribution_plot
 
 generate_trip_distribution_plot.execute_in_process()
@@ -100,7 +100,7 @@ generate_trip_distribution_plot.execute_in_process()
 
 Since our logic looks OK, the problem likely originates in an incorrect assumption about the source data. To investigate, we write a [Pandera schema](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html). The schema defines a set of dataframe columns with corresponding datatypes. Pandera columns are by default required to exist and non-nullable, so there is also an implicit expectation that columns with the specified names exist, and that all values are defined (NOTE: this illustrates only a small slice of Pandera's functionality):
 
-```python file=/guides/dagster/pandas_dagster_types/schema.py
+```python file=/guides/dagster/dagster_type_factories/schema.py
 import numpy as np
 import pandas as pd
 import pandera as pa
@@ -123,7 +123,7 @@ trips_schema = pa.DataFrameSchema(
 
 Let's try validating our data:
 
-```python file=/guides/dagster/pandas_dagster_types/schema_execution.py
+```python file=/guides/dagster/dagster_type_factories/schema_execution.py
 from .schema import df, trips_schema
 
 trips_schema.validate(df)
@@ -144,7 +144,7 @@ We can prevent these situations by validating our data before passing it downstr
 
 Fortunately, it's easy to write a factory function that will wrap any Pandera schema in a unique Dagster type:
 
-```python file=/guides/dagster/pandas_dagster_types/factory.py
+```python file=/guides/dagster/dagster_type_factories/factory.py
 import pandas as pd
 import pandera as pa
 from dagster import DagsterType, TypeCheck
@@ -188,7 +188,7 @@ Notice also that we provide a `metadata` dictionary to the `TypeCheck` construct
 
 Now that we can turn Pandera schemas into Dagster types, we only need to tweak our job definition a little bit to integrate Pandera validation.
 
-```python file=/guides/dagster/pandas_dagster_types/job_2.py
+```python file=/guides/dagster/dagster_type_factories/job_2.py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -252,7 +252,7 @@ Second, we've added a `clean` configuration parameter to `load_trips`. When `cle
 
 Let's see what happens when we run without setting `clean`:
 
-```python file=/guides/dagster/pandas_dagster_types/job_2_execution.py startafter=execution_1 endbefore=execution_2
+```python file=/guides/dagster/dagster_type_factories/job_2_execution.py startafter=execution_1 endbefore=execution_2
 generate_trip_distribution_plot.execute_in_process()
 # => ...
 # => dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "TripsDataFrame".
@@ -261,7 +261,7 @@ generate_trip_distribution_plot.execute_in_process()
 
 Just as we expect, Dagster's runtime validation caught the error and raised a `DagsterTypeCheckDidNotPass` exception. Now let's try with `clean` set. Stripping out the offending records should allow our dataframe to pass the `TripsDataframe` validation:
 
-```python file=/guides/dagster/pandas_dagster_types/job_2_execution.py startafter=execution_2
+```python file=/guides/dagster/dagster_type_factories/job_2_execution.py startafter=execution_2
 generate_trip_distribution_plot.execute_in_process(
     run_config={"ops": {"load_trips": {"config": {"clean": True}}}}
 )
@@ -272,7 +272,7 @@ generate_trip_distribution_plot.execute_in_process(
 Success! We also find that our histogram was successfully rendered to `./trip_lengths.png`.
 
 <Image
-src="/images/guides/pandas_dagster_types/trip_lengths.png"
+src="/images/guides/dagster_type_factories/trip_lengths.png"
 alt="trip_lengths.png"
 width={720}
 height={360}

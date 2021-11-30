@@ -1,18 +1,18 @@
 import os
 import shutil
 
-import docs_snippets.guides.dagster.pandas_dagster_types as example_root
+import docs_snippets.guides.dagster.dagster_type_factories as example_root
 import pytest
 from dagster import check_dagster_type
 from dagster.core.errors import DagsterTypeCheckDidNotPass
-from docs_snippets.guides.dagster.pandas_dagster_types.simple_example import (
+from docs_snippets.guides.dagster.dagster_type_factories.simple_example import (
     set_containing_1,
     set_has_element_type_factory,
 )
-from docs_snippets.guides.dagster.pandas_dagster_types.job_1 import (
+from docs_snippets.guides.dagster.dagster_type_factories.job_1 import (
     generate_trip_distribution_plot as job_1,
 )
-from docs_snippets.guides.dagster.pandas_dagster_types.job_2 import (
+from docs_snippets.guides.dagster.dagster_type_factories.job_2 import (
     generate_trip_distribution_plot as job_2,
 )
 
