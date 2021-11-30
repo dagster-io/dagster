@@ -58,12 +58,19 @@ Sensors
 
 .. autodecorator:: asset_sensor
 
-.. autodecorator:: pipeline_failure_sensor
-
-.. autoclass:: PipelineFailureSensorContext
-
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext
 
+.. autoclass:: RunFailureSensorContext
+
 .. autodecorator:: run_status_sensor
+
+.. autodecorator:: run_failure_sensor
+
+Legacy APIs
+-----------
+
+.. autodecorator:: pipeline_failure_sensor
+
+.. autoclass:: PipelineFailureSensorContext

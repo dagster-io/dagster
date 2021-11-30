@@ -7,6 +7,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Subheading} from '../ui/Text';
+<<<<<<< HEAD
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {
   AssetNode,
@@ -21,7 +22,11 @@ import {
 } from '../workspace/asset-graph/Utils';
 import {AssetNodeFragment} from '../workspace/asset-graph/types/AssetNodeFragment';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
+=======
+import {ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 
+import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 import {
   AssetNodeDefinitionRunsQuery,
@@ -93,19 +98,30 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
         <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
           <Description
             description={assetNode.description || 'No description provided.'}
+<<<<<<< HEAD
             maxHeight={278}
+=======
+            maxHeight={318}
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
           />
         </Box>
       </Box>
       <Box
+<<<<<<< HEAD
         style={{width: '40%', height: 350, minWidth: 0}}
         flex={{direction: 'column'}}
         border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+=======
+        border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+        style={{width: '40%', height: 390}}
+        flex={{direction: 'column'}}
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       >
         <Box
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
+<<<<<<< HEAD
           <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
         </Box>
         <AssetList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
@@ -116,6 +132,13 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
           <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
         </Box>
         <AssetList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
+=======
+          <Subheading>Related Assets</Subheading>
+        </Box>
+        <Box margin={{vertical: 16, horizontal: 24}} style={{minHeight: 0, height: '100%'}}>
+          <AssetNeighborsGraph assetNode={assetNode} />
+        </Box>
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       </Box>
     </Box>
   );
@@ -147,27 +170,41 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     ...AssetNodeFragment
+<<<<<<< HEAD
     ...AssetNodeLiveFragment
+=======
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 
     dependencies {
       asset {
         id
+<<<<<<< HEAD
         opName
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
+=======
+        ...AssetNodeFragment
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       }
     }
     dependedBy {
       asset {
         id
+<<<<<<< HEAD
         opName
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
+=======
+        ...AssetNodeFragment
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
       }
     }
   }
   ${ASSET_NODE_FRAGMENT}
+<<<<<<< HEAD
   ${ASSET_NODE_LIVE_FRAGMENT}
+=======
+>>>>>>> 02814dbbf434c6974c4272f19e525dc71cb254e9
 `;
 
 const AssetList: React.FC<{

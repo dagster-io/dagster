@@ -405,6 +405,15 @@ const ASSETS_GRAPH_QUERY = gql`
               }
             }
           }
+          dependedBy {
+            inputName
+            asset {
+              id
+              assetKey {
+                path
+              }
+            }
+          }
           dependencies {
             inputName
             asset {
