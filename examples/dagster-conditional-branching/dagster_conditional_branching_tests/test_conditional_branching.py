@@ -2,9 +2,12 @@ import os
 import tempfile
 
 import pandas as pd
-from bite_sized.conditional_branching import conditional_branching, df_to_csv_io_manager
 from dagster import build_init_resource_context, build_input_context, build_output_context
 from dagster.core.test_utils import instance_for_test
+from dagster_conditional_branching.conditional_branching_job import (
+    conditional_branching,
+    df_to_csv_io_manager,
+)
 
 
 def test_conditional_branching():
