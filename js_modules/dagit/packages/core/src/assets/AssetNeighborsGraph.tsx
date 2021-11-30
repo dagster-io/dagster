@@ -61,7 +61,7 @@ export const AssetNeighborsGraph: React.FC<{assetNode: AssetNodeDefinitionFragme
 }) => {
   const history = useHistory();
   const graphData = buildGraphFromSingleNode(assetNode);
-  const layout = layoutGraph(graphData, 0);
+  const layout = layoutGraph(graphData, 0, 0.3);
   const computeStatuses = buildGraphComputeStatuses(graphData);
 
   return (

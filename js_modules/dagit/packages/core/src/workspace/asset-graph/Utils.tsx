@@ -102,16 +102,16 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const layoutGraph = (graphData: GraphData, margin = 100) => {
+export const layoutGraph = (graphData: GraphData, margin = 100, spacing = 1) => {
   const g = new dagre.graphlib.Graph();
 
   g.setGraph({
     rankdir: 'TB',
     marginx: margin,
     marginy: margin,
-    edgesep: 20,
-    ranksep: 25,
-    nodesep: 20,
+    nodesep: 50 * spacing,
+    edgesep: 10 * spacing,
+    ranksep: 50 * spacing,
   });
   g.setDefaultEdgeLabel(() => ({}));
 
