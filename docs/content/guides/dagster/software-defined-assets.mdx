@@ -120,8 +120,8 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
 Here's an extended version of `weather_job` that contains the new asset:
 
 ```python file=../../software_defined_assets/software_defined_assets/spark_weather_job.py startafter=build_assets_job_start endbefore=build_assets_job_end
-weather_job = build_assets_job(
-    "weather",
+spark_weather_job = build_assets_job(
+    "spark_weather",
     assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
     source_assets=[sfo_q2_weather_sample],
     resource_defs={
