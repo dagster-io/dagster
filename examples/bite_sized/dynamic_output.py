@@ -25,9 +25,10 @@ ARTICLES_LINK = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
 
 class DynamicOutIOManager(DataframeToCSVIOManager):
     def _get_path(self, output_context: OutputContext):
+        path = f"{output_context.step_key}{f'_{output_context.mapping_key}' if output_context.mapping_key else ''}.csv"
         return os.path.join(
             self.base_dir,
-            f"{output_context.step_key}_{output_context.name}_{output_context.mapping_key}.csv",
+            path,
         )
 
 
@@ -60,6 +61,12 @@ def fetch_articles_df():
         yield DynamicOutput(pd.DataFrame(articles), mapping_key=re.sub(r"\W+", "", category_name))
 
 
+@op
+def combine_articles_df(articles):
+    return pd.concat(articles)
+
+
 @job(resource_defs={"io_manager": dynamic_df_to_csv_io_manager})
 def dynamic_output():
-    fetch_articles_df()
+    articles = fetch_articles_df()
+    combine_articles_df(articles.collect())
