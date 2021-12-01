@@ -533,6 +533,10 @@ class AssetSensorDefinition(SensorDefinition):
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        on_every_event (bool): If True, the evaluation function will be evaluated for
+            every materialization event since the last sensor tick.  The default value is False,
+            where the decorated function is evaluated at most once, for the most recent
+            materialization event, if one has been recorded since the last sensor tick.
 
     """
 
@@ -551,7 +555,7 @@ class AssetSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-        last_event_only: bool = True,
+        on_every_event: bool = False,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -574,7 +578,7 @@ class AssetSensorDefinition(SensorDefinition):
                         after_cursor=after_cursor,
                     ),
                     ascending=False,
-                    limit=1 if last_event_only else None,
+                    limit=None if on_every_event else 1,
                 )
 
                 if not event_records:

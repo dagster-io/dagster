@@ -110,7 +110,7 @@ def asset_sensor(
     description: Optional[str] = None,
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-    last_event_only: bool = True,
+    on_every_event: bool = False,
 ) -> Callable[
     [
         Callable[
@@ -153,6 +153,10 @@ def asset_sensor(
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        on_every_event (bool): If True, the decorated function will be evaluated for every
+            materialization event since the last sensor tick.  The default value is False, where the
+            decorated function is evaluated at most once, for the most recent materialization event,
+            if one has been recorded since the last sensor tick.
     """
 
     check.opt_str_param(name, "name")
@@ -198,7 +202,7 @@ def asset_sensor(
             description=description,
             job=job,
             jobs=jobs,
-            last_event_only=last_event_only,
+            on_every_event=on_every_event,
         )
 
     return inner
