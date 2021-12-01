@@ -14,15 +14,26 @@ import site
 import sys
 import tempfile
 import zipfile
+from typing import NamedTuple
 
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
 from dagster.core.instance import DagsterInstance
-from dagster.serdes import serialize_value
+from dagster.serdes import serialize_value, whitelist_for_serdes
+
 
 # This won't be set in Databricks but is needed to be non-None for the
 # Dagster step to run.
 if "DATABRICKS_TOKEN" not in os.environ:
     os.environ["DATABRICKS_TOKEN"] = ""
+
+
+@whitelist_for_serdes
+class LogsCompleteSentinal(NamedTuple):
+    """Written to the events file after run has completed to allow processes to determine that
+    all available data has been written.
+
+    This subclasses dict to make it natively serializable
+    """
 
 
 def main(
@@ -52,15 +63,21 @@ def main(
             print("y" * 100)
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
+        events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
         with DagsterInstance.ephemeral() as instance:
-            events_filepath = (
-                os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
-            )
             events = []
-            with open(events_filepath, "wb") as handle:
-                for event in run_step_from_ref(step_run_ref, instance):
-                    events.append(event)
+            for event in run_step_from_ref(step_run_ref, instance):
+                events.append(event)
+                print("*" * 100)
+                print("--events: ", events)
+                with open(events_filepath, "wb") as handle:
                     pickle.dump(serialize_value(events), handle)
+
+        print("FINAL EVENTS")
+        events.append(LogsCompleteSentinal())
+        print(events)
+        with open(events_filepath, "wb") as handle:
+            pickle.dump(serialize_value(events), handle)
 
 
 if __name__ == "__main__":
