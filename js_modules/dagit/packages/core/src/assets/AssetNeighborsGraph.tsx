@@ -79,18 +79,17 @@ export const AssetNeighborsGraph: React.FC<{
             const graphNode = graphData.nodes[layoutNode.id];
             return (
               <foreignObject
+                {...layoutNode}
                 key={layoutNode.id}
-                x={layoutNode.x}
-                y={layoutNode.y}
-                width={layoutNode.width}
-                height={layoutNode.height}
+                style={{overflow: 'visible'}}
                 onClick={(e) => {
                   e.stopPropagation();
-                  history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                  if (graphNode.definition.opName) {
+                    history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                  }
                 }}
-                style={{overflow: 'visible'}}
               >
-                {graphNode.hidden ? (
+                {graphNode.hidden || !graphNode.definition.opName ? (
                   <ForeignNode assetKey={graphNode.assetKey} />
                 ) : (
                   <AssetNode

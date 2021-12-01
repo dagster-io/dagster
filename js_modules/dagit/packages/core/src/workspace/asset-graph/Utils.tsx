@@ -172,8 +172,10 @@ export const layoutGraph = (
   });
   g.setDefaultEdgeLabel(() => ({}));
 
+  const shouldRender = (node?: Node) => node && !node.hidden && node.definition.opName;
+
   Object.values(graphData.nodes)
-    .filter((x) => !x.hidden)
+    .filter(shouldRender)
     .forEach((node) => {
       const {width, height} = getNodeDimensions(node.definition);
       g.setNode(node.id, {width: opts.mini ? 230 : width, height});
@@ -184,24 +186,23 @@ export const layoutGraph = (
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
       if (
-        graphData.nodes[downstreamId] &&
-        graphData.nodes[downstreamId].hidden &&
-        graphData.nodes[upstreamId] &&
-        graphData.nodes[upstreamId].hidden
+        !shouldRender(graphData.nodes[downstreamId]) &&
+        !shouldRender(graphData.nodes[upstreamId])
       ) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-      if (!graphData.nodes[downstreamId] || graphData.nodes[downstreamId].hidden) {
+
+      if (!shouldRender(graphData.nodes[downstreamId])) {
         foreignNodes[downstreamId] = true;
-      } else if (!graphData.nodes[upstreamId] || graphData.nodes[upstreamId].hidden) {
+      } else if (!shouldRender(graphData.nodes[upstreamId])) {
         foreignNodes[upstreamId] = true;
       }
     });
   });
 
-  Object.keys(foreignNodes).forEach((upstreamId) => {
-    g.setNode(upstreamId, getForeignNodeDimensions(upstreamId));
+  Object.keys(foreignNodes).forEach((id) => {
+    g.setNode(id, getForeignNodeDimensions(id));
   });
 
   dagre.layout(g);
