@@ -13,7 +13,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
+import {Caption, Subheading} from '../ui/Text';
 import {InProgressRunsBanner} from '../workspace/asset-graph/InProgressRunsBanner';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
@@ -99,18 +99,6 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
-  if (!reversed.length) {
-    return (
-      <Box padding={{vertical: 20}}>
-        <NonIdealState
-          icon="asset"
-          title="No materializations"
-          description="No materializations were found for this asset."
-        />
-      </Box>
-    );
-  }
-
   const notYetMaterializedRunIds = (inProgressRunIds || []).filter(
     (runId) =>
       !materializations.some(
@@ -124,21 +112,26 @@ export const AssetMaterializations: React.FC<Props> = ({
       <>
         <InProgressRunsBanner runIds={inProgressRunIds || []} />
         <SidebarSection title={'Materialization in Last Run'}>
-          {latest ? (
-            <>
+          <>
+            {latest ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <LatestMaterializationMetadata latest={latest} asOf={null} />
+                <LatestMaterializationMetadata latest={latest} />
               </div>
-              <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
-                <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
-                  {'View All in Asset Catalog '}
-                  <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
-                </AssetCatalogLink>
+            ) : (
+              <Box
+                margin={{horizontal: 24, bottom: 24, top: 12}}
+                style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
+              >
+                No materializations found
               </Box>
-            </>
-          ) : (
-            <Box margin={12}>&mdash;</Box>
-          )}
+            )}
+            <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
+              <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
+                {'View All in Asset Catalog '}
+                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+              </AssetCatalogLink>
+            </Box>
+          </>
         </SidebarSection>
         <SidebarSection title={'Materialization Plots'}>
           <AssetMaterializationGraphs
@@ -151,13 +144,25 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
+  if (!reversed.length) {
+    return (
+      <Box padding={{vertical: 20}}>
+        <NonIdealState
+          icon="asset"
+          title="No materializations"
+          description="No materializations were found for this asset."
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box style={{display: 'flex'}}>
       <Box style={{flex: 1}}>
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
           padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          style={{marginBottom: -1}}
         >
           <Subheading>Materializations</Subheading>
           {hasPartitions ? (
@@ -223,14 +228,33 @@ const AssetMaterializationGraphs: React.FC<{
         }}
       >
         {[...graphedLabels].sort().map((label) => (
-          <AssetValueGraph
+          <Box
             key={label}
-            label={label}
-            width={'100%'}
-            data={graphDataByMetadataLabel[label]}
-            xHover={xHover}
-            onHoverX={(x) => x !== xHover && setXHover(x)}
-          />
+            style={{width: '100%'}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            {props.asSidebarSection ? (
+              <Box padding={{horizontal: 24, top: 8}}>
+                <Caption style={{fontWeight: 700}}>{label}</Caption>
+              </Box>
+            ) : (
+              <Box
+                padding={{horizontal: 24, vertical: 16}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              >
+                <Subheading>{label}</Subheading>
+              </Box>
+            )}
+            <Box padding={{horizontal: 24, vertical: 16}}>
+              <AssetValueGraph
+                label={label}
+                width={'100%'}
+                data={graphDataByMetadataLabel[label]}
+                xHover={xHover}
+                onHoverX={(x) => x !== xHover && setXHover(x)}
+              />
+            </Box>
+          </Box>
         ))}
       </div>
       {xAxis === 'partition' && (

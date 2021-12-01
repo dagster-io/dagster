@@ -23,8 +23,7 @@ import {LatestMaterializationMetadataFragment} from './types/LatestMaterializati
 
 export const LatestMaterializationMetadata: React.FC<{
   latest: LatestMaterializationMetadataFragment | undefined;
-  asOf: string | null;
-}> = ({latest, asOf}) => {
+}> = ({latest}) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -33,33 +32,12 @@ export const LatestMaterializationMetadata: React.FC<{
   const repo = useRepository(repoAddress);
 
   if (!latest) {
-    if (!asOf) {
-      return (
-        <Box padding={{top: 16, bottom: 32}}>
-          <NonIdealState
-            icon="asset"
-            title="No materializations"
-            description="No materializations were found for this asset."
-          />
-        </Box>
-      );
-    }
-
     return (
       <Box padding={{top: 16, bottom: 32}}>
         <NonIdealState
           icon="asset"
           title="No materializations"
-          description={
-            <div>
-              No materializations found at{' '}
-              <Timestamp
-                timestamp={{ms: Number(asOf)}}
-                timeFormat={{showSeconds: true, showTimezone: true}}
-              />
-              .
-            </div>
-          }
+          description="No materializations were found for this asset."
         />
       </Box>
     );
