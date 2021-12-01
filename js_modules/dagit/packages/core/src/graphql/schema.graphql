@@ -93,6 +93,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  repository: Repository!
   assetNodes: [AssetNode!]!
 }
 
@@ -626,6 +627,7 @@ type AssetNode {
   description: String
   opName: String
   jobName: String
+  jobs: [Pipeline!]!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
@@ -1206,6 +1208,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  repository: Repository!
   assetNodes: [AssetNode!]!
 }
 

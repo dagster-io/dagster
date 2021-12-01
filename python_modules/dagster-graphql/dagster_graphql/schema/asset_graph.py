@@ -5,7 +5,7 @@ from dagster.core.host_representation.external_data import ExternalAssetNode
 
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .pipelines.pipeline import GrapheneAssetMaterialization
+from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
 from .util import non_null_list
 
 
@@ -36,6 +36,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
+    jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
     assetMaterializations = graphene.Field(
@@ -108,6 +109,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 before_timestamp=before_timestamp,
                 limit=kwargs.get("limit"),
             )
+        ]
+
+    def resolve_jobs(self, _graphene_info):
+        job_names = self._external_asset_node.job_names or []
+        return [
+            GraphenePipeline(self._external_repository.get_full_external_pipeline(job_name))
+            for job_name in job_names
+            if self._external_repository.has_external_pipeline(job_name)
         ]
 
 
