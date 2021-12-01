@@ -150,6 +150,7 @@ def step_context_to_step_run_ref(
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
+        known_state=step_context.execution_plan.known_state,
     )
 
 
@@ -166,6 +167,7 @@ def step_run_ref_to_step_context(
         step_run_ref.run_config,
         mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
+        known_state=step_run_ref.known_state,
     )
 
     initialization_manager = PlanExecutionContextManager(
@@ -197,4 +199,4 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
-    return core_dagster_event_sequence_for_step(step_context)
+    yield from core_dagster_event_sequence_for_step(step_context)

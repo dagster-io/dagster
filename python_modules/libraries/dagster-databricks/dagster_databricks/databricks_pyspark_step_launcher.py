@@ -14,7 +14,12 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    DatabricksError,
+    poll_run_state,
+)
 from dagster_pyspark.utils import build_pyspark_zip
 
 from .configs import (
@@ -158,22 +163,77 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
         try:
-            # If this is being called within a `capture_interrupts` context, allow interrupts while
-            # waiting for the  execution to complete, so that we can terminate slow or hanging steps
-            with raise_execution_interrupts():
-                self.databricks_runner.wait_for_run_to_complete(log, databricks_run_id)
+            for event in self.step_events_iterator(log, step_key, run_id, databricks_run_id):
+                if not (isinstance(event, databricks_step_main.LogsCompleteSentinal)):
+                    log_step_event(step_context, event)
+                    yield event
         finally:
             if self.wait_for_logs:
                 self._log_logs_from_cluster(log, databricks_run_id)
 
-        for event in self.get_step_events(run_id, step_key):
-            log_step_event(step_context, event)
-            yield event
+    def step_events_iterator(self, log, step_key: str, dagster_run_id: str, databricks_run_id: int):
+        """The launched Databricks job writes each new event to a specific dbfs file. This iterator
+        regularly reads the contents of the file and yields the ones that have been added since the
+        previous poll. This allows events to be "streamed" back to the parent process rather than
+        requiring that we wait until it has fully completed."""
+        all_events = []
+        all_events_new = []
+        start = time.time()
+        done = False
+        poll_interval_sec = 2.5  # self.databricks_runner.poll_interval_sec
+        check.int_param(databricks_run_id, "databricks_run_id")
+        log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+        while not done:
+            with raise_execution_interrupts():
+                log.debug("Waiting %.1f seconds..." % poll_interval_sec)
+                time.sleep(poll_interval_sec)
+                try:
+                    done = poll_run_state(
+                        self.databricks_runner.client,
+                        log,
+                        start,
+                        databricks_run_id,
+                        self.databricks_runner.max_wait_time_sec,
+                    )
+                finally:
+                    all_events_new = self.get_step_events(dagster_run_id, step_key)
+                    if all_events_new:
+                        for i in range(len(all_events), len(all_events_new)):
+                            yield all_events_new[i]
+                        all_events = all_events_new
+        # if run completed without error, we want to wait until all the logs are available on dbfs.
+        log.info(f"Databricks run {databricks_run_id} completed.")
+        while not isinstance(all_events[-1], databricks_step_main.LogsCompleteSentinal):
+            with raise_execution_interrupts():
+                if time.time() - start > self.databricks_runner.max_wait_time_sec:
+                    raise DatabricksError("Timed out while waiting for logs to become available.")
+                log.info(
+                    f"Waiting for Dagster logs to become available for Databricks run {databricks_run_id}."
+                )
+                all_events_new = self.get_step_events(dagster_run_id, step_key)
+                if all_events_new:
+                    for i in range(len(all_events), len(all_events_new)):
+                        yield all_events_new[i]
+                    all_events = all_events_new
+                time.sleep(poll_interval_sec)
 
     def get_step_events(self, run_id, step_key):
+        err = None
+        cur_retries = 0
         path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
-        events_data = self.databricks_runner.client.read_file(path)
-        return deserialize_value(pickle.loads(events_data))
+        while True:
+            try:
+                events_data = self.databricks_runner.client.read_file(path)
+                return deserialize_value(pickle.loads(events_data))
+            except HTTPError as e:
+                err = e
+                if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+                    return []
+            except Exception as e:
+                err = e
+            cur_retries += 1
+            if cur_retries == 3:
+                raise err
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.
