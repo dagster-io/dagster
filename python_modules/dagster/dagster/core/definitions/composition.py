@@ -50,7 +50,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
-    from .partition import PartitionedConfig
+    from .partition import PartitionedConfig, PartitionsDefinition
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -569,6 +569,7 @@ class PendingNodeInvocation:
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -593,6 +594,7 @@ class PendingNodeInvocation:
             hooks=job_hooks,
             op_retry_policy=op_retry_policy,
             version_strategy=version_strategy,
+            partitions_def=partitions_def,
         )
 
     def execute_in_process(

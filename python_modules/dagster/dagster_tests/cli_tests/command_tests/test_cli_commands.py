@@ -1,4 +1,3 @@
-import json
 import os
 import string
 import sys
@@ -83,8 +82,7 @@ def qux():
 
 qux_job = qux.to_job(
     config=PartitionedConfig(
-        partitions_def=StaticPartitionsDefinition([Partition("abc")]),
-        run_config_for_partition_fn=lambda _: {},
+        partitions_def=StaticPartitionsDefinition(["abc"]), run_config_for_partition_fn=lambda _: {}
     ),
     tags={"foo": "bar"},
 )

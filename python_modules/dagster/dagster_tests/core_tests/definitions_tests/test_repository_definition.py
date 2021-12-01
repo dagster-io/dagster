@@ -21,11 +21,7 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster.core.definitions.partition import (
-    Partition,
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
 def create_single_node_pipeline(name, called):
@@ -330,7 +326,7 @@ def test_job_with_partitions():
             bare.to_job(
                 resource_defs={},
                 config=PartitionedConfig(
-                    partitions_def=StaticPartitionsDefinition([Partition("abc")]),
+                    partitions_def=StaticPartitionsDefinition(["abc"]),
                     run_config_for_partition_fn=lambda _: {},
                 ),
             )
@@ -440,7 +436,7 @@ def test_job_validation():
     ):
 
         @repository
-        def my_repo():
+        def _my_repo():
             return {"jobs": {"my_pipeline": my_pipeline}}
 
 
@@ -475,7 +471,7 @@ def test_list_dupe_graph():
     ):
 
         @repository
-        def jobs():
+        def _jobs():
             return [foo.to_job(name="foo"), foo]
 
 

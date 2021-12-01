@@ -135,14 +135,20 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
         ...
 
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
+        return [partition.name for partition in self.get_partitions(current_time)]
 
-class StaticPartitionsDefinition(PartitionsDefinition[T]):  # pylint: disable=unsubscriptable-object
-    def __init__(self, partitions: List[Partition[T]]):
-        self._partitions = check.list_param(partitions, "partitions", of_type=Partition)
+
+class StaticPartitionsDefinition(
+    PartitionsDefinition[str]
+):  # pylint: disable=unsubscriptable-object
+    def __init__(self, partition_keys: List[str]):
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
-    ) -> List[Partition[T]]:
+    ) -> List[Partition[str]]:
         return self._partitions
 
 
@@ -261,16 +267,22 @@ class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_DynamicPartitionsDefinition",
-        [("partition_fn", Callable[[Optional[datetime]], List[Partition]])],
+        [("partition_fn", Callable[[Optional[datetime]], Union[List[Partition], List[str]]])],
     ),
 ):
-    def __new__(cls, partition_fn: Callable[[Optional[datetime]], List[Partition]]):
+    def __new__(
+        cls, partition_fn: Callable[[Optional[datetime]], Union[List[Partition], List[str]]]
+    ):
         return super(DynamicPartitionsDefinition, cls).__new__(
             cls, check.callable_param(partition_fn, "partition_fn")
         )
 
     def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
-        return self.partition_fn(current_time)
+        partitions = self.partition_fn(current_time)
+        if all(isinstance(partition, Partition) for partition in partitions):
+            return cast(List[Partition], partitions)
+        else:
+            return [Partition(p) for p in partitions]
 
 
 class PartitionSetDefinition(Generic[T]):
@@ -702,13 +714,11 @@ def static_partitioned_config(
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
-        partitions_list = [Partition(key) for key in partition_keys]
-
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
         return PartitionedConfig(
-            partitions_def=StaticPartitionsDefinition(partitions_list),
+            partitions_def=StaticPartitionsDefinition(partition_keys),
             run_config_for_partition_fn=_run_config_wrapper,
         )
 
@@ -738,15 +748,11 @@ def dynamic_partitioned_config(
     check.callable_param(partition_fn, "partition_fn")
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
-        def _partitions_wrapper(current_time: Optional[datetime] = None):
-            partition_keys = partition_fn(current_time)
-            return [Partition(key) for key in partition_keys]
-
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
         return PartitionedConfig(
-            partitions_def=DynamicPartitionsDefinition(_partitions_wrapper),
+            partitions_def=DynamicPartitionsDefinition(partition_fn),
             run_config_for_partition_fn=_run_config_wrapper,
         )
 
