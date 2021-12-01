@@ -3,11 +3,12 @@ import datetime
 import pytest
 import responses
 from dagster import Failure, build_init_resource_context
-from dagster_fivetran import fivetran_resource
+from dagster_fivetran import FivetranOutput, fivetran_resource
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
     get_sample_connector_response,
+    get_sample_connector_schema_config,
     get_sample_sync_response,
     get_sample_update_response,
 )
@@ -155,6 +156,11 @@ def test_sync_and_poll(n_polls, succeed_at_end):
     def _mock_interaction():
 
         with responses.RequestsMock() as rsps:
+            rsps.add(
+                rsps.GET,
+                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                json=get_sample_connector_schema_config(),
+            )
             rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
             rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
             # initial state
@@ -167,7 +173,10 @@ def test_sync_and_poll(n_polls, succeed_at_end):
             return ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
 
     if succeed_at_end:
-        assert _mock_interaction() == get_sample_connector_response(data=final_data)["data"]
+        assert _mock_interaction() == FivetranOutput(
+            connector_details=get_sample_connector_response(data=final_data)["data"],
+            schema_config=get_sample_connector_schema_config()["data"],
+        )
     else:
         with pytest.raises(Failure, match="failed!"):
             _mock_interaction()
@@ -186,6 +195,11 @@ def test_sync_and_poll_timeout():
 
     with pytest.raises(Failure, match="timed out"):
         with responses.RequestsMock() as rsps:
+            rsps.add(
+                rsps.GET,
+                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                json=get_sample_connector_schema_config(),
+            )
             rsps.add(
                 rsps.GET,
                 f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
@@ -224,6 +238,11 @@ def test_sync_and_poll_invalid(data, match):
 
     with pytest.raises(Failure, match=match):
         with responses.RequestsMock() as rsps:
+            rsps.add(
+                rsps.GET,
+                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                json=get_sample_connector_schema_config(),
+            )
             rsps.add(
                 rsps.GET,
                 f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",

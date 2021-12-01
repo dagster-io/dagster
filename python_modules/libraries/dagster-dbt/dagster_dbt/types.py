@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from dagster import check
 
@@ -17,3 +17,7 @@ class DbtOutput:
     @property
     def result(self) -> Dict[str, Any]:
         return self._result
+
+    @property
+    def docs_url(self) -> Optional[str]:
+        return None
