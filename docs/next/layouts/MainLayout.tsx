@@ -532,7 +532,7 @@ const Layout = ({ children }) => {
           <div className="flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900"></div>
         </div>
         {/* End placeholder spacer for navbar */}
-        <div className="w-full overflow-y-scroll">
+        <div className="w-full min-w-0">
           <div className="max-w-7xl mx-auto">
             <div className="relative w-full">
               <div className="lg:hidden">
@@ -543,7 +543,7 @@ const Layout = ({ children }) => {
                       src="/assets/logos/dagster-logo.svg"
                     />
                   </div>
-                  
+
                   <div>
                     <button
                       onClick={openMobileMenu}
