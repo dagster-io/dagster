@@ -567,6 +567,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     presets = non_null_list(GraphenePipelinePreset)
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
+    repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
     assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
@@ -599,6 +600,13 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
+
+    def resolve_repository(self, graphene_info):
+        from ..external import GrapheneRepository
+
+        handle = self._external_pipeline.repository_handle
+        location = graphene_info.context.get_repository_location(handle.location_name)
+        return GrapheneRepository(location.get_repository(handle.repository_name), location)
 
     def resolve_assetNodes(self, graphene_info):
         from ..asset_graph import GrapheneAssetNode
