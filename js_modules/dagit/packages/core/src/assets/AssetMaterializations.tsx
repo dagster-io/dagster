@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import styled from '@emotion/styled-base';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
@@ -36,27 +36,41 @@ interface Props {
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
+
+  // This timestamp is a "hint", when it changes this component will refetch
+  // to retrieve new data. Just don't want to poll the entire table query.
+  assetLastMaterializedAt: string | undefined;
 }
+
 const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 export const AssetMaterializations: React.FC<Props> = ({
   assetKey,
+  assetLastMaterializedAt,
   asSidebarSection,
   params,
   paramsTimeWindowOnly,
   setParams,
   inProgressRunIds,
 }) => {
-  const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
-    ASSET_MATERIALIZATIONS_QUERY,
-    {
-      variables: {
-        assetKey: {path: assetKey.path},
-        before: paramsTimeWindowOnly && params.asOf ? `${Number(params.asOf) + 1}` : undefined,
-        limit: 200,
-      },
+  const {data, loading, refetch} = useQuery<
+    AssetMaterializationsQuery,
+    AssetMaterializationsQueryVariables
+  >(ASSET_MATERIALIZATIONS_QUERY, {
+    variables: {
+      assetKey: {path: assetKey.path},
+      before: paramsTimeWindowOnly && params.asOf ? `${Number(params.asOf) + 1}` : undefined,
+      limit: 200,
     },
-  );
+  });
+
+  React.useEffect(() => {
+    if (paramsTimeWindowOnly) {
+      return;
+    }
+    console.log('refetch');
+    refetch();
+  }, [paramsTimeWindowOnly, assetLastMaterializedAt, refetch]);
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
   const materializations = asset?.assetMaterializations || [];

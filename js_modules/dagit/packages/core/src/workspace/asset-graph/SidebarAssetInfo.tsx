@@ -19,6 +19,7 @@ export const SidebarAssetInfo: React.FC<{
   repoAddress: RepoAddress;
 }> = ({node, definition, repoAddress, liveData}) => {
   const Plugin = pluginForMetadata(definition.metadata);
+  const {inProgressRunIds, lastMaterialization} = liveData || {};
 
   return (
     <div style={{overflowY: 'auto'}}>
@@ -36,8 +37,9 @@ export const SidebarAssetInfo: React.FC<{
 
       <AssetMaterializations
         assetKey={node.assetKey}
+        assetLastMaterializedAt={lastMaterialization?.materializationEvent.timestamp}
         asSidebarSection
-        inProgressRunIds={liveData?.inProgressRunIds}
+        inProgressRunIds={inProgressRunIds}
         paramsTimeWindowOnly={false}
         params={{}}
         setParams={() => {}}

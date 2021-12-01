@@ -1,9 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {QueryCountdown} from '../app/QueryCountdown';
 import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useDidLaunchEvent} from '../runs/RunUtils';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -15,6 +17,7 @@ import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipelin
 
 import {AssetMaterializations} from './AssetMaterializations';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
 import {
   AssetNodeDefinitionRunsQuery,
@@ -39,20 +42,25 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     Boolean(params.asOf),
   );
 
-  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
+  const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
+    notifyOnNetworkStatusChange: true,
     pollInterval: 5 * 1000,
   });
 
-  const definition =
-    data?.assetOrError && data.assetOrError.__typename === 'Asset'
-      ? data.assetOrError.definition
-      : null;
+  // Refresh immediately when a run is launched from this page
+  useDidLaunchEvent(queryResult.refetch);
 
+  const {assetOrError} = queryResult.data || queryResult.previousData || {};
+  const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
+  const definition = asset?.definition;
+  const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+
+  // Note: Todo create a better way to link an Asset to a Repo
   const {options} = useRepositoryOptions();
   const [repo] = definition?.jobName ? findRepoContainingPipeline(options, definition.jobName) : [];
 
-  const liveResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
+  const bonusResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
     ASSET_NODE_DEFINITION_RUNS_QUERY,
     {
       skip: !definition?.jobName,
@@ -68,14 +76,23 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const inProgressRuns =
-    liveResult.data?.repositoryOrError.__typename === 'Repository'
-      ? liveResult.data.repositoryOrError.inProgressRunsByStep
+    bonusResult.data?.repositoryOrError.__typename === 'Repository'
+      ? bonusResult.data.repositoryOrError.inProgressRunsByStep
       : [];
 
   return (
     <div>
+      <AssetPageHeader
+        currentPath={assetKey.path}
+        right={
+          <div style={{marginTop: 4}}>
+            <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+          </div>
+        }
+      />
+
       <div>
-        {loading ? (
+        {queryResult.loading && !queryResult.previousData ? (
           <Box
             style={{height: 390}}
             flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
@@ -111,11 +128,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             />
           </Box>
         ) : definition ? (
-          <AssetNodeDefinition assetNode={definition} inProgressRuns={inProgressRuns} />
+          <AssetNodeDefinition repo={repo} assetNode={definition} inProgressRuns={inProgressRuns} />
         ) : undefined}
       </div>
       <AssetMaterializations
         assetKey={assetKey}
+        assetLastMaterializedAt={lastMaterializedAt}
         params={params}
         paramsTimeWindowOnly={navigatedDirectlyToTime}
         setParams={setParams}
@@ -136,6 +154,12 @@ const ASSET_QUERY = gql`
         id
         key {
           path
+        }
+
+        assetMaterializations(limit: 1) {
+          materializationEvent {
+            timestamp
+          }
         }
 
         definition {

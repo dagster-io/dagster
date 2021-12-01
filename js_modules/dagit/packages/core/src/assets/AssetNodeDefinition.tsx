@@ -5,23 +5,32 @@ import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {buildGraphDataFromSingleNode, buildLiveData} from '../workspace/asset-graph/Utils';
 import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
-import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 
 import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
+  repo: DagsterRepoOption | null;
   assetNode: AssetNodeDefinitionFragment;
   inProgressRuns: InProgressRunsFragment[];
-}> = ({assetNode, inProgressRuns}) => {
-  const {options} = useRepositoryOptions();
-  const [repo] = assetNode?.jobName ? findRepoContainingPipeline(options, assetNode.jobName) : [];
-
+}> = ({repo, assetNode, inProgressRuns}) => {
+  if (!repo) {
+    return (
+      <Box padding={{vertical: 20}}>
+        <NonIdealState
+          icon="asset"
+          title="No software-defined metadata"
+          description="The definition of this asset could not be found in a repository."
+        />
+      </Box>
+    );
+  }
   const nodesWithLatestMaterialization = [
     assetNode,
     ...assetNode.dependencies.map((d) => d.asset),
@@ -32,7 +41,6 @@ export const AssetNodeDefinition: React.FC<{
     nodesWithLatestMaterialization,
     inProgressRuns,
   );
-  console.log(liveDataByNode);
 
   return (
     <Box

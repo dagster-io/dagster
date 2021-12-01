@@ -12,6 +12,7 @@ import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import {useDidLaunchEvent} from '../../runs/RunUtils';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
 import {NonIdealState} from '../../ui/NonIdealState';
@@ -80,6 +81,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 
   useDocumentTitle('Assets');
+  useDidLaunchEvent(liveResult.refetch);
 
   const graphData = React.useMemo(() => {
     if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
@@ -131,6 +133,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
         return (
           <AssetGraphExplorerWithData
+            key={explorerPath.pipelineName}
             graphData={graphData}
             liveDataQueryResult={liveResult}
             liveDataByNode={liveDataByNode}
@@ -174,8 +177,7 @@ const AssetGraphExplorerWithData: React.FC<
       e.stopPropagation();
 
       const def = (node && node.definition) || (await fetchAssetDefinitionLocation(assetKey));
-      if (!def || !def.jobName || !def.opName) {
-        history.push(`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`);
+      if (!def || !def.opName) {
         return;
       }
 
@@ -258,15 +260,10 @@ const AssetGraphExplorerWithData: React.FC<
 
                 {layout.nodes.map((layoutNode) => {
                   const graphNode = graphData.nodes[layoutNode.id];
-                  const {width, height} =
-                    !graphNode || graphNode.hidden
-                      ? getForeignNodeDimensions(layoutNode.id)
-                      : getNodeDimensions(graphNode.definition);
-
                   const path = JSON.parse(layoutNode.id);
                   if (
-                    layoutNode.x + width < bounds.left ||
-                    layoutNode.y + height < bounds.top ||
+                    layoutNode.x + layoutNode.width < bounds.left ||
+                    layoutNode.y + layoutNode.height < bounds.top ||
                     layoutNode.x > bounds.right ||
                     layoutNode.y > bounds.bottom
                   ) {
@@ -275,11 +272,8 @@ const AssetGraphExplorerWithData: React.FC<
 
                   return (
                     <foreignObject
+                      {...layoutNode}
                       key={layoutNode.id}
-                      x={layoutNode.x}
-                      y={layoutNode.y}
-                      width={width}
-                      height={height}
                       onClick={(e) => onSelectNode(e, {path}, graphNode)}
                       style={{overflow: 'visible'}}
                     >

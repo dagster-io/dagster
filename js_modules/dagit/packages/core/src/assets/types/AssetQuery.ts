@@ -18,6 +18,16 @@ export interface AssetQuery_assetOrError_Asset_key {
   path: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent {
+  __typename: "StepMaterializationEvent";
+  timestamp: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_assetMaterializations {
+  __typename: "AssetMaterialization";
+  materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -508,6 +518,7 @@ export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
   id: string;
   key: AssetQuery_assetOrError_Asset_key;
+  assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
   definition: AssetQuery_assetOrError_Asset_definition | null;
 }
 
