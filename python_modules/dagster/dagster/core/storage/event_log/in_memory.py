@@ -86,7 +86,11 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         run_id = event.run_id
         self._logs[run_id].append(event)
 
-        if event.is_dagster_event and event.dagster_event.asset_key:
+        if (
+            event.is_dagster_event
+            and event.dagster_event.is_step_materialization
+            and event.dagster_event.asset_key
+        ):
             materialization = event.dagster_event.step_materialization_data.materialization
             self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 

@@ -8,6 +8,7 @@ from dagster import check
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     EventMetadataEntry,
     ExpectationResult,
     HookDefinition,
@@ -76,6 +77,7 @@ class DagsterEventType(Enum):
     STEP_RESTARTED = "STEP_RESTARTED"
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
     # We want to display RUN_* events in dagit and in our LogManager output, but in order to
@@ -137,6 +139,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_SUCCESS,
     DagsterEventType.STEP_SKIPPED,
     DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
@@ -491,16 +494,26 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
     @property
+    def is_asset_observation(self) -> bool:
+        return self.event_type == DagsterEventType.ASSET_OBSERVATION
+
+    @property
     def asset_key(self) -> Optional[AssetKey]:
-        if self.event_type != DagsterEventType.ASSET_MATERIALIZATION:
+        if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            return self.step_materialization_data.materialization.asset_key
+        elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
+            return self.asset_observation_data.asset_observation.asset_key
+        else:
             return None
-        return self.step_materialization_data.materialization.asset_key
 
     @property
     def partition(self) -> Optional[str]:
-        if self.event_type != DagsterEventType.ASSET_MATERIALIZATION:
+        if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            return self.step_materialization_data.materialization.partition
+        elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
+            return self.asset_observation_data.asset_observation.partition
+        else:
             return None
-        return self.step_materialization_data.materialization.partition
 
     @property
     def step_input_data(self) -> "StepInputData":
@@ -541,6 +554,11 @@ class DagsterEvent(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
         return cast(StepMaterializationData, self.event_specific_data)
+
+    @property
+    def asset_observation_data(self) -> "AssetObservationData":
+        _assert_type("asset_observation_data", DagsterEventType.ASSET_OBSERVATION, self.event_type)
+        return cast(AssetObservationData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -722,6 +740,16 @@ class DagsterEvent(
                 if materialization.label
                 else ""
             ),
+        )
+
+    @staticmethod
+    def asset_observation(
+        step_context: IStepContext, observation: AssetObservation
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ASSET_OBSERVATION,
+            step_context=step_context,
+            event_specific_data=AssetObservationData(observation),
         )
 
     @staticmethod
@@ -1161,6 +1189,19 @@ def get_step_output_event(
         ):
             return event
     return None
+
+
+@whitelist_for_serdes
+class AssetObservationData(
+    NamedTuple("_AssetObservation", [("asset_observation", AssetObservation)])
+):
+    def __new__(cls, asset_observation: AssetObservation):
+        return super(AssetObservationData, cls).__new__(
+            cls,
+            asset_observation=check.inst_param(
+                asset_observation, "asset_observation", AssetObservation
+            ),
+        )
 
 
 @whitelist_for_serdes

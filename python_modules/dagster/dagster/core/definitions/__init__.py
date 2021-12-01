@@ -45,6 +45,7 @@ from .event_metadata import (
 from .events import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DynamicOutput,
     ExpectationResult,
     Failure,

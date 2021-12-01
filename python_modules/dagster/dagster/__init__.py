@@ -5,6 +5,7 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
@@ -223,6 +224,7 @@ __all__ = [
     # Definition
     "AssetKey",
     "AssetMaterialization",
+    "AssetObservation",
     "AssetSensorDefinition",
     "CompositeSolidDefinition",
     "ConfigMapping",
