@@ -2,6 +2,7 @@ import io
 import os.path
 import pickle
 import tempfile
+import time
 
 from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -14,8 +15,13 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    poll_run_state,
+)
 from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
 
 from .configs import (
     define_databricks_secrets_config,
@@ -158,21 +164,51 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
         try:
-            # If this is being called within a `capture_interrupts` context, allow interrupts while
-            # waiting for the  execution to complete, so that we can terminate slow or hanging steps
-            with raise_execution_interrupts():
-                self.databricks_runner.wait_for_run_to_complete(log, databricks_run_id)
+            for event in self.step_events_iterator(log, step_key, run_id, databricks_run_id):
+                log_step_event(step_context, event)
+                yield event
         finally:
-            if self.wait_for_logs:
+            if True:  # self.wait_for_logs:
                 self._log_logs_from_cluster(log, databricks_run_id)
 
-        for event in self.get_step_events(run_id, step_key):
-            log_step_event(step_context, event)
-            yield event
+    def step_events_iterator(self, log, step_key: str, dagster_run_id: str, databricks_run_id: int):
+        """The launched Databricks job writes each new event to a specific dbfs file. This iterator
+        regularly reads the contents of the file and yields the ones that have been added since the
+        previous poll. This allows events to be "streamed" back to the parent process rather than
+        requiring that we wait until it has fully completed."""
+        all_events = []
+        start = time.time()
+        poll_interval_sec = 1  # self.databricks_runner.poll_interval_sec
+        check.int_param(databricks_run_id, "databricks_run_id")
+        log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+        while True:
+            with raise_execution_interrupts():
+                log.debug("Waiting %.1f seconds..." % poll_interval_sec)
+                time.sleep(poll_interval_sec)
+                try:
+                    is_finished = poll_run_state(
+                        self.databricks_runner.client,
+                        log,
+                        start,
+                        databricks_run_id,
+                        self.databricks_runner.max_wait_time_sec,
+                    )
+                finally:
+                    all_events_new = self.get_step_events(dagster_run_id, step_key)
+                    for i in range(len(all_events), len(all_events_new)):
+                        yield all_events_new[i]
+                    all_events = all_events_new
+            if is_finished:
+                break
 
     def get_step_events(self, run_id, step_key):
         path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
-        events_data = self.databricks_runner.client.read_file(path)
+        try:
+            events_data = self.databricks_runner.client.read_file(path)
+        except HTTPError as ex:
+            if ex.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+                return []
+            raise ex
         return deserialize_value(pickle.loads(events_data))
 
     def _get_databricks_task(self, run_id, step_key):
@@ -253,12 +289,26 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         return databricks_step_main.__file__
 
     def _dbfs_path(self, run_id, step_key, filename):
-        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        path = "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                step_key.replace("[", "__").replace("]", "__"),
+                os.path.basename(filename),
+            ]
+        )
         return "dbfs://{}".format(path)
 
     def _internal_dbfs_path(self, run_id, step_key, filename):
         """Scripts running on Databricks should access DBFS at /dbfs/."""
-        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        path = "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                step_key.replace("[", "__").replace("]", "__"),
+                os.path.basename(filename),
+            ]
+        )
         return "/dbfs/{}".format(path)
 
 

@@ -49,14 +49,18 @@ def main(
         databricks_config.setup(dbutils, sc)  # noqa pylint: disable=undefined-variable
 
         with open(step_run_ref_filepath, "rb") as handle:
+            print("y" * 100)
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
         with DagsterInstance.ephemeral() as instance:
-            events = list(run_step_from_ref(step_run_ref, instance))
-
-    events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
-    with open(events_filepath, "wb") as handle:
-        pickle.dump(serialize_value(events), handle)
+            events_filepath = (
+                os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+            )
+            events = []
+            with open(events_filepath, "wb") as handle:
+                for event in run_step_from_ref(step_run_ref, instance):
+                    events.append(event)
+                    pickle.dump(serialize_value(events), handle)
 
 
 if __name__ == "__main__":
