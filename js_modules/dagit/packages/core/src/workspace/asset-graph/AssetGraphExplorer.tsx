@@ -22,13 +22,8 @@ import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
-import {
-  AssetNode,
-  ASSET_NODE_FRAGMENT,
-  ASSET_NODE_LIVE_FRAGMENT,
-  getNodeDimensions,
-} from './AssetNode';
-import {ForeignNode, getForeignNodeDimensions} from './ForeignNode';
+import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
+import {ForeignNode} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   buildGraphData,
