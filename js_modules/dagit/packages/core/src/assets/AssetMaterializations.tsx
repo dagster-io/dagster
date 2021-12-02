@@ -68,7 +68,6 @@ export const AssetMaterializations: React.FC<Props> = ({
     if (paramsTimeWindowOnly) {
       return;
     }
-    console.log('refetch');
     refetch();
   }, [paramsTimeWindowOnly, assetLastMaterializedAt, refetch]);
 
