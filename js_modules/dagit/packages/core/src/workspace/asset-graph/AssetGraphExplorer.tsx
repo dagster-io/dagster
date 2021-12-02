@@ -1,16 +1,18 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, QueryResult, useQuery} from '@apollo/client';
 import {uniq, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
+import {QueryCountdown} from '../../app/QueryCountdown';
 import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import {useDidLaunchEvent} from '../../runs/RunUtils';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
 import {NonIdealState} from '../../ui/NonIdealState';
@@ -20,17 +22,20 @@ import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
-import {AssetNode, ASSET_NODE_FRAGMENT, getNodeDimensions} from './AssetNode';
-import {ForeignNode, getForeignNodeDimensions} from './ForeignNode';
+import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
+import {ForeignNode} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
-  buildGraphComputeStatuses,
   buildGraphData,
+  buildLiveData,
   GraphData,
   graphHasCycles,
+  IN_PROGRESS_RUNS_FRAGMENT,
   layoutGraph,
+  LiveData,
   Node,
 } from './Utils';
+import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
@@ -51,12 +56,27 @@ interface Props {
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {repoAddress, explorerPath} = props;
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const repositorySelector = {
+    repositoryLocationName: repoAddress.location,
+    repositoryName: repoAddress.name,
+  };
+
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {pipelineSelector},
     notifyOnNetworkStatusChange: true,
   });
 
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      variables: {pipelineSelector, repositorySelector},
+      notifyOnNetworkStatusChange: true,
+      pollInterval: 5 * 1000,
+    },
+  );
+
   useDocumentTitle('Assets');
+  useDidLaunchEvent(liveResult.refetch);
 
   const graphData = React.useMemo(() => {
     if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
@@ -64,6 +84,19 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     }
     return buildGraphData(queryResult.data.pipelineOrError.assetNodes, explorerPath.pipelineName);
   }, [queryResult, explorerPath.pipelineName]);
+
+  const liveDataByNode = React.useMemo(() => {
+    if (!liveResult.data || !graphData) {
+      return {};
+    }
+
+    const {repositoryOrError, pipelineOrError} = liveResult.data;
+    const assetNodes = pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
+    const inProgressRunsByStep =
+      repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
+
+    return buildLiveData(graphData, assetNodes, inProgressRunsByStep);
+  }, [graphData, liveResult]);
 
   return (
     <Loading allowStaleData queryResult={queryResult}>
@@ -93,14 +126,26 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           );
         }
 
-        return <AssetGraphExplorerWithData graphData={graphData} {...props} />;
+        return (
+          <AssetGraphExplorerWithData
+            key={explorerPath.pipelineName}
+            graphData={graphData}
+            liveDataQueryResult={liveResult}
+            liveDataByNode={liveDataByNode}
+            {...props}
+          />
+        );
       }}
     </Loading>
   );
 };
 
 const AssetGraphExplorerWithData: React.FC<
-  {graphData: ReturnType<typeof buildGraphData>} & Props
+  {
+    graphData: ReturnType<typeof buildGraphData>;
+    liveDataByNode: LiveData;
+    liveDataQueryResult: QueryResult<any>;
+  } & Props
 > = (props) => {
   const {
     repoAddress,
@@ -108,6 +153,8 @@ const AssetGraphExplorerWithData: React.FC<
     selectedHandle,
     explorerPath,
     onChangeExplorerPath,
+    liveDataQueryResult,
+    liveDataByNode,
     graphData,
   } = props;
 
@@ -125,8 +172,7 @@ const AssetGraphExplorerWithData: React.FC<
       e.stopPropagation();
 
       const def = (node && node.definition) || (await fetchAssetDefinitionLocation(assetKey));
-      if (!def || !def.jobName || !def.opName) {
-        history.push(`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`);
+      if (!def || !def.opName) {
         return;
       }
 
@@ -176,7 +222,6 @@ const AssetGraphExplorerWithData: React.FC<
   );
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
-  const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
 
   return (
     <SplitPanelContainer
@@ -210,15 +255,10 @@ const AssetGraphExplorerWithData: React.FC<
 
                 {layout.nodes.map((layoutNode) => {
                   const graphNode = graphData.nodes[layoutNode.id];
-                  const {width, height} =
-                    !graphNode || graphNode.hidden
-                      ? getForeignNodeDimensions(layoutNode.id)
-                      : getNodeDimensions(graphNode.definition);
-
                   const path = JSON.parse(layoutNode.id);
                   if (
-                    layoutNode.x + width < bounds.left ||
-                    layoutNode.y + height < bounds.top ||
+                    layoutNode.x + layoutNode.width < bounds.left ||
+                    layoutNode.y + layoutNode.height < bounds.top ||
                     layoutNode.x > bounds.right ||
                     layoutNode.y > bounds.bottom
                   ) {
@@ -227,11 +267,8 @@ const AssetGraphExplorerWithData: React.FC<
 
                   return (
                     <foreignObject
+                      {...layoutNode}
                       key={layoutNode.id}
-                      x={layoutNode.x}
-                      y={layoutNode.y}
-                      width={width}
-                      height={height}
                       onClick={(e) => onSelectNode(e, {path}, graphNode)}
                       style={{overflow: 'visible'}}
                     >
@@ -240,12 +277,12 @@ const AssetGraphExplorerWithData: React.FC<
                       ) : (
                         <AssetNode
                           definition={graphNode.definition}
+                          liveData={liveDataByNode[graphNode.id]}
                           metadata={
                             handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
                               .definition.metadata
                           }
                           selected={selectedGraphNode === graphNode}
-                          computeStatus={computeStatuses[graphNode.id]}
                           repoAddress={repoAddress}
                           secondaryHighlight={
                             explorerPath.opsQuery
@@ -263,6 +300,9 @@ const AssetGraphExplorerWithData: React.FC<
             )}
           </SVGViewport>
 
+          <div style={{position: 'absolute', right: 8, top: 6}}>
+            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+          </div>
           <AssetQueryInputContainer>
             <GraphQueryInput
               items={handles.map((h) => h.solid)}
@@ -293,6 +333,7 @@ const AssetGraphExplorerWithData: React.FC<
         selectedGraphNode && selectedDefinition ? (
           <SidebarAssetInfo
             node={selectedGraphNode.definition}
+            liveData={liveDataByNode[selectedGraphNode.id]}
             definition={selectedDefinition}
             repoAddress={repoAddress}
           />
@@ -303,16 +344,53 @@ const AssetGraphExplorerWithData: React.FC<
     />
   );
 };
+
+const ASSETS_GRAPH_LIVE_QUERY = gql`
+  query AssetGraphLiveQuery(
+    $pipelineSelector: PipelineSelector!
+    $repositorySelector: RepositorySelector!
+  ) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      __typename
+      ... on Repository {
+        id
+        name
+        inProgressRunsByStep {
+          ...InProgressRunsFragment
+        }
+      }
+    }
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
+        id
+        assetNodes {
+          id
+          ...AssetNodeLiveFragment
+        }
+      }
+    }
+  }
+  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${ASSET_NODE_LIVE_FRAGMENT}
+`;
+
 const ASSETS_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
       ... on Pipeline {
         id
         assetNodes {
-          ...AssetNodeFragment
           id
-          assetKey {
-            path
+          ...AssetNodeFragment
+
+          dependedBy {
+            inputName
+            asset {
+              id
+              assetKey {
+                path
+              }
+            }
           }
           dependedBy {
             inputName

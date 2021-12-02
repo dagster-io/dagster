@@ -27,6 +27,15 @@ export const RunsQueryRefetchContext = React.createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
+export function useDidLaunchEvent(cb: () => void) {
+  React.useEffect(() => {
+    document.addEventListener('run-launched', cb);
+    return () => {
+      document.removeEventListener('run-launched', cb);
+    };
+  }, [cb]);
+}
+
 export function handleLaunchResult(
   basePath: string,
   pipelineName: string,
@@ -52,6 +61,7 @@ export function handleLaunchResult(
     } else {
       window.location.href = url;
     }
+    document.dispatchEvent(new CustomEvent('run-launched'));
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',

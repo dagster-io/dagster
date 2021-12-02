@@ -5,15 +5,43 @@ import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
-import {ASSET_NODE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
+import {buildGraphDataFromSingleNode, buildLiveData} from '../workspace/asset-graph/Utils';
+import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
 
 import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
-export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragment}> = ({
-  assetNode,
-}) => {
+export const AssetNodeDefinition: React.FC<{
+  repo: DagsterRepoOption | null;
+  assetNode: AssetNodeDefinitionFragment;
+  inProgressRuns: InProgressRunsFragment[];
+}> = ({repo, assetNode, inProgressRuns}) => {
+  if (!repo) {
+    return (
+      <Box padding={{vertical: 20}}>
+        <NonIdealState
+          icon="asset"
+          title="No software-defined metadata"
+          description="The definition of this asset could not be found in a repository."
+        />
+      </Box>
+    );
+  }
+  const nodesWithLatestMaterialization = [
+    assetNode,
+    ...assetNode.dependencies.map((d) => d.asset),
+    ...assetNode.dependedBy.map((d) => d.asset),
+  ];
+  const liveDataByNode = buildLiveData(
+    buildGraphDataFromSingleNode(assetNode),
+    nodesWithLatestMaterialization,
+    inProgressRuns,
+  );
+
   return (
     <Box
       flex={{direction: 'row'}}
@@ -54,7 +82,11 @@ export const AssetNodeDefinition: React.FC<{assetNode: AssetNodeDefinitionFragme
           <Subheading>Related Assets</Subheading>
         </Box>
         <Box margin={{vertical: 16, horizontal: 24}} style={{minHeight: 0, height: '100%'}}>
-          <AssetNeighborsGraph assetNode={assetNode} />
+          <AssetNeighborsGraph
+            assetNode={assetNode}
+            liveDataByNode={liveDataByNode}
+            repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
+          />
         </Box>
       </Box>
     </Box>
@@ -65,19 +97,25 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     ...AssetNodeFragment
+    ...AssetNodeLiveFragment
 
     dependencies {
       asset {
         id
+        opName
         ...AssetNodeFragment
+        ...AssetNodeLiveFragment
       }
     }
     dependedBy {
       asset {
         id
+        opName
         ...AssetNodeFragment
+        ...AssetNodeLiveFragment
       }
     }
   }
   ${ASSET_NODE_FRAGMENT}
+  ${ASSET_NODE_LIVE_FRAGMENT}
 `;

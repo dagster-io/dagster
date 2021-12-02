@@ -2,19 +2,25 @@ import {gql, useQuery} from '@apollo/client';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
+import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
+import {Caption, Subheading} from '../ui/Text';
+import {InProgressRunsBanner} from '../workspace/asset-graph/InProgressRunsBanner';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
 import {AssetViewParams} from './AssetView';
+import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetKey, AssetNumericHistoricalData} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
@@ -26,29 +32,44 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 interface Props {
   assetKey: AssetKey;
   asSidebarSection?: boolean;
+  inProgressRunIds?: string[];
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
+
+  // This timestamp is a "hint", when it changes this component will refetch
+  // to retrieve new data. Just don't want to poll the entire table query.
+  assetLastMaterializedAt: string | undefined;
 }
+
 const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 export const AssetMaterializations: React.FC<Props> = ({
   assetKey,
+  assetLastMaterializedAt,
   asSidebarSection,
   params,
-  setParams,
   paramsTimeWindowOnly,
+  setParams,
+  inProgressRunIds,
 }) => {
-  const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
-    ASSET_MATERIALIZATIONS_QUERY,
-    {
-      variables: {
-        assetKey: {path: assetKey.path},
-        before: paramsTimeWindowOnly && params.asOf ? `${Number(params.asOf) + 1}` : undefined,
-        limit: 200,
-      },
+  const {data, loading, refetch} = useQuery<
+    AssetMaterializationsQuery,
+    AssetMaterializationsQueryVariables
+  >(ASSET_MATERIALIZATIONS_QUERY, {
+    variables: {
+      assetKey: {path: assetKey.path},
+      before: paramsTimeWindowOnly && params.asOf ? `${Number(params.asOf) + 1}` : undefined,
+      limit: 200,
     },
-  );
+  });
+
+  React.useEffect(() => {
+    if (paramsTimeWindowOnly) {
+      return;
+    }
+    refetch();
+  }, [paramsTimeWindowOnly, assetLastMaterializedAt, refetch]);
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
   const materializations = asset?.assetMaterializations || [];
@@ -77,6 +98,51 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
+  const notYetMaterializedRunIds = (inProgressRunIds || []).filter(
+    (runId) =>
+      !materializations.some(
+        (m) => m.runOrError.__typename === 'Run' && m.runOrError.runId === runId,
+      ),
+  );
+
+  if (asSidebarSection) {
+    const latest = materializations[0];
+    return (
+      <>
+        <InProgressRunsBanner runIds={inProgressRunIds || []} />
+        <SidebarSection title={'Materialization in Last Run'}>
+          <>
+            {latest ? (
+              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+                <LatestMaterializationMetadata latest={latest} />
+              </div>
+            ) : (
+              <Box
+                margin={{horizontal: 24, bottom: 24, top: 12}}
+                style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
+              >
+                No materializations found
+              </Box>
+            )}
+            <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
+              <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
+                {'View All in Asset Catalog '}
+                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+              </AssetCatalogLink>
+            </Box>
+          </>
+        </SidebarSection>
+        <SidebarSection title={'Materialization Plots'}>
+          <AssetMaterializationGraphs
+            xAxis={xAxis}
+            asSidebarSection
+            assetMaterializations={reversed}
+          />
+        </SidebarSection>
+      </>
+    );
+  }
+
   if (!reversed.length) {
     return (
       <Box padding={{vertical: 20}}>
@@ -89,19 +155,13 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
-  if (asSidebarSection) {
-    return (
-      <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection assetMaterializations={reversed} />
-    );
-  }
-
   return (
     <Box style={{display: 'flex'}}>
       <Box style={{flex: 1}}>
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
           padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          style={{marginBottom: -1}}
         >
           <Subheading>Materializations</Subheading>
           {hasPartitions ? (
@@ -117,6 +177,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </div>
           ) : null}
         </Box>
+        <InProgressRunsBanner runIds={notYetMaterializedRunIds} />
         <AssetMaterializationTable
           hasPartitions={hasPartitions}
           hasLineage={hasLineage}
@@ -166,14 +227,33 @@ const AssetMaterializationGraphs: React.FC<{
         }}
       >
         {[...graphedLabels].sort().map((label) => (
-          <AssetValueGraph
+          <Box
             key={label}
-            label={label}
-            width={'100%'}
-            data={graphDataByMetadataLabel[label]}
-            xHover={xHover}
-            onHoverX={(x) => x !== xHover && setXHover(x)}
-          />
+            style={{width: '100%'}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            {props.asSidebarSection ? (
+              <Box padding={{horizontal: 24, top: 8}}>
+                <Caption style={{fontWeight: 700}}>{label}</Caption>
+              </Box>
+            ) : (
+              <Box
+                padding={{horizontal: 24, vertical: 16}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              >
+                <Subheading>{label}</Subheading>
+              </Box>
+            )}
+            <Box padding={{horizontal: 24, vertical: 16}}>
+              <AssetValueGraph
+                label={label}
+                width={'100%'}
+                data={graphDataByMetadataLabel[label]}
+                xHover={xHover}
+                onHoverX={(x) => x !== xHover && setXHover(x)}
+              />
+            </Box>
+          </Box>
         ))}
       </div>
       {xAxis === 'partition' && (
@@ -294,6 +374,7 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         key {
           path
         }
+
         assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
           ...AssetMaterializationFragment
         }
@@ -339,4 +420,12 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
   }
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+const AssetCatalogLink = styled(Link)`
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: -10px;
 `;

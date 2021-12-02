@@ -150,22 +150,24 @@ const AssetMaterializationRow: React.FC<{
             )}
             {metadataEntries.length || hasLineage ? (
               <DetailsTable>
-                {(metadataEntries || []).map((entry) => (
-                  <tr key={`metadata-${entry.label}`}>
-                    <td>{entry.label}</td>
-                    <td>
-                      <MetadataEntry entry={entry} expandSmallValues={true} />
-                    </td>
-                  </tr>
-                ))}
-                {hasLineage && (
-                  <tr>
-                    <td>Parent Materializations</td>
-                    <td>
-                      <AssetLineageElements elements={assetLineage} timestamp={timestamp} />
-                    </td>
-                  </tr>
-                )}
+                <tbody>
+                  {(metadataEntries || []).map((entry) => (
+                    <tr key={`metadata-${entry.label}`}>
+                      <td>{entry.label}</td>
+                      <td>
+                        <MetadataEntry entry={entry} expandSmallValues={true} />
+                      </td>
+                    </tr>
+                  ))}
+                  {hasLineage && (
+                    <tr>
+                      <td>Parent Materializations</td>
+                      <td>
+                        <AssetLineageElements elements={assetLineage} timestamp={timestamp} />
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
               </DetailsTable>
             ) : (
               <Box padding={{horizontal: 24, vertical: 12}}>No materialization event metadata</Box>

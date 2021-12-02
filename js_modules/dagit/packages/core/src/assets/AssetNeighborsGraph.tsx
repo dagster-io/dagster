@@ -6,12 +6,8 @@ import {SVGViewport} from '../graph/SVGViewport';
 import {AssetLinks} from '../workspace/asset-graph/AssetLinks';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {
-  layoutGraph,
-  buildGraphComputeStatuses,
-  GraphData,
-  assetKeyToString,
-} from '../workspace/asset-graph/Utils';
+import {layoutGraph, GraphData, assetKeyToString, LiveData} from '../workspace/asset-graph/Utils';
+import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
@@ -56,13 +52,14 @@ const buildGraphFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
   return graphData;
 };
 
-export const AssetNeighborsGraph: React.FC<{assetNode: AssetNodeDefinitionFragment}> = ({
-  assetNode,
-}) => {
+export const AssetNeighborsGraph: React.FC<{
+  assetNode: AssetNodeDefinitionFragment;
+  repoAddress: RepoAddress;
+  liveDataByNode: LiveData;
+}> = ({assetNode, liveDataByNode, repoAddress}) => {
   const history = useHistory();
   const graphData = buildGraphFromSingleNode(assetNode);
   const layout = layoutGraph(graphData, {margin: 0, mini: true});
-  const computeStatuses = buildGraphComputeStatuses(graphData);
 
   return (
     <SVGViewport
@@ -82,30 +79,26 @@ export const AssetNeighborsGraph: React.FC<{assetNode: AssetNodeDefinitionFragme
             const graphNode = graphData.nodes[layoutNode.id];
             return (
               <foreignObject
+                {...layoutNode}
                 key={layoutNode.id}
-                x={layoutNode.x}
-                y={layoutNode.y}
-                width={layoutNode.width}
-                height={layoutNode.height}
+                style={{overflow: 'visible'}}
                 onClick={(e) => {
                   e.stopPropagation();
-                  history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                  if (graphNode.definition.opName) {
+                    history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                  }
                 }}
-                style={{overflow: 'visible'}}
               >
-                {graphNode.hidden ? (
+                {graphNode.hidden || !graphNode.definition.opName ? (
                   <ForeignNode assetKey={graphNode.assetKey} />
                 ) : (
                   <AssetNode
                     definition={graphNode.definition}
                     metadata={[]}
                     selected={graphNode.assetKey === assetNode.assetKey}
-                    computeStatus={computeStatuses[graphNode.id]}
+                    liveData={liveDataByNode[graphNode.id]}
                     secondaryHighlight={false}
-                    repoAddress={{
-                      name: 'a',
-                      location: 'a',
-                    }}
+                    repoAddress={repoAddress}
                   />
                 )}
               </foreignObject>
