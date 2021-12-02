@@ -46,6 +46,7 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     "_logged_execute_pipeline",
     "execute_execute_command",
     "execute_launch_command",
+    "_daemon_run_command",
 }
 
 
