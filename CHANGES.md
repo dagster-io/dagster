@@ -17,7 +17,7 @@ def add_one(x):
 def my_job(x):
     add_one(x)
 ```
-I can now add config for x at the top level of my run_config like so:
+You can now add config for x at the top level of my run_config like so:
 ```python
 run_config = {
   "inputs": {
