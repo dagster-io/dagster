@@ -1,3 +1,4 @@
+import inspect
 import re
 from datetime import datetime, time
 
@@ -5,17 +6,18 @@ import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    RunRequest,
     ScheduleDefinition,
     build_schedule_context,
+    daily_schedule,
+    hourly_schedule,
+    job,
+    monthly_schedule,
+    op,
     pipeline,
     schedule,
     solid,
     validate_run_config,
-)
-from dagster.core.definitions.decorators import (
-    daily_schedule,
-    hourly_schedule,
-    monthly_schedule,
     weekly_schedule,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -732,7 +734,7 @@ def test_schedule_decorators_bad():
 
 
 def test_scheduled_jobs():
-    from dagster import job, op, Field, String
+    from dagster import Field, String
 
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
@@ -754,3 +756,235 @@ def test_scheduled_jobs():
     assert len(execution_data.run_requests) == 1
 
     validate_run_config(foo_job, execution_data.run_requests[0].run_config)
+
+
+def test_request_based_schedule():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+    )
+    def foo_schedule(context):
+        return RunRequest(run_key=None, run_config=FOO_CONFIG, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    run_request = execution_data.run_requests[0]
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+    # test direct invocation
+    run_request = foo_schedule(context_without_time)
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+
+def test_request_based_schedule_no_context():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+    )
+    def foo_schedule():
+        return RunRequest(run_key=None, run_config=FOO_CONFIG, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    run_request = execution_data.run_requests[0]
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+    # test direct invocation
+    run_request = foo_schedule()
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+
+def test_config_based_schedule():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+        tags={"foo": "FOO"},
+    )
+    def foo_schedule(context):
+        return FOO_CONFIG
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    run_request = execution_data.run_requests[0]
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+    # direct invocation
+    run_config = foo_schedule(context_without_time)
+    assert run_config == FOO_CONFIG
+
+
+def test_config_based_schedule_no_context():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+        tags={"foo": "FOO"},
+    )
+    def foo_schedule():
+        return FOO_CONFIG
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    run_request = execution_data.run_requests[0]
+    assert run_request.run_config == FOO_CONFIG
+    assert run_request.tags.get("foo") == "FOO"
+
+    # direct invocation
+    run_config = foo_schedule()
+    assert run_config == FOO_CONFIG
+
+
+def test_request_based_schedule_generator():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+    )
+    def foo_schedule(_context):
+        yield RunRequest(run_key=None, run_config=FOO_CONFIG, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].run_config == FOO_CONFIG
+    assert execution_data.run_requests[0].tags.get("foo") == "FOO"
+
+    # test direct invocation
+    request_generator = foo_schedule(context_without_time)
+    assert inspect.isgenerator(request_generator)
+    requests = list(request_generator)
+    assert len(requests) == 1
+    assert requests[0].run_config == FOO_CONFIG
+    assert requests[0].tags.get("foo") == "FOO"
+
+
+def test_request_based_schedule_generator_no_context():
+    from dagster import Field, String
+
+    context_without_time = build_schedule_context()
+
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op(config_schema={"foo": Field(String)})
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    FOO_CONFIG = {"ops": {"foo_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(
+        cron_schedule="* * * * *",
+        job=foo_job,
+    )
+    def foo_schedule():
+        yield RunRequest(run_key=None, run_config=FOO_CONFIG, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].run_config == FOO_CONFIG
+    assert execution_data.run_requests[0].tags.get("foo") == "FOO"
+
+    # test direct invocation
+    request_generator = foo_schedule()
+    assert inspect.isgenerator(request_generator)
+    requests = list(request_generator)
+    assert len(requests) == 1
+    assert requests[0].run_config == FOO_CONFIG
+    assert requests[0].tags.get("foo") == "FOO"
