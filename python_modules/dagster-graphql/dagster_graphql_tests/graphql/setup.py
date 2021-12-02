@@ -22,10 +22,10 @@ from dagster import (
     EventMetadataEntry,
     ExpectationResult,
     Field,
-    InputDefinition,
-    Int,
     IOManager,
     IOManagerDefinition,
+    InputDefinition,
+    Int,
     Materialization,
     ModeDefinition,
     Noneable,
@@ -1270,12 +1270,12 @@ dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
 
 
 @asset
-def first_asset(dummy_foreign_asset):
+def first_asset(dummy_foreign_asset):  # pylint: disable=redefined-outer-name,unused-argument
     return 1
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context, first_asset):
+def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
     """
     Asset that hangs forever, used to test in-progress ops.
     """
@@ -1287,7 +1287,7 @@ def hanging_asset(context, first_asset):
 
 
 @asset
-def never_runs_asset(context, hanging_asset):
+def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unused-argument
     pass
 
 
