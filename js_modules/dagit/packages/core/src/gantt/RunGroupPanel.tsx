@@ -37,7 +37,9 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   // it's reflected in the sidebar. Observing this single timestamp from our parent
   // allows us to refetch data immediately when the run's exitedAt / startedAt, etc. is set.
   React.useEffect(() => {
-    refetch();
+    if (runStatusLastChangedAt) {
+      refetch();
+    }
   }, [refetch, runStatusLastChangedAt]);
 
   const group = data?.runGroupOrError;
