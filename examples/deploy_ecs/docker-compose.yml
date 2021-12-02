@@ -72,6 +72,8 @@ services:
             - "ecs:RegisterTaskDefinition"
             - "ecs:RunTask"
             - "ecs:TagResource"
+            - "secretsmanager:ListSecrets"
+            - "secretsManager:GetSecretValue"
           Resource:
             - "*"
         - Effect: "Allow"
