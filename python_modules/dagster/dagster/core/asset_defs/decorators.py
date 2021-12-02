@@ -20,6 +20,7 @@ def asset(
     name: Optional[str] = None,
     namespace: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    depends_on: Optional[Set[AssetKey]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -72,6 +73,7 @@ def asset(
             name=name,
             namespace=namespace,
             ins=ins,
+            depends_on=depends_on,
             metadata=metadata,
             description=description,
             required_resource_keys=required_resource_keys,
@@ -89,6 +91,7 @@ class _Asset:
         name: Optional[str] = None,
         namespace: Optional[str] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
+        depends_on: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
@@ -99,6 +102,7 @@ class _Asset:
         self.name = name
         self.namespace = namespace
         self.ins = ins or {}
+        self.depends_on = depends_on
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = required_resource_keys
@@ -109,7 +113,9 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(fn, self.namespace, self.ins or {})
+        ins_by_input_names: Mapping[str, In] = build_asset_ins(
+            fn, self.namespace, self.ins or {}, self.depends_on
+        )
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
@@ -189,7 +195,11 @@ def build_asset_ins(
     fn: Callable,
     asset_namespace: Optional[str],
     asset_ins: Mapping[str, AssetIn],
+    depends_on: Optional[Set[AssetKey]],
 ) -> Mapping[AssetKey, In]:
+
+    depends_on = check.opt_set_param(depends_on, "depends_on", AssetKey)
+
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
@@ -231,5 +241,8 @@ def build_asset_ins(
             asset_key=asset_key,
             dagster_type=dagster_type,
         )
+
+    for asset_key in depends_on:
+        ins[asset_key.to_string(legacy=True)] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins
