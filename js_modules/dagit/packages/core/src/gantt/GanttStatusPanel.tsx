@@ -154,7 +154,7 @@ const StepItem: React.FunctionComponent<{
           position="bottom"
           content={'Unknown step state. Run completed without step execution completion.'}
         >
-          {'?'}
+          <div style={{width: 12, textAlign: 'center'}}>{'?'}</div>
         </Tooltip>
       ) : (
         <StepStatusDot

@@ -16,10 +16,15 @@ export enum IStepState {
   SUCCEEDED = 'succeeded',
   SKIPPED = 'skipped',
   FAILED = 'failed',
-  UNKNOWN = 'unknown',
+  UNKNOWN = 'unknown', // run exited without step reaching a final state
 }
 
-const BOX_EXIT_STATES = [IStepState.RETRY_REQUESTED, IStepState.SUCCEEDED, IStepState.FAILED];
+const BOX_EXIT_STATES = [
+  IStepState.RETRY_REQUESTED,
+  IStepState.SUCCEEDED,
+  IStepState.FAILED,
+  IStepState.UNKNOWN,
+];
 
 interface IMarker {
   key: string;
