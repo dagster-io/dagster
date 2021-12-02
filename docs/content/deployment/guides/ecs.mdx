@@ -1,0 +1,80 @@
+---
+title: Deploying Dagster to AWS ECS | Dagster
+description: A guide to deploying Dagster to AWS ECS.
+---
+
+The <PyObject module="dagster_aws" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of our Dagster deployment is also running in ECS on a Fargate compatible cluster.
+
+By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run. When using the <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task; runs launched from a sensor or schedule inherit their task definitions from the Daemon task.
+
+Alternatively, you can define your own task definition in your dagster.yaml:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    task_definition: "arn:aws:ecs:us-east-1:1234567890:task-definition/my-task-definition:1"
+    container_name: "my_container_name"
+```
+
+# Deploying with the Docker Compose CLI
+
+<CodeReferenceLink filePath="examples/deploy_ecs" />
+
+The [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration/) provides an easy way to get started with Dagster on ECS. The Deploying ECS example on GitHub demonstrates how to configure the Docker Compose CLI to manage all of the required AWS resources that Dagster needs to run on ECS.
+
+# Customizing CPU and Memory
+
+You can use job tags to customize the run's CPU and Memory:
+
+```py
+from dagster import job, op
+
+@op()
+def my_op(context):
+  context.log.info('running')
+
+@job(
+  tags = {
+    "ecs/cpu": "256",
+    "ecs/memory": "512",
+  }
+)
+def my_job():
+  my_op()
+```
+
+[Fargate tasks only support certain combinations of CPU and Memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+
+# Secrets Management
+
+[ECS can bind AWS Secrets Managers secrets as environment variables when runs launch.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html)
+
+By default, Dagster will fetch any Secrets Manager secrets tagged with the key `dagster` and set them as environment variables.
+
+Alternatively you can set your own tag name in your dagster.yaml:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    secrets_tag: "my-tag-name"
+```
+
+Any secret tagged with `my-tag-name` will be included in the environment.
+
+Additionally, you can pass specific secret ARNs:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    secrets_tag: "my-tag-name"
+    secrets:
+      - "arn:aws:secretsmanager:us-east-1:1234567890:secret:MY_SECRET"
+```
+
+Any secret tagged with `my-tag-name` will be included in the environment. `MY_SECRET` will also be included in the environment.
