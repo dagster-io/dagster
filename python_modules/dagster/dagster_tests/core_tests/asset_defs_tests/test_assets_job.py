@@ -1,5 +1,5 @@
 from dagster import AssetKey, DependencyDefinition, IOManager, io_manager
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, AssetIn
 
 
 def test_single_asset_pipeline():
@@ -78,6 +78,42 @@ def test_join():
         },
     }
     assert job.execute_in_process().success
+
+
+def test_asset_key_output():
+    @asset
+    def asset1():
+        return 1
+
+    @asset(ins={"hello": AssetIn(asset_key="asset1")})
+    def asset2(hello):
+        return hello
+
+    job = build_assets_job("boo", [asset1, asset2])
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset2") == 1
+
+
+def test_asset_key_matches_input_name():
+    @asset
+    def asset_foo():
+        return "foo"
+
+    @asset
+    def asset_bar():
+        return "bar"
+
+    @asset(
+        ins={"asset_bar": AssetIn(asset_key="asset_foo")}
+    )  # should still use output from asset_foo
+    def last_asset(asset_bar):
+        return asset_bar
+
+    job = build_assets_job("lol", [asset_foo, asset_bar, last_asset])
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("last_asset") == "foo"
 
 
 def test_foreign_asset():

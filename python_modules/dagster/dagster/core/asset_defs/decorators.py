@@ -109,9 +109,7 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        ins_by_asset_key: Mapping[AssetKey, In] = build_asset_ins(
-            fn, self.namespace, self.ins or {}
-        )
+        ins_by_input_names: Mapping[str, In] = build_asset_ins(fn, self.namespace, self.ins or {})
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
@@ -122,16 +120,17 @@ class _Asset:
         op = _Op(
             name=asset_name,
             description=self.description,
-            ins={asset_key.path[-1]: in_def for asset_key, in_def in ins_by_asset_key.items()},
+            ins={input_name: in_def for input_name, in_def in ins_by_input_names.items()},
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
         )(fn)
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
+
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_asset_key: in_asset_key.path[-1] for in_asset_key in ins_by_asset_key.keys()
+                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
             output_names_by_asset_key={out_asset_key: "result"},
             op=op,
@@ -208,7 +207,11 @@ def build_asset_ins(
 
     ins: Dict[AssetKey, In] = {}
     for input_name in all_input_names:
+        asset_key = None
+
         if input_name in asset_ins:
+            if asset_ins[input_name].asset_key:
+                asset_key = AssetKey(asset_ins[input_name].asset_key)
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
             dagster_type = None if asset_ins[input_name].managed else Nothing
@@ -217,9 +220,11 @@ def build_asset_ins(
             namespace = None
             dagster_type = None
 
-        asset_key = AssetKey(list(filter(None, [namespace or asset_namespace, input_name])))
+        asset_key = asset_key or AssetKey(
+            list(filter(None, [namespace or asset_namespace, input_name]))
+        )
 
-        ins[asset_key] = In(
+        ins[input_name] = In(
             metadata=metadata,
             root_manager_key="root_manager",
             asset_key=asset_key,
