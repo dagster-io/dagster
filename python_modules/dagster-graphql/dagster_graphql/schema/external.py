@@ -255,9 +255,7 @@ class GrapheneRepository(graphene.ObjectType):
         asset_node_keys = [
             node.op_name for node in self._repository.get_external_asset_nodes() if node.op_name
         ]
-        return get_in_progress_runs_by_step(
-            _graphene_info, in_progress_runs, asset_node_keys
-        )
+        return get_in_progress_runs_by_step(_graphene_info, in_progress_runs, asset_node_keys)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):
