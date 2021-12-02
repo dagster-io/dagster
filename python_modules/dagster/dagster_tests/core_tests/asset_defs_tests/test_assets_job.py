@@ -1,4 +1,11 @@
-from dagster import AssetKey, DependencyDefinition, IOManager, io_manager
+import pytest
+from dagster import (
+    AssetKey,
+    DependencyDefinition,
+    IOManager,
+    io_manager,
+    DagsterInvalidDefinitionError,
+)
 from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, AssetIn
 
 
@@ -85,7 +92,7 @@ def test_asset_key_output():
     def asset1():
         return 1
 
-    @asset(ins={"hello": AssetIn(asset_key="asset1")})
+    @asset(ins={"hello": AssetIn(asset_key=AssetKey("asset1"))})
     def asset2(hello):
         return hello
 
@@ -105,7 +112,7 @@ def test_asset_key_matches_input_name():
         return "bar"
 
     @asset(
-        ins={"asset_bar": AssetIn(asset_key="asset_foo")}
+        ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))}
     )  # should still use output from asset_foo
     def last_asset(asset_bar):
         return asset_bar
@@ -114,6 +121,31 @@ def test_asset_key_matches_input_name():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("last_asset") == "foo"
+
+
+def test_asset_key_for_asset_with_namespace():
+    @asset(namespace="hello")
+    def asset_foo():
+        return "foo"
+
+    @asset(
+        ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
+    )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
+    def failing_asset(foo):
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        build_assets_job("lol", [asset_foo, failing_asset])
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
+    def success_asset(foo):
+        return foo
+
+    job = build_assets_job("lol", [asset_foo, success_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("success_asset") == "foo"
 
 
 def test_foreign_asset():

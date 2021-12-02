@@ -72,7 +72,7 @@ def test_asset_with_context_arg_and_dep():
 
 
 def test_input_asset_key():
-    @asset(ins={"arg1": AssetIn(asset_key="foo")})
+    @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"))})
     def my_asset(arg1):
         assert arg1
 
@@ -82,7 +82,7 @@ def test_input_asset_key():
 def test_input_asset_key_and_namespace():
     with pytest.raises(check.CheckError, match="key and namespace cannot both be set"):
 
-        @asset(ins={"arg1": AssetIn(asset_key="foo", namespace="bar")})
+        @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"), namespace="bar")})
         def my_asset(arg1):
             assert arg1
 

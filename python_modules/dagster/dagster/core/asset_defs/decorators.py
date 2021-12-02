@@ -120,7 +120,7 @@ class _Asset:
         op = _Op(
             name=asset_name,
             description=self.description,
-            ins={input_name: in_def for input_name, in_def in ins_by_input_names.items()},
+            ins=ins_by_input_names,
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
@@ -186,7 +186,9 @@ def multi_asset(
 
 
 def build_asset_ins(
-    fn: Callable, asset_namespace: Optional[str], asset_ins: Mapping[str, AssetIn]
+    fn: Callable,
+    asset_namespace: Optional[str],
+    asset_ins: Mapping[str, AssetIn],
 ) -> Mapping[AssetKey, In]:
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
@@ -210,8 +212,7 @@ def build_asset_ins(
         asset_key = None
 
         if input_name in asset_ins:
-            if asset_ins[input_name].asset_key:
-                asset_key = AssetKey(asset_ins[input_name].asset_key)
+            asset_key = asset_ins[input_name].asset_key
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
             dagster_type = None if asset_ins[input_name].managed else Nothing
