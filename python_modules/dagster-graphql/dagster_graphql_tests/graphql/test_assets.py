@@ -107,7 +107,10 @@ GET_ASSET_IN_PROGRESS_RUNS = """
                 }
                 inProgressRunsByStep {
                     stepKey
-                    runs {
+                    unstartedRuns {
+                        runId
+                    }
+                    inProgressRuns {
                         runId
                     }
                 }
@@ -341,7 +344,24 @@ class TestPersistentInstanceAssetInProgress(
 
             in_progress_runs_by_step = result.data["repositoryOrError"]["inProgressRunsByStep"]
 
-            assert len(in_progress_runs_by_step) == 1
-            assert in_progress_runs_by_step[0]["stepKey"] == "hanging_asset"
-            assert len(in_progress_runs_by_step[0]["runs"]) == 1
-            assert in_progress_runs_by_step[0]["runs"][0]["runId"] == run_id
+            assert len(in_progress_runs_by_step) == 2
+
+            hanging_asset_status = in_progress_runs_by_step[0]
+            never_runs_asset_status = in_progress_runs_by_step[1]
+            # graphql endpoint returns unordered list of steps
+            # swap if never_runs_asset_status is first in list
+            if hanging_asset_status["stepKey"] != "hanging_asset":
+                never_runs_asset_status, hanging_asset_status = (
+                    hanging_asset_status,
+                    never_runs_asset_status,
+                )
+
+            assert hanging_asset_status["stepKey"] == "hanging_asset"
+            assert len(hanging_asset_status["inProgressRuns"]) == 1
+            assert hanging_asset_status["inProgressRuns"][0]["runId"] == run_id
+            assert len(hanging_asset_status["unstartedRuns"]) == 0
+
+            assert never_runs_asset_status["stepKey"] == "never_runs_asset"
+            assert len(never_runs_asset_status["inProgressRuns"]) == 0
+            assert len(never_runs_asset_status["unstartedRuns"]) == 1
+            assert never_runs_asset_status["unstartedRuns"][0]["runId"] == run_id

@@ -468,6 +468,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'first_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'first_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'get_input_one'
                 },
                 'invocations': [
@@ -629,6 +645,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'multiply_inputs'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'never_runs_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'never_runs_asset'
                         }
                     }
                 ]
