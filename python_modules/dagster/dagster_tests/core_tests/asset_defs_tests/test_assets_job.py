@@ -160,7 +160,9 @@ def test_asset_key_for_asset_with_namespace():
     def failing_asset(foo):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+    ):
         build_assets_job("lol", [asset_foo, failing_asset])
 
     @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})

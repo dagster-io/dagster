@@ -6,7 +6,7 @@ class AssetIn(
     NamedTuple(
         "_AssetIn",
         [
-            ("asset_key", Optional[str]),
+            ("asset_key", Optional[AssetKey]),
             ("metadata", Optional[Mapping[str, Any]]),
             ("namespace", Optional[str]),
             ("managed", bool),
