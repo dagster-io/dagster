@@ -4,4 +4,4 @@ pushd "$ROOT/js_modules/dagit"
 set -eux
 
 yarn install
-yarn build-for-python
+yarn build
