@@ -24,6 +24,8 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    IOManager,
+    IOManagerDefinition,
     Materialization,
     ModeDefinition,
     Noneable,
@@ -57,7 +59,7 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
@@ -1256,8 +1258,24 @@ def hanging_asset_resource(context):
     return context.resource_config.get("file")
 
 
+class DummyIOManager(IOManager):
+    def handle_output(self, context, obj):
+        pass
+
+    def load_input(self, context):
+        pass
+
+
+dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
+
+
+@asset
+def first_asset(dummy_foreign_asset):
+    return 1
+
+
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context):
+def hanging_asset(context, first_asset):
     """
     Asset that hangs forever, used to test in-progress ops.
     """
@@ -1268,10 +1286,19 @@ def hanging_asset(context):
         time.sleep(0.1)
 
 
+@asset
+def never_runs_asset(context, hanging_asset):
+    pass
+
+
 hanging_job = build_assets_job(
     name="hanging_job",
-    assets=[hanging_asset],
-    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+    source_assets=[dummy_foreign_asset],
+    assets=[first_asset, hanging_asset, never_runs_asset],
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
 )
 
 

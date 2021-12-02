@@ -128,18 +128,40 @@ def get_in_progress_runs_for_job(graphene_info, job_name):
 def get_in_progress_runs_by_in_progress_step(graphene_info, in_progress_runs, step_keys):
     from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
 
-    runs_by_step = {}
+    in_progress_runs_by_step = {}
+    unstarted_runs_by_step = {}
+
     for run in in_progress_runs:
         step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, step_keys)
         for step_stat in step_stats:
             if step_stat.status == StepEventStatus.IN_PROGRESS:
-                if step_stat.step_key not in runs_by_step:
-                    runs_by_step[step_stat.step_key] = []
-                runs_by_step[step_stat.step_key].append(GrapheneRun(run))
+                if step_stat.step_key not in in_progress_runs_by_step:
+                    in_progress_runs_by_step[step_stat.step_key] = []
+                in_progress_runs_by_step[step_stat.step_key].append(GrapheneRun(run))
+
+        asset_names = graphene_info.context.instance.get_execution_plan_snapshot(
+            run.execution_plan_snapshot_id
+        ).step_keys_to_execute
+
+        for step_key in asset_names:
+            # step_stats only contains stats for steps that are in progress or complete
+            is_unstarted = (
+                len([step_stat for step_stat in step_stats if step_stat.step_key == step_key]) == 0
+            )
+            if is_unstarted:
+                if step_key not in unstarted_runs_by_step:
+                    unstarted_runs_by_step[step_key] = []
+                unstarted_runs_by_step[step_key].append(GrapheneRun(run))
 
     step_runs = []
-    for key in runs_by_step.keys():
-        step_runs.append(GrapheneInProgressRunsByStep(key, runs_by_step[key]))
+    for key in in_progress_runs_by_step.keys() | unstarted_runs_by_step.keys():
+        step_runs.append(
+            GrapheneInProgressRunsByStep(
+                key,
+                unstarted_runs_by_step.get(key, []),
+                in_progress_runs_by_step.get(key, []),
+            )
+        )
 
     return step_runs
 

@@ -1221,7 +1221,8 @@ type NodeInvocationSite {
 
 type InProgressRunsByStep {
   stepKey: String!
-  runs: [Run!]!
+  unstartedRuns: [Run!]!
+  inProgressRuns: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
