@@ -6,7 +6,15 @@ description: This guide illustrates the use of a Dagster Type factory to validat
 # Validating Data with Dagster Type Factories
 
 <Warning>
- This guide uses <a href="https://pandas.pydata.org/">Pandas</a> dataframes and the <a href="https://github.com/pandera-dev/pandera">Pandera</a> validation library to illustrate how to integrate arbitrary data validation into Dagster. Users looking for a simpler out-of-the-box validation solution for Pandas should check out Dagster's dedicated integration library <a href="/_apidocs/libraries/dagster-pandas"><code>dagster-pandas</code></a>.
+  This guide uses <a href="https://pandas.pydata.org/">Pandas</a> dataframes and
+  the <a href="https://github.com/pandera-dev/pandera">Pandera</a> validation
+  library to illustrate how to integrate arbitrary data validation into Dagster.
+  Users looking for a simpler out-of-the-box validation solution for Pandas
+  should check out Dagster's dedicated integration library{" "}
+  <a href="/_apidocs/libraries/dagster-pandas">
+    <code>dagster-pandas</code>
+  </a>
+  .
 </Warning>
 
 Dagster is designed to interoperate easily with other components of your stack. In this guide we'll illustrate a technique for integrating third-party data validation libraries into your Dagster jobs: the [Dagster Type](/concepts/types) factory pattern.
