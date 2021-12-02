@@ -261,6 +261,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         limit=graphene.Int(),
     )
     runsCount = graphene.NonNull(graphene.Int)
+    tick = graphene.Field(GrapheneInstigationTick, timestamp=graphene.Float())
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
         dayRange=graphene.Int(),
@@ -319,6 +320,12 @@ class GrapheneInstigationState(graphene.ObjectType):
         else:
             filters = PipelineRunsFilter.for_schedule(self._job_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
+
+    def resolve_tick(self, graphene_info, timestamp):
+        tick = graphene_info.context.instance.get_job_tick(
+            self._job_state.job_origin_id, timestamp=timestamp
+        )
+        return GrapheneInstigationTick(graphene_info, tick) if tick else None
 
     def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
         before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
