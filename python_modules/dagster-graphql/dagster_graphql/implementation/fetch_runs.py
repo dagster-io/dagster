@@ -125,7 +125,7 @@ def get_in_progress_runs_for_job(graphene_info, job_name):
     return instance.get_runs(in_progress_runs_filter)
 
 
-def get_in_progress_runs_by_in_progress_step(graphene_info, in_progress_runs, step_keys):
+def get_in_progress_runs_by_step(graphene_info, in_progress_runs, step_keys):
     from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
 
     in_progress_runs_by_step = {}
