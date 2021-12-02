@@ -98,7 +98,6 @@ if __name__ == "__main__":
                 "grpcio-tools==1.32.0",
                 "isort>=4.3.21,<5",
                 "mock==3.0.5",
-                "pandera<0.8.0",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
                 "pylint==2.6.0",
                 "pytest-cov==2.10.1",
