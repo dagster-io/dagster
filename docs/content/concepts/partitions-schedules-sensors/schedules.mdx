@@ -24,9 +24,9 @@ A _schedule_ is a definition in Dagster that is used to execute a job at a fixed
 Each schedule:
 
 - Targets a single job.
-- Optionally defines a function that returns run configuration for the targeted job.
-- Optionally defines tags and an op selection for the targeted job.
-- Optionally defines a `should_execute` function, which can be used to skip some ticks.
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
 
 Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
 
@@ -49,7 +49,7 @@ def my_job():
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
-### A schedule that provides run config
+### A schedule that provides custom run config and tags
 
 If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
 
@@ -67,7 +67,10 @@ def configurable_job():
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
+    return RunRequest(
+        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
+        tags={"date": scheduled_date},
+    )
 ```
 
 If you don't need access to the context parameter, you can omit it from the decorated function.

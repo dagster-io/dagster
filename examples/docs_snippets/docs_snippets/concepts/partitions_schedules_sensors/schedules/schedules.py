@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, ScheduleEvaluationContext, job, op, schedule
+from dagster import RunRequest, ScheduleDefinition, ScheduleEvaluationContext, job, op, schedule
 
 
 # start_basic_schedule
@@ -24,7 +24,10 @@ def configurable_job():
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
+    return RunRequest(
+        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
+        tags={"date": scheduled_date},
+    )
 
 
 # end_run_config_schedule
