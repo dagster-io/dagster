@@ -25,6 +25,7 @@ def configurable_job():
 def configurable_job_schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return RunRequest(
+        run_key="my_run_key",
         run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
         tags={"date": scheduled_date},
     )
