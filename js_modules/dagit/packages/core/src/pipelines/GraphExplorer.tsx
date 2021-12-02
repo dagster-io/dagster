@@ -273,15 +273,23 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   ${PIPELINE_GRAPH_OP_FRAGMENT}
 `;
 
-const RightInfoPanel = styled.div`
+export const RightInfoPanel = styled.div`
   // Fixes major perofmance hit. To reproduce, add enough content to
   // the sidebar that it scrolls (via overflow-y below) and then try
   // to pan the DAG.
   position: relative;
 
   height: 100%;
-  overflow-y: scroll;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: ${ColorsWIP.White};
+`;
+
+export const RightInfoPanelContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const OptionsOverlay = styled.div`

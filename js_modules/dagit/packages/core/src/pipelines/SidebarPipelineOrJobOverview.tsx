@@ -46,7 +46,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         const modes = pipelineSnapshotOrError.modes;
 
         return (
-          <div style={{overflowY: 'scroll'}}>
+          <>
             <SidebarSection title={'Description'}>
               <Box padding={{vertical: 16, horizontal: 24}}>
                 <Description
@@ -61,7 +61,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
                 ))}
               </Box>
             </SidebarSection>
-          </div>
+          </>
         );
       }}
     </Loading>

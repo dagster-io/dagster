@@ -9,6 +9,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
+import {RightInfoPanelContent} from './GraphExplorer';
 import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpContainer} from './SidebarOpContainer';
@@ -119,7 +120,9 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
           ))}
         </Tabs>
       </Box>
-      {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+      <RightInfoPanelContent>
+        {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+      </RightInfoPanelContent>
     </>
   );
 };
