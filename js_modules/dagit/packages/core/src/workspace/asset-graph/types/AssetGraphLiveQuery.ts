@@ -13,16 +13,21 @@ export interface AssetGraphLiveQuery_repositoryOrError_PythonError {
   __typename: "PythonError" | "RepositoryNotFoundError";
 }
 
-export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_runs {
+export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns {
   __typename: "Run";
   id: string;
-  runId: string;
+}
+
+export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns {
+  __typename: "Run";
+  id: string;
 }
 
 export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep {
   __typename: "InProgressRunsByStep";
   stepKey: string;
-  runs: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_runs[];
+  unstartedRuns: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns[];
+  inProgressRuns: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns[];
 }
 
 export interface AssetGraphLiveQuery_repositoryOrError_Repository {

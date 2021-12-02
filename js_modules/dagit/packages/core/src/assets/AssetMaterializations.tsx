@@ -14,7 +14,8 @@ import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Caption, Subheading} from '../ui/Text';
-import {InProgressRunsBanner} from '../workspace/asset-graph/InProgressRunsBanner';
+import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
+import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
@@ -32,7 +33,7 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 interface Props {
   assetKey: AssetKey;
   asSidebarSection?: boolean;
-  inProgressRunIds?: string[];
+  liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
@@ -51,7 +52,7 @@ export const AssetMaterializations: React.FC<Props> = ({
   params,
   paramsTimeWindowOnly,
   setParams,
-  inProgressRunIds,
+  liveData,
 }) => {
   const {data, loading, refetch} = useQuery<
     AssetMaterializationsQuery,
@@ -98,18 +99,11 @@ export const AssetMaterializations: React.FC<Props> = ({
     );
   }
 
-  const notYetMaterializedRunIds = (inProgressRunIds || []).filter(
-    (runId) =>
-      !materializations.some(
-        (m) => m.runOrError.__typename === 'Run' && m.runOrError.runId === runId,
-      ),
-  );
-
   if (asSidebarSection) {
     const latest = materializations[0];
     return (
       <>
-        <InProgressRunsBanner runIds={inProgressRunIds || []} />
+        <CurrentRunsBanner liveData={liveData} />
         <SidebarSection title={'Materialization in Last Run'}>
           <>
             {latest ? (
@@ -177,7 +171,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </div>
           ) : null}
         </Box>
-        <InProgressRunsBanner runIds={notYetMaterializedRunIds} />
+        <CurrentRunsBanner liveData={liveData} />
         <AssetMaterializationTable
           hasPartitions={hasPartitions}
           hasLineage={hasLineage}

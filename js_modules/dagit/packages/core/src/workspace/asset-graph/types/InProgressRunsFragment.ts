@@ -7,14 +7,19 @@
 // GraphQL fragment: InProgressRunsFragment
 // ====================================================
 
-export interface InProgressRunsFragment_runs {
+export interface InProgressRunsFragment_unstartedRuns {
   __typename: "Run";
   id: string;
-  runId: string;
+}
+
+export interface InProgressRunsFragment_inProgressRuns {
+  __typename: "Run";
+  id: string;
 }
 
 export interface InProgressRunsFragment {
   __typename: "InProgressRunsByStep";
   stepKey: string;
-  runs: InProgressRunsFragment_runs[];
+  unstartedRuns: InProgressRunsFragment_unstartedRuns[];
+  inProgressRuns: InProgressRunsFragment_inProgressRuns[];
 }
