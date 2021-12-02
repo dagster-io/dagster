@@ -199,4 +199,4 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
-    yield from core_dagster_event_sequence_for_step(step_context)
+    return core_dagster_event_sequence_for_step(step_context)

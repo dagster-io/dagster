@@ -246,17 +246,21 @@ class DagsterLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add Dagster metadata, and have handlers handle it"""
-        dagster_record = self._convert_record(record)
+        self.emit_dagster_record(self._convert_record(record))
+
+    def emit_dagster_record(self, dagster_record: logging.LogRecord):
+        """Emit a record with formatted Dagster metadata"""
         # built-in handlers
         for handler in self._handlers:
             handler.handle(dagster_record)
         # user-defined @loggers
         for logger in self._loggers:
+            extra = self._extract_extra(dagster_record)
             logger.log(
                 dagster_record.levelno,
                 dagster_record.msg,
                 exc_info=dagster_record.exc_info,
-                extra=self._extract_extra(record),
+                extra=extra,
             )
 
 
@@ -344,16 +348,20 @@ class DagsterLogManager(logging.Logger):
         )
 
     @property
+    def dagster_handler(self) -> DagsterLogHandler:
+        return self._dagster_handler
+
+    @property
     def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._dagster_handler.logging_metadata
 
     def begin_python_log_capture(self):
         for logger in self._managed_loggers:
-            logger.addHandler(self._dagster_handler)
+            logger.addHandler(self.dagster_handler)
 
     def end_python_log_capture(self):
         for logger in self._managed_loggers:
-            logger.removeHandler(self._dagster_handler)
+            logger.removeHandler(self.dagster_handler)
 
     def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
@@ -394,7 +402,7 @@ class DagsterLogManager(logging.Logger):
                 run ID and loggers.
         """
         return DagsterLogManager(
-            dagster_handler=self._dagster_handler.with_tags(**new_tags),
+            dagster_handler=self.dagster_handler.with_tags(**new_tags),
             managed_loggers=self._managed_loggers,
             level=self.level,
         )
