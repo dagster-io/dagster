@@ -7,9 +7,10 @@ from contextlib import contextmanager
 
 import kubernetes
 import pytest
+import requests
 import yaml
 from dagster import check
-from dagster.utils import git_repository_root, merge_dicts
+from dagster.utils import find_free_port, git_repository_root, merge_dicts
 from dagster_k8s.utils import wait_for_pod
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
@@ -554,69 +555,65 @@ def helm_chart_for_k8s_run_launcher(
 
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
-    helm_config = {
-        "dagster-user-deployments": {"enabled": False, "enableSubchart": False},
-        "dagit": {
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
-            "envSecrets": [{"name": TEST_SECRET_NAME}],
-            "livenessProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "periodSeconds": 20,
-                "failureThreshold": 3,
+    helm_config = merge_dicts(
+        _base_helm_config(docker_image),
+        {
+            "flower": {
+                "enabled": False,
             },
-            "startupProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "failureThreshold": 6,
-                "periodSeconds": 10,
+            "runLauncher": {
+                "type": "K8sRunLauncher",
+                "config": {
+                    "k8sRunLauncher": {
+                        "jobNamespace": namespace,
+                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
+                        + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+                        "envSecrets": [{"name": TEST_SECRET_NAME}],
+                        "envVars": ["BUILDKITE"],
+                        "imagePullPolicy": image_pull_policy(),
+                        "volumeMounts": [
+                            {
+                                "name": "test-volume",
+                                "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                                "subPath": "volume_mounted_file.yaml",
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "test-volume",
+                                "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
+                            }
+                        ],
+                    }
+                },
             },
+            "rabbitmq": {"enabled": False},
+            "dagsterDaemon": {
+                "enabled": True,
+                "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                "heartbeatTolerance": 180,
+                "runCoordinator": {"enabled": False},  # No run queue
+                "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+                "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+                "envSecrets": [{"name": TEST_SECRET_NAME}],
+                "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
+                "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
+                if run_monitoring
+                else {},
+                "startupProbe": {
+                    "periodSeconds": 10,
+                    "failureThreshold": 12,
+                    "timeoutSeconds": 12,
+                },
+                "livenessProbe": {
+                    "periodSeconds": 30,
+                    "failureThreshold": 12,
+                    "timeoutSeconds": 12,
+                },
+            },
+            "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         },
-        "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
-        "runLauncher": {
-            "type": "K8sRunLauncher",
-            "config": {
-                "k8sRunLauncher": {
-                    "jobNamespace": namespace,
-                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
-                    + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
-                    "envSecrets": [{"name": TEST_SECRET_NAME}],
-                    "envVars": ["BUILDKITE"],
-                    "imagePullPolicy": image_pull_policy(),
-                    "volumeMounts": [
-                        {
-                            "name": "test-volume",
-                            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
-                            "subPath": "volume_mounted_file.yaml",
-                        }
-                    ],
-                    "volumes": [
-                        {"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}
-                    ],
-                }
-            },
-        },
-        "rabbitmq": {"enabled": False},
-        "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
-        "serviceAccount": {"name": "dagit-admin"},
-        "postgresqlPassword": "test",
-        "postgresqlDatabase": "test",
-        "postgresqlUser": "test",
-        "dagsterDaemon": {
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5} if run_monitoring else {},
-            "startupProbe": {
-                "periodSeconds": 10,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
-            },
-            "livenessProbe": {
-                "periodSeconds": 30,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
-            },
-        },
-    }
+    )
 
     with _helm_chart_helper(
         namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_k8s_run_launcher"
@@ -740,6 +737,9 @@ def _base_helm_config(docker_image):
                     "port": 3030,
                     "env": (
                         {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}
+                    ),
+                    "envConfigMaps": (
+                        [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
                     ),
                     "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
                     "service": {
@@ -898,3 +898,94 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
         namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_daemon"
     ):
         yield
+
+
+@pytest.fixture(scope="session")
+def dagit_url(helm_namespace):
+    with _port_forward_dagit(namespace=helm_namespace) as forwarded_dagit_url:
+        yield forwarded_dagit_url
+
+
+@pytest.fixture(scope="session")
+def dagit_url_for_daemon(helm_namespace_for_daemon):
+    with _port_forward_dagit(namespace=helm_namespace_for_daemon) as forwarded_dagit_url:
+        yield forwarded_dagit_url
+
+
+@pytest.fixture(scope="session")
+def dagit_url_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher):
+    with _port_forward_dagit(namespace=helm_namespace_for_k8s_run_launcher) as forwarded_dagit_url:
+        yield forwarded_dagit_url
+
+
+@contextmanager
+def _port_forward_dagit(namespace):
+    print("Port-forwarding dagit")
+    kube_api = kubernetes.client.CoreV1Api()
+
+    pods = kube_api.list_namespaced_pod(namespace=namespace)
+    pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
+
+    if not pod_names:
+        raise Exception("No pods with dagit in name")
+
+    dagit_pod_name = pod_names[0]
+
+    forward_port = find_free_port()
+
+    try:
+        p = subprocess.Popen(
+            [
+                "kubectl",
+                "port-forward",
+                "--namespace",
+                namespace,
+                dagit_pod_name,
+                "{forward_port}:80".format(forward_port=forward_port),
+            ],
+            # Squelch the verbose "Handling connection for..." messages
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
+
+        dagit_url = f"localhost:{forward_port}"
+
+        # Validate port forwarding works
+        start = time.time()
+
+        while True:
+            if time.time() - start > 60:
+                raise Exception("Timed out while waiting for dagit port forwarding")
+
+            print(
+                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be"
+                " available..." % (dagit_pod_name, forward_port)
+            )
+            try:
+                check_output(["curl", f"http://{dagit_url}"])
+                break
+            except Exception:
+                time.sleep(1)
+
+        print("Port forwarding in the backgound. Trying to connect to Dagit...")
+
+        start_time = time.time()
+
+        while True:
+            if time.time() - start_time > 30:
+                raise Exception("Timed out waiting for dagit server to be available")
+
+            try:
+                sanity_check = requests.get(f"http://{dagit_url}/dagit_info")
+                assert "dagster" in sanity_check.text
+                print("Connected to dagit, beginning tests for versions")
+                break
+            except requests.exceptions.ConnectionError:
+                pass
+
+            time.sleep(1)
+        yield f"http://{dagit_url}"
+
+    finally:
+        print("Terminating port-forwarding")
+        p.terminate()

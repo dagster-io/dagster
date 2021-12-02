@@ -111,6 +111,13 @@ def count_letters(word):
 
 @op(
     ins={"word": In(String)},
+)
+def always_fail(context, word):
+    raise Exception("Op Exception Message")
+
+
+@op(
+    ins={"word": In(String)},
     config_schema={"factor": Int},
 )
 def multiply_the_word_op(context, word):
@@ -156,6 +163,17 @@ def hanging_pipeline():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+        )
+    ]
+)
+def always_fail_pipeline():
+    always_fail(multiply_the_word())
 
 
 @pipeline(
@@ -645,6 +663,7 @@ def define_demo_execution_repo():
     def demo_execution_repo():
         return {
             "pipelines": {
+                "always_fail_pipeline": always_fail_pipeline,
                 "demo_pipeline_celery": define_demo_pipeline_celery,
                 "demo_job_celery": define_demo_job_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,

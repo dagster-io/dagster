@@ -18,9 +18,7 @@ from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordin
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import SqliteRunStorage
-from dagster.core.storage.schedules import SqliteScheduleStorage
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import ExplodingRunLauncher, environ
 from dagster.utils import find_free_port
 from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
@@ -178,28 +176,6 @@ def helm_postgres_url_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher):
         yield postgres_url
 
 
-@pytest.fixture(scope="function")
-def dagster_instance_with_k8s_scheduler(
-    helm_postgres_url_for_k8s_run_launcher, run_launcher, k8s_scheduler, schedule_tempdir
-):  # pylint: disable=redefined-outer-name
-    with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(schedule_tempdir),
-        run_storage=SqliteRunStorage.from_local(os.path.join(schedule_tempdir, "runs")),
-        event_storage=PostgresEventLogStorage(helm_postgres_url_for_k8s_run_launcher),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=run_launcher,
-        schedule_storage=SqliteScheduleStorage.from_local(
-            os.path.join(schedule_tempdir, "schedules")
-        ),
-        scheduler=k8s_scheduler,
-    ) as instance:
-        yield instance
-
-        check_export_runs(instance)
-
-
 @pytest.fixture(scope="session")
 def helm_postgres_url_for_user_deployments_subchart_disabled(
     helm_namespace_for_user_deployments_subchart_disabled,
@@ -216,7 +192,7 @@ def helm_postgres_url_for_user_deployments_subchart_disabled(
 
 @pytest.fixture(scope="function")
 def dagster_instance_for_user_deployments_subchart_disabled(
-    helm_postgres_url_for_user_deployments_subchart_disabled, run_launcher
+    helm_postgres_url_for_user_deployments_subchart_disabled,
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
@@ -229,7 +205,7 @@ def dagster_instance_for_user_deployments_subchart_disabled(
         ),
         compute_log_manager=NoOpComputeLogManager(),
         run_coordinator=DefaultRunCoordinator(),
-        run_launcher=run_launcher,
+        run_launcher=ExplodingRunLauncher(),
     ) as instance:
         yield instance
 
@@ -248,7 +224,7 @@ def helm_postgres_url_for_daemon(helm_namespace_for_daemon):
 
 @pytest.fixture(scope="function")
 def dagster_instance_for_daemon(
-    helm_postgres_url_for_daemon, run_launcher
+    helm_postgres_url_for_daemon,
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
@@ -260,7 +236,7 @@ def dagster_instance_for_daemon(
         schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_daemon),
         compute_log_manager=NoOpComputeLogManager(),
         run_coordinator=QueuedRunCoordinator(),
-        run_launcher=run_launcher,
+        run_launcher=ExplodingRunLauncher(),
         scheduler=DagsterDaemonScheduler(),
     ) as instance:
         yield instance
@@ -270,7 +246,7 @@ def dagster_instance_for_daemon(
 
 @pytest.fixture(scope="function")
 def dagster_instance_for_k8s_run_launcher(
-    helm_postgres_url_for_k8s_run_launcher, run_launcher
+    helm_postgres_url_for_k8s_run_launcher,
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
@@ -284,8 +260,7 @@ def dagster_instance_for_k8s_run_launcher(
         schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_k8s_run_launcher),
         compute_log_manager=NoOpComputeLogManager(),
         run_coordinator=DefaultRunCoordinator(),
-        run_launcher=run_launcher,
-        settings={"run_monitoring": {"enabled": True}},
+        run_launcher=ExplodingRunLauncher(),
         ref=instance_ref,
     ) as instance:
         yield instance
@@ -304,7 +279,7 @@ def helm_postgres_url(helm_namespace):
 
 
 @pytest.fixture(scope="function")
-def dagster_instance(helm_postgres_url, run_launcher):  # pylint: disable=redefined-outer-name
+def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
 
     with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": tempdir}):
@@ -316,7 +291,7 @@ def dagster_instance(helm_postgres_url, run_launcher):  # pylint: disable=redefi
                 event_storage=PostgresEventLogStorage(helm_postgres_url),
                 compute_log_manager=NoOpComputeLogManager(),
                 run_coordinator=DefaultRunCoordinator(),
-                run_launcher=run_launcher,
+                run_launcher=ExplodingRunLauncher(),  # use graphql to launch any runs
                 ref=InstanceRef.from_dir(tempdir),
             ) as instance:
                 yield instance
