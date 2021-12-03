@@ -250,6 +250,6 @@ def build_asset_ins(
     for asset_key in depends_on:
         stringified_asset_key = asset_key.to_string(legacy=True)
         if stringified_asset_key:
-            ins[cast(str, stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
+            ins[str(stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins
