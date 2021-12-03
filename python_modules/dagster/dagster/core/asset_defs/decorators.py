@@ -20,7 +20,7 @@ def asset(
     name: Optional[str] = None,
     namespace: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    depends_on: Optional[Set[AssetKey]] = None,
+    non_argument_deps: Optional[Set[AssetKey]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -73,7 +73,7 @@ def asset(
             name=name,
             namespace=namespace,
             ins=ins,
-            depends_on=depends_on,
+            non_argument_deps=non_argument_deps,
             metadata=metadata,
             description=description,
             required_resource_keys=required_resource_keys,
@@ -91,7 +91,7 @@ class _Asset:
         name: Optional[str] = None,
         namespace: Optional[str] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        depends_on: Optional[Set[AssetKey]] = None,
+        non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
@@ -102,7 +102,7 @@ class _Asset:
         self.name = name
         self.namespace = namespace
         self.ins = ins or {}
-        self.depends_on = depends_on
+        self.non_argument_deps = non_argument_deps
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = required_resource_keys
@@ -114,7 +114,7 @@ class _Asset:
         asset_name = self.name or fn.__name__
 
         ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, self.namespace, self.ins or {}, self.depends_on
+            fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
         out = Out(
@@ -150,7 +150,7 @@ def multi_asset(
     outs: Dict[str, Out],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    depends_on: Optional[Set[AssetKey]] = None,
+    non_argument_deps: Optional[Set[AssetKey]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -173,7 +173,9 @@ def multi_asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(fn, None, ins or {}, depends_on)
+        ins_by_input_names: Mapping[str, In] = build_asset_ins(
+            fn, None, ins or {}, non_argument_deps
+        )
 
         op = _Op(
             name=asset_name,
@@ -200,10 +202,10 @@ def build_asset_ins(
     fn: Callable,
     asset_namespace: Optional[str],
     asset_ins: Mapping[str, AssetIn],
-    depends_on: Optional[Set[AssetKey]],
+    non_argument_deps: Optional[Set[AssetKey]],
 ) -> Mapping[str, In]:
 
-    depends_on = check.opt_set_param(depends_on, "depends_on", AssetKey)
+    non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
@@ -247,7 +249,7 @@ def build_asset_ins(
             dagster_type=dagster_type,
         )
 
-    for asset_key in depends_on:
+    for asset_key in non_argument_deps:
         stringified_asset_key = asset_key.to_string(legacy=True)
         if stringified_asset_key:
             ins[str(stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)

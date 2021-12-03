@@ -235,7 +235,7 @@ def test_source_op_asset():
     assert job.execute_in_process().success
 
 
-def test_depends_on():
+def test_non_argument_deps():
     with safe_tempfile_path() as path:
 
         @asset
@@ -243,7 +243,7 @@ def test_depends_on():
             with open(path, "w") as ff:
                 ff.write("yup")
 
-        @asset(depends_on={AssetKey("foo")})
+        @asset(non_argument_deps={AssetKey("foo")})
         def bar():
             # assert that the foo asset already executed
             assert os.path.exists(path)
@@ -252,7 +252,7 @@ def test_depends_on():
         assert job.execute_in_process().success
 
 
-def test_multiple_depends_on():
+def test_multiple_non_argument_deps():
     @asset
     def foo():
         pass
@@ -265,7 +265,7 @@ def test_multiple_depends_on():
     def baz():
         return 1
 
-    @asset(depends_on={AssetKey("foo"), AssetKey("bar")})
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey("bar")})
     def qux(baz):
         return baz
 
