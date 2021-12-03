@@ -111,7 +111,7 @@ class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress."""
 
     def __init__(
-        self, host, token, poll_interval_sec=10, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
+        self, host, token, poll_interval_sec=2.5, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
     ):
         """Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net
