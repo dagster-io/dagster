@@ -19,6 +19,7 @@ from enum import Enum
 from inspect import Parameter, isclass, signature
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Mapping,
@@ -28,8 +29,8 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
+    overload,
 )
 
 from dagster import check, seven
@@ -94,8 +95,13 @@ class WhitelistMap(NamedTuple):
 
 _WHITELIST_MAP = WhitelistMap.create()
 
-
-def whitelist_for_serdes(serializer: Union[Type, Type["Serializer"]]):
+@overload
+def whitelist_for_serdes(serializer: Type) -> Type:
+    ...
+@overload
+def whitelist_for_serdes(serializer: Type["Serializer"]) -> Callable[[Type], Type]:
+    ...
+def whitelist_for_serdes(serializer):
     """
     Decorator to whitelist a named tuple or enum to be serializable.
 
