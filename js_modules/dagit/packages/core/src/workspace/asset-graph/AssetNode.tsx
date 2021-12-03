@@ -39,9 +39,6 @@ export const AssetNode: React.FC<{
 
   const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
   const kind = metadata.find((m) => m.key === 'kind')?.value;
-  const notYetMaterializedRunIds = (liveData?.inProgressRunIds || []).filter(
-    (runId) => (runOrError?.__typename === 'Run' ? runOrError.runId : '') !== runId,
-  );
 
   return (
     <ContextMenu
@@ -78,22 +75,15 @@ export const AssetNode: React.FC<{
               {assetKeyToString(definition.assetKey)}
             </div>
             <div style={{flex: 1}} />
-            {notYetMaterializedRunIds.length > 0 && (
-              <Tooltip
-                content={
-                  <div>
-                    Run ID:{' '}
-                    {notYetMaterializedRunIds.map((runId) => (
-                      <Link to={`/instance/runs/${runId}`} key={runId}>
-                        {runId}
-                      </Link>
-                    ))}
-                  </div>
-                }
-              >
+            {liveData && liveData.inProgressRunIds.length > 0 ? (
+              <Tooltip content={'A run is currently refreshing this asset.'}>
                 <Spinner purpose="body-text" />
               </Tooltip>
-            )}
+            ) : liveData && liveData.unstartedRunIds.length > 0 ? (
+              <Tooltip content={'A run has started that will refresh this asset soon.'}>
+                <Spinner purpose="body-text" stopped />
+              </Tooltip>
+            ) : undefined}
 
             {liveData?.computeStatus === 'old' && (
               <UpstreamNotice>

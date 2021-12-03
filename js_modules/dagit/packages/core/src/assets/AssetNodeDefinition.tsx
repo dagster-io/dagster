@@ -9,8 +9,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {buildGraphDataFromSingleNode, buildLiveData} from '../workspace/asset-graph/Utils';
-import {InProgressRunsFragment} from '../workspace/asset-graph/types/InProgressRunsFragment';
+import {LiveData} from '../workspace/asset-graph/Utils';
 
 import {AssetNeighborsGraph} from './AssetNeighborsGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
@@ -18,8 +17,8 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 export const AssetNodeDefinition: React.FC<{
   repo: DagsterRepoOption | null;
   assetNode: AssetNodeDefinitionFragment;
-  inProgressRuns: InProgressRunsFragment[];
-}> = ({repo, assetNode, inProgressRuns}) => {
+  liveDataByNode: LiveData;
+}> = ({repo, assetNode, liveDataByNode}) => {
   if (!repo) {
     return (
       <Box padding={{vertical: 20}}>
@@ -31,16 +30,6 @@ export const AssetNodeDefinition: React.FC<{
       </Box>
     );
   }
-  const nodesWithLatestMaterialization = [
-    assetNode,
-    ...assetNode.dependencies.map((d) => d.asset),
-    ...assetNode.dependedBy.map((d) => d.asset),
-  ];
-  const liveDataByNode = buildLiveData(
-    buildGraphDataFromSingleNode(assetNode),
-    nodesWithLatestMaterialization,
-    inProgressRuns,
-  );
 
   return (
     <Box

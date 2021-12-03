@@ -12,7 +12,13 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
-import {assetKeyToString, IN_PROGRESS_RUNS_FRAGMENT} from '../workspace/asset-graph/Utils';
+import {
+  assetKeyToString,
+  buildGraphDataFromSingleNode,
+  buildLiveData,
+  IN_PROGRESS_RUNS_FRAGMENT,
+  LiveData,
+} from '../workspace/asset-graph/Utils';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 
 import {AssetMaterializations} from './AssetMaterializations';
@@ -75,10 +81,25 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     },
   );
 
-  const inProgressRuns =
-    bonusResult.data?.repositoryOrError.__typename === 'Repository'
-      ? bonusResult.data.repositoryOrError.inProgressRunsByStep
-      : [];
+  let liveDataByNode: LiveData = {};
+
+  if (definition) {
+    const inProgressRuns =
+      bonusResult.data?.repositoryOrError.__typename === 'Repository'
+        ? bonusResult.data.repositoryOrError.inProgressRunsByStep
+        : [];
+
+    const nodesWithLatestMaterialization = [
+      definition,
+      ...definition.dependencies.map((d) => d.asset),
+      ...definition.dependedBy.map((d) => d.asset),
+    ];
+    liveDataByNode = buildLiveData(
+      buildGraphDataFromSingleNode(definition),
+      nodesWithLatestMaterialization,
+      inProgressRuns,
+    );
+  }
 
   return (
     <div>
@@ -128,7 +149,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             />
           </Box>
         ) : definition ? (
-          <AssetNodeDefinition repo={repo} assetNode={definition} inProgressRuns={inProgressRuns} />
+          <AssetNodeDefinition repo={repo} assetNode={definition} liveDataByNode={liveDataByNode} />
         ) : undefined}
       </div>
       <AssetMaterializations
@@ -137,11 +158,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         params={params}
         paramsTimeWindowOnly={navigatedDirectlyToTime}
         setParams={setParams}
-        inProgressRunIds={
-          definition?.opName && inProgressRuns
-            ? inProgressRuns.find((f) => f.stepKey === definition.opName)?.runs.map((r) => r.runId)
-            : []
-        }
+        liveData={definition ? liveDataByNode[definition.id] : undefined}
       />
     </div>
   );

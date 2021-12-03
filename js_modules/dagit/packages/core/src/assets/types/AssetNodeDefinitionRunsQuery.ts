@@ -13,16 +13,21 @@ export interface AssetNodeDefinitionRunsQuery_repositoryOrError_PythonError {
   __typename: "PythonError" | "RepositoryNotFoundError";
 }
 
-export interface AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_runs {
+export interface AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns {
   __typename: "Run";
   id: string;
-  runId: string;
+}
+
+export interface AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns {
+  __typename: "Run";
+  id: string;
 }
 
 export interface AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep {
   __typename: "InProgressRunsByStep";
   stepKey: string;
-  runs: AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_runs[];
+  unstartedRuns: AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns[];
+  inProgressRuns: AssetNodeDefinitionRunsQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns[];
 }
 
 export interface AssetNodeDefinitionRunsQuery_repositoryOrError_Repository {

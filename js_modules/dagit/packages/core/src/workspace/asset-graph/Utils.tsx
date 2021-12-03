@@ -261,7 +261,8 @@ export type Status = 'good' | 'old' | 'none' | 'unknown';
 
 export interface LiveDataForNode {
   computeStatus: Status;
-  inProgressRunIds: string[];
+  unstartedRunIds: string[]; // run in progress and step not started
+  inProgressRunIds: string[]; // run in progress and step in progress
   lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
@@ -281,11 +282,13 @@ export const buildLiveData = (
     const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
     const isForeignNode = !node.opName;
 
+    const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
+
     data[node.id] = {
       lastStepStart,
       lastMaterialization,
-      inProgressRunIds:
-        inProgressRunsByStep.find((r) => r.stepKey === node.opName)?.runs.map((r) => r.runId) || [],
+      inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
+      unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
       computeStatus: isForeignNode ? 'good' : lastMaterialization ? 'unknown' : 'none',
     };
   }
@@ -323,9 +326,11 @@ function findComputeStatusForId(
 export const IN_PROGRESS_RUNS_FRAGMENT = gql`
   fragment InProgressRunsFragment on InProgressRunsByStep {
     stepKey
-    runs {
+    unstartedRuns {
       id
-      runId
+    }
+    inProgressRuns {
+      id
     }
   }
 `;
