@@ -1,5 +1,6 @@
-from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, op, root_input_manager
+from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, job, op, root_input_manager
 from dagster.core.events import DagsterEventType
+from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 @op
@@ -27,16 +28,20 @@ def do_it_all():
     add_one(adder(return_one(), return_two()))
 
 
+def _success_step_keys(result: ExecuteInProcessResult):
+    return [
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
+    ]
+
+
 def test_simple_op_selection_on_graph_def():
     result = do_it_all.execute_in_process(op_selection=["*adder"])
 
     assert result.success
 
-    executed_step_keys = [
-        evt.step_key
-        for evt in result.all_node_events
-        if evt.event_type == DagsterEventType.STEP_SUCCESS
-    ]
+    executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
 
@@ -47,11 +52,7 @@ def test_simple_op_selection_on_job_def():
 
     assert result.success
 
-    executed_step_keys = [
-        evt.step_key
-        for evt in result.all_node_events
-        if evt.event_type == DagsterEventType.STEP_SUCCESS
-    ]
+    executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
 
@@ -62,11 +63,7 @@ def test_select_all_on_job_def():
 
     assert result.success
 
-    executed_step_keys = [
-        evt.step_key
-        for evt in result.all_node_events
-        if evt.event_type == DagsterEventType.STEP_SUCCESS
-    ]
+    executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 4
 
 
@@ -76,11 +73,7 @@ def test_simple_op_selection_on_job_execution():
 
     assert result.success
 
-    executed_step_keys = [
-        evt.step_key
-        for evt in result.all_node_events
-        if evt.event_type == DagsterEventType.STEP_SUCCESS
-    ]
+    executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
 
@@ -92,11 +85,7 @@ def test_simple_op_selection_on_subset_execution():
 
     assert result.success
 
-    executed_step_keys = [
-        evt.step_key
-        for evt in result.all_node_events
-        if evt.event_type == DagsterEventType.STEP_SUCCESS
-    ]
+    executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
 
@@ -261,38 +250,37 @@ def test_op_selection_on_alias():
     full_job = _aliased.to_job()
     result = full_job.execute_in_process()
     assert result.success
-    assert (
-        len(
-            [
-                evt.step_key
-                for evt in result.all_node_events
-                if evt.event_type == DagsterEventType.STEP_SUCCESS
-            ]
-        )
-        == 4
-    )
+    assert len(_success_step_keys(result)) == 4
 
     subsetted_job = _aliased.to_job(op_selection=["return_one_2*"])
     result_for_subset_def = subsetted_job.execute_in_process()
     assert result_for_subset_def.success
-    assert (
-        len(
-            [
-                evt.step_key
-                for evt in result_for_subset_def.all_node_events
-                if evt.event_type == DagsterEventType.STEP_SUCCESS
-            ]
-        )
-        == 2
-    )
+    assert len(_success_step_keys(result_for_subset_def)) == 2
 
     result_for_subset = subsetted_job.execute_in_process(op_selection=["return_one_2*"])
     assert result_for_subset.success
+    assert len(_success_step_keys(result_for_subset)) == 2
+
+
+def test_op_selection_on_implicit_alias():
+    @job
+    def _reuse_ops_job():
+        add_one(return_one())
+        add_one(return_one())
+        add_one(return_one())
+
+    result_1 = _reuse_ops_job.execute_in_process(op_selection=["return_one*"])
+
+    assert result_1.success
+    assert len(_success_step_keys(result_1)) == 2
+
+    result_2 = _reuse_ops_job.execute_in_process(op_selection=["return_one_2*"])
+    assert result_2.success
     assert (
         len(
             [
                 evt.step_key
-                for evt in result_for_subset.all_node_events
+                for evt in result_2.all_node_events
                 if evt.event_type == DagsterEventType.STEP_SUCCESS
             ]
         )
@@ -330,3 +318,16 @@ def test_op_selection_with_config_mapping():
     )
     assert subset_result.success
     assert subset_result.output_for_node("my_other_op") == "bar"
+
+
+def test_disconnected_selection():
+    my_subset_job = do_it_all.to_job(op_selection=["return_two", "add_one"])
+    result = my_subset_job.execute_in_process(
+        run_config={"ops": {"add_one": {"inputs": {"num": 1}}}}
+    )
+
+    assert result.success
+
+    executed_step_keys = _success_step_keys(result)
+    assert len(executed_step_keys) == 2
+    assert set(executed_step_keys) == {"return_two", "add_one"}
