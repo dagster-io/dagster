@@ -144,10 +144,10 @@ export const SensorDetails: React.FC<{
               )}
             </td>
           </tr>
-          <tr>
-            <td>{pipelineOrJobLabel}</td>
-            <td>
-              {sensor.targets && sensor.targets.length ? (
+          {sensor.targets && sensor.targets.length ? (
+            <tr>
+              <td>{pipelineOrJobLabel}</td>
+              <td>
                 <Group direction="column" spacing={2}>
                   {sensor.targets.map((target) =>
                     target.pipelineName ? (
@@ -160,11 +160,9 @@ export const SensorDetails: React.FC<{
                     ) : null,
                   )}
                 </Group>
-              ) : (
-                'Sensor does not target a pipeline'
-              )}
-            </td>
-          </tr>
+              </td>
+            </tr>
+          ) : null}
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
