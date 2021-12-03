@@ -2,7 +2,8 @@ import os
 import pickle
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+import logging
+from typing import TYPE_CHECKING, Iterator, Optional, cast, List
 
 from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
@@ -19,8 +20,10 @@ from dagster.core.execution.context_creation_pipeline import PlanExecutionContex
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
+from dagster.serdes import serialize_value, deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
+PICKLED_RECORDS_FILE_NAME = "records.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
 if TYPE_CHECKING:
@@ -40,7 +43,7 @@ def local_external_step_launcher(context):
 
 
 class LocalExternalStepLauncher(StepLauncher):
-    """Launches each step in its own local process, outside the plan process."""
+    """Launches a step in its own local process, outside the plan process."""
 
     def __init__(self, scratch_dir: str):
         self.scratch_dir = check.str_param(scratch_dir, "scratch_dir")
@@ -142,6 +145,8 @@ def step_context_to_step_run_ref(
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
+    parent_run_id = step_context.pipeline_run.parent_run_id
+    parent_run = step_context.instance.get_run_by_id(parent_run_id) if parent_run_id else None
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -151,6 +156,7 @@ def step_context_to_step_run_ref(
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
         known_state=step_context.execution_plan.known_state,
+        parent_run=parent_run,
     )
 
 
@@ -200,3 +206,30 @@ def run_step_from_ref(
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
     return core_dagster_event_sequence_for_step(step_context)
+
+
+def serialize_dagster_log_records(records: List[logging.LogRecord]) -> bytes:
+    """Serialize a Dagster-produced log record"""
+    from dagster.core.log_manager import DAGSTER_META_KEY, DAGSTER_META_DAGSTER_EVENT_KEY
+
+    for record in records:
+        # serialize DagsterEvent into a dictionary before pickling
+        dagster_meta = getattr(record, DAGSTER_META_KEY)
+        dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY] = serialize_value(
+            dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY]
+        )
+    return pickle.dumps(records)
+
+
+def deserialize_dagster_log_records(data: bytes) -> List[logging.LogRecord]:
+    """Deserialize a Dagster-produced log record"""
+    from dagster.core.log_manager import DAGSTER_META_KEY, DAGSTER_META_DAGSTER_EVENT_KEY
+
+    records = pickle.loads(data)
+    for record in records:
+        # rehydrate serialized DagsterEvents
+        dagster_meta = getattr(record, DAGSTER_META_KEY)
+        dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY] = deserialize_value(
+            dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY]
+        )
+    return records

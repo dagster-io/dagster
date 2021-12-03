@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent
 
 DAGSTER_META_KEY = "dagster_meta"
+DAGSTER_META_DAGSTER_EVENT_KEY = "dagster_event"
 
 
 class DagsterMessageProps(

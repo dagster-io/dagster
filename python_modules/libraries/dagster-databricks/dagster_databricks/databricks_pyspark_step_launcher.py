@@ -11,11 +11,11 @@ from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
 from dagster.core.execution.plan.external_step import (
-    PICKLED_EVENTS_FILE_NAME,
+    PICKLED_RECORDS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
+    deserialize_dagster_log_records,
 )
-from dagster.serdes import deserialize_value
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
     DEFAULT_RUN_MAX_WAIT_TIME_SEC,
@@ -24,8 +24,13 @@ from dagster_databricks.databricks import (
     poll_run_state,
 )
 from dagster_pyspark.utils import build_pyspark_zip
+from dagster.utils.backoff import backoff
 from requests import HTTPError
-from dagster.core.log_manager import DAGSTER_META_KEY, DagsterLogManager
+from dagster.core.log_manager import (
+    DAGSTER_META_KEY,
+    DAGSTER_META_DAGSTER_EVENT_KEY,
+    DagsterLogManager,
+)
 
 from .configs import (
     define_databricks_secrets_config,
@@ -175,22 +180,25 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 self._log_logs_from_cluster(log, databricks_run_id)
 
     def step_events_iterator(self, log, step_key: str, dagster_run_id: str, databricks_run_id: int):
-        """The launched Databricks job writes each new event to a specific dbfs file. This iterator
-        regularly reads the contents of the file and yields the ones that have been added since the
-        previous poll. This allows events to be "streamed" back to the parent process rather than
-        requiring that we wait until it has fully completed."""
+        """The launched Databricks job writes all log records to a specific dbfs file. This iterator
+        regularly reads the contents of the file, logs any records that have not previously been
+        seen, and yields any DagsterEvents found within those log records.
 
+        By doing this, we simulate having the remote Databricks process able to directly log to
+        the local DagsterInstance. Importantly, this means that timestamps (and all other record
+        properties) will be sourced from the Databricks process, rather than recording when this
+        process happens to log them.
+        """
+
+        check.int_param(databricks_run_id, "databricks_run_id")
         processed_records = 0
-        done_processing = False
         start = time.time()
         done = False
-        poll_interval_sec = 2.5  # self.databricks_runner.poll_interval_sec
-        check.int_param(databricks_run_id, "databricks_run_id")
         log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
         while not done:
             with raise_execution_interrupts():
-                log.debug("Waiting %.1f seconds..." % poll_interval_sec)
-                time.sleep(poll_interval_sec)
+                log.debug("Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec)
+                time.sleep(self.databricks_runner.poll_interval_sec)
                 try:
                     done = poll_run_state(
                         self.databricks_runner.client,
@@ -200,70 +208,42 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         self.databricks_runner.max_wait_time_sec,
                     )
                 finally:
-                    new_events, processed_records = self.get_new_events(
-                        log, dagster_run_id, step_key, processed_records=processed_records
-                    )
-                    for event in new_events:
-                        yield event
+                    all_records = self.get_step_records(dagster_run_id, step_key)
+                    # we get all available records on each poll, but we only want to process the
+                    # ones we haven't seen before
+                    for record in all_records[processed_records:]:
+                        dagster_event = getattr(record, DAGSTER_META_KEY)[
+                            DAGSTER_META_DAGSTER_EVENT_KEY
+                        ]
+                        if dagster_event:
+                            yield dagster_event
+                        log.dagster_handler.emit_dagster_record(record)
+                    processed_records = len(all_records)
 
-        # if run completed without error, we want to wait until all the logs are available on dbfs.
         log.info(f"Databricks run {databricks_run_id} completed.")
-        while processed_records != -1:
-            with raise_execution_interrupts():
-                if time.time() - start > self.databricks_runner.max_wait_time_sec:
-                    raise DatabricksError(
-                        "Timed out while waiting for Dagster logs to become available."
-                    )
-                log.info(
-                    f"Waiting for Dagster logs to become available for Databricks run {databricks_run_id}."
-                )
-                new_events, processed_records = self.get_new_events(
-                    log, dagster_run_id, step_key, processed_records=processed_records
-                )
-                for event in new_events:
-                    yield event
-                time.sleep(poll_interval_sec)
 
-    def get_new_events(
-        self, log: DagsterLogManager, run_id: str, step_key: str, processed_records: int = 0
-    ):
-        err = None
-        cur_retries = 0
-        path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
-        while True:
-            try:
-                raw_records = self.databricks_runner.client.read_file(path)
-                if not raw_records:
-                    return [], processed_records
-                records = pickle.loads(raw_records)[processed_records:]
-                events = []
-                for record in records:
-                    # done processing
-                    if record == databricks_step_main.LOGS_COMPLETE:
-                        return events, -1
+    def get_step_records(self, run_id: str, step_key: str) -> List[logging.LogRecord]:
+        path = self._dbfs_path(run_id, step_key, PICKLED_RECORDS_FILE_NAME)
 
-                    # deserialize the dagster_event
-                    dagster_event = deserialize_value(
-                        getattr(record, DAGSTER_META_KEY)["dagster_event"]
-                    )
-                    getattr(record, DAGSTER_META_KEY)["dagster_event"] = dagster_event
-                    if dagster_event:
-                        events.append(dagster_event)
+        def _get_step_records():
+            serialized_records = self.databricks_runner.client.read_file(path)
+            if not serialized_records:
+                return []
+            return deserialize_dagster_log_records(serialized_records)
 
-                    # directly emit the record that we grabbed from the Databricks execution
-                    log.dagster_handler.emit_dagster_record(record)
-
-                return events, processed_records + len(records)
-            except HTTPError as e:
-                err = e
-                if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
-                    return [], processed_records
-            except Exception as e:
-                err = e
-            cur_retries += 1
-            if cur_retries == 3:
-                raise err
-            log.warn("Execption while attempting to read remote Dagster events: %s", err)
+        try:
+            # reading from dbfs can be flaky, allow for retry
+            return backoff(
+                fn=_get_step_records,
+                retry_on=(Exception,),
+                max_retries=3,
+            )
+        # if you poll before the Databricks process has had a chance to create the file,
+        # we expect to get this error
+        except HTTPError as e:
+            print("HAD ERROR")
+            if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+                return []
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.
