@@ -126,7 +126,9 @@ class _Asset:
         op = _Op(
             name=asset_name,
             description=self.description,
-            ins=ins_by_input_names,
+            ins={
+                input_name: in_def for input_name, in_def in ins_by_input_names.items()
+            },  # convert Mapping object to dict
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
@@ -148,6 +150,7 @@ def multi_asset(
     outs: Dict[str, Out],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    depends_on: Optional[Set[AssetKey]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -170,19 +173,21 @@ def multi_asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
-        ins_by_asset_key: Mapping[AssetKey, In] = build_asset_ins(fn, None, ins or {})
+        ins_by_input_names: Mapping[str, In] = build_asset_ins(fn, None, ins or {}, depends_on)
 
         op = _Op(
             name=asset_name,
             description=description,
-            ins={asset_key.path[-1]: in_def for asset_key, in_def in ins_by_asset_key.items()},
+            ins={
+                input_name: in_def for input_name, in_def in ins_by_input_names.items()
+            },  # convert Mapping object to dict
             out=outs,
             required_resource_keys=required_resource_keys,
         )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_asset_key: in_asset_key.path[-1] for in_asset_key in ins_by_asset_key.keys()
+                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
             output_names_by_asset_key={AssetKey([name]): name for name in outs.keys()},
             op=op,
@@ -196,7 +201,7 @@ def build_asset_ins(
     asset_namespace: Optional[str],
     asset_ins: Mapping[str, AssetIn],
     depends_on: Optional[Set[AssetKey]],
-) -> Mapping[AssetKey, In]:
+) -> Mapping[str, In]:
 
     depends_on = check.opt_set_param(depends_on, "depends_on", AssetKey)
 
@@ -217,7 +222,7 @@ def build_asset_ins(
                 "of the arguments to the decorated function"
             )
 
-    ins: Dict[AssetKey, In] = {}
+    ins: Dict[str, In] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -243,6 +248,8 @@ def build_asset_ins(
         )
 
     for asset_key in depends_on:
-        ins[asset_key.to_string(legacy=True)] = In(dagster_type=Nothing, asset_key=asset_key)
+        stringified_asset_key = asset_key.to_string(legacy=True)
+        if stringified_asset_key:
+            ins[cast(str, stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins

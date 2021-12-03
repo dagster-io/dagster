@@ -1,5 +1,6 @@
 from typing import Any, Mapping, NamedTuple, Optional
-from dagster import check, AssetKey
+
+from dagster import AssetKey, check
 
 
 class AssetIn(

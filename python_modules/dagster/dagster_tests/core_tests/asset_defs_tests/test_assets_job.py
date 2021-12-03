@@ -1,19 +1,20 @@
 import os
+
 import pytest
 from dagster import (
     AssetKey,
+    DagsterInvalidDefinitionError,
     DependencyDefinition,
     IOManager,
     io_manager,
-    DagsterInvalidDefinitionError,
 )
-from dagster.utils import safe_tempfile_path
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, AssetIn
+from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.utils import safe_tempfile_path
 
 
 def test_single_asset_pipeline():
