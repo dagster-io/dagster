@@ -13,7 +13,12 @@ This example describes how to use Dagster's versioning and memoization features.
 You can enable memoization functionality by providing a (include link here) VersionStrategy to your job. Dagster provides the SourceHashVersionStrategy as a top-level export.
 
 ```python file=/guides/dagster/versioning_memoization/memoization_enabled_job.py
+from dagster import job, SourceHashVersionStrategy
 
+
+@job(version_strategy=SourceHashVersionStrategy())
+def the_job():
+    ...
 ```
 
 When memoization is enabled, the outputs of ops will be cached. Ops will only be re-run if:
@@ -39,17 +44,13 @@ Memoization is enabled by using a `version_strategy`, and the use of `Memoizable
 
 Before execution occurs, the Dagster system will determine a set of which steps actually need to run. If using memoization, Dagster will check whether all the outputs of a given step have already been memoized by calling the `has_output` method on the io manager for each output. If `has_output` returns `True` for all outputs, then the step will not run again.
 
-All of the persistent out-of-the-box IO managers provided by Dagster are memoizable. (list them here)
+Several of the persistent IO managers provided by Dagster are memoizable. This includes the `s3_pickle_io_manager` and the `filesystem_io_manager`.
 
 ## Writing a custom VersionStrategy
 
 There will likely be cases where the default `SourceHashVersionStrategy` will not suffice. In these cases, it is advantageous to implement your own `VersionStrategy` to match your requirements.
 
-For example, `SourceHashVersionStrategy` only takes into account the code directly within the body of an `op` or `resource`, but it's likely that you might be writing other helper functions that are subject to change. Consider the following job: (job here that has a helper function yadayadayada)
-
-I can include the helper function in my computation like so (Version Strategy that hashes the helper function yadayadayada)
-
-Probably include another example here talking about an op reading from an external data source, only want to rerun when that data source has changed / has new data.
+Check out the implementation of `SourceHashVersionStrategy` as an example.
 
 ## Writing a custom MemoizableIOManager
 
