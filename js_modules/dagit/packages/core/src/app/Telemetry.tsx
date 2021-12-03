@@ -1,22 +1,16 @@
 import {gql} from '@apollo/client';
-import {extractPathPrefix} from '@dagit/app/src/extractPathPrefix';
+import {extractInitializationData} from '@dagit/app/src/extractInitializationData';
 import {print} from 'graphql';
-
-import {DagitTelemetryEnabledQuery} from './types/DagitTelemetryEnabledQuery';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',
+  GRAPHQL_QUERY_COMPLETED = 'GRAPHQL_QUERY_COMPLETED',
 }
 
-const TELEMETRY_ENABLED_QUERY = gql`
-  query DagitTelemetryEnabledQuery {
-    instance {
-      dagitTelemetryEnabled
-    }
-  }
-`;
+const initializationData = extractInitializationData();
+const {pathPrefix, telemetryEnabled} = initializationData;
 
-const GRAPHQL_PATH = `${extractPathPrefix() || ''}/graphql`;
+const GRAPHQL_PATH = `${pathPrefix || ''}/graphql`;
 
 const LOG_TELEMETRY_MUTATION = gql`
   mutation LogTelemetryMutation($action: String!, $metadata: String!, $clientTime: String!) {
@@ -32,28 +26,11 @@ const LOG_TELEMETRY_MUTATION = gql`
   }
 `;
 
-let __DAGIT_TELEMETRY_FLAG: boolean | undefined = undefined;
-
 export async function logTelemetry(
   action: TelemetryAction,
   metadata: {[key: string]: string | null | undefined} = {},
 ) {
-  if (__DAGIT_TELEMETRY_FLAG === undefined) {
-    const enabledResponse = await fetch(GRAPHQL_PATH, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        query: print(TELEMETRY_ENABLED_QUERY),
-      }),
-    });
-    const payload = (await enabledResponse.json()) as {data: DagitTelemetryEnabledQuery};
-    const data = payload.data;
-    __DAGIT_TELEMETRY_FLAG = data.instance.dagitTelemetryEnabled;
-  }
-  if (!__DAGIT_TELEMETRY_FLAG) {
+  if (telemetryEnabled) {
     return;
   }
   return fetch(GRAPHQL_PATH, {

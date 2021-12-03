@@ -7,7 +7,7 @@ import {errorLink} from '@dagit/core/app/AppError';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import {ContentRoot} from '@dagit/core/app/ContentRoot';
-import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
+import {logLink, logTelemetryLink, timeStartLink} from '@dagit/core/app/apolloLinks';
 import {ColorsWIP} from '@dagit/core/ui/Colors';
 import {IconWIP, IconWrapper} from '@dagit/core/ui/Icon';
 import * as React from 'react';
@@ -15,11 +15,11 @@ import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {extractPathPrefix} from './extractPathPrefix';
+import {extractInitializationData} from './extractInitializationData';
 
-const pathPrefix = extractPathPrefix();
+const {pathPrefix} = extractInitializationData();
 
-const apolloLinks = [logLink, errorLink, timeStartLink];
+const apolloLinks = [logTelemetryLink, logLink, errorLink, timeStartLink];
 
 const config = {
   apolloLinks,

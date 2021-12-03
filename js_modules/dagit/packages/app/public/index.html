@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#000000" />
 
     <!-- A target element to insert a custom path prefix, replaced server-side. -->
-    <script type="application/json" id="path-prefix">
-      {"pathPrefix": "__PATH_PREFIX__"}
+    <script type="application/json" id="initialization-data">
+      {"initializationData": {"pathPrefix": "__PATH_PREFIX__"}, {"telemetryEnabled": "__TELEMETRY_ENABLED__"}}
     </script>
     <script nonce="NONCE-PLACEHOLDER">
       __webpack_nonce__ = 'NONCE-PLACEHOLDER';
@@ -18,8 +18,8 @@
       homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" crossorigin="use-credentials" />
-    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" >
-    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg">
+    <link rel="icon" type="image/png" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
