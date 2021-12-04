@@ -9,6 +9,7 @@ import click
 import pendulum
 from dagster import __version__ as dagster_version
 from dagster.core.instance import DagsterInstance
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
@@ -35,10 +36,15 @@ def _get_heartbeat_tolerance():
 def run_command():
     with capture_interrupts():
         with DagsterInstance.get() as instance:
-            with daemon_controller_from_instance(
-                instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()
-            ) as controller:
-                controller.check_daemon_loop()
+            _daemon_run_command(instance)
+
+
+@telemetry_wrapper
+def _daemon_run_command(instance):
+    with daemon_controller_from_instance(
+        instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()
+    ) as controller:
+        controller.check_daemon_loop()
 
 
 @click.command(

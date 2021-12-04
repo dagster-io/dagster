@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, overload
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -9,11 +9,12 @@ from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
+from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from ..partition import PartitionedConfig
+    from ..partition import PartitionedConfig, PartitionsDefinition
     from ..executor_definition import ExecutorDefinition
 
 
@@ -28,7 +29,9 @@ class _Job:
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         self.name = name
         self.description = description
@@ -38,7 +41,9 @@ class _Job:
         self.logger_defs = logger_defs
         self.executor_def = executor_def
         self.hooks = hooks
+        self.op_retry_policy = op_retry_policy
         self.version_strategy = version_strategy
+        self.partitions_def = partitions_def
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -85,10 +90,33 @@ class _Job:
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
             hooks=self.hooks,
+            op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
+            partitions_def=self.partitions_def,
         )
         update_wrapper(job_def, fn)
         return job_def
+
+
+@overload
+def job(name: Callable[..., Any]) -> JobDefinition:
+    ...
+
+
+@overload
+def job(
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+    executor_def: Optional["ExecutorDefinition"] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
+    version_strategy: Optional[VersionStrategy] = None,
+) -> _Job:
+    ...
 
 
 def job(
@@ -100,7 +128,9 @@ def job(
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
 ) -> Union[_Job, JobDefinition]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -141,9 +171,14 @@ def job(
             A dictionary of string logger identifiers to their implementations.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
+            Only used if retry policy is not defined on the op definition or op invocation.
         version_strategy (Optional[VersionStrategy]):
             Defines how each op (and optionally, resource) in the job can be versioned. If
             provided, memoizaton will be enabled for this job.
+        partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
+            that can parameterize the job. If this argument is supplied, the config argument
+            can't also be supplied.
 
     """
     if callable(name):
@@ -159,5 +194,7 @@ def job(
         logger_defs=logger_defs,
         executor_def=executor_def,
         hooks=hooks,
+        op_retry_policy=op_retry_policy,
         version_strategy=version_strategy,
+        partitions_def=partitions_def,
     )

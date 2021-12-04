@@ -1,4 +1,10 @@
-type Query {
+schema {
+  query: DagitQuery
+  mutation: DagitMutation
+  subscription: DagitSubscription
+}
+
+type DagitQuery {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
@@ -55,6 +61,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  inProgressRunsByStep: [InProgressRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -85,6 +92,9 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  repository: Repository!
+  assetNodes: [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -414,6 +424,7 @@ enum StepEventStatus {
   SKIPPED
   SUCCESS
   FAILURE
+  IN_PROGRESS
 }
 
 type Materialization implements DisplayableEvent {
@@ -616,13 +627,15 @@ type AssetNode {
   description: String
   opName: String
   jobName: String
+  jobs: [Pipeline!]!
   dependencies: [AssetDependency!]!
+  dependedBy: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
 }
 
 type AssetDependency {
   inputName: String!
-  upstreamAsset: AssetNode!
+  asset: AssetNode!
 }
 
 union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
@@ -1194,6 +1207,9 @@ type Job implements SolidContainer & IPipelineSnapshot {
   graphName: String!
   presets: [PipelinePreset!]!
   isJob: Boolean!
+  isAssetJob: Boolean!
+  repository: Repository!
+  assetNodes: [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1204,6 +1220,12 @@ type UsedSolid {
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type InProgressRunsByStep {
+  stepKey: String!
+  unstartedRuns: [Run!]!
+  inProgressRuns: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -1565,7 +1587,7 @@ type GraphenePermission {
   value: Boolean!
 }
 
-type Mutation {
+type DagitMutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
@@ -1761,7 +1783,7 @@ type LogTelemetrySuccess {
   action: String!
 }
 
-type Subscription {
+type DagitSubscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!

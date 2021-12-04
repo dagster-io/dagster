@@ -47,10 +47,21 @@ def get_worker_name(name=None):
     )
 
 
-def get_config_dir(config_yaml=None):
-    instance = DagsterInstance.get()
+def get_validated_config(config_yaml=None):
     config_type = celery_executor.config_schema.config_type
     config_value = get_config_value_from_yaml(config_yaml)
+    config = validate_config(config_type, config_value)
+    if not config.success:
+        raise DagsterInvalidConfigError(
+            "Errors while loading Celery executor config at {}.".format(config_yaml),
+            config.errors,
+            config_value,
+        )
+    return post_process_config(config_type, config_value).value
+
+
+def get_config_dir(config_yaml=None):
+    instance = DagsterInstance.get()
 
     config_module_name = "dagster_celery_config"
 
@@ -62,15 +73,7 @@ def get_config_dir(config_yaml=None):
         config_dir, "{config_module_name}.py".format(config_module_name=config_module_name)
     )
 
-    config = validate_config(config_type, config_value)
-    if not config.success:
-        raise DagsterInvalidConfigError(
-            "Errors while loading Celery executor config at {}.".format(config_yaml),
-            config.errors,
-            config_value,
-        )
-
-    validated_config = post_process_config(config_type, config_value).value
+    validated_config = get_validated_config(config_yaml)
     with open(config_path, "w") as fd:
         if "broker" in validated_config and validated_config["broker"]:
             fd.write(
@@ -195,6 +198,35 @@ def worker_start_command(
         return subprocess.check_call(subprocess_args, env=env)
 
 
+@click.command(name="status", help="wrapper around `celery status`")
+@click.option(
+    "--config-yaml",
+    "-y",
+    type=click.Path(exists=True),
+    required=True,
+    help=(
+        "Specify the path to a config YAML file with options for the worker. This is the same "
+        "config block that you provide to dagster_celery.celery_executor when configuring a "
+        "job for execution with Celery, with, e.g., the URL of the broker to use."
+    ),
+)
+@click.option("--app", "-A", type=click.STRING)
+@click.argument("additional_args", nargs=-1, type=click.UNPROCESSED)
+def status_command(
+    config_yaml,
+    app,
+    additional_args,
+):
+    check.invariant(app, "App must be specified. E.g. dagster_celery.app or dagster_celery_k8s.app")
+
+    config = get_validated_config(config_yaml)
+    subprocess_args = ["celery", "-A", app, "-b", str(config["broker"]), "status"] + list(
+        additional_args
+    )
+
+    subprocess.check_call(subprocess_args)
+
+
 @click.command(
     name="list",
     help="List running dagster-celery workers. Note that we use the broker to contact the workers.",
@@ -257,7 +289,7 @@ def worker_terminate_command(name="dagster", config_yaml=None, all_=False):
 worker_cli = create_worker_cli_group()
 
 
-@click.group(commands={"worker": worker_cli})
+@click.group(commands={"worker": worker_cli, "status": status_command})
 def main():
     """dagster-celery"""
 

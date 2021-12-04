@@ -16,7 +16,7 @@ import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 const fuseOptions = {
   keys: ['label', 'tags', 'type'],
   limit: 10,
-  threshold: 0.3,
+  threshold: 0.5,
   useExtendedSearch: true,
 };
 

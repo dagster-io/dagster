@@ -13,21 +13,21 @@ dependency on an old version, via ``snowflake-connector-python``.
 
 .. currentmodule:: dagster_azure
 
-.. autodata:: dagster_azure.adls2.adls2_resource
+.. autoconfigurable:: dagster_azure.adls2.adls2_resource
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.adls2.FakeADLS2Resource
 
-.. autodata:: dagster_azure.adls2.adls2_file_cache
+.. autoconfigurable:: dagster_azure.adls2.adls2_file_cache
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
-.. autodata:: dagster_azure.adls2.adls2_file_manager
+.. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
 
-.. autodata:: dagster_azure.adls2.adls2_pickle_io_manager
+.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
   :annotation: IOManagerDefinition

@@ -1,11 +1,42 @@
 import csv
+import os
 import xml.etree.ElementTree as ET
 from unittest.mock import MagicMock
 
+import pandas as pd
 import requests
-from dagster import Out, Output, job, op, resource
+from dagster import (
+    IOManager,
+    InputContext,
+    Out,
+    Output,
+    OutputContext,
+    io_manager,
+    job,
+    op,
+    resource,
+)
 
 ARTICLES_LINK = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+
+
+class DataframeToCSVIOManager(IOManager):
+    def __init__(self, base_dir: str):
+        self.base_dir = base_dir
+
+    def _get_path(self, output_context: OutputContext):
+        return os.path.join(self.base_dir, f"{output_context.step_key}_{output_context.name}.csv")
+
+    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
+        obj.to_csv(self._get_path(context), index=False)
+
+    def load_input(self, context: InputContext) -> pd.DataFrame:
+        return pd.read_csv(self._get_path(context.upstream_output))
+
+
+@io_manager(config_schema={"base_dir": str})
+def df_to_csv_io_manager(init_context):
+    return DataframeToCSVIOManager(base_dir=init_context.resource_config.get("base_dir"))
 
 
 @resource(config_schema={"token": str})

@@ -17,8 +17,10 @@ data:
   celery.yaml: |
     execution:
       celery:
-        broker: {{ include "dagster.celery.broker_url" $ | quote }}
-        backend: {{ include "dagster.celery.backend_url" $ | quote }}
+        broker:
+          env: DAGSTER_CELERY_BROKER_URL
+        backend:
+          env: DAGSTER_CELERY_BACKEND_URL
         config_source: {{ merge $individualConfig $sharedConfig | toYaml | nindent 10 }}
 ---
 {{- end }}

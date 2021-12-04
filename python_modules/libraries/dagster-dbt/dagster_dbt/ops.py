@@ -42,7 +42,7 @@ Examples:
             default_value=True,
             description=(
                 "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
+                "be yielded when the op executes. Default: True"
             ),
         ),
         "asset_key_prefix": Field(

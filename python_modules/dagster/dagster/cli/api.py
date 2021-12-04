@@ -9,6 +9,7 @@ from dagster.cli.workspace.cli_target import (
 )
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
+from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
@@ -65,6 +66,10 @@ def execute_run_command(input_json):
 
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+    if instance.should_start_background_run_thread:
+        cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
+            instance, pipeline_run_id
+        )
 
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
@@ -79,6 +84,15 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
         for event in core_execute_run(recon_pipeline, pipeline_run, instance):
             write_stream_fn(event)
     finally:
+        if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event.set()
+            if cancellation_thread.is_alive():
+                cancellation_thread.join(timeout=15)
+                if cancellation_thread.is_alive():
+                    instance.report_engine_event(
+                        "Cancellation thread did not shutdown gracefully",
+                        pipeline_run,
+                    )
         instance.report_engine_event(
             "Process for run exited (pid: {pid}).".format(pid=pid),
             pipeline_run,
@@ -120,7 +134,10 @@ def resume_run_command(input_json):
 
 
 def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
-
+    if instance.should_start_background_run_thread:
+        cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
+            instance, pipeline_run_id
+        )
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
     pid = os.getpid()
@@ -136,6 +153,15 @@ def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_st
         ):
             write_stream_fn(event)
     finally:
+        if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event.set()
+            if cancellation_thread.is_alive():
+                cancellation_thread.join(timeout=15)
+                if cancellation_thread.is_alive():
+                    instance.report_engine_event(
+                        "Cancellation thread did not shutdown gracefully",
+                        pipeline_run,
+                    )
         instance.report_engine_event(
             "Process for pipeline exited (pid: {pid}).".format(pid=pid),
             pipeline_run,

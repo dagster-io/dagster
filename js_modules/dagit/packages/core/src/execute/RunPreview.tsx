@@ -266,7 +266,8 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     });
   }
 
-  const {resources, solids, ...rest} = rootCompositeChildren;
+  const {resources, ops, solids, ...rest} = rootCompositeChildren;
+  const hasOps = !!ops?.fields;
 
   const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
     const boxes = items
@@ -290,9 +291,11 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
         const isMissing = path.some((_, idx) =>
           missingNodes.includes(path.slice(0, idx + 1).join('.')),
         );
+
         if (errorsOnly && !isInvalid) {
           return false;
         }
+
         const state =
           isMissing && item.isRequired
             ? 'missing'
@@ -388,7 +391,12 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
             </RuntimeAndResourcesSection>
             <Section>
               <SectionTitle>Ops</SectionTitle>
-              <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
+              <ItemSet>
+                {itemsIn(
+                  [hasOps ? 'ops' : 'solids'],
+                  (hasOps ? ops?.fields : solids?.fields) || [],
+                )}
+              </ItemSet>
             </Section>
             <div style={{height: 50}} />
           </div>

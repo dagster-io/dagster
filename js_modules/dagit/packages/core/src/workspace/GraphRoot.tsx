@@ -58,9 +58,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
   );
 };
 
-export const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: RepoAddress}> = (
-  props,
-) => {
+const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: RepoAddress}> = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
   const {repoAddress} = props;
   const history = useHistory();
@@ -139,7 +137,7 @@ export const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: Rep
   );
 };
 
-export const GRAPH_EXPLORER_ROOT_QUERY = gql`
+const GRAPH_EXPLORER_ROOT_QUERY = gql`
   query GraphExplorerRootQuery(
     $graphSelector: GraphSelector
     $rootHandleID: String!

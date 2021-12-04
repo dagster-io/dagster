@@ -13,7 +13,7 @@ def test_user_top_recommended_stories():
     row_users = Series(["abc"])
     col_stories = Series([35, 38, 40])
 
-    result = user_top_recommended_stories(
+    result = user_top_recommended_stories.op(
         None,
         recommender_model=model,
         user_story_matrix=IndexedCooMatrix(user_story_matrix, row_users, col_stories),

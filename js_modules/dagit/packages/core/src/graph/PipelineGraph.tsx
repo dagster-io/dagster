@@ -37,10 +37,7 @@ interface IPipelineGraphProps {
 interface IPipelineContentsProps extends IPipelineGraphProps {
   minified: boolean;
   layout: IFullPipelineLayout;
-}
-
-interface IPipelineContentsState {
-  highlighted: Edge[];
+  bounds: {top: number; left: number; right: number; bottom: number};
 }
 
 /**
@@ -84,100 +81,101 @@ function computeOpPrefixBoundingBoxes(layout: IFullPipelineLayout) {
   return boxes;
 }
 
-export class PipelineGraphContents extends React.PureComponent<
-  IPipelineContentsProps,
-  IPipelineContentsState
-> {
-  state: IPipelineContentsState = {
-    highlighted: [],
-  };
+const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((props) => {
+  const [highlighted, setHighlighted] = React.useState<Edge[]>(() => []);
 
-  onHighlightEdges = (highlighted: Edge[]) => {
-    this.setState({highlighted});
-  };
+  const {
+    layout,
+    minified,
+    ops,
+    bounds,
+    focusOps,
+    parentOp,
+    parentHandleID,
+    onClickOp = NoOp,
+    onDoubleClickOp = NoOp,
+    onEnterSubgraph = NoOp,
+    highlightedOps,
+    selectedOp,
+  } = props;
 
-  render() {
-    const {
-      layout,
-      minified,
-      ops,
-      focusOps,
-      parentOp,
-      parentHandleID,
-      onClickOp = NoOp,
-      onDoubleClickOp = NoOp,
-      onEnterSubgraph = NoOp,
-      highlightedOps,
-      selectedOp,
-    } = this.props;
-
-    return (
-      <>
-        {parentOp && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
-          <SVGLabeledParentRect
-            {...layout.parent.invocationBoundingBox}
-            key={`composite-rect-${parentHandleID}`}
-            label={parentOp.name}
-            fill={ColorsWIP.Gray50}
-            minified={minified}
-          />
-        )}
-        {/* {selectedOp && layout.ops[selectedOp.name] && (
-          // this rect is hidden beneath the user's selection with a React key so that
-          // when they expand the composite op React sees this component becoming
-          // the one above and re-uses the DOM node. This allows us to animate the rect's
-          // bounds from the parent layout to the inner layout with no React state.
-          <SVGLabeledParentRect
-            {...layout.ops[selectedOp.name].op}
-            key={`composite-rect-${selectedHandleID}`}
-            label={''}
-            fill={ColorsWIP.Gray50}
-            minified={true}
-          />
-        )} */}
-
-        {parentOp && (
-          <ParentOpNode
-            onClickOp={onClickOp}
-            onDoubleClick={(name) => onDoubleClickOp({name})}
-            onHighlightEdges={this.onHighlightEdges}
-            highlightedEdges={this.state.highlighted}
-            key={`composite-rect-${parentHandleID}-definition`}
-            minified={minified}
-            op={parentOp}
-            layout={layout}
-          />
-        )}
-        <OpLinks
-          ops={ops}
-          layout={layout}
-          opacity={0.2}
-          connections={layout.connections}
-          onHighlight={this.onHighlightEdges}
+  return (
+    <>
+      {parentOp && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
+        <SVGLabeledParentRect
+          {...layout.parent.invocationBoundingBox}
+          key={`composite-rect-${parentHandleID}`}
+          label=""
+          fill={ColorsWIP.Yellow50}
+          minified={minified}
         />
-        <OpLinks
-          ops={ops}
-          layout={layout}
-          opacity={0.55}
-          onHighlight={this.onHighlightEdges}
-          connections={layout.connections.filter(({from, to}) =>
-            isHighlighted(this.state.highlighted, {
-              a: from.opName,
-              b: to.opName,
-            }),
-          )}
+      )}
+      {/* {selectedOp && layout.ops[selectedOp.name] && (
+        // this rect is hidden beneath the user's selection with a React key so that
+        // when they expand the composite op React sees this component becoming
+        // the one above and re-uses the DOM node. This allows us to animate the rect's
+        // bounds from the parent layout to the inner layout with no React state.
+        <SVGLabeledParentRect
+          {...layout.ops[selectedOp.name].op}
+          key={`composite-rect-${selectedHandleID}`}
+          label={''}
+          fill={ColorsWIP.Gray50}
+          minified={true}
         />
-        {computeOpPrefixBoundingBoxes(layout).map((box, idx) => (
-          <rect
-            key={idx}
-            {...box}
-            stroke="rgb(230, 219, 238)"
-            fill="rgba(230, 219, 238, 0.2)"
-            strokeWidth={2}
-          />
-        ))}
-        <foreignObject width={layout.width} height={layout.height}>
-          {ops.map((op) => (
+      )} */}
+
+      {parentOp && (
+        <ParentOpNode
+          onClickOp={onClickOp}
+          onDoubleClick={(name) => onDoubleClickOp({name})}
+          onHighlightEdges={setHighlighted}
+          highlightedEdges={highlighted}
+          key={`composite-rect-${parentHandleID}-definition`}
+          minified={minified}
+          op={parentOp}
+          layout={layout}
+        />
+      )}
+      <OpLinks
+        ops={ops}
+        layout={layout}
+        color={ColorsWIP.KeylineGray}
+        connections={layout.connections}
+        onHighlight={setHighlighted}
+      />
+      <OpLinks
+        ops={ops}
+        layout={layout}
+        color={ColorsWIP.Gray500}
+        onHighlight={setHighlighted}
+        connections={layout.connections.filter(({from, to}) =>
+          isHighlighted(highlighted, {
+            a: from.opName,
+            b: to.opName,
+          }),
+        )}
+      />
+      {computeOpPrefixBoundingBoxes(layout).map((box, idx) => (
+        <rect
+          key={idx}
+          {...box}
+          stroke="rgb(230, 219, 238)"
+          fill="rgba(230, 219, 238, 0.2)"
+          strokeWidth={2}
+        />
+      ))}
+      <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
+        {ops
+          .filter((op) => {
+            const box = layout.ops[op.name].boundingBox;
+            return (
+              box.x + box.width >= bounds.left &&
+              box.y + box.height >= bounds.top &&
+              box.x < bounds.right &&
+              box.y < bounds.bottom
+            );
+          })
+          .map((op) => (
             <OpNode
               key={op.name}
               invocation={op}
@@ -186,23 +184,22 @@ export class PipelineGraphContents extends React.PureComponent<
               onClick={() => onClickOp({name: op.name})}
               onDoubleClick={() => onDoubleClickOp({name: op.name})}
               onEnterComposite={() => onEnterSubgraph({name: op.name})}
-              onHighlightEdges={this.onHighlightEdges}
+              onHighlightEdges={setHighlighted}
               layout={layout.ops[op.name]}
               selected={selectedOp === op}
               focused={focusOps.includes(op)}
               highlightedEdges={
-                isOpHighlighted(this.state.highlighted, op.name)
-                  ? this.state.highlighted
-                  : EmptyHighlightedArray
+                isOpHighlighted(highlighted, op.name) ? highlighted : EmptyHighlightedArray
               }
               dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
             />
           ))}
-        </foreignObject>
-      </>
-    );
-  }
-}
+      </foreignObject>
+    </>
+  );
+});
+
+PipelineGraphContents.displayName = 'PipelineGraphContents';
 
 // This is a specific empty array we pass to represent the common / empty case
 // so that OpNode can use shallow equality comparisons in shouldComponentUpdate.
@@ -340,17 +337,16 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         onClick={onClickBackground}
         onDoubleClick={this.unfocus}
       >
-        {({scale}: any) => (
-          <>
-            <SVGContainer width={layout.width} height={layout.height + 200}>
-              <PipelineGraphContents
-                {...this.props}
-                layout={layout}
-                minified={scale < DETAIL_ZOOM - 0.01}
-                onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
-              />
-            </SVGContainer>
-          </>
+        {({scale}, bounds) => (
+          <SVGContainer width={layout.width} height={layout.height + 200}>
+            <PipelineGraphContents
+              {...this.props}
+              layout={layout}
+              minified={scale < DETAIL_ZOOM - 0.01}
+              onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
+              bounds={bounds}
+            />
+          </SVGContainer>
         )}
       </SVGViewport>
     );

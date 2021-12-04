@@ -34,6 +34,7 @@ describe('Repository options', () => {
         id: () => 'my_pipeline',
         name: () => 'my_pipeline',
         modes: () => new MockList(1),
+        isAssetJob: () => false,
       }),
     };
 
@@ -113,6 +114,23 @@ describe('Repository options', () => {
     };
 
     it('initializes with first repo option, if one option and no localStorage', async () => {
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      await waitFor(() => {
+        // Three links. One for repo, two for pipelines.
+        expect(screen.getAllByRole('link')).toHaveLength(3);
+      });
+    });
+
+    it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
       render(
         <TestProvider
           apolloProps={{mocks: [defaultMocks, mocksWithOne]}}

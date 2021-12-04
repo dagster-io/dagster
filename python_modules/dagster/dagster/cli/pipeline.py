@@ -286,7 +286,7 @@ def execute_list_versions_command(instance, kwargs):
         pipeline,
         run_config=run_config,
         mode=mode,
-        instance=instance,
+        instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     add_step_to_table(memoized_plan)
@@ -525,6 +525,7 @@ def _create_external_pipeline_run(
         pipeline_mode,
         step_keys_to_execute=None,
         known_state=None,
+        instance=instance,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 

@@ -1,28 +1,25 @@
 import React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
-import {LatestMaterializationMetadata} from '../../assets/LastMaterializationMetadata';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
-import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
-import {IconWIP} from '../../ui/Icon';
 import {RepoAddress} from '../types';
 
-import {assetKeyToString} from './Utils';
-import {AssetGraphQuery_repositoryOrError_Repository_assetNodes} from './types/AssetGraphQuery';
+import {assetKeyToString, LiveDataForNode} from './Utils';
+import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  node: AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-  handle: GraphExplorerSolidHandleFragment;
+  definition: GraphExplorerSolidHandleFragment_solid_definition;
+  node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+  liveData: LiveDataForNode;
   repoAddress: RepoAddress;
-}> = ({node, handle, repoAddress}) => {
-  const definition = handle.solid.definition;
+}> = ({node, definition, repoAddress, liveData}) => {
   const Plugin = pluginForMetadata(definition.metadata);
+  const {lastMaterialization} = liveData || {};
 
   return (
     <div style={{overflowY: 'auto'}}>
@@ -37,36 +34,16 @@ export const SidebarAssetInfo: React.FC<{
       </SidebarSection>
 
       <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
-      <SidebarSection title={'Materialization in Last Run'}>
-        {node.assetMaterializations.length ? (
-          <Box margin={12}>
-            <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
 
-            <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
-              {'View All in Asset Catalog '}
-              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
-            </AssetCatalogLink>
-          </Box>
-        ) : (
-          <Box margin={12}>&mdash;</Box>
-        )}
-      </SidebarSection>
-
-      {node.assetMaterializations.length ? (
-        <SidebarSection title={'Materialization Plots'}>
-          <Box margin={12}>
-            <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
-          </Box>
-        </SidebarSection>
-      ) : null}
+      <AssetMaterializations
+        assetKey={node.assetKey}
+        assetLastMaterializedAt={lastMaterialization?.materializationEvent.timestamp}
+        asSidebarSection
+        liveData={liveData}
+        paramsTimeWindowOnly={false}
+        params={{}}
+        setParams={() => {}}
+      />
     </div>
   );
 };
-
-const AssetCatalogLink = styled(Link)`
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: -10px;
-`;

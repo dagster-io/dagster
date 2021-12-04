@@ -1,6 +1,6 @@
 ---
 title: Run Launchers | Dagster
-description: TODO
+description: The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs.
 ---
 
 # Run Launchers
@@ -19,7 +19,7 @@ The core abstraction in the launch process is the run launcher, which is configu
 
 ## Default Run Launcher
 
-The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a new process on the same node as the pipeline's repository location. It also provides the ability to terminate launched runs.
+The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the pipeline's repository location.
 
 ## Other Run Launchers
 
@@ -30,21 +30,27 @@ Other run launchers include:
 
   For more information, check out [Kubernetes Deployment Guides](/deployment/guides/kubernetes/deploying-with-helm).
 
+- <PyObject module="dagster_aws" object="EcsRunLauncher" />, which launches an
+  ECS task per run.
+
+  For more information, check out [ECS Deployment Guides](/deployment/guides/ecs).
+
 - <PyObject module="dagster_docker" object="DockerRunLauncher" />, which
   launches runs in a Docker container.
 
   For more information, check out [Deploying Dagster to Docker Guide](/deployment/guides/docker) and [Docker deployment example](/deployment/guides/docker#example).
 
 - <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, which
-  launches runs as single Kubernetes Jobs.
+  launches runs as single Kubernetes Jobs with extra configuration to support
+  the `celery_k8s_job_executor`.
 
-  For more information, check out [Deploying Dagster on Helm, Advanced](/deployment/guides/kubernetes/deploying-with-helm-advanced).
+  For more information, check out [Per-Op Limits in Kubernetes](/deployment/guides/kubernetes/deploying-with-helm-advanced).
 
 ## Custom Run Launchers
 
 A few examples of when a custom run launcher is needed:
 
-- You want to allocate different computational resources for different pipelines or pipeline runs (e.g. GPUs for some, more cores or memory for others). These decisions should be made in the run launcher.
 - You have custom infrastructure or custom APIs for allocating nodes for execution.
+- You have custom logic for launching runs on different clusters, platforms, etc.
 
 Colloquially we refer to the process or computational resource created by the run launcher as the run worker. The run launcher only determines the behavior of the run worker. Once execution starts within the run worker, it is the _executor_ -- an in-memory abstraction in the run worker process -- that takes over management of computational resources.

@@ -5,7 +5,7 @@ from dagster.core.host_representation.external_data import ExternalAssetNode
 
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .pipelines.pipeline import GrapheneAssetMaterialization
+from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
 from .util import non_null_list
 
 
@@ -14,21 +14,19 @@ class GrapheneAssetDependency(graphene.ObjectType):
         name = "AssetDependency"
 
     inputName = graphene.NonNull(graphene.String)
-    upstreamAsset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
-    def __init__(self, external_repository, input_name, upstream_asset_key):
+    def __init__(self, external_repository, input_name, asset_key):
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
-        self._upstream_asset_key = check.inst_param(
-            upstream_asset_key, "upstream_asset_key", AssetKey
-        )
+        self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         super().__init__(inputName=input_name)
 
-    def resolve_upstreamAsset(self, _graphene_info):
+    def resolve_asset(self, _graphene_info):
         return GrapheneAssetNode(
             self._external_repository,
-            self._external_repository.get_external_asset_node(self._upstream_asset_key),
+            self._external_repository.get_external_asset_node(self._asset_key),
         )
 
 
@@ -38,7 +36,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
+    jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
+    dependedBy = non_null_list(GrapheneAssetDependency)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
@@ -69,10 +69,24 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneAssetDependency(
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
-                upstream_asset_key=dep.upstream_asset_key,
+                asset_key=dep.upstream_asset_key,
             )
             for dep in self._external_asset_node.dependencies
         ]
+
+    def resolve_dependedBy(self, _graphene_info):
+        results = []
+        for item in self._external_repository.get_external_asset_nodes():
+            for dep in item.dependencies:
+                if dep.upstream_asset_key == self._external_asset_node.asset_key:
+                    results.append(
+                        GrapheneAssetDependency(
+                            external_repository=self._external_repository,
+                            input_name=dep.input_name,
+                            asset_key=item.asset_key,
+                        )
+                    )
+        return results
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
@@ -95,6 +109,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 before_timestamp=before_timestamp,
                 limit=kwargs.get("limit"),
             )
+        ]
+
+    def resolve_jobs(self, _graphene_info):
+        job_names = self._external_asset_node.job_names or []
+        return [
+            GraphenePipeline(self._external_repository.get_full_external_pipeline(job_name))
+            for job_name in job_names
+            if self._external_repository.has_external_pipeline(job_name)
         ]
 
 

@@ -24,6 +24,7 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -223,9 +224,7 @@ def test_partitions():
     job = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=config_fn,
-            partitions_def=StaticPartitionsDefinition(
-                [Partition("2020-02-25"), Partition("2020-02-26")]
-            ),
+            partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     partition_set = job.get_partition_set_def()
@@ -252,9 +251,7 @@ def test_partitions():
     job = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=shared_config_fn,
-            partitions_def=StaticPartitionsDefinition(
-                [Partition("2020-02-25"), Partition("2020-02-26")]
-            ),
+            partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     partition_set = job.get_partition_set_def()
@@ -956,3 +953,41 @@ def test_job_non_default_logger_config():
         run_config={"loggers": {"json": {"config": {"log_level": "DEBUG"}}}}
     )
     assert result.success
+
+
+def test_job_partitions_def():
+    @op
+    def my_op(context):
+        assert context.has_partition_key
+        assert context.partition_key == "2020-01-01"
+
+    @graph
+    def my_graph():
+        my_op()
+
+    my_job = my_graph.to_job(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    assert my_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_graph_top_level_input():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    result = my_graph.execute_in_process(
+        run_config={"inputs": {"x": {"value": 2}, "y": {"value": 3}}}
+    )
+    assert result.success
+    assert result.output_for_node("my_op") == 5
+
+    @graph
+    def my_graph_with_nesting(x):
+        my_graph(x, x)
+
+    result = my_graph_with_nesting.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
+    assert result.success
+    assert result.output_for_node("my_graph.my_op") == 4

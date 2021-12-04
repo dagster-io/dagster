@@ -72,6 +72,14 @@ class ExternalRepository:
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
 
+        self._asset_jobs = OrderedDict()
+        for asset_node in external_repository_data.external_asset_graph_data:
+            for job_name in asset_node.job_names:
+                if job_name not in self._asset_jobs:
+                    self._asset_jobs[job_name] = [asset_node]
+                else:
+                    self._asset_jobs[job_name].append(asset_node)
+
     @property
     def name(self):
         return self.external_repository_data.name
@@ -177,8 +185,12 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
-    def get_external_asset_nodes(self) -> Sequence[ExternalAssetNode]:
-        return self.external_repository_data.external_asset_graph_data
+    def get_external_asset_nodes(self, job_name=None) -> Sequence[ExternalAssetNode]:
+        return (
+            self.external_repository_data.external_asset_graph_data
+            if job_name is None
+            else self._asset_jobs.get(job_name)
+        )
 
     def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
         matching = [

@@ -1,8 +1,14 @@
+import os
 import time
 
 from dagster import AssetKey
+from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+    infer_repository_selector,
+)
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -90,13 +96,41 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
     }
 """
 
+GET_ASSET_IN_PROGRESS_RUNS = """
+    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                assetNodes {
+                    opName
+                    description
+                    jobName
+                }
+                inProgressRunsByStep {
+                    stepKey
+                    unstartedRuns {
+                        runId
+                    }
+                    inProgressRuns {
+                        runId
+                    }
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(graphql_context, pipeline_name, mode="default"):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={"executionParams": {"selector": selector, "mode": mode}},
+        variables={
+            "executionParams": {
+                "selector": selector,
+                "mode": mode,
+            }
+        },
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
@@ -260,3 +294,74 @@ class TestAssetAwareEventLog(
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
+
+
+class TestPersistentInstanceAssetInProgress(
+    make_graphql_context_test_suite(
+        context_variants=[
+            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
+        ]
+    )
+):
+    def test_asset_in_progress(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "hanging_job")
+        run_id = "foo"
+
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                        "executionMetadata": {"runId": run_id},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_IN_PROGRESS_RUNS,
+                variables={"repositorySelector": infer_repository_selector(graphql_context)},
+            )
+            graphql_context.instance.run_launcher.terminate(run_id)
+
+            assert result.data
+            assert result.data["repositoryOrError"]
+            assert result.data["repositoryOrError"]["inProgressRunsByStep"]
+
+            in_progress_runs_by_step = result.data["repositoryOrError"]["inProgressRunsByStep"]
+
+            assert len(in_progress_runs_by_step) == 2
+
+            hanging_asset_status = in_progress_runs_by_step[0]
+            never_runs_asset_status = in_progress_runs_by_step[1]
+            # graphql endpoint returns unordered list of steps
+            # swap if never_runs_asset_status is first in list
+            if hanging_asset_status["stepKey"] != "hanging_asset":
+                never_runs_asset_status, hanging_asset_status = (
+                    hanging_asset_status,
+                    never_runs_asset_status,
+                )
+
+            assert hanging_asset_status["stepKey"] == "hanging_asset"
+            assert len(hanging_asset_status["inProgressRuns"]) == 1
+            assert hanging_asset_status["inProgressRuns"][0]["runId"] == run_id
+            assert len(hanging_asset_status["unstartedRuns"]) == 0
+
+            assert never_runs_asset_status["stepKey"] == "never_runs_asset"
+            assert len(never_runs_asset_status["inProgressRuns"]) == 0
+            assert len(never_runs_asset_status["unstartedRuns"]) == 1
+            assert never_runs_asset_status["unstartedRuns"][0]["runId"] == run_id

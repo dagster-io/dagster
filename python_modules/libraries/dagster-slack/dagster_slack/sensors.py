@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
@@ -10,21 +10,57 @@ from dagster.core.definitions.run_status_sensor_definition import (
 from slack_sdk import WebClient
 
 
-def _default_failure_message(context: PipelineFailureSensorContext) -> str:
-    return "\n".join(
-        [
-            f"Job {context.pipeline_run.pipeline_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
-            f"Error: {context.failure_event.message}",
-        ]
-    )
+def _build_slack_blocks_and_text(
+    context: RunFailureSensorContext,
+    text_fn: Callable[[RunFailureSensorContext], str],
+    blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]],
+    dagit_base_url: Optional[str],
+) -> Tuple[List[Dict[str, Any]], str]:
+    blocks: List[Dict[str, Any]] = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
+            },
+        },
+    ]
+    main_body_text = text_fn(context)
+
+    if blocks_fn:
+        blocks.extend(blocks_fn(context))
+    else:
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": main_body_text},
+            },
+        )
+
+    if dagit_base_url:
+        blocks.append(
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "View in Dagit"},
+                        "url": f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}",
+                    }
+                ],
+            }
+        )
+    return blocks, main_body_text
+
+
+def _default_failure_message_text_fn(context: PipelineFailureSensorContext) -> str:
+    return f"Error: ```{context.failure_event.message}```"
 
 
 def make_slack_on_pipeline_failure_sensor(
     channel: str,
     slack_token: str,
-    text_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_message,
+    text_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_message_text_fn,
     blocks_fn: Callable[[PipelineFailureSensorContext], List[Dict]] = None,
     pipeline_selection: List[str] = None,
     name: Optional[str] = None,
@@ -90,14 +126,12 @@ def make_slack_on_pipeline_failure_sensor(
 
     @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection)
     def slack_on_pipeline_failure(context: PipelineFailureSensorContext):
-        text = text_fn(context)
-        blocks = blocks_fn(context) if blocks_fn else None
-        if dagit_base_url:
-            text += "\n<{base_url}/instance/runs/{run_id}|View in Dagit>".format(
-                base_url=dagit_base_url, run_id=context.pipeline_run.run_id
-            )
 
-        slack_client.chat_postMessage(channel=channel, text=text, blocks=blocks)
+        blocks, main_body_text = _build_slack_blocks_and_text(
+            context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+        )
+
+        slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
 
     return slack_on_pipeline_failure
 
@@ -105,7 +139,7 @@ def make_slack_on_pipeline_failure_sensor(
 def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
-    text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message,
+    text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message_text_fn,
     blocks_fn: Callable[[RunFailureSensorContext], List[Dict]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
@@ -171,13 +205,10 @@ def make_slack_on_run_failure_sensor(
 
     @run_failure_sensor(name=name, job_selection=job_selection)
     def slack_on_run_failure(context: RunFailureSensorContext):
-        text = text_fn(context)
-        blocks = blocks_fn(context) if blocks_fn else None
-        if dagit_base_url:
-            text += "\n<{base_url}/instance/runs/{run_id}|View in Dagit>".format(
-                base_url=dagit_base_url, run_id=context.pipeline_run.run_id
-            )
+        blocks, main_body_text = _build_slack_blocks_and_text(
+            context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+        )
 
-        slack_client.chat_postMessage(channel=channel, text=text, blocks=blocks)
+        slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
 
     return slack_on_run_failure

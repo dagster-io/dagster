@@ -409,7 +409,10 @@ class DbtCloudResourceV2:
         final_run_details = self.poll_run(
             run_id, poll_interval=poll_interval, poll_timeout=poll_timeout, href=href
         )
-        return DbtCloudOutput(run_details=final_run_details, result=self.get_run_results(run_id))
+        output = DbtCloudOutput(run_details=final_run_details, result=self.get_run_results(run_id))
+        if output.docs_url:
+            self._log.info(f"Docs for this run can be viewed here: {output.docs_url}")
+        return output
 
 
 @resource(
@@ -460,25 +463,6 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
     To configure this resource, we recommend using the `configured
     <https://docs.dagster.io/overview/configuration#configured>`_ method.
 
-    **Config Options:**
-
-    auth_token (StringSource)
-        dbt Cloud API Token. User tokens can be found in the `dbt Cloud UI
-        <https://cloud.getdbt.com/#/profile/api/>`_, or see the `dbt Cloud Docs
-        <https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens>`_ for instructions
-        on creating a Service Account token.
-    account_id (int)
-        dbt Cloud Account ID. This value can be found in the url of a variety of views in the dbt
-        Cloud UI, e.g. ``https://cloud.getdbt.com/#/accounts/{account_id}/settings/``.
-    disable_schedule_on_trigger (bool)
-        Specifies if you would like any job that is launched using this resource to be
-        automatically taken off its dbt Cloud schedule. Defaults to ``True``.
-    request_max_retries (int)
-        The maximum number of times requests to the dbt Cloud API should be retried before
-        failing. Defaults to ``3``.
-    request_retry_delay (float)
-        Time (in seconds) to wait between each request retry.  Defaults to ``0.25``.
-
     **Examples:**
 
     .. code-block:: python
@@ -486,7 +470,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         from dagster import job
         from dagster_dbt import dbt_cloud_resource
 
-        my_dbt_cloud_resource = fivetran_resource.configured(
+        my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
                 "account_id": 30000,

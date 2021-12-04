@@ -16,8 +16,6 @@ import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
-export const LAST_REPO_KEY = 'dagit.last-repo';
-// export const REPO_KEYS = 'dagit.repo-keys';
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
 const buildDetails = memoize((option: DagsterRepoOption) => ({
@@ -55,6 +53,11 @@ const useNavVisibleRepos = (
   // Collect hidden keys from localStorage and remove them from the visible repo key list.
   React.useEffect(() => {
     setVisibleKeys(() => {
+      // If there's only one key, skip the local storage check -- we have to show this one.
+      if (allKeys.length === 1) {
+        return new Set(allKeys);
+      }
+
       const hiddenKeys = hiddenKeysFromLocalStorage();
       const visible = allKeys.filter((key) => !hiddenKeys.has(key));
 

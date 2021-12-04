@@ -29,7 +29,7 @@ def download_csv(context):
     return [row for row in csv.DictReader(lines)]
 ```
 
-Here, rather than hard-coding the value of the URL we want to download from, we use a config option, `url`.
+Here, rather than hard-coding the value of the URL we want to download from, we use a config option, `url`. In order to access that config option, our decorated function accepts an argument named "context". When Dagster sees an argument named "context", instead of treating it as one of the op's inputs, it provides an instance of <PyObject module="dagster" object="OpExecutionContext" />. A consequence of this is that ops cannot have inputs named "context".
 
 Let's rebuild a job we've seen before, but this time using our newly parameterized op.
 
@@ -37,7 +37,7 @@ Let's rebuild a job we've seen before, but this time using our newly parameteriz
 import csv
 
 import requests
-from dagster import job, op
+from dagster import get_dagster_logger, job, op
 
 
 @op
@@ -48,12 +48,14 @@ def download_csv(context):
 
 
 @op
-def sort_by_calories(context, cereals):
+def sort_by_calories(cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal["calories"])
     )
 
-    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+    get_dagster_logger().info(
+        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
+    )
 
 
 @job

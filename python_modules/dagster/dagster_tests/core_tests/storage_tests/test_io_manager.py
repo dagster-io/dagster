@@ -8,7 +8,6 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     Field,
     IOManagerDefinition,
     In,
@@ -21,6 +20,7 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     graph,
+    job,
     op,
     pipeline,
     reexecute_pipeline,
@@ -29,6 +29,7 @@ from dagster import (
 )
 from dagster.check import CheckError
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.output import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -661,6 +662,33 @@ def test_error_boundary_with_gen():
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
+def test_handle_output_exception_raised():
+    class ErrorIOManager(IOManager):
+        def load_input(self, context):
+            pass
+
+        def handle_output(self, context, obj):
+            raise ValueError("handle output error")
+
+    @io_manager
+    def error_io_manager(_):
+        return ErrorIOManager()
+
+    @op
+    def basic_op():
+        return 5
+
+    @job(resource_defs={"io_manager": error_io_manager})
+    def single_op_job():
+        basic_op()
+
+    result = single_op_job.execute_in_process(raise_on_error=False)
+    step_failure = [
+        event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
+    ][0]
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+
+
 def test_output_identifier_dynamic_memoization():
     context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
 
@@ -701,3 +729,31 @@ def test_asset_key():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
     ).execute_in_process()
     assert result.success
+
+
+def test_partition_key():
+    @op
+    def my_op():
+        pass
+
+    @op
+    def my_op2(_input1):
+        pass
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.has_partition_key
+            assert context.partition_key == "2020-01-01"
+
+        def handle_output(self, context, _obj):
+            assert context.has_partition_key
+            assert context.partition_key == "2020-01-01"
+
+    @job(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    def my_job():
+        my_op2(my_op())
+
+    assert my_job.execute_in_process(partition_key="2020-01-01").success

@@ -306,3 +306,18 @@ def test_engine_error():
                         },
                         instance=instance,
                     )
+
+
+def test_memoization_celery_executor(dagster_celery_worker):
+    with instance_for_test() as instance:
+        with execute_pipeline_on_celery(
+            "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
+        ) as result:
+            assert result.success
+            assert result.output_for_solid("bar_solid") == "bar"
+
+        with execute_pipeline_on_celery(
+            "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
+        ) as result:
+            assert result.success
+            assert len(result.step_event_list) == 0

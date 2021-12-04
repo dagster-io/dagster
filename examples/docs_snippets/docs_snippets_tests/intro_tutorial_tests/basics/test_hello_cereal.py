@@ -13,4 +13,4 @@ def test_tutorial_intro_tutorial_hello_world():
 
 @patch_cereal_requests
 def test_hello_cereal_solid():
-    assert len(hello_cereal(None)) == 77
+    assert len(hello_cereal()) == 77

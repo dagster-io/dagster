@@ -1,17 +1,21 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
+import {gql} from 'graphql.macro';
 
-import {AssetNode, getNodeDimensions} from './AssetNode';
+import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
+
+import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
+import {AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
-  AssetGraphQuery_repositoryOrError_Repository,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes,
-  AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
+  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
+import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
+import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 
-type Repository = AssetGraphQuery_repositoryOrError_Repository;
-type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
-type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
 
 export interface Node {
   id: string;
@@ -23,11 +27,13 @@ interface LayoutNode {
   id: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
-interface GraphData {
-  nodes: {[id: string]: Node};
-  downstream: {[upstream: string]: {[downstream: string]: string}};
-  upstream: {[downstream: string]: {[upstream: string]: boolean}};
+export interface GraphData {
+  nodes: {[assetId: string]: Node};
+  downstream: {[assetId: string]: {[childAssetId: string]: string}};
+  upstream: {[assetId: string]: {[parentAssetId: string]: boolean}};
 }
 interface IPoint {
   x: number;
@@ -39,34 +45,42 @@ export type IEdge = {
   dashed: boolean;
 };
 
-export function runForDisplay(d: AssetNode) {
-  const run = d.assetMaterializations[0]?.runOrError;
-  return run && run.__typename === 'Run' ? run : null;
-}
-
 export function assetKeyToString(key: {path: string[]}) {
   return key.path.join('>');
 }
 
-export const buildGraphData = (repository: Repository, jobName?: string) => {
-  const nodes: {[id: string]: Node} = {};
-  const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
-  const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
+export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
+  const data: GraphData = {
+    nodes: {},
+    downstream: {},
+    upstream: {},
+  };
 
-  repository.assetNodes.forEach((definition: AssetNode) => {
+  assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach((dependency) => {
-      const upstreamAssetKeyJson = JSON.stringify(dependency.upstreamAsset.assetKey.path);
-      downstream[upstreamAssetKeyJson] = {
-        ...(downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: dependency.inputName,
+    definition.dependencies.forEach(({asset, inputName}) => {
+      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      data.downstream[upstreamAssetKeyJson] = {
+        ...(data.downstream[upstreamAssetKeyJson] || {}),
+        [assetKeyJson]: inputName,
       };
-      upstream[assetKeyJson] = {
-        ...(upstream[assetKeyJson] || {}),
+      data.upstream[assetKeyJson] = {
+        ...(data.upstream[assetKeyJson] || {}),
         [upstreamAssetKeyJson]: true,
       };
     });
-    nodes[assetKeyJson] = {
+    definition.dependedBy.forEach(({asset, inputName}) => {
+      const downstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+      data.upstream[downstreamAssetKeyJson] = {
+        ...(data.upstream[downstreamAssetKeyJson] || {}),
+        [assetKeyJson]: true,
+      };
+      data.downstream[assetKeyJson] = {
+        ...(data.downstream[assetKeyJson] || {}),
+        [downstreamAssetKeyJson]: inputName,
+      };
+    });
+    data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
       hidden: !!jobName && definition.jobName !== jobName,
@@ -74,7 +88,48 @@ export const buildGraphData = (repository: Repository, jobName?: string) => {
     };
   });
 
-  return {nodes, downstream, upstream};
+  return data;
+};
+
+export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
+  const graphData: GraphData = {
+    downstream: {
+      [assetNode.id]: {},
+    },
+    nodes: {
+      [assetNode.id]: {
+        id: assetNode.id,
+        assetKey: assetNode.assetKey,
+        definition: {...assetNode, dependencies: [], dependedBy: []},
+        hidden: false,
+      },
+    },
+    upstream: {
+      [assetNode.id]: {},
+    },
+  };
+
+  for (const {asset} of assetNode.dependencies) {
+    graphData.upstream[assetNode.id][asset.id] = true;
+    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: 'a'};
+    graphData.nodes[asset.id] = {
+      id: asset.id,
+      assetKey: asset.assetKey,
+      definition: {...asset, dependencies: [], dependedBy: []},
+      hidden: false,
+    };
+  }
+  for (const {asset} of assetNode.dependedBy) {
+    graphData.upstream[asset.id] = {...graphData.upstream[asset.id], [assetNode.id]: true};
+    graphData.downstream[assetNode.id][asset.id] = 'a';
+    graphData.nodes[asset.id] = {
+      id: asset.id,
+      assetKey: asset.assetKey,
+      definition: {...asset, dependencies: [], dependedBy: []},
+      hidden: false,
+    };
+  }
+  return graphData;
 };
 
 export const graphHasCycles = (graphData: GraphData) => {
@@ -98,37 +153,56 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const layoutGraph = (graphData: GraphData) => {
+export const layoutGraph = (
+  graphData: GraphData,
+  opts: {margin: number; mini: boolean} = {
+    margin: 100,
+    mini: false,
+  },
+) => {
   const g = new dagre.graphlib.Graph();
-  const marginBase = 100;
-  const marginy = marginBase;
-  const marginx = marginBase;
-  g.setGraph({rankdir: 'TB', marginx, marginy});
+
+  g.setGraph({
+    rankdir: 'TB',
+    marginx: opts.margin,
+    marginy: opts.margin,
+    nodesep: opts.mini ? 20 : 50,
+    edgesep: opts.mini ? 10 : 10,
+    ranksep: opts.mini ? 20 : 50,
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
+  const shouldRender = (node?: Node) => node && !node.hidden && node.definition.opName;
+
   Object.values(graphData.nodes)
-    .filter((x) => !x.hidden)
+    .filter(shouldRender)
     .forEach((node) => {
-      g.setNode(node.id, getNodeDimensions(node.definition));
+      const {width, height} = getNodeDimensions(node.definition);
+      g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
+
   const foreignNodes = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
-      if (graphData.nodes[downstreamId].hidden && graphData.nodes[upstreamId].hidden) {
+      if (
+        !shouldRender(graphData.nodes[downstreamId]) &&
+        !shouldRender(graphData.nodes[upstreamId])
+      ) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-      if (graphData.nodes[downstreamId].hidden) {
+
+      if (!shouldRender(graphData.nodes[downstreamId])) {
         foreignNodes[downstreamId] = true;
-      } else if (graphData.nodes[upstreamId].hidden) {
+      } else if (!shouldRender(graphData.nodes[upstreamId])) {
         foreignNodes[upstreamId] = true;
       }
     });
   });
 
-  Object.keys(foreignNodes).forEach((upstreamId) => {
-    g.setNode(upstreamId, getForeignNodeDimensions(upstreamId));
+  Object.keys(foreignNodes).forEach((id) => {
+    g.setNode(id, getForeignNodeDimensions(id));
   });
 
   dagre.layout(g);
@@ -151,9 +225,11 @@ export const layoutGraph = (graphData: GraphData) => {
       id,
       x: dagreNode.x - dagreNode.width / 2,
       y: dagreNode.y - dagreNode.height / 2,
+      width: dagreNode.width,
+      height: dagreNode.height,
     });
-    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width);
-    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height);
+    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
+    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
   const edges: IEdge[] = [];
@@ -169,8 +245,8 @@ export const layoutGraph = (graphData: GraphData) => {
   return {
     nodes,
     edges,
-    width: maxWidth,
-    height: maxHeight + marginBase,
+    width: maxWidth + opts.margin,
+    height: maxHeight + opts.margin,
   };
 };
 
@@ -181,57 +257,80 @@ export const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-export function buildGraphComputeStatuses(graphData: GraphData) {
-  const timestamps: {[key: string]: number} = {};
-  for (const node of Object.values(graphData.nodes)) {
-    timestamps[node.id] =
-      node.definition.assetMaterializations[0]?.materializationEvent.stepStats?.startTime || 0;
-  }
-  const upstream: {[key: string]: string[]} = {};
-  Object.keys(graphData.downstream).forEach((upstreamId) => {
-    const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
+export type Status = 'good' | 'old' | 'none' | 'unknown';
 
-    downstreamIds.forEach((downstreamId) => {
-      upstream[downstreamId] = upstream[downstreamId] || [];
-      upstream[downstreamId].push(upstreamId);
-    });
-  });
-
-  const statuses: {[key: string]: Status} = {};
-
-  for (const asset of Object.values(graphData.nodes)) {
-    if (asset.definition.assetMaterializations.length === 0) {
-      statuses[asset.id] = 'none';
-    }
-  }
-  for (const asset of Object.values(graphData.nodes)) {
-    const id = JSON.stringify(asset.assetKey.path);
-    statuses[id] = findComputeStatusForId(timestamps, statuses, upstream, id);
-  }
-  return statuses;
+export interface LiveDataForNode {
+  computeStatus: Status;
+  unstartedRunIds: string[]; // run in progress and step not started
+  inProgressRunIds: string[]; // run in progress and step in progress
+  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
+  lastStepStart: number;
+}
+export interface LiveData {
+  [assetId: string]: LiveDataForNode;
 }
 
-export type Status = 'good' | 'old' | 'none';
+export const buildLiveData = (
+  graph: ReturnType<typeof buildGraphData>,
+  nodes: AssetNodeLiveFragment[],
+  inProgressRunsByStep: InProgressRunsFragment[],
+) => {
+  const data: LiveData = {};
 
-export function findComputeStatusForId(
-  timestamps: {[key: string]: number},
-  statuses: {[key: string]: Status},
-  upstream: {[key: string]: string[]},
-  id: string,
-): Status {
-  const ts = timestamps[id];
-  const upstreamIds = upstream[id] || [];
-  if (id in statuses) {
-    return statuses[id];
+  for (const node of nodes) {
+    const lastMaterialization = node.assetMaterializations[0] || null;
+    const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
+    const isForeignNode = !node.opName;
+
+    const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
+
+    data[node.id] = {
+      lastStepStart,
+      lastMaterialization,
+      inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
+      unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
+      computeStatus: isForeignNode ? 'good' : lastMaterialization ? 'unknown' : 'none',
+    };
   }
 
-  statuses[id] = upstreamIds.some((uid) => timestamps[uid] > ts)
+  for (const asset of nodes) {
+    data[asset.id].computeStatus = findComputeStatusForId(data, graph.upstream, asset.id);
+  }
+
+  return data;
+};
+
+function findComputeStatusForId(
+  data: LiveData,
+  upstream: {[assetId: string]: {[upstreamAssetId: string]: boolean}},
+  assetId: string,
+): Status {
+  if (!data[assetId]) {
+    // Currently compute status assumes foreign nodes are up to date
+    // and only shows "upstream changed" for upstreams in the same job
+    return 'good';
+  }
+  const ts = data[assetId].lastStepStart;
+  const upstreamIds = Object.keys(upstream[assetId] || {});
+  if (data[assetId].computeStatus !== 'unknown') {
+    return data[assetId].computeStatus;
+  }
+
+  return upstreamIds.some((uid) => data[uid]?.lastStepStart > ts)
     ? 'old'
-    : upstreamIds.some(
-        (uid) => findComputeStatusForId(timestamps, statuses, upstream, uid) !== 'good',
-      )
+    : upstreamIds.some((uid) => findComputeStatusForId(data, upstream, uid) !== 'good')
     ? 'old'
     : 'good';
-
-  return statuses[id];
 }
+
+export const IN_PROGRESS_RUNS_FRAGMENT = gql`
+  fragment InProgressRunsFragment on InProgressRunsByStep {
+    stepKey
+    unstartedRuns {
+      id
+    }
+    inProgressRuns {
+      id
+    }
+  }
+`;

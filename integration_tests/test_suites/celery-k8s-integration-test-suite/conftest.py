@@ -4,17 +4,16 @@ import os
 import docker
 import pytest
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
+from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 from dagster_k8s_test_infra.cluster import (  # isort:skip
     dagster_instance,
-    dagster_instance_for_user_deployments,
     dagster_instance_for_user_deployments_subchart_disabled,
     dagster_instance_for_daemon,
     define_cluster_provider_fixture,
     helm_postgres_url,
-    helm_postgres_url_for_user_deployments,
     helm_postgres_url_for_user_deployments_subchart_disabled,
     helm_postgres_url_for_daemon,
 )
@@ -42,17 +41,6 @@ def dagster_docker_image():
             build_and_tag_test_image(docker_image)
 
     return docker_image
-
-
-@pytest.fixture(scope="function")
-def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unused-argument
-    return CeleryK8sRunLauncher(
-        instance_config_map="dagster-instance",
-        postgres_password_secret="dagster-postgresql-secret",
-        dagster_home="/opt/dagster/dagster_home",
-        load_incluster_config=False,
-        kubeconfig_file=cluster_provider.kubeconfig_file,
-    )
 
 
 # See: https://stackoverflow.com/a/31526934/324449

@@ -36,7 +36,7 @@ from .types import DbtCloudOutput
             default_value=True,
             description=(
                 "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes."
+                "be yielded when the op executes."
             ),
         ),
         "asset_key_prefix": Field(
@@ -52,7 +52,7 @@ from .types import DbtCloudOutput
 )
 def dbt_cloud_run_op(context):
     """
-    This op initiates a run for a dbt Cloud job, then polls until the run completes. If the job
+    Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
     fails or is otherwised stopped before succeeding, a `dagster.Failure` exception will be raised,
     and this op will fail.
 

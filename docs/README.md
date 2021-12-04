@@ -84,14 +84,14 @@ Using markers:
 
 **Render:**
 
-Run `make snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
+Run `make snapshot` to actually get the snippets to render. This will replace the body of the code block with the code you referenced.
 
 **Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `make snapshot` once you update the underlying code to see the changes in the doc site. _This behavior is different from previous versions of the site._
 
 **Properties:**
 
 - **`file`**: The path to file relative to the `/examples/docs_snippets/docs_snippets` folder. You can use a relative path from this folder to access snippets from other parts of the codebase, but this is _highly discouraged_. Instead, you should copy the bit of code you need into `doc_snippets` and test it appropriately.
-- **`startafter`** and **`endbefore`**: Use this property to specify a code snippet in between to makers. You will need to include the markers in the source file as comments.
+- **`startafter`** and **`endbefore`**: Use this property to specify a code snippet in between two markers. You will need to include the markers in the source file as comments.
 - **`lines`**: (This is highly discouraged) Use this property to specify a range of lines to include in the code snippet. You can also pass multiple ranges separated by commas.
 
   For example:

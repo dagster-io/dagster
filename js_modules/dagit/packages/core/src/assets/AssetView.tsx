@@ -1,90 +1,182 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {QueryCountdown} from '../app/QueryCountdown';
+import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useDidLaunchEvent} from '../runs/RunUtils';
+import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
-import {assetKeyToString} from '../workspace/asset-graph/Utils';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {
+  assetKeyToString,
+  buildGraphDataFromSingleNode,
+  buildLiveData,
+  IN_PROGRESS_RUNS_FRAGMENT,
+  LiveData,
+} from '../workspace/asset-graph/Utils';
+import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 
 import {AssetMaterializations} from './AssetMaterializations';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
-import {
-  LatestMaterializationMetadata,
-  LATEST_MATERIALIZATION_METADATA_FRAGMENT,
-} from './LastMaterializationMetadata';
-import {SnapshotWarning, SNAPSHOT_WARNING_ASSET_FRAGMENT} from './SnapshotWarning';
+import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
+import {
+  AssetNodeDefinitionRunsQuery,
+  AssetNodeDefinitionRunsQueryVariables,
+} from './types/AssetNodeDefinitionRunsQuery';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
   assetKey: AssetKey;
-  asOf: string | null;
 }
 
-export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
+export interface AssetViewParams {
+  xAxis?: 'partition' | 'time';
+  asOf?: string;
+}
+
+export const AssetView: React.FC<Props> = ({assetKey}) => {
   useDocumentTitle(`Asset: ${assetKeyToString(assetKey)}`);
-  const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
-  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {
-      assetKey: {path: assetKey.path},
-      limit: 1,
-      before,
-    },
+
+  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [navigatedDirectlyToTime, setNavigatedDirectlyToTime] = React.useState(() =>
+    Boolean(params.asOf),
+  );
+
+  const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
+    variables: {assetKey: {path: assetKey.path}},
+    notifyOnNetworkStatusChange: true,
+    pollInterval: 5 * 1000,
   });
 
-  const isPartitioned = !!(
-    data?.assetOrError?.__typename === 'Asset' &&
-    data?.assetOrError?.assetMaterializations[0]?.partition
+  // Refresh immediately when a run is launched from this page
+  useDidLaunchEvent(queryResult.refetch);
+
+  const {assetOrError} = queryResult.data || queryResult.previousData || {};
+  const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
+  const definition = asset?.definition;
+  const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+
+  // Note: Todo create a better way to link an Asset to a Repo
+  const {options} = useRepositoryOptions();
+  const [repo] = definition?.jobName ? findRepoContainingPipeline(options, definition.jobName) : [];
+
+  const bonusResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
+    ASSET_NODE_DEFINITION_RUNS_QUERY,
+    {
+      skip: !definition?.jobName,
+      variables: {
+        repositorySelector: {
+          repositoryLocationName: repo?.repositoryLocation.name || '',
+          repositoryName: repo?.repository.name || '',
+        },
+      },
+      notifyOnNetworkStatusChange: true,
+      pollInterval: 5 * 1000,
+    },
   );
+
+  let liveDataByNode: LiveData = {};
+
+  if (definition) {
+    const inProgressRuns =
+      bonusResult.data?.repositoryOrError.__typename === 'Repository'
+        ? bonusResult.data.repositoryOrError.inProgressRunsByStep
+        : [];
+
+    const nodesWithLatestMaterialization = [
+      definition,
+      ...definition.dependencies.map((d) => d.asset),
+      ...definition.dependedBy.map((d) => d.asset),
+    ];
+    liveDataByNode = buildLiveData(
+      buildGraphDataFromSingleNode(definition),
+      nodesWithLatestMaterialization,
+      inProgressRuns,
+    );
+  }
 
   return (
     <div>
+      <AssetPageHeader
+        currentPath={assetKey.path}
+        right={
+          <div style={{marginTop: 4}}>
+            <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+          </div>
+        }
+      />
+
       <div>
-        {loading && (
-          <Box padding={{vertical: 20}}>
+        {queryResult.loading && !queryResult.previousData ? (
+          <Box
+            style={{height: 390}}
+            flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+          >
             <Spinner purpose="section" />
           </Box>
-        )}
-
-        {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
-          <SnapshotWarning asset={data.assetOrError} asOf={asOf} />
-        )}
-        {data?.assetOrError &&
-          data.assetOrError.__typename === 'Asset' &&
-          data.assetOrError.definition && (
-            <AssetNodeDefinition assetNode={data.assetOrError.definition} />
-          )}
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Subheading>
-            {isPartitioned ? 'Latest materialized partition' : 'Latest materialization'}
-          </Subheading>
-        </Box>
-        {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
-          <LatestMaterializationMetadata
-            latest={data.assetOrError.assetMaterializations[0]}
-            asOf={asOf}
-          />
-        )}
+        ) : navigatedDirectlyToTime ? (
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Alert
+              intent="info"
+              title={
+                <span>
+                  This is a historical view of materializations as of{' '}
+                  <span style={{fontWeight: 600}}>
+                    <Timestamp
+                      timestamp={{ms: Number(params.asOf)}}
+                      timeFormat={{showSeconds: true, showTimezone: true}}
+                    />
+                  </span>
+                  .
+                </span>
+              }
+              description={
+                <ButtonLink onClick={() => setNavigatedDirectlyToTime(false)} underline="always">
+                  {definition
+                    ? 'Show definition and latest materializations'
+                    : 'Show latest materializations'}
+                </ButtonLink>
+              }
+            />
+          </Box>
+        ) : definition ? (
+          <AssetNodeDefinition repo={repo} assetNode={definition} liveDataByNode={liveDataByNode} />
+        ) : undefined}
       </div>
-      <AssetMaterializations assetKey={assetKey} asOf={asOf} />
+      <AssetMaterializations
+        assetKey={assetKey}
+        assetLastMaterializedAt={lastMaterializedAt}
+        params={params}
+        paramsTimeWindowOnly={navigatedDirectlyToTime}
+        setParams={setParams}
+        liveData={definition ? liveDataByNode[definition.id] : undefined}
+      />
     </div>
   );
 };
 
 const ASSET_QUERY = gql`
-  query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
+  query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
         key {
           path
         }
-        ...SnapshotWarningAssetFragment
 
-        assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
-          ...LatestMaterializationMetadataFragment
+        assetMaterializations(limit: 1) {
+          materializationEvent {
+            timestamp
+          }
         }
 
         definition {
@@ -98,8 +190,21 @@ const ASSET_QUERY = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
-  ${SNAPSHOT_WARNING_ASSET_FRAGMENT}
+`;
+
+const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
+  query AssetNodeDefinitionRunsQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      __typename
+      ... on Repository {
+        id
+        name
+        inProgressRunsByStep {
+          ...InProgressRunsFragment
+        }
+      }
+    }
+  }
+  ${IN_PROGRESS_RUNS_FRAGMENT}
 `;

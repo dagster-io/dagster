@@ -8,7 +8,7 @@ BigQuery
 
 .. autoclass:: BigQueryError
 
-.. autodata:: bigquery_resource
+.. autoconfigurable:: bigquery_resource
   :annotation: ResourceDefinition
 
 .. autofunction:: bq_create_dataset
@@ -27,16 +27,16 @@ BigQuery
 Dataproc
 --------
 
-.. autofunction:: dataproc_op
+.. autoconfigurable:: dataproc_op
 
-.. autodata:: dataproc_resource
+.. autoconfigurable:: dataproc_resource
   :annotation: ResourceDefinition
 
 
 GCS
 ---
 
-.. autodata:: gcs_resource
+.. autoconfigurable:: gcs_resource
   :annotation: ResourceDefinition
 
 .. autoclass:: GCSFileHandle
@@ -45,7 +45,7 @@ GCS
 .. autodata:: gcs_file_manager
   :annotation: ResourceDefinition
 
-.. autodata:: dagster_gcp.gcs.gcs_pickle_io_manager
+.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
   :annotation: IOManagerDefinition
 
 Legacy APIs

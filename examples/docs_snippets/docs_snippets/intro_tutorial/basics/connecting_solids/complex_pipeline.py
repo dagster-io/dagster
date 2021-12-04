@@ -1,7 +1,7 @@
 import csv
 
 import requests
-from dagster import job, op
+from dagster import get_dagster_logger, job, op
 
 
 @op
@@ -28,9 +28,10 @@ def find_highest_protein_cereal(cereals):
 
 
 @op
-def display_results(context, most_calories, most_protein):
-    context.log.info(f"Most caloric cereal: {most_calories}")
-    context.log.info(f"Most protein-rich cereal: {most_protein}")
+def display_results(most_calories, most_protein):
+    logger = get_dagster_logger()
+    logger.info(f"Most caloric cereal: {most_calories}")
+    logger.info(f"Most protein-rich cereal: {most_protein}")
 
 
 @job

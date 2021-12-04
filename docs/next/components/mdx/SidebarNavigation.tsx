@@ -84,7 +84,7 @@ const useActiveId = (itemIds) => {
           }
         });
       },
-      { rootMargin: `0% 0% -95% 0%` }
+      { rootMargin: `0% 0% -50% 0%` }
     );
     itemIds.forEach((id) => {
       if (document.getElementById(id)) {
@@ -112,12 +112,14 @@ const renderItems = (items, activeId, depth) => {
           <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
             <a
               href={item.url}
-              className={cx("font-semibold text-sm text-gray-500 hover:text-gray-800 transition", {
-                "":
-                  activeId === item.url.slice(1),
-                "text-gray-500 hover:text-gray-800 transition":
-                  activeId !== item.url.slice(1),
-              })}
+              className={cx(
+                "font-semibold text-sm text-gray-500 hover:text-gray-800 transition",
+                {
+                  "text-gray-800": activeId === item.url.slice(1),
+                  "text-gray-500 hover:text-gray-800 transition":
+                    activeId !== item.url.slice(1),
+                }
+              )}
             >
               {item.title}
             </a>

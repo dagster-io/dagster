@@ -1,6 +1,8 @@
 # pylint: disable=protected-access
+# pylint: disable=unused-variable
 import dagster_aws
 import pytest
+from botocore.exceptions import ClientError
 from dagster.check import CheckError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
@@ -12,7 +14,6 @@ def test_default_launcher(
     workspace,
     run,
     subnet,
-    network_interface,
     image,
     environment,
     task_long_arn_format,
@@ -48,7 +49,6 @@ def test_default_launcher(
     task_arn = list(set(tasks).difference(initial_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
     assert subnet.id in str(task)
-    assert network_interface.id in str(task)
     assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
     # The run is tagged with info about the ECS task
@@ -81,6 +81,8 @@ def test_launching_custom_task_definition(
         family="override",
         containerDefinitions=[{"name": container_name, "image": "hello_world:latest"}],
         networkMode="bridge",
+        memory="512",
+        cpu="256",
     )["taskDefinition"]
     task_definition_arn = task_definition["taskDefinitionArn"]
     family = task_definition["family"]
@@ -170,4 +172,72 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     with pytest.raises(Exception, match="boom"):
         monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", exploding_describe_tasks)
+        instance.launch_run(run.run_id, workspace)
+
+
+@pytest.mark.parametrize("assign_public_ip", [True, False])
+def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_ip):
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+    attachment = task.get("attachments")[0]
+    details = dict([(detail.get("name"), detail.get("value")) for detail in attachment["details"]])
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    attributes = eni.association_attribute or {}
+
+    assert bool(attributes.get("PublicIp")) == assign_public_ip
+
+
+def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
+    # By default
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task.get("memory") == task_definition.get("memory")
+    assert not task.get("overrides").get("memory")
+    assert task.get("cpu") == task_definition.get("cpu")
+    assert not task.get("overrides").get("cpu")
+
+    # Override memory
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.add_run_tags(run.run_id, {"ecs/memory": "1024"})
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task.get("memory") == task_definition.get("memory")
+    assert task.get("overrides").get("memory") == "1024"
+    assert task.get("cpu") == task_definition.get("cpu")
+    assert not task.get("overrides").get("cpu")
+
+    # Also override cpu
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.add_run_tags(run.run_id, {"ecs/cpu": "512"})
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task.get("memory") == task_definition.get("memory")
+    assert task.get("overrides").get("memory") == "1024"
+    assert task.get("cpu") == task_definition.get("cpu")
+    assert task.get("overrides").get("cpu") == "512"
+
+    # Override with invalid constraints
+    instance.add_run_tags(run.run_id, {"ecs/memory": "999"})
+    with pytest.raises(ClientError):
         instance.launch_run(run.run_id, workspace)

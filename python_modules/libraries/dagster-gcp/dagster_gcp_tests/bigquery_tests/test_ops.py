@@ -305,7 +305,7 @@ def test_gcs_load():
     )
     assert result.success
 
-    values = result.result_for_node("query_op").output_value()
+    values = result.output_for_node("query_op")
     assert values[0].to_dict() == {"string_field_0": {0: "Alabama"}, "string_field_1": {0: "AL"}}
 
     assert not dataset_exists(dataset)

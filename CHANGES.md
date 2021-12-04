@@ -1,5 +1,113 @@
 # Changelog
 
+# 0.13.10
+
+### New
+
+- `run_id`, `job_name`, and `op_exception` have been added as parameters to `build_hook_context`.
+- You can now define inputs on the top-level job / graph. Those inputs can be can configured as an inputs key on the top level of your run config. For example, consider the following job:
+```python
+from dagster import job, op
+
+@op
+def add_one(x):
+    return x + 1
+
+@job
+def my_job(x):
+    add_one(x)
+```
+You can now add config for x at the top level of my run_config like so:
+```python
+run_config = {
+  "inputs": {
+    "x": {
+      "value": 2
+    }
+  }
+}
+```
+
+- You can now create partitioned jobs and reference a run’s partition from inside an op body or IOManager load_input or handle_output method, without threading partition values through config. For example, where previously you might have written:
+```python
+@op(config_schema={"partition_key": str})
+def my_op(context):
+    print("partition_key: " + context.op_config["partition_key"])
+
+@static_partitioned_config(partition_keys=["a", "b"])
+def my_static_partitioned_config(partition_key: str):
+    return {"ops": {"my_op": {"config": {"partition_key": partition_key}}}}
+
+@job(config=my_static_partitioned_config)
+def my_partitioned_job():
+    my_op()
+```
+You can now write:
+```python
+@op
+def my_op(context):
+    print("partition_key: " + context.partition_key)
+
+@job(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+def my_partitioned_job():
+    my_op()
+```
+- Added `op_retry_policy` to `@job`. You can also specify `op_retry_policy` when invoking `to_job` on graphs.
+- [dagster-fivetran] The `fivetran_sync_op` will now be rendered with a fivetran tag in Dagit.
+- [dagster-fivetran] The `fivetran_sync_op` now supports producing `AssetMaterializations` for each table updated during the sync. To this end, it now outputs a structured `FivetranOutput` containing this schema information, instead of an unstructured dictionary.
+- [dagster-dbt] `AssetMaterializations` produced from the dbt_cloud_run_op now include a link to the dbt Cloud docs for each asset (if docs were generated for that run).
+- You can now use the `@schedule` decorator with `RunRequest` - based evaluation functions.  For example, you can now write:
+```python
+@schedule(cron_schedule="* * * * *", job=my_job)
+def my_schedule(context):
+    yield RunRequest(run_key="a", ...)
+    yield RunRequest(run_key="b", ...)
+```
+- [dagster-k8s] You may now configure instance-level `python_logs` settings using the [Dagster Helm chart](https://github.com/dagster-io/dagster/tree/master/helm/dagster).
+- [dagster-k8s] You can now manage a secret that contains the Celery broker and backend URLs, rather than the Helm chart
+- [Dagster-slack] Improved the default messages in `make_slack_on_run_failure_sensor` to use Slack layout blocks and include clickable link to Dagit. Previously, it sent a plain text message.
+
+### Dagit
+
+- Made performance improvements to the Run page.
+- The Run page now has a pane control that splits the Gantt view and log table evenly on the screen.
+- The Run page now includes a list of succeeded steps in the status panel next to the Gantt chart.
+- In the Schedules list, execution timezone is now shown alongside tick timestamps.
+- If no repositories are successfully loaded when viewing Dagit, we now redirect to /workspace to quickly surface errors to the user.
+- Increased the size of the reload repository button
+- Repositories that had been hidden from the left nav became inaccessible when loaded in a workspace containing only that repository. Now, when loading a workspace containing a single repository, jobs for that repository will always appear in the left nav.
+- In the Launchpad, selected ops were incorrectly hidden in the lower right panel.
+- Repaired asset search input keyboard interaction.
+- In the Run page, the list of previous runs was incorrectly ordered based on run ID, and is now ordered by start time.
+- Using keyboard commands with the / key (e.g. toggling commented code) in the config editor
+
+### Bugfixes
+
+- Previously, if an asset in software-defined assets job depended on a `ForeignAsset`, the repository containing that job would fail to load.
+- Incorrectly triggered global search. This has been fixed.
+- Fix type on tags of EMR cluster config (thanks [Chris](https://github.com/cdchan))!
+- Fixes to the tests in dagster new-project , which were previously using an outdated result API (thanks [Vašek](https://github.com/illagrenan))!
+
+### Experimental
+
+- You can now mount AWS Secrets Manager secrets as environment variables in runs launched by the `EcsRunLauncher`.
+- You can now specify the CPU and Memory for runs launched by the `EcsRunLauncher`.
+- The `EcsRunLauncher` now dynamically chooses between assigning a public IP address or not based on whether it’s running in a public or private subnet.
+- The `@asset` and `@multi_asset` decorator now return `AssetsDefinition` objects instead of `OpDefinitions`
+
+### Documentation
+
+- The tutorial now uses `get_dagster_logger` instead of `context.log`.
+- In the API docs, most configurable objects (such as ops and resources) now have their configuration schema documented in-line.
+- Removed typo from CLI readme (thanks Kan (https://github.com/zkan))!
+
+
+# 0.13.9
+
+### New
+
+- Memoization can now be used with the multiprocess, k8s, celery-k8s, and dask executors.
+
 # 0.13.8
 
 ### New

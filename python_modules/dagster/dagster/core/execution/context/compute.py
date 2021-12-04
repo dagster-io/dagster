@@ -199,6 +199,19 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """SolidDefinition: The current solid definition."""
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
 
+    @property
+    def has_partition_key(self) -> bool:
+        """Whether the current run is a partitioned run"""
+        return self._step_execution_context.has_partition_key
+
+    @property
+    def partition_key(self) -> str:
+        """The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+        """
+        return self._step_execution_context.partition_key
+
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
 

@@ -12,10 +12,14 @@ def test_describe_task_definition(ecs):
         family="dagster",
         containerDefinitions=[{"image": "hello_world:latest"}],
         networkMode="bridge",
+        memory="512",
+        cpu="256",
     )
     dagster2 = ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[{"image": "hello_world:latest"}],
+        memory="512",
+        cpu="256",
     )
 
     # It gets the latest revision
@@ -39,7 +43,9 @@ def test_describe_tasks(ecs):
     assert not ecs.describe_tasks(tasks=["invalid"])["tasks"]
     assert not ecs.describe_tasks(cluster="dagster", tasks=["invalid"])["tasks"]
 
-    ecs.register_task_definition(family="bridge", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="bridge", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
 
     default = ecs.run_task(taskDefinition="bridge")
     default_arn = default["tasks"][0]["taskArn"]
@@ -81,7 +87,9 @@ def test_list_tags_for_resource(ecs):
         ecs.list_tags_for_resource(resourceArn=invalid_arn)
 
     tags = [{"key": "foo", "value": "bar"}, {"key": "fizz", "value": "buzz"}]
-    ecs.register_task_definition(family="dagster", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="dagster", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
     arn = ecs.run_task(taskDefinition="dagster")["tasks"][0]["taskArn"]
 
     assert not ecs.list_tags_for_resource(resourceArn=arn)["tags"]
@@ -103,9 +111,21 @@ def test_list_task_definitions(ecs):
     def arn(task_definition):
         return task_definition["taskDefinition"]["taskDefinitionArn"]
 
-    dagster1 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
-    dagster2 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
-    other1 = arn(ecs.register_task_definition(family="other", containerDefinitions=[]))
+    dagster1 = arn(
+        ecs.register_task_definition(
+            family="dagster", containerDefinitions=[], memory="512", cpu="256"
+        )
+    )
+    dagster2 = arn(
+        ecs.register_task_definition(
+            family="dagster", containerDefinitions=[], memory="512", cpu="256"
+        )
+    )
+    other1 = arn(
+        ecs.register_task_definition(
+            family="other", containerDefinitions=[], memory="512", cpu="256"
+        )
+    )
 
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == 3
     assert dagster1 in ecs.list_task_definitions()["taskDefinitionArns"]
@@ -116,8 +136,12 @@ def test_list_task_definitions(ecs):
 def test_list_tasks(ecs):
     assert not ecs.list_tasks()["taskArns"]
 
-    ecs.register_task_definition(family="dagster", containerDefinitions=[], networkMode="bridge")
-    ecs.register_task_definition(family="other", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="dagster", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
+    ecs.register_task_definition(
+        family="other", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
 
     def arn(response):
         return response["tasks"][0]["taskArn"]
@@ -163,33 +187,57 @@ def test_put_account_setting(ecs):
 
 
 def test_register_task_definition(ecs):
-    response = ecs.register_task_definition(family="dagster", containerDefinitions=[])
+    # Without memory
+    with pytest.raises(ClientError):
+        ecs.register_task_definition(family="dagster", containerDefinitions=[])
+
+    # Without cpu
+    with pytest.raises(ClientError):
+        ecs.register_task_definition(family="dagster", containerDefinitions=[], memory="512")
+
+    # With an invalid memory/cpu combination
+    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+    with pytest.raises(ClientError):
+        ecs.register_task_definition(
+            family="dagster", containerDefinitions=[], memory="512", cpu="1"
+        )
+
+    response = ecs.register_task_definition(
+        family="dagster", containerDefinitions=[], memory="512", cpu="256"
+    )
     assert response["taskDefinition"]["family"] == "dagster"
     assert response["taskDefinition"]["revision"] == 1
     assert response["taskDefinition"]["taskDefinitionArn"].endswith("dagster:1")
 
-    response = ecs.register_task_definition(family="other", containerDefinitions=[])
+    response = ecs.register_task_definition(
+        family="other", containerDefinitions=[], memory="512", cpu="256"
+    )
     assert response["taskDefinition"]["family"] == "other"
     assert response["taskDefinition"]["revision"] == 1
     assert response["taskDefinition"]["taskDefinitionArn"].endswith("other:1")
 
-    response = ecs.register_task_definition(family="dagster", containerDefinitions=[])
+    response = ecs.register_task_definition(
+        family="dagster", containerDefinitions=[], memory="512", cpu="256"
+    )
     assert response["taskDefinition"]["family"] == "dagster"
     assert response["taskDefinition"]["revision"] == 2
     assert response["taskDefinition"]["taskDefinitionArn"].endswith("dagster:2")
 
     response = ecs.register_task_definition(
-        family="dagster", containerDefinitions=[{"image": "hello_world:latest"}]
+        family="dagster",
+        containerDefinitions=[{"image": "hello_world:latest"}],
+        memory="512",
+        cpu="256",
     )
     assert response["taskDefinition"]["containerDefinitions"][0]["image"] == "hello_world:latest"
 
     response = ecs.register_task_definition(
-        family="dagster", containerDefinitions=[], networkMode="bridge"
+        family="dagster", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
     )
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
 
-def test_run_task(ecs, subnet):
+def test_run_task(ecs, ec2, subnet):
     with pytest.raises(ParamValidationError):
         # The task doesn't exist
         ecs.run_task()
@@ -198,8 +246,12 @@ def test_run_task(ecs, subnet):
         # The task definition doesn't exist
         ecs.run_task(taskDefinition="dagster")
 
-    ecs.register_task_definition(family="awsvpc", containerDefinitions=[], networkMode="awsvpc")
-    ecs.register_task_definition(family="bridge", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="awsvpc", containerDefinitions=[], networkMode="awsvpc", memory="512", cpu="256"
+    )
+    ecs.register_task_definition(
+        family="bridge", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
 
     response = ecs.run_task(taskDefinition="bridge")
     assert len(response["tasks"]) == 1
@@ -212,6 +264,10 @@ def test_run_task(ecs, subnet):
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
     response = ecs.run_task(taskDefinition="bridge", cluster=ecs._cluster_arn("dagster"))
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
+
+    # It includes memory and cpu
+    assert response["tasks"][0]["cpu"] == "256"
+    assert response["tasks"][0]["memory"] == "512"
 
     response = ecs.run_task(taskDefinition="bridge", count=2)
     assert len(response["tasks"]) == 2
@@ -228,14 +284,7 @@ def test_run_task(ecs, subnet):
             networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
         )
 
-    #  The subnet exists but there's no network interface
-    with pytest.raises(ClientError):
-        ecs.run_task(
-            taskDefinition="awsvpc",
-            networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
-        )
-
-    network_interface = subnet.create_network_interface()
+    # With a real subnet
     response = ecs.run_task(
         taskDefinition="awsvpc",
         networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
@@ -245,8 +294,22 @@ def test_run_task(ecs, subnet):
     assert "awsvpc" in response["tasks"][0]["taskDefinitionArn"]
     attachment = response["tasks"][0]["attachments"][0]
     assert attachment["type"] == "ElasticNetworkInterface"
-    assert {"name": "subnetId", "value": subnet.id} in attachment["details"]
-    assert {"name": "networkInterfaceId", "value": network_interface.id} in attachment["details"]
+    details = dict(detail.values() for detail in attachment["details"])
+    assert details["subnetId"] == subnet.id
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    assert not eni.association_attribute
+
+    # When assigning a public IP
+    response = ecs.run_task(
+        taskDefinition="awsvpc",
+        networkConfiguration={
+            "awsvpcConfiguration": {"subnets": [subnet.id], "assignPublicIp": "ENABLED"}
+        },
+    )
+    details = dict(detail.values() for detail in response["tasks"][0]["attachments"][0]["details"])
+    assert details["subnetId"] == subnet.id
+    eni = ec2.NetworkInterface(details["networkInterfaceId"])
+    assert eni.association_attribute.get("PublicIp")
 
     # containers and overrides are included
     ecs.register_task_definition(
@@ -259,6 +322,8 @@ def test_run_task(ecs, subnet):
             }
         ],
         networkMode="bridge",
+        memory="512",
+        cpu="256",
     )
     response = ecs.run_task(taskDefinition="container")
     assert response["tasks"][0]["containers"]
@@ -272,13 +337,27 @@ def test_run_task(ecs, subnet):
     )
     assert response["tasks"][0]["overrides"]["containerOverrides"][0]["command"] == ["ls"]
 
+    # With invalid memory and cpu overrides
+    with pytest.raises(ClientError):
+        ecs.run_task(
+            taskDefinition="container",
+            overrides={"cpu": "7"},
+        )
+
+    # With valid memory and cpu overrides
+    response = ecs.run_task(taskDefinition="container", overrides={"cpu": "512", "memory": "1024"})
+    assert response["tasks"][0]["overrides"]["cpu"] == "512"
+    assert response["tasks"][0]["overrides"]["memory"] == "1024"
+
 
 def test_stop_task(ecs):
     with pytest.raises(ClientError):
         # The task doesn't exist
         ecs.stop_task(task=ecs._task_arn("invalid"))
 
-    ecs.register_task_definition(family="bridge", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="bridge", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
     task_arn = ecs.run_task(taskDefinition="bridge")["tasks"][0]["taskArn"]
 
     assert ecs.describe_tasks(tasks=[task_arn])["tasks"][0]["lastStatus"] == "RUNNING"
@@ -298,7 +377,9 @@ def test_tag_resource(ecs):
         # The task doesn't exist
         ecs.tag_resource(resourceArn=invalid_arn, tags=tags)
 
-    ecs.register_task_definition(family="dagster", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(
+        family="dagster", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
+    )
     arn = ecs.run_task(taskDefinition="dagster")["tasks"][0]["taskArn"]
 
     ecs.tag_resource(resourceArn=arn, tags=tags)
