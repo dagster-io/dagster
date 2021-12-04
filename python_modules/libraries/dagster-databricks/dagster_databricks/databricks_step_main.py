@@ -38,12 +38,13 @@ class DBFSHandler(logging.Handler):
         self._records_filepath = records_filepath
 
     def emit(self, record):
-        print("--------------")
-        print(self._all_records)
-        print(self._records_filepath)
+        import time
+
+        start = time.time()
         self._all_records.append(record)
         with open(self._records_filepath, "wb") as handle:
             handle.write(serialize_dagster_log_records(self._all_records))
+        print("TIME: ", time.time() - start)
 
 
 def main(

@@ -212,9 +212,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     # we get all available records on each poll, but we only want to process the
                     # ones we haven't seen before
                     for record in all_records[processed_records:]:
-                        dagster_event = getattr(record, DAGSTER_META_KEY)[
-                            DAGSTER_META_DAGSTER_EVENT_KEY
-                        ]
+                        dagster_meta = getattr(record, DAGSTER_META_KEY)
+                        dagster_event = dagster_meta.get("dagster_event")
                         if dagster_event:
                             yield dagster_event
                         log.dagster_handler.emit_dagster_record(record)
@@ -241,7 +240,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error
         except HTTPError as e:
-            print("HAD ERROR")
             if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
                 return []
 

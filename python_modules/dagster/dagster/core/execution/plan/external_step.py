@@ -1,9 +1,11 @@
 import os
 import pickle
 import subprocess
+import copy
 import sys
 import logging
 from typing import TYPE_CHECKING, Iterator, Optional, cast, List
+from dagster.core.log_manager import DAGSTER_META_KEY
 
 from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
@@ -208,28 +210,25 @@ def run_step_from_ref(
     return core_dagster_event_sequence_for_step(step_context)
 
 
-def serialize_dagster_log_records(records: List[logging.LogRecord]) -> bytes:
-    """Serialize a Dagster-produced log record"""
-    from dagster.core.log_manager import DAGSTER_META_KEY, DAGSTER_META_DAGSTER_EVENT_KEY
+def _pack_dagster_log_record(record: logging.LogRecord) -> logging.LogRecord:
+    packed_record = copy.deepcopy(record)
+    packed_record.__dict__[DAGSTER_META_KEY] = serialize_value(record.__dict__[DAGSTER_META_KEY])
+    return packed_record
 
-    for record in records:
-        # serialize DagsterEvent into a dictionary before pickling
-        dagster_meta = getattr(record, DAGSTER_META_KEY)
-        dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY] = serialize_value(
-            dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY]
-        )
-    return pickle.dumps(records)
+
+def serialize_dagster_log_records(records: List[logging.LogRecord]) -> bytes:
+    """Serialize a list of Dagster-produced log records"""
+    return pickle.dumps([_pack_dagster_log_record(r) for r in records])
+
+
+def _unpack_dagster_log_record(record: logging.LogRecord) -> logging.LogRecord:
+    unpacked_record = copy.deepcopy(record)
+    unpacked_record.__dict__[DAGSTER_META_KEY] = deserialize_value(
+        record.__dict__[DAGSTER_META_KEY]
+    )
+    return unpacked_record
 
 
 def deserialize_dagster_log_records(data: bytes) -> List[logging.LogRecord]:
-    """Deserialize a Dagster-produced log record"""
-    from dagster.core.log_manager import DAGSTER_META_KEY, DAGSTER_META_DAGSTER_EVENT_KEY
-
-    records = pickle.loads(data)
-    for record in records:
-        # rehydrate serialized DagsterEvents
-        dagster_meta = getattr(record, DAGSTER_META_KEY)
-        dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY] = deserialize_value(
-            dagster_meta[DAGSTER_META_DAGSTER_EVENT_KEY]
-        )
-    return records
+    """Deserialize a list of Dagster-produced log records"""
+    return [_unpack_dagster_log_record(r) for r in pickle.loads(data)]
