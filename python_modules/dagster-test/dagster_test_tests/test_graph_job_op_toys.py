@@ -26,6 +26,7 @@ from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource
 from dagster_test.graph_job_op_toys.retries import retry
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy
+from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets_job
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
@@ -293,3 +294,7 @@ def test_retry_job(executor_def):
         .execute_in_process()
         .success
     )
+
+
+def test_software_defined_assets_job():
+    assert software_defined_assets_job.execute_in_process().success
