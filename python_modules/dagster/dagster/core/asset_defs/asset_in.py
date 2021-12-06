@@ -10,7 +10,6 @@ class AssetIn(
             ("asset_key", Optional[AssetKey]),
             ("metadata", Optional[Mapping[str, Any]]),
             ("namespace", Optional[str]),
-            ("managed", bool),
         ],
     )
 ):
@@ -19,7 +18,6 @@ class AssetIn(
         asset_key: Optional[AssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         namespace: Optional[str] = None,
-        managed: bool = True,
     ):
         check.invariant(
             not (asset_key and namespace),
@@ -31,5 +29,4 @@ class AssetIn(
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             namespace=check.opt_str_param(namespace, "namespace"),
-            managed=managed,
         )

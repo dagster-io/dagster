@@ -218,7 +218,7 @@ def build_asset_ins(
     all_input_names = set(input_param_names) | asset_ins.keys()
 
     for in_key, asset_in in asset_ins.items():
-        if in_key not in input_param_names and asset_in.managed:
+        if in_key not in input_param_names:
             raise DagsterInvalidDefinitionError(
                 f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
                 "of the arguments to the decorated function"
@@ -232,7 +232,7 @@ def build_asset_ins(
             asset_key = asset_ins[input_name].asset_key
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
-            dagster_type = None if asset_ins[input_name].managed else Nothing
+            dagster_type = None
         else:
             metadata = {}
             namespace = None
