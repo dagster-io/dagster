@@ -682,9 +682,7 @@ class DagsterInstance:
             if snapshot.lineage_snapshot
             else None
         )
-        return HistoricalPipeline(
-            self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id, parent_snapshot
-        )
+        return HistoricalPipeline(snapshot, snapshot_id, parent_snapshot)
 
     def has_historical_pipeline(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
