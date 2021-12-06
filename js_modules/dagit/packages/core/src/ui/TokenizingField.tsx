@@ -54,13 +54,16 @@ function findProviderByToken(token: string, providers: SuggestionProvider[]) {
   return providers.find((p) => p.token.toLowerCase() === token.toLowerCase());
 }
 
-export function tokenizedValuesFromString(str: string, providers: SuggestionProvider[]) {
+export const tokenizedValuesFromString = (str: string, providers: SuggestionProvider[]) => {
   if (str === '') {
     return [];
   }
   const tokens = str.split(',');
-  return tokens.map((token) => tokenizedValueFromString(token, providers));
-}
+  return tokenizedValuesFromStringArray(tokens, providers);
+};
+
+export const tokenizedValuesFromStringArray = (tokens: string[], providers: SuggestionProvider[]) =>
+  tokens.map((token) => tokenizedValueFromString(token, providers));
 
 export function tokenizedValueFromString(
   str: string,
@@ -80,12 +83,11 @@ export function tokenizedValueFromString(
   return {value: str};
 }
 
-export function stringFromValue(value: TokenizingFieldValue[]) {
-  return value
-    .filter((v) => v.value !== '')
-    .map((v) => (v.token ? `${v.token}:${v.value}` : v.value))
-    .join(',');
-}
+export const tokensAsStringArray = (value: TokenizingFieldValue[]) =>
+  value.filter((v) => v.value !== '').map((v) => (v.token ? `${v.token}:${v.value}` : v.value));
+
+export const stringFromValue = (value: TokenizingFieldValue[]) =>
+  tokensAsStringArray(value).join(',');
 
 /** Provides a text field with typeahead autocompletion for key value pairs,
 where the key is one of a known set of "suggestion provider tokens". Provide
