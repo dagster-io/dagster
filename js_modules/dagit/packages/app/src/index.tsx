@@ -7,7 +7,7 @@ import {errorLink} from '@dagit/core/app/AppError';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import {ContentRoot} from '@dagit/core/app/ContentRoot';
-import {logLink, logTelemetryLink, timeStartLink} from '@dagit/core/app/apolloLinks';
+import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
 import {ColorsWIP} from '@dagit/core/ui/Colors';
 import {IconWIP, IconWrapper} from '@dagit/core/ui/Icon';
 import * as React from 'react';
@@ -16,15 +16,23 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {extractInitializationData} from './extractInitializationData';
+import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix} = extractInitializationData();
+const {pathPrefix, telemetryEnabled} = extractInitializationData();
 
-const apolloLinks = [logTelemetryLink, logLink, errorLink, timeStartLink];
+const apolloLinks = [logLink, errorLink, timeStartLink];
+
+console.log(`TELEMETRY_ENABLED: ${telemetryEnabled}`);
+if (telemetryEnabled) {
+  console.log('ENTERED telemetryEnabled IF STMT');
+  apolloLinks.unshift(telemetryLink(pathPrefix));
+}
 
 const config = {
   apolloLinks,
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
+  telemetryEnabled: telemetryEnabled,
 };
 
 const appCache = createAppCache();

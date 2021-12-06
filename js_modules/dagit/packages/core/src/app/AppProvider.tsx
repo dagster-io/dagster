@@ -112,6 +112,7 @@ interface Props {
   config: {
     apolloLinks: ApolloLink[];
     basePath?: string;
+    telemetryEnabled?: boolean;
     headers?: {[key: string]: string};
     origin: string;
   };
@@ -119,7 +120,7 @@ interface Props {
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {apolloLinks, basePath = '', headers = {}, origin} = config;
+  const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -159,8 +160,9 @@ export const AppProvider: React.FC<Props> = (props) => {
     () => ({
       basePath,
       rootServerURI,
+      telemetryEnabled,
     }),
-    [basePath, rootServerURI],
+    [basePath, rootServerURI, telemetryEnabled],
   );
 
   return (
