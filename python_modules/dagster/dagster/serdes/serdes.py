@@ -138,7 +138,6 @@ def _whitelist_for_serdes(
             _check_serdes_tuple_class_invariants(klass, sig_params)
             whitelist_map.register_tuple(klass.__name__, cast(Type[NamedTuple], klass), serializer, sig_params)
         else:
-            from IPython import embed; embed()
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 
         return klass
