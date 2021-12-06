@@ -4,7 +4,7 @@ import subprocess
 import textwrap
 from typing import Any, Callable, List, Mapping, Optional
 
-from dagster import OpDefinition, Output, SolidExecutionContext, check
+from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, check
 from dagster.core.asset_defs import AssetIn, asset
 
 
@@ -55,9 +55,9 @@ def _dbt_node_to_asset(
     @asset(
         name=node_info["name"],
         description=description,
-        ins={
-            dep_name.split(".")[-1]: AssetIn(managed=False)
-            for dep_name in node_info["depends_on"]["nodes"]
+        # ins={dep_name.split(".")[-1]: AssetIn() for dep_name in node_info["depends_on"]["nodes"]},
+        non_argument_deps={
+            AssetKey(dep_name.split(".")[-1]) for dep_name in node_info["depends_on"]["nodes"]
         },
         required_resource_keys={"dbt"},
         io_manager_key=io_manager_key,

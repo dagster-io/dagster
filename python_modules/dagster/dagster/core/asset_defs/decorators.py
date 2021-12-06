@@ -217,7 +217,7 @@ def build_asset_ins(
 
     all_input_names = set(input_param_names) | asset_ins.keys()
 
-    for in_key, asset_in in asset_ins.items():
+    for in_key in asset_ins.keys():
         if in_key not in input_param_names:
             raise DagsterInvalidDefinitionError(
                 f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
