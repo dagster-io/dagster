@@ -5,7 +5,7 @@ import textwrap
 from typing import Any, Callable, List, Mapping, Optional
 
 from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, check
-from dagster.core.asset_defs import AssetIn, asset
+from dagster.core.asset_defs import asset
 
 
 def _load_manifest_for_project(
