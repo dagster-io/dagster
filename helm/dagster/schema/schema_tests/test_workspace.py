@@ -151,7 +151,7 @@ def test_workspace_server_location_name_renders_from_helm_dagit(template: HelmTe
     assert len(grpc_servers) == len(servers)
 
     for grpc_server, server in zip(grpc_servers, servers):
-        assert grpc_servers["grpc_server"]["host"] == server.host
+        assert grpc_server["grpc_server"]["host"] == server.host
         assert grpc_server["grpc_server"]["port"] == server.port
 
     assert grpc_servers[0]["grpc_server"]["location_name"] == servers[0].host
