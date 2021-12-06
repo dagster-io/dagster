@@ -94,7 +94,7 @@ def test_index_view_at_path_prefix():
             res = client.get("/dagster-path/")
             assert res.status_code == 200
             assert b"You need to enable JavaScript to run this app" in res.data
-            assert b'{"pathPrefix": "/dagster-path"}' in res.data
+            assert b'"pathPrefix": "/dagster-path"' in res.data
 
 
 def test_graphql_view():
