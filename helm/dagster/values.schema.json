@@ -168,6 +168,17 @@
                 "port": {
                     "title": "Port",
                     "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

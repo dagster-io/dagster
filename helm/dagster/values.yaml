@@ -53,6 +53,7 @@ dagit:
     servers:
       - host: "k8s-example-user-code-1"
         port: 3030
+        name: "user-code-example"
 
   # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
