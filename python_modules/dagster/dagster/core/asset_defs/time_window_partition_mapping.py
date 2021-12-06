@@ -80,6 +80,7 @@ class TimeWindowPartitionMapping(PartitionMapping):
             to_end_dt = round_datetime_to_period(from_end_dt, to_period)
         elif to_period < from_period:
             to_start_dt = from_start_dt
+            # TODO: daylight savings
             to_end_dt = (from_end_dt + from_period.delta) - to_period.delta
         else:
             to_start_dt = from_start_dt
@@ -88,6 +89,55 @@ class TimeWindowPartitionMapping(PartitionMapping):
         return PartitionKeyRange(
             to_start_dt.strftime(to_partitions_def.fmt),
             to_end_dt.strftime(to_partitions_def.fmt),
+        )
+
+
+class RollingWindowTimeWindowPartitionMapping(PartitionMapping):
+    """
+    Partition N in a child asset depends on the partitions in the inclusive range [N - start_offset,
+    N - end_offset in the parent asset].
+
+    For example, if the assets have a daily partitioning, and start_offset and end_offset are both
+    1, then partition 2021-12-06 in the child asset would map to 2021-12-05 in the parent asset.
+    """
+
+    start_offset: int
+    end_offset: int
+
+    def get_parent_partitions(
+        self,
+        child_partitions_def: PartitionsDefinition,
+        parent_partitions_def: PartitionsDefinition,
+        child_partition_key_range: PartitionKeyRange,
+    ) -> PartitionKeyRange:
+        assert child_partitions_def.schedule_type == parent_partitions_def.schedule_type
+        return self._shift_partition_key_range(
+            child_partitions_def, child_partition_key_range, -self.start_offset, -self.end_offset
+        )
+
+    def get_child_partitions(
+        self,
+        child_partitions_def: PartitionsDefinition,
+        parent_partitions_def: PartitionsDefinition,
+        parent_partition_key_range: PartitionKeyRange,
+    ) -> PartitionKeyRange:
+        assert child_partitions_def.schedule_type == parent_partitions_def.schedule_type
+        return self._shift_partition_key_range(
+            child_partitions_def, parent_partition_key_range, self.start_offset, self.end_offset
+        )
+
+    def _shift_partition_key_range(
+        self, partitions_def, partition_key_range, start_shift, end_shift
+    ):
+        child_start_dt = datetime.strptime(partition_key_range.start, partitions_def.fmt)
+        child_end_dt = datetime.strptime(partition_key_range.end, partitions_def.fmt)
+
+        parent_start_dt = child_start_dt - partitions_def.delta * start_shift
+        parent_end_dt = child_end_dt - partitions_def.delta * end_shift
+
+        return PartitionKeyRange(
+            parent_start_dt.strftime(partitions_def.fmt),
+            parent_end_dt.strftime(partitions_def.fmt),
         )
 
 
