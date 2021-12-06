@@ -131,13 +131,14 @@ def _whitelist_for_serdes(
             serializer is None or issubclass(serializer, EnumSerializer)
         ):
             whitelist_map.register_enum(klass.__name__, klass, serializer)
-        elif issubclass(klass, NamedTuple) and (
+        elif issubclass(klass, tuple) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
             sig_params = signature(klass.__new__).parameters
             _check_serdes_tuple_class_invariants(klass, sig_params)
-            whitelist_map.register_tuple(klass.__name__, klass, serializer, sig_params)
+            whitelist_map.register_tuple(klass.__name__, cast(Type[NamedTuple], klass), serializer, sig_params)
         else:
+            from IPython import embed; embed()
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 
         return klass
