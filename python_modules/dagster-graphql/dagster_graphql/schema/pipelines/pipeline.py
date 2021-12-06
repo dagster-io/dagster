@@ -37,12 +37,14 @@ from ..solids import (
     build_solid_handles,
     build_solids,
 )
+from ..inputs import GrapheneAssetKeyInput
 from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
+from dagster.core.definitions.events import AssetKey
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
@@ -568,7 +570,10 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
-    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetNodes = graphene.Field(
+        non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode"),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -608,13 +613,26 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_repository_location(handle.location_name)
         return GrapheneRepository(location.get_repository(handle.repository_name), location)
 
-    def resolve_assetNodes(self, graphene_info):
+    def resolve_assetNodes(self, graphene_info, **kwargs):
         from ..asset_graph import GrapheneAssetNode
 
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
+
+        asset_keys = kwargs.get("assetKeys")
+        if asset_keys:
+            asset_keys = [AssetKey.from_graphql_input(asset_key) for asset_key in asset_keys]
+            print("x" * 100)
+            print(asset_keys)
+            filtered_asset_nodes = []
+            for asset_node in asset_nodes:
+                if asset_node.asset_key in asset_keys:
+                    print("matching asset found")
+                    filtered_asset_nodes.append(GrapheneAssetNode(repository, asset_node))
+            return filtered_asset_nodes
+
         return [
             GrapheneAssetNode(repository, external_asset_node)
             for external_asset_node in asset_nodes or []
