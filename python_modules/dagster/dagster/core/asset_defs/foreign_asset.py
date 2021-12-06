@@ -12,8 +12,10 @@ class ForeignAsset(NamedTuple):
         metadata (Optional[Any]): Metadata associated with the asset.
         io_manager_key (str): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
+        description (Optional[str]): The description of the asset.
     """
 
     key: AssetKey
     metadata: Optional[Any] = None
     io_manager_key: str = "io_manager"
+    description: Optional[str] = None
