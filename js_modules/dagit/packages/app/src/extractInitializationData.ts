@@ -16,7 +16,7 @@ export const extractInitializationData = (): {
     const element = document.getElementById(ELEMENT_ID);
     if (element) {
       const parsed = JSON.parse(element.innerHTML);
-      console.log(parsed);
+      console.log(`PARSED: ${JSON.stringify(parsed)}`);
       if (parsed.pathPrefix !== PREFIX_PLACEHOLDER) {
         value.pathPrefix = parsed.pathPrefix;
       }

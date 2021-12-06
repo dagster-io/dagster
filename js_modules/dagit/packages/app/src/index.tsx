@@ -22,9 +22,7 @@ const {pathPrefix, telemetryEnabled} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
-console.log(`TELEMETRY_ENABLED: ${telemetryEnabled}`);
 if (telemetryEnabled) {
-  console.log('ENTERED telemetryEnabled IF STMT');
   apolloLinks.unshift(telemetryLink(pathPrefix));
 }
 
