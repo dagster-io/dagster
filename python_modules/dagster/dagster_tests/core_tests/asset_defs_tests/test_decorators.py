@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, String
+from dagster import AssetKey, DagsterInvalidDefinitionError, String, check
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset
 
 
@@ -69,6 +69,22 @@ def test_asset_with_context_arg_and_dep():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.input_defs) == 1
     assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+
+
+def test_input_asset_key():
+    @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"))})
+    def my_asset(arg1):
+        assert arg1
+
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("foo")
+
+
+def test_input_asset_key_and_namespace():
+    with pytest.raises(check.CheckError, match="key and namespace cannot both be set"):
+
+        @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"), namespace="bar")})
+        def my_asset(arg1):
+            assert arg1
 
 
 def test_input_namespace():
