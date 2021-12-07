@@ -1697,6 +1697,12 @@ records = instance.get_event_records(
     def delete_job_state(self, job_origin_id):
         return self._schedule_storage.delete_job_state(job_origin_id)
 
+    def get_job_tick(self, job_origin_id, timestamp):
+        matches = self._schedule_storage.get_job_ticks(
+            job_origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+        )
+        return matches[0] if len(matches) else None
+
     def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         return self._schedule_storage.get_job_ticks(
             job_origin_id, before=before, after=after, limit=limit
