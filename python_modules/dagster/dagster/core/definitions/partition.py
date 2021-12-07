@@ -3,7 +3,19 @@ import inspect
 from abc import ABC, abstractmethod
 from datetime import datetime, time, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from dagster import check
@@ -687,10 +699,21 @@ class PartitionedConfig(Generic[T]):
         self,
         partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
         run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
+        tags_for_partition_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
+        """
+        Args:
+            tags_for_partition_fn (Optional[Callable[[str], Mapping[str, Any]]]) (Experimental):
+                A function that accepts a partition key and returns a set of tags that are applied
+                to runs with that partition.
+        """
+
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
+        )
+        self._tags_for_partition_fn = check.opt_callable_param(
+            tags_for_partition_fn, "tags_for_partition_fn"
         )
 
     @property
@@ -715,6 +738,12 @@ class PartitionedConfig(Generic[T]):
                 f"Could not find a partition with key `{partition_key}`"
             )
         return self.run_config_for_partition_fn(matching[0])
+
+    def get_tags(self, partition_key: str) -> Dict[str, Any]:
+        if self._tags_for_partition_fn:
+            return self._tags_for_partition_fn(partition_key) or {}
+        else:
+            return {}
 
 
 def static_partitioned_config(

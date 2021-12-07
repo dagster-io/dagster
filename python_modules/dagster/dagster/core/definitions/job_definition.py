@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
@@ -139,6 +139,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 
+        partition_tags = {}
         if partition_key:
             if not base_mode.partitioned_config:
                 check.failed(
@@ -149,6 +150,7 @@ class JobDefinition(PipelineDefinition):
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
             run_config = base_mode.partitioned_config.get_run_config(partition_key)
+            partition_tags = base_mode.partitioned_config.get_tags(partition_key)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -157,7 +159,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={"partition": partition_key} if partition_key else None,
+            run_tags={"partition": partition_key, **partition_tags} if partition_key else None,
         )
 
     @property
@@ -212,20 +214,25 @@ class JobDefinition(PipelineDefinition):
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
+        from dagster.core.definitions.partition import PartitionedConfig
+
         if not self.is_single_mode:
             return None
 
         mode = self.get_mode_definition()
-        if not mode.partitioned_config:
+        partitioned_config = mode.partitioned_config
+        if not partitioned_config:
             return None
 
         if not self._cached_partition_set:
-
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
-                partitions_def=mode.partitioned_config.partitions_def,
-                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                partitions_def=partitioned_config.partitions_def,
+                run_config_fn_for_partition=partitioned_config.run_config_for_partition_fn,
+                tags_fn_for_partition=lambda p: cast(
+                    PartitionedConfig, partitioned_config
+                ).get_tags(p.name),
                 mode=mode.name,
             )
 
