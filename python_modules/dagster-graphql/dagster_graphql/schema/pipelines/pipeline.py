@@ -1,6 +1,7 @@
 import graphene
 import yaml
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
@@ -19,6 +20,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -37,14 +39,12 @@ from ..solids import (
     build_solid_handles,
     build_solids,
 )
-from ..inputs import GrapheneAssetKeyInput
 from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
-from dagster.core.definitions.events import AssetKey
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):

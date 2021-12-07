@@ -313,7 +313,7 @@ class TestAssetAwareEventLog(
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_NODES_FROM_KEYS,
-            variables={"pipelineSelector": selector, "assetKeys": [{"path": ['asset_one']}]},
+            variables={"pipelineSelector": selector, "assetKeys": [{"path": ["asset_one"]}]},
         )
 
         assert result.data

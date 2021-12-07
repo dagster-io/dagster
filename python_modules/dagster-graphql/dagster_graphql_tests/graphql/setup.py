@@ -1308,7 +1308,7 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):
+def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argument
     return first_asset + 1
 
 
