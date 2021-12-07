@@ -53,7 +53,8 @@ def test_default_launcher(
 
     # The run is tagged with info about the ECS task
     assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
-    assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == ecs._cluster_arn("default")
+    cluster_arn = ecs._cluster_arn("default")
+    assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == cluster_arn
 
     # If we're using the new long ARN format,
     # the ECS task is tagged with info about the Dagster run
@@ -70,6 +71,14 @@ def test_default_launcher(
     assert override["name"] == "run"
     assert "execute_run" in override["command"]
     assert run.run_id in str(override["command"])
+
+    # And we log
+    events = instance.event_log_storage.get_logs_for_run(run.run_id)
+    latest_event = events[-1]
+    assert (
+        latest_event.message
+        == f"[EcsRunLauncher] Launching run in task {task_arn} on cluster {cluster_arn}"
+    )
 
 
 def test_launching_custom_task_definition(
