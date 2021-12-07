@@ -621,18 +621,13 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
 
-        asset_keys = kwargs.get("assetKeys")
-        if asset_keys:
-            asset_keys = [AssetKey.from_graphql_input(asset_key) for asset_key in asset_keys]
-            filtered_asset_nodes = []
-            for asset_node in asset_nodes:
-                if asset_node.asset_key in asset_keys:
-                    filtered_asset_nodes.append(GrapheneAssetNode(repository, asset_node))
-            return filtered_asset_nodes
-
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
         return [
-            GrapheneAssetNode(repository, external_asset_node)
-            for external_asset_node in asset_nodes or []
+            GrapheneAssetNode(repository, asset_node)
+            for asset_node in asset_nodes or []
+            if not asset_keys or asset_node.asset_key in asset_keys
         ]
 
 
