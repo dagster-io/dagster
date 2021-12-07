@@ -14,7 +14,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -85,18 +85,20 @@ const AssetMaterializationRow: React.FC<{
 
   return (
     <>
-      <ClickableRow onClick={() => setFocused?.(timestamp)}>
+      <HoverableRow>
         {hasPartitions && (
           <td style={{whiteSpace: 'nowrap', ...focusCss}}>
             <Group direction="row" spacing={2}>
-              <DisclosureTriangle $open={isFocused} />
+              <DisclosureTriangle open={isFocused} onClick={() => setFocused?.(timestamp)} />
               {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
             </Group>
           </td>
         )}
         <td style={hasPartitions ? {} : focusCss}>
           <Group direction="row" spacing={4}>
-            {!hasPartitions && <DisclosureTriangle $open={isFocused} />}
+            {!hasPartitions && (
+              <DisclosureTriangle open={isFocused} onClick={() => setFocused?.(timestamp)} />
+            )}
             <Group direction="column" spacing={4}>
               <Timestamp timestamp={{ms: Number(timestamp)}} />
               {predecessors?.length ? (
@@ -141,7 +143,7 @@ const AssetMaterializationRow: React.FC<{
             </Link>
           </Box>
         </td>
-      </ClickableRow>
+      </HoverableRow>
       {isFocused && (
         <tr style={{background: ColorsWIP.Gray50}}>
           <td colSpan={6} style={{fontSize: 14, padding: 0}}>
@@ -179,11 +181,12 @@ const AssetMaterializationRow: React.FC<{
   );
 };
 
-const ClickableRow = styled.tr`
+const HoverableRow = styled.tr`
   &:hover {
     background: ${ColorsWIP.Gray10};
   }
 `;
+
 const DetailsTable = styled.table`
   margin: -2px -2px -3px;
   tr td {
@@ -245,14 +248,32 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   );
 };
 
-const DisclosureTriangle: React.FC<{$open: boolean}> = ({$open}) => (
-  <IconWIP
-    name="arrow_drop_down"
-    size={24}
-    style={{
-      margin: '-2px -5px',
-      transform: $open ? 'rotate(0deg)' : 'rotate(-90deg)',
-      opacity: 0.25,
-    }}
-  />
+const DisclosureTriangle: React.FC<{open: boolean; onClick: () => void}> = ({open, onClick}) => (
+  <DisclosureTriangleButton onClick={onClick} $open={open}>
+    <IconWIP name="arrow_drop_down" size={24} />
+  </DisclosureTriangleButton>
 );
+
+const DisclosureTriangleButton = styled.button<{$open: boolean}>`
+  padding: 4px;
+  margin: -4px;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  outline: none;
+
+  ${IconWrapper} {
+    margin: -2px -5px;
+    transform: ${({$open}) => ($open ? 'rotate(0deg)' : 'rotate(-90deg)')};
+    opacity: 0.25;
+  }
+
+  :focus {
+    outline: none;
+
+    ${IconWrapper} {
+      background: ${ColorsWIP.Dark};
+      opacity: 0.5;
+    }
+  }
+`;
