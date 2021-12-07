@@ -8,6 +8,7 @@ import pytest
 import requests
 from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.utils import merge_dicts
 from dagster_graphql import DagsterGraphQLClient
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
@@ -26,6 +27,66 @@ RELEASE_TEST_MAP = {
     "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH],
     "user-code-latest-release": [DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER],
 }
+GET_SENSORS_QUERY = """
+query SensorsQuery($repositorySelector: RepositorySelector!) {
+  sensorsOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensors {
+      results {
+        id
+        name
+      }
+    }
+  }
+}
+"""
+START_SENSOR_MUTATION = """
+  mutation($sensorSelector: SensorSelector!) {
+    startSensor(sensorSelector: $sensorSelector) {
+      __typename
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on Sensor {
+        jobOriginId
+      }
+    }
+  }
+"""
+STOP_SENSORS_QUERY = """
+mutation($jobOriginId: String!) {
+  stopSensor(jobOriginId: $jobOriginId) {
+    ... on PythonError {
+      message
+      className
+      stack
+    }
+    ... on StopSensorMutationResult {
+      instigationState {
+        status
+      }
+    }
+  }
+}
+"""
+RUNS_QUERY = """
+query PipelineRunsRootQuery {
+  pipelineRunsOrError {
+    __typename
+    ... on PipelineRuns {
+      results {
+        pipelineName
+        status
+      }
+    }
+  }
+}
+"""
 
 
 def assert_run_success(client, run_id: int):
@@ -138,3 +199,45 @@ def assert_runs_and_exists(client, name):
     )
     assert len(locations) == 1
     assert locations[0].pipeline_name == name
+
+
+def test_sensor_run(graphql_client):
+    # pylint: disable=protected-access
+    repo_selector = {
+        "repositoryLocationName": "test_repo",
+        "repositoryName": "basic_repo",
+    }
+    sensors = graphql_client._execute(GET_SENSORS_QUERY, {"repositorySelector": repo_selector})
+
+    assert sensors["sensorsOrError"]["__typename"] == "Sensors"
+
+    sensor_selector = merge_dicts(
+        repo_selector,
+        {
+            "sensorName": "the_sensor",
+        },
+    )
+    response = graphql_client._execute(START_SENSOR_MUTATION, {"sensorSelector": sensor_selector})
+    assert response["startSensor"]["__typename"] == "Sensor"
+    time.sleep(5)
+
+    graphql_client._execute(
+        STOP_SENSORS_QUERY, {"jobOriginId": response["startSensor"]["jobOriginId"]}
+    )
+
+    runs_list = []
+    while are_all_runs_complete(runs_list):
+        response = graphql_client._execute(RUNS_QUERY)
+        runs_list = response["pipelineRunsOrError"]["results"]
+
+    for run in runs_list:
+        assert run["status"] == "SUCCESS"
+
+
+def are_all_runs_complete(runs_list):
+    return runs_list and all(
+        [
+            run["status"] == "SUCCESS" or run["status"] == "FAILURE" or run["status"] == "CANCELED"
+            for run in runs_list
+        ]
+    )

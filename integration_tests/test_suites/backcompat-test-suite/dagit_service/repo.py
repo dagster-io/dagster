@@ -1,4 +1,4 @@
-from dagster import graph, op, pipeline, repository, solid
+from dagster import RunRequest, graph, op, pipeline, repository, sensor, solid
 
 
 @solid
@@ -34,6 +34,11 @@ def basic():
 the_job = basic.to_job(name="the_job")
 
 
+@sensor(job=the_job, minimum_interval_seconds=1)
+def the_sensor():
+    yield RunRequest(run_key=None, run_config={})
+
+
 @repository
 def basic_repo():
-    return [the_job, the_pipeline]
+    return [the_job, the_pipeline, the_sensor]
