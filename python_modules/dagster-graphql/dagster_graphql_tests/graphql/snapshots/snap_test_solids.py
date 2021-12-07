@@ -220,6 +220,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'asset_one'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'two_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_one'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_two'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'two_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_two'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'backcompat_materialize'
                 },
                 'invocations': [
