@@ -24,7 +24,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import serialize_value, deserialize_value
 
-PICKLED_EVENTS_FILE_NAME = "events.pkl"
+COMPUTE_LOGS_FILE_NAME = "logs.txt"
 PICKLED_RECORDS_FILE_NAME = "records.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
@@ -208,27 +208,3 @@ def run_step_from_ref(
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
     return core_dagster_event_sequence_for_step(step_context)
-
-
-def _pack_dagster_log_record(record: logging.LogRecord) -> logging.LogRecord:
-    packed_record = copy.deepcopy(record)
-    packed_record.__dict__[DAGSTER_META_KEY] = serialize_value(record.__dict__[DAGSTER_META_KEY])
-    return packed_record
-
-
-def serialize_dagster_log_records(records: List[logging.LogRecord]) -> bytes:
-    """Serialize a list of Dagster-produced log records"""
-    return pickle.dumps([_pack_dagster_log_record(r) for r in records])
-
-
-def _unpack_dagster_log_record(record: logging.LogRecord) -> logging.LogRecord:
-    unpacked_record = copy.deepcopy(record)
-    unpacked_record.__dict__[DAGSTER_META_KEY] = deserialize_value(
-        record.__dict__[DAGSTER_META_KEY]
-    )
-    return unpacked_record
-
-
-def deserialize_dagster_log_records(data: bytes) -> List[logging.LogRecord]:
-    """Deserialize a list of Dagster-produced log records"""
-    return [_unpack_dagster_log_record(r) for r in pickle.loads(data)]

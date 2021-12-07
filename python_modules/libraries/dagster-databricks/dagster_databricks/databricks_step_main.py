@@ -15,36 +15,22 @@ import sys
 import tempfile
 import zipfile
 import logging
+from dagster.core.execution.compute_logs import mirror_stream_to_file
+from contextlib import redirect_stdout, redirect_stderr
 
 from dagster.core.execution.plan.external_step import (
     PICKLED_RECORDS_FILE_NAME,
     run_step_from_ref,
-    serialize_dagster_log_records,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DAGSTER_META_KEY
+from dagster.serdes import serialize_value
 
 
 # This won't be set in Databricks but is needed to be non-None for the
 # Dagster step to run.
 if "DATABRICKS_TOKEN" not in os.environ:
     os.environ["DATABRICKS_TOKEN"] = ""
-
-
-class DBFSHandler(logging.Handler):
-    def __init__(self, records_filepath: str):
-        super().__init__()
-        self._all_records = []
-        self._records_filepath = records_filepath
-
-    def emit(self, record):
-        import time
-
-        start = time.time()
-        self._all_records.append(record)
-        with open(self._records_filepath, "wb") as handle:
-            handle.write(serialize_dagster_log_records(self._all_records))
-        print("TIME: ", time.time() - start)
 
 
 def main(
@@ -74,16 +60,41 @@ def main(
             step_run_ref = pickle.load(handle)
 
         records_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_RECORDS_FILE_NAME
-        with DagsterInstance.ephemeral() as instance:
-            # enable re-execution
-            if step_run_ref.parent_run:
-                instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
-            instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
-            # hack to send all events to a specific filepath
-            instance.get_handlers = lambda: [DBFSHandler(records_filepath)]
-            # run the step
+
+        all_events = []
+
+        def dbfs_callback(event):
+            all_events.append(event)
+            with open(records_filepath, "wb") as handle:
+                handle.write(pickle.dumps(serialize_value(all_events)))
+
+        stdout_path = tmp + "/stdout"
+        stderr_path = tmp + "/stderr"
+
+        try:
             print("Running dagster job")  # noqa pylint: disable=print-call
-            list(run_step_from_ref(step_run_ref, instance))
+            with open(stdout_path, "w") as f_stdout, open(stderr_path, "w") as f_stderr:
+                with redirect_stderr(f_stderr), redirect_stdout(f_stdout):
+                    with DagsterInstance.ephemeral() as instance:
+                        # write every event to a DBFS file original local process can read it
+                        instance.add_event_listener(step_run_ref.run_id, dbfs_callback)
+                        # enable re-execution
+                        if step_run_ref.parent_run:
+                            instance.add_run(
+                                step_run_ref.parent_run._replace(pipeline_snapshot_id=None)
+                            )
+                        instance.add_run(
+                            step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None)
+                        )
+                        # run the step
+                        list(run_step_from_ref(step_run_ref, instance))
+        finally:
+            with open(os.path.dirname(step_run_ref_filepath) + "/stdout", "wb") as handle:
+                with open(stdout_path, "rb") as f:
+                    handle.write(f.read())
+            with open(os.path.dirname(step_run_ref_filepath) + "/stderr", "wb") as handle:
+                with open(stderr_path, "rb") as f:
+                    handle.write(f.read())
 
 
 if __name__ == "__main__":

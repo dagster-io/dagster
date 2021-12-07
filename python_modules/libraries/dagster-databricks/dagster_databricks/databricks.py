@@ -165,11 +165,13 @@ class DatabricksJobRunner:
             "Invalid value for run_config.cluster",
         )
 
-        # We'll always need some libraries, namely dagster/dagster_databricks/dagster_pyspark,
+        # We'll always need some libraries, namely dagster/dagster-databricks/dagster-pyspark,
         # since they're imported by our scripts.
         # Add them if they're not already added by users in config.
         libraries = list(run_config.get("libraries", []))
-        python_libraries = {x["pypi"]["package"].split("==")[0] for x in libraries if "pypi" in x}
+        python_libraries = {
+            x["pypi"]["package"].split("==")[0].replace("_", "-") for x in libraries if "pypi" in x
+        }
         for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
             if library not in python_libraries:
                 libraries.append(
@@ -241,10 +243,10 @@ class DatabricksJobRunner:
                 time.sleep(waiter_delay)
         log.warn("Could not retrieve cluster logs!")
 
-    def wait_for_run_to_complete(self, databricks_run_id):
+    def wait_for_run_to_complete(self, log, databricks_run_id):
         return wait_for_run_to_complete(
             self.client,
-            get_dagster_logger(),
+            log,
             databricks_run_id,
             self.poll_interval_sec,
             self.max_wait_time_sec,

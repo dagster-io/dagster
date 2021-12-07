@@ -10,11 +10,12 @@ from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
+from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.storage.event_log import EventLogEntry
 from dagster.core.execution.plan.external_step import (
     PICKLED_RECORDS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
-    deserialize_dagster_log_records,
 )
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
@@ -37,6 +38,7 @@ from .configs import (
     define_databricks_storage_config,
     define_databricks_submit_run_config,
 )
+from dagster.serdes import deserialize_value
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"
@@ -173,13 +175,30 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
         try:
-            for event in self.step_events_iterator(log, step_key, run_id, databricks_run_id):
+            for event in self.step_events_iterator(step_context, step_key, databricks_run_id):
                 yield event
         finally:
+            self.log_compute_logs(log, run_id, step_key, "stdout")
+            self.log_compute_logs(log, run_id, step_key, "stderr")
             if self.wait_for_logs:
                 self._log_logs_from_cluster(log, databricks_run_id)
 
-    def step_events_iterator(self, log, step_key: str, dagster_run_id: str, databricks_run_id: int):
+    def log_compute_logs(self, log, run_id: str, step_key: str, log_type: ComputeIOType):
+        log.info(f"Captured {log_type} data for step '{step_key}':")
+        try:
+            path = self._dbfs_path(run_id, step_key, log_type)
+            # dbfs can be flaky, allow for retries
+            data = backoff(
+                fn=self.databricks_runner.client.read_file,
+                retry_on=(pickle.UnpicklingError,),
+                max_retries=2,
+                args=[path],
+            )
+            log.info(data.decode())
+        except:
+            log.info("Could not read captured logs")
+
+    def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
         """The launched Databricks job writes all log records to a specific dbfs file. This iterator
         regularly reads the contents of the file, logs any records that have not previously been
         seen, and yields any DagsterEvents found within those log records.
@@ -194,54 +213,56 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         processed_records = 0
         start = time.time()
         done = False
-        log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+        step_context.log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
         while not done:
             with raise_execution_interrupts():
-                log.debug("Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec)
+                step_context.log.debug(
+                    "Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec
+                )
                 time.sleep(self.databricks_runner.poll_interval_sec)
                 try:
                     done = poll_run_state(
                         self.databricks_runner.client,
-                        log,
+                        step_context.log,
                         start,
                         databricks_run_id,
                         self.databricks_runner.max_wait_time_sec,
                     )
                 finally:
-                    all_records = self.get_step_records(dagster_run_id, step_key)
+                    all_records = self.get_step_records(step_context.run_id, step_key)
                     # we get all available records on each poll, but we only want to process the
                     # ones we haven't seen before
-                    for record in all_records[processed_records:]:
-                        dagster_meta = getattr(record, DAGSTER_META_KEY)
-                        dagster_event = dagster_meta.get("dagster_event")
-                        if dagster_event:
-                            yield dagster_event
-                        log.dagster_handler.emit_dagster_record(record)
+                    for event_record in all_records[processed_records:]:
+                        if event_record.is_dagster_event:
+                            yield event_record.dagster_event
+                        step_context.instance.handle_new_event(event_record)
                     processed_records = len(all_records)
 
-        log.info(f"Databricks run {databricks_run_id} completed.")
+        step_context.log.info(f"Databricks run {databricks_run_id} completed.")
 
-    def get_step_records(self, run_id: str, step_key: str) -> List[logging.LogRecord]:
+    def get_step_records(self, run_id: str, step_key: str) -> List[EventLogEntry]:
         path = self._dbfs_path(run_id, step_key, PICKLED_RECORDS_FILE_NAME)
 
         def _get_step_records():
             serialized_records = self.databricks_runner.client.read_file(path)
             if not serialized_records:
                 return []
-            return deserialize_dagster_log_records(serialized_records)
+            return deserialize_value(pickle.loads(serialized_records))
 
         try:
             # reading from dbfs can be flaky, allow for retry
             return backoff(
                 fn=_get_step_records,
-                retry_on=(Exception,),
-                max_retries=3,
+                retry_on=(pickle.UnpicklingError,),
+                max_retries=2,
             )
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error
         except HTTPError as e:
             if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
                 return []
+
+        return []
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.
