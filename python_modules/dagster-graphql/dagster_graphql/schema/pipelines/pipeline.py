@@ -624,12 +624,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         asset_keys = kwargs.get("assetKeys")
         if asset_keys:
             asset_keys = [AssetKey.from_graphql_input(asset_key) for asset_key in asset_keys]
-            print("x" * 100)
-            print(asset_keys)
             filtered_asset_nodes = []
             for asset_node in asset_nodes:
                 if asset_node.asset_key in asset_keys:
-                    print("matching asset found")
                     filtered_asset_nodes.append(GrapheneAssetNode(repository, asset_node))
             return filtered_asset_nodes
 

@@ -1302,6 +1302,19 @@ hanging_job = build_assets_job(
 )
 
 
+@asset
+def asset_one():
+    return 1
+
+
+@asset
+def asset_two(asset_one):
+    return first_asset + 1
+
+
+two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
+
+
 @job
 def two_ins_job():
     @op
@@ -1370,6 +1383,7 @@ def define_pipelines():
         job_with_default_config,
         hanging_job,
         two_ins_job,
+        two_assets_job,
     ]
 
 

@@ -119,6 +119,19 @@ GET_ASSET_IN_PROGRESS_RUNS = """
     }
 """
 
+GET_ASSET_NODES_FROM_KEYS = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+        pipelineOrError(params: $pipelineSelector) {
+            ... on Pipeline {
+                id
+                assetNodes(assetKeys: $assetKeys) {
+                    id
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(graphql_context, pipeline_name, mode="default"):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
@@ -294,6 +307,36 @@ class TestAssetAwareEventLog(
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
+
+    def test_asset_node_in_pipeline(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "two_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={"pipelineSelector": selector, "assetKeys": [{"path": ['asset_one']}]},
+        )
+
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+
+        assert len(result.data["pipelineOrError"]["assetNodes"]) == 1
+        asset_node = result.data["pipelineOrError"]["assetNodes"][0]
+        assert asset_node["id"] == '["asset_one"]'
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+
+        assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
+        asset_node = result.data["pipelineOrError"]["assetNodes"][0]
+        assert asset_node["id"] == '["asset_one"]'
 
 
 class TestPersistentInstanceAssetInProgress(
