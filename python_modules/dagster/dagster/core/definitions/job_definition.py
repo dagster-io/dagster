@@ -220,12 +220,16 @@ class JobDefinition(PipelineDefinition):
             return None
 
         if not self._cached_partition_set:
+            tags_for_partition_fn = (
+                lambda p: mode.tags_for_partition_fn(p.name) if mode.tags_for_partition_fn else None
+            )
 
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                tags_for_partition_fn=tags_for_partition_fn,
                 mode=mode.name,
             )
 

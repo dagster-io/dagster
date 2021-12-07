@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
@@ -27,6 +27,7 @@ class ModeDefinition(
             ("description", Optional[str]),
             ("config_mapping", Optional[ConfigMapping]),
             ("partitioned_config", Optional["PartitionedConfig"]),
+            ("tags_for_partition_fn", Optional[Callable[[str], Mapping[str, Any]]]),
         ],
     )
 ):
@@ -49,6 +50,8 @@ class ModeDefinition(
         description (Optional[str]): A human-readable description of the mode.
         _config_mapping (Optional[ConfigMapping]): Only for internal use.
         _partitions (Optional[PartitionedConfig]): Only for internal use.
+        _tags_for_partition_fn (Optional[Callable[[str], Mapping[str, Any]]]): Only for internal
+            use.
     """
 
     def __new__(
@@ -60,6 +63,7 @@ class ModeDefinition(
         description: Optional[str] = None,
         _config_mapping: Optional[ConfigMapping] = None,
         _partitioned_config: Optional["PartitionedConfig"] = None,
+        _tags_for_partition_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
 
         from .partition import PartitionedConfig
@@ -100,6 +104,9 @@ class ModeDefinition(
             config_mapping=check.opt_inst_param(_config_mapping, "_config_mapping", ConfigMapping),
             partitioned_config=check.opt_inst_param(
                 _partitioned_config, "_partitioned_config", PartitionedConfig
+            ),
+            tags_for_partition_fn=check.opt_callable_param(
+                _tags_for_partition_fn, "_tags_for_partition_fn"
             ),
         )
 

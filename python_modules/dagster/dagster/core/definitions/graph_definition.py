@@ -3,10 +3,12 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -406,6 +408,7 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        tags_for_partition_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -454,6 +457,9 @@ class GraphDefinition(NodeDefinition):
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
+            tags_for_partition_fn (Optional[Callable[[str], Mapping[str, Any]]]) (Experimental):
+                A function that accepts a partition key and returns a set of tags that are applied
+                to runs with that partition.
 
         Returns:
             JobDefinition
@@ -520,6 +526,7 @@ class GraphDefinition(NodeDefinition):
                 executor_defs=[executor_def],
                 _config_mapping=config_mapping,
                 _partitioned_config=partitioned_config,
+                _tags_for_partition_fn=tags_for_partition_fn,
             ),
             preset_defs=presets,
             tags=tags,
