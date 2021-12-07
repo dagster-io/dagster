@@ -14,6 +14,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.utils import coerce_valid_log_level
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
@@ -21,6 +22,7 @@ from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
+from dagster.utils.log import default_system_logger
 
 
 @click.group(name="api")
@@ -368,6 +370,13 @@ def execute_step_command(input_json):
     help="[INTERNAL] This option should generally not be used by users. Override the system "
     "timezone for tests.",
 )
+@click.option(
+    "--log-level",
+    type=click.STRING,
+    required=False,
+    default="INFO",
+    help="Level at which to log output from the gRPC server process",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -379,6 +388,7 @@ def grpc_command(
     ipc_output_file=None,
     fixed_server_id=None,
     override_system_timezone=None,
+    log_level="INFO",
     **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
@@ -387,6 +397,8 @@ def grpc_command(
         )
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
+
+    logger = default_system_logger("dagster-code-server", coerce_valid_log_level(log_level))
 
     loadable_target_origin = None
     if any(
@@ -427,7 +439,27 @@ def grpc_command(
             fixed_server_id=fixed_server_id,
         )
 
-        server.serve()
+        code_desc = " "
+        if loadable_target_origin:
+            if loadable_target_origin.python_file:
+                code_desc = f" for file {loadable_target_origin.python_file} "
+            elif loadable_target_origin.package_name:
+                code_desc = f" for package {loadable_target_origin.package_name} "
+            elif loadable_target_origin.module_name:
+                code_desc = f" for module {loadable_target_origin.module_name} "
+
+        server_desc = (
+            f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+            if port
+            else f"Dagster code server{code_desc}in process {os.getpid()}"
+        )
+
+        logger.info("Started {server_desc}".format(server_desc=server_desc))
+
+        try:
+            server.serve()
+        finally:
+            logger.info("Shutting down {server_desc}".format(server_desc=server_desc))
 
 
 @api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")

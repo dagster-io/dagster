@@ -982,6 +982,7 @@ def open_server_process(
         + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
         + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
+        + (["--log-level", "WARNING"])  # don't log INFO messages for automatically spun up servers
     )
 
     if loadable_target_origin:

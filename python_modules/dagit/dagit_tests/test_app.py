@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import host_dagit_ui_with_workspace_process_context, ui
+from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test
@@ -292,8 +293,15 @@ def test_dagit_logs(
                 hash_name("dagster_test_repository"): 4,
             }
             actions = set()
+            records = []
             for record in caplog.records:
-                message = json.loads(record.getMessage())
+                try:
+                    message = json.loads(record.getMessage())
+                except seven.JSONDecodeError:
+                    continue
+
+                records.append(record)
+
                 actions.add(message.get("action"))
                 if message.get("action") == UPDATE_REPO_STATS:
                     assert message.get("pipeline_name_hash") == ""
@@ -322,5 +330,5 @@ def test_dagit_logs(
                 )
 
             assert actions == set([START_DAGIT_WEBSERVER, UPDATE_REPO_STATS])
-            assert len(caplog.records) == 3
+            assert len(records) == 3
             assert server_mock.call_args_list == [mock.call()]
