@@ -4,11 +4,11 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
-
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster import check
+from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
     PartitionSetDefinition,
@@ -21,6 +21,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -458,12 +459,14 @@ def external_repository_data_from_def(repository_def):
             list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
             key=lambda sd: sd.name,
         ),
-        external_asset_graph_data=external_asset_graph_from_defs(pipelines),
+        external_asset_graph_data=external_asset_graph_from_defs(
+            pipelines, foreign_assets_by_key=repository_def.foreign_assets_by_key
+        ),
     )
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[PipelineDefinition],
+    pipelines: Sequence[PipelineDefinition], foreign_assets_by_key: Mapping[AssetKey, ForeignAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[NodeDefinition, PipelineDefinition]]
@@ -492,11 +495,34 @@ def external_asset_graph_from_defs(
                         )
                         all_upstream_asset_keys.add(upstream_asset_key)
 
-    source_asset_keys = all_upstream_asset_keys.difference(node_defs_by_asset_key.keys())
+    asset_keys_without_definitions = all_upstream_asset_keys.difference(
+        node_defs_by_asset_key.keys()
+    ).difference(foreign_assets_by_key.keys())
+
     asset_nodes = [
-        ExternalAssetNode(asset_key=asset_key, dependencies=[], job_names=[])
-        for asset_key in source_asset_keys
+        ExternalAssetNode(
+            asset_key=asset_key,
+            dependencies=[],
+            job_names=[],
+        )
+        for asset_key in asset_keys_without_definitions
     ]
+
+    for foreign_asset in foreign_assets_by_key.values():
+        if foreign_asset.key in node_defs_by_asset_key:
+            raise DagsterInvariantViolationError(
+                f"Asset with key {foreign_asset.key.to_string()} is defined both as a foreign asset"
+                " and as a non-foreign asset"
+            )
+
+        asset_nodes.append(
+            ExternalAssetNode(
+                asset_key=foreign_asset.key,
+                dependencies=[],
+                job_names=[],
+                op_description=foreign_asset.description,
+            )
+        )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_def = node_tuple_list[0][0]

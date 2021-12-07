@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    AssetKey,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     PipelineDefinition,
@@ -21,6 +22,7 @@ from dagster import (
     sensor,
     solid,
 )
+from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
@@ -558,3 +560,14 @@ def test_bad_coerce():
             return {
                 "jobs": {"bar": bar},
             }
+
+
+def test_foreign_assets():
+    foo = ForeignAsset(key=AssetKey("foo"))
+    bar = ForeignAsset(key=AssetKey("bar"))
+
+    @repository
+    def my_repo():
+        return [foo, bar]
+
+    assert my_repo.foreign_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
