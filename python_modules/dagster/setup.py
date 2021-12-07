@@ -1,21 +1,20 @@
+from pathlib import Path
 from typing import Dict
 
 from setuptools import find_packages, setup  # type: ignore
 
 
-def long_description() -> str:
-    return """
-## Dagster
-Dagster is a data orchestrator for machine learning, analytics, and ETL.
+def get_description() -> str:
+    readme_path = Path(__file__).parent.parent.parent / "README.md"
 
-Dagster lets you define pipelines in terms of the data flow between reusable, logical components,
-then test locally and run anywhere. With a unified view of pipelines and the assets they produce,
-Dagster can schedule and orchestrate Pandas, Spark, SQL, or anything else that Python can invoke.
+    if not readme_path.exists():
+        return """
+        # Dagster
 
-Dagster is designed for data platform engineers, data engineers, and full-stack data scientists.
-Building a data platform with Dagster makes your stakeholders more independent and your systems
-more robust. Developing data pipelines with Dagster makes testing easier and deploying faster.
-""".strip()
+        The data orchestration platform built for productivity.
+        """.strip()
+
+    return readme_path.read_text()
 
 
 def get_version() -> str:
@@ -33,8 +32,8 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="A data orchestrator for machine learning, analytics, and ETL.",
-        long_description=long_description(),
+        description="The data orchestration platform built for productivity.",
+        long_description=get_description(),
         long_description_content_type="text/markdown",
         url="https://github.com/dagster-io/dagster",
         classifiers=[
