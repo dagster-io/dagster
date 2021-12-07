@@ -1,7 +1,6 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
 import {uniq, without} from 'lodash';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
@@ -158,7 +157,6 @@ const AssetGraphExplorerWithData: React.FC<
     graphData,
   } = props;
 
-  const history = useHistory();
   const fetchAssetDefinitionLocation = useFetchAssetDefinitionLocation();
   const selectedDefinition = selectedHandle?.solid.definition;
   const selectedGraphNode =
@@ -206,7 +204,6 @@ const AssetGraphExplorerWithData: React.FC<
       fetchAssetDefinitionLocation,
       explorerPath,
       onChangeExplorerPath,
-      history,
       selectedGraphNode,
       graphData,
     ],
