@@ -22,7 +22,7 @@ export const SidebarAssetInfo: React.FC<{
   const {lastMaterialization} = liveData || {};
 
   return (
-    <div style={{overflowY: 'auto'}}>
+    <>
       <SidebarSection title="Definition">
         <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarTitle>{assetKeyToString(node.assetKey)}</SidebarTitle>
@@ -44,6 +44,6 @@ export const SidebarAssetInfo: React.FC<{
         params={{}}
         setParams={() => {}}
       />
-    </div>
+    </>
   );
 };

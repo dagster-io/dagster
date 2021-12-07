@@ -8,6 +8,7 @@ import {QueryCountdown} from '../../app/QueryCountdown';
 import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {RightInfoPanel, RightInfoPanelContent} from '../../pipelines/GraphExplorer';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
@@ -327,16 +328,20 @@ const AssetGraphExplorerWithData: React.FC<
         </>
       }
       second={
-        selectedGraphNode && selectedDefinition ? (
-          <SidebarAssetInfo
-            node={selectedGraphNode.definition}
-            liveData={liveDataByNode[selectedGraphNode.id]}
-            definition={selectedDefinition}
-            repoAddress={repoAddress}
-          />
-        ) : (
-          <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
-        )
+        <RightInfoPanel>
+          <RightInfoPanelContent>
+            {selectedGraphNode && selectedDefinition ? (
+              <SidebarAssetInfo
+                node={selectedGraphNode.definition}
+                liveData={liveDataByNode[selectedGraphNode.id]}
+                definition={selectedDefinition}
+                repoAddress={repoAddress}
+              />
+            ) : (
+              <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
+            )}
+          </RightInfoPanelContent>
+        </RightInfoPanel>
       }
     />
   );

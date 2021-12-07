@@ -49,10 +49,11 @@ export const GraphRoot: React.FC<Props> = (props) => {
           </TagWIP>
         }
       />
-      <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
-        <div style={{minHeight: 0, flex: 1, display: 'flex'}}>
-          <GraphExplorerRoot {...props} repoAddress={repoAddress} />
-        </div>
+      <Box
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        style={{minHeight: 0, flex: 1, display: 'flex'}}
+      >
+        <GraphExplorerRoot {...props} repoAddress={repoAddress} />
       </Box>
     </div>
   );
