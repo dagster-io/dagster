@@ -90,6 +90,10 @@ class TimeWindowPartitionMapping(PartitionMapping):
             to_end_dt.strftime(to_partitions_def.fmt),
         )
 
+    @property
+    def is_identity() -> bool:
+        return True
+
 
 def round_datetime_to_period(dt: datetime, period: ScheduleType) -> datetime:
     if period == ScheduleType.MONTHLY:

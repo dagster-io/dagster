@@ -1,4 +1,4 @@
-from typing import Mapping, Optional
+from typing import AbstractSet, Mapping, Optional
 
 from dagster.core.definitions import OpDefinition
 from dagster.core.definitions.events import AssetKey
@@ -44,6 +44,14 @@ class AssetsDefinition:
     @property
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
+
+    @property
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._output_defs_by_asset_key.keys()
+
+    @property
+    def parent_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._input_defs_by_asset_key.keys()
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         return self._partition_mappings.get(

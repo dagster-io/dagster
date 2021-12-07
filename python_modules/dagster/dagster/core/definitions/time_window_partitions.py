@@ -131,6 +131,18 @@ class TimeWindowPartitionsDefinition(
 
         return TimeWindowPartitionMapping()
 
+    def __hash__(self):
+        return hash((self.timezone, self.schedule_type, self.start, self.fmt, self.end_offset))
+
+    def __eq__(self, other):
+        return (
+            self.timezone == other.timezone
+            and self.schedule_type == other.schedule_type
+            and self.start == other.start
+            and self.fmt == other.fmt
+            and self.end_offset == other.end_offset
+        )
+
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(

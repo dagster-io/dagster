@@ -1,4 +1,16 @@
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
@@ -14,7 +26,7 @@ from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
-from dagster.core.definitions.partition import PartitionedConfig
+from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
@@ -79,6 +91,7 @@ def build_assets_job(
 
     op_defs = build_op_deps(assets, source_assets_by_key.keys())
     root_manager = build_root_manager(source_assets_by_key)
+    partitions_def, tags_for_partition_fn = build_partitions_info()
 
     return GraphDefinition(
         name=name,
@@ -93,6 +106,8 @@ def build_assets_job(
         config=config,
         tags=tags,
         executor_def=executor_def,
+        partitions_def=partitions_def,
+        tags_for_partition_fn=tags_for_partition_fn,
     )
 
 
@@ -179,3 +194,39 @@ def build_root_manager(
         return io_manager.load_input(input_context_with_upstream)
 
     return _root_manager
+
+
+def build_partitions_info(
+    assets: Sequence[AssetsDefinition],
+) -> Tuple[PartitionsDefinition, Callable[[str], Mapping[str, Any]]]:
+    """
+    Determines whether the partitionings of the given assets satisfy the constraints of a regular
+    non-asset partitioned job. I.e., every asset has the same partitioning as every other asset,
+    and all the partition mappings are identity partition mappings.
+
+    If the partitionings do satisfy the constraints of a regular non-asset partitioned job, then
+    returns a PartitionsDefinition and tags_for_partition_fn that can be used to build a partitioned
+    job.
+    """
+    partitions_defs = {
+        assets_def.partitions_def for assets_def in assets if assets_def.partitions_def is not None
+    }
+
+    if len(partitions_defs) != 1:
+        return None, None
+
+    for assets_def in assets:
+        for parent_asset_key in assets_def.parent_asset_keys:
+            if not assets_def.get_partition_mapping(parent_asset_key).is_identity:
+                return None, None
+
+    def tags_for_partition_fn(partition_key: str) -> Mapping[str, Any]:
+        return {
+            "asset_partitions": {
+                partition_key: asset_key.to_string()
+                for assets_def in assets
+                for asset_key in assets_def.asset_keys
+            }
+        }
+
+    return next(iter(partitions_defs)), tags_for_partition_fn

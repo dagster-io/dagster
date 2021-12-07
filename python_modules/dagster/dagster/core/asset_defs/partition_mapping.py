@@ -48,6 +48,10 @@ class PartitionMapping(ABC):
                 parent asset.
         """
 
+    @property
+    def is_identity() -> bool:
+        return False
+
 
 class IdentityPartitionMapping(PartitionMapping):
     def get_parent_partitions(
@@ -65,3 +69,7 @@ class IdentityPartitionMapping(PartitionMapping):
         parent_partition_key_range: PartitionKeyRange,
     ) -> PartitionKeyRange:
         return parent_partition_key_range
+
+    @property
+    def is_identity() -> bool:
+        return True
