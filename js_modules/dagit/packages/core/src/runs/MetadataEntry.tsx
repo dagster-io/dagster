@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
@@ -153,7 +153,7 @@ export const MetadataEntry: React.FC<{
         <MetadataEntryLink
           to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
         >
-          {entry.assetKey.path.join(' > ')}
+          {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
     default:

@@ -6,7 +6,7 @@ import {SVGViewport} from '../graph/SVGViewport';
 import {AssetLinks} from '../workspace/asset-graph/AssetLinks';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {layoutGraph, GraphData, assetKeyToString, LiveData} from '../workspace/asset-graph/Utils';
+import {layoutGraph, GraphData, LiveData} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
@@ -85,7 +85,7 @@ export const AssetNeighborsGraph: React.FC<{
                 onClick={(e) => {
                   e.stopPropagation();
                   if (graphNode.definition.opName) {
-                    history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                    history.push(`/instance/assets/${graphNode.assetKey.path.join('/')}`);
                   }
                 }}
               >

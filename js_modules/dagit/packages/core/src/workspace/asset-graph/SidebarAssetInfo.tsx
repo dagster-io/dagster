@@ -1,5 +1,6 @@
 import React from 'react';
 
+import {displayNameForAssetKey} from '../../app/Util';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
@@ -9,7 +10,7 @@ import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
 import {RepoAddress} from '../types';
 
-import {assetKeyToString, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
@@ -25,7 +26,7 @@ export const SidebarAssetInfo: React.FC<{
     <>
       <SidebarSection title="Definition">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <SidebarTitle>{assetKeyToString(node.assetKey)}</SidebarTitle>
+          <SidebarTitle>{displayNameForAssetKey(node.assetKey)}</SidebarTitle>
           <Description description={node.description || null} />
         </Box>
         {definition.metadata && Plugin && Plugin.SidebarComponent && (

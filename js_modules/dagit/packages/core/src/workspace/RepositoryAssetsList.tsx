@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../app/Util';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -57,7 +58,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
       return null;
     }
     const items = repo.assetNodes.map((asset) => ({
-      name: asset.assetKey.path.join(' > '),
+      name: displayNameForAssetKey(asset.assetKey),
       path: `/jobs/${asset.jobName}:default/${asset.assetKey.path
         .map(encodeURIComponent)
         .join('/')}`,
