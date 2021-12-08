@@ -12,9 +12,11 @@ from dagster.core.instance import is_dagit_telemetry_enabled
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
+from dagster.seven import json
+from dagster.utils import DAGSTER_CALL_COUNTS_KEY
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
+from flask import Blueprint, Flask, g, jsonify, redirect, render_template_string, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -233,10 +235,17 @@ def instantiate_app_with_views(
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
+    app.after_request(add_counts)
 
     CORS(app)
 
     return app
+
+
+def add_counts(response):
+    call_counts = g.get(DAGSTER_CALL_COUNTS_KEY, {})
+    response.headers["x-dagster-call-counts"] = json.dumps(call_counts)
+    return response
 
 
 def create_app_from_workspace_process_context(

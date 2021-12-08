@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
 from typing import (
@@ -559,3 +559,32 @@ def compose(*args):
 
 def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
+
+
+DAGSTER_CALL_COUNTS_KEY = "dagster_call_counts"
+
+
+def count_calls(func):
+    """
+    A decorator that keeps track of how many times a function is called.
+    """
+    func.num_calls = 0
+
+    def _increment(name):
+        try:
+            from flask import g, has_request_context  # pylint: disable=import-error
+
+            if not has_request_context():
+                return
+            if not hasattr(g, DAGSTER_CALL_COUNTS_KEY):
+                setattr(g, DAGSTER_CALL_COUNTS_KEY, defaultdict(int))
+            getattr(g, DAGSTER_CALL_COUNTS_KEY)[name] += 1
+        except:
+            return
+
+    def inner(*args, **kwargs):
+        func.num_calls += 1
+        _increment(func.__name__)
+        return func(*args, **kwargs)
+
+    return inner

@@ -4,9 +4,14 @@ import {formatElapsedTime, debugLog} from './Util';
 
 export const logLink = new ApolloLink((operation, forward) =>
   forward(operation).map((data) => {
-    const time = performance.now() - operation.getContext().start;
-    operation.setContext({elapsedTime: time});
-    debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
+    const context = operation.getContext();
+    const elapsedTime = performance.now() - context.start;
+    const callCounts = JSON.parse(context.response.headers.get('x-dagster-call-counts'));
+    operation.setContext({elapsedTime, callCounts});
+    debugLog(`${operation.operationName} took ${formatElapsedTime(elapsedTime)}`, {
+      operation,
+      data,
+    });
     return data;
   }),
 );
