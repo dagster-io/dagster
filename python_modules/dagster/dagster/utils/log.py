@@ -191,11 +191,10 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_localtime(_):
+def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
     """Uses pendulum.now to determine the logging time, causing pendulum
     mocking to affect the logger timestamp in tests."""
-    now_time = pendulum.now()
-    return now_time.timetuple()
+    return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
 
 
 def default_system_logger(logger_name: str, level: str = "INFO"):
@@ -206,12 +205,13 @@ def default_system_logger(logger_name: str, level: str = "INFO"):
     system_logger.handlers = [handler]
 
     formatter = coloredlogs.ColoredFormatter(
-        default_format_string(),
+        fmt=default_format_string(),
+        datefmt=default_date_format_string(),
         field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
         level_styles={"debug": {}, "error": {"color": "red"}},
     )
 
-    formatter.converter = _mockable_localtime
+    formatter.formatTime = _mockable_formatTime
 
     handler.setFormatter(formatter)
 
@@ -222,8 +222,12 @@ def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
+def default_date_format_string():
+    return "%Y-%m-%d %H:%M:%S %z"
+
+
 def define_default_formatter():
-    return logging.Formatter(default_format_string())
+    return logging.Formatter(default_format_string(), default_date_format_string())
 
 
 @contextmanager

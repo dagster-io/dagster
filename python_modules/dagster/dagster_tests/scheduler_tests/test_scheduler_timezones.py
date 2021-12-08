@@ -53,8 +53,8 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 21:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 21:59:59 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule"""
+                == """2019-02-27 21:59:59 -0800 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
+2019-02-27 21:59:59 -0800 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule"""
             )
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
@@ -92,9 +92,9 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 22:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00-0600
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule""".format(
+                == """2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
+2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00 -0600
+2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
