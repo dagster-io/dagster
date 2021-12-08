@@ -380,7 +380,7 @@ class DagsterGrpcClient:
 
     def health_check_query(self):
         try:
-            with grpc.insecure_channel(self._server_address) as channel:
+            with self._channel() as channel:
                 response = HealthStub(channel).Check(
                     health_pb2.HealthCheckRequest(service="DagsterApi")
                 )

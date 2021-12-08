@@ -46,6 +46,14 @@ def test_ping():
             process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
         )
         assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+
+        subprocess.check_call(["dagster", "api", "grpc-health-check", "--port", str(port)])
+
+        ssl_result = subprocess.run(  # pylint:disable=subprocess-run-check
+            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"]
+        )
+        assert ssl_result.returncode == 1
+
     finally:
         process.terminate()
 

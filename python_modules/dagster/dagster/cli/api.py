@@ -453,7 +453,12 @@ def grpc_command(
     default="localhost",
     help="Hostname at which to serve. Default is localhost.",
 )
-def grpc_health_check_command(port=None, socket=None, host="localhost"):
+@click.option(
+    "--use-ssl",
+    is_flag=True,
+    help="Whether to connect to the gRPC server over SSL",
+)
+def grpc_health_check_command(port=None, socket=None, host="localhost", use_ssl=False):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
@@ -461,7 +466,7 @@ def grpc_health_check_command(port=None, socket=None, host="localhost"):
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    client = DagsterGrpcClient(port=port, socket=socket, host=host)
+    client = DagsterGrpcClient(port=port, socket=socket, host=host, use_ssl=use_ssl)
     status = client.health_check_query()
     if status != "SERVING":
         sys.exit(1)
