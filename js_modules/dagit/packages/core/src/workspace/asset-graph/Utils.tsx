@@ -46,7 +46,7 @@ export type IEdge = {
 };
 
 export function assetKeyToString(key: {path: string[]}) {
-  return key.path.join('>');
+  return key.path.join(' > ');
 }
 
 export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {

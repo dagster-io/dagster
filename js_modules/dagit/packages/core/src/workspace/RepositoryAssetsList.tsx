@@ -9,6 +9,7 @@ import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 
+import {assetKeyToString} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -57,7 +58,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
       return null;
     }
     const items = repo.assetNodes.map((asset) => ({
-      name: asset.assetKey.path.join(' > '),
+      name: assetKeyToString(asset.assetKey),
       path: `/jobs/${asset.jobName}:default/${asset.assetKey.path
         .map(encodeURIComponent)
         .join('/')}`,

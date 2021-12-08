@@ -85,7 +85,7 @@ export const AssetNeighborsGraph: React.FC<{
                 onClick={(e) => {
                   e.stopPropagation();
                   if (graphNode.definition.opName) {
-                    history.push(`/instance/assets/${assetKeyToString(graphNode.assetKey)}`);
+                    history.push(`/instance/assets/${graphNode.assetKey.path.join('/')}`);
                   }
                 }}
               >
