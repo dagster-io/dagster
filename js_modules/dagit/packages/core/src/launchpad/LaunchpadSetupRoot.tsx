@@ -14,7 +14,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
+export const LaunchpadSetupRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);

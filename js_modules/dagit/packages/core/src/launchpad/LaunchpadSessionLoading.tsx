@@ -7,7 +7,7 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
 
-export const ExecutionSessionContainerLoading = () => (
+export const LaunchpadSessionLoading = () => (
   <SplitPanelContainer
     axis={'vertical'}
     identifier={'execution'}

@@ -2,8 +2,8 @@ import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {usePermissions} from '../app/Permissions';
-import {PipelineExecutionRoot} from '../execute/PipelineExecutionRoot';
-import {PipelineExecutionSetupRoot} from '../execute/PipelineExecutionSetupRoot';
+import {LaunchpadRoot} from '../launchpad/LaunchpadRoot';
+import {LaunchpadSetupRoot} from '../launchpad/LaunchpadSetupRoot';
 import {PipelineNav} from '../nav/PipelineNav';
 import {PipelinePartitionsRoot} from '../partitions/PipelinePartitionsRoot';
 import {RepoAddress} from '../workspace/types';
@@ -48,9 +48,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             if (!canLaunchPipelineExecution) {
               return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
             }
-            return (
-              <PipelineExecutionSetupRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />
-            );
+            return <LaunchpadSetupRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
           }}
         />
         <Route
@@ -64,7 +62,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
               return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
             }
             return (
-              <PipelineExecutionRoot
+              <LaunchpadRoot
                 pipelinePath={props.match.params.pipelinePath}
                 repoAddress={repoAddress}
               />
