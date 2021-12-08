@@ -170,7 +170,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self._set_run_tags(run.run_id, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
-            message=f"Launching run in ECS task",
+            message="Launching run in ECS task",
             pipeline_run=run,
             engine_event_data=EngineEventData(
                 [
