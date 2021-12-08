@@ -20,10 +20,9 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
+from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
-from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
