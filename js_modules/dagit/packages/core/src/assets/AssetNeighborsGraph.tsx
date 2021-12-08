@@ -6,7 +6,12 @@ import {SVGViewport} from '../graph/SVGViewport';
 import {AssetLinks} from '../workspace/asset-graph/AssetLinks';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {layoutGraph, GraphData, assetKeyToString, LiveData} from '../workspace/asset-graph/Utils';
+import {
+  layoutGraph,
+  GraphData,
+  displayNameForAssetKey,
+  LiveData,
+} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';

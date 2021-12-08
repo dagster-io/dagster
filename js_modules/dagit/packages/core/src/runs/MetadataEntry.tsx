@@ -14,7 +14,7 @@ import {IconWIP} from '../ui/Icon';
 import {Markdown} from '../ui/Markdown';
 import {Tooltip} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
-import {assetKeyToString} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -154,7 +154,7 @@ export const MetadataEntry: React.FC<{
         <MetadataEntryLink
           to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
         >
-          {assetKeyToString(entry.assetKey)}
+          {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
     default:

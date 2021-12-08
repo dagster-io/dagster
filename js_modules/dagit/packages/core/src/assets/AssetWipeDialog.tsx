@@ -4,7 +4,7 @@ import * as React from 'react';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
-import {assetKeyToString} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 interface AssetKey {
   path: string[];
@@ -34,7 +34,7 @@ export const AssetWipeDialog: React.FC<{
     <DialogWIP
       isOpen={isOpen}
       title={`Wipe materializations of ${
-        assetKeys.length === 1 ? assetKeyToString(assetKeys[0]) : 'selected assets'
+        assetKeys.length === 1 ? displayNameForAssetKey(assetKeys[0]) : 'selected assets'
       }?`}
       onClose={onClose}
       style={{width: 400}}

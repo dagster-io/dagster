@@ -10,7 +10,7 @@ import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {TagWIP} from '../ui/TagWIP';
-import {assetKeyToString} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -375,7 +375,7 @@ const MaterializationContent: React.FC<{
               label: 'asset_key',
               item: (
                 <>
-                  {assetKeyToString(materialization.assetKey)}
+                  {displayNameForAssetKey(materialization.assetKey)}
                   {assetDashboardLink}
                 </>
               ),

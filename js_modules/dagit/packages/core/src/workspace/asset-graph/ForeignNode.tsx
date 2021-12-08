@@ -5,11 +5,11 @@ import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {FontFamily} from '../../ui/styles';
 
-import {assetKeyToString} from './Utils';
+import {displayNameForAssetKey} from './Utils';
 
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>
-    <span className="label">{assetKeyToString(assetKey)}</span>
+    <span className="label">{displayNameForAssetKey(assetKey)}</span>
     <IconWIP name="open_in_new" color={ColorsWIP.Gray500} />
   </ForeignNodeLink>
 ));
@@ -30,5 +30,5 @@ const ForeignNodeLink = styled.div`
 `;
 export const getForeignNodeDimensions = (id: string) => {
   const path = JSON.parse(id);
-  return {width: assetKeyToString({path}).length * 7 + 30, height: 30};
+  return {width: displayNameForAssetKey({path}).length * 7 + 30, height: 30};
 };

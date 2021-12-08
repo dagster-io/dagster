@@ -45,7 +45,7 @@ export type IEdge = {
   dashed: boolean;
 };
 
-export function assetKeyToString(key: {path: string[]}) {
+export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' > ');
 }
 
