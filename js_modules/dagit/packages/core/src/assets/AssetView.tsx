@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
+import {displayNameForAssetKey} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -13,7 +14,6 @@ import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {
-  displayNameForAssetKey,
   buildGraphDataFromSingleNode,
   buildLiveData,
   IN_PROGRESS_RUNS_FRAGMENT,

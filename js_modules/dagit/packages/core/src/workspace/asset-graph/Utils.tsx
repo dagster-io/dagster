@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
-import {gql} from 'graphql.macro';
 
 import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
 
@@ -44,10 +44,6 @@ export type IEdge = {
   to: IPoint;
   dashed: boolean;
 };
-
-export function displayNameForAssetKey(key: {path: string[]}) {
-  return key.path.join(' > ');
-}
 
 export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
   const data: GraphData = {

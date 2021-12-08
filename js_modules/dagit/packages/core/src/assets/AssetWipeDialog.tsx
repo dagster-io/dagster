@@ -1,10 +1,10 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
 import * as React from 'react';
 
+import {displayNameForAssetKey} from '../app/Util';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 interface AssetKey {
   path: string[];

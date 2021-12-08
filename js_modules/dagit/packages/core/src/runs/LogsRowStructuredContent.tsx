@@ -4,13 +4,12 @@ import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {TagWIP} from '../ui/TagWIP';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';

@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
@@ -14,7 +14,6 @@ import {IconWIP} from '../ui/Icon';
 import {Markdown} from '../ui/Markdown';
 import {Tooltip} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 

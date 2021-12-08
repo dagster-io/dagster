@@ -1,11 +1,10 @@
 import React from 'react';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../../app/Util';
 import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {FontFamily} from '../../ui/styles';
-
-import {displayNameForAssetKey} from './Utils';
 
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>

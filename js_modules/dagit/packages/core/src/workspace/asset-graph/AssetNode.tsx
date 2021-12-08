@@ -6,6 +6,7 @@ import React, {CSSProperties} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
@@ -22,7 +23,7 @@ import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 

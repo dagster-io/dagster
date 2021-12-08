@@ -3,13 +3,13 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../app/Util';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 
-import {displayNameForAssetKey} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';

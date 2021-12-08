@@ -1,5 +1,6 @@
 import React from 'react';
 
+import {displayNameForAssetKey} from '../../app/Util';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
@@ -9,7 +10,7 @@ import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
 import {RepoAddress} from '../types';
 
-import {displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
