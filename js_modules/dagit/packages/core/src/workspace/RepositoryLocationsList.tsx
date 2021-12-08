@@ -17,12 +17,14 @@ import {Tooltip} from '../ui/Tooltip';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
-import {WorkspaceContext} from './WorkspaceContext';
-import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
+import {WorkspaceContext, WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
-const LocationStatus: React.FC<{location: string; locationOrError: LocationOrError}> = (props) => {
+const LocationStatus: React.FC<{
+  location: string;
+  locationOrError: WorkspaceRepositoryLocationNode;
+}> = (props) => {
   const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
   const {reloading, tryReload} = useRepositoryLocationReload(location);

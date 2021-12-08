@@ -9,37 +9,42 @@ import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
-  RootRepositoriesQuery,
-  RootRepositoriesQuery_workspaceOrError_PythonError,
-  RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries,
-  RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation,
-  RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories,
-} from './types/RootRepositoriesQuery';
+  RootWorkspaceQuery,
+  RootWorkspaceQuery_workspaceOrError_PythonError,
+  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries,
+  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation,
+  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories,
+  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors,
+  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules,
+} from './types/RootWorkspaceQuery';
 
-type Repository = RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories;
-type RepositoryLocation = RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation;
-type RepositoryLocationNode = RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries;
-type RepositoryError = RootRepositoriesQuery_workspaceOrError_PythonError;
+type Repository = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories;
+type RepositoryLocation = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation;
+type RepositoryError = RootWorkspaceQuery_workspaceOrError_PythonError;
+
+export type WorkspaceJobSensor = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors;
+export type WorkspaceJobSchedule = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules;
+export type WorkspaceRepositoryLocationNode = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries;
 
 export interface DagsterRepoOption {
   repositoryLocation: RepositoryLocation;
   repository: Repository;
 }
 
-type WorkspaceState = {
+export type WorkspaceState = {
   error: RepositoryError | null;
   loading: boolean;
-  locationEntries: RepositoryLocationNode[];
+  locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
-  refetch: () => Promise<ApolloQueryResult<RootRepositoriesQuery>>;
+  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
 
-const ROOT_REPOSITORIES_QUERY = gql`
-  query RootRepositoriesQuery {
+const ROOT_WORKSPACE_QUERY = gql`
+  query RootWorkspaceQuery {
     workspaceOrError {
       __typename
       ... on Workspace {
@@ -72,6 +77,27 @@ const ROOT_REPOSITORIES_QUERY = gql`
                     id
                     name
                   }
+                  schedules {
+                    id
+                    mode
+                    name
+                    scheduleState {
+                      id
+                      status
+                    }
+                  }
+                  sensors {
+                    id
+                    name
+                    targets {
+                      mode
+                      pipelineName
+                    }
+                    sensorState {
+                      id
+                      status
+                    }
+                  }
                 }
                 partitionSets {
                   id
@@ -94,38 +120,6 @@ const ROOT_REPOSITORIES_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
 `;
 
-export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
-  fragment RepositoryLocationsFragment on WorkspaceOrError {
-    __typename
-    ... on Workspace {
-      locationEntries {
-        __typename
-        id
-        name
-        loadStatus
-        displayMetadata {
-          key
-          value
-        }
-        updatedTimestamp
-        locationOrLoadError {
-          ... on RepositoryLocation {
-            id
-            isReloadSupported
-            serverId
-            name
-          }
-          ... on PythonError {
-            message
-          }
-        }
-      }
-    }
-    ...PythonErrorFragment
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
 export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
@@ -135,7 +129,7 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = () => {
-  const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
+  const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
