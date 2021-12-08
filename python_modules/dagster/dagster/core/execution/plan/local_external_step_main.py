@@ -5,6 +5,7 @@ import sys
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
+from dagster.serdes import serialize_value
 
 
 def main(step_run_ref_path: str) -> None:
@@ -12,11 +13,22 @@ def main(step_run_ref_path: str) -> None:
     file_handle = LocalFileHandle(step_run_ref_path)
     step_run_ref = pickle.loads(file_manager.read_data(file_handle))
 
-    with DagsterInstance.ephemeral() as instance:
-        events = list(run_step_from_ref(step_run_ref, instance))
+    all_events = []
+
+    def events_callback(event):
+        # each new event will get added to this list so we can send them back to the parent
+        # process (which will add them to that instance)
+        all_events.append(event)
+
+    try:
+        with DagsterInstance.ephemeral() as instance:
+            instance.add_event_listener(step_run_ref.run_id, events_callback)
+            # consume entire step iterator
+            list(run_step_from_ref(step_run_ref, instance))
+    finally:
         events_out_path = os.path.join(os.path.dirname(step_run_ref_path), PICKLED_EVENTS_FILE_NAME)
         with open(events_out_path, "wb") as events_file:
-            pickle.dump(events, events_file)
+            pickle.dump(serialize_value(all_events), events_file)
 
 
 if __name__ == "__main__":

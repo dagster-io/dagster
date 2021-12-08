@@ -51,12 +51,22 @@ def main(
         with open(step_run_ref_filepath, "rb") as handle:
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
-        with DagsterInstance.ephemeral() as instance:
-            events = list(run_step_from_ref(step_run_ref, instance))
 
-    events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
-    with open(events_filepath, "wb") as handle:
-        pickle.dump(serialize_value(events), handle)
+        all_events = []
+
+        def events_callback(event):
+            all_events.append(event)
+
+        try:
+            with DagsterInstance.ephemeral() as instance:
+                instance.add_event_listener(step_run_ref.run_id, events_callback)
+                list(run_step_from_ref(step_run_ref, instance))
+        finally:
+            events_filepath = (
+                os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+            )
+            with open(events_filepath, "wb") as handle:
+                pickle.dump(serialize_value(all_events), handle)
 
 
 if __name__ == "__main__":
