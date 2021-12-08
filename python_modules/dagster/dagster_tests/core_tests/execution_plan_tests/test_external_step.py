@@ -6,6 +6,8 @@ from threading import Thread
 
 import pytest
 from dagster import (
+    DynamicOut,
+    DynamicOutput,
     Field,
     ModeDefinition,
     RetryRequested,
@@ -13,21 +15,17 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
     fs_io_manager,
+    job,
+    op,
     pipeline,
     reconstructable,
     resource,
     solid,
-    job,
-    graph,
-    op,
-    DynamicOut,
-    DynamicOutput,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.test_utils import instance_for_test
 from dagster.core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -37,6 +35,7 @@ from dagster.core.execution.plan.external_step import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts, merge_dicts
 
