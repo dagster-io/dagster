@@ -42,6 +42,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description,
         flex={{
           gap: 8,
           direction: 'column',
+          alignItems: 'flex-start',
         }}
       >
         {title && <Subheading style={{color: ColorsWIP.Gray900}}>{title}</Subheading>}
