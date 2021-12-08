@@ -1,6 +1,5 @@
 import hashlib
 import inspect
-from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 if TYPE_CHECKING:
@@ -43,7 +42,7 @@ class ResourceVersionContext(NamedTuple):
     resource_config: Any
 
 
-class VersionStrategy(ABC):
+class VersionStrategy:
     """Abstract class for defining a strategy to version solids and resources.
 
     When subclassing, `get_solid_version` must be implemented, and `get_resource_version` can be
@@ -56,7 +55,6 @@ class VersionStrategy(ABC):
     up-to-date version will run.
     """
 
-    @abstractmethod
     def get_solid_version(self, context: SolidVersionContext) -> str:
         pass
 
@@ -74,8 +72,8 @@ class SourceHashVersionStrategy(VersionStrategy):
         code_as_str = inspect.getsource(fn)
         return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
 
-    def get_solid_version(self, context: SolidVersionContext) -> str:
-        compute_fn = context.solid_def.compute_fn
+    def get_op_version(self, context: OpVersionContext) -> str:
+        compute_fn = context.op_def.compute_fn
         if callable(compute_fn):
             return self._get_source_hash(compute_fn)
         else:
