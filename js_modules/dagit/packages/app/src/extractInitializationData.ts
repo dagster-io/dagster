@@ -16,11 +16,13 @@ export const extractInitializationData = (): {
     const element = document.getElementById(ELEMENT_ID);
     if (element) {
       const parsed = JSON.parse(element.innerHTML);
-      console.log(`PARSED: ${JSON.stringify(parsed)}`);
       if (parsed.pathPrefix !== PREFIX_PLACEHOLDER) {
         value.pathPrefix = parsed.pathPrefix;
       }
-      if (parsed.telemetryEnabled !== TELEMETRY_PLACEHOLDER) {
+      if (
+        parsed.telemetryEnabled !== TELEMETRY_PLACEHOLDER &&
+        typeof parsed.telemetryEnabled === 'boolean'
+      ) {
         value.telemetryEnabled = parsed.telemetryEnabled;
       }
     }

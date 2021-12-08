@@ -30,7 +30,7 @@ const config = {
   apolloLinks,
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
-  telemetryEnabled: telemetryEnabled,
+  telemetryEnabled,
 };
 
 const appCache = createAppCache();

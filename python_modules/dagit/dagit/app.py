@@ -212,7 +212,7 @@ def instantiate_app_with_views(
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
                     .replace("__PATH_PREFIX__", app_path_prefix)
-                    .replace("__TELEMETRY_ENABLED__", str(telemetry_enabled).lower())
+                    .replace('"__TELEMETRY_ENABLED__"', str(telemetry_enabled).lower())
                     .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:
