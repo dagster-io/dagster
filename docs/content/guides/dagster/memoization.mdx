@@ -8,6 +8,9 @@ title: Versioning and Memoization | Dagster
 
 This example describes how to use Dagster's versioning and memoization features.
 
+Dagster can use versions to determine whether or not it is necessary to re-execute a particular step. Given versions of the code from each op in a job, the system can infer whether an upcoming execution of a step will differ from previous executions by tagging op outputs with a version. This
+allows for the outputs of previous runs to be re-used. We call this process **memoized execution**.
+
 ## Quick Start
 
 You can enable memoization functionality by providing a <PyObject object="VersionStrategy"/> to your job. Dagster provides the <PyObject object="SourceHashVersionStrategy"/> as a top-level export.
@@ -68,7 +71,7 @@ Check out the implementation of <PyObject object="SourceHashVersionStrategy"/> a
 
 ## Writing a custom MemoizableIOManager
 
-If you are using a custom IO manager and want to make use of memoization functionality, then your custom IO managers must be memoizable. This means they must implement the `has_output` function. The <PyObject object="OutputContext" method="get_output_identifier" /> will provide a path which includes version information that you can both store and check outputs to. Check out our implementations of io managers for inspiration.
+If you are using a custom IO manager and want to make use of memoization functionality, then your custom IO manager must be memoizable. This means they must implement the `has_output` function. The <PyObject object="OutputContext" method="get_output_identifier" /> will provide a path which includes version information that you can both store and check outputs to. Check out our implementations of io managers for inspiration.
 
 ## Disabling memoization
 

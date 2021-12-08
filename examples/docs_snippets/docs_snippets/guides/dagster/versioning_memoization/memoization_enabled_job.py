@@ -1,4 +1,4 @@
-from dagster import job, SourceHashVersionStrategy
+from dagster import SourceHashVersionStrategy, job
 
 
 @job(version_strategy=SourceHashVersionStrategy())
