@@ -246,10 +246,7 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    # If the mode name is the default mode name for a job, then we can be
-                    # reasonably confident that we are executing a job, in which case it doesn't
-                    # make sense to be able to switch on in_process execution.
-                    if plan_context.pipeline_run.mode == "default":
+                    if plan_context.pipeline.get_definition().is_job:
                         run_config = plan_context.run_config
                     else:
                         run_config = dict(plan_context.run_config, execution={"in_process": {}})
