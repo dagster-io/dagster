@@ -40,8 +40,8 @@ import {
 } from './ConfigEditorConfigPicker';
 import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {ExecutionTabs} from './ExecutionTabs';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {LaunchpadTabs} from './LaunchpadTabs';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
@@ -49,8 +49,8 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
-import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
-import {ExecutionSessionContainerPipelineFragment} from './types/ExecutionSessionContainerPipelineFragment';
+import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
+import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
 import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
 import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
@@ -61,13 +61,13 @@ const LOADING_RUN_PREVIEW = `Checking config...`;
 
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 
-interface IExecutionSessionContainerProps {
-  pipeline: ExecutionSessionContainerPipelineFragment;
-  partitionSets: ExecutionSessionContainerPartitionSetsFragment;
+interface LaunchpadSessionContainerProps {
+  pipeline: LaunchpadSessionContainerPipelineFragment;
+  partitionSets: LaunchpadSessionContainerPartitionSetsFragment;
   repoAddress: RepoAddress;
 }
 
-interface IExecutionSessionContainerState {
+interface ILaunchpadSessionState {
   preview: PreviewConfigQuery | null;
   previewLoading: boolean;
   previewedDocument: any | null;
@@ -92,7 +92,7 @@ type Action =
   | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null}
   | {type: 'toggle-whitepsace'; payload: boolean};
 
-const reducer = (state: IExecutionSessionContainerState, action: Action) => {
+const reducer = (state: ILaunchpadSessionState, action: Action) => {
   switch (action.type) {
     case 'preview-loading':
       return {...state, previewLoading: action.payload};
@@ -118,7 +118,7 @@ const reducer = (state: IExecutionSessionContainerState, action: Action) => {
   }
 };
 
-const initialState: IExecutionSessionContainerState = {
+const initialState: ILaunchpadSessionState = {
   preview: null,
   previewLoading: false,
   previewedDocument: null,
@@ -128,7 +128,7 @@ const initialState: IExecutionSessionContainerState = {
   tagEditorOpen: false,
 };
 
-const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
+const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (props) => {
   const {partitionSets, pipeline, repoAddress} = props;
 
   const client = useApolloClient();
@@ -520,7 +520,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
 
   return (
     <>
-      <ExecutionTabs data={data} onCreate={onCreateSession} onSave={onSave} />
+      <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
       <SplitPanelContainer
         axis={'vertical'}
         identifier={'execution'}
@@ -688,7 +688,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default ExecutionSessionContainer;
+export default LaunchpadSessionContainer;
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
@@ -710,7 +710,7 @@ const SessionSettingsSpacer = styled.div`
 `;
 
 const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
-  fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
+  fragment LaunchpadSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
     __typename
     ... on RunConfigSchema {
       ...ConfigEditorRunConfigSchemaFragment
@@ -725,7 +725,7 @@ const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
 const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
-      ...ExecutionSessionContainerRunConfigSchemaFragment
+      ...LaunchpadSessionContainerRunConfigSchemaFragment
     }
   }
 

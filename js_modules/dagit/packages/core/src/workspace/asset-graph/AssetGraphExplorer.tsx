@@ -5,9 +5,9 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
 import {QueryCountdown} from '../../app/QueryCountdown';
-import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
 import {RightInfoPanel, RightInfoPanelContent} from '../../pipelines/GraphExplorer';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';

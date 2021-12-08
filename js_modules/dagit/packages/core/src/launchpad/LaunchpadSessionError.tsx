@@ -6,7 +6,7 @@ import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {SessionSettingsBar} from './SessionSettingsBar';
 
-export const ExecutionSessionContainerError: React.FC<NonIdealStateProps> = (props) => (
+export const LaunchpadSessionError: React.FC<NonIdealStateProps> = (props) => (
   <SplitPanelContainer
     axis={'vertical'}
     identifier={'execution'}
