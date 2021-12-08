@@ -1,6 +1,7 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {Box} from '../ui/Box';
 import {Tab, Tabs} from '../ui/Tabs';
@@ -17,10 +18,14 @@ interface Props<TData> {
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {queryData, tab} = props;
   const canSeeConfig = useCanSeeConfig();
+  const {flagInstanceOverview} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
+        {flagInstanceOverview ? (
+          <Tab id="overview" title="Overview" to="/instance/overview" />
+        ) : null}
         <Tab id="health" title="Health" to="/instance/health" />
         <Tab id="schedules" title="Schedules" to="/instance/schedules" />
         <Tab id="sensors" title="Sensors" to="/instance/sensors" />

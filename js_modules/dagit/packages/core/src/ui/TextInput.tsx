@@ -39,6 +39,7 @@ const Container = styled.div<{$disabled: boolean}>`
   display: inline-flex;
   flex-direction: row;
   flex: 1;
+  flex-grow: 0;
   font-family: ${FontFamily.default};
   font-size: 14px;
   font-weight: 400;
