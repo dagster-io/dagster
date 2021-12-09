@@ -17,7 +17,7 @@ def main(step_run_ref_path: str) -> None:
 
     try:
         with DagsterInstance.ephemeral() as instance:
-            instance.add_event_listener(step_run_ref.run_id, lambda event: all_events.append(event))
+            instance.add_event_listener(step_run_ref.run_id, all_events.append)
             # consume entire step iterator
             list(run_step_from_ref(step_run_ref, instance))
     finally:
