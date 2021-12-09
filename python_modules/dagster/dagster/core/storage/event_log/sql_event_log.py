@@ -1,6 +1,5 @@
 import logging
 from abc import abstractmethod
-from collections import defaultdict
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
 
@@ -930,72 +929,6 @@ class SqlEventLogStorage(EventLogStorage):
             return None
 
         return event_or_materialization.dagster_event.step_materialization_data.materialization
-
-    def all_asset_tags(self):
-        tags_by_asset_key = defaultdict(dict)
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            query = (
-                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.tags])
-                .where(AssetKeyTable.c.tags != None)
-                .where(
-                    db.or_(
-                        AssetKeyTable.c.wipe_timestamp == None,
-                        AssetKeyTable.c.last_materialization_timestamp
-                        > AssetKeyTable.c.wipe_timestamp,
-                    )
-                )
-            )
-            with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
-                for asset_key, tags_json in rows:
-                    tags = seven.json.loads(tags_json)
-                    if tags:
-                        tags_by_asset_key[AssetKey.from_db_string(asset_key)] = tags
-
-        else:
-            query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
-            with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
-                for asset_key, json_str in rows:
-                    materialization = self._asset_materialization_from_json_column(json_str)
-                    if materialization and materialization.tags:
-                        tags_by_asset_key[AssetKey.from_db_string(asset_key)] = {
-                            k: v for k, v in materialization.tags.items()
-                        }
-
-        return tags_by_asset_key
-
-    def get_asset_tags(self, asset_key):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            query = (
-                db.select([AssetKeyTable.c.tags])
-                .where(AssetKeyTable.c.asset_key == asset_key.to_string())
-                .where(
-                    db.or_(
-                        AssetKeyTable.c.wipe_timestamp == None,
-                        AssetKeyTable.c.last_materialization_timestamp
-                        > AssetKeyTable.c.wipe_timestamp,
-                    )
-                )
-            )
-            with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
-                if not rows or not rows[0] or not rows[0][0]:
-                    return {}
-
-                return seven.json.loads(rows[0][0])
-        else:
-            query = db.select([AssetKeyTable.c.last_materialization]).where(
-                AssetKeyTable.c.asset_key == asset_key.to_string()
-            )
-            with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
-                if not rows or not rows[0] or not rows[0][0]:
-                    return {}
-
-                materialization = self._asset_materialization_from_json_column(rows[0][0])
-                return materialization.tags if materialization and materialization.tags else {}
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
