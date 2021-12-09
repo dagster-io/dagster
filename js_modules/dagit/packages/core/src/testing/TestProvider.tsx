@@ -31,6 +31,7 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
 const testValue = {
   basePath: '',
   rootServerURI: '',
+  telemetryEnabled: false,
 };
 
 const websocketValue: WebSocketContextType = {
