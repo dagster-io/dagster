@@ -1,5 +1,39 @@
 # Changelog
 
+# 0.13.11
+
+### New
+
+- [dagit] Made performance improvements to the Run page.
+- [dagit] Highlighting a specific sensor / schedule ticks is now reflected in a shareable URL.
+
+### Bugfixes
+
+- [dagit] On the Runs page, when filtering runs with a tag containing a comma, the filter input would incorrectly break the tag apart. This has been fixed.
+- [dagit] For sensors that do not target a specific job (e.g. un_status_sensor, we are now hiding potentially confusing Job details
+- [dagit] Fixed an issue where some graph explorer views generated multiple scrollbars.
+- [dagit] Fixed an issue with the Run view where the Gantt view incorrectly showed in-progress steps when the run had exited.
+- [dagster-celery-k8s] Fixed an issue where setting a custom Celery broker URL but not a custom Celery backend URL in the helm chart would produce an incorrect Celery configuration.
+- [dagster-k8s] Fixed an issue where Kubernetes volumes using list or dict types could not be set in the Helm chart.
+
+### Community Contributions
+
+- [dagster-k8s] Added the ability to set a custom location name when configuring a workspace in the Helm chart. Thanks [@pcherednichenko!](https://github.com/pcherednichenko)
+
+### Experimental
+
+- [dagit] Asset jobs now display with spinners on assets that are currently in progress.
+- [dagit] Assets jobs that are in progress will now display a dot icon on all assets that are not yet running but will be re-materialized in the run.
+- [dagit] Fixed broken links to the asset catalog entries from the explorer view of asset jobs.
+- The `AssetIn` input object now accepts an asset key so upstream assets can be explicitly specified (e.g. `AssetIn(asset_key=AssetKey("asset1"))`)
+- The `@asset` decorator now has an optional `non_argument_deps` parameter that accepts AssetKeys of assets that do not pass data but are upstream dependencies.
+- `ForeignAsset` objects now have an optional `description` attribute.
+
+### Documentation
+
+- “Validating Data with Dagster Type Factories” guide added.
+
+
 # 0.13.10
 
 ### New
