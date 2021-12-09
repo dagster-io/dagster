@@ -631,7 +631,7 @@ def check_volume_mount(context):
 
 def define_volume_mount_pipeline():
     @pipeline(
-        mode_defs=k8s_mode_defs(),
+        mode_defs=k8s_mode_defs(name="k8s") + celery_mode_defs(name="celery"),
     )
     def volume_mount_pipeline():
         check_volume_mount()

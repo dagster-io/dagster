@@ -111,7 +111,7 @@ spec:
         {{- if $deployment.volumeMounts }}
           volumeMounts:
           {{- range $volumeMount := $deployment.volumeMounts }}
-            - {{ $volumeMount | toYaml | nindent 16 }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
           {{- end }}
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
@@ -120,7 +120,7 @@ spec:
       {{- if $deployment.volumes }}
       volumes:
         {{- range $volume := $deployment.volumes }}
-        - {{ $volume | toYaml | nindent 12 }}
+        - {{- $volume | toYaml | nindent 10 }}
         {{- end }}
       {{- end }}
 ---

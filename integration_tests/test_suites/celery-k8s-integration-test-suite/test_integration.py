@@ -546,3 +546,26 @@ def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
         cleanup_memoized_results(
             define_memoization_pipeline(), "celery", dagster_instance, run_config
         )
+
+
+@pytest.mark.integration
+def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, dagit_url):
+    run_config = deep_merge_dicts(
+        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
+        get_celery_engine_config(
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
+        ),
+    )
+
+    run_id = launch_run_over_graphql(
+        dagit_url,
+        run_config=run_config,
+        pipeline_name="volume_mount_pipeline",
+        mode="celery",
+    )
+
+    result = wait_for_job_and_get_raw_logs(
+        job_name="dagster-run-%s" % run_id, namespace=helm_namespace
+    )
+
+    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)

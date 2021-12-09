@@ -1593,6 +1593,20 @@
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    }
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
+                    }
                 }
             },
             "required": [
@@ -1610,7 +1624,9 @@
                 "podSecurityContext",
                 "securityContext",
                 "resources",
-                "livenessProbe"
+                "livenessProbe",
+                "volumeMounts",
+                "volumes"
             ],
             "additionalProperties": false
         },
