@@ -78,11 +78,12 @@ function expansionDepthForClause(clause: string) {
 
 export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
   if (query === '*') {
-    return {all: items, focus: []};
+    return {all: items, applyingEmptyDefault: false, focus: []};
   }
   if (query === '') {
     return {
-      all: items.length < MAX_RENDERED_FOR_EMPTY_QUERY ? items : [],
+      all: items.length >= MAX_RENDERED_FOR_EMPTY_QUERY ? [] : items,
+      applyingEmptyDefault: items.length >= MAX_RENDERED_FOR_EMPTY_QUERY,
       focus: [],
     };
   }
@@ -114,5 +115,6 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   return {
     all: Array.from(results),
     focus: Array.from(focus),
+    applyingEmptyDefault: false,
   };
 }

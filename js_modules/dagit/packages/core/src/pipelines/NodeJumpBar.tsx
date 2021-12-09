@@ -7,16 +7,15 @@ import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 
-import {GraphExplorerSolidHandleFragment_solid} from './types/GraphExplorerSolidHandleFragment';
-
-interface OpJumpBarProps {
-  ops: Array<GraphExplorerSolidHandleFragment_solid>;
-  selectedOp: GraphExplorerSolidHandleFragment_solid | undefined;
-  onChange: (op: GraphExplorerSolidHandleFragment_solid) => void;
+interface NodeJumpBarProps<T extends {name: string}> {
+  nodes: T[];
+  nodeType: 'asset' | 'op';
+  selectedNode: T | undefined;
+  onChange: (node: T) => void;
 }
 
-export const OpJumpBar: React.FC<OpJumpBarProps> = (props) => {
-  const {ops, selectedOp, onChange} = props;
+export function NodeJumpBar<T extends {name: string}>(props: NodeJumpBarProps<T>) {
+  const {nodes, nodeType, selectedNode, onChange} = props;
   const button = React.useRef<HTMLButtonElement | null>(null);
 
   return (
@@ -26,19 +25,19 @@ export const OpJumpBar: React.FC<OpJumpBarProps> = (props) => {
       shortcutFilter={(e) => e.code === 'KeyS' && e.altKey}
     >
       <SelectWIP
-        items={ops.map((s) => s.name)}
+        items={nodes.map((s) => s.name)}
         itemRenderer={BasicStringRenderer}
         itemListPredicate={BasicStringPredicate}
         noResults={<MenuItemWIP disabled text="No results." />}
-        onItemSelect={(name) => onChange(ops.find((s) => s.name === name)!)}
+        onItemSelect={(name) => onChange(nodes.find((s) => s.name === name)!)}
       >
         <SelectButton ref={button} rightIcon={<IconWIP name="unfold_more" />}>
-          {selectedOp ? selectedOp.name : 'Select an op…'}
+          {selectedNode ? selectedNode.name : `Select an ${nodeType}…`}
         </SelectButton>
       </SelectWIP>
     </ShortcutHandler>
   );
-};
+}
 
 // By default, Blueprint's Select component has an intrinsic size determined by the length of
 // it's content, which in our case can be wildly long and unruly. Giving the Select a min-width
