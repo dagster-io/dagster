@@ -1,7 +1,14 @@
 import {ApolloLink} from '@apollo/client';
 import {TelemetryAction, logTelemetry} from '@dagit/core/app/Telemetry';
 
-const TELEMETRY_WHITELIST = new Set(['PipelineRunsRootQuery']);
+const TELEMETRY_WHITELIST = new Set([
+  'PipelineRunsRootQuery',
+  'RunsRootQuery',
+  'ScheduleRootQuery',
+  'SensorRootQuery',
+  'PaginatedAssetKeysQuery',
+  'AssetMaterializationsQuery',
+]);
 
 export const telemetryLink = (pathPrefix: string) => {
   return new ApolloLink((operation, forward) =>
