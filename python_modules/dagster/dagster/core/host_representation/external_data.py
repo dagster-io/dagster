@@ -4,6 +4,7 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+from datetime import datetime
 from collections import defaultdict, namedtuple
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
@@ -20,8 +21,8 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
-from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
+from dagster.core.definitions.partition import PartitionsDefinition, PartitionScheduleDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -444,7 +445,8 @@ class ExternalAssetDependedBy(
 @whitelist_for_serdes
 class ExternalAssetNode(
     namedtuple(
-        "_ExternalAssetNode", "asset_key dependencies depended_by op_name op_description job_names"
+        "_ExternalAssetNode",
+        "asset_key dependencies depended_by op_name op_description job_names partition_keys",
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -460,6 +462,7 @@ class ExternalAssetNode(
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
+        partition_keys: Optional[List[str]] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
@@ -469,6 +472,7 @@ class ExternalAssetNode(
             op_name=op_name,
             op_description=op_description,
             job_names=job_names,
+            partition_keys=partition_keys,
         )
 
 
@@ -570,6 +574,12 @@ def external_asset_graph_from_defs(
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_def = node_tuple_list[0][0]
         job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
+
+        # temporary workaround to retrieve asset definition from job
+        op_asset_def = (
+            node_def.outs['result'].metadata["asset_def"] if node_def.is_graph_job_op_node else None
+        )
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
@@ -578,6 +588,9 @@ def external_asset_graph_from_defs(
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
+                partition_keys=op_asset_def.partitions_def.get_partition_keys(datetime.utcnow())
+                if op_asset_def and op_asset_def.partitions_def
+                else None,
             )
         )
 

@@ -627,6 +627,7 @@ type AssetNode {
   description: String
   opName: String
   jobName: String
+  partitionKeys: [String]
   jobs: [Pipeline!]!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!

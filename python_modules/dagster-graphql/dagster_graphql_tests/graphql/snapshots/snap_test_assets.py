@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_process_env] 1'] = {
@@ -48,6 +49,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_pr
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_foreign_asset'
                     ]
                 }
@@ -70,6 +78,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_pr
                 'key': {
                     'path': [
                         'never_runs_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_asset'
                     ]
                 }
             }
@@ -119,6 +134,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_foreign_asset'
                     ]
                 }
@@ -141,6 +163,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'never_runs_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_asset'
                     ]
                 }
             }
@@ -190,6 +219,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'dummy_foreign_asset'
                     ]
                 }
@@ -212,6 +248,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'never_runs_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'upstream_asset'
                     ]
                 }
             }

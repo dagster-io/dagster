@@ -36,6 +36,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
+    partitionKeys = graphene.List(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
@@ -62,6 +63,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
             jobName=external_asset_node.job_names[0] if external_asset_node.job_names else None,
+            partitionKeys=external_asset_node.partition_keys,
         )
 
     def resolve_dependencies(self, _graphene_info):

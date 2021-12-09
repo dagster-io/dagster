@@ -39,6 +39,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    StaticPartitionsDefinition,
     String,
     check,
     composite_solid,
@@ -1315,6 +1316,24 @@ def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argumen
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
+partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+
+@asset(partitions_def=partitions_def)
+def upstream_asset():
+    pass
+
+
+@asset(partitions_def=partitions_def)
+def downstream_asset(upstream_asset):
+    assert upstream_asset
+
+
+partitioned_assets_job = build_assets_job(
+    "partitioned_assets_job", assets=[upstream_asset, downstream_asset]
+)
+
+
 @job
 def two_ins_job():
     @op
@@ -1384,6 +1403,7 @@ def define_pipelines():
         hanging_job,
         two_ins_job,
         two_assets_job,
+        partitioned_assets_job,
     ]
 
 

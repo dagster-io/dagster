@@ -134,9 +134,11 @@ class _Asset:
             fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
+        metadata = self.metadata or {}
+
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
-            metadata=self.metadata or {},
+            metadata=metadata,
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
         )
@@ -153,7 +155,7 @@ class _Asset:
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
 
-        return AssetsDefinition(
+        asset_def = AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
@@ -167,6 +169,10 @@ class _Asset:
             if self.partition_mappings
             else None,
         )
+
+        metadata["asset_def"] = asset_def
+
+        return asset_def
 
 
 @experimental_decorator
