@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -89,6 +90,13 @@ const SensorRow: React.FC<{
                   pipelineHrefContext={repoAddress}
                   isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                 />
+              ))}
+            </Box>
+          ) : null}
+          {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
+            <Box flex={{direction: 'column', gap: 2}}>
+              {sensor.metadata.assetKeys.map((key) => (
+                <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
               ))}
             </Box>
           ) : null}
