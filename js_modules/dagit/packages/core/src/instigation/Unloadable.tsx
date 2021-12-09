@@ -65,8 +65,10 @@ export const UnloadableSchedules: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable schedules</Subheading>
-      <UnloadableScheduleInfo />
+      <Box padding={{top: 16, horizontal: 24}}>
+        <Subheading>Unloadable schedules</Subheading>
+        <UnloadableScheduleInfo />
+      </Box>
       <Table>
         <thead>
           <tr>

@@ -15,7 +15,6 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
-import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -130,9 +129,6 @@ const INSTANCE_SENSORS_QUERY = gql`
     instance {
       ...InstanceHealthFragment
     }
-    workspaceOrError {
-      ...RepositoryLocationsFragment
-    }
     repositoriesOrError {
       __typename
       ... on RepositoryConnection {
@@ -160,7 +156,6 @@ const INSTANCE_SENSORS_QUERY = gql`
   }
 
   ${INSTANCE_HEALTH_FRAGMENT}
-  ${REPOSITORY_LOCATIONS_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${SENSOR_FRAGMENT}
