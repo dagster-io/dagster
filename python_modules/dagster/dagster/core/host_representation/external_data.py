@@ -530,8 +530,8 @@ def external_asset_graph_from_defs(
     asset_nodes = [
         ExternalAssetNode(
             asset_key=asset_key,
-            dependencies=[],
-            depended_by=[],
+            dependencies=list(deps[asset_key].values()),
+            depended_by=list(dep_by[asset_key].values()),
             job_names=[],
         )
         for asset_key in asset_keys_without_definitions
@@ -544,21 +544,11 @@ def external_asset_graph_from_defs(
                 " and as a non-foreign asset"
             )
 
-        foreign_depended_by = []
-        for node_asset_key, node_deps in deps.items():
-            for dep in node_deps.values():
-                if dep.upstream_asset_key == foreign_asset.key:
-                    foreign_depended_by.append(
-                        ExternalAssetDependedBy(
-                            downstream_asset_key=node_asset_key, input_name=dep.input_name
-                        )
-                    )
-
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=foreign_asset.key,
-                dependencies=[],
-                depended_by=foreign_depended_by,
+                dependencies=list(deps[foreign_asset.key].values()),
+                depended_by=list(dep_by[foreign_asset.key].values()),
                 job_names=[],
                 op_description=foreign_asset.description,
             )
