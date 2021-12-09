@@ -380,23 +380,6 @@ def test_asset_partition_query(asset_aware_context):
 
 
 @asset_test
-def test_asset_materialization_tags(asset_aware_context):
-    with asset_aware_context() as ctx:
-        instance, event_log_storage = ctx
-        execute_pipeline(pipeline_asset_tags, instance=instance)
-
-        tags = event_log_storage.get_asset_tags(AssetKey("asset_tags"))
-        assert len(tags) == 2
-        assert tags["foo"] == "FOO"
-        assert tags["bar"] == "BAR"
-
-        execute_pipeline(pipeline_asset_tags_overwrite, instance=instance)
-        tags = event_log_storage.get_asset_tags(AssetKey("asset_tags"))
-        assert len(tags) == 1
-        assert tags["foo"] == "NOT_FOO"
-
-
-@asset_test
 def test_get_asset_keys(asset_aware_context):
     @op
     def gen_op():

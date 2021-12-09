@@ -513,7 +513,6 @@ type Asset {
   id: String!
   key: AssetKey!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
-  tags: [AssetTag!]!
   definition: AssetNode
 }
 
@@ -614,11 +613,6 @@ type RunNotFoundError implements PipelineRunNotFoundError & Error {
 interface PipelineRunNotFoundError {
   runId: String!
   message: String!
-}
-
-type AssetTag {
-  key: String!
-  value: String!
 }
 
 type AssetNode {

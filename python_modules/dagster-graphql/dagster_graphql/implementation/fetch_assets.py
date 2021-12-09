@@ -92,8 +92,7 @@ def get_asset(graphene_info, asset_key):
     if not asset_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    tags = instance.get_asset_tags(asset_key)
-    return GrapheneAsset(key=asset_key, definition=asset_node, tags=tags)
+    return GrapheneAsset(key=asset_key, definition=asset_node)
 
 
 def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
