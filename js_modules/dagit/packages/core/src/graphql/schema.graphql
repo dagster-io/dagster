@@ -1173,12 +1173,17 @@ type Sensor {
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+  metadata: SensorMetadata!
 }
 
 type Target {
   pipelineName: String!
   mode: String!
   solidSelection: [String!]
+}
+
+type SensorMetadata {
+  assetKeys: [AssetKey!]
 }
 
 type PipelinePreset {

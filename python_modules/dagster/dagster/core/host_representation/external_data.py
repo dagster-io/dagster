@@ -21,6 +21,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -239,10 +240,20 @@ class ExternalTargetData(
 
 
 @whitelist_for_serdes
+class ExternalSensorMetadata(namedtuple("_ExternalSensorMetadata", "asset_keys")):
+    """Stores additional sensor metadata which is available on the Dagit frontend."""
+
+    def __new__(cls, asset_keys=None):
+        return super(ExternalSensorMetadata, cls).__new__(
+            cls, asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys")
+        )
+
+
+@whitelist_for_serdes
 class ExternalSensorData(
     namedtuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description target_dict",
+        "name pipeline_name solid_selection mode min_interval description target_dict metadata",
     )
 ):
     def __new__(
@@ -254,6 +265,7 @@ class ExternalSensorData(
         min_interval=None,
         description=None,
         target_dict=None,
+        metadata=None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -281,6 +293,7 @@ class ExternalSensorData(
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
             target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
+            metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
         )
 
 
@@ -614,6 +627,11 @@ def external_partition_set_data_from_def(partition_set_def):
 
 def external_sensor_data_from_def(sensor_def):
     first_target = sensor_def.targets[0] if sensor_def.targets else None
+
+    asset_keys = None
+    if isinstance(sensor_def, AssetSensorDefinition):
+        asset_keys = [sensor_def.asset_key]
+
     return ExternalSensorData(
         name=sensor_def.name,
         pipeline_name=first_target.pipeline_name if first_target else None,
@@ -629,6 +647,7 @@ def external_sensor_data_from_def(sensor_def):
         },
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
+        metadata=ExternalSensorMetadata(asset_keys=asset_keys),
     )
 
 
