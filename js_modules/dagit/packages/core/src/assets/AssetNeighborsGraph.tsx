@@ -20,7 +20,7 @@ const buildGraphFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencies: [], dependedBy: []},
+        definition: {...assetNode, dependencies: []},
         hidden: false,
       },
     },
@@ -31,21 +31,21 @@ const buildGraphFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
 
   for (const {asset} of assetNode.dependencies) {
     graphData.upstream[assetNode.id][asset.id] = true;
-    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: 'a'};
+    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: true};
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: [], dependedBy: []},
+      definition: {...asset, dependencies: []},
       hidden: false,
     };
   }
   for (const {asset} of assetNode.dependedBy) {
     graphData.upstream[asset.id] = {...graphData.upstream[asset.id], [assetNode.id]: true};
-    graphData.downstream[assetNode.id][asset.id] = 'a';
+    graphData.downstream[assetNode.id][asset.id] = true;
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: [], dependedBy: []},
+      definition: {...asset, dependencies: []},
       hidden: false,
     };
   }

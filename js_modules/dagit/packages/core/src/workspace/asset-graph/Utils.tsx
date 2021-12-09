@@ -32,7 +32,7 @@ interface LayoutNode {
 }
 export interface GraphData {
   nodes: {[assetId: string]: Node};
-  downstream: {[assetId: string]: {[childAssetId: string]: string}};
+  downstream: {[assetId: string]: {[childAssetId: string]: boolean}};
   upstream: {[assetId: string]: {[parentAssetId: string]: boolean}};
 }
 interface IPoint {
@@ -54,26 +54,15 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
 
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({asset, inputName}) => {
+    definition.dependencies.forEach(({asset}) => {
       const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
       data.downstream[upstreamAssetKeyJson] = {
         ...(data.downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: inputName,
+        [assetKeyJson]: true,
       };
       data.upstream[assetKeyJson] = {
         ...(data.upstream[assetKeyJson] || {}),
         [upstreamAssetKeyJson]: true,
-      };
-    });
-    definition.dependedBy.forEach(({asset, inputName}) => {
-      const downstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
-      data.upstream[downstreamAssetKeyJson] = {
-        ...(data.upstream[downstreamAssetKeyJson] || {}),
-        [assetKeyJson]: true,
-      };
-      data.downstream[assetKeyJson] = {
-        ...(data.downstream[assetKeyJson] || {}),
-        [downstreamAssetKeyJson]: inputName,
       };
     });
     data.nodes[assetKeyJson] = {
@@ -96,7 +85,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencies: [], dependedBy: []},
+        definition: {...assetNode, dependencies: []},
         hidden: false,
       },
     },
@@ -107,21 +96,21 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
 
   for (const {asset} of assetNode.dependencies) {
     graphData.upstream[assetNode.id][asset.id] = true;
-    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: 'a'};
+    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: true};
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: [], dependedBy: []},
+      definition: {...asset, dependencies: []},
       hidden: false,
     };
   }
   for (const {asset} of assetNode.dependedBy) {
     graphData.upstream[asset.id] = {...graphData.upstream[asset.id], [assetNode.id]: true};
-    graphData.downstream[assetNode.id][asset.id] = 'a';
+    graphData.downstream[assetNode.id][asset.id] = true;
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: [], dependedBy: []},
+      definition: {...asset, dependencies: []},
       hidden: false,
     };
   }
@@ -267,7 +256,7 @@ export interface LiveData {
 }
 
 export const buildLiveData = (
-  graph: ReturnType<typeof buildGraphData>,
+  graph: GraphData,
   nodes: AssetNodeLiveFragment[],
   inProgressRunsByStep: InProgressRunsFragment[],
 ) => {
