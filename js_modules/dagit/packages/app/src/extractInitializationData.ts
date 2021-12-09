@@ -19,10 +19,7 @@ export const extractInitializationData = (): {
       if (parsed.pathPrefix !== PREFIX_PLACEHOLDER) {
         value.pathPrefix = parsed.pathPrefix;
       }
-      if (
-        parsed.telemetryEnabled !== TELEMETRY_PLACEHOLDER &&
-        typeof parsed.telemetryEnabled === 'boolean'
-      ) {
+      if (parsed.telemetryEnabled !== TELEMETRY_PLACEHOLDER) {
         value.telemetryEnabled = parsed.telemetryEnabled;
       }
     }
