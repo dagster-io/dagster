@@ -40,6 +40,7 @@ DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
+DAEMON_HEARTBEAT = "daemon_heartbeat"
 TELEMETRY_VERSION = "0.2"
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
