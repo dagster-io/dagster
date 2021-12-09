@@ -54,12 +54,11 @@ def main(
 
         all_events = []
 
-        def events_callback(event):
-            all_events.append(event)
-
         try:
             with DagsterInstance.ephemeral() as instance:
-                instance.add_event_listener(step_run_ref.run_id, events_callback)
+                instance.add_event_listener(
+                    step_run_ref.run_id, lambda event: all_events.append(event)
+                )
                 list(run_step_from_ref(step_run_ref, instance))
         finally:
             events_filepath = (

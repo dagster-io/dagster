@@ -15,14 +15,9 @@ def main(step_run_ref_path: str) -> None:
 
     all_events = []
 
-    def events_callback(event):
-        # each new event will get added to this list so we can send them back to the parent
-        # process (which will add them to that instance)
-        all_events.append(event)
-
     try:
         with DagsterInstance.ephemeral() as instance:
-            instance.add_event_listener(step_run_ref.run_id, events_callback)
+            instance.add_event_listener(step_run_ref.run_id, lambda event: all_events.append(event))
             # consume entire step iterator
             list(run_step_from_ref(step_run_ref, instance))
     finally:
