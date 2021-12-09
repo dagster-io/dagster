@@ -6,6 +6,7 @@ from dagster.core.asset_defs import ForeignAsset
 from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.host_representation.external_data import (
+    ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
     ExternalSensorData,
@@ -47,6 +48,7 @@ def test_single_asset_pipeline():
         ExternalAssetNode(
             asset_key=AssetKey("asset1"),
             dependencies=[],
+            depended_by=[],
             op_name="asset1",
             op_description=None,
             job_names=["my_graph"],
@@ -73,6 +75,11 @@ def test_two_asset_pipeline():
         ExternalAssetNode(
             asset_key=AssetKey("asset1"),
             dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("asset2"), input_name="asset1"
+                )
+            ],
             op_name="asset1",
             op_description=None,
             job_names=["my_graph"],
@@ -82,6 +89,7 @@ def test_two_asset_pipeline():
             dependencies=[
                 ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"), input_name="asset1")
             ],
+            depended_by=[],
             op_name="asset2",
             op_description=None,
             job_names=["my_graph"],
@@ -114,6 +122,11 @@ def test_cross_pipeline_asset_dependency():
         ExternalAssetNode(
             asset_key=AssetKey("asset1"),
             dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("asset2"), input_name="asset1"
+                )
+            ],
             op_name="asset1",
             op_description=None,
             job_names=["asset1_graph"],
@@ -123,6 +136,7 @@ def test_cross_pipeline_asset_dependency():
             dependencies=[
                 ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"), input_name="asset1")
             ],
+            depended_by=[],
             op_name="asset2",
             op_description=None,
             job_names=["asset2_graph"],
@@ -151,6 +165,7 @@ def test_same_asset_in_multiple_pipelines():
         ExternalAssetNode(
             asset_key=AssetKey("asset1"),
             dependencies=[],
+            depended_by=[],
             op_name="asset1",
             op_description=None,
             job_names=["graph1", "graph2"],
@@ -167,10 +182,18 @@ def test_unused_foreign_asset():
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
-            asset_key=AssetKey("foo"), op_description="abc", dependencies=[], job_names=[]
+            asset_key=AssetKey("foo"),
+            op_description="abc",
+            dependencies=[],
+            depended_by=[],
+            job_names=[],
         ),
         ExternalAssetNode(
-            asset_key=AssetKey("bar"), op_description="def", dependencies=[], job_names=[]
+            asset_key=AssetKey("bar"),
+            op_description="def",
+            dependencies=[],
+            depended_by=[],
+            job_names=[],
         ),
     ]
 
@@ -191,7 +214,13 @@ def test_used_foreign_asset():
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
-            asset_key=AssetKey("bar"), op_description="def", dependencies=[], job_names=[]
+            asset_key=AssetKey("bar"),
+            op_description="def",
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]), input_name="bar")
+            ],
+            job_names=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -200,6 +229,7 @@ def test_used_foreign_asset():
             dependencies=[
                 ExternalAssetDependency(upstream_asset_key=AssetKey(["bar"]), input_name="bar")
             ],
+            depended_by=[],
             job_names=["job1"],
         ),
     ]

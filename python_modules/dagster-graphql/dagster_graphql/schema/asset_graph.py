@@ -75,18 +75,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_dependedBy(self, _graphene_info):
-        results = []
-        for item in self._external_repository.get_external_asset_nodes():
-            for dep in item.dependencies:
-                if dep.upstream_asset_key == self._external_asset_node.asset_key:
-                    results.append(
-                        GrapheneAssetDependency(
-                            external_repository=self._external_repository,
-                            input_name=dep.input_name,
-                            asset_key=item.asset_key,
-                        )
-                    )
-        return results
+        return [
+            GrapheneAssetDependency(
+                external_repository=self._external_repository,
+                input_name=dep.input_name,
+                asset_key=dep.downstream_asset_key,
+            )
+            for dep in self._external_asset_node.depended_by
+        ]
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
