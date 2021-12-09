@@ -124,7 +124,7 @@ class ExecuteStepArgs(
     namedtuple(
         "_ExecuteStepArgs",
         "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref "
-        "retry_mode known_state should_verify_step",
+        "retry_mode known_state should_verify_step self_managed_cancellation",
     )
 ):
     def __new__(
@@ -136,6 +136,7 @@ class ExecuteStepArgs(
         retry_mode=None,
         known_state=None,
         should_verify_step=None,
+        self_managed_cancellation=None,
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
@@ -151,6 +152,11 @@ class ExecuteStepArgs(
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             should_verify_step=check.opt_bool_param(
                 should_verify_step, "should_verify_step", False
+            ),
+            self_managed_cancellation=check.opt_bool_param(
+                self_managed_cancellation,
+                "self_managed_cancellation",
+                False,
             ),
         )
 

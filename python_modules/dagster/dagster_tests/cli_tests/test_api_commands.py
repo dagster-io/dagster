@@ -1,13 +1,68 @@
+import sys
+import time
+from contextlib import contextmanager
+
 import mock
+import pytest
 from click.testing import CliRunner
+from dagster import job, op, repository
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
+from dagster.core.host_representation import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PipelineHandle,
+)
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+
+
+@op
+def slow_op():
+    time.sleep(10)
+
+
+@job
+def slow_job():
+    slow_op()
+
+
+@repository
+def my_repo():
+    return [slow_job]
+
+
+@contextmanager
+def get_my_repo_repository_location():
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=__file__,
+        attribute="my_repo",
+    )
+    location_name = "my_repo_location"
+
+    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+
+    with origin.create_test_location() as location:
+        yield location
+
+
+@contextmanager
+def get_my_repo_handle():
+    with get_my_repo_repository_location() as location:
+        yield location.get_repository("my_repo").handle
+
+
+@contextmanager
+def get_slow_job_handle():
+    with get_my_repo_handle() as repo_handle:
+        yield PipelineHandle("slow_job", repo_handle)
 
 
 def runner_execute_run(runner, cli_args):
@@ -101,7 +156,7 @@ def test_execute_step():
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
-                    step_keys_to_execute=None,
+                    step_keys_to_execute=["do_something"],
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -114,7 +169,7 @@ def test_execute_step():
         assert "STEP_SUCCESS" in result.stdout
 
 
-def test_execute_step_1():
+def test_execute_step_cancelation_no_cancel():
     with get_foo_pipeline_handle() as pipeline_handle:
         runner = CliRunner()
 
@@ -132,8 +187,9 @@ def test_execute_step_1():
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
-                    step_keys_to_execute=None,
+                    step_keys_to_execute=["do_something"],
                     instance_ref=instance.get_ref(),
+                    self_managed_cancellation=True,
                 )
             )
 
@@ -143,6 +199,59 @@ def test_execute_step_1():
             )
 
         assert "STEP_SUCCESS" in result.stdout
+
+
+def test_execute_step_cancelation_with_cancel():
+    with get_slow_job_handle() as pipeline_handle:
+        runner = CliRunner()
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            run = create_run_for_test(
+                instance, pipeline_name="foo", run_id="new_run", status=PipelineRunStatus.CANCELING
+            )
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    step_keys_to_execute=["slow_op"],
+                    instance_ref=instance.get_ref(),
+                    self_managed_cancellation=True,
+                )
+            )
+
+            with pytest.raises(DagsterExecutionInterruptedError):
+                runner_execute_step(
+                    runner,
+                    [input_json],
+                )
+
+            run = create_run_for_test(
+                instance, pipeline_name="foo", run_id="newer_run", status=PipelineRunStatus.CANCELED
+            )
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    step_keys_to_execute=["slow_op"],
+                    instance_ref=instance.get_ref(),
+                    self_managed_cancellation=True,
+                )
+            )
+
+            with pytest.raises(DagsterExecutionInterruptedError):
+                runner_execute_step(
+                    runner,
+                    [input_json],
+                )
 
 
 def test_execute_step_verify_step():
@@ -167,7 +276,7 @@ def test_execute_step_verify_step():
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
-                    step_keys_to_execute=None,
+                    step_keys_to_execute=["do_something"],
                     instance_ref=instance.get_ref(),
                 )
             )

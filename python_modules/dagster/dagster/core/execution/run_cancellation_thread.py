@@ -45,3 +45,17 @@ def start_run_cancellation_thread(
     )
     thread.start()
     return thread, shutdown_event
+
+
+def start_step_cancellation_thread(
+    instance: DagsterInstance, run_id
+) -> Tuple[threading.Thread, threading.Event]:
+    print("Starting step cancellation thread")  # pylint: disable=print-call
+    shutdown_event = threading.Event()
+    thread = threading.Thread(
+        target=_kill_on_cancel,
+        args=(instance.get_ref(), run_id, shutdown_event),
+        name="kill-on-cancel",
+    )
+    thread.start()
+    return thread, shutdown_event
