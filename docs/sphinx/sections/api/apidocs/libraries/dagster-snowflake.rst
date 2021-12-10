@@ -20,3 +20,5 @@ your data warehouse.
 .. autoclass:: SnowflakeConnection
   :members:
   :undoc-members:
+
+.. autofunction:: snowflake_op_for_query
