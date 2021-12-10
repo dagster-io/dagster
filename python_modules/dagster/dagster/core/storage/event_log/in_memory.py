@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Optional
+from typing import Iterable, Optional
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -291,9 +291,3 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._wiped_asset_keys[asset_key] = time.time()
         if asset_key in self._asset_tags:
             del self._asset_tags[asset_key]
-
-    def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
-        return {asset_key: tags for asset_key, tags in self._asset_tags.items()}
-
-    def get_asset_tags(self, asset_key: AssetKey) -> Dict[str, str]:
-        return self._asset_tags[asset_key]

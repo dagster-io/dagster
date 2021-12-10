@@ -433,7 +433,6 @@ def test_0_11_0_add_asset_columns():
             assert "last_materialization" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "asset_details" in set(get_sqlite3_columns(db_path, "asset_keys"))
-            instance.get_asset_tags(AssetKey("model"))
 
 
 def test_rename_event_log_entry():
@@ -483,7 +482,6 @@ def test_0_12_0_extract_asset_index_cols():
 
             execute_pipeline(asset_pipeline, instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
-            old_tags = storage.get_asset_tags(AssetKey(["a"]))
 
             # wipe and leave asset wiped
             storage.wipe_asset(AssetKey(["b"]))
@@ -502,9 +500,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert storage.has_asset_key(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["b"]))
 
-            new_tags = storage.get_asset_tags(AssetKey(["a"]))
             new_keys = storage.all_asset_keys()
-            assert set(old_tags) == set(new_tags)
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
