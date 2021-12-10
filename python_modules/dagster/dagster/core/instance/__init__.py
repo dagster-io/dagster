@@ -1188,7 +1188,7 @@ records = instance.get_event_records(
     def all_asset_tags(self):
         return {}
 
-    def get_asset_tags(self, asset_key):
+    def get_asset_tags(self, asset_key):  # pylint: disable=unused-argument
         return {}
 
     def wipe_assets(self, asset_keys):
