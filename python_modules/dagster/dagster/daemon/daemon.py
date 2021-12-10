@@ -4,8 +4,8 @@ from collections import deque
 from contextlib import AbstractContextManager
 
 import pendulum
-from dagster.core.telemetry import log_action, DAEMON_HEARTBEAT
 from dagster import DagsterInstance, check
+from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.monitoring import execute_monitoring_iteration
@@ -21,7 +21,7 @@ def get_default_daemon_logger(daemon_name):
 
 
 DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
-LOG_FREQUENCY = 20  # Frequency at which to log daemon heartbeats
+TELEMETRY_LOGGING_INTERVAL = 3600  # Interval (in seconds) at which to log that daemon is alive
 
 
 class DagsterDaemon(AbstractContextManager):
@@ -31,7 +31,7 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._num_heartbeats_since_log = 0
+        self._last_log_time = None
         self._errors = deque(
             maxlen=DAEMON_HEARTBEAT_ERROR_LIMIT
         )  # (SerializableErrorInfo, timestamp) tuples
@@ -194,10 +194,12 @@ class DagsterDaemon(AbstractContextManager):
                 errors=[error for (error, timestamp) in self._errors],
             )
         )
-        self._num_heartbeats_since_log += 1
-        if self._num_heartbeats_since_log >= LOG_FREQUENCY:
-            log_action(instance, DAEMON_HEARTBEAT)
-            self._num_heartbeats_since_log = 0
+        if (
+            not self._last_log_time
+            or (curr_time - self._last_log_time).total_seconds() >= TELEMETRY_LOGGING_INTERVAL
+        ):
+            log_action(instance, DAEMON_ALIVE)
+            self._last_log_time = curr_time
 
     @abstractmethod
     def run_iteration(self, instance, workspace):
