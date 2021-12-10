@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+from collections import OrderedDict
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
 
@@ -26,6 +27,8 @@ from .base import (
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
+
+MIN_ASSET_ROWS = 25
 
 
 class SqlEventLogStorage(EventLogStorage):
@@ -715,72 +718,20 @@ class SqlEventLogStorage(EventLogStorage):
 
     def all_asset_keys(self):
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
-                results = conn.execute(
-                    db.select([AssetKeyTable.c.asset_key]).where(
-                        db.or_(
-                            AssetKeyTable.c.wipe_timestamp == None,
-                            AssetKeyTable.c.last_materialization_timestamp
-                            > AssetKeyTable.c.wipe_timestamp,
-                        )
-                    )
-                ).fetchall()
-                return list(set([AssetKey.from_db_string(result[0]) for result in results]))
-
-        # has not migrated, need to fetch the wipe_timestamp from asset_details
-        with self.index_connection() as conn:
-            results = conn.execute(
-                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
-            ).fetchall()
-
-            asset_keys = set()
-            wiped = set()
-            wiped_timestamps = {}
-            for result in results:
-                asset_key = AssetKey.from_db_string(result[0])
-                asset_details: Optional[AssetDetails] = AssetDetails.from_db_string(result[1])
-                asset_keys.add(asset_key)
-                if asset_details and asset_details.last_wipe_timestamp:
-                    wiped_timestamps[asset_key] = asset_details.last_wipe_timestamp
-
-            if wiped_timestamps:
-                materialized_timestamps = {}
-
-                # fetch the last materialization timestamp per asset key
-                materialization_results = conn.execute(
-                    db.select(
-                        [
-                            SqlEventLogStorageTable.c.asset_key,
-                            db.func.max(SqlEventLogStorageTable.c.timestamp),
-                        ]
-                    )
-                    .where(
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string() for asset_key in wiped_timestamps.keys()]
-                        )
-                    )
-                    .group_by(SqlEventLogStorageTable.c.asset_key)
-                    .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
-                ).fetchall()
-
-                for result in materialization_results:
-                    asset_key = AssetKey.from_db_string(result[0])
-                    last_materialized_timestamp = result[1]
-                    materialized_timestamps[asset_key] = last_materialized_timestamp
-
-                # calculate the set of wiped asset keys that have not had a materialization since
-                # the wipe timestamp
-                wiped = set(
-                    [
-                        asset_key
-                        for asset_key in wiped_timestamps.keys()
-                        if not materialized_timestamps.get(asset_key)
-                        or utc_datetime_from_naive(materialized_timestamps.get(asset_key))
-                        < utc_datetime_from_timestamp(wiped_timestamps[asset_key])
-                    ]
+            query = db.select([AssetKeyTable.c.asset_key]).where(
+                db.or_(
+                    AssetKeyTable.c.wipe_timestamp == None,
+                    AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
                 )
+            )
+            with self.index_connection() as conn:
+                results = conn.execute(query).fetchall()
 
-        return list(asset_keys.difference(wiped))
+            return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+
+        rows, _has_more, _cursor = self._fetch_unwiped_asset_rows()
+        asset_keys = [AssetKey.from_db_string(row[0]) for row in rows]
+        return asset_keys
 
     def get_asset_keys(
         self,
@@ -788,16 +739,122 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
-        query = (
-            db.select([AssetKeyTable.c.asset_key])
-            .where(
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            query = db.select([AssetKeyTable.c.asset_key]).where(
                 db.or_(
                     AssetKeyTable.c.wipe_timestamp == None,
                     AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
                 )
             )
-            .order_by(AssetKeyTable.c.asset_key.asc())
+            query = self._apply_asset_filter_to_query(query, None, prefix, limit, cursor)
+            with self.index_connection() as conn:
+                results = conn.execute(query).fetchall()
+
+            return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+
+        asset_keys = []
+        should_query = True
+        current_cursor = cursor
+
+        fetch_limit = max(limit, MIN_ASSET_ROWS) if limit else None
+        while should_query:
+            rows, has_more, new_cursor = self._fetch_unwiped_asset_rows(
+                prefix=prefix, limit=fetch_limit, cursor=current_cursor
+            )
+            asset_keys.extend([AssetKey.from_db_string(row[0]) for row in rows])
+            should_query = has_more and limit and len(asset_keys) < limit
+            current_cursor = new_cursor
+
+        return asset_keys[:limit] if limit else asset_keys
+
+    def _fetch_unwiped_asset_rows(self, asset_keys=None, prefix=None, limit=None, cursor=None):
+        # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
+        # applying the filters specified in the arguments.  Does not guarantee that the number of
+        # rows returned will match the limit specified.
+        # returns a tuple of (rows, has_more, cursor), where each row is a tuple of (asset_key,
+        # materialization, and asset_details)
+
+        query = db.select(
+            [
+                AssetKeyTable.c.asset_key,
+                AssetKeyTable.c.last_materialization,
+                AssetKeyTable.c.asset_details,
+            ]
         )
+        query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        wiped_timestamps_by_asset_key = {}
+        row_by_asset_key = OrderedDict()
+
+        for row in rows:
+            asset_key = AssetKey.from_db_string(row[0])
+            if not asset_key:
+                continue
+            asset_details = AssetDetails.from_db_string(row[2])
+            if not asset_details or not asset_details.last_wipe_timestamp:
+                row_by_asset_key[asset_key] = row
+                continue
+            materialization_or_event = deserialize_json_to_dagster_namedtuple(row[1])
+            if isinstance(materialization_or_event, EventLogEntry):
+                if asset_details.last_wipe_timestamp > materialization_or_event.timestamp:
+                    # this asset has not been materialized since being wiped, skip
+                    continue
+                else:
+                    # add the key
+                    row_by_asset_key[asset_key] = row
+            else:
+                row_by_asset_key[asset_key] = row
+                wiped_timestamps_by_asset_key[asset_key] = asset_details.last_wipe_timestamp
+
+        if wiped_timestamps_by_asset_key:
+            materialization_times = self._backcompat_fetch_last_materialization_time(
+                wiped_timestamps_by_asset_key.keys()
+            )
+            for asset_key, wiped_timestamp in wiped_timestamps_by_asset_key.items():
+                materialization_time = materialization_times.get(asset_key)
+                if not materialization_time or materialization_time < wiped_timestamp:
+                    # remove rows that have not been materialized since being wiped
+                    row_by_asset_key.pop(asset_key)
+
+        has_more = limit and len(rows) == limit
+        new_cursor = rows[-1][0] if rows else None
+        return row_by_asset_key.values(), has_more, new_cursor
+
+    def _backcompat_fetch_last_materialization_time(self, asset_keys):
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.timestamp),
+                ]
+            )
+            .where(
+                SqlEventLogStorageTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in asset_keys]
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+        )
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        return {AssetKey.from_db_string(row[0]): row[1] for row in rows}
+
+    def _apply_asset_filter_to_query(
+        self,
+        query,
+        asset_keys=None,
+        prefix=None,
+        limit=None,
+        cursor=None,
+    ):
+        if asset_keys:
+            query = query.where(
+                AssetKeyTable.c.asset_key.in_([asset_key.to_string() for asset_key in asset_keys])
+            )
 
         if prefix:
             prefix_str = seven.dumps(prefix)[:-1]
@@ -808,16 +865,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         if limit:
             query = query.limit(limit)
-
-        asset_keys = []
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-            for result in results:
-                asset_key = AssetKey.from_db_string(result[0])
-                if asset_key:
-                    asset_keys.append(asset_key)
-
-        return asset_keys
+        return query
 
     def _get_asset_details(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
