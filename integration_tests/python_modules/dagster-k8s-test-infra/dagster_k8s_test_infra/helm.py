@@ -821,6 +821,19 @@ def _base_helm_config(docker_image):
                     ),
                     "env": {"TEST_SET_ENV_VAR": "test_celery_env_var"},
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
+                    "volumeMounts": [
+                        {
+                            "name": "test-volume",
+                            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                            "subPath": "volume_mounted_file.yaml",
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "test-volume",
+                            "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
+                        }
+                    ],
                 },
             },
         },
