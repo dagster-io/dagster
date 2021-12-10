@@ -1,7 +1,6 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.definitions.events import AssetKey
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
@@ -105,14 +104,17 @@ class GrapheneAsset(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        limit = kwargs.get("limit")
+        partitions = kwargs.get("partitions")
+
         return [
             GrapheneAssetMaterialization(event=event)
             for event in get_asset_events(
                 graphene_info,
                 self.key,
-                kwargs.get("partitions"),
+                partitions=partitions,
                 before_timestamp=before_timestamp,
-                limit=kwargs.get("limit"),
+                limit=limit,
             )
         ]
 
@@ -607,14 +609,25 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
+        key_filter = set(kwargs.get("assetKeys", []))
+        if not asset_nodes:
+            return []
+        matching = [node for node in asset_nodes if not key_filter or node.asset_key in key_filter]
+        if not matching:
+            return []
 
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        events_by_key = graphene_info.context.instance.get_latest_materialization_events(
+            [node.asset_key for node in matching]
         )
+
         return [
-            GrapheneAssetNode(repository, asset_node)
-            for asset_node in asset_nodes or []
-            if not asset_keys or asset_node.asset_key in asset_keys
+            GrapheneAssetNode(
+                repository,
+                node,
+                events_by_key.get(node.asset_key),
+                fetched_materialization=True,
+            )
+            for node in matching
         ]
 
 
