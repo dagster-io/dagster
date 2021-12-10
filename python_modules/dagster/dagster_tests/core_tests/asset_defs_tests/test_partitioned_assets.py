@@ -2,8 +2,8 @@ from dagster import PartitionsDefinition, StaticPartitionsDefinition
 from dagster.core.asset_defs import asset
 from dagster.core.asset_defs.asset_partitions import (
     PartitionKeyRange,
-    get_child_partitions_for_partition_range,
-    get_parent_partitions_for_partition_range,
+    get_downstream_partitions_for_partition_range,
+    get_upstream_partitions_for_partition_range,
 )
 from dagster.core.asset_defs.partition_mapping import PartitionMapping
 from dagster.core.definitions.events import AssetKey
@@ -21,7 +21,7 @@ def test_assets_with_same_partitioning():
         assert upstream_asset
 
     assert (
-        get_parent_partitions_for_partition_range(
+        get_upstream_partitions_for_partition_range(
             downstream_asset,
             upstream_asset,
             AssetKey("upstream_asset"),
@@ -31,7 +31,7 @@ def test_assets_with_same_partitioning():
     )
 
     assert (
-        get_child_partitions_for_partition_range(
+        get_downstream_partitions_for_partition_range(
             downstream_asset,
             upstream_asset,
             AssetKey("upstream_asset"),
@@ -55,26 +55,26 @@ def test_filter_mapping_partitions_dep():
         def __init__(self, hemisphere: str):
             self.hemisphere = hemisphere
 
-        def get_parent_partitions_for_partition_range(
+        def get_upstream_partitions_for_partition_range(
             self,
-            child_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-            parent_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-            child_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
-                f"{self.hemisphere}|{child_partition_key_range.start}",
-                f"{self.hemisphere}|{child_partition_key_range.end}",
+                f"{self.hemisphere}|{downstream_partition_key_range.start}",
+                f"{self.hemisphere}|{downstream_partition_key_range.end}",
             )
 
-        def get_child_partitions_for_partition_range(
+        def get_downstream_partitions_for_partition_range(
             self,
-            child_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-            parent_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-            parent_partition_key_range: PartitionKeyRange,
+            upstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
-                parent_partition_key_range.start.split("|")[-1],
-                parent_partition_key_range.end.split("|")[-1],
+                upstream_partition_key_range.start.split("|")[-1],
+                upstream_partition_key_range.end.split("|")[-1],
             )
 
     @asset(partitions_def=upstream_partitions_def)
@@ -89,7 +89,7 @@ def test_filter_mapping_partitions_dep():
         assert upstream_asset
 
     assert (
-        get_parent_partitions_for_partition_range(
+        get_upstream_partitions_for_partition_range(
             downstream_asset,
             upstream_asset,
             AssetKey("upstream_asset"),
@@ -99,7 +99,7 @@ def test_filter_mapping_partitions_dep():
     )
 
     assert (
-        get_child_partitions_for_partition_range(
+        get_downstream_partitions_for_partition_range(
             downstream_asset,
             upstream_asset,
             AssetKey("upstream_asset"),
