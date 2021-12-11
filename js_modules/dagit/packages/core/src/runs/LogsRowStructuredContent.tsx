@@ -4,7 +4,7 @@ import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
@@ -374,7 +374,7 @@ const MaterializationContent: React.FC<{
               label: 'asset_key',
               item: (
                 <>
-                  {materialization.assetKey.path.join(' > ')}
+                  {displayNameForAssetKey(materialization.assetKey)}
                   {assetDashboardLink}
                 </>
               ),

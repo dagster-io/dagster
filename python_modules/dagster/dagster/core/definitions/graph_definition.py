@@ -566,6 +566,7 @@ class GraphDefinition(NodeDefinition):
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
+        op_selection: Optional[List[str]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -581,6 +582,14 @@ class GraphDefinition(NodeDefinition):
                 or resource definitions.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
+            op_selection (Optional[List[str]]): A list of op selection queries (including single op
+                names) to execute. For example:
+                * ``['some_op']``: selects ``some_op`` itself.
+                * ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
+                * ``['*some_op+++']``: select ``some_op``, all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+                * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
+                ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -598,9 +607,12 @@ class GraphDefinition(NodeDefinition):
         in_proc_mode = ModeDefinition(
             executor_defs=[execute_in_process_executor], resource_defs=resource_defs
         )
-        ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
+        ephemeral_job = JobDefinition(
+            name=self._name, graph_def=self, mode_def=in_proc_mode
+        ).get_job_def_for_op_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         return core_execute_in_process(
             node=self,

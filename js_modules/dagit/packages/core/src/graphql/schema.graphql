@@ -94,7 +94,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes: [AssetNode!]!
+  assetNodes(assetKeys: [AssetKeyInput!]): [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -513,7 +513,6 @@ type Asset {
   id: String!
   key: AssetKey!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
-  tags: [AssetTag!]!
   definition: AssetNode
 }
 
@@ -614,11 +613,6 @@ type RunNotFoundError implements PipelineRunNotFoundError & Error {
 interface PipelineRunNotFoundError {
   runId: String!
   message: String!
-}
-
-type AssetTag {
-  key: String!
-  value: String!
 }
 
 type AssetNode {
@@ -1028,6 +1022,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
+  tick(timestamp: Float): InstigationTick
   ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
   nextTick: FutureInstigationTick
   runningCount: Int!
@@ -1172,6 +1167,7 @@ type Sensor {
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+  metadata: SensorMetadata!
 }
 
 type Target {
@@ -1180,12 +1176,20 @@ type Target {
   solidSelection: [String!]
 }
 
+type SensorMetadata {
+  assetKeys: [AssetKey!]
+}
+
 type PipelinePreset {
   name: String!
   solidSelection: [String!]
   runConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -1209,7 +1213,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes: [AssetNode!]!
+  assetNodes(assetKeys: [AssetKeyInput!]): [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1545,10 +1549,6 @@ union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!
-}
-
-input AssetKeyInput {
-  path: [String!]!
 }
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError

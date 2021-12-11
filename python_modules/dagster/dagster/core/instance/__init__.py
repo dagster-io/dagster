@@ -682,9 +682,7 @@ class DagsterInstance:
             if snapshot.lineage_snapshot
             else None
         )
-        return HistoricalPipeline(
-            self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id, parent_snapshot
-        )
+        return HistoricalPipeline(snapshot, snapshot_id, parent_snapshot)
 
     def has_historical_pipeline(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
@@ -1188,11 +1186,10 @@ records = instance.get_event_records(
         return self._event_storage.get_asset_run_ids(asset_key)
 
     def all_asset_tags(self):
-        return self._event_storage.all_asset_tags()
+        return {}
 
-    def get_asset_tags(self, asset_key):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        return self._event_storage.get_asset_tags(asset_key)
+    def get_asset_tags(self, asset_key):  # pylint: disable=unused-argument
+        return {}
 
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
@@ -1540,7 +1537,7 @@ records = instance.get_event_records(
         Args:
             run_id (str): The id of the run the launch.
         """
-        from dagster.core.launcher import LaunchRunContext
+        from dagster.core.launcher import ResumeRunContext
         from dagster.core.events import EngineEventData
         from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
@@ -1560,11 +1557,10 @@ records = instance.get_event_records(
         )
 
         try:
-            self._run_launcher.launch_run(
-                LaunchRunContext(
+            self._run_launcher.resume_run(
+                ResumeRunContext(
                     pipeline_run=run,
                     workspace=workspace,
-                    resume_from_failure=True,
                     resume_attempt_number=attempt_number,
                 )
             )
@@ -1698,6 +1694,12 @@ records = instance.get_event_records(
 
     def delete_job_state(self, job_origin_id):
         return self._schedule_storage.delete_job_state(job_origin_id)
+
+    def get_job_tick(self, job_origin_id, timestamp):
+        matches = self._schedule_storage.get_job_ticks(
+            job_origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+        )
+        return matches[0] if len(matches) else None
 
     def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         return self._schedule_storage.get_job_ticks(

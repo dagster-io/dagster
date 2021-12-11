@@ -10,18 +10,18 @@ import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
 } from './ConfigEditorConfigPicker';
-import {ExecutionSessionContainerError} from './ExecutionSessionContainerError';
-import {ExecutionSessionContainerLoading} from './ExecutionSessionContainerLoading';
-import {PipelineExecutionRootQuery} from './types/PipelineExecutionRootQuery';
+import {LaunchpadSessionError} from './LaunchpadSessionError';
+import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {LaunchpadRootQuery} from './types/LaunchpadRootQuery';
 
-const ExecutionSessionContainer = React.lazy(() => import('./ExecutionSessionContainer'));
+const LaunchpadSessionContainer = React.lazy(() => import('./LaunchpadSessionContainer'));
 
 interface Props {
   pipelinePath: string;
   repoAddress: RepoAddress;
 }
 
-export const PipelineExecutionRoot: React.FC<Props> = (props) => {
+export const LaunchpadRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;
@@ -34,7 +34,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
-  const result = useQuery<PipelineExecutionRootQuery>(PIPELINE_EXECUTION_ROOT_QUERY, {
+  const result = useQuery<LaunchpadRootQuery>(PIPELINE_EXECUTION_ROOT_QUERY, {
     variables: {repositoryName, repositoryLocationName, pipelineName},
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
@@ -44,7 +44,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
 
   if (!pipelineOrError || !partitionSetsOrError) {
-    return <ExecutionSessionContainerLoading />;
+    return <LaunchpadSessionLoading />;
   }
 
   if (
@@ -57,13 +57,13 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
         : 'No data returned from GraphQL';
 
     return pipelineName !== '' ? (
-      <ExecutionSessionContainerError
+      <LaunchpadSessionError
         icon="error"
         title={isJob ? 'Job not found' : 'Pipeline not found'}
         description={message}
       />
     ) : (
-      <ExecutionSessionContainerError
+      <LaunchpadSessionError
         icon="no-results"
         title={isJob ? 'Select a job' : 'Select a pipeline'}
         description={message}
@@ -77,7 +77,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 
   if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
     return (
-      <ExecutionSessionContainerError
+      <LaunchpadSessionError
         icon="error"
         title="Python Error"
         description={pipelineOrError.message}
@@ -86,7 +86,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   }
   if (partitionSetsOrError && partitionSetsOrError.__typename === 'PythonError') {
     return (
-      <ExecutionSessionContainerError
+      <LaunchpadSessionError
         icon="error"
         title="Python Error"
         description={partitionSetsOrError.message}
@@ -96,7 +96,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 
   return (
     <React.Suspense fallback={<div />}>
-      <ExecutionSessionContainer
+      <LaunchpadSessionContainer
         pipeline={pipelineOrError}
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
@@ -106,7 +106,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 };
 
 const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment ExecutionSessionContainerPipelineFragment on Pipeline {
+  fragment LaunchpadSessionContainerPipelineFragment on Pipeline {
     id
     isJob
     ...ConfigEditorGeneratorPipelineFragment
@@ -120,14 +120,14 @@ const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
 `;
 
 const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
-  fragment ExecutionSessionContainerPartitionSetsFragment on PartitionSets {
+  fragment LaunchpadSessionContainerPartitionSetsFragment on PartitionSets {
     ...ConfigEditorGeneratorPartitionSetsFragment
   }
   ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
 `;
 
 const PIPELINE_EXECUTION_ROOT_QUERY = gql`
-  query PipelineExecutionRootQuery(
+  query LaunchpadRootQuery(
     $pipelineName: String!
     $repositoryName: String!
     $repositoryLocationName: String!
@@ -147,7 +147,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
       ... on Pipeline {
         id
-        ...ExecutionSessionContainerPipelineFragment
+        ...LaunchpadSessionContainerPipelineFragment
       }
     }
     partitionSetsOrError(
@@ -158,7 +158,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
     ) {
       __typename
-      ...ExecutionSessionContainerPartitionSetsFragment
+      ...LaunchpadSessionContainerPartitionSetsFragment
       ... on PipelineNotFoundError {
         message
       }

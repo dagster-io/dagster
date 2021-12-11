@@ -7,8 +7,8 @@ import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
-  stringFromValue,
-  tokenizedValuesFromString,
+  tokensAsStringArray,
+  tokenizedValuesFromStringArray,
 } from '../ui/TokenizingField';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
@@ -60,9 +60,9 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<TokenizingFieldValue[]>(
     React.useMemo(
       () => ({
-        encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
-        decode: ({q = ''}) =>
-          tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
+        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        decode: ({q = []}) =>
+          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
           ),
@@ -183,7 +183,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 
   const suggestions = searchSuggestionsForRuns(options, data?.pipelineRunTags, enabledFilters);
 
-  const search = tokenizedValuesFromString(stringFromValue(tokens), suggestions);
+  const search = tokenizedValuesFromStringArray(tokensAsStringArray(tokens), suggestions);
 
   const suggestionProvidersFilter = (
     suggestionProviders: SuggestionProvider[],

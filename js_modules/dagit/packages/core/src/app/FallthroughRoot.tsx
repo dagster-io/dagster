@@ -2,6 +2,7 @@ import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {Box} from '../ui/Box';
+import {ExternalAnchorButton} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
@@ -76,13 +77,9 @@ export const FallthroughRoot = () => {
                         : 'Add a repository to get started.'
                     }
                     action={
-                      <a
-                        href="https://docs.dagster.io/getting-started"
-                        target="_blank"
-                        rel="nofollow noreferrer"
-                      >
+                      <ExternalAnchorButton href="https://docs.dagster.io/getting-started">
                         View documentation
-                      </a>
+                      </ExternalAnchorButton>
                     }
                   />
                 </Box>

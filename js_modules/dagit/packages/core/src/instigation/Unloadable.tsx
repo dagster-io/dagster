@@ -65,8 +65,10 @@ export const UnloadableSchedules: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable schedules</Subheading>
-      <UnloadableScheduleInfo />
+      <Box padding={{top: 16, horizontal: 24}}>
+        <Subheading>Unloadable schedules</Subheading>
+        <UnloadableScheduleInfo />
+      </Box>
       <Table>
         <thead>
           <tr>
@@ -135,9 +137,17 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
     onCompleted: displaySensorMutationErrors,
   });
   const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
+  const confirm = useConfirmation();
 
-  const onChangeSwitch = () => {
+  const onChangeSwitch = async () => {
     if (status === InstigationStatus.RUNNING) {
+      await confirm({
+        title: 'Are you sure you want to turn off this sensor?',
+        description:
+          'The definition for this sensor is not available. ' +
+          'If you turn it off, you will not be able to turn it back on from ' +
+          'the currently loaded workspace.',
+      });
       stopSensor({variables: {jobOriginId: id}});
     }
   };
@@ -205,8 +215,8 @@ const ScheduleStateRow: React.FunctionComponent<{
       await confirm({
         title: 'Are you sure you want to stop this schedule?',
         description:
-          'The schedule definition for this schedule is not available. ' +
-          'If you turn off this schedule, you will not be able to turn it back on from ' +
+          'The definition for this schedule is not available. ' +
+          'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
       stopSchedule({variables: {scheduleOriginId: id}});

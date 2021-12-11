@@ -167,7 +167,7 @@ rpc://
 {{- else if .Values.redis.enabled -}}
 {{- $password := ternary (printf ":%s@" .Values.redis.password) "" .Values.redis.usePassword -}}
 {{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.backendDbNumber | default (float64 0)) -}}
-{{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
+{{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.backendUrl)) }}
 {{- end -}}
 {{- end -}}
 

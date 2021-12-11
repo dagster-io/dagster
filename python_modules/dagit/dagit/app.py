@@ -8,6 +8,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.instance import is_dagit_telemetry_enabled
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
@@ -201,6 +202,8 @@ def instantiate_app_with_views(
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
+    telemetry_enabled = is_dagit_telemetry_enabled(context.instance)
+
     def index_view(*args, **kwargs):  # pylint: disable=unused-argument
         try:
             with open(index_path) as f:
@@ -209,6 +212,7 @@ def instantiate_app_with_views(
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
                     .replace("__PATH_PREFIX__", app_path_prefix)
+                    .replace('"__TELEMETRY_ENABLED__"', str(telemetry_enabled).lower())
                     .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:

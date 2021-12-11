@@ -1,6 +1,7 @@
 import graphene
 import yaml
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
@@ -19,6 +20,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -37,7 +39,7 @@ from ..solids import (
     build_solid_handles,
     build_solids,
 )
-from ..tags import GrapheneAssetTag, GraphenePipelineTag
+from ..tags import GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
@@ -83,16 +85,10 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    tags = non_null_list(GrapheneAssetTag)
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "Asset"
-
-    def __init__(self, key, definition=None, tags=None):
-        super().__init__(key=key, definition=definition)
-        check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-        self._tags = tags
 
     def resolve_id(self, _):
         return self.key
@@ -119,13 +115,6 @@ class GrapheneAsset(graphene.ObjectType):
                 limit=kwargs.get("limit"),
             )
         ]
-
-    def resolve_tags(self, graphene_info):
-        if self._tags is not None:
-            tags = self._tags
-        else:
-            tags = graphene_info.context.instance.get_asset_tags(self.key)
-        return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
 class GraphenePipelineRun(graphene.Interface):
@@ -568,7 +557,10 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
-    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetNodes = graphene.Field(
+        non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode"),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -608,16 +600,21 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_repository_location(handle.location_name)
         return GrapheneRepository(location.get_repository(handle.repository_name), location)
 
-    def resolve_assetNodes(self, graphene_info):
+    def resolve_assetNodes(self, graphene_info, **kwargs):
         from ..asset_graph import GrapheneAssetNode
 
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
+
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
         return [
-            GrapheneAssetNode(repository, external_asset_node)
-            for external_asset_node in asset_nodes or []
+            GrapheneAssetNode(repository, asset_node)
+            for asset_node in asset_nodes or []
+            if not asset_keys or asset_node.asset_key in asset_keys
         ]
 
 

@@ -129,3 +129,48 @@ def test_celery_backend_override_connection_string(template: HelmTemplate):
     assert secret.data["DAGSTER_CELERY_BACKEND_URL"] == base64.b64encode(
         bytes(backend_url, encoding="utf-8")
     ).decode("utf-8")
+
+
+def test_celery_backend_override_only_one(template: HelmTemplate):
+    custom_url = "host:6380,password=password,ssl=True"
+    default_url = "redis://myhost:6379/0"
+
+    # Override broker, not backend
+    helm_values = DagsterHelmValues.construct(
+        generateCeleryConfigSecret=True,
+        runLauncher=RunLauncher.construct(type=RunLauncherType.CELERY),
+        redis=Redis.construct(
+            enabled=True,
+            brokerUrl=custom_url,
+            host="myhost",
+        ),
+    )
+
+    [secret] = template.render(helm_values)
+
+    assert secret.data["DAGSTER_CELERY_BROKER_URL"] == base64.b64encode(
+        bytes(custom_url, encoding="utf-8")
+    ).decode("utf-8")
+    assert secret.data["DAGSTER_CELERY_BACKEND_URL"] == base64.b64encode(
+        bytes(default_url, encoding="utf-8")
+    ).decode("utf-8")
+
+    # Override backend, not broker
+    helm_values = DagsterHelmValues.construct(
+        generateCeleryConfigSecret=True,
+        runLauncher=RunLauncher.construct(type=RunLauncherType.CELERY),
+        redis=Redis.construct(
+            enabled=True,
+            backendUrl=custom_url,
+            host="myhost",
+        ),
+    )
+
+    [secret] = template.render(helm_values)
+
+    assert secret.data["DAGSTER_CELERY_BROKER_URL"] == base64.b64encode(
+        bytes(default_url, encoding="utf-8")
+    ).decode("utf-8")
+    assert secret.data["DAGSTER_CELERY_BACKEND_URL"] == base64.b64encode(
+        bytes(custom_url, encoding="utf-8")
+    ).decode("utf-8")

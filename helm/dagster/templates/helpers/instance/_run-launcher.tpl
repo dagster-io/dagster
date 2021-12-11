@@ -32,6 +32,13 @@ config:
     {{- end }}
     - {{ .Values.global.celeryConfigSecretName }}
   {{- end }}
+  {{- if $celeryK8sRunLauncherConfig.volumeMounts }}
+  volume_mounts: {{- $celeryK8sRunLauncherConfig.volumeMounts | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $celeryK8sRunLauncherConfig.volumes }}
+  volumes: {{- $celeryK8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.k8s" }}

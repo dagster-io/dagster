@@ -1,7 +1,7 @@
 import re
 
 from dagster import check
-from dagster.core.definitions.version_strategy import ResourceVersionContext, SolidVersionContext
+from dagster.core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
@@ -103,8 +103,8 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         if solid_def.version is not None:
             solid_def_version = solid_def.version
         elif pipeline_def.version_strategy is not None:
-            version_context = SolidVersionContext(solid_def=solid_def, solid_config=solid_config)
-            solid_def_version = pipeline_def.version_strategy.get_solid_version(version_context)
+            version_context = OpVersionContext(op_def=solid_def, op_config=solid_config)
+            solid_def_version = pipeline_def.version_strategy.get_op_version(version_context)
 
         if solid_def_version is None:
             node_label = f"{solid_def.node_type_str} '{solid_def.name}'"

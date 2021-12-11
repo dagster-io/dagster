@@ -25,7 +25,7 @@ const DEFAULT_SEO = {
     url: BASE_URL,
     title: "Dagster Docs",
     type: "website",
-    description: "A data orchestrator for machine learning, analytics, and ETL",
+    description: "The data orchestration platform built for productivity.",
     images: [
       {
         url: `${BASE_URL}/assets/shared/dagster-og-share.png`,

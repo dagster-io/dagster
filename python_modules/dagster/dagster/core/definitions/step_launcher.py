@@ -10,7 +10,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 class StepRunRef(
     namedtuple(
         "_StepRunRef",
-        "run_config pipeline_run run_id retry_mode step_key recon_pipeline prior_attempts_count",
+        "run_config pipeline_run run_id retry_mode step_key recon_pipeline prior_attempts_count known_state",
     )
 ):
     """
@@ -27,7 +27,10 @@ class StepRunRef(
         step_key,
         recon_pipeline,
         prior_attempts_count,
+        known_state,
     ):
+        from dagster.core.execution.plan.state import KnownExecutionState
+
         return super(StepRunRef, cls).__new__(
             cls,
             check.dict_param(run_config, "run_config", key_type=str),
@@ -37,6 +40,7 @@ class StepRunRef(
             check.str_param(step_key, "step_key"),
             check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline),
             check.int_param(prior_attempts_count, "prior_attempts_count"),
+            check.opt_inst_param(known_state, "known_state", KnownExecutionState),
         )
 
 

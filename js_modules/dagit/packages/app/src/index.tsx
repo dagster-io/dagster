@@ -15,16 +15,22 @@ import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {extractPathPrefix} from './extractPathPrefix';
+import {extractInitializationData} from './extractInitializationData';
+import {telemetryLink} from './telemetryLink';
 
-const pathPrefix = extractPathPrefix();
+const {pathPrefix, telemetryEnabled} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
+
+if (telemetryEnabled) {
+  apolloLinks.unshift(telemetryLink(pathPrefix));
+}
 
 const config = {
   apolloLinks,
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
+  telemetryEnabled,
 };
 
 const appCache = createAppCache();

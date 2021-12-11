@@ -6,6 +6,7 @@ import React, {CSSProperties} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
@@ -22,7 +23,7 @@ import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {assetKeyToString, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
@@ -51,7 +52,7 @@ export const AssetNode: React.FC<{
               <span>
                 Launch run to build{' '}
                 <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                  {assetKeyToString(definition.assetKey)}
+                  {displayNameForAssetKey(definition.assetKey)}
                 </span>
               </span>
             }
@@ -72,7 +73,7 @@ export const AssetNode: React.FC<{
           <Name>
             <IconWIP name="asset" />
             <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
-              {assetKeyToString(definition.assetKey)}
+              {displayNameForAssetKey(definition.assetKey)}
             </div>
             <div style={{flex: 1}} />
             {liveData && liveData.inProgressRunIds.length > 0 ? (
@@ -243,7 +244,7 @@ export const getNodeDimensions = (def: {
   if (def.description) {
     height += 25;
   }
-  return {width: Math.max(250, assetKeyToString(def.assetKey).length * 9.5) + 25, height};
+  return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
 };
 
 const RunLinkTooltipStyle = JSON.stringify({

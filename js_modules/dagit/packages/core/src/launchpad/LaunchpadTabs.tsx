@@ -21,7 +21,7 @@ interface ExecutationTabProps {
   onClick: () => void;
 }
 
-const ExecutionTab = (props: ExecutationTabProps) => {
+const LaunchpadTab = (props: ExecutationTabProps) => {
   const {canRemove, title, onChange, onClick, onRemove, active} = props;
 
   const input = React.useRef<HTMLInputElement>(null);
@@ -81,13 +81,13 @@ const ExecutionTab = (props: ExecutationTabProps) => {
   );
 };
 
-interface ExecutionTabsProps {
+interface LaunchpadTabsProps {
   data: IStorageData;
   onCreate: () => void;
   onSave: (data: IStorageData) => void;
 }
 
-export const ExecutionTabs = (props: ExecutionTabsProps) => {
+export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
   const {data, onCreate, onSave} = props;
   const {sessions} = data;
   const sessionKeys = Object.keys(sessions);
@@ -116,9 +116,9 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
       border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
       padding={{horizontal: 12, top: 12}}
     >
-      <ExecutionTabsContainer>
+      <LaunchpadTabsContainer>
         {sessionKeys.map((key) => (
-          <ExecutionTab
+          <LaunchpadTab
             canRemove={sessionCount > 1}
             key={key}
             active={key === data.current}
@@ -128,13 +128,13 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
             onRemove={() => onRemove(key)}
           />
         ))}
-        <ExecutionTab title="+ Add..." onClick={onCreate} />
-      </ExecutionTabsContainer>
+        <LaunchpadTab title="+ Add..." onClick={onCreate} />
+      </LaunchpadTabsContainer>
     </Box>
   );
 };
 
-const ExecutionTabsContainer = styled.div`
+const LaunchpadTabsContainer = styled.div`
   display: flex;
   flex-direction: row;
   font-size: 13px;

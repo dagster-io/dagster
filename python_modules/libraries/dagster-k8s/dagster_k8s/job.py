@@ -316,6 +316,38 @@ class DagsterK8sJobConfig(
                 "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
                 "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
             ),
+            "volume_mounts": Field(
+                Array(
+                    Shape(
+                        {
+                            "name": StringSource,
+                            "mountPath": StringSource,
+                            "mountPropagation": Field(StringSource, is_required=False),
+                            "readOnly": Field(BoolSource, is_required=False),
+                            "subPath": Field(StringSource, is_required=False),
+                            "subPathExpr": Field(StringSource, is_required=False),
+                        }
+                    )
+                ),
+                is_required=False,
+                default_value=[],
+                description="A list of volume mounts to include in the job's container. Default: ``[]``. See: "
+                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core",
+            ),
+            "volumes": Field(
+                Array(
+                    Permissive(
+                        {
+                            "name": str,
+                        }
+                    )
+                ),
+                is_required=False,
+                default_value=[],
+                description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
+                "possible volume source types that can be included, see: "
+                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
+            ),
         }
 
     @classmethod

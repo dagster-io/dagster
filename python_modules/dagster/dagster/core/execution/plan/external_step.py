@@ -19,6 +19,7 @@ from dagster.core.execution.context_creation_pipeline import PlanExecutionContex
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
+from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
@@ -76,9 +77,13 @@ class LocalExternalStepLauncher(StepLauncher):
         file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
-        events = pickle.loads(events_data)
+        all_events = deserialize_value(pickle.loads(events_data))
 
-        yield from events
+        for event in all_events:
+            # write each pickled event from the external instance to the local instance
+            step_context.instance.handle_new_event(event)
+            if event.is_dagster_event:
+                yield event.dagster_event
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:
@@ -150,6 +155,7 @@ def step_context_to_step_run_ref(
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
+        known_state=step_context.execution_plan.known_state,
     )
 
 
@@ -166,6 +172,7 @@ def step_run_ref_to_step_context(
         step_run_ref.run_config,
         mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
+        known_state=step_run_ref.known_state,
     )
 
     initialization_manager = PlanExecutionContextManager(

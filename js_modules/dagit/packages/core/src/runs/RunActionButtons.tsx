@@ -3,7 +3,7 @@ import * as React from 'react';
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';

@@ -13,13 +13,12 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
-import {OpJumpBar} from './PipelineJumpComponents';
+import {EmptyDAGNotice, LargeDAGNotice} from './GraphNotices';
+import {NodeJumpBar} from './NodeJumpBar';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -133,14 +132,16 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
   const queryResultOps = React.useMemo(
-    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
+    () =>
+      solidsQueryEnabled
+        ? filterByQuery(solids, opsQuery)
+        : {all: solids, focus: [], applyingEmptyDefault: false},
     [opsQuery, solids, solidsQueryEnabled],
   );
 
-  const {all} = queryResultOps;
   const highlightedOps = React.useMemo(
-    () => all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
-    [nameMatch, all],
+    () => queryResultOps.all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
+    [nameMatch, queryResultOps.all],
   );
 
   const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
@@ -154,25 +155,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
         <>
           <PathOverlay style={{background: backgroundTranslucent}}>
             <Breadcrumbs
-              items={explorerPath.opNames.map((name, idx) => {
-                return {
-                  text: name,
-                  onClick: () =>
-                    onChangeExplorerPath(
-                      {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
-                      'push',
-                    ),
-                };
-              })}
+              items={explorerPath.opNames.map((name, idx) => ({
+                text: name,
+                onClick: () =>
+                  onChangeExplorerPath(
+                    {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
+                    'push',
+                  ),
+              }))}
               currentBreadcrumbRenderer={() => (
-                <OpJumpBar
-                  ops={queryResultOps.all}
-                  selectedOp={selectedHandle && selectedHandle.solid}
-                  onChange={(solid) => handleClickOp({name: solid.name})}
+                <NodeJumpBar
+                  nodes={queryResultOps.all}
+                  nodeType="op"
+                  selectedNode={selectedHandle && selectedHandle.solid}
+                  onChange={handleClickOp}
                 />
               )}
             />
           </PathOverlay>
+
           {solidsQueryEnabled && (
             <PipelineGraphQueryInputContainer>
               <GraphQueryInput
@@ -208,10 +209,11 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               />
             </OptionsOverlay>
           )}
-          {solids.length === 0 ? <EmptyDAGNotice isGraph={isGraph} /> : null}
-          {solids.length > 0 &&
-            queryResultOps.all.length === 0 &&
-            !explorerPath.opsQuery.length && <LargeDAGNotice />}
+          {solids.length === 0 ? (
+            <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
+          ) : queryResultOps.applyingEmptyDefault ? (
+            <LargeDAGNotice nodeType="op" />
+          ) : undefined}
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
             backgroundColor={backgroundColor}
@@ -273,15 +275,23 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   ${PIPELINE_GRAPH_OP_FRAGMENT}
 `;
 
-const RightInfoPanel = styled.div`
+export const RightInfoPanel = styled.div`
   // Fixes major perofmance hit. To reproduce, add enough content to
   // the sidebar that it scrolls (via overflow-y below) and then try
   // to pan the DAG.
   position: relative;
 
   height: 100%;
-  overflow-y: scroll;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: ${ColorsWIP.White};
+`;
+
+export const RightInfoPanelContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const OptionsOverlay = styled.div`
@@ -312,74 +322,6 @@ const PathOverlay = styled.div`
   align-items: center;
   position: absolute;
   left: 0;
-`;
-
-const LargeDAGNotice = () => (
-  <LargeDAGContainer>
-    <LargeDAGInstructionBox>
-      <p>
-        This is a large DAG that may be difficult to visualize. Type <code>*</code> in the subset
-        box below to render the entire thing, or type a solid name and use:
-      </p>
-      <ul style={{marginBottom: 0}}>
-        <li>
-          <code>+</code> to expand a single layer before or after the solid.
-        </li>
-        <li>
-          <code>*</code> to expand recursively before or after the solid.
-        </li>
-        <li>
-          <code>AND</code> to render another disconnected fragment.
-        </li>
-      </ul>
-    </LargeDAGInstructionBox>
-    <IconWIP name="arrow_downward" size={24} />
-  </LargeDAGContainer>
-);
-
-const EmptyDAGNotice: React.FC<{isGraph: boolean}> = ({isGraph}) => {
-  return (
-    <NonIdealState
-      icon="no-results"
-      title={isGraph ? 'Empty graph' : 'Empty pipeline'}
-      description={
-        <>
-          <div>This {isGraph ? 'graph' : 'pipeline'} is empty.</div>
-          <div>Solids will appear here when you add them.</div>
-        </>
-      }
-    />
-  );
-};
-
-const LargeDAGContainer = styled.div`
-  width: 50vw;
-  position: absolute;
-  transform: translateX(-50%);
-  left: 50%;
-  bottom: 60px;
-  z-index: 2;
-  max-width: 600px;
-  text-align: center;
-  .bp3-icon {
-    color: ${ColorsWIP.Gray200};
-  }
-`;
-
-const LargeDAGInstructionBox = styled.div`
-  padding: 15px 20px;
-  border: 1px solid #fff5c3;
-  margin-bottom: 20px;
-  color: ${ColorsWIP.Gray800};
-  background: #fffbe5;
-  text-align: left;
-  line-height: 1.4rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  code {
-    background: #f8ebad;
-    font-weight: 500;
-    padding: 0 4px;
-  }
 `;
 
 const PipelineGraphQueryInputContainer = styled.div`

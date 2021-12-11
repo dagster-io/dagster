@@ -66,7 +66,7 @@ export const RunActionsMenu: React.FC<{
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
-  const playgroundPath = () => {
+  const launchpadPath = () => {
     const path = `/playground/setup?${qs.stringify({
       config: runConfigYaml,
       solidSelection: run.solidSelection,
@@ -105,7 +105,7 @@ export const RunActionsMenu: React.FC<{
             <MenuDividerWIP />
             <>
               <Tooltip
-                content={OPEN_PLAYGROUND_UNKNOWN}
+                content={OPEN_LAUNCHPAD_UNKNOWN}
                 position="bottom"
                 disabled={infoReady}
                 targetTagName="div"
@@ -114,7 +114,7 @@ export const RunActionsMenu: React.FC<{
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  href={playgroundPath()}
+                  href={launchpadPath()}
                 />
               </Tooltip>
               <Tooltip
@@ -284,7 +284,7 @@ export const RunBulkActionsMenu: React.FC<{
   );
 });
 
-const OPEN_PLAYGROUND_UNKNOWN =
+const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.

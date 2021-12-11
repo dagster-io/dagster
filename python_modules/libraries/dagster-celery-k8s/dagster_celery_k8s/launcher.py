@@ -83,6 +83,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
+            container. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
     """
 
     def __init__(
@@ -101,6 +106,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         k8s_client_batch_api=None,
         env_config_maps=None,
         env_secrets=None,
+        volume_mounts=None,
+        volumes=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -133,6 +140,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_config_maps, "env_config_maps", of_type=str
         )
         self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+
+        self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
+        self._volumes = check.opt_list_param(volumes, "volumes")
 
         super().__init__()
 
@@ -271,8 +281,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=exc_config.get("service_account_name"),
             env_config_maps=exc_config.get("env_config_maps", []) + self._env_config_maps,
             env_secrets=exc_config.get("env_secrets", []) + self._env_secrets,
-            volume_mounts=exc_config.get("volume_mounts"),
-            volumes=exc_config.get("volumes"),
+            volume_mounts=exc_config.get("volume_mounts", []) + self._volume_mounts,
+            volumes=exc_config.get("volumes", []) + self._volumes,
         )
 
     # https://github.com/dagster-io/dagster/issues/2741

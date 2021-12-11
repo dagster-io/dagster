@@ -211,10 +211,8 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
                 DagsterInstanceMigrationRequired,
                 match=_migration_regex("event log", current_revision="3e71cf573ba6"),
             ):
-                storage.get_asset_tags(AssetKey(["test"]))
                 storage.all_asset_keys()
             instance.upgrade()
-            storage.get_asset_tags(AssetKey(["test"]))
             storage.all_asset_keys()
 
 
@@ -303,14 +301,11 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
 
             execute_pipeline(asset_pipeline, instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
-            old_tags = storage.get_asset_tags(AssetKey(["a"]))
             old_keys = storage.all_asset_keys()
 
             instance.upgrade()
             assert storage.has_asset_key(AssetKey(["a"]))
-            new_tags = storage.get_asset_tags(AssetKey(["a"]))
             new_keys = storage.all_asset_keys()
-            assert set(old_tags) == set(new_tags)
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works

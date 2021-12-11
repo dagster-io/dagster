@@ -103,6 +103,7 @@ def test_k8s_run_launcher_volume_mounts(
         helm_namespace_for_k8s_run_launcher,
         pipeline_name="volume_mount_pipeline",
         num_steps=1,
+        mode="k8s",
     )
 
 
@@ -212,8 +213,11 @@ def _launch_executor_run(
     helm_namespace_for_k8s_run_launcher,
     pipeline_name="demo_k8s_executor_pipeline",
     num_steps=2,
+    mode="default",
 ):
-    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, pipeline_name=pipeline_name)
+    run_id = launch_run_over_graphql(
+        dagit_url, run_config=run_config, pipeline_name=pipeline_name, mode=mode
+    )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
