@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, List, Optional, cast
 
 import pendulum
 import sqlalchemy as db
@@ -727,30 +727,37 @@ class SqlEventLogStorage(EventLogStorage):
             with self.index_connection() as conn:
                 results = conn.execute(query).fetchall()
 
-            return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+            deduped_asset_key_strs = sorted(set(result[0] for result in results))
+            return [AssetKey.from_db_string(s) for s in deduped_asset_key_strs]
 
         rows, _has_more, _cursor = self._fetch_unwiped_asset_rows()
-        asset_keys = [AssetKey.from_db_string(row[0]) for row in rows]
-        return asset_keys
+        return [AssetKey.from_db_string(s) for s in sorted([row[0] for row in rows])]
 
     def get_asset_keys(
         self,
-        prefix: Optional[Sequence[str]] = None,
+        prefix: Optional[List[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Sequence[AssetKey]:
+    ) -> Iterable[AssetKey]:
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            query = db.select([AssetKeyTable.c.asset_key]).where(
-                db.or_(
-                    AssetKeyTable.c.wipe_timestamp == None,
-                    AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
+            query = (
+                db.select([AssetKeyTable.c.asset_key])
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
                 )
+                .order_by(AssetKeyTable.c.asset_key.asc())
             )
             query = self._apply_asset_filter_to_query(query, None, prefix, limit, cursor)
             with self.index_connection() as conn:
                 results = conn.execute(query).fetchall()
-
-            return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+            asset_keys = sorted(
+                set(AssetKey.from_db_string(result[0]) for result in results), key=str
+            )
+            return [asset_key for asset_key in asset_keys if asset_key]
 
         asset_keys = []
         should_query = True
@@ -762,10 +769,11 @@ class SqlEventLogStorage(EventLogStorage):
                 prefix=prefix, limit=fetch_limit, cursor=current_cursor
             )
             asset_keys.extend([AssetKey.from_db_string(row[0]) for row in rows])
-            should_query = has_more and limit and len(asset_keys) < limit
+            should_query = bool(has_more) and bool(limit) and len(asset_keys) < cast(int, limit)
             current_cursor = new_cursor
 
-        return asset_keys[:limit] if limit else asset_keys
+        filtered = [asset_key for asset_key in sorted(asset_keys, key=str) if asset_key]
+        return filtered[:limit] if limit else filtered
 
     def _fetch_unwiped_asset_rows(self, asset_keys=None, prefix=None, limit=None, cursor=None):
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
@@ -780,7 +788,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetKeyTable.c.last_materialization,
                 AssetKeyTable.c.asset_details,
             ]
-        )
+        ).order_by(AssetKeyTable.c.asset_key.asc())
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
