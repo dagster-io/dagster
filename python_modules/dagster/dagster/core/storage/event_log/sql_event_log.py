@@ -804,7 +804,9 @@ class SqlEventLogStorage(EventLogStorage):
             if not asset_details or not asset_details.last_wipe_timestamp:
                 row_by_asset_key[asset_key] = row
                 continue
-            materialization_or_event = deserialize_json_to_dagster_namedtuple(row[1])
+            materialization_or_event = (
+                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+            )
             if isinstance(materialization_or_event, EventLogEntry):
                 if asset_details.last_wipe_timestamp > materialization_or_event.timestamp:
                     # this asset has not been materialized since being wiped, skip
