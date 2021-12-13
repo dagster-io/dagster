@@ -1,5 +1,8 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
+import { Intent } from '@blueprintjs/core';
 import * as React from 'react';
+import { SharedToaster } from '../app/DomUtils';
+import { useFeatureFlags } from '../app/Flags';
 
 import {LocationStateChangeEventType} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -28,6 +31,7 @@ export const RepositoryLocationStateObserver = () => {
   const client = useApolloClient();
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
   const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
+  const {flagLiveReload} = useFeatureFlags();
   const totalMessages = updatedLocations.length;
 
   useSubscription<LocationStateChangeSubscription>(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
@@ -62,6 +66,19 @@ export const RepositoryLocationStateObserver = () => {
   if (!totalMessages) {
     return null;
   }
+
+  if (flagLiveReload) {
+    setUpdatedLocations([]);
+    refetch();
+    client.resetStore();
+    SharedToaster.show({
+      icon: 'done',
+      intent: Intent.SUCCESS,
+      message: `Repository location ${updatedLocations[0]} has been updated and automatically reloaded.`,
+      timeout: 3000,
+    });
+  }
+
 
   return (
     <Group background={ColorsWIP.Gray200} direction="column" spacing={0}>

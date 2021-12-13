@@ -79,6 +79,16 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'Live reload repositories',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagLiveReload)}
+                  onChange={() => toggleFlag(FeatureFlag.flagLiveReload)}
+                />
+              ),
+            },
           ]}
         />
       </Box>
