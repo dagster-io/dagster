@@ -11,57 +11,57 @@ class PartitionMapping(ABC):
     """
 
     @abstractmethod
-    def get_parent_partitions_for_partition_range(
+    def get_upstream_partitions_for_partition_range(
         self,
-        child_partitions_def: PartitionsDefinition,
-        parent_partitions_def: PartitionsDefinition,
-        child_partition_key_range: PartitionKeyRange,
+        downstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        """Returns the range of partition keys in the parent asset that include data necessary
-        to compute the contents of the given partition key range in the child asset.
+        """Returns the range of partition keys in the upstream asset that include data necessary
+        to compute the contents of the given partition key range in the downstream asset.
 
         Args:
-            child_partitions_def (PartitionsDefinition): The partitions definition for the child
-                asset.
-            parent_partitions_def (PartitionsDefinition): The partitions definition for the parent
-                asset.
-            child_partition_key_range (PartitionKeyRange): The range of partition keys in the child
-                asset.
+            downstream_partition_key_range (PartitionKeyRange): The range of partition keys in the
+                downstream asset.
+            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                downstream asset.
+            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                upstream asset.
         """
 
     @abstractmethod
-    def get_child_partitions_for_partition_range(
+    def get_downstream_partitions_for_partition_range(
         self,
-        child_partitions_def: PartitionsDefinition,
-        parent_partitions_def: PartitionsDefinition,
-        parent_partition_key_range: PartitionKeyRange,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        """Returns the range of partition keys in the child asset that use the data in the given
-        partition key range of the child asset.
+        """Returns the range of partition keys in the downstream asset that use the data in the given
+        partition key range of the downstream asset.
 
         Args:
-            child_partitions_def (PartitionsDefinition): The partitions definition for the child
-                asset.
-            parent_partitions_def (PartitionsDefinition): The partitions definition for the parent
-                asset.
-            parent_partition_key_range (PartitionKeyRange): The range of partition keys in the
-                parent asset.
+            upstream_partition_key_range (PartitionKeyRange): The range of partition keys in the
+                upstream asset.
+            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                downstream asset.
+            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                upstream asset.
         """
 
 
 class IdentityPartitionMapping(PartitionMapping):
-    def get_parent_partitions_for_partition_range(
+    def get_upstream_partitions_for_partition_range(
         self,
-        child_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-        parent_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-        child_partition_key_range: PartitionKeyRange,
+        downstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
     ) -> PartitionKeyRange:
-        return child_partition_key_range
+        return downstream_partition_key_range
 
-    def get_child_partitions_for_partition_range(
+    def get_downstream_partitions_for_partition_range(
         self,
-        child_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-        parent_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
-        parent_partition_key_range: PartitionKeyRange,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
     ) -> PartitionKeyRange:
-        return parent_partition_key_range
+        return upstream_partition_key_range
