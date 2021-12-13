@@ -3,7 +3,19 @@ import inspect
 from abc import ABC, abstractmethod
 from datetime import datetime, time
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from dagster import check
@@ -138,7 +150,7 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
-    def get_partition_keys_in_range(self, start: str, end: str) -> List[str]:
+    def get_partition_keys_in_range(self, start: str, end: str) -> Sequence[str]:
         """Returns partitions keys that fall within the given range, inclusive"""
         if start == end:
             return [start]
@@ -165,7 +177,7 @@ class StaticPartitionsDefinition(
     ) -> List[Partition[str]]:
         return self._partitions
 
-    def get_partition_keys_in_range(self, start: str, end: str) -> List[str]:
+    def get_partition_keys_in_range(self, start: str, end: str) -> Sequence[str]:
         if start == end:
             return [start]
         else:
