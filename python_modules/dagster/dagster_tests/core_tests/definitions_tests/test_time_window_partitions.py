@@ -2,11 +2,13 @@ from datetime import datetime
 from typing import cast
 
 import pendulum
+import pytest
 
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    PartitionKeyRange,
     WeeklyPartitionsDefinition,
     daily_partitioned_config,
     hourly_partitioned_config,
@@ -274,4 +276,28 @@ def test_weekly_partitions_with_time_offset():
 
     assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
         "2021-05-05T04:15:00", "2021-05-12T04:15:00"
+    )
+
+
+@pytest.mark.parametrize(
+    "partitions_def, range_start, range_end, partition_keys",
+    [
+        [
+            DailyPartitionsDefinition(start_date="2021-05-01"),
+            "2021-05-01",
+            "2021-05-01",
+            ["2021-05-01"],
+        ],
+        [
+            DailyPartitionsDefinition(start_date="2021-05-01"),
+            "2021-05-02",
+            "2021-05-05",
+            ["2021-05-02", "2021-05-03", "2021-05-04", "2021-05-05"],
+        ],
+    ],
+)
+def test_get_partition_keys_in_range(partitions_def, range_start, range_end, partition_keys):
+    assert (
+        partitions_def.get_partition_keys_in_range(PartitionKeyRange(range_start, range_end))
+        == partition_keys
     )
