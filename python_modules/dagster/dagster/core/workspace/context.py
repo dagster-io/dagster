@@ -5,7 +5,7 @@ import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -28,9 +28,13 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
+from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server_watcher import create_grpc_watch_thread
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+
+from watchdog.events import FileSystemEventHandler as WatchdogFileSystemEventHandler
+from watchdog.observers import Observer as WatchdogObserver
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import get_user_permissions
@@ -399,6 +403,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
         self._watch_threads: Dict[str, threading.Thread] = {}
 
+        self._watchdog_threads: Dict[str, WatchdogObserver] = {}
+
         self._state_subscribers: List[LocationStateSubscriber] = []
         self.add_state_subscriber(self._location_state_subscriber)
 
@@ -447,6 +453,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
             if origin.supports_server_watch:
                 self._start_watch_thread(origin)
+            elif isinstance(
+                origin, ManagedGrpcPythonEnvRepositoryLocationOrigin
+            ):  # TODO add a condition here
+                self._start_watchdog_thread(origin)
+
             self._location_entry_dict[origin.location_name] = self._load_location(origin)
 
     def _create_location_from_origin(self, origin):
@@ -526,7 +537,33 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin):
+    def _start_watchdog_thread(self, origin: ManagedGrpcPythonEnvRepositoryLocationOrigin):
+        location_name = origin.location_name
+        print(f"Starting watchdog thread for {location_name}")
+
+        context = self
+
+        class Handler(WatchdogFileSystemEventHandler):
+            def on_any_event(self, event):
+                print(f"Watchdog event {event} for {location_name}")
+                if not "__pycache__" in event.src_path:
+                    print("Reporting event.")
+                    context._send_state_event_to_subscribers(
+                        LocationStateChangeEvent(
+                            LocationStateChangeEventType.LOCATION_UPDATED,
+                            location_name=location_name,
+                            message="Server has been updated.",
+                            server_id=location_name,  # TODO ???
+                        )
+                    )
+
+        watch_path = origin.loadable_target_origin.get_root_path()
+        thread = WatchdogObserver()
+        thread.schedule(Handler(), watch_path, recursive=True)
+        thread.start()
+        self._watchdog_threads[origin.location_name] = thread
+
+    def _load_location(self, origin: RepositoryLocationOrigin) -> WorkspaceLocationEntry:
         assert self._lock.locked()
         location_name = origin.location_name
         location = None

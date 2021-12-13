@@ -56,3 +56,21 @@ class LoadableTargetOrigin(
         )
 
         return args
+
+    def get_root_path(self) -> str:
+        if self.working_directory and self.python_file:
+            return os.path.join(self.working_directory, self.python_file)
+        elif self.python_file:
+            return self.python_file
+        # origin is a guaranteed string for non-namespace-packages
+        elif self.module_name:
+            spec = importlib.util.find_spec(self.module_name)
+            assert spec is not None, f"Could not find module {self.module_name}."
+            return cast(str, spec.origin)
+        elif self.package_name:
+            spec = importlib.util.find_spec(self.package_name)
+            assert spec is not None, f"Could not find package {self.package_name}."
+            assert spec.origin is not None, f"Namespace package has no root path."
+            return os.path.dirname(spec.origin)
+        else:
+            raise Exception("Cannot resolve root path for LoadableTargetOrigin")
