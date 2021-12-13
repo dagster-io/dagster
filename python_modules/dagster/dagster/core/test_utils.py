@@ -1,4 +1,5 @@
 import os
+import re
 import signal
 import sys
 import tempfile
@@ -460,3 +461,18 @@ def remove_none_recursively(obj):
 
 
 default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+
+
+def strip_ansi(input_str):
+    ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
+    return ansi_escape.sub("", input_str)
+
+
+def get_logger_output_from_capfd(capfd, logger_name):
+    return "\n".join(
+        [
+            line
+            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split("\n")
+            if logger_name in line
+        ]
+    )

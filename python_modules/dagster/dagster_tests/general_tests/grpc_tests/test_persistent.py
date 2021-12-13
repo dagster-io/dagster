@@ -25,7 +25,7 @@ def _get_ipc_output_file():
     )
 
 
-def test_ping():
+def test_ping(capfd):
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo.py")
 
@@ -39,7 +39,7 @@ def test_ping():
         python_file,
     ]
 
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    process = subprocess.Popen(subprocess_args)
 
     try:
         wait_for_grpc_server(
@@ -56,6 +56,13 @@ def test_ping():
 
     finally:
         process.terminate()
+
+    out, _err = capfd.readouterr()
+
+    assert (
+        f"Started Dagster code server for file {python_file} on port {port} in process {process.pid}"
+        in out
+    )
 
 
 def test_load_via_env_var():

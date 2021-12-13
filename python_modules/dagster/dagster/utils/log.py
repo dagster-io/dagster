@@ -5,6 +5,8 @@ import traceback
 from collections import namedtuple
 from contextlib import contextmanager
 
+import coloredlogs
+import pendulum
 from dagster import check, seven
 from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
@@ -187,6 +189,33 @@ def get_stack_trace_array(exception):
     else:
         _exc_type, _exc_value, tb = sys.exc_info()
     return traceback.format_tb(tb)
+
+
+def _mockable_localtime(_):
+    """Uses pendulum.now to determine the logging time, causing pendulum
+    mocking to affect the logger timestamp in tests."""
+    now_time = pendulum.now()
+    return now_time.timetuple()
+
+
+def default_system_logger(logger_name: str, level: str = "INFO"):
+    """ Logger for Dagster system processes like dagit, the daemon, and code servers."""
+    handler = logging.StreamHandler(sys.stdout)
+    system_logger = logging.getLogger(logger_name)
+    system_logger.setLevel(level)
+    system_logger.handlers = [handler]
+
+    formatter = coloredlogs.ColoredFormatter(
+        default_format_string(),
+        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+        level_styles={"debug": {}, "error": {"color": "red"}},
+    )
+
+    formatter.converter = _mockable_localtime
+
+    handler.setFormatter(formatter)
+
+    return system_logger
 
 
 def default_format_string():

@@ -1,6 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.scheduler.job import JobTickStatus
+from dagster.core.test_utils import get_logger_output_from_capfd
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
@@ -50,13 +51,10 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
 
-            captured = capfd.readouterr()
-
             assert (
-                captured.out
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
                 == """2019-02-27 21:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 21:59:59 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule
-"""
+2019-02-27 21:59:59 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule"""
             )
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
@@ -92,14 +90,11 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
                 create_pendulum_time(2019, 2, 27, tz="US/Central"),
             )
 
-            captured = capfd.readouterr()
-
             assert (
-                captured.out
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
                 == """2019-02-27 22:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
 2019-02-27 22:00:01 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00-0600
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule
-""".format(
+2019-02-27 22:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
