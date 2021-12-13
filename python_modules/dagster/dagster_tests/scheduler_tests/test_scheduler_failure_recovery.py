@@ -83,8 +83,8 @@ def test_failure_recovery_before_run_created(
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000"""
+                == """2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00 +0000"""
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -122,10 +122,10 @@ def test_failure_recovery_before_run_created(
             )
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-26 18:05:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule""".format(
+                == """2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00 +0000
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )

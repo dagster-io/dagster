@@ -532,8 +532,8 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-27 17:59:59 - SchedulerDaemon - INFO - No new runs for simple_schedule"""
+                == """2019-02-27 17:59:59 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-27 17:59:59 -0600 - SchedulerDaemon - INFO - No new runs for simple_schedule"""
             )
 
         freeze_datetime = freeze_datetime.add(seconds=2)
@@ -570,9 +570,9 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule""".format(
+                == """2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00 +0000
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
@@ -632,10 +632,10 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert get_logger_output_from_capfd(
                 capfd, "SchedulerDaemon"
-            ) == """2019-03-01 18:00:03 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-03-01 18:00:03 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
-2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule""".format(
+            ) == """2019-03-01 18:00:03 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-03-01 18:00:03 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-01 00:00:00 +0000, 2019-03-02 00:00:00 +0000
+2019-03-01 18:00:03 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-03-01 18:00:03 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule""".format(
                 first_run_id=instance.get_runs()[1].run_id,
                 second_run_id=instance.get_runs()[0].run_id,
             )
@@ -888,9 +888,9 @@ def test_skip(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: skip_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `skip_schedule` at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - No run requests returned for skip_schedule, skipping"""
+                == """2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: skip_schedule
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `skip_schedule` at 2019-02-27 00:00:00 +0000
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - No run requests returned for skip_schedule, skipping"""
             )
 
 
@@ -1359,11 +1359,11 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             assert get_logger_output_from_capfd(
                 capfd, "SchedulerDaemon"
-            ) == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_hourly_schedule""".format(
+            ) == """2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00 +0000
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 00:00:00 +0000
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_hourly_schedule""".format(
                 first_run_id=instance.get_runs()[1].run_id,
                 second_run_id=instance.get_runs()[0].run_id,
             )
@@ -1384,10 +1384,10 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 19:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
-2019-02-27 19:00:01 - SchedulerDaemon - INFO - No new runs for simple_schedule
-2019-02-27 19:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 01:00:00+0000
-2019-02-27 19:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule""".format(
+                == """2019-02-27 19:00:01 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
+2019-02-27 19:00:01 -0600 - SchedulerDaemon - INFO - No new runs for simple_schedule
+2019-02-27 19:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 01:00:00 +0000
+2019-02-27 19:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule""".format(
                     third_run_id=instance.get_runs()[0].run_id
                 )
             )
@@ -1441,9 +1441,9 @@ def test_launch_failure(external_repo_context, capfd):
             logger_output = get_logger_output_from_capfd(capfd, "SchedulerDaemon")
 
             assert (
-                """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch:""".format(
+                """2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00 +0000
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch:""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
                 in logger_output
@@ -1487,10 +1487,10 @@ def test_partitionless_schedule(capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-03-04 00:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: partitionless_schedule
-2019-03-04 00:00:00 - SchedulerDaemon - WARNING - partitionless_schedule has no partition set, so not trying to catch up
-2019-03-04 00:00:00 - SchedulerDaemon - INFO - Evaluating schedule `partitionless_schedule` at 2019-03-04 00:00:00-0600
-2019-03-04 00:00:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for partitionless_schedule""".format(
+                == """2019-03-04 00:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: partitionless_schedule
+2019-03-04 00:00:00 -0600 - SchedulerDaemon - WARNING - partitionless_schedule has no partition set, so not trying to catch up
+2019-03-04 00:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `partitionless_schedule` at 2019-03-04 00:00:00 -0600
+2019-03-04 00:00:00 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for partitionless_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
@@ -1559,11 +1559,11 @@ def test_max_catchup_runs(capfd):
 
             assert get_logger_output_from_capfd(
                 capfd, "SchedulerDaemon"
-            ) == """2019-03-04 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-03-04 17:59:59 - SchedulerDaemon - WARNING - simple_schedule has fallen behind, only launching 2 runs
-2019-03-04 17:59:59 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-03 00:00:00+0000, 2019-03-04 00:00:00+0000
-2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule""".format(
+            ) == """2019-03-04 17:59:59 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-03-04 17:59:59 -0600 - SchedulerDaemon - WARNING - simple_schedule has fallen behind, only launching 2 runs
+2019-03-04 17:59:59 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-03 00:00:00 +0000, 2019-03-04 00:00:00 +0000
+2019-03-04 17:59:59 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-03-04 17:59:59 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule""".format(
                 first_run_id=instance.get_runs()[1].run_id,
                 second_run_id=instance.get_runs()[0].run_id,
             )
@@ -1605,8 +1605,8 @@ def test_multi_runs(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == """2019-02-27 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
-2019-02-27 17:59:59 - SchedulerDaemon - INFO - No new runs for multi_run_schedule"""
+                == """2019-02-27 17:59:59 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-27 17:59:59 -0600 - SchedulerDaemon - INFO - No new runs for multi_run_schedule"""
             )
 
         freeze_datetime = freeze_datetime.add(seconds=2)
@@ -1634,10 +1634,10 @@ def test_multi_runs(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == f"""2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule"""
+                == f"""2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-02-28 00:00:00 +0000
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
+2019-02-27 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule"""
             )
 
             # Verify idempotence
@@ -1661,10 +1661,10 @@ def test_multi_runs(external_repo_context, capfd):
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
-                == f"""2019-02-28 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
-2019-02-28 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-03-01 00:00:00+0000
-2019-02-28 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
-2019-02-28 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule"""
+                == f"""2019-02-28 18:00:01 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-28 18:00:01 -0600 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-03-01 00:00:00 +0000
+2019-02-28 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
+2019-02-28 18:00:01 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule"""
             )
 
 
