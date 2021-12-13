@@ -612,6 +612,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_thread_shutdown_events = {}
         self._watch_threads = {}
 
+        for _, watchdog_thread in self._watchdog_threads.items():
+            watchdog_thread.stop()
+            watchdog_thread.join()
+        self._watchdog_threads = {}
+
         for entry in self._location_entry_dict.values():
             if entry.repository_location:
                 entry.repository_location.cleanup()
