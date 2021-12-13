@@ -824,7 +824,9 @@ class SqlEventLogStorage(EventLogStorage):
             )
             for asset_key, wiped_timestamp in wiped_timestamps_by_asset_key.items():
                 materialization_time = materialization_times.get(asset_key)
-                if not materialization_time or materialization_time < wiped_timestamp:
+                if not materialization_time or utc_datetime_from_naive(
+                    materialization_time
+                ) < utc_datetime_from_timestamp(wiped_timestamp):
                     # remove rows that have not been materialized since being wiped
                     row_by_asset_key.pop(asset_key)
 
