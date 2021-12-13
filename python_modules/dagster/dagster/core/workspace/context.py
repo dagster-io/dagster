@@ -5,7 +5,7 @@ import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -455,7 +455,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 self._start_watch_thread(origin)
             elif isinstance(
                 origin, ManagedGrpcPythonEnvRepositoryLocationOrigin
-            ):  # TODO add a condition here
+            ):
                 self._start_watchdog_thread(origin)
 
             self._location_entry_dict[origin.location_name] = self._load_location(origin)
