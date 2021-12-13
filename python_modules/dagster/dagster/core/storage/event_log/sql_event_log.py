@@ -694,7 +694,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         while should_query:
             rows, has_more, new_cursor = self._fetch_raw_asset_rows(
-                prefix=prefix, limit=fetch_limit, cursor=current_cursor
+                asset_keys=asset_keys, prefix=prefix, limit=fetch_limit, cursor=current_cursor
             )
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
