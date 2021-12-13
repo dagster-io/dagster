@@ -9,7 +9,7 @@ import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {MenuLink, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
@@ -213,20 +213,20 @@ const ScheduleRow: React.FC<{
           <Popover
             content={
               <MenuWIP>
-                <MenuItemWIP
+                <MenuLink
                   text="View Partition History..."
                   icon="dynamic_feed"
                   target="_blank"
-                  href={workspacePathFromAddress(
+                  to={workspacePathFromAddress(
                     repoAddress,
                     `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions`,
                   )}
                 />
-                <MenuItemWIP
+                <MenuLink
                   text="Launch Partition Backfill..."
                   icon="add_circle"
                   target="_blank"
-                  href={workspacePathFromAddress(
+                  to={workspacePathFromAddress(
                     repoAddress,
                     `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions`,
                   )}
