@@ -69,6 +69,9 @@ if __name__ == "__main__":
                 "uvicorn[standard]",
                 "gunicorn",
             ],
+            "test": [
+                "types-Flask",  # version will be resolved against flask
+            ],
         },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]

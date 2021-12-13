@@ -113,6 +113,13 @@ if __name__ == "__main__":
                 "tox==3.14.2",
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
+                "types-croniter",  # version will be resolved against croniter
+                "types-mock",  # version will be resolved against mock
+                "types-pkg-resources",  # version will be resolved against pkg_resources (setuptools)
+                "types-python-dateutil",  # version will be resolved against python-dateutil
+                "types-PyYAML",  # version will be resolved against PyYAML
+                "types-pytz",  # version will be resolved against pytz
+                "types-tabulate",  # version will be resolved against tabulate
                 "yamllint",
             ],
         },

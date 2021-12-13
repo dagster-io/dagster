@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Union, overload
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
@@ -34,7 +34,17 @@ VALID_CONFIG_DESC = """
 """
 
 
-def resolve_to_config_type(dagster_type):
+@overload
+def resolve_to_config_type(dagster_type: ConfigType) -> ConfigType:
+    pass
+
+
+@overload
+def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
+    pass
+
+
+def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
     from .field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
@@ -285,7 +295,7 @@ class Field:
                         "into of a config enum type {name}. You must pass in the underlying "
                         "string represention as the default value. One of {value_set}."
                     ).format(
-                        value_set=[ev.config_value for ev in self.config_type.enum_values],
+                        value_set=[ev.config_value for ev in self.config_type.enum_values],  # type: ignore
                         name=self.config_type.given_name,
                     )
                 )
@@ -329,7 +339,7 @@ class Field:
         return self._default_value != FIELD_NO_DEFAULT_PROVIDED
 
     @property
-    def default_value(self) -> typing.Any:
+    def default_value(self) -> Any:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 

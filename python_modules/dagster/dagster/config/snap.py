@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Set
+from typing import Any, Dict, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
@@ -8,7 +8,9 @@ from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field
 
 
-def get_recursive_type_keys(config_type_snap, config_schema_snapshot):
+def get_recursive_type_keys(
+    config_type_snap: "ConfigTypeSnap", config_schema_snapshot: "ConfigSchemaSnapshot"
+) -> Set[str]:
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
     check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
     result_keys = set()
@@ -22,8 +24,10 @@ def get_recursive_type_keys(config_type_snap, config_schema_snapshot):
 
 
 @whitelist_for_serdes
-class ConfigSchemaSnapshot(namedtuple("_ConfigSchemaSnapshot", "all_config_snaps_by_key")):
-    def __new__(cls, all_config_snaps_by_key):
+class ConfigSchemaSnapshot(
+    NamedTuple("_ConfigSchemaSnapshot", [("all_config_snaps_by_key", Dict[str, "ConfigTypeSnap"])])
+):
+    def __new__(cls, all_config_snaps_by_key: Dict[str, "ConfigTypeSnap"]):
         return super(ConfigSchemaSnapshot, cls).__new__(
             cls,
             all_config_snaps_by_key=check.dict_param(
@@ -35,14 +39,14 @@ class ConfigSchemaSnapshot(namedtuple("_ConfigSchemaSnapshot", "all_config_snaps
         )
 
     @property
-    def all_config_keys(self):
+    def all_config_keys(self) -> List[str]:
         return list(self.all_config_snaps_by_key.keys())
 
-    def get_config_snap(self, key):
+    def get_config_snap(self, key: str) -> "ConfigTypeSnap":
         check.str_param(key, "key")
         return self.all_config_snaps_by_key[key]
 
-    def has_config_snap(self, key):
+    def has_config_snap(self, key: str) -> bool:
         check.str_param(key, "key")
         return key in self.all_config_snaps_by_key
 
@@ -55,14 +59,19 @@ class ConfigTypeSnapSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=ConfigTypeSnapSerializer)
 class ConfigTypeSnap(
-    namedtuple(
+    NamedTuple(
         "_ConfigTypeSnap",
-        "kind key given_name description "
-        "type_param_keys "  # only valid for closed generics (Set, Tuple, List, Optional)
-        "enum_values "  # only valid for enums
-        "fields "  # only valid for dicts and selectors
-        "scalar_kind "  # only valid for scalars
-        "field_aliases",  # only valid for strict shapes
+        [
+            ("kind", ConfigTypeKind),
+            ("key", str),
+            ("given_name", Optional[str]),
+            ("description", Optional[str]),
+            ("type_param_keys", Optional[List[str]]),  # only valid for closed generics
+            ("enum_values", Optional[List["ConfigEnumValueSnap"]]),  # only valid for enums
+            ("fields", Optional[List["ConfigFieldSnap"]]),  # only valid for dicts and selectors
+            ("scalar_kind", Optional[ConfigScalarKind]),  # only valid for scalars
+            ("field_aliases", Optional[Dict[str, str]]),  # only valid for strict shapes
+        ],
     )
 ):
     # serdes log
@@ -103,56 +112,63 @@ class ConfigTypeSnap(
         )
 
     @property
-    def inner_type_key(self):
+    def inner_type_key(self) -> str:
         # valid for Noneable and Array
         check.invariant(self.kind == ConfigTypeKind.NONEABLE or self.kind == ConfigTypeKind.ARRAY)
-        check.invariant(len(self.type_param_keys) == 1)
-        return self.type_param_keys[0]
+        type_param_keys = check.is_list(self.type_param_keys, of_type=str)
+        check.invariant(len(type_param_keys) == 1)
+        return type_param_keys[0]
 
     @property
-    def scalar_type_key(self):
+    def scalar_type_key(self) -> str:
         check.invariant(self.kind == ConfigTypeKind.SCALAR_UNION)
-        return self.type_param_keys[0]
+        type_param_keys = check.is_list(self.type_param_keys, of_type=str)
+        return type_param_keys[0]
 
     @property
-    def non_scalar_type_key(self):
+    def non_scalar_type_key(self) -> str:
         check.invariant(self.kind == ConfigTypeKind.SCALAR_UNION)
-        return self.type_param_keys[1]
+        type_param_keys = check.is_list(self.type_param_keys, of_type=str)
+        return type_param_keys[1]
 
-    def _get_field(self, name):
+    def _get_field(self, name: str) -> Optional["ConfigFieldSnap"]:
         check.str_param(name, "name")
         check.invariant(ConfigTypeKind.has_fields(self.kind))
-
-        for f in self.fields:
+        fields = check.is_list(self.fields, of_type=ConfigFieldSnap)
+        for f in fields:
             if f.name == name:
                 return f
 
         return None
 
-    def get_field(self, name):
+    def get_field(self, name: str) -> "ConfigFieldSnap":
         field = self._get_field(name)
         if not field:
             check.failed("Field {name} not found".format(name=name))
         return field
 
-    def has_field(self, name):
+    def has_field(self, name: str) -> bool:
         return bool(self._get_field(name))
 
     @property
-    def field_names(self):
-        return [fs.name for fs in self.fields]
+    def field_names(self) -> List[str]:
+        fields = check.is_list(self.fields, of_type=ConfigFieldSnap)
+        return [fs.name for fs in fields]
 
-    def get_child_type_keys(self):
+    def get_child_type_keys(self) -> List[str]:
         if ConfigTypeKind.is_closed_generic(self.kind):
-            return self.type_param_keys
+            # all closed generics have type params
+            return cast(List[str], self.type_param_keys)
         elif ConfigTypeKind.has_fields(self.kind):
-            return [field.type_key for field in self.fields]
+            return [
+                field.type_key for field in cast(List[ConfigFieldSnap], check.not_none(self.fields))
+            ]
         else:
             return []
 
-    def has_enum_value(self, value):
+    def has_enum_value(self, value: object) -> bool:
         check.invariant(self.kind == ConfigTypeKind.ENUM)
-        for enum_value in self.enum_values:
+        for enum_value in cast(List[ConfigEnumValueSnap], self.enum_values):
             if enum_value.value == value:
                 return True
         return False
@@ -170,9 +186,16 @@ class ConfigEnumValueSnap(namedtuple("_ConfigEnumValueSnap", "value description"
 
 @whitelist_for_serdes
 class ConfigFieldSnap(
-    namedtuple(
+    NamedTuple(
         "_ConfigFieldSnap",
-        "name type_key is_required default_provided default_value_as_json_str description",
+        [
+            ("name", Optional[str]),
+            ("type_key", str),
+            ("is_required", bool),
+            ("default_provided", bool),
+            ("default_value_as_json_str", Optional[object]),
+            ("description", Optional[str]),
+        ],
     )
 ):
     def __new__(
@@ -206,7 +229,8 @@ def snap_from_field(name, field):
     )
 
 
-def snap_from_config_type(config_type):
+# type-ignores here are temporary until config type system overhauled
+def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
     check.inst_param(config_type, "config_type", ConfigType)
     return ConfigTypeSnap(
         key=config_type.key,
@@ -215,19 +239,19 @@ def snap_from_config_type(config_type):
         description=config_type.description,
         type_param_keys=[ct.key for ct in config_type.type_params] if config_type.type_params
         # jam scalar union types into type_param_keys
-        else [config_type.scalar_type.key, config_type.non_scalar_type.key]
+        else [config_type.scalar_type.key, config_type.non_scalar_type.key]  # type: ignore
         if config_type.kind == ConfigTypeKind.SCALAR_UNION
         else None,
         enum_values=[
-            ConfigEnumValueSnap(ev.config_value, ev.description) for ev in config_type.enum_values
+            ConfigEnumValueSnap(ev.config_value, ev.description) for ev in config_type.enum_values  # type: ignore
         ]
         if config_type.kind == ConfigTypeKind.ENUM
         else None,
-        fields=[snap_from_field(name, field) for name, field in config_type.fields.items()]
+        fields=[snap_from_field(name, field) for name, field in config_type.fields.items()]  # type: ignore
         if ConfigTypeKind.has_fields(config_type.kind)
         else None,
-        scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,
-        field_aliases=config_type.field_aliases
+        scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,  # type: ignore
+        field_aliases=config_type.field_aliases  # type: ignore
         if config_type.kind == ConfigTypeKind.STRICT_SHAPE
         else None,
     )
@@ -244,7 +268,7 @@ def minimal_config_for_type_snap(
         default_dict = {}
         if ConfigTypeKind.is_selector(config_type_snap.kind):
             return "<selector>"
-        for field in config_type_snap.fields:
+        for field in config_type_snap.fields:  # type: ignore
             if not field.is_required:
                 continue
 
@@ -257,7 +281,7 @@ def minimal_config_for_type_snap(
     elif config_type_snap.kind == ConfigTypeKind.SCALAR:
         defaults = {"String": "...", "Int": 0, "Float": 0.0, "Bool": True}
 
-        return defaults.get(config_type_snap.given_name, "<unknown>")
+        return defaults.get(config_type_snap.given_name, "<unknown>")  # type: ignore
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return []
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
@@ -268,7 +292,7 @@ def minimal_config_for_type_snap(
     elif config_type_snap.kind == ConfigTypeKind.SCALAR_UNION:
         return minimal_config_for_type_snap(
             config_schema_snap,
-            config_schema_snap.get_config_snap(config_type_snap.type_param_keys[0]),
+            config_schema_snap.get_config_snap(config_type_snap.type_param_keys[0]),  # type: ignore
         )
     else:
         return "<unknown>"
