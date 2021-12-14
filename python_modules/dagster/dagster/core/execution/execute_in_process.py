@@ -1,3 +1,5 @@
+import json
+from itertools import chain
 from typing import Any, Dict, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
@@ -45,7 +47,10 @@ def core_execute_in_process(
             pipeline_def=pipeline_def,
             run_config=run_config,
             mode=mode_def.name,
-            tags={**pipeline_def.tags, **(run_tags or {})},
+            tags={
+                key: value if isinstance(value, str) else json.dumps(value)
+                for key, value in chain(pipeline_def.tags.items(), (run_tags or {}).items())
+            },
         )
 
         _execute_run_iterable = ExecuteRunWithPlanIterable(
