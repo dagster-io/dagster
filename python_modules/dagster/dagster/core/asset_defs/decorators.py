@@ -134,7 +134,7 @@ class _Asset:
             fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
-        metadata = self.metadata or {}
+        metadata = dict(self.metadata or {})
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
@@ -169,6 +169,7 @@ class _Asset:
             if self.partition_mappings
             else None,
         )
+
         # temporary workaround to retrieve asset definition from job
         metadata["asset_def"] = asset_def
 

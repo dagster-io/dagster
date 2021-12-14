@@ -4,9 +4,8 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
-from datetime import datetime
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster import check, StaticPartitionsDefinition
 from dagster.core.asset_defs import ForeignAsset
@@ -24,7 +23,6 @@ from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.definitions.partition import (
     ScheduleType,
-    PartitionsDefinition,
     PartitionScheduleDefinition,
 )
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -612,7 +610,7 @@ def external_asset_graph_from_defs(
         job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
 
         # temporary workaround to retrieve asset definition from job
-        output = node_def.output_dict.get('result', None)
+        output = node_def.output_dict.get("result", None)
         op_asset_def = (
             output.metadata.get("asset_def", None) if output and output.metadata else None
         )
@@ -627,9 +625,6 @@ def external_asset_graph_from_defs(
                 partitions_def = external_static_partitions_definition_from_def(
                     op_asset_def.partitions_def
                 )
-            else:
-                # Dynamic Partitions case
-                pass
 
         asset_nodes.append(
             ExternalAssetNode(

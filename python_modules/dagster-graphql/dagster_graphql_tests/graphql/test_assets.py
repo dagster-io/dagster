@@ -392,17 +392,17 @@ class TestAssetAwareEventLog(
         assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
         assert asset_node["partitionsDef"] and asset_node["partitionsDef"]["partitionKeys"] == [
-            'a',
-            'b',
-            'c',
-            'd',
+            "a",
+            "b",
+            "c",
+            "d",
         ]
         asset_node = result.data["pipelineOrError"]["assetNodes"][1]
         assert asset_node["partitionsDef"] and asset_node["partitionsDef"]["partitionKeys"] == [
-            'a',
-            'b',
-            'c',
-            'd',
+            "a",
+            "b",
+            "c",
+            "d",
         ]
 
         selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")

@@ -1347,7 +1347,9 @@ def upstream_time_partitioned_asset():
 
 
 @asset(partitions_def=hourly_partition)
-def downstream_time_partitioned_asset(upstream_time_partitioned_asset):
+def downstream_time_partitioned_asset(
+    upstream_time_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
     return upstream_time_partitioned_asset + 1
 
 

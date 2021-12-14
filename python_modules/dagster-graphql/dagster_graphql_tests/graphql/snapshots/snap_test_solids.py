@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_query_all_solids 1'] = {
@@ -373,15 +372,31 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'downstream_asset'
+                    'name': 'downstream_static_partitioned_asset'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'partitioned_assets_job'
+                            'name': 'static_partitioned_assets_job'
                         },
                         'solidHandle': {
-                            'handleID': 'downstream_asset'
+                            'handleID': 'downstream_static_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'downstream_time_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'time_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_time_partitioned_asset'
                         }
                     }
                 ]
@@ -1421,15 +1436,31 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'upstream_asset'
+                    'name': 'upstream_static_partitioned_asset'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'partitioned_assets_job'
+                            'name': 'static_partitioned_assets_job'
                         },
                         'solidHandle': {
-                            'handleID': 'upstream_asset'
+                            'handleID': 'upstream_static_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'upstream_time_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'time_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_time_partitioned_asset'
                         }
                     }
                 ]

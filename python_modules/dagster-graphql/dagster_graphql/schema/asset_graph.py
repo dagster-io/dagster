@@ -3,18 +3,18 @@ from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
-    ExternalTimeWindowPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
 )
 
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
 from .partition_sets import (
     GraphenePartitionsDefinition,
-    GrapheneTimeWindowPartitionsDefinition,
     GrapheneStaticPartitionsDefinition,
+    GrapheneTimeWindowPartitionsDefinition,
 )
+from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
 from .util import non_null_list
 
 
@@ -127,12 +127,12 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionsDef(self, _graphene_info):
         partitions_def = self._external_asset_node.partitions_def
-        if partitions_def and isinstance(
-            partitions_def, ExternalTimeWindowPartitionsDefinitionData
-        ):
-            return GrapheneTimeWindowPartitionsDefinition(partitions_def)
-        elif partitions_def and isinstance(partitions_def, ExternalStaticPartitionsDefinitionData):
-            return GrapheneStaticPartitionsDefinition(partitions_def)
+        if partitions_def:
+            if isinstance(partitions_def, ExternalTimeWindowPartitionsDefinitionData):
+                return GrapheneTimeWindowPartitionsDefinition(partitions_def)
+            elif isinstance(partitions_def, ExternalStaticPartitionsDefinitionData):
+                return GrapheneStaticPartitionsDefinition(partitions_def)
+        # TODO: Add functionality for dynamic partitions definition
 
 
 class GrapheneAssetNodeOrError(graphene.Union):
