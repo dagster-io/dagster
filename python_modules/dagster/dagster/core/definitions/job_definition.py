@@ -202,6 +202,7 @@ class JobDefinition(PipelineDefinition):
 
         sub_graph = _get_graph_definition(self.graph, resolved_op_selection)
 
+        # TODO: config mapping - ignore nested nodes
         ignored_solids = [
             solid for solid in self.graph.solids if not sub_graph.has_solid_named(solid.name)
         ]
@@ -390,7 +391,7 @@ def _get_graph_definition(
             node_defs=selected_nodes,
             input_mappings=new_input_mappings,
             output_mappings=new_output_mappings,
-            config=None,
+            config=graph.config_mapping,
             description=None,
         )
     except DagsterInvalidDefinitionError as exc:
