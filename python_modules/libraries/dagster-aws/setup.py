@@ -33,7 +33,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["test"]),
         include_package_data=True,
         install_requires=[
-            "boto3!=1.20.24",
+            "boto3<1.20.24",
             f"dagster{pin}",
             "packaging",
             "requests",
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         extras_require={
             "redshift": ["psycopg2-binary"],
             "pyspark": ["dagster-pyspark"],
-            "test": ["moto>=2.2.8", "requests-mock"],
+            "test": ["moto>=2.2.8,<2.2.18", "requests-mock"],
         },
         zip_safe=False,
     )
