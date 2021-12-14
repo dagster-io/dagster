@@ -3,10 +3,10 @@ from typing import cast
 
 from dagster import check
 from dagster.core.definitions.partition import PartitionsDefinition, ScheduleType
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from .partition_key_range import PartitionKeyRange
 from .partition_mapping import PartitionMapping
 
 
