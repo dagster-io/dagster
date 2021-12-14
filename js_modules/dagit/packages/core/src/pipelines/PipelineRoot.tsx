@@ -33,7 +33,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
       <PipelineNav repoAddress={repoAddress} />
       <Switch>
         <Route
-          path="/workspace/:repoPath/pipeline_or_job/:pipelinePath"
+          path="/workspace/:repoPath/pipeline_or_job/:pipelinePath/(/?.*)"
           render={(props: RouteComponentProps<{repoPath: string; pipelinePath: string}>) => {
             return <PipelineOrJobDisambiguationRoot {...props} repoAddress={repoAddress} />;
           }}

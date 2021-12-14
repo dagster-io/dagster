@@ -62,9 +62,8 @@ interface CommonMenuItemProps {
 
 interface ItemProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon'> {}
+    Omit<React.ComponentProps<typeof MenuItem>, 'href' | 'icon'> {}
 
-// todo dish: Disallow `href` prop!
 export const MenuItemWIP: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
   return (
