@@ -90,7 +90,7 @@ def _make_pandas_column_from_sqlalchemy_column(
     return pandas_column
 
 
-def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
+def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, dataframe_loader=None):
     columns = []
 
     # Extract all fields of type Column in the (child) class
@@ -146,6 +146,7 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
     data_frame_type = create_dagster_pandas_dataframe_type(
         name=name,
         columns=[_make_pandas_column_from_sqlalchemy_column(column) for column in columns],
+        loader=dataframe_loader,
         dataframe_constraints=dataframe_constraints
     )
 

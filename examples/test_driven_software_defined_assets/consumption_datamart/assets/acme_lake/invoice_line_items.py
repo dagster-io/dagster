@@ -6,10 +6,17 @@ from sqlalchemy import Column, String, Date, Numeric, Integer
 
 import dagster
 from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
-from dagster import Output
+from dagster import Output, dagster_type_loader
 from dagster.core.asset_defs import asset
 
 warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
+
+
+def list_to_str(values: list):
+    s = ';'.join(str(v) for v in values if pandas.notna(v))
+    if s == '':
+        return numpy.NaN
+    return s
 
 
 class InvoiceOrderItemsDataFrameSchema:
@@ -36,22 +43,11 @@ class InvoiceOrderItemsDataFrameSchema:
         comment="subscription_term")
 
 
-InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type("InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema)
-
-def list_to_str(values: list):
-    s = ';'.join(str(v) for v in values if pandas.notna(v))
-    if s == '':
-        return numpy.NaN
-    return s
-
-@asset(
-    namespace='acme_lake',
-    compute_kind='lake',
+@dagster_type_loader(
     required_resource_keys={"datawarehouse"},
+    config_schema={}
 )
-def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
-    """An immutable snapshot containing all customer invoice line items"""
-
+def invoice_order_lines_loader(context, _config):
     df = context.resources.datawarehouse.read_sql_query('''
         SELECT
             invoice_id
@@ -68,7 +64,7 @@ def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
     df['meta__warnings'] = numpy.empty((df.shape[0], 0)).tolist()
 
     has_invalid_customer_id = ~df.customer_id.str.match(r'^CUST-\d+$')
-    df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id']) 
+    df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id'])
 
     non_vcpu_sku = ~df.subscription_sku.str.contains('VCPU')
     df.loc[non_vcpu_sku, 'meta__warnings'] = df.loc[non_vcpu_sku, 'meta__warnings'].apply(lambda w: w + ['non_vcpu_sku'])
@@ -77,4 +73,26 @@ def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
 
     typed_df = InvoiceOrderItemsDataFrameType.convert_dtypes(df)
 
-    return Output(typed_df, metadata=InvoiceOrderItemsDataFrameType.extract_event_metadata(df))
+    return typed_df
+
+
+InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type(
+    "InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema,
+    dataframe_loader=invoice_order_lines_loader,
+)
+
+
+@asset(
+    namespace='acme_lake',
+    compute_kind='lake',
+    dagster_type=InvoiceOrderItemsDataFrameType,
+    io_manager_key="lake_input_manager",
+)
+def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
+    """An immutable snapshot containing all customer invoice line items"""
+
+    # TODO: Figure out a more elegant wat to dagster_type
+    context.dagster_type = InvoiceOrderItemsDataFrameType
+    typed_df = context.resources.lake_input_manager.load_input(context)
+
+    return Output(typed_df, metadata=InvoiceOrderItemsDataFrameType.extract_event_metadata(typed_df))
