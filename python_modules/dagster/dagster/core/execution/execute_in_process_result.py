@@ -1,9 +1,11 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
-from dagster import DagsterEvent, check
+from dagster import check
 from dagster.core.definitions import NodeDefinition, NodeHandle
+from dagster.core.definitions.events import AssetMaterialization, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent, DagsterEventType, StepMaterializationData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 
 
@@ -60,6 +62,15 @@ class ExecuteInProcessResult:
         check.str_param(node_name, "node_name")
 
         return _filter_events_by_handle(self._event_list, NodeHandle.from_string(node_name))
+
+    def asset_materializations_for_node(
+        self, node_name
+    ) -> List[Union[Materialization, AssetMaterialization]]:
+        return [
+            cast(StepMaterializationData, event.event_specific_data).materialization
+            for event in self.events_for_node(node_name)
+            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+        ]
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output of top-level job, if an output is returned.
