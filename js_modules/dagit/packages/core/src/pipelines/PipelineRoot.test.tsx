@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
@@ -23,24 +22,24 @@ describe('PipelineRoot', () => {
   const mocks = {
     Pipeline: () => ({
       id: () => PIPELINE_NAME,
-      modes: () => new MockList(1),
+      modes: () => [...new Array(1)],
       isAssetJob: () => false,
     }),
     PipelineSnapshot: () => ({
-      runs: () => new MockList(0),
-      schedules: () => new MockList(0),
-      sensors: () => new MockList(0),
+      runs: () => [],
+      schedules: () => [],
+      sensors: () => [],
       solidHandle: null,
     }),
     RepositoryLocation: () => ({
       id: REPO_LOCATION,
       name: REPO_LOCATION,
-      repositories: () => new MockList(1),
+      repositories: () => [...new Array(1)],
     }),
     Repository: () => ({
       id: REPO_NAME,
       name: REPO_NAME,
-      pipelines: () => new MockList(1),
+      pipelines: () => [...new Array(1)],
     }),
   };
 
