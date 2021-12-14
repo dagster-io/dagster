@@ -321,8 +321,6 @@ class DatabricksConfig:
             self.setup_s3_storage(self.storage["s3"], dbutils, sc)
         elif "adls2" in self.storage:
             self.setup_adls2_storage(self.storage["adls2"], dbutils, sc)
-        else:
-            raise Exception("No valid storage found in Databricks configuration!")
 
     def setup_s3_storage(self, s3_storage, dbutils, sc):
         """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
