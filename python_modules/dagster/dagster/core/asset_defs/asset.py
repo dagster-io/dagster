@@ -1,4 +1,4 @@
-from typing import Mapping, Optional
+from typing import AbstractSet, Mapping, Optional
 
 from dagster import check
 from dagster.core.definitions import OpDefinition
@@ -33,6 +33,10 @@ class AssetsDefinition:
     @property
     def op(self) -> OpDefinition:
         return self._op
+
+    @property
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._output_defs_by_asset_key.keys()
 
     @property
     def output_defs_by_asset_key(self):
