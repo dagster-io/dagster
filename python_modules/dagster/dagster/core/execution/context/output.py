@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
@@ -255,6 +256,27 @@ class OutputContext:
         Raises an error if the current run is not a partitioned run.
         """
         return self.step_context.partition_key
+
+    @property
+    def has_asset_partitions(self) -> bool:
+        return self.step_context.has_asset_partitions_for_output(self.name)
+
+    @property
+    def asset_partition_key(self) -> str:
+        """The partition key for output asset.
+
+        Raises an error if the output asset has no partitioning, or if the run covers a partition
+        range for the output asset.
+        """
+        return self.step_context.asset_partition_key_for_output(self.name)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for output asset.
+
+        Raises an error if the output asset has no partitioning.
+        """
+        return self.step_context.asset_partition_key_range_for_output(self.name)
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique

@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Set
 
 from dagster import check
 from dagster.builtins import Nothing
+from dagster.config import Field
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
@@ -157,6 +158,12 @@ class _Asset:
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
+            config_schema={
+                "assets": {
+                    "input_partitions": Field(dict, is_required=False),
+                    "output_partitions": Field(dict, is_required=False),
+                }
+            },
         )(fn)
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
