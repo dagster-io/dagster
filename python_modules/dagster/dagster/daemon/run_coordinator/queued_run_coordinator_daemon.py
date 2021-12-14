@@ -105,8 +105,10 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(workspace, "workspace", IWorkspace)
 
-        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
-        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
+        run_queue_config = instance.run_coordinator.get_run_queue_config()
+
+        max_concurrent_runs = run_queue_config.max_concurrent_runs
+        tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
         in_progress_runs = self._get_in_progress_runs(instance)
         max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
