@@ -406,7 +406,7 @@ class TestAssetAwareEventLog(
         assert asset_node["partitionsDef"]
         partitions_def = asset_node["partitionsDef"]
         assert partitions_def["scheduleType"] == "HOURLY"
-        assert partitions_def["start"] == 1620201600
+        assert partitions_def["start"] == 1620201600.0
         assert partitions_def["timezone"] == "UTC"
         assert partitions_def["fmt"] == "%Y-%m-%d-%H:%M"
         assert partitions_def["endOffset"] == 0

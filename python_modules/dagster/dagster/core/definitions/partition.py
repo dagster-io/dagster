@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 
 import pendulum
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
 from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -27,8 +28,6 @@ from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
 from .utils import check_valid_name
-
-from dagster.serdes import whitelist_for_serdes
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
