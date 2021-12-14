@@ -169,7 +169,7 @@ class _Asset:
             if self.partition_mappings
             else None,
         )
-
+        # temporary workaround to retrieve asset definition from job
         metadata["asset_def"] = asset_def
 
         return asset_def

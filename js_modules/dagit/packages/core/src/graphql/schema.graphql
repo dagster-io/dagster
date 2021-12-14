@@ -627,11 +627,32 @@ type AssetNode {
   description: String
   opName: String
   jobName: String
-  partitionKeys: [String]
+  partitionsDef: PartitionsDefinition
   jobs: [Pipeline!]!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+union PartitionsDefinition = TimeWindowPartitionsDefinition | StaticPartitionsDefinition
+
+type TimeWindowPartitionsDefinition {
+  scheduleType: PartitionScheduleType!
+  start: Float!
+  timezone: String
+  fmt: String!
+  endOffset: Int!
+}
+
+enum PartitionScheduleType {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+type StaticPartitionsDefinition {
+  partitionKeys: [String]!
 }
 
 type AssetDependency {

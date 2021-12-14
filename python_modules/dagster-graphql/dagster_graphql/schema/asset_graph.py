@@ -1,11 +1,20 @@
 import graphene
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.external_data import ExternalAssetNode
+from dagster.core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalTimeWindowPartitionsDefinitionData,
+    ExternalStaticPartitionsDefinitionData,
+)
 
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
+from .partition_sets import (
+    GraphenePartitionsDefinition,
+    GrapheneTimeWindowPartitionsDefinition,
+    GrapheneStaticPartitionsDefinition,
+)
 from .util import non_null_list
 
 
@@ -36,7 +45,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
-    partitionKeys = graphene.List(graphene.String)
+    partitionsDef = graphene.Field(GraphenePartitionsDefinition)
     jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
@@ -63,7 +72,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
             jobName=external_asset_node.job_names[0] if external_asset_node.job_names else None,
-            partitionKeys=external_asset_node.partition_keys,
         )
 
     def resolve_dependencies(self, _graphene_info):
@@ -116,6 +124,15 @@ class GrapheneAssetNode(graphene.ObjectType):
             for job_name in job_names
             if self._external_repository.has_external_pipeline(job_name)
         ]
+
+    def resolve_partitionsDef(self, _graphene_info):
+        partitions_def = self._external_asset_node.partitions_def
+        if partitions_def and isinstance(
+            partitions_def, ExternalTimeWindowPartitionsDefinitionData
+        ):
+            return GrapheneTimeWindowPartitionsDefinition(partitions_def)
+        elif partitions_def and isinstance(partitions_def, ExternalStaticPartitionsDefinitionData):
+            return GrapheneStaticPartitionsDefinition(partitions_def)
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

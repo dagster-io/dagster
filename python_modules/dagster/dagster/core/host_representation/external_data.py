@@ -6,9 +6,9 @@ for that.
 """
 from datetime import datetime
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
 
-from dagster import check
+from dagster import check, StaticPartitionsDefinition
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
@@ -22,7 +22,12 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
-from dagster.core.definitions.partition import PartitionsDefinition, PartitionScheduleDefinition
+from dagster.core.definitions.partition import (
+    ScheduleType,
+    PartitionsDefinition,
+    PartitionScheduleDefinition,
+)
+from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -327,6 +332,33 @@ class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsError
 
 
 @whitelist_for_serdes
+class ExternalTimeWindowPartitionsDefinitionData(
+    namedtuple(
+        "_ExternalTimeWindowPartitionsDefinitionData", "schedule_type start timezone fmt end_offset"
+    )
+):
+    def __new__(cls, schedule_type, start, timezone, fmt, end_offset):
+        return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
+            cls,
+            schedule_type=check.inst_param(schedule_type, "schedule_type", ScheduleType),
+            start=check.float_param(start, "start"),
+            timezone=check.opt_str_param(timezone, "timezone"),
+            fmt=check.str_param(fmt, "fmt"),
+            end_offset=check.int_param(end_offset, "end_offset"),
+        )
+
+
+@whitelist_for_serdes
+class ExternalStaticPartitionsDefinitionData(
+    namedtuple("_StaticPartitionsDefinitionData", "partition_keys")
+):
+    def __new__(cls, partition_keys):
+        return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
+            cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     namedtuple("_ExternalPartitionSetData", "name pipeline_name solid_selection mode")
 ):
@@ -446,7 +478,7 @@ class ExternalAssetDependedBy(
 class ExternalAssetNode(
     namedtuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partition_keys",
+        "asset_key dependencies depended_by op_name op_description job_names partitions_def",
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -462,7 +494,11 @@ class ExternalAssetNode(
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
-        partition_keys: Optional[List[str]] = None,
+        partitions_def: Optional[
+            Union[
+                ExternalTimeWindowPartitionsDefinitionData, ExternalStaticPartitionsDefinitionData
+            ]
+        ] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
@@ -472,7 +508,7 @@ class ExternalAssetNode(
             op_name=op_name,
             op_description=op_description,
             job_names=job_names,
-            partition_keys=partition_keys,
+            partitions_def=partitions_def,
         )
 
 
@@ -576,9 +612,24 @@ def external_asset_graph_from_defs(
         job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
 
         # temporary workaround to retrieve asset definition from job
+        output = node_def.output_dict.get('result', None)
         op_asset_def = (
-            node_def.outs['result'].metadata["asset_def"] if node_def.is_graph_job_op_node else None
+            output.metadata.get("asset_def", None) if output and output.metadata else None
         )
+
+        partitions_def = None
+        if op_asset_def and op_asset_def.partitions_def:
+            if isinstance(op_asset_def.partitions_def, TimeWindowPartitionsDefinition):
+                partitions_def = external_time_window_partitions_definition_from_def(
+                    op_asset_def.partitions_def
+                )
+            elif isinstance(op_asset_def.partitions_def, StaticPartitionsDefinition):
+                partitions_def = external_static_partitions_definition_from_def(
+                    op_asset_def.partitions_def
+                )
+            else:
+                # Dynamic Partitions case
+                pass
 
         asset_nodes.append(
             ExternalAssetNode(
@@ -588,9 +639,7 @@ def external_asset_graph_from_defs(
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
-                partition_keys=op_asset_def.partitions_def.get_partition_keys(datetime.utcnow())
-                if op_asset_def and op_asset_def.partitions_def
-                else None,
+                partitions_def=partitions_def,
             )
         )
 
@@ -625,6 +674,24 @@ def external_schedule_data_from_def(schedule_def):
         else None,
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
+    )
+
+
+def external_time_window_partitions_definition_from_def(partitions_def):
+    check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
+    return ExternalTimeWindowPartitionsDefinitionData(
+        schedule_type=partitions_def.schedule_type,
+        start=partitions_def.start.timestamp(),
+        timezone=partitions_def.timezone,
+        fmt=partitions_def.fmt,
+        end_offset=partitions_def.end_offset,
+    )
+
+
+def external_static_partitions_definition_from_def(partitions_def):
+    check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
+    return ExternalStaticPartitionsDefinitionData(
+        partition_keys=partitions_def.get_partition_keys()
     )
 
 

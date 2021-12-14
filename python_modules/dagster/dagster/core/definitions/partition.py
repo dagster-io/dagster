@@ -27,6 +27,8 @@ from .run_request import RunRequest, SkipReason
 from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
 from .utils import check_valid_name
 
+from dagster.serdes import whitelist_for_serdes
+
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 T = TypeVar("T")
@@ -123,6 +125,7 @@ def schedule_partition_range(
     return partitions
 
 
+@whitelist_for_serdes
 class ScheduleType(Enum):
     HOURLY = "HOURLY"
     DAILY = "DAILY"
