@@ -102,6 +102,9 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
     columns.append(Column('meta__warnings', String, nullable=True, comment="Semi-colon seperated list of data warnings detected in this rows data"))
 
     def _extract_event_metadata(df: pandas.DataFrame):
+        warning_count = 0
+        if len(df.meta__warnings.dropna()) > 0:
+            warning_count = len(df.meta__warnings.dropna().str.split(";").sum())
         return {
             "Row count": EventMetadata.int(len(df)),
             "Schema": EventMetadata.md(pandas.DataFrame({
@@ -109,7 +112,7 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None):
                 "Type": [column.type for column in columns],
                 "Description": [column.description for column in columns]
             }).to_markdown(index=False)),
-            "Warnings": len(df.meta__warnings.dropna().str.split(";").sum()),
+            "Warnings": warning_count,
             "Tail(5)": EventMetadata.md(df.tail(5).to_markdown()),
         }
 
