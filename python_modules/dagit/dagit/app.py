@@ -258,8 +258,6 @@ def create_app_from_workspace_process_context(
 
     warn_if_compute_logs_disabled()
 
-    print("Loading repository...")  # pylint: disable=print-call
-
     log_workspace_stats(instance, workspace_process_context)
 
     schema = create_schema()

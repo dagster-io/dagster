@@ -6,7 +6,6 @@ import tempfile
 from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
-from dagster.core.events import log_step_event
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
@@ -167,8 +166,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 self._log_logs_from_cluster(log, databricks_run_id)
 
         for event in self.get_step_events(run_id, step_key):
-            log_step_event(step_context, event)
-            yield event
+            # write each pickled event from the DataBricks instance to the local instance
+            step_context.instance.handle_new_event(event)
+            if event.is_dagster_event:
+                yield event.dagster_event
 
     def get_step_events(self, run_id, step_key):
         path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
@@ -252,13 +253,31 @@ class DatabricksPySparkStepLauncher(StepLauncher):
     def _main_file_local_path(self):
         return databricks_step_main.__file__
 
+    def _sanitize_step_key(self, step_key: str) -> str:
+        # step_keys of dynamic steps contain brackets, which are invalid characters
+        return step_key.replace("[", "__").replace("]", "__")
+
     def _dbfs_path(self, run_id, step_key, filename):
-        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        path = "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                self._sanitize_step_key(step_key),
+                os.path.basename(filename),
+            ]
+        )
         return "dbfs://{}".format(path)
 
     def _internal_dbfs_path(self, run_id, step_key, filename):
         """Scripts running on Databricks should access DBFS at /dbfs/."""
-        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        path = "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                self._sanitize_step_key(step_key),
+                os.path.basename(filename),
+            ]
+        )
         return "/dbfs/{}".format(path)
 
 

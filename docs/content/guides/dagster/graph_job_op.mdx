@@ -111,17 +111,6 @@ def do_something():
 @job(resource_defs={"external_service": external_service})
 def do_it_all():
     do_something()
-
-
-# end_graph_with_resources
-
-# start_execute_graph
-def execute_graph_in_process():
-    result = do_it_all.execute_in_process()
-    assert result.output_for_node("do_something")
-
-
-# end_execute_graph
 ```
 
 ### A pipeline with a test mode

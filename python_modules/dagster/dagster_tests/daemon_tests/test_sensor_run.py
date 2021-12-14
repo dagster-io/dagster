@@ -44,7 +44,11 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
+from dagster.core.test_utils import (
+    create_test_daemon_workspace,
+    get_logger_output_from_capfd,
+    instance_for_test,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.controller import (
@@ -443,12 +447,10 @@ def test_simple_sensor(external_repo_context, capfd):
                 JobTickStatus.SKIPPED,
             )
 
-            captured = capfd.readouterr()
             assert (
-                captured.out
-                == """2019-02-27 17:59:59 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 17:59:59 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping
-"""
+                get_logger_output_from_capfd(capfd, "SensorDaemon")
+                == """2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping"""
             )
 
             freeze_datetime = freeze_datetime.add(seconds=30)
@@ -473,13 +475,11 @@ def test_simple_sensor(external_repo_context, capfd):
                 [run.run_id],
             )
 
-            captured = capfd.readouterr()
             assert (
-                captured.out
-                == """2019-02-27 18:00:29 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:00:29 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:29 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor
-""".format(
+                get_logger_output_from_capfd(capfd, "SensorDaemon")
+                == """2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
                     run_id=run.run_id
                 )
             )

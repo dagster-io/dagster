@@ -782,7 +782,6 @@ def _checked_resource_reqs_for_mode(
 
     for resource_key, resource in mode_def.resource_defs.items():
         for required_resource in resource.required_resource_keys:
-            resource_reqs.add(required_resource)
             if required_resource not in mode_resources:
                 error_msg = _get_missing_resource_error_msg(
                     resource_type="resource",
@@ -792,6 +791,18 @@ def _checked_resource_reqs_for_mode(
                     resource_defs_of_type=mode_resources,
                 )
                 raise DagsterInvalidDefinitionError(error_msg)
+
+    # Finally, recursively add any resources that the set of required resources require
+    while True:
+        new_resources: Set[str] = set()
+        for resource_key in resource_reqs:
+            resource = mode_def.resource_defs[resource_key]
+            new_resources.update(resource.required_resource_keys - resource_reqs)
+
+        if not len(new_resources):
+            break
+
+        resource_reqs.update(new_resources)
 
     return resource_reqs
 

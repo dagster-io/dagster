@@ -41,6 +41,8 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
+    volumeMounts: List[kubernetes.VolumeMount]
+    volumes: List[kubernetes.Volume]
 
     class Config:
         extra = Extra.forbid

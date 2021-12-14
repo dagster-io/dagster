@@ -9,6 +9,7 @@ from dagster.core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,
+    get_logger_output_from_capfd,
 )
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
@@ -66,7 +67,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
             assert ticks[0].status == JobTickStatus.SKIPPED
-            captured = capfd.readouterr()
+            capfd.readouterr()
 
             # create a starting tick, but crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
@@ -79,7 +80,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 
             assert launch_process.exitcode != 0
 
-            captured = capfd.readouterr()
+            capfd.readouterr()
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
@@ -101,13 +102,11 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
-            captured = capfd.readouterr()
             assert (
-                captured.out.replace("\r\n", "\n")
-                == f"""2019-02-27 18:01:03 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:01:03 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:01:03 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor
-"""
+                get_logger_output_from_capfd(capfd, "SensorDaemon")
+                == f"""2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())

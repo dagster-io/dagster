@@ -17,6 +17,7 @@ from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
+from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import resource_pipeline
@@ -231,3 +232,11 @@ def test_retry_pipeline():
         retry_pipeline,
         run_config=retry_pipeline.get_preset("pass_after_retry").run_config,
     ).success
+
+
+def test_notebook_pipeline():
+    with instance_for_test() as instance:
+        assert execute_pipeline(
+            reconstructable(hello_world_notebook_pipeline),
+            instance=instance,
+        ).success

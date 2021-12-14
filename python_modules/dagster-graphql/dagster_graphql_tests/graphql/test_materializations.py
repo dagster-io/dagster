@@ -1,21 +1,8 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import infer_pipeline_selector
 from dagster_graphql_tests.graphql.setup import LONG_INT
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
-
-ASSET_TAGS_QUERY = """
-    query AssetQuery($assetKey: AssetKeyInput!) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
-                tags {
-                    key
-                    value
-                }
-            }
-        }
-    }
-"""
 
 
 class TestMaterializations(ExecutingGraphQLContextTestMatrix):
@@ -92,22 +79,3 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         ]
 
         snapshot.assert_match([message["__typename"] for message in non_engine_event_logs])
-
-    def test_materialization_backcompat(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "backcompat_materialization_pipeline")
-        sync_execute_get_events(
-            context=graphql_context,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "mode": "default",
-                }
-            },
-        )
-        result = execute_dagster_graphql(
-            graphql_context, ASSET_TAGS_QUERY, variables={"assetKey": {"path": ["all_types"]}}
-        )
-        assert result.data
-        assert result.data["assetOrError"]
-        assert result.data["assetOrError"]["tags"] is not None
-        snapshot.assert_match(result.data)

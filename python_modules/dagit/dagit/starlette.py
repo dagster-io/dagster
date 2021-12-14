@@ -4,8 +4,10 @@ import uuid
 from os import path
 from typing import List
 
+import nbformat
 from dagster import DagsterInstance
 from dagster import __version__ as dagster_version
+from dagster import check
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -13,10 +15,17 @@ from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceReq
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
+from nbconvert import HTMLExporter
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import HTTPConnection, Request
-from starlette.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from starlette.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    StreamingResponse,
+)
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 
@@ -79,6 +88,25 @@ class DagitWebserver(GraphQLServer):
         result.seek(0)  # be kind, please rewind
 
         return StreamingResponse(result, media_type="application/gzip")
+
+    async def download_notebook(self, request: Request):
+        context = self.make_request_context(request)
+        repo_location_name = request.query_params["repoLocName"]
+
+        nb_path = request.query_params["path"]
+        if not nb_path.endswith(".ipynb"):
+            return PlainTextResponse("Invalid Path", status_code=400)
+
+        # get ipynb content from grpc call
+        notebook_content = context.get_external_notebook_data(repo_location_name, nb_path)
+        check.inst_param(notebook_content, "notebook_content", bytes)
+
+        # parse content to HTML
+        notebook = nbformat.reads(notebook_content, as_version=4)
+        html_exporter = HTMLExporter()
+        html_exporter.template_file = "basic"
+        (body, resources) = html_exporter.from_notebook_node(notebook)
+        return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
     async def download_compute_logs_endpoint(self, request: Request):
         run_id = request.path_params["run_id"]
@@ -185,6 +213,10 @@ class DagitWebserver(GraphQLServer):
                 Route(
                     "/download/{run_id:str}/{step_key:str}/{file_type:str}",
                     self.download_compute_logs_endpoint,
+                ),
+                Route(
+                    "/dagit/notebook",
+                    self.download_notebook,
                 ),
                 Route(
                     "/download_debug/{run_id:str}",

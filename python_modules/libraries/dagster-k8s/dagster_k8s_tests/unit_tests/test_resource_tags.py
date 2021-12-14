@@ -196,8 +196,35 @@ def test_tags_to_dynamic_plan():
 
 def test_bad_user_defined_k8s_config_tags():
     @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: {"other": {}}})
-    def my_solid():
+    def my_pipeline():
         pass
 
-    with pytest.raises(DagsterInvalidConfigError):
-        get_user_defined_k8s_config(my_solid.tags)
+    with pytest.raises(
+        DagsterInvalidConfigError, match='Received unexpected config entry "other" at the root'
+    ):
+        get_user_defined_k8s_config(my_pipeline.tags)
+
+
+def test_user_defined_config_from_tags():
+
+    config_args = {
+        "container_config": {
+            "resources": {
+                "requests": {"cpu": "500m", "memory": "128Mi"},
+                "limits": {"cpu": "1000m", "memory": "1Gi"},
+            }
+        },
+        "pod_template_spec_metadata": {"pod_template_spec_key": "pod_template_spec_value"},
+        "pod_spec_config": {"pod_spec_config_key": "pod_spec_config_value"},
+        "job_config": {"job_config_key": "job_config_value"},
+        "job_metadata": {"job_metadata_key": "job_metadata_value"},
+        "job_spec_config": {"job_spec_config_key": "job_spec_config_value"},
+    }
+
+    @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: config_args})
+    def my_pipeline():
+        pass
+
+    assert get_user_defined_k8s_config(my_pipeline.tags) == UserDefinedDagsterK8sConfig(
+        **config_args
+    )

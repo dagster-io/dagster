@@ -1,14 +1,10 @@
 ### Dagster Documentation Gap
 
-{{ message }}
-
 This issue was generated from the slack conversation at: {{ permalink }}
 
-Conversation excerpt:
+### Conversation excerpt
 
-```
 {{ replies }}
-```
 
 ---
 

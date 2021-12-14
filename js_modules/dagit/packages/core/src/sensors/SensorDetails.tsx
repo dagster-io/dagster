@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -54,6 +55,7 @@ export const SensorDetails: React.FC<{
     name,
     sensorState: {status, ticks},
     targets,
+    metadata,
   } = sensor;
 
   const repo = useRepository(repoAddress);
@@ -167,6 +169,18 @@ export const SensorDetails: React.FC<{
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
+          {metadata.assetKeys && metadata.assetKeys.length ? (
+            <tr>
+              <td>Monitored Assets</td>
+              <td>
+                <Box flex={{direction: 'column', gap: 2}}>
+                  {metadata.assetKeys.map((key) => (
+                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                  ))}
+                </Box>
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </MetadataTableWIP>
     </>

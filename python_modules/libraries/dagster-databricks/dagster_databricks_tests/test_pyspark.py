@@ -13,6 +13,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster.core.test_utils import instance_for_test
 from dagster.utils.merger import deep_merge_dicts
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
@@ -155,9 +156,15 @@ def test_local():
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
 @mock.patch("dagster_databricks.databricks.DatabricksJobRunner.wait_for_run_to_complete")
 def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock_submit_run):
-    mock_get_step_events.return_value = execute_pipeline(
-        pipeline=reconstructable(define_do_nothing_pipe), mode="local"
-    ).events_by_step_key["do_nothing_solid"]
+    with instance_for_test() as instance:
+        execute_pipeline(
+            pipeline=reconstructable(define_do_nothing_pipe), mode="local", instance=instance
+        )
+        mock_get_step_events.return_value = [
+            record.event_log_entry
+            for record in instance.get_event_records()
+            if record.event_log_entry.step_key == "do_nothing_solid"
+        ]
 
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
@@ -193,10 +200,7 @@ def test_do_it_live_databricks_s3():
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
                 "io_manager": {
-                    "config": {
-                        "s3_bucket": "dagster-databricks-tests",
-                        "s3_prefix": "dagster-databricks-tests",
-                    }
+                    "config": {"s3_bucket": "elementl-databricks", "s3_prefix": "dagster-test"}
                 },
             },
         },

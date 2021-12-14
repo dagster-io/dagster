@@ -16,6 +16,7 @@ from dagster.core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.log import default_date_format_string
 
 
 class _ScheduleLaunchContext:
@@ -43,9 +44,6 @@ class _ScheduleLaunchContext:
             self.update_state(JobTickStatus.FAILURE, error=error_data)
 
         self._write()
-
-
-_SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
 def execute_scheduler_iteration(instance, workspace, logger, max_catchup_runs):
@@ -176,10 +174,10 @@ def launch_scheduled_runs_for_schedule(
         tick_times = tick_times[-max_catchup_runs:]
 
     if len(tick_times) == 1:
-        tick_time = tick_times[0].strftime(_SCHEDULER_DATETIME_FORMAT)
+        tick_time = tick_times[0].strftime(default_date_format_string())
         logger.info(f"Evaluating schedule `{schedule_name}` at {tick_time}")
     else:
-        times = ", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times])
+        times = ", ".join([time.strftime(default_date_format_string()) for time in tick_times])
         logger.info(f"Evaluating schedule `{schedule_name}` at the following times: {times}")
 
     for schedule_time in tick_times:

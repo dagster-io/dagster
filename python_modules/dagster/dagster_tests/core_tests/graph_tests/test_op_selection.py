@@ -27,6 +27,20 @@ def do_it_all():
     add_one(adder(return_one(), return_two()))
 
 
+def test_simple_op_selection_on_graph_def():
+    result = do_it_all.execute_in_process(op_selection=["*adder"])
+
+    assert result.success
+
+    executed_step_keys = [
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
+    ]
+    assert len(executed_step_keys) == 3
+    assert "add_one" not in [executed_step_keys]
+
+
 def test_simple_op_selection_on_job_def():
     my_subset_job = do_it_all.to_job(op_selection=["*adder"])
     result = my_subset_job.execute_in_process()

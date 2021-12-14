@@ -85,6 +85,9 @@ spec:
             - name: dagster-celery
               mountPath: "{{ $.Values.global.dagsterHome }}/celery-config.yaml"
               subPath: celery.yaml
+            {{- range $volumeMount := $celeryK8sRunLauncherConfig.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+            {{- end }}
           resources:
             {{- toYaml $celeryK8sRunLauncherConfig.resources | nindent 12 }}
       {{- if $celeryK8sRunLauncherConfig.livenessProbe }}
@@ -128,6 +131,9 @@ spec:
         - name: dagster-celery
           configMap:
             name: {{ template "dagster.fullname" $ }}-celery-{{- $queue.name }}
+        {{- range $volume := $celeryK8sRunLauncherConfig.volumes }}
+        - {{- $volume | toYaml | nindent 10 }}
+        {{- end }}
     {{- with $celeryK8sRunLauncherConfig.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

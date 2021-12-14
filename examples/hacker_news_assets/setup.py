@@ -14,6 +14,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     package_data={"hacker_news_assets": ["hacker_news_dbt/*"]},
     install_requires=[
+        "aiobotocore==1.3.3",
         "dagster",
         "dagster-aws",
         "dagster-dbt",

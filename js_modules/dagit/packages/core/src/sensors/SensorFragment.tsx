@@ -21,6 +21,11 @@ export const SENSOR_FRAGMENT = gql`
       solidSelection
       mode
     }
+    metadata {
+      assetKeys {
+        path
+      }
+    }
   }
   ${INSTIGATION_STATE_FRAGMENT}
 `;

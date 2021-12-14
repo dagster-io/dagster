@@ -14,7 +14,9 @@ import site
 import sys
 import tempfile
 import zipfile
+from typing import List
 
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import serialize_value
@@ -51,12 +53,19 @@ def main(
         with open(step_run_ref_filepath, "rb") as handle:
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
-        with DagsterInstance.ephemeral() as instance:
-            events = list(run_step_from_ref(step_run_ref, instance))
 
-    events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
-    with open(events_filepath, "wb") as handle:
-        pickle.dump(serialize_value(events), handle)
+        all_events: List[EventLogEntry] = []
+
+        try:
+            with DagsterInstance.ephemeral() as instance:
+                instance.add_event_listener(step_run_ref.run_id, all_events.append)
+                list(run_step_from_ref(step_run_ref, instance))
+        finally:
+            events_filepath = (
+                os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+            )
+            with open(events_filepath, "wb") as handle:
+                pickle.dump(serialize_value(all_events), handle)
 
 
 if __name__ == "__main__":
