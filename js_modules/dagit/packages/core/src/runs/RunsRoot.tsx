@@ -5,6 +5,7 @@ import {Link, RouteComponentProps} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
@@ -55,6 +56,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
+  const canSeeConfig = useCanSeeConfig();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -139,7 +141,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           </Box>
         }
       />
-      {selectedTab === 'queued' ? (
+      {selectedTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
