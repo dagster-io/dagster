@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Iterable, Optional
+from typing import Dict, Iterable, List, Optional, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -240,6 +240,40 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         for event in asset_events:
             asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
+
+    def get_last_materialization_event(
+        self, asset_key_or_keys: Union[AssetKey, List[AssetKey]]
+    ) -> Union[Optional[EventLogEntry], Dict[AssetKey, Optional[EventLogEntry]]]:
+        if isinstance(asset_key_or_keys, AssetKey):
+            asset_keys = set([asset_key_or_keys])
+            is_multi = False
+        else:
+            check.is_list(asset_key_or_keys, of_type=AssetKey)
+            asset_keys = set(asset_key_or_keys)
+            is_multi = True
+
+        asset_records = []
+        for records in self._logs.values():
+            asset_records += [
+                record
+                for record in records
+                if record.is_dagster_event
+                and record.dagster_event.asset_key
+                and record.dagster_event.asset_key in asset_keys
+            ]
+
+        materializations_by_key = OrderedDict()
+        for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True):
+            if (
+                self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
+                and record.dagster_event.asset_key not in materializations_by_key
+            ):
+                materializations_by_key[record.dagster_event.asset_key] = record.dagster_event
+
+        if is_multi:
+            return materializations_by_key
+        else:
+            return materializations_by_key.get(asset_key_or_keys)
 
     def get_asset_events(
         self,
