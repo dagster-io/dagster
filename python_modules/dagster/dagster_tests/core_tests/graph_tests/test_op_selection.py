@@ -1,8 +1,19 @@
 import pytest
-from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, job, op, root_input_manager
+from dagster import (
+    ConfigMapping,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    graph,
+    job,
+    op,
+    root_input_manager,
+)
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+
+from typing import List
 
 
 @op
@@ -533,3 +544,80 @@ def test_sub_sub_graph_selection():
         "subgraph.add_one",
     }
     assert result_sub_3.output_for_node("subgraph.add_one") == 101
+
+
+def test_nested_op_selection_fan_in():
+    @op
+    def sum_fan_in(nums: List[int]) -> int:
+        return sum(nums)
+
+    @graph
+    def fan_in_graph():
+        fan_outs = []
+        for i in range(0, 10):
+            fan_outs.append(return_one.alias(f"return_one_{i}")())
+        return sum_fan_in(fan_outs)
+
+    @job
+    def _super():
+        add_one(fan_in_graph())
+
+    result_full = _super.execute_in_process()
+    assert result_full.success
+    assert result_full.output_for_node("add_one") == 11
+
+    result_sub_1 = _super.execute_in_process(
+        op_selection=[
+            "fan_in_graph.return_one_0",
+            "fan_in_graph.return_one_1",
+            "fan_in_graph.return_one_2",
+            "fan_in_graph.sum_fan_in",
+            "add_one",
+        ]
+    )
+    assert result_sub_1.success
+    assert result_sub_1.output_for_node("add_one") == 4
+
+
+def test_nested_op_selection_with_config_mapping():
+    @op(config_schema=str)
+    def concat(context, x: str):
+        return x + context.op_config
+
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _nested_config_fn(outer):
+        return {"my_op": {"config": outer}, "concat": {"config": outer}}
+
+    @graph(config=ConfigMapping(config_fn=_nested_config_fn, config_schema=str))
+    def my_nested_graph():
+        concat(my_op())
+
+    def _config_fn(outer):
+        return {"my_nested_graph": {"config": outer}}
+
+    @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_nested_graph()
+
+    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+    assert result.success
+    assert result.output_for_node("my_nested_graph.concat") == "foofoo"
+
+    result_sub_1 = my_graph.to_job().execute_in_process(
+        op_selection=["my_nested_graph.my_op", "my_nested_graph.concat"],
+        run_config={"ops": {"config": "hello"}},
+    )
+    assert result_sub_1.success
+    assert result_sub_1.output_for_node("my_nested_graph.concat") == "hellohello"
+
+    # TODO config mapping - ignore unselected nodes
+    # result_sub_2 = my_graph.to_job().execute_in_process(
+    #     op_selection=["my_nested_graph.my_op"],
+    #     # fail bc "Received unexpected config entry "concat" at the root"
+    #     run_config={"ops": {"config": "hello"}},
+    # )
+    # assert result_sub_2.success
+    # assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"
