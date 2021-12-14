@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime, timezone
 
 from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
@@ -406,7 +407,12 @@ class TestAssetAwareEventLog(
         assert asset_node["partitionsDef"]
         partitions_def = asset_node["partitionsDef"]
         assert partitions_def["scheduleType"] == "HOURLY"
-        assert partitions_def["start"] == 1620201600.0
+        assert (
+            partitions_def["start"]
+            == datetime.strptime("2021-05-05-01:00", "%Y-%m-%d-%H:%M")
+            .replace(tzinfo=timezone.utc)
+            .timestamp()
+        )
         assert partitions_def["timezone"] == "UTC"
         assert partitions_def["fmt"] == "%Y-%m-%d-%H:%M"
         assert partitions_def["endOffset"] == 0

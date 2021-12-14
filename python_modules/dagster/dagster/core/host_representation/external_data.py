@@ -5,6 +5,7 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 from collections import defaultdict, namedtuple
+from datetime import timezone
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster import StaticPartitionsDefinition, check
@@ -673,7 +674,7 @@ def external_time_window_partitions_definition_from_def(partitions_def):
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=partitions_def.schedule_type,
-        start=partitions_def.start.timestamp(),
+        start=partitions_def.start.replace(tzinfo=timezone.utc).timestamp(),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
