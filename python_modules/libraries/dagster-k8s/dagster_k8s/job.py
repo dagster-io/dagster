@@ -171,6 +171,7 @@ def get_user_defined_k8s_config(tags):
         pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
         pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
         job_config=user_defined_k8s_config.get("job_config"),
+        job_metadata=user_defined_k8s_config.get("job_metadata"),
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
     )
 
