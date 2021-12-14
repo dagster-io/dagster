@@ -134,12 +134,21 @@ class _Asset:
             fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
+        partition_fn: Optional[Callable] = None
+        if self.partitions_def:
+
+            def partition_fn(context):  # pylint: disable=function-redefined
+                return self.partitions_def.get_partition_keys_in_range(
+                    *context.asset_partition_key_range
+                )
+
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
             asset_partitions_def=self.partitions_def,
+            asset_partitions=partition_fn,
         )
         op = _Op(
             name=asset_name,

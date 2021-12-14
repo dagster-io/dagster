@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -223,6 +224,27 @@ class InputContext:
         Raises an error if the current run is not a partitioned run.
         """
         return self.step_context.partition_key
+
+    @property
+    def has_asset_partitions(self) -> bool:
+        return self.step_context.has_asset_partitions_for_input(self.name)
+
+    @property
+    def asset_partition_key(self) -> str:
+        """The partition key for input asset.
+
+        Raises an error if the input asset has no partitioning, or if the run covers a partition
+        range for the input asset.
+        """
+        return self.step_context.asset_partition_key_for_input(self.name)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.step_context.asset_partition_key_range_for_input(self.name)
 
 
 def build_input_context(

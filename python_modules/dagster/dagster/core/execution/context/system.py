@@ -4,6 +4,7 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
+import json
 from abc import ABC, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
@@ -11,6 +12,7 @@ from dagster import check
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
@@ -547,6 +549,68 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def previous_attempt_count(self) -> int:
         return self._previous_attempt_count
+
+    def has_asset_partitions_for_input(self, input_name: str) -> bool:
+        tags = self._plan_data.pipeline_run.tags
+
+        if "asset_partitions" in tags:
+            asset_partitions = json.loads(tags["asset_partitions"])
+            step_partitions = asset_partitions.get(self.step.key)
+            return step_partitions is not None and input_name in step_partitions["inputs"]
+        else:
+            return False
+
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        tags = self._plan_data.pipeline_run.tags
+
+        if "asset_partitions" in tags:
+            step_input_partitions = json.loads(tags["asset_partitions"])[self.step.key]["inputs"][
+                input_name
+            ]
+            return PartitionKeyRange(step_input_partitions["start"], step_input_partitions["end"])
+        else:
+            check.failed("The run has no 'asset_partitions' tag")
+
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_input(input_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}', "
+                f"but the step input has a partition range: '{start}' to '{end}'."
+            )
+
+    def has_asset_partitions_for_output(self, output_name: str) -> bool:
+        tags = self._plan_data.pipeline_run.tags
+
+        if "asset_partitions" in tags:
+            asset_partitions = json.loads(tags["asset_partitions"])
+            step_partitions = asset_partitions.get(self.step.key)
+            return step_partitions is not None and output_name in step_partitions["outputs"]
+        else:
+            return False
+
+    def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
+        tags = self._plan_data.pipeline_run.tags
+
+        if "asset_partitions" in tags:
+            step_output_partitions = json.loads(tags["asset_partitions"])[self.step.key]["outputs"][
+                output_name
+            ]
+            return PartitionKeyRange(step_output_partitions["start"], step_output_partitions["end"])
+        else:
+            check.failed("The run has no 'asset_partitions' tag")
+
+    def asset_partition_key_for_output(self, output_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_output(output_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
+                f"but the step output has a partition range: '{start}' to '{end}'."
+            )
 
 
 class TypeCheckContext:
