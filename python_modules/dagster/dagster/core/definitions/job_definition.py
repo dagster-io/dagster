@@ -1,7 +1,8 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Union, cast, Type
 
 from dagster import check
+from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
@@ -10,7 +11,9 @@ from dagster.core.definitions.dependency import (
     Node,
     NodeHandle,
     NodeInvocation,
+    SolidOutputHandle,
 )
+from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import OpSelectionData, parse_op_selection
@@ -303,7 +306,7 @@ def _get_graph_definition(
         Dict[str, IDependencyDefinition],
     ] = {}
 
-    selected_nodes: List[Node] = []
+    selected_nodes: List[NodeDefinition] = []
 
     for node in graph.solids_in_topological_order:
         node_handle = NodeHandle(node.name, parent=parent_handle)
@@ -344,14 +347,22 @@ def _get_graph_definition(
                     )
             elif graph.dependency_structure.has_fan_in_deps(input_handle):
                 output_handles = graph.dependency_structure.get_fan_in_deps(input_handle)
+                multi_dependencies = [
+                    DependencyDefinition(
+                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                    )
+                    for output_handle in output_handles
+                    if (
+                        isinstance(output_handle, SolidOutputHandle)
+                        and output_handle.solid.name in resolved_op_selection
+                        # TODO: handle graph subset with dynamic outs
+                    )
+                ]
                 deps[_dep_key_of(node)][input_handle.input_def.name] = MultiDependencyDefinition(
-                    [
-                        DependencyDefinition(
-                            solid=output_handle.solid.name, output=output_handle.output_def.name
-                        )
-                        for output_handle in output_handles
-                        if output_handle.solid.name in resolved_op_selection
-                    ]
+                    cast(
+                        List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
+                        multi_dependencies,
+                    )
                 )
             # else input is unconnected
 
