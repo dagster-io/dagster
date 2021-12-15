@@ -1,6 +1,6 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
-import {useRouteMatch} from 'react-router-dom';
+import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
@@ -107,18 +107,12 @@ const useNavVisibleRepos = (
 };
 
 const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
-  const match = useRouteMatch<
-    | {repoPath: string; selector: string; tab: string; rootTab: undefined}
-    | {selector: undefined; tab: undefined; rootTab: string}
-  >([
-    '/workspace/:repoPath/pipelines/:selector/:tab?',
-    '/workspace/:repoPath/jobs/:selector/:tab?',
-    '/workspace/:repoPath/solids/:selector',
-    '/workspace/:repoPath/ops/:selector',
-    '/workspace/:repoPath/schedules/:selector',
-    '/workspace/:repoPath/sensors/:selector',
-    '/:rootTab?',
-  ]);
+  const location = useLocation();
+  const workspacePath = location.pathname.split('/workspace/').pop();
+  const [, repoPath, , selector, tab] =
+    workspacePath?.match(
+      /([^\/]+)\/(pipelines|jobs|solids|ops|sensors|schedules)\/([^\/]+)\/?([^\/]+)?/,
+    ) || [];
 
   const [visibleRepos, toggleRepo] = useNavVisibleRepos(allRepos);
 
@@ -138,7 +132,12 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
     <Container>
       <ListContainer>
         {visibleRepos.size ? (
-          <FlatContentList {...match?.params} repos={visibleOptions} />
+          <FlatContentList
+            repoPath={repoPath}
+            selector={selector}
+            repos={visibleOptions}
+            tab={tab}
+          />
         ) : allRepos.length > 0 ? (
           <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
         ) : (

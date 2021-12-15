@@ -107,7 +107,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-interface Props {
+export interface AppProviderProps {
   appCache: InMemoryCache;
   config: {
     apolloLinks: ApolloLink[];
@@ -118,7 +118,7 @@ interface Props {
   };
 }
 
-export const AppProvider: React.FC<Props> = (props) => {
+export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const {appCache, config} = props;
   const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
 
@@ -127,7 +127,10 @@ export const AppProvider: React.FC<Props> = (props) => {
   const websocketURI = `${rootServerURI.replace(/^http/, 'ws')}/graphql`;
 
   // Ensure that we use the same `headers` value.
-  const headersAsString = JSON.stringify(headers);
+  const [temporaryHeaders, setTemporaryHeaders] = React.useState<{
+    [key: string]: string | undefined;
+  }>({});
+  const headersAsString = JSON.stringify({...headers, ...temporaryHeaders});
   const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
 
   const websocketClient = React.useMemo(
@@ -156,13 +159,23 @@ export const AppProvider: React.FC<Props> = (props) => {
     });
   }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
 
+  const setTemporaryHeader = React.useMemo(() => {
+    return (key: string, value: string | undefined) => {
+      if (temporaryHeaders[key] !== value) {
+        setTemporaryHeaders({...temporaryHeaders, [key]: value});
+        apolloClient.resetStore();
+      }
+    };
+  }, [apolloClient, temporaryHeaders]);
+
   const appContextValue = React.useMemo(
     () => ({
       basePath,
       rootServerURI,
       telemetryEnabled,
+      setTemporaryHeader,
     }),
-    [basePath, rootServerURI, telemetryEnabled],
+    [basePath, rootServerURI, telemetryEnabled, setTemporaryHeader],
   );
 
   return (
