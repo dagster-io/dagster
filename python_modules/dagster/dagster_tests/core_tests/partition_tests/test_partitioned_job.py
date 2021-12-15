@@ -23,6 +23,8 @@ def test_static_partitioned_job():
     def my_static_partitioned_config(_partition_key: str):
         return RUN_CONFIG
 
+    assert my_static_partitioned_config("") == RUN_CONFIG
+
     @job(config=my_static_partitioned_config)
     def my_job():
         my_op()
@@ -43,6 +45,8 @@ def test_time_based_partitioned_job():
     @daily_partitioned_config(start_date="2021-05-05")
     def my_daily_partitioned_config(_start, _end):
         return RUN_CONFIG
+
+    assert my_daily_partitioned_config(None, None) == RUN_CONFIG
 
     @job(config=my_daily_partitioned_config)
     def my_job():
@@ -72,6 +76,8 @@ def test_dynamic_partitioned_config():
     @dynamic_partitioned_config(partition_fn)
     def my_dynamic_partitioned_config(_partition_key):
         return RUN_CONFIG
+
+    assert my_dynamic_partitioned_config("") == RUN_CONFIG
 
     @job(config=my_dynamic_partitioned_config)
     def my_job():

@@ -687,11 +687,13 @@ class PartitionedConfig(Generic[T]):
         self,
         partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
         run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
+        decorated_fn: Optional[Callable[..., Dict[str, Any]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
         )
+        self._decorated_fn = decorated_fn
 
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
@@ -715,6 +717,15 @@ class PartitionedConfig(Generic[T]):
                 f"Could not find a partition with key `{partition_key}`"
             )
         return self.run_config_for_partition_fn(matching[0])
+
+    def __call__(self, *args, **kwargs):
+        if self._decorated_fn is None:
+            raise DagsterInvalidInvocationError(
+                "Only PartitionedConfig objects created using one of the partitioned config "
+                "decorators can be directly invoked."
+            )
+        else:
+            return self._decorated_fn(*args, **kwargs)
 
 
 def static_partitioned_config(
@@ -751,6 +762,7 @@ def static_partitioned_config(
         return PartitionedConfig(
             partitions_def=StaticPartitionsDefinition(partition_keys),
             run_config_for_partition_fn=_run_config_wrapper,
+            decorated_fn=fn,
         )
 
     return inner
@@ -785,6 +797,7 @@ def dynamic_partitioned_config(
         return PartitionedConfig(
             partitions_def=DynamicPartitionsDefinition(partition_fn),
             run_config_for_partition_fn=_run_config_wrapper,
+            decorated_fn=fn,
         )
 
     return inner
