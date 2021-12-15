@@ -1,10 +1,6 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster.core.host_representation.external_data import (
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
-)
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import merge_dicts
@@ -28,6 +24,8 @@ from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
+from dagster.core.definitions.partition import StaticPartitionsDefinition
+from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -245,60 +243,6 @@ class GraphenePartitionSetsOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionSets, GraphenePipelineNotFoundError, GraphenePythonError)
         name = "PartitionSetsOrError"
-
-
-class GraphenePartitionScheduleType(graphene.Enum):
-    HOURLY = "HOURLY"
-    DAILY = "DAILY"
-    WEEKLY = "WEEKLY"
-    MONTHLY = "MONTHLY"
-
-    class Meta:
-        name = "PartitionScheduleType"
-
-
-class GrapheneTimeWindowPartitionsDefinition(graphene.ObjectType):
-    scheduleType = graphene.NonNull(GraphenePartitionScheduleType)
-    start = graphene.NonNull(graphene.Float)
-    timezone = graphene.String()
-    fmt = graphene.NonNull(graphene.String)
-    endOffset = graphene.NonNull(graphene.Int)
-
-    class Meta:
-        name = "TimeWindowPartitionsDefinition"
-
-    def __init__(self, partitions_def):
-        self._partitions_def = check.inst_param(
-            partitions_def, "partitions_def", ExternalTimeWindowPartitionsDefinitionData
-        )
-
-        super().__init__(
-            scheduleType=partitions_def.schedule_type,
-            start=partitions_def.start,
-            timezone=partitions_def.timezone,
-            fmt=partitions_def.fmt,
-            endOffset=partitions_def.end_offset,
-        )
-
-
-class GrapheneStaticPartitionsDefinition(graphene.ObjectType):
-    partitionKeys = graphene.NonNull(graphene.List(graphene.String))
-
-    class Meta:
-        name = "StaticPartitionsDefinition"
-
-    def __init__(self, partitions_def):
-        self._partitions_def = check.inst_param(
-            partitions_def, "partitions_def", ExternalStaticPartitionsDefinitionData
-        )
-
-        super().__init__(partitionKeys=partitions_def.partition_keys)
-
-
-class GraphenePartitionsDefinition(graphene.Union):
-    class Meta:
-        types = (GrapheneTimeWindowPartitionsDefinition, GrapheneStaticPartitionsDefinition)
-        name = "PartitionsDefinition"
 
 
 types = [

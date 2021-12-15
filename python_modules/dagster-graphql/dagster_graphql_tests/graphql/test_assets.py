@@ -137,18 +137,7 @@ GET_ASSET_PARTITIONS_FROM_KEYS = """
                 id
                 assetNodes {
                     id
-                    partitionsDef {
-                        ... on StaticPartitionsDefinition {
-                            partitionKeys
-                        }
-                        ... on TimeWindowPartitionsDefinition {
-                            scheduleType
-                            start
-                            timezone
-                            fmt
-                            endOffset
-                        }
-                    }
+                    partitionKeys
                 }
             }
         }
@@ -364,7 +353,7 @@ class TestAssetAwareEventLog(
         assert result.data["pipelineOrError"]["assetNodes"]
         assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert asset_node["partitionsDef"] == None
+        assert asset_node["partitionKeys"] == []
 
         selector = infer_pipeline_selector(graphql_context, "static_partitioned_assets_job")
         result = execute_dagster_graphql(
@@ -378,14 +367,14 @@ class TestAssetAwareEventLog(
         assert result.data["pipelineOrError"]["assetNodes"]
         assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert asset_node["partitionsDef"] and asset_node["partitionsDef"]["partitionKeys"] == [
+        assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
             "a",
             "b",
             "c",
             "d",
         ]
         asset_node = result.data["pipelineOrError"]["assetNodes"][1]
-        assert asset_node["partitionsDef"] and asset_node["partitionsDef"]["partitionKeys"] == [
+        assert asset_node["partitionKeys"] and asset_node["partitionKeys"] == [
             "a",
             "b",
             "c",
@@ -404,18 +393,12 @@ class TestAssetAwareEventLog(
         assert result.data["pipelineOrError"]["assetNodes"]
         assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert asset_node["partitionsDef"]
-        partitions_def = asset_node["partitionsDef"]
-        assert partitions_def["scheduleType"] == "HOURLY"
-        assert (
-            partitions_def["start"]
-            == datetime.strptime("2021-05-05-01:00", "%Y-%m-%d-%H:%M")
-            .replace(tzinfo=timezone.utc)
-            .timestamp()
-        )
-        assert partitions_def["timezone"] == "UTC"
-        assert partitions_def["fmt"] == "%Y-%m-%d-%H:%M"
-        assert partitions_def["endOffset"] == 0
+
+        # test partition starts at "2021-05-05-01:00". Should be > 100 partition keys
+        # since partition is hourly
+        assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) > 100
+        assert asset_node["partitionKeys"][0] == "2021-05-05-01:00"
+        assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
 
 
 class TestPersistentInstanceAssetInProgress(

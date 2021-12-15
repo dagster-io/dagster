@@ -1,19 +1,16 @@
 import graphene
+from datetime import datetime
+
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
-    ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-
+from dagster.core.definitions.partition import StaticPartitionsDefinition
+from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .partition_sets import (
-    GraphenePartitionsDefinition,
-    GrapheneStaticPartitionsDefinition,
-    GrapheneTimeWindowPartitionsDefinition,
-)
 from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
 from .util import non_null_list
 
@@ -45,7 +42,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
-    partitionsDef = graphene.Field(GraphenePartitionsDefinition)
+    partitionKeys = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
@@ -125,14 +122,24 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_pipeline(job_name)
         ]
 
-    def resolve_partitionsDef(self, _graphene_info):
+    def resolve_partitionKeys(self, _graphene_info):
+        # TODO: Add functionality for dynamic partitions definition
         partitions_def = self._external_asset_node.partitions_def
         if partitions_def:
-            if isinstance(partitions_def, ExternalTimeWindowPartitionsDefinitionData):
-                return GrapheneTimeWindowPartitionsDefinition(partitions_def)
-            elif isinstance(partitions_def, ExternalStaticPartitionsDefinitionData):
-                return GrapheneStaticPartitionsDefinition(partitions_def)
-        # TODO: Add functionality for dynamic partitions definition
+            if isinstance(partitions_def, StaticPartitionsDefinition):
+                return [partition.name for partition in partitions_def.get_partitions()]
+            elif isinstance(partitions_def, ExternalTimeWindowPartitionsDefinitionData):
+                return [
+                    partition.name
+                    for partition in TimeWindowPartitionsDefinition.get_partitions_from_serialized_data(
+                        partitions_def.schedule_type,
+                        partitions_def.start,
+                        partitions_def.timezone,
+                        partitions_def.fmt,
+                        partitions_def.end_offset,
+                    )
+                ]
+        return []
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

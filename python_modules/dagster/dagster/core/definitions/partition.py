@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 
 import pendulum
 from dagster import check
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes, DefaultNamedTupleSerializer
 from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -170,17 +170,19 @@ class PartitionsDefinition(ABC, Generic[T]):
         return IdentityPartitionMapping()
 
 
+@whitelist_for_serdes
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
-):  # pylint: disable=unsubscriptable-object
-    def __init__(self, partition_keys: List[str]):
+    PartitionsDefinition[str],  # pylint: disable=unsubscriptable-object
+    NamedTuple("_StaticPartitionsDefinition", [("partition_keys", List[str])]),
+):
+    def __new__(cls, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
-        self._partitions = [Partition(key) for key in partition_keys]
+        return super(StaticPartitionsDefinition, cls).__new__(cls, partition_keys)
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
     ) -> List[Partition[str]]:
-        return self._partitions
+        return [Partition(key) for key in self.partition_keys]
 
 
 class ScheduleTimeBasedPartitionsDefinition(

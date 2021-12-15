@@ -6,7 +6,7 @@ for that.
 """
 from collections import defaultdict, namedtuple
 from datetime import timezone
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
@@ -345,16 +345,6 @@ class ExternalTimeWindowPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
-class ExternalStaticPartitionsDefinitionData(
-    namedtuple("_StaticPartitionsDefinitionData", "partition_keys")
-):
-    def __new__(cls, partition_keys):
-        return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
-            cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
-        )
-
-
-@whitelist_for_serdes
 class ExternalPartitionSetData(
     namedtuple("_ExternalPartitionSetData", "name pipeline_name solid_selection mode")
 ):
@@ -491,9 +481,7 @@ class ExternalAssetNode(
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
         partitions_def: Optional[
-            Union[
-                ExternalTimeWindowPartitionsDefinitionData, ExternalStaticPartitionsDefinitionData
-            ]
+            Union[TimeWindowPartitionsDefinition, StaticPartitionsDefinition]
         ] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
@@ -620,9 +608,7 @@ def external_asset_graph_from_defs(
                     op_asset_def.partitions_def
                 )
             elif isinstance(op_asset_def.partitions_def, StaticPartitionsDefinition):
-                partitions_def = external_static_partitions_definition_from_def(
-                    op_asset_def.partitions_def
-                )
+                partitions_def = op_asset_def.partitions_def
 
         asset_nodes.append(
             ExternalAssetNode(
@@ -674,17 +660,10 @@ def external_time_window_partitions_definition_from_def(partitions_def):
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=partitions_def.schedule_type,
-        start=partitions_def.start.replace(tzinfo=timezone.utc).timestamp(),
+        start=partitions_def.start.timestamp(),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
-    )
-
-
-def external_static_partitions_definition_from_def(partitions_def):
-    check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
-    return ExternalStaticPartitionsDefinitionData(
-        partition_keys=partitions_def.get_partition_keys()
     )
 
 

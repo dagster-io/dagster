@@ -5,6 +5,7 @@ import pendulum
 from dagster import check
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster.utils.schedules import schedule_execution_time_iterator
+from dagster.serdes import whitelist_for_serdes
 
 from .partition import (
     DEFAULT_DATE_FORMAT,
@@ -116,6 +117,19 @@ class TimeWindowPartitionsDefinition(
         from dagster.core.asset_defs.time_window_partition_mapping import TimeWindowPartitionMapping
 
         return TimeWindowPartitionMapping()
+
+    @staticmethod
+    def get_partitions_from_serialized_data(
+        schedule_type: ScheduleType, start: float, timezone: str, fmt: str, end_offset: int
+    ):
+        partitions_def = TimeWindowPartitionsDefinition(
+            schedule_type,
+            datetime.fromtimestamp(start),
+            timezone,
+            fmt,
+            end_offset,
+        )
+        return partitions_def.get_partitions()
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
