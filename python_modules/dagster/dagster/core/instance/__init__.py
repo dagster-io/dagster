@@ -8,6 +8,7 @@ import time
 import warnings
 import weakref
 from collections import defaultdict
+from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -234,6 +235,7 @@ class DagsterInstance:
     """
 
     _PROCESS_TEMPDIR = None
+    _EXIT_STACK = None
 
     def __init__(
         self,
@@ -461,7 +463,13 @@ class DagsterInstance:
 
     @staticmethod
     def temp_storage() -> str:
+        from dagster.core.test_utils import environ
+
         if DagsterInstance._PROCESS_TEMPDIR is None:
+            DagsterInstance._EXIT_STACK = ExitStack()
+            DagsterInstance._EXIT_STACK.enter_context(
+                environ({"DAGSTER_TELEMETRY_DISABLED": "yes"})
+            )
             DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
 
@@ -1743,6 +1751,8 @@ records = instance.get_event_records(
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.dispose()
+        if DagsterInstance._EXIT_STACK:
+            DagsterInstance._EXIT_STACK.close()
 
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """
