@@ -17,7 +17,7 @@ from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
-    LeadNodeSelection,
+    LeafNodeSelection,
     OpSelectionData,
     parse_op_selection,
 )
@@ -319,9 +319,7 @@ def _get_graph_definition(
             continue
 
         # rebuild graph if any nodes inside the graph are selected
-        if node.is_graph and not isinstance(
-            resolved_op_selection_dict[node.name], LeadNodeSelection
-        ):
+        if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
             definition = _get_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
