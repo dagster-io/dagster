@@ -10,7 +10,7 @@ from .test_images import publish_test_images, test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
-EARLIEST_TESTED_RELEASE = "0.12.11"
+EARLIEST_TESTED_RELEASE = "0.12.12"
 
 
 def integration_suite_extra_cmds_fn(version):
