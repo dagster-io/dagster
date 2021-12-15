@@ -39,6 +39,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
+    dependencyKeys = non_null_list(GrapheneAssetKey)
+    dependedByKeys = non_null_list(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
@@ -81,6 +83,18 @@ class GrapheneAssetNode(graphene.ObjectType):
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
             )
+            for dep in self._external_asset_node.depended_by
+        ]
+
+    def resolve_dependencyKeys(self, _graphene_info):
+        return [
+            GrapheneAssetKey(path=dep.upstream_asset_key.path)
+            for dep in self._external_asset_node.dependencies
+        ]
+
+    def resolve_dependencyByKeys(self, _graphene_info):
+        return [
+            GrapheneAssetKey(path=dep.downstream_asset_key.path)
             for dep in self._external_asset_node.depended_by
         ]
 

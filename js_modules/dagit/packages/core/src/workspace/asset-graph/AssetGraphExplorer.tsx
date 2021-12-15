@@ -364,13 +364,8 @@ const ASSETS_GRAPH_QUERY = gql`
         assetNodes {
           id
           ...AssetNodeFragment
-          dependencies {
-            asset {
-              id
-              assetKey {
-                path
-              }
-            }
+          dependencyKeys {
+            path
           }
         }
       }

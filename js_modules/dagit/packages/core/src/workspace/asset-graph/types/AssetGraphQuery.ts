@@ -18,20 +18,9 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey {
   path: string[];
 }
 
-export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset_assetKey {
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencyKeys {
   __typename: "AssetKey";
   path: string[];
-}
-
-export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset {
-  __typename: "AssetNode";
-  id: string;
-  assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset_assetKey;
-}
-
-export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies {
-  __typename: "AssetDependency";
-  asset: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies_asset;
 }
 
 export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
@@ -41,7 +30,7 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   description: string | null;
   jobName: string | null;
   assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
-  dependencies: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencies[];
+  dependencyKeys: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencyKeys[];
 }
 
 export interface AssetGraphQuery_pipelineOrError_Pipeline {
