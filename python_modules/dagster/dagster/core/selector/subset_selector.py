@@ -197,7 +197,7 @@ def clause_to_subset(graph, clause):
     return subset_list
 
 
-class LeadNodeSelection:
+class LeafNodeSelection:
     """Marker for no further nesting selection needed."""
 
 
@@ -206,7 +206,7 @@ def convert_dot_seperated_string_to_dict(tree, splits):
     # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
     key = splits[0]
     if len(splits) == 1:
-        tree[key] = LeadNodeSelection
+        tree[key] = LeafNodeSelection
     else:
         tree[key] = convert_dot_seperated_string_to_dict(
             tree[key] if key in tree else {}, splits[1:]
@@ -218,13 +218,13 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
     """
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
-        => {"subgraph": {{"return_one": LeadNodeSelection}, {"adder": LeadNodeSelection}, {"add_one": LeadNodeSelection}}, "add_one": LeadNodeSelection}
+        => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
 
         ["subgraph.subsubgraph.return_one"]
-        => {"subgraph": {"subsubgraph": {"return_one": LeadNodeSelection}}}
+        => {"subgraph": {"subsubgraph": {"return_one": LeafNodeSelection}}}
 
         ["top_level_op_1+"]
-        => {"top_level_op_1": LeadNodeSelection, "top_level_op_2": LeadNodeSelection}
+        => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
     """
     # TODO: better parse so it works both for dot and none dot syntax
     if any(["." in item for item in op_selection]):
@@ -234,7 +234,7 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
         return resolved_op_selection_dict
 
     return {
-        top_level_op: LeadNodeSelection
+        top_level_op: LeafNodeSelection
         for top_level_op in parse_solid_selection(job_def, op_selection)
     }
 
