@@ -224,10 +224,10 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
     """
     # TODO: better parse so it works both for dot and none dot syntax
     if any(["." in item for item in op_selection]):
-        resolved_op_selection = {}
+        resolved_op_selection_dict: Dict[str, Dict] = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection, splits=item.split("."))
-        return resolved_op_selection
+            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+        return resolved_op_selection_dict
 
     return {top_level_op: None for top_level_op in parse_solid_selection(job_def, op_selection)}
 
