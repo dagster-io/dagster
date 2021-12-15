@@ -1,3 +1,4 @@
+import os
 import tempfile
 import time
 from contextlib import contextmanager
@@ -19,7 +20,7 @@ from dagster.core.definitions.events import parse_asset_key_string, validate_ass
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.core.events import DagsterEvent, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
-from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.event_log import (
@@ -31,6 +32,8 @@ from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.utils import file_relative_path
+from dagster.utils.test import copy_directory
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -443,3 +446,59 @@ def _materialization_event_record(run_id, asset_key):
             event_specific_data=StepMaterializationData(AssetMaterialization(asset_key=asset_key)),
         ),
     )
+
+
+def test_backcompat_asset_read():
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    # should contain materialization events for asset keys a, b, c, d, e, f
+    # events a and b have been wiped, but b has been rematerialized
+    def _validate_instance_assets(instance):
+        assert instance.all_asset_keys() == [
+            AssetKey("b"),
+            AssetKey("c"),
+            AssetKey("d"),
+            AssetKey("e"),
+            AssetKey("f"),
+        ]
+        assert instance.get_asset_keys() == [
+            AssetKey("b"),
+            AssetKey("c"),
+            AssetKey("d"),
+            AssetKey("e"),
+            AssetKey("f"),
+        ]
+        assert instance.get_asset_keys(prefix=["d"]) == [AssetKey("d")]
+        assert instance.get_asset_keys(limit=3) == [
+            AssetKey("b"),
+            AssetKey("c"),
+            AssetKey("d"),
+        ]
+        assert instance.get_asset_keys(cursor='["b"]', limit=3) == [
+            AssetKey("c"),
+            AssetKey("d"),
+            AssetKey("e"),
+        ]
+
+    @op
+    def materialize():
+        yield AssetMaterialization(AssetKey("e"))
+        yield AssetMaterialization(AssetKey("f"))
+        yield Output(None)
+
+    @job
+    def my_job():
+        materialize()
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            _validate_instance_assets(instance)
+            my_job.execute_in_process(instance=instance)
+            _validate_instance_assets(instance)
+            instance.upgrade()
+            _validate_instance_assets(instance)
+            my_job.execute_in_process(instance=instance)
+            _validate_instance_assets(instance)
+            instance.reindex()
+            _validate_instance_assets(instance)
+            my_job.execute_in_process(instance=instance)
+            _validate_instance_assets(instance)
