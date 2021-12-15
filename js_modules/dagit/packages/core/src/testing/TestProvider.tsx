@@ -32,7 +32,6 @@ const testValue: AppContextValue = {
   basePath: '',
   rootServerURI: '',
   telemetryEnabled: false,
-  setTemporaryHeader: () => {},
 };
 
 const websocketValue: WebSocketContextType = {
