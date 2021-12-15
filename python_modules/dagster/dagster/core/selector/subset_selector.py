@@ -197,12 +197,16 @@ def clause_to_subset(graph, clause):
     return subset_list
 
 
+class LeadNodeSelection:
+    """Marker for no further nesting selection needed."""
+
+
 def convert_dot_seperated_string_to_dict(tree, splits):
     # For example:
     # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
     key = splits[0]
     if len(splits) == 1:
-        tree[key] = None
+        tree[key] = LeadNodeSelection
     else:
         tree[key] = convert_dot_seperated_string_to_dict(
             tree[key] if key in tree else {}, splits[1:]
@@ -210,26 +214,29 @@ def convert_dot_seperated_string_to_dict(tree, splits):
     return tree
 
 
-def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dict[str, Dict]:
+def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dict:
     """
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
-        => {"subgraph": {{"return_one": None}, {"adder": None}, {"add_one": None}}, "add_one": None}
+        => {"subgraph": {{"return_one": LeadNodeSelection}, {"adder": LeadNodeSelection}, {"add_one": LeadNodeSelection}}, "add_one": LeadNodeSelection}
 
         ["subgraph.subsubgraph.return_one"]
-        => {"subgraph": {"subsubgraph": {"return_one": None}}}
+        => {"subgraph": {"subsubgraph": {"return_one": LeadNodeSelection}}}
 
         ["top_level_op_1+"]
-        => {"top_level_op_1": None, "top_level_op_2": None}
+        => {"top_level_op_1": LeadNodeSelection, "top_level_op_2": LeadNodeSelection}
     """
     # TODO: better parse so it works both for dot and none dot syntax
     if any(["." in item for item in op_selection]):
-        resolved_op_selection_dict: Dict[str, Dict] = {}
+        resolved_op_selection_dict: Dict = {}
         for item in op_selection:
             convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
         return resolved_op_selection_dict
 
-    return {top_level_op: None for top_level_op in parse_solid_selection(job_def, op_selection)}
+    return {
+        top_level_op: LeadNodeSelection
+        for top_level_op in parse_solid_selection(job_def, op_selection)
+    }
 
 
 def parse_solid_selection(pipeline_def, solid_selection):

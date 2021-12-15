@@ -1,19 +1,10 @@
+from typing import List
+
 import pytest
-from dagster import (
-    ConfigMapping,
-    DynamicOut,
-    DynamicOutput,
-    In,
-    graph,
-    job,
-    op,
-    root_input_manager,
-)
+from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, job, op, root_input_manager
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
-
-from typing import List
 
 
 @op
