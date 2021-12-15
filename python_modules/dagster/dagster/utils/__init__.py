@@ -1,4 +1,5 @@
 import contextlib
+import contextvars
 import datetime
 import errno
 import functools
@@ -11,22 +12,12 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    ContextManager,
-    Generator,
-    Generic,
-    Iterator,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Callable, ContextManager, Generator, Generic, Iterator
+from typing import Mapping as TypingMapping
+from typing import Optional, Type, TypeVar, Union, cast
 from warnings import warn
 
 import _thread as thread
@@ -561,30 +552,35 @@ def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
-DAGSTER_CALL_COUNTS_KEY = "dagster_call_counts"
+class Counter:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._counts = OrderedDict()
+        super(Counter, self).__init__()
+
+    def increment(self, key: str):
+        with self._lock:
+            self._counts[key] = self._counts.get(key, 0) + 1
+
+    def counts(self) -> TypingMapping[str, int]:
+        with self._lock:
+            copy = {k: v for k, v in self._counts.items()}
+        return copy
 
 
-def count_calls(func):
+tracecall_counter = contextvars.ContextVar("tracecall_counts", default=Counter())
+
+
+def tracecall(func):
     """
     A decorator that keeps track of how many times a function is called.
     """
-    func.num_calls = 0
-
-    def _increment(name):
-        try:
-            from flask import g, has_request_context  # pylint: disable=import-error
-
-            if not has_request_context():
-                return
-            if not hasattr(g, DAGSTER_CALL_COUNTS_KEY):
-                setattr(g, DAGSTER_CALL_COUNTS_KEY, defaultdict(int))
-            getattr(g, DAGSTER_CALL_COUNTS_KEY)[name] += 1
-        except:
-            return
 
     def inner(*args, **kwargs):
-        func.num_calls += 1
-        _increment(func.__name__)
+        counter = tracecall_counter.get()
+        if counter and isinstance(counter, Counter):
+            counter.increment(func.__name__)
+
         return func(*args, **kwargs)
 
     return inner

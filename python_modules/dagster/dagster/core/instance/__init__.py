@@ -53,7 +53,7 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import count_calls
+from dagster.utils import tracecall
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -664,23 +664,23 @@ class DagsterInstance:
         self._compute_log_manager.dispose()
 
     # run storage
-    @count_calls
+    @tracecall
     def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
         return self._run_storage.get_run_by_id(run_id)
 
-    @count_calls
+    @tracecall
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
         return self._run_storage.get_pipeline_snapshot(snapshot_id)
 
-    @count_calls
+    @tracecall
     def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
-    @count_calls
+    @tracecall
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_snapshot(snapshot_id)
 
-    @count_calls
+    @tracecall
     def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
         from dagster.core.host_representation import HistoricalPipeline
 
@@ -692,27 +692,27 @@ class DagsterInstance:
         )
         return HistoricalPipeline(snapshot, snapshot_id, parent_snapshot)
 
-    @count_calls
+    @tracecall
     def has_historical_pipeline(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
-    @count_calls
+    @tracecall
     def get_execution_plan_snapshot(self, snapshot_id: str) -> "ExecutionPlanSnapshot":
         return self._run_storage.get_execution_plan_snapshot(snapshot_id)
 
-    @count_calls
+    @tracecall
     def get_run_stats(self, run_id: str) -> PipelineRunStatsSnapshot:
         return self._event_storage.get_stats_for_run(run_id)
 
-    @count_calls
+    @tracecall
     def get_run_step_stats(self, run_id, step_keys=None) -> List["RunStepKeyStatsSnapshot"]:
         return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
-    @count_calls
+    @tracecall
     def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         return self._run_storage.get_run_tags()
 
-    @count_calls
+    @tracecall
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         return self._run_storage.get_run_group(run_id)
 
@@ -1039,43 +1039,43 @@ class DagsterInstance:
         except DagsterRunAlreadyExists:
             return get_run()
 
-    @count_calls
+    @tracecall
     def add_run(self, pipeline_run: PipelineRun):
         return self._run_storage.add_run(pipeline_run)
 
-    @count_calls
+    @tracecall
     def add_snapshot(self, snapshot, snapshot_id=None):
         return self._run_storage.add_snapshot(snapshot, snapshot_id)
 
-    @count_calls
+    @tracecall
     def handle_run_event(self, run_id: str, event: "DagsterEvent"):
         return self._run_storage.handle_run_event(run_id, event)
 
-    @count_calls
+    @tracecall
     def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
         return self._run_storage.add_run_tags(run_id, new_tags)
 
-    @count_calls
+    @tracecall
     def has_run(self, run_id: str) -> bool:
         return self._run_storage.has_run(run_id)
 
-    @count_calls
+    @tracecall
     def get_runs(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Iterable[PipelineRun]:
         return self._run_storage.get_runs(filters, cursor, limit)
 
-    @count_calls
+    @tracecall
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
-    @count_calls
+    @tracecall
     def get_run_groups(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
-    @count_calls
+    @tracecall
     def get_run_records(
         self,
         filters: PipelineRunsFilter = None,
@@ -1101,13 +1101,13 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
-    @count_calls
+    @tracecall
     def delete_run(self, run_id: str):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
 
     # event storage
-    @count_calls
+    @tracecall
     def logs_after(
         self,
         run_id,
@@ -1122,7 +1122,7 @@ class DagsterInstance:
             limit=limit,
         )
 
-    @count_calls
+    @tracecall
     def all_logs(self, run_id, of_type: "DagsterEventType" = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
@@ -1134,15 +1134,15 @@ class DagsterInstance:
 
     # asset storage
 
-    @count_calls
+    @tracecall
     def all_asset_keys(self):
         return self._event_storage.all_asset_keys()
 
-    @count_calls
+    @tracecall
     def get_asset_keys(self, prefix=None, limit=None, cursor=None):
         return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
-    @count_calls
+    @tracecall
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
 
@@ -1171,7 +1171,7 @@ class DagsterInstance:
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
-    @count_calls
+    @tracecall
     def events_for_asset_key(
         self,
         asset_key,
@@ -1215,7 +1215,7 @@ records = instance.get_event_records(
             cursor=cursor,
         )
 
-    @count_calls
+    @tracecall
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
@@ -1226,7 +1226,7 @@ records = instance.get_event_records(
     def get_asset_tags(self, asset_key):  # pylint: disable=unused-argument
         return {}
 
-    @count_calls
+    @tracecall
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
