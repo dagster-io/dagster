@@ -13,8 +13,10 @@ import pickle
 import site
 import sys
 import tempfile
+import time
 import zipfile
-from typing import List
+from queue import Empty, Queue
+from threading import Thread
 
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
@@ -25,6 +27,36 @@ from dagster.serdes import serialize_value
 # Dagster step to run.
 if "DATABRICKS_TOKEN" not in os.environ:
     os.environ["DATABRICKS_TOKEN"] = ""
+
+DONE = object()
+
+
+def event_writing_loop(events_queue, put_events_fn):
+    """
+    Periodically check whether the instance has posted any new events to the queue.  If they have,
+    write ALL events (not just the new events) to DBFS.
+    """
+    all_events = []
+
+    done = False
+    got_new_events = False
+    time_posted_last_batch = time.time()
+    while not done:
+        try:
+            event_or_done = events_queue.get(timeout=1)
+            if event_or_done == DONE:
+                done = True
+            else:
+                all_events.append(event_or_done)
+                got_new_events = True
+        except Empty:
+            pass
+
+        enough_time_between_batches = time.time() - time_posted_last_batch > 1
+        if got_new_events and (done or enough_time_between_batches):
+            put_events_fn(all_events)
+            got_new_events = False
+            time_posted_last_batch = time.time()
 
 
 def main(
@@ -54,18 +86,32 @@ def main(
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
 
-        all_events: List[EventLogEntry] = []
+        events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+
+        def put_events(events):
+            with open(events_filepath, "wb") as handle:
+                pickle.dump(serialize_value(events), handle)
+
+        # Set up a thread to handle writing events back to the plan process, so execution doesn't get
+        # blocked on remote communication
+        events_queue = Queue()
+        event_writing_thread = Thread(
+            target=event_writing_loop,
+            kwargs=dict(events_queue=events_queue, put_events_fn=put_events),
+        )
+        event_writing_thread.start()
 
         try:
             with DagsterInstance.ephemeral() as instance:
-                instance.add_event_listener(step_run_ref.run_id, all_events.append)
+                # enable re-execution
+                if step_run_ref.parent_run:
+                    instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
+                    instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
+                instance.add_event_listener(step_run_ref.run_id, events_queue.put)
                 list(run_step_from_ref(step_run_ref, instance))
         finally:
-            events_filepath = (
-                os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
-            )
-            with open(events_filepath, "wb") as handle:
-                pickle.dump(serialize_value(all_events), handle)
+            events_queue.put(DONE)
+            event_writing_thread.join()
 
 
 if __name__ == "__main__":

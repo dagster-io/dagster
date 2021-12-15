@@ -147,6 +147,8 @@ def step_context_to_step_run_ref(
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
+    parent_run_id = step_context.pipeline_run.parent_run_id
+    parent_run = step_context.instance.get_run_by_id(parent_run_id) if parent_run_id else None
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -156,6 +158,7 @@ def step_context_to_step_run_ref(
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
         known_state=step_context.execution_plan.known_state,
+        parent_run=parent_run,
     )
 
 

@@ -249,32 +249,42 @@ class DatabricksJobRunner:
         )
 
 
+def poll_run_state(
+    client,
+    log,
+    start_poll_time: float,
+    databricks_run_id: int,
+    max_wait_time_sec: float,
+):
+    run_state = client.get_run_state(databricks_run_id)
+    if run_state.has_terminated():
+        if run_state.is_successful():
+            log.info("Run %s completed successfully" % databricks_run_id)
+            return True
+        else:
+            error_message = "Run %s failed with result state: %s. Message: %s" % (
+                databricks_run_id,
+                run_state.result_state,
+                run_state.state_message,
+            )
+            log.error(error_message)
+            raise DatabricksError(error_message)
+    else:
+        log.info("Run %s in state %s" % (databricks_run_id, run_state))
+    if time.time() - start_poll_time > max_wait_time_sec:
+        raise DatabricksError(
+            "Job run {} took more than {}s to complete; failing".format(
+                databricks_run_id, max_wait_time_sec
+            )
+        )
+    return False
+
+
 def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
     start = time.time()
     while True:
-        log.debug("Waiting %.1f seconds..." % poll_interval_sec)
-        time.sleep(poll_interval_sec)
-        run_state = client.get_run_state(databricks_run_id)
-        if run_state.has_terminated():
-            if run_state.is_successful():
-                log.info("Run %s completed successfully" % databricks_run_id)
-                return
-            else:
-                error_message = "Run %s failed with result state: %s. Message: %s" % (
-                    databricks_run_id,
-                    run_state.result_state,
-                    run_state.state_message,
-                )
-                log.error(error_message)
-                raise DatabricksError(error_message)
-        else:
-            log.info("Run %s in state %s" % (databricks_run_id, run_state))
-        if time.time() - start > max_wait_time_sec:
-            raise DatabricksError(
-                "Job run {} took more than {}s to complete; failing".format(
-                    databricks_run_id, max_wait_time_sec
-                )
-            )
+        if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec):
+            return
