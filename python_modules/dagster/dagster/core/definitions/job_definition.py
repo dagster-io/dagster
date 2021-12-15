@@ -184,25 +184,11 @@ class JobDefinition(PipelineDefinition):
 
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
-        # TODO: https://github.com/dagster-io/dagster/issues/2115
-        #   op selection currently still operates on PipelineSubsetDefinition. ideally we'd like to
-        #   1) [next step] move away from creating PipelineSubsetDefinition
-        #   2) [wont do] consolidate solid selection and step selection
-        #   3) [done] enable subsetting nested graphs/ops which isn't working with the current setting
-        resolved_op_selection = (
-            self._op_selection_data.resolved_op_selection if self._op_selection_data else None
-        )
-        if op_selection:
-            resolved_op_selection = parse_op_selection(
-                # TODO: no need to call get_pipeline_subset_def
-                # now we should be able to substract resolved_op_selection dict from the previous selection scope
-                super(JobDefinition, self).get_pipeline_subset_def(resolved_op_selection),
-                op_selection,
-            )
+        resolved_op_selection = parse_op_selection(self, op_selection)
 
         sub_graph = _get_graph_definition(self.graph, resolved_op_selection)
 
-        # TODO: config mapping - ignore nested nodes
+        # TODO: config mapping - ignore unselected nested nodes
         ignored_solids = [
             solid for solid in self.graph.solids if not sub_graph.has_solid_named(solid.name)
         ]
@@ -219,11 +205,12 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
+                # TODO thread nested graph selection
                 resolved_op_selection=set(
                     resolved_op_selection.keys()
-                ),  # TODO better parse and thread op selection
-                ignored_solids=ignored_solids,
-                parent_job_def=self,
+                ),  # equivalent to solids_to_execute
+                ignored_solids=ignored_solids,  # used by config resolution
+                parent_job_def=self,  # used by pipeline snapshot lineage
             ),
         )
 

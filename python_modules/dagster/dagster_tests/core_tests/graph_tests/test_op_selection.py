@@ -270,7 +270,7 @@ def test_op_selection_on_alias():
     assert result_for_subset_def.success
     assert len(_success_step_keys(result_for_subset_def)) == 2
 
-    result_for_subset = subsetted_job.execute_in_process(op_selection=["return_one_2*"])
+    result_for_subset = subsetted_job.execute_in_process(op_selection=["*"])
     assert result_for_subset.success
     assert len(_success_step_keys(result_for_subset)) == 2
 
