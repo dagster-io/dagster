@@ -1,5 +1,40 @@
 # Changelog
 
+# 0.13.12
+
+### New
+
+- The dagit and dagster-daemon processes now use a structured Python logger for command-line output.
+- Dagster command-line logs now include the system timezone in the logging timestamp.
+- When running your own Dagster gRPC code server, the server process will now log a message to stdout when it starts up and when it shuts down.
+- [dagit] The sensor details page and sensor list page now display links to the assets tracked by `@asset_sensor`s.
+- [dagit] Improved instance warning in Dagit. Previously, Dagit showed an instance warning for daemon not running when no repos have schedulers or sensors.
+- [dagster-celery-k8s] You can now specify volumes and volume mounts to runs using the `CeleryK8sRunLauncher` that will be included in all launched jobs.
+- [dagster-databricks] You are no longer required to specify storage configuration when using the databricks_pyspark_step_launcher.
+- [dagster-databricks] The databricks_pyspark_step_launcher can now be used with dynamic mapping and collect steps.
+- [dagster-mlflow] The `end_mlflow_on_run_finished` hook is now a top-level export of the dagster mlflow library. The API reference also now includes an entry for it.
+
+### Bugfixes
+
+- Better backwards-compatibility for fetching asset keys materialized from older versions of dagster.
+- Fixed an issue where jobs running with op subsets required some resource configuration as part of the run config, even when they weren’t required by the selected ops.
+- [dagit] Fixed "Open in Playground" link on the scheduled ticks.
+- [dagit] Fixed the run ID links on the Asset list view.
+
+### Community Contributions
+
+- [dagster-k8s] Fixed an issue where specifying `job_metadata` in tags did not correctly propagate to Kubernetes jobs created by Dagster. Thanks [@ibelikov](https://github.com/ibelikov)!
+
+### Experimental
+
+- [dagit] Made performance improvements for loading the asset graph.
+
+### Documentation
+
+- Improved API docs and guide for Versioning and Memoization.
+- [dagster-dbt] Updated the dagster-dbt integration guide to mention the new dbt Cloud integration.
+- [dagster-dbt] Added documentation for the `default_flags` property of `DbtCliResource`.
+
 # 0.13.11
 
 ### New
