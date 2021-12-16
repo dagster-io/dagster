@@ -193,17 +193,18 @@ export const Checkbox = styled(Base)`
   display: inline-flex;
   position: relative;
   user-select: none;
-  align-items: center;
+  align-items: flex-start;
   color: ${({disabled}) => (disabled ? DISABLED_COLOR : ColorsWIP.Gray900)};
   cursor: pointer;
   gap: 8px;
 
   svg {
+    flex-shrink: 0;
     ${({size}) =>
       size === 'small'
         ? css`
-            margin: -6px -12px;
-            transform: scale(0.5);
+            margin: -3px -6px;
+            transform: scale(0.75);
           `
         : css`
             margin: -3px;
