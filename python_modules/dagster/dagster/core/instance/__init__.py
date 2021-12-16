@@ -16,7 +16,9 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -83,6 +85,7 @@ if TYPE_CHECKING:
     from dagster.core.launcher import RunLauncher
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.debug import DebugRunPayload
+    from dagster.core.events.log import EventLogEntry
 
 
 def _check_run_equality(
@@ -1117,6 +1120,11 @@ class DagsterInstance:
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
+
+    def get_latest_materialization_event(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
+        return self._event_storage.get_latest_materialization_event(asset_keys)
 
     def get_event_records(
         self,

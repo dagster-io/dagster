@@ -1,7 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from datetime import datetime
-from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -234,9 +234,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return asset_keys
 
     @abstractmethod
-    def get_last_materialization_event(
-        self, asset_key_or_keys: Union[AssetKey, List[AssetKey]]
-    ) -> Union[Optional[EventLogEntry], Dict[AssetKey, Optional[EventLogEntry]]]:
+    def get_latest_materialization_event(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         pass
 
     @abstractmethod

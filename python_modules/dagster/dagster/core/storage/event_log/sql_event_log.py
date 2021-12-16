@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
-from typing import Dict, Iterable, List, Optional, Union, cast
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
@@ -673,15 +673,10 @@ class SqlEventLogStorage(EventLogStorage):
         asset_keys = [AssetKey.from_db_string(row[0]) for row in sorted(rows, key=lambda x: x[0])]
         return [asset_key for asset_key in asset_keys if asset_key]
 
-    def get_last_materialization_event(
-        self, asset_key_or_keys: Union[AssetKey, List[AssetKey]]
-    ) -> Union[Optional[EventLogEntry], Dict[AssetKey, Optional[EventLogEntry]]]:
-        if isinstance(asset_key_or_keys, AssetKey):
-            asset_keys = [asset_key_or_keys]
-        else:
-            check.is_list(asset_key_or_keys, of_type=AssetKey)
-            asset_keys = list(asset_key_or_keys)
-
+    def get_latest_materialization_event(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+        check.list_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         to_backcompat_fetch = set()
         results: Dict[AssetKey, Optional[EventLogEntry]] = {}
@@ -732,10 +727,7 @@ class SqlEventLogStorage(EventLogStorage):
                         EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
                     )
 
-        if isinstance(asset_key_or_keys, AssetKey):
-            return results.get(asset_key_or_keys)
-        else:
-            return results
+        return results
 
     def _fetch_asset_rows(self, asset_keys=None, prefix=None, limit=None, cursor=None):
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
