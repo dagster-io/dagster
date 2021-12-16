@@ -568,18 +568,18 @@ class Counter:
         return copy
 
 
-tracecall_counter = contextvars.ContextVar("tracecall_counts", default=Counter())
+traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
 
 
-def tracecall(func):
+def traced(func=None):
     """
     A decorator that keeps track of how many times a function is called.
     """
 
     def inner(*args, **kwargs):
-        counter = tracecall_counter.get()
+        counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
-            counter.increment(func.__name__)
+            counter.increment(func.__qualname__)
 
         return func(*args, **kwargs)
 

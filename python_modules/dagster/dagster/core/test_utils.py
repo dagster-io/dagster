@@ -27,7 +27,7 @@ from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster.utils import Counter, merge_dicts, tracecall, tracecall_counter
+from dagster.utils import Counter, merge_dicts, traced, traced_counter
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -480,11 +480,11 @@ def get_logger_output_from_capfd(capfd, logger_name):
 
 
 def test_counter():
-    @tracecall
+    @traced
     async def foo():
         pass
 
-    @tracecall
+    @traced
     async def bar():
         pass
 
@@ -499,10 +499,10 @@ def test_counter():
         await call_foo(10)
         await call_bar(10)
 
-    tracecall_counter.set(Counter())
+    traced_counter.set(Counter())
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
-    counter = tracecall_counter.get()
+    counter = traced_counter.get()
     assert isinstance(counter, Counter)
     counts = counter.counts()
     assert counts["foo"] == 20

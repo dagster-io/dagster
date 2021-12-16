@@ -13,10 +13,10 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster.seven import json
-from dagster.utils import Counter, tracecall_counter
+from dagster.utils import Counter, traced_counter
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Blueprint, Flask, g, jsonify, redirect, render_template_string, request, send_file
+from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -244,11 +244,11 @@ def instantiate_app_with_views(
 
 
 def initialize_counts():
-    tracecall_counter.set(Counter())
+    traced_counter.set(Counter())
 
 
 def return_counts(response):
-    counter = tracecall_counter.get()
+    counter = traced_counter.get()
     if counter and isinstance(counter, Counter):
         response.headers["x-dagster-call-counts"] = json.dumps(counter.counts())
     return response
