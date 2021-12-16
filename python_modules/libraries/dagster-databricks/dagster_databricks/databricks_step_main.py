@@ -18,8 +18,11 @@ import zipfile
 from queue import Empty, Queue
 from threading import Thread
 
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
+from dagster.core.execution.plan.external_step import (
+    PICKLED_EVENTS_FILE_NAME,
+    run_step_from_ref,
+    external_instance_from_step_run_ref,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import serialize_value
 
@@ -102,13 +105,10 @@ def main(
         event_writing_thread.start()
 
         try:
-            with DagsterInstance.ephemeral() as instance:
-                # enable re-execution
-                if step_run_ref.parent_run:
-                    instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
-                    instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
-                instance.add_event_listener(step_run_ref.run_id, events_queue.put)
-                list(run_step_from_ref(step_run_ref, instance))
+            instance = external_instance_from_step_run_ref(
+                step_run_ref, event_listener_fn=put_events
+            )
+            list(run_step_from_ref(step_run_ref, instance))
         finally:
             events_queue.put(DONE)
             event_writing_thread.join()

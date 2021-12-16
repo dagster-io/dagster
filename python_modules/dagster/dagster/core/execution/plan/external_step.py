@@ -162,6 +162,32 @@ def step_context_to_step_run_ref(
     )
 
 
+def external_instance_from_step_run_ref(
+    step_run_ref: StepRunRef, event_listener_fn=None
+) -> DagsterInstance:
+    """
+    Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
+    by a StepRunRef by pre-populating certain values.
+
+    Args:
+        step_run_ref (StepRunRef): The reference to the the step that we want to execute
+        event_listener_fn (EventLogEntry -> Any): A function that handles each individual
+            EventLogEntry created on this instance. Generally used to send these events back to
+            the host instance.
+    Returns:
+        DagsterInstance: A DagsterInstance that can be used to execute an external step.
+    """
+    instance = DagsterInstance.ephemeral()
+    # re-execution expects the parent run to be available on the instance, so add these
+    if step_run_ref.parent_run:
+        # remove the pipeline_snapshot_id, as this instance doesn't have any snapshots
+        instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
+        instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
+    if event_listener_fn:
+        instance.add_event_listener(step_run_ref.run_id, event_listener_fn)
+    return instance
+
+
 def step_run_ref_to_step_context(
     step_run_ref: StepRunRef, instance: DagsterInstance
 ) -> StepExecutionContext:
