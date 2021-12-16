@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import (
     DagsterError,
+    DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
     raise_execution_interrupts,
 )
@@ -40,11 +41,14 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
     with raise_execution_interrupts():
 
         step_context.log.begin_python_log_capture()
+        retry_policy = step_context.solid_retry_policy
+
         try:
             yield
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de
+
         except Exception as e:  # pylint: disable=W0703
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
@@ -53,13 +57,12 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
             if isinstance(e, RetryRequested):
                 raise e
 
-            policy = step_context.solid_retry_policy
-            if policy:
-                # could check exc against a whitelist of exceptions
+            if retry_policy:
                 raise RetryRequested(
-                    max_retries=policy.max_retries,
-                    # likely to move the declarative properties on to the request (or just the whole policy)
-                    seconds_to_wait=policy.calculate_delay(step_context.previous_attempt_count + 1),
+                    max_retries=retry_policy.max_retries,
+                    seconds_to_wait=retry_policy.calculate_delay(
+                        step_context.previous_attempt_count + 1
+                    ),
                 ) from e
 
             # Failure exceptions get re-throw without wrapping
@@ -73,5 +76,18 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
                 original_exc_info=sys.exc_info(),
                 **kwargs,
             ) from e
+
+        except (DagsterExecutionInterruptedError, KeyboardInterrupt) as ie:
+            # respect retry policy when interrupts occur
+            if retry_policy:
+                raise RetryRequested(
+                    max_retries=retry_policy.max_retries,
+                    seconds_to_wait=retry_policy.calculate_delay(
+                        step_context.previous_attempt_count + 1
+                    ),
+                ) from ie
+            else:
+                raise ie
+
         finally:
             step_context.log.end_python_log_capture()
