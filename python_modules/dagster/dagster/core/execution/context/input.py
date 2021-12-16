@@ -5,6 +5,10 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
+from dagster.core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
@@ -245,6 +249,39 @@ class InputContext:
         Raises an error if the input asset has no partitioning.
         """
         return self.step_context.asset_partition_key_range_for_input(self.name)
+
+    @property
+    def asset_partitions_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        if self.upstream_output is None:
+            check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
+
+        partitions_def = self.upstream_output.solid_def.output_def_named(
+            self.upstream_output.name
+        ).asset_partitions_def
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an output that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+
+        partition_key_range = self.asset_partition_key_range
+        return TimeWindow(
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+        )
 
 
 def build_input_context(

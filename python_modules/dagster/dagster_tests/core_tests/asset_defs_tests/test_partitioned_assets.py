@@ -1,7 +1,9 @@
+import pendulum
 import pytest
 from dagster import (
     AssetMaterialization,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
     PartitionsDefinition,
@@ -15,6 +17,7 @@ from dagster.core.asset_defs.asset_partitions import (
 from dagster.core.asset_defs.partition_mapping import PartitionMapping
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
+from dagster.core.definitions.time_window_partitions import TimeWindow
 
 
 def test_assets_with_same_partitioning():
@@ -273,3 +276,116 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
     assert result.asset_materializations_for_node("upstream_asset") == [
         AssetMaterialization(asset_key=AssetKey(["upstream_asset"]), partition="b")
     ]
+
+
+def test_output_context_asset_partitions_time_window():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+            )
+
+        def load_input(self, context):
+            raise NotImplementedError()
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
+    def my_asset():
+        pass
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[my_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    my_job.execute_in_process(partition_key="2021-06-06")
+
+
+def test_input_context_asset_partitions_time_window():
+    partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+            )
+
+        def load_input(self, context):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+            )
+
+    @asset(partitions_def=partitions_def)
+    def upstream_asset():
+        pass
+
+    @asset(partitions_def=partitions_def)
+    def downstream_asset(upstream_asset):
+        assert upstream_asset is None
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[downstream_asset, upstream_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    my_job.execute_in_process(partition_key="2021-06-06")
+
+
+def test_asset_partitions_time_window_non_identity_partition_mapping():
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    class TrailingWindowPartitionMapping(PartitionMapping):
+        """
+        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        preceding partition.
+        """
+
+        def get_upstream_partitions_for_partition_range(
+            self,
+            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,
+            upstream_partitions_def: PartitionsDefinition,
+        ) -> PartitionKeyRange:
+            del downstream_partitions_def, upstream_partitions_def
+
+            start, end = downstream_partition_key_range
+            assert start == "2020-01-02"
+            assert end == "2020-01-02"
+            return PartitionKeyRange("2020-01-01", "2020-01-02")
+
+        def get_downstream_partitions_for_partition_range(
+            self,
+            upstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,
+            upstream_partitions_def: PartitionsDefinition,
+        ) -> PartitionKeyRange:
+            raise NotImplementedError()
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2020-01-02"), pendulum.parse("2020-01-03")
+            )
+
+        def load_input(self, context):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2020-01-01"), pendulum.parse("2020-01-03")
+            )
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset():
+        pass
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        partition_mappings={"upstream_asset": TrailingWindowPartitionMapping()},
+    )
+    def downstream_asset(upstream_asset):
+        assert upstream_asset is None
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    my_job.execute_in_process(partition_key="2020-01-02")
