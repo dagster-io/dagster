@@ -4,6 +4,8 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+from abc import ABC, abstractmethod
+from datetime import datetime
 from collections import defaultdict, namedtuple
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
@@ -11,6 +13,7 @@ from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
+    PartitionsDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -20,10 +23,10 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
-from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType, Partition
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -326,11 +329,18 @@ class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsError
         )
 
 
+class ExternalPartitionsDefinitionData(ABC):
+    @abstractmethod
+    def get_partitions_definition(self) -> PartitionsDefinition:
+        ...
+
+
 @whitelist_for_serdes
 class ExternalTimeWindowPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
     namedtuple(
         "_ExternalTimeWindowPartitionsDefinitionData", "schedule_type start timezone fmt end_offset"
-    )
+    ),
 ):
     def __new__(cls, schedule_type, start, timezone, fmt, end_offset):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
@@ -341,6 +351,29 @@ class ExternalTimeWindowPartitionsDefinitionData(
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
         )
+
+    def get_partitions_definition(self):
+        return TimeWindowPartitionsDefinition(
+            self.schedule_type,
+            datetime.fromtimestamp(self.start),
+            self.timezone,
+            self.fmt,
+            self.end_offset,
+        )
+
+
+@whitelist_for_serdes
+class ExternalStaticPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    namedtuple("_ExternalStaticPartitionsDefinitionData", "partition_keys"),
+):
+    def __new__(cls, partition_keys):
+        return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
+            cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
+        )
+
+    def get_partitions_definition(self):
+        return StaticPartitionsDefinition(self.partition_keys)
 
 
 @whitelist_for_serdes
@@ -463,7 +496,7 @@ class ExternalAssetDependedBy(
 class ExternalAssetNode(
     namedtuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partitions_def",
+        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data",
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -479,9 +512,7 @@ class ExternalAssetNode(
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
-        partitions_def: Optional[
-            Union[TimeWindowPartitionsDefinition, StaticPartitionsDefinition]
-        ] = None,
+        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
@@ -491,7 +522,7 @@ class ExternalAssetNode(
             op_name=op_name,
             op_description=op_description,
             job_names=job_names,
-            partitions_def=partitions_def,
+            partitions_def_data=partitions_def_data,
         )
 
 
@@ -600,14 +631,20 @@ def external_asset_graph_from_defs(
             output.metadata.get("asset_def", None) if output and output.metadata else None
         )
 
-        partitions_def = None
+        partitions_def_data = None
         if op_asset_def and op_asset_def.partitions_def:
             if isinstance(op_asset_def.partitions_def, TimeWindowPartitionsDefinition):
-                partitions_def = external_time_window_partitions_definition_from_def(
+                partitions_def_data = external_time_window_partitions_definition_from_def(
                     op_asset_def.partitions_def
                 )
             elif isinstance(op_asset_def.partitions_def, StaticPartitionsDefinition):
-                partitions_def = op_asset_def.partitions_def
+                partitions_def_data = external_static_partitions_definition_from_def(
+                    op_asset_def.partitions_def
+                )
+            else:
+                raise DagsterInvalidDefinitionError(
+                    "Only static partition and time window partitions are currently supported."
+                )
 
         asset_nodes.append(
             ExternalAssetNode(
@@ -617,7 +654,7 @@ def external_asset_graph_from_defs(
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
-                partitions_def=partitions_def,
+                partitions_def_data=partitions_def_data,
             )
         )
 
@@ -663,6 +700,13 @@ def external_time_window_partitions_definition_from_def(partitions_def):
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
+    )
+
+
+def external_static_partitions_definition_from_def(partitions_def):
+    check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
+    return ExternalStaticPartitionsDefinitionData(
+        partition_keys=partitions_def.get_partition_keys()
     )
 
 

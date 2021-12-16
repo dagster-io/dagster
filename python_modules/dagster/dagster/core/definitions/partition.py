@@ -170,19 +170,17 @@ class PartitionsDefinition(ABC, Generic[T]):
         return IdentityPartitionMapping()
 
 
-@whitelist_for_serdes
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str],  # pylint: disable=unsubscriptable-object
-    NamedTuple("_StaticPartitionsDefinition", [("partition_keys", List[str])]),
-):
-    def __new__(cls, partition_keys: List[str]):
+    PartitionsDefinition[str],
+):  # pylint: disable=unsubscriptable-object
+    def __init__(self, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
-        return super(StaticPartitionsDefinition, cls).__new__(cls, partition_keys)
+        self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
     ) -> List[Partition[str]]:
-        return [Partition(key) for key in self.partition_keys]
+        return self._partitions
 
 
 class ScheduleTimeBasedPartitionsDefinition(

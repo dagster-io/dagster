@@ -117,19 +117,6 @@ class TimeWindowPartitionsDefinition(
 
         return TimeWindowPartitionMapping()
 
-    @staticmethod
-    def get_partitions_from_serialized_data(
-        schedule_type: ScheduleType, start: float, timezone: str, fmt: str, end_offset: int
-    ):
-        partitions_def = TimeWindowPartitionsDefinition(
-            schedule_type,
-            datetime.fromtimestamp(start),
-            timezone,
-            fmt,
-            end_offset,
-        )
-        return partitions_def.get_partitions()
-
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(

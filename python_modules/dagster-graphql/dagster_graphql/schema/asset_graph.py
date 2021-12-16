@@ -5,6 +5,7 @@ from dagster.core.definitions.time_window_partitions import TimeWindowPartitions
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
+    ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
@@ -123,20 +124,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionKeys(self, _graphene_info):
         # TODO: Add functionality for dynamic partitions definition
-        partitions_def = self._external_asset_node.partitions_def
-        if partitions_def:
-            if isinstance(partitions_def, StaticPartitionsDefinition):
-                return [partition.name for partition in partitions_def.get_partitions()]
-            elif isinstance(partitions_def, ExternalTimeWindowPartitionsDefinitionData):
+        partitions_def_data = self._external_asset_node.partitions_def_data
+        if partitions_def_data:
+            if isinstance(
+                partitions_def_data, ExternalStaticPartitionsDefinitionData
+            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
                 return [
                     partition.name
-                    for partition in TimeWindowPartitionsDefinition.get_partitions_from_serialized_data(
-                        partitions_def.schedule_type,
-                        partitions_def.start,
-                        partitions_def.timezone,
-                        partitions_def.fmt,
-                        partitions_def.end_offset,
-                    )
+                    for partition in partitions_def_data.get_partitions_definition().get_partitions()
                 ]
         return []
 
