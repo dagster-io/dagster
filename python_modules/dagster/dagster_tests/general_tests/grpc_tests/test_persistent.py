@@ -59,10 +59,8 @@ def test_ping(capfd):
 
     out, _err = capfd.readouterr()
 
-    assert (
-        f"Started Dagster code server for file {python_file} on port {port} in process {process.pid}"
-        in out
-    )
+    assert f"Started Dagster code server for file " in out
+    assert f"grpc_repo.py on port {port} in process {process.pid}" in out
 
 
 def test_load_via_env_var():
