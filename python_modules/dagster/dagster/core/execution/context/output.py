@@ -6,6 +6,10 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
+from dagster.core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
@@ -277,6 +281,34 @@ class OutputContext:
         Raises an error if the output asset has no partitioning.
         """
         return self.step_context.asset_partition_key_range_for_output(self.name)
+
+    @property
+    def asset_partitions_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        partitions_def = self.solid_def.output_def_named(self.name).asset_partitions_def
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an output that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an output that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+
+        partition_key_range = self.asset_partition_key_range
+        return TimeWindow(
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+        )
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
