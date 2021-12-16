@@ -562,6 +562,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     assetNodes = graphene.Field(
         non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode"),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        loadMaterializations=graphene.Boolean(default_value=False),
     )
 
     class Meta:
@@ -605,6 +606,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_assetNodes(self, graphene_info, **kwargs):
         from ..asset_graph import GrapheneAssetNode
 
+        load_materializations = kwargs.get("loadMaterializations")
+
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
@@ -616,16 +619,19 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         if not matching:
             return []
 
-        events_by_key = graphene_info.context.instance.get_latest_materialization_events(
-            [node.asset_key for node in matching]
-        )
+        if load_materializations:
+            events_by_key = graphene_info.context.instance.get_latest_materialization_events(
+                [node.asset_key for node in matching]
+            )
+        else:
+            events_by_key = {}
 
         return [
             GrapheneAssetNode(
                 repository,
                 node,
                 events_by_key.get(node.asset_key),
-                fetched_materialization=True,
+                fetched_materialization=load_materializations,
             )
             for node in matching
         ]
