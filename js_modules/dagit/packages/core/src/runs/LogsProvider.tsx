@@ -103,7 +103,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
       const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-        id: `PipelineRun:${runId}`,
+        id: `Run:${runId}`,
       });
 
       if (local) {
@@ -117,10 +117,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
         ) {
           toWrite.canTerminate = false;
         }
+
         client.writeFragment({
           fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
           fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-          id: `PipelineRun:${runId}`,
+          id: `Run:${runId}`,
           data: toWrite,
         });
       }
