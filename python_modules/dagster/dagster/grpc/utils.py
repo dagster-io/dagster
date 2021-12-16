@@ -1,3 +1,5 @@
+import os
+
 from dagster import check
 from dagster.core.definitions.reconstructable import (
     load_def_in_module,
@@ -38,3 +40,21 @@ def get_loadable_targets(python_file, module_name, package_name, working_directo
         )
     else:
         check.failed("invalid")
+
+
+def max_rx_bytes():
+    env_set = os.getenv("DAGSTER_GRPC_MAX_RX_BYTES")
+    if env_set:
+        return int(env_set)
+
+    # default 50 MB
+    return 50 * (10 ** 6)
+
+
+def max_send_bytes():
+    env_set = os.getenv("DAGSTER_GRPC_MAX_SEND_BYTES")
+    if env_set:
+        return int(env_set)
+
+    # default 50 MB
+    return 50 * (10 ** 6)

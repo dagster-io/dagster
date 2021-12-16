@@ -210,7 +210,11 @@ class SchedulerDaemon(DagsterDaemon):
 
     def run_iteration(self, instance, workspace):
         yield from execute_scheduler_iteration(
-            instance, workspace, self._logger, instance.scheduler.max_catchup_runs
+            instance,
+            workspace,
+            self._logger,
+            instance.scheduler.max_catchup_runs,
+            instance.scheduler.max_tick_retries,
         )
 
 

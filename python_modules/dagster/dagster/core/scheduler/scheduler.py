@@ -269,10 +269,17 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
             Note that no matter what this value is, the scheduler will never launch a run from a time
             before the schedule was turned on (even if the start_date on the schedule is earlier) - if
             you want to launch runs for earlier partitions, launch a backfill.
+        max_tick_retries (int): For each schedule tick that raises an error, how many times to retry
+            that tick (defaults to 0).
     """
 
-    def __init__(self, max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS, inst_data=None):
-        self.max_catchup_runs = check.opt_int_param(max_catchup_runs, "max_catchup_runs", 5)
+    def __init__(
+        self, max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS, max_tick_retries=0, inst_data=None
+    ):
+        self.max_catchup_runs = check.opt_int_param(
+            max_catchup_runs, "max_catchup_runs", DEFAULT_MAX_CATCHUP_RUNS
+        )
+        self.max_tick_retries = check.opt_int_param(max_tick_retries, "max_tick_retries", 0)
         self._inst_data = inst_data
 
     @property
@@ -281,13 +288,14 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {"max_catchup_runs": Field(IntSource, is_required=False)}
+        return {
+            "max_catchup_runs": Field(IntSource, is_required=False),
+            "max_tick_retries": Field(IntSource, is_required=False),
+        }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return DagsterDaemonScheduler(
-            inst_data=inst_data, max_catchup_runs=config_value.get("max_catchup_runs")
-        )
+        return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
 
     def debug_info(self):
         return ""

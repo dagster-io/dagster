@@ -29,19 +29,11 @@ from .types import (
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
 )
+from .utils import max_rx_bytes, max_send_bytes
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
 DEFAULT_GRPC_TIMEOUT = 60
-
-
-def _max_rx_bytes():
-    env_set = os.getenv("DAGSTER_GRPC_MAX_RX_BYTES")
-    if env_set:
-        return int(env_set)
-
-    # default 50 MB
-    return 50 * (10 ** 6)
 
 
 def client_heartbeat_thread(client, shutdown_event):
@@ -86,7 +78,8 @@ class DagsterGrpcClient:
     @contextmanager
     def _channel(self):
         options = [
-            ("grpc.max_receive_message_length", _max_rx_bytes()),
+            ("grpc.max_receive_message_length", max_rx_bytes()),
+            ("grpc.max_send_message_length", max_send_bytes()),
         ]
         with (
             grpc.secure_channel(

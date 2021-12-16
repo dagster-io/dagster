@@ -67,7 +67,7 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import get_loadable_targets
+from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -812,6 +812,10 @@ class DagsterGrpcServer:
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=max_workers),
             compression=grpc.Compression.Gzip,
+            options=[
+                ("grpc.max_send_message_length", max_send_bytes()),
+                ("grpc.max_receive_message_length", max_rx_bytes()),
+            ],
         )
         self._server_termination_event = threading.Event()
 
