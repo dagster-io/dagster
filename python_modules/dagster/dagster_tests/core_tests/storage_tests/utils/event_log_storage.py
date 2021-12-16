@@ -1413,18 +1413,21 @@ class TestEventLogStorage:
         def _event_tags(event):
             return event.dagster_event.step_materialization_data.materialization.tags
 
+        def _fetch_events(storage):
+            return storage.get_latest_materialization_events(
+                [
+                    AssetKey("a"),
+                    AssetKey("b"),
+                    AssetKey("c"),
+                    AssetKey("d"),
+                ]
+            )
+
         events, _ = _synthesize_events(lambda: one())
         for event in events:
             storage.store_event(event)
 
-        events_by_key = storage.get_latest_materialization_event(
-            [
-                AssetKey("a"),
-                AssetKey("b"),
-                AssetKey("c"),
-                AssetKey("d"),
-            ]
-        )
+        events_by_key = _fetch_events(storage)
         assert len(events_by_key) == 4
         assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
         assert _event_tags(events_by_key[AssetKey("b")])["num"] == "1"
@@ -1432,35 +1435,32 @@ class TestEventLogStorage:
         assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
         # wipe 2 of the assets, make sure we respect that
-        storage.wipe_asset(AssetKey("a"))
-        storage.wipe_asset(AssetKey("b"))
-        events_by_key = storage.get_latest_materialization_event(
-            [
-                AssetKey("a"),
-                AssetKey("b"),
-                AssetKey("c"),
-                AssetKey("d"),
-            ]
-        )
-        assert events_by_key.get(AssetKey("a")) is None
-        assert events_by_key.get(AssetKey("b")) is None
-        assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
-        assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
+        if self.can_wipe():
+            storage.wipe_asset(AssetKey("a"))
+            storage.wipe_asset(AssetKey("b"))
+            events_by_key = _fetch_events(storage)
+            assert events_by_key.get(AssetKey("a")) is None
+            assert events_by_key.get(AssetKey("b")) is None
+            assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
+            assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
-        # rematerialize one of the wiped assets, one of the existing assets
-        events, _ = _synthesize_events(lambda: two())
-        for event in events:
-            storage.store_event(event)
+            # rematerialize one of the wiped assets, one of the existing assets
+            events, _ = _synthesize_events(lambda: two())
+            for event in events:
+                storage.store_event(event)
 
-        events_by_key = storage.get_latest_materialization_event(
-            [
-                AssetKey("a"),
-                AssetKey("b"),
-                AssetKey("c"),
-                AssetKey("d"),
-            ]
-        )
-        assert events_by_key.get(AssetKey("a")) is None
-        assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
-        assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
-        assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
+            events_by_key = _fetch_events(storage)
+            assert events_by_key.get(AssetKey("a")) is None
+            assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
+            assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
+            assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
+
+        else:
+            events, _ = _synthesize_events(lambda: two())
+            for event in events:
+                storage.store_event(event)
+            events_by_key = _fetch_events(storage)
+            assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
+            assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
+            assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
+            assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"

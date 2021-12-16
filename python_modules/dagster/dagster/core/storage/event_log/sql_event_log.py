@@ -673,7 +673,7 @@ class SqlEventLogStorage(EventLogStorage):
         asset_keys = [AssetKey.from_db_string(row[0]) for row in sorted(rows, key=lambda x: x[0])]
         return [asset_key for asset_key in asset_keys if asset_key]
 
-    def get_latest_materialization_event(
+    def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         check.list_param(asset_keys, "asset_keys", AssetKey)

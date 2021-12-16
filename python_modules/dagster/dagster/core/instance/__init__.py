@@ -1121,10 +1121,10 @@ class DagsterInstance:
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
 
-    def get_latest_materialization_event(
+    def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
-        return self._event_storage.get_latest_materialization_event(asset_keys)
+        return self._event_storage.get_latest_materialization_events(asset_keys)
 
     def get_event_records(
         self,

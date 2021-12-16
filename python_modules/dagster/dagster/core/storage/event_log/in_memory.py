@@ -241,7 +241,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
 
-    def get_latest_materialization_event(
+    def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)

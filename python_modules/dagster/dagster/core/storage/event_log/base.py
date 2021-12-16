@@ -234,7 +234,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return asset_keys
 
     @abstractmethod
-    def get_latest_materialization_event(
+    def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         pass
