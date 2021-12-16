@@ -5,8 +5,7 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 from collections import defaultdict, namedtuple
-from datetime import timezone
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset

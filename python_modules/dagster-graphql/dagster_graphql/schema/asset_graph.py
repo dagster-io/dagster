@@ -1,14 +1,13 @@
 import graphene
-from datetime import datetime
-
 from dagster import AssetKey, check
+from dagster.core.definitions.partition import StaticPartitionsDefinition
+from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster.core.definitions.partition import StaticPartitionsDefinition
-from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
@@ -42,7 +41,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobName = graphene.String()
-    partitionKeys = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
@@ -52,6 +50,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    partitionKeys = non_null_list(graphene.String)
 
     class Meta:
         name = "AssetNode"

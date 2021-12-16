@@ -24,8 +24,6 @@ from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
-from dagster.core.definitions.partition import StaticPartitionsDefinition
-from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
 
 class GraphenePartitionTags(graphene.ObjectType):

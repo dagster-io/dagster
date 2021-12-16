@@ -621,11 +621,11 @@ type AssetNode {
   description: String
   opName: String
   jobName: String
-  partitionKeys: [String!]!
-  jobs(currentTime: String): [Pipeline!]!
+  jobs: [Pipeline!]!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  partitionKeys: [String!]!
 }
 
 type AssetDependency {

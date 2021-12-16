@@ -1,6 +1,5 @@
 import os
 import time
-from datetime import datetime, timezone
 
 from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
