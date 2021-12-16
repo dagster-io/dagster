@@ -98,6 +98,7 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
   fragment ScheduleSwitchFragment on Schedule {
     id
     name
+    cronSchedule
     scheduleState {
       id
       status

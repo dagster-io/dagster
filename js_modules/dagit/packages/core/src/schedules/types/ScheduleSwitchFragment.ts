@@ -19,5 +19,6 @@ export interface ScheduleSwitchFragment {
   __typename: "Schedule";
   id: string;
   name: string;
+  cronSchedule: string;
   scheduleState: ScheduleSwitchFragment_scheduleState;
 }
