@@ -532,13 +532,13 @@ def test_backcompat_asset_materializations():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
 
-            a_mat = storage.get_latest_materialization_events(a)
+            a_mat = storage.get_latest_materialization_events([a]).get(a)
             assert a_mat is None
 
-            b_mat = storage.get_latest_materialization_events(b)
+            b_mat = storage.get_latest_materialization_events([b]).get(b)
             _validate_materialization(b, b_mat, expected_tags={})
 
-            c_mat = storage.get_latest_materialization_events(c)
+            c_mat = storage.get_latest_materialization_events([c]).get(c)
             _validate_materialization(c, c_mat, expected_tags={})
 
             mat_by_key = storage.get_latest_materialization_events([a, b, c])
@@ -549,13 +549,13 @@ def test_backcompat_asset_materializations():
             # materialize c with tags
             my_job.execute_in_process(instance=instance)
 
-            a_mat = storage.get_latest_materialization_events(a)
+            a_mat = storage.get_latest_materialization_events([a]).get(a)
             assert a_mat is None
 
-            b_mat = storage.get_latest_materialization_events(b)
+            b_mat = storage.get_latest_materialization_events([b]).get(b)
             _validate_materialization(b, b_mat, expected_tags={})
 
-            c_mat = storage.get_latest_materialization_events(c)
+            c_mat = storage.get_latest_materialization_events([c]).get(c)
             _validate_materialization(c, c_mat, expected_tags={"foo": "bar"})
 
             mat_by_key = storage.get_latest_materialization_events([a, b, c])
