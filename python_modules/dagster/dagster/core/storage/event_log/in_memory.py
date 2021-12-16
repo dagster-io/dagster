@@ -262,7 +262,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
                 and record.dagster_event.asset_key not in materializations_by_key
             ):
-                materializations_by_key[record.dagster_event.asset_key] = record.dagster_event
+                materializations_by_key[record.dagster_event.asset_key] = record
 
         return materializations_by_key
 
