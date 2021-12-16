@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
@@ -9,7 +8,7 @@ import {AppTopNav} from './AppTopNav';
 describe('AppTopNav', () => {
   const defaultMocks = {
     Workspace: () => ({
-      locationEntries: () => new MockList(2),
+      locationEntries: () => [...new Array(2)],
     }),
   };
 
@@ -25,16 +24,16 @@ describe('AppTopNav', () => {
     const mocks = {
       Repository: () => ({
         name: () => 'my_repository',
-        pipelines: () => new MockList(1),
+        pipelines: () => [...new Array(1)],
       }),
       RepositoryLocation: () => ({
         environmentPath: () => 'what then',
         id: () => 'my_location',
         name: () => 'my_location',
-        repositories: () => new MockList(1),
+        repositories: () => [...new Array(1)],
       }),
       Workspace: () => ({
-        locationEntries: () => new MockList(1),
+        locationEntries: () => [...new Array(1)],
       }),
       RepositoryOrigin: () => ({
         repositoryName: () => 'my_repository',
@@ -43,11 +42,11 @@ describe('AppTopNav', () => {
       SolidDefinition: () => ({
         configField: null,
         description: null,
-        inputDefinitions: () => new MockList(1),
-        outputDefinitions: () => new MockList(1),
+        inputDefinitions: () => [...new Array(1)],
+        outputDefinitions: () => [...new Array(1)],
         metadata: () => [],
         name: 'foo_solid',
-        requiredResources: () => new MockList(0),
+        requiredResources: () => [],
       }),
       SolidInvocationSite: () => ({
         solidHandle: () => ({
@@ -86,7 +85,7 @@ describe('AppTopNav', () => {
       });
     });
 
-    it('shows the error message when repo location errors are found', async () => {
+    it.only('shows the error message when repo location errors are found', async () => {
       const mocks = {
         RepositoryLocationOrLoadError: () => ({
           __typename: 'PythonError',
