@@ -1,4 +1,3 @@
-import os
 import tempfile
 import time
 from contextlib import contextmanager
@@ -502,3 +501,64 @@ def test_backcompat_asset_read():
             _validate_instance_assets(instance)
             my_job.execute_in_process(instance=instance)
             _validate_instance_assets(instance)
+
+
+def test_backcompat_asset_materializations():
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    # should contain materialization events for asset keys a, b, c, d, e, f
+    # events a and b have been wiped, but b has been rematerialized
+
+    @op
+    def materialize():
+        yield AssetMaterialization(AssetKey("c"), tags={"foo": "bar"})
+        yield Output(None)
+
+    @job
+    def my_job():
+        materialize()
+
+    def _validate_materialization(asset_key, event, expected_tags):
+        assert isinstance(event, EventLogEntry)
+        assert event.dagster_event
+        assert event.dagster_event.is_step_materialization
+        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
+        assert event.dagster_event.step_materialization_data.materialization.tags == expected_tags
+
+    a = AssetKey("a")
+    b = AssetKey("b")
+    c = AssetKey("c")
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
+
+            a_mat = storage.get_latest_materialization_events([a]).get(a)
+            assert a_mat is None
+
+            b_mat = storage.get_latest_materialization_events([b]).get(b)
+            _validate_materialization(b, b_mat, expected_tags={})
+
+            c_mat = storage.get_latest_materialization_events([c]).get(c)
+            _validate_materialization(c, c_mat, expected_tags={})
+
+            mat_by_key = storage.get_latest_materialization_events([a, b, c])
+            assert mat_by_key.get(a) is None
+            _validate_materialization(b, mat_by_key.get(b), expected_tags={})
+            _validate_materialization(c, mat_by_key.get(c), expected_tags={})
+
+            # materialize c with tags
+            my_job.execute_in_process(instance=instance)
+
+            a_mat = storage.get_latest_materialization_events([a]).get(a)
+            assert a_mat is None
+
+            b_mat = storage.get_latest_materialization_events([b]).get(b)
+            _validate_materialization(b, b_mat, expected_tags={})
+
+            c_mat = storage.get_latest_materialization_events([c]).get(c)
+            _validate_materialization(c, c_mat, expected_tags={"foo": "bar"})
+
+            mat_by_key = storage.get_latest_materialization_events([a, b, c])
+            assert mat_by_key.get(a) is None
+            _validate_materialization(b, mat_by_key.get(b), expected_tags={})
+            _validate_materialization(c, c_mat, expected_tags={"foo": "bar"})

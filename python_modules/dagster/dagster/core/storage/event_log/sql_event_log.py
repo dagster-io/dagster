@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
-from typing import Iterable, List, Optional, cast
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
@@ -672,6 +672,62 @@ class SqlEventLogStorage(EventLogStorage):
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
         asset_keys = [AssetKey.from_db_string(row[0]) for row in sorted(rows, key=lambda x: x[0])]
         return [asset_key for asset_key in asset_keys if asset_key]
+
+    def get_latest_materialization_events(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+        check.list_param(asset_keys, "asset_keys", AssetKey)
+        rows = self._fetch_asset_rows(asset_keys=asset_keys)
+        to_backcompat_fetch = set()
+        results: Dict[AssetKey, Optional[EventLogEntry]] = {}
+        for row in rows:
+            asset_key = AssetKey.from_db_string(row[0])
+            if not asset_key:
+                continue
+            event_or_materialization = (
+                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+            )
+            if isinstance(event_or_materialization, EventLogEntry):
+                results[asset_key] = event_or_materialization
+            else:
+                to_backcompat_fetch.add(asset_key)
+
+        if to_backcompat_fetch:
+            latest_event_subquery = (
+                db.select(
+                    [
+                        SqlEventLogStorageTable.c.asset_key,
+                        db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
+                    ]
+                )
+                .where(
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                    )
+                )
+                .group_by(SqlEventLogStorageTable.c.asset_key)
+                .subquery()
+            )
+            backcompat_query = db.select(
+                [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
+            ).join(
+                latest_event_subquery,
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
+                    SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
+                ),
+            )
+            with self.index_connection() as conn:
+                event_rows = conn.execute(backcompat_query).fetchall()
+
+            for row in event_rows:
+                asset_key = AssetKey.from_db_string(row[0])
+                if asset_key:
+                    results[asset_key] = cast(
+                        EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
+                    )
+
+        return results
 
     def _fetch_asset_rows(self, asset_keys=None, prefix=None, limit=None, cursor=None):
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
