@@ -760,7 +760,8 @@ class SqlEventLogStorage(EventLogStorage):
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
 
-        if self._can_mark_assets_as_migrated(rows, has_more):
+        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
@@ -780,7 +781,8 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.asset_details,
         ]
 
-        if self.has_asset_key_index_cols() and not limit:
+        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        if self.has_asset_key_index_cols() and not is_partial_query:
             # if the schema has been migrated, fetch the last_materialization_timestamp to see if
             # we can lazily migrate the data table
             columns.append(AssetKeyTable.c.last_materialization_timestamp)
@@ -830,29 +832,9 @@ class SqlEventLogStorage(EventLogStorage):
                 wiped_timestamps_by_asset_key[asset_key] = asset_details.last_wipe_timestamp
 
         if wiped_timestamps_by_asset_key:
-            backcompat_query = (
-                db.select(
-                    [
-                        SqlEventLogStorageTable.c.asset_key,
-                        db.func.max(SqlEventLogStorageTable.c.timestamp),
-                    ]
-                )
-                .where(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [
-                            asset_key.to_string()
-                            for asset_key in wiped_timestamps_by_asset_key.keys()
-                        ]
-                    )
-                )
-                .group_by(SqlEventLogStorageTable.c.asset_key)
-                .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+            materialization_times = self._fetch_backcompat_materialization_times(
+                wiped_timestamps_by_asset_key.keys()
             )
-            with self.index_connection() as conn:
-                backcompat_rows = conn.execute(backcompat_query).fetchall()
-            materialization_times = {
-                AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows
-            }
             for asset_key, wiped_timestamp in wiped_timestamps_by_asset_key.items():
                 materialization_time = materialization_times.get(asset_key)
                 if not materialization_time or utc_datetime_from_naive(
@@ -866,12 +848,30 @@ class SqlEventLogStorage(EventLogStorage):
 
         return row_by_asset_key.values(), has_more, new_cursor
 
-    def _can_mark_assets_as_migrated(self, rows, has_more):
-        if not self.has_asset_key_index_cols():
-            return False
+    def _fetch_backcompat_materialization_times(self, asset_keys):
+        # fetches the latest materialization timestamp for the given asset_keys.  Uses the (slower)
+        # raw event log table.
+        backcompat_query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.timestamp),
+                ]
+            )
+            .where(
+                SqlEventLogStorageTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in asset_keys]
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+        )
+        with self.index_connection() as conn:
+            backcompat_rows = conn.execute(backcompat_query).fetchall()
+        return {AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows}
 
-        if has_more:
-            # need the full set of rows to determine if we can mark the assets as migrated
+    def _can_mark_assets_as_migrated(self, rows):
+        if not self.has_asset_key_index_cols():
             return False
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):

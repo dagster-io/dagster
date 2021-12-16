@@ -608,6 +608,13 @@ def test_asset_lazy_migration():
             # still should not be migrated (on write)
             assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
 
+            # fetching partial results should not trigger migration
+            instance.get_asset_keys(prefix=["b"])
+            instance.get_asset_keys(cursor=str(AssetKey("b")))
+            instance.get_latest_materialization_events(asset_keys=[AssetKey("b")])
+
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
             # on read, we should see that all the data has already been migrated and we can now mark
             # the asset key index as migrated
             instance.all_asset_keys()
