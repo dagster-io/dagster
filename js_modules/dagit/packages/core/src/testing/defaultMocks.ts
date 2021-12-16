@@ -1,7 +1,7 @@
 import faker from 'faker';
 
 export const hyphenatedName = () => faker.random.words(2).replace(/ /g, '-').toLowerCase();
-const randomId = () => faker.random.uuid();
+const randomId = () => faker.datatype.uuid();
 
 /**
  * A set of default values to use for Jest GraphQL mocks.

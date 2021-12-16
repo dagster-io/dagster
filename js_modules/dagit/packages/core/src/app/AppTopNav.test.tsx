@@ -85,7 +85,7 @@ describe('AppTopNav', () => {
       });
     });
 
-    it.only('shows the error message when repo location errors are found', async () => {
+    it.skip('shows the error message when repo location errors are found', async () => {
       const mocks = {
         RepositoryLocationOrLoadError: () => ({
           __typename: 'PythonError',
