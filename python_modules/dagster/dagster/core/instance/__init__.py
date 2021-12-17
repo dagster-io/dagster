@@ -3,12 +3,13 @@ import logging
 import logging.config
 import os
 import sys
-import tempfile
 import time
 import warnings
 import weakref
 from collections import defaultdict
+from contextlib import ExitStack
 from enum import Enum
+from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -234,7 +235,8 @@ class DagsterInstance:
             boundaries.
     """
 
-    _PROCESS_TEMPDIR = None
+    _PROCESS_TEMPDIR: Optional[TemporaryDirectory] = None
+    _EXIT_STACK = None
 
     def __init__(
         self,
@@ -462,9 +464,15 @@ class DagsterInstance:
 
     @staticmethod
     def temp_storage() -> str:
+        from dagster.core.test_utils import environ
+
         if DagsterInstance._PROCESS_TEMPDIR is None:
-            DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
-        return DagsterInstance._PROCESS_TEMPDIR.name
+            DagsterInstance._EXIT_STACK = ExitStack()
+            DagsterInstance._EXIT_STACK.enter_context(
+                environ({"DAGSTER_TELEMETRY_DISABLED": "yes"})
+            )
+            DagsterInstance._PROCESS_TEMPDIR = TemporaryDirectory()
+        return cast(TemporaryDirectory, DagsterInstance._PROCESS_TEMPDIR).name
 
     def _info(self, component):
         # ConfigurableClass may not have inst_data if it's a direct instantiation
@@ -1773,6 +1781,8 @@ records = instance.get_event_records(
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.dispose()
+        if DagsterInstance._EXIT_STACK:
+            DagsterInstance._EXIT_STACK.close()
 
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """
