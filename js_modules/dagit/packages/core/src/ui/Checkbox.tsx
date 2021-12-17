@@ -7,6 +7,9 @@ import {ColorsWIP} from './Colors';
 
 const DISABLED_COLOR = ColorsWIP.Gray300;
 
+type Format = 'check' | 'star' | 'switch';
+type Size = 'small' | 'large';
+
 type Props = Omit<
   React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>,
   'size'
@@ -15,9 +18,9 @@ type Props = Omit<
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: React.ReactNode;
   indeterminate?: boolean;
-  format?: 'check' | 'star' | 'switch';
+  format?: Format;
   fillColor?: string;
-  size?: 'small' | 'large';
+  size?: Size;
 };
 
 interface IconProps {
@@ -60,7 +63,7 @@ const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => (
 );
 
 const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fillColor}) => (
-  <svg width="42px" height="28px" viewBox="-3 -3 42 28">
+  <svg width="36px" height="24px" viewBox="-3 -3 42 28">
     <defs>
       <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="innerShadow">
         <stop stopColor="#000" stopOpacity="0.2" offset="0%" />
@@ -189,25 +192,40 @@ const Base = ({
   );
 };
 
+const svgStyle = (values: {size?: Size; format?: Format}) => {
+  const {size = 'large', format = 'check'} = values;
+
+  if (size === 'large') {
+    return css`
+      margin: -3px;
+    `;
+  }
+
+  if (format === 'switch') {
+    return css`
+      margin: -3px -9px;
+      transform: scale(0.5);
+    `;
+  }
+
+  return css`
+    margin: -3px -6px;
+    transform: scale(0.75);
+  `;
+};
+
 export const Checkbox = styled(Base)`
   display: inline-flex;
   position: relative;
   user-select: none;
-  align-items: center;
+  align-items: flex-start;
   color: ${({disabled}) => (disabled ? DISABLED_COLOR : ColorsWIP.Gray900)};
   cursor: pointer;
   gap: 8px;
 
   svg {
-    ${({size}) =>
-      size === 'small'
-        ? css`
-            margin: -6px -12px;
-            transform: scale(0.5);
-          `
-        : css`
-            margin: -3px;
-          `}
+    flex-shrink: 0;
+    ${svgStyle}
   }
 
   input[type='checkbox'] {

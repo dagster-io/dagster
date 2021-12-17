@@ -600,12 +600,10 @@ def define_databricks_storage_config():
         Selector(
             {"s3": _define_s3_storage_credentials(), "adls2": _define_adls2_storage_credentials()}
         ),
-        description="Databricks storage configuration. Solids using the "
-        "DatabricksPySparkStepLauncher to execute dagster job steps in Databricks MUST configure "
-        "storage using this config (either S3 or ADLS2 can be used). Access credentials for the "
-        "storage must be stored in Databricks secrets; this config indicates the secret scope "
-        "and the secret keys used to access either S3 or ADLS2.",
-        is_required=True,
+        description="Databricks storage configuration for either S3 or ADLS2. If access credentials "
+        "for your Databricks storage are stored in Databricks secrets, this config indicates the "
+        "secret scope and the secret keys used to access either S3 or ADLS2.",
+        is_required=False,
     )
 
 

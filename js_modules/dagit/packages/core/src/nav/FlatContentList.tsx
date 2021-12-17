@@ -2,6 +2,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
@@ -67,11 +68,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
                 {name}
               </TruncatingName>
               <div style={{flex: 1}} />
-              {isJob ? null : (
-                <Tooltip content="Legacy pipeline" placement="top" className="legacy-container">
-                  <LegacyTag>Legacy</LegacyTag>
-                </Tooltip>
-              )}
+              {isJob ? null : <LegacyPipelineTag />}
             </Label>
           ),
           repoAddress: address,
@@ -174,10 +171,6 @@ const Label = styled.div<{$hasIcon: boolean}>`
   align-items: center;
   gap: 8px;
   width: ${({$hasIcon}) => ($hasIcon ? '260px' : '280px')};
-
-  .legacy-container {
-    flex-shrink: 1;
-  }
 `;
 
 const LabelTooltipStyles = JSON.stringify({
@@ -212,15 +205,4 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
-`;
-
-const LegacyTag = styled.div`
-  background: ${ColorsWIP.Gray10};
-  color: ${ColorsWIP.Gray600};
-  border-radius: 7px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  padding: 5px;
-  margin: -3px 0;
-  font-size: 11px;
 `;

@@ -19,9 +19,9 @@ const Template: Story<DeletionDialogProps & {mocks?: any}> = ({mocks, ...props})
 );
 
 const ids = [
-  faker.random.uuid().slice(0, 8),
-  faker.random.uuid().slice(0, 8),
-  faker.random.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
 ];
 
 export const Success = Template.bind({});

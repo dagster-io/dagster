@@ -1,5 +1,42 @@
 # Changelog
 
+# 0.13.12
+
+### New
+
+- The dagit and dagster-daemon processes now use a structured Python logger for command-line output.
+- Dagster command-line logs now include the system timezone in the logging timestamp.
+- When running your own Dagster gRPC code server, the server process will now log a message to stdout when it starts up and when it shuts down.
+- [dagit] The sensor details page and sensor list page now display links to the assets tracked by `@asset_sensor`s.
+- [dagit] Improved instance warning in Dagit. Previously, Dagit showed an instance warning for daemon not running when no repos have schedulers or sensors.
+- [dagster-celery-k8s] You can now specify volumes and volume mounts to runs using the `CeleryK8sRunLauncher` that will be included in all launched jobs.
+- [dagster-databricks] You are no longer required to specify storage configuration when using the databricks_pyspark_step_launcher.
+- [dagster-databricks] The databricks_pyspark_step_launcher can now be used with dynamic mapping and collect steps.
+- [dagster-mlflow] The `end_mlflow_on_run_finished` hook is now a top-level export of the dagster mlflow library. The API reference also now includes an entry for it.
+
+### Bugfixes
+
+- Better backwards-compatibility for fetching asset keys materialized from older versions of dagster.
+- Fixed an issue where jobs running with op subsets required some resource configuration as part of the run config, even when they weren’t required by the selected ops.
+- `RetryPolicy` is now respected when execution is interrupted.
+- [dagit] Fixed "Open in Playground" link on the scheduled ticks.
+- [dagit] Fixed the run ID links on the Asset list view.
+- [dagit] When viewing an in-progress run, the run status sometimes failed to update as new logs arrived, resulting in a Gantt chart that either never updated from a “queued” state or did so only after a long delay. The run status and Gantt chart now accurately match incoming logs.
+
+### Community Contributions
+
+- [dagster-k8s] Fixed an issue where specifying `job_metadata` in tags did not correctly propagate to Kubernetes jobs created by Dagster. Thanks [@ibelikov](https://github.com/ibelikov)!
+
+### Experimental
+
+- [dagit] Made performance improvements for loading the asset graph.
+
+### Documentation
+
+- The Versioning and Memoization guide has been updated to reflect a new set of core memoization APIs.
+- [dagster-dbt] Updated the dagster-dbt integration guide to mention the new dbt Cloud integration.
+- [dagster-dbt] Added documentation for the `default_flags` property of `DbtCliResource`.
+
 # 0.13.11
 
 ### New
@@ -33,13 +70,13 @@
 
 - “Validating Data with Dagster Type Factories” guide added.
 
-
 # 0.13.10
 
 ### New
 
 - `run_id`, `job_name`, and `op_exception` have been added as parameters to `build_hook_context`.
 - You can now define inputs on the top-level job / graph. Those inputs can be can configured as an inputs key on the top level of your run config. For example, consider the following job:
+
 ```python
 from dagster import job, op
 
@@ -51,7 +88,9 @@ def add_one(x):
 def my_job(x):
     add_one(x)
 ```
+
 You can now add config for x at the top level of my run_config like so:
+
 ```python
 run_config = {
   "inputs": {
@@ -63,6 +102,7 @@ run_config = {
 ```
 
 - You can now create partitioned jobs and reference a run’s partition from inside an op body or IOManager load_input or handle_output method, without threading partition values through config. For example, where previously you might have written:
+
 ```python
 @op(config_schema={"partition_key": str})
 def my_op(context):
@@ -76,7 +116,9 @@ def my_static_partitioned_config(partition_key: str):
 def my_partitioned_job():
     my_op()
 ```
+
 You can now write:
+
 ```python
 @op
 def my_op(context):
@@ -86,17 +128,20 @@ def my_op(context):
 def my_partitioned_job():
     my_op()
 ```
+
 - Added `op_retry_policy` to `@job`. You can also specify `op_retry_policy` when invoking `to_job` on graphs.
 - [dagster-fivetran] The `fivetran_sync_op` will now be rendered with a fivetran tag in Dagit.
 - [dagster-fivetran] The `fivetran_sync_op` now supports producing `AssetMaterializations` for each table updated during the sync. To this end, it now outputs a structured `FivetranOutput` containing this schema information, instead of an unstructured dictionary.
 - [dagster-dbt] `AssetMaterializations` produced from the dbt_cloud_run_op now include a link to the dbt Cloud docs for each asset (if docs were generated for that run).
-- You can now use the `@schedule` decorator with `RunRequest` - based evaluation functions.  For example, you can now write:
+- You can now use the `@schedule` decorator with `RunRequest` - based evaluation functions. For example, you can now write:
+
 ```python
 @schedule(cron_schedule="* * * * *", job=my_job)
 def my_schedule(context):
     yield RunRequest(run_key="a", ...)
     yield RunRequest(run_key="b", ...)
 ```
+
 - [dagster-k8s] You may now configure instance-level `python_logs` settings using the [Dagster Helm chart](https://github.com/dagster-io/dagster/tree/master/helm/dagster).
 - [dagster-k8s] You can now manage a secret that contains the Celery broker and backend URLs, rather than the Helm chart
 - [Dagster-slack] Improved the default messages in `make_slack_on_run_failure_sensor` to use Slack layout blocks and include clickable link to Dagit. Previously, it sent a plain text message.
@@ -135,7 +180,6 @@ def my_schedule(context):
 - In the API docs, most configurable objects (such as ops and resources) now have their configuration schema documented in-line.
 - Removed typo from CLI readme (thanks Kan (https://github.com/zkan))!
 
-
 # 0.13.9
 
 ### New
@@ -146,7 +190,7 @@ def my_schedule(context):
 
 ### New
 
-- Improved the error message for situations where you try `a, b = my_op()`, inside `@graph` or `@job`, but `my`_op only has a single `Out`.
+- Improved the error message for situations where you try `a, b = my_op()`, inside `@graph` or `@job`, but `my`\_op only has a single `Out`.
 - [dagster-dbt] A new integration with dbt Cloud allows you to launch dbt Cloud jobs as part of your Dagster jobs. This comes complete with rich error messages, links back to the dbt Cloud UI, and automatically generated [Asset Materializations](https://docs.dagster.io/concepts/assets/asset-materializations) to help keep track of your dbt models in Dagit. It provides a pre-built `dbt_cloud_run_op`, as well as a more flexible `dbt_cloud_resource` for more customized use cases. Check out the [api docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#ops) to learn more!
 - [dagster-gcp] Pinned the google-cloud-bigquery dependency to <3, because the new 3.0.0b1 version was causing some problems in tests.
 - [dagit] Verbiage update to make it clear that wiping an asset means deleting the materialization events for that asset.

@@ -797,21 +797,28 @@ def pipeline_execution_iterator(
             reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
             if reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELING:
                 event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
+            elif reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELED:
+                # This happens if the run was force-terminated but was still able to send
+                # a cancellation request
+                event = DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Computational resources were cleaned up after the run was forcibly marked as canceled.",
+                    EngineEventData(),
+                )
+            elif pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+                event = DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Execution was interrupted unexpectedly. "
+                    "No user initiated termination request was found, not treating as failure because run will be resumed.",
+                    EngineEventData(),
+                )
             else:
-                if pipeline_context.instance.run_will_resume(pipeline_context.run_id):
-                    event = DagsterEvent.engine_event(
-                        pipeline_context,
-                        "Execution was interrupted unexpectedly. "
-                        "No user initiated termination request was found, not treating as failure because run will be resumed.",
-                        EngineEventData(),
-                    )
-                else:
-                    event = DagsterEvent.pipeline_failure(
-                        pipeline_context,
-                        "Execution was interrupted unexpectedly. "
-                        "No user initiated termination request was found, treating as failure.",
-                        pipeline_canceled_info,
-                    )
+                event = DagsterEvent.pipeline_failure(
+                    pipeline_context,
+                    "Execution was interrupted unexpectedly. "
+                    "No user initiated termination request was found, treating as failure.",
+                    pipeline_canceled_info,
+                )
         elif pipeline_exception_info:
             event = DagsterEvent.pipeline_failure(
                 pipeline_context,

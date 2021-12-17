@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import signal
@@ -26,7 +27,7 @@ from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster.utils import merge_dicts
+from dagster.utils import Counter, merge_dicts, traced, traced_counter
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -113,7 +114,9 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
         )
 
         if set_dagster_home:
-            stack.enter_context(environ({"DAGSTER_HOME": temp_dir}))
+            stack.enter_context(
+                environ({"DAGSTER_HOME": temp_dir, "DAGSTER_DISABLE_TELEMETRY": "yes"})
+            )
 
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
@@ -476,3 +479,33 @@ def get_logger_output_from_capfd(capfd, logger_name):
             if logger_name in line
         ]
     )
+
+
+def test_counter():
+    @traced
+    async def foo():
+        pass
+
+    @traced
+    async def bar():
+        pass
+
+    async def call_foo(num):
+        await asyncio.gather(*[foo() for _ in range(num)])
+
+    async def call_bar(num):
+        await asyncio.gather(*[bar() for _ in range(num)])
+
+    async def run():
+        await call_foo(10)
+        await call_foo(10)
+        await call_bar(10)
+
+    traced_counter.set(Counter())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+    counter = traced_counter.get()
+    assert isinstance(counter, Counter)
+    counts = counter.counts()
+    assert counts["foo"] == 20
+    assert counts["bar"] == 10

@@ -54,8 +54,8 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
 
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencies.forEach(({asset}) => {
-      const upstreamAssetKeyJson = JSON.stringify(asset.assetKey.path);
+    definition.dependencyKeys.forEach(({path}) => {
+      const upstreamAssetKeyJson = JSON.stringify(path);
       data.downstream[upstreamAssetKeyJson] = {
         ...(data.downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: true,
@@ -85,7 +85,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencies: []},
+        definition: {...assetNode, dependencyKeys: []},
         hidden: false,
       },
     },
@@ -100,7 +100,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: []},
+      definition: {...asset, dependencyKeys: []},
       hidden: false,
     };
   }
@@ -110,7 +110,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencies: []},
+      definition: {...asset, dependencyKeys: []},
       hidden: false,
     };
   }

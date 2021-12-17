@@ -168,6 +168,45 @@ class TestRunVariantTermination(
             )
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
+    def test_force_termination(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {"solids": {"loop": {"config": {"file": path}}}},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # just test existence
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            assert run_id
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                RUN_CANCELLATION_QUERY,
+                variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
+            )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
+
+            instance = graphql_context.instance
+            run = instance.get_run_by_id(run_id)
+            assert run.status == PipelineRunStatus.CANCELED
+
     def test_run_not_found(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": "nope"}

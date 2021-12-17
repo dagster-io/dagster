@@ -211,7 +211,7 @@ def repository(
             def __init__(self, yaml_directory):
                 self._yaml_directory = yaml_directory
 
-            def get_all_jobs(self):
+            def get_all_pipelines(self):
                 return [
                     self._construct_job_def_from_yaml_file(
                       self._yaml_file_for_job_name(file_name)

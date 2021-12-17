@@ -78,7 +78,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
+export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
   job,
   repoAddress,
 }) => {
@@ -288,7 +288,7 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
+export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
     if (run.stats.__typename === 'RunStatsSnapshot') {
       return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
@@ -426,7 +426,7 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   );
 };
 
-const RUN_METADATA_FRAGMENT = gql`
+export const RUN_METADATA_FRAGMENT = gql`
   fragment RunMetadataFragment on PipelineRun {
     id
     status
@@ -450,7 +450,6 @@ const JOB_METADATA_QUERY = gql`
         name
         schedules {
           id
-          cronSchedule
           mode
           ...ScheduleSwitchFragment
         }

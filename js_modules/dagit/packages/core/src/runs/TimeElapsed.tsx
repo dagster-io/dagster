@@ -44,9 +44,9 @@ export const TimeElapsed = (props: Props) => {
 
   return (
     <Group direction="row" spacing={4} alignItems="center">
-      <IconWIP name="schedule" color={ColorsWIP.Gray400} />
+      <IconWIP name="timer" color={ColorsWIP.Gray400} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
-        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : ''}
+        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : '–'}
       </span>
     </Group>
   );

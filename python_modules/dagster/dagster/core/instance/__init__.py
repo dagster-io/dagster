@@ -3,12 +3,13 @@ import logging
 import logging.config
 import os
 import sys
-import tempfile
 import time
 import warnings
 import weakref
 from collections import defaultdict
+from contextlib import ExitStack
 from enum import Enum
+from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,7 +17,9 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -51,6 +54,7 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
+from dagster.utils import traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -83,6 +87,7 @@ if TYPE_CHECKING:
     from dagster.core.launcher import RunLauncher
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.debug import DebugRunPayload
+    from dagster.core.events.log import EventLogEntry
 
 
 def _check_run_equality(
@@ -230,7 +235,8 @@ class DagsterInstance:
             boundaries.
     """
 
-    _PROCESS_TEMPDIR = None
+    _PROCESS_TEMPDIR: Optional[TemporaryDirectory] = None
+    _EXIT_STACK = None
 
     def __init__(
         self,
@@ -458,9 +464,15 @@ class DagsterInstance:
 
     @staticmethod
     def temp_storage() -> str:
+        from dagster.core.test_utils import environ
+
         if DagsterInstance._PROCESS_TEMPDIR is None:
-            DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
-        return DagsterInstance._PROCESS_TEMPDIR.name
+            DagsterInstance._EXIT_STACK = ExitStack()
+            DagsterInstance._EXIT_STACK.enter_context(
+                environ({"DAGSTER_TELEMETRY_DISABLED": "yes"})
+            )
+            DagsterInstance._PROCESS_TEMPDIR = TemporaryDirectory()
+        return cast(TemporaryDirectory, DagsterInstance._PROCESS_TEMPDIR).name
 
     def _info(self, component):
         # ConfigurableClass may not have inst_data if it's a direct instantiation
@@ -660,19 +672,23 @@ class DagsterInstance:
         self._compute_log_manager.dispose()
 
     # run storage
-
+    @traced
     def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
         return self._run_storage.get_run_by_id(run_id)
 
+    @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
         return self._run_storage.get_pipeline_snapshot(snapshot_id)
 
+    @traced
     def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
+    @traced
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_snapshot(snapshot_id)
 
+    @traced
     def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
         from dagster.core.host_representation import HistoricalPipeline
 
@@ -684,21 +700,27 @@ class DagsterInstance:
         )
         return HistoricalPipeline(snapshot, snapshot_id, parent_snapshot)
 
+    @traced
     def has_historical_pipeline(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
+    @traced
     def get_execution_plan_snapshot(self, snapshot_id: str) -> "ExecutionPlanSnapshot":
         return self._run_storage.get_execution_plan_snapshot(snapshot_id)
 
+    @traced
     def get_run_stats(self, run_id: str) -> PipelineRunStatsSnapshot:
         return self._event_storage.get_stats_for_run(run_id)
 
+    @traced
     def get_run_step_stats(self, run_id, step_keys=None) -> List["RunStepKeyStatsSnapshot"]:
         return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
+    @traced
     def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         return self._run_storage.get_run_tags()
 
+    @traced
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         return self._run_storage.get_run_group(run_id)
 
@@ -1025,34 +1047,43 @@ class DagsterInstance:
         except DagsterRunAlreadyExists:
             return get_run()
 
+    @traced
     def add_run(self, pipeline_run: PipelineRun):
         return self._run_storage.add_run(pipeline_run)
 
+    @traced
     def add_snapshot(self, snapshot, snapshot_id=None):
         return self._run_storage.add_snapshot(snapshot, snapshot_id)
 
+    @traced
     def handle_run_event(self, run_id: str, event: "DagsterEvent"):
         return self._run_storage.handle_run_event(run_id, event)
 
+    @traced
     def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
         return self._run_storage.add_run_tags(run_id, new_tags)
 
+    @traced
     def has_run(self, run_id: str) -> bool:
         return self._run_storage.has_run(run_id)
 
+    @traced
     def get_runs(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Iterable[PipelineRun]:
         return self._run_storage.get_runs(filters, cursor, limit)
 
+    @traced
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
+    @traced
     def get_run_groups(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
+    @traced
     def get_run_records(
         self,
         filters: PipelineRunsFilter = None,
@@ -1078,12 +1109,13 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
+    @traced
     def delete_run(self, run_id: str):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
 
     # event storage
-
+    @traced
     def logs_after(
         self,
         run_id,
@@ -1098,6 +1130,7 @@ class DagsterInstance:
             limit=limit,
         )
 
+    @traced
     def all_logs(self, run_id, of_type: "DagsterEventType" = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
@@ -1109,15 +1142,25 @@ class DagsterInstance:
 
     # asset storage
 
+    @traced
     def all_asset_keys(self):
         return self._event_storage.all_asset_keys()
 
+    @traced
     def get_asset_keys(self, prefix=None, limit=None, cursor=None):
         return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
+    @traced
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
 
+    @traced
+    def get_latest_materialization_events(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
+        return self._event_storage.get_latest_materialization_events(asset_keys)
+
+    @traced
     def get_event_records(
         self,
         event_records_filter: Optional["EventRecordsFilter"] = None,
@@ -1138,6 +1181,7 @@ class DagsterInstance:
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
+    @traced
     def events_for_asset_key(
         self,
         asset_key,
@@ -1181,6 +1225,7 @@ records = instance.get_event_records(
             cursor=cursor,
         )
 
+    @traced
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
@@ -1191,6 +1236,7 @@ records = instance.get_event_records(
     def get_asset_tags(self, asset_key):  # pylint: disable=unused-argument
         return {}
 
+    @traced
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
@@ -1735,6 +1781,8 @@ records = instance.get_event_records(
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.dispose()
+        if DagsterInstance._EXIT_STACK:
+            DagsterInstance._EXIT_STACK.close()
 
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """
