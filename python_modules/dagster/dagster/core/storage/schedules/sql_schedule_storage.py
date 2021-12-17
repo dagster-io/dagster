@@ -8,8 +8,8 @@ from dagster.core.scheduler.job import (
     InstigationState,
     InstigationTick,
     InstigationTickData,
+    InstigationTickStatsSnapshot,
     InstigationTickStatus,
-    JobTickStatsSnapshot,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -238,7 +238,7 @@ class SqlScheduleStorage(ScheduleStorage):
         for status, count in rows:
             counts[status] = count
 
-        return JobTickStatsSnapshot(
+        return InstigationTickStatsSnapshot(
             ticks_started=counts.get(InstigationTickStatus.STARTED.value, 0),
             ticks_succeeded=counts.get(InstigationTickStatus.SUCCESS.value, 0),
             ticks_skipped=counts.get(InstigationTickStatus.SKIPPED.value, 0),

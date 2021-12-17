@@ -354,9 +354,9 @@ def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_rea
         )
 
 
-class JobTickStatsSnapshot(
+class InstigationTickStatsSnapshot(
     namedtuple(
-        "JobTickStatsSnapshot",
+        "InstigationTickStatsSnapshot",
         ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
     )
 ):
@@ -367,7 +367,7 @@ class JobTickStatsSnapshot(
         ticks_skipped,
         ticks_failed,
     ):
-        return super(JobTickStatsSnapshot, cls).__new__(
+        return super(InstigationTickStatsSnapshot, cls).__new__(
             cls,
             ticks_started=check.int_param(ticks_started, "ticks_started"),
             ticks_succeeded=check.int_param(ticks_succeeded, "ticks_succeeded"),
