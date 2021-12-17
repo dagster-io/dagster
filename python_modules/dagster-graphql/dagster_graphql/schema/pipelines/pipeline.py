@@ -617,7 +617,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         asset_keys = set(
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
-        matching = [node for node in asset_nodes if not key_filter or node.asset_key in asset_keys]
+        matching = [node for node in asset_nodes if not asset_keys or node.asset_key in asset_keys]
         if not matching:
             return []
 
