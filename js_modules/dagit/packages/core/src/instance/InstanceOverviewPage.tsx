@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import {RUN_METADATA_FRAGMENT, ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
+import {RunStatusPezList} from '../runs/RunStatusPez';
 import {
   failedStatuses,
   inProgressStatuses,
@@ -39,7 +40,9 @@ import {RepoAddress} from '../workspace/types';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceOverviewInitialQuery} from './types/InstanceOverviewInitialQuery';
+import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
+import {RunStatusFragment} from './types/RunStatusFragment';
 
 export const InstanceOverviewPage = () => {
   const {flagInstanceOverview} = useFeatureFlags();
@@ -72,9 +75,17 @@ const intent = (status: RunStatus) => {
   }
 };
 
+const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
+  return `${jobName}-${repoAddressAsString(repoAddress)}`;
+};
+
 type JobItem = {
   job: OverviewJobFragment;
   repoAddress: RepoAddress;
+};
+
+type JobItemWithRuns = JobItem & {
+  runs: RunStatusFragment[];
 };
 
 type State = {
@@ -108,8 +119,15 @@ const OverviewContent = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {options} = useRepositoryOptions();
   const {data, loading} = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY);
+  const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
+    LAST_TEN_RUNS_PER_JOB_QUERY,
+  );
 
   const {hiddenRepos, searchValue} = state;
+
+  React.useEffect(() => {
+    retrieveLastTenRuns();
+  }, [retrieveLastTenRuns]);
 
   const optionAddresses = React.useMemo(() => {
     if (!options) {
@@ -211,6 +229,52 @@ const OverviewContent = () => {
     };
   }, [bucketed, hiddenRepos, searchValue]);
 
+  const lastTenRunsFlattened = React.useMemo(() => {
+    if (!lastTenRunsData) {
+      return null;
+    }
+
+    const flattened = {};
+    if (lastTenRunsData && lastTenRunsData?.workspaceOrError.__typename === 'Workspace') {
+      for (const locationEntry of lastTenRunsData.workspaceOrError.locationEntries) {
+        if (
+          locationEntry.__typename === 'WorkspaceLocationEntry' &&
+          locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
+        ) {
+          for (const repository of locationEntry.locationOrLoadError.repositories) {
+            for (const pipeline of repository.pipelines) {
+              const jobKey = makeJobKey(
+                buildRepoAddress(repository.name, locationEntry.locationOrLoadError.name),
+                pipeline.name,
+              );
+              flattened[jobKey] = pipeline.runs;
+            }
+          }
+        }
+      }
+    }
+
+    return flattened;
+  }, [lastTenRunsData]);
+
+  const filteredJobsWithRuns = React.useMemo(() => {
+    const appendRuns = (jobItem: JobItem) => {
+      const {job, repoAddress} = jobItem;
+      const jobKey = makeJobKey(repoAddress, job.name);
+      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] : [];
+      return {...jobItem, runs: [...matchingRuns].reverse()};
+    };
+
+    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+    return {
+      failed: failed.map(appendRuns),
+      inProgress: inProgress.map(appendRuns),
+      queued: queued.map(appendRuns),
+      succeeded: succeeded.map(appendRuns),
+      neverRan: neverRan.map(appendRuns),
+    };
+  }, [lastTenRunsFlattened, filteredJobs]);
+
   if (loading) {
     return (
       <Box padding={64}>
@@ -258,7 +322,7 @@ const OverviewContent = () => {
     return null;
   };
 
-  const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+  const {failed, inProgress, queued, succeeded, neverRan} = filteredJobsWithRuns;
 
   return (
     <>
@@ -321,7 +385,7 @@ const OverviewContent = () => {
 interface JobSectionProps {
   icon: React.ReactNode;
   heading: React.ReactNode;
-  jobs: JobItem[];
+  jobs: JobItemWithRuns[];
 }
 
 const JobSection = (props: JobSectionProps) => {
@@ -346,46 +410,62 @@ const JobSection = (props: JobSectionProps) => {
           </tr>
         </thead>
         <tbody>
-          {jobs.map(({job, repoAddress}) => (
-            <tr key={`${job.name}-${repoAddressAsString(repoAddress)}`}>
-              <td>
-                <Box flex={{direction: 'column', gap: 4}}>
-                  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                    <PipelineReference
-                      pipelineName={job.name}
-                      isJob={job.isJob}
-                      pipelineHrefContext={repoAddress}
-                    />
-                    {!job.isJob ? <LegacyPipelineTag /> : null}
-                  </Box>
-                  <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                    {repoAddressAsString(repoAddress)}
-                  </Body>
-                </Box>
-              </td>
-              <td>
-                {job.schedules.length || job.sensors.length ? (
-                  <ScheduleOrSensorTag job={job} repoAddress={repoAddress} />
-                ) : (
-                  <div style={{color: ColorsWIP.Gray500}}>None</div>
-                )}
-              </td>
-              <td>
-                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                  <TagWIP intent={intent(job.runs[0].status)}>
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                      <RunStatusIndicator status={job.runs[0].status} size={10} />
-                      <RunTime run={job.runs[0]} />
+          {jobs.map(({job, repoAddress, runs}) => {
+            const jobKey = makeJobKey(repoAddress, job.name);
+            return (
+              <tr key={jobKey}>
+                <td>
+                  <Box
+                    flex={{
+                      direction: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Box flex={{direction: 'column', gap: 4}}>
+                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                        <PipelineReference
+                          pipelineName={job.name}
+                          isJob={job.isJob}
+                          pipelineHrefContext={repoAddress}
+                        />
+                        {!job.isJob ? <LegacyPipelineTag /> : null}
+                      </Box>
+                      <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
+                        {repoAddressAsString(repoAddress)}
+                      </Body>
                     </Box>
-                  </TagWIP>
-                  <RunElapsed run={job.runs[0]} />
-                </Box>
-              </td>
-              <td>
-                <ButtonWIP icon={<IconWIP name="expand_more" />} />
-              </td>
-            </tr>
-          ))}
+                    {runs ? (
+                      <Box margin={{top: 4}}>
+                        <RunStatusPezList fade runs={runs} />
+                      </Box>
+                    ) : null}
+                  </Box>
+                </td>
+                <td>
+                  {job.schedules.length || job.sensors.length ? (
+                    <ScheduleOrSensorTag job={job} repoAddress={repoAddress} />
+                  ) : (
+                    <div style={{color: ColorsWIP.Gray500}}>None</div>
+                  )}
+                </td>
+                <td>
+                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                    <TagWIP intent={intent(job.runs[0].status)}>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                        <RunStatusIndicator status={job.runs[0].status} size={10} />
+                        <RunTime run={job.runs[0]} />
+                      </Box>
+                    </TagWIP>
+                    <RunElapsed run={job.runs[0]} />
+                  </Box>
+                </td>
+                <td>
+                  <ButtonWIP icon={<IconWIP name="expand_more" />} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </Table>
     </>
@@ -404,12 +484,10 @@ const OVERVIEW_JOB_FRAGMENT = gql`
       status
       ...RunMetadataFragment
       ...RunTimeFragment
-      __typename
     }
     modes {
       id
       name
-      __typename
     }
     schedules {
       id
@@ -418,10 +496,8 @@ const OVERVIEW_JOB_FRAGMENT = gql`
       scheduleState {
         id
         status
-        __typename
       }
       ...ScheduleSwitchFragment
-      __typename
     }
     sensors {
       id
@@ -429,17 +505,13 @@ const OVERVIEW_JOB_FRAGMENT = gql`
       targets {
         mode
         pipelineName
-        __typename
       }
       sensorState {
         id
         status
-        __typename
       }
       ...SensorSwitchFragment
-      __typename
     }
-    __typename
   }
 
   ${SCHEDULE_SWITCH_FRAGMENT}
@@ -451,17 +523,14 @@ const OVERVIEW_JOB_FRAGMENT = gql`
 const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
   query InstanceOverviewInitialQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
         locationEntries {
-          __typename
           id
           name
           loadStatus
           displayMetadata {
             key
             value
-            __typename
           }
           locationOrLoadError {
             ... on RepositoryLocation {
@@ -473,21 +542,15 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                 pipelines {
                   id
                   ...OverviewJobFragment
-                  __typename
                 }
                 ...RepositoryInfoFragment
-                __typename
               }
-              __typename
             }
             ... on PythonError {
               ...PythonErrorFragment
-              __typename
             }
-            __typename
           }
         }
-        __typename
       }
       ...PythonErrorFragment
     }
@@ -495,5 +558,48 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
 
   ${OVERVIEW_JOB_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
+  query LastTenRunsPerJobQuery {
+    workspaceOrError {
+      ... on Workspace {
+        locationEntries {
+          id
+          locationOrLoadError {
+            ... on RepositoryLocation {
+              id
+              name
+              repositories {
+                id
+                name
+                pipelines {
+                  id
+                  name
+                  isJob
+                  runs(limit: 10) {
+                    id
+                    ...RunStatusFragment
+                  }
+                }
+              }
+            }
+            ... on PythonError {
+              ...PythonErrorFragment
+            }
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment RunStatusFragment on Run {
+    id
+    runId
+    status
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
