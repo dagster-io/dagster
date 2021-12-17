@@ -12,8 +12,8 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import (
     InstigationStatus,
+    InstigationTickData,
     InstigationTickStatus,
-    JobTickData,
     SensorInstigationData,
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -217,7 +217,7 @@ def execute_sensor_iteration(
                 continue
 
             tick = instance.create_job_tick(
-                JobTickData(
+                InstigationTickData(
                     job_origin_id=job_state.job_origin_id,
                     job_name=job_state.job_name,
                     job_type=JobType.SENSOR,

@@ -3,7 +3,12 @@ from typing import Iterable
 
 from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import InstigationState, InstigationTickStatus, JobTick, JobTickData
+from dagster.core.scheduler.job import (
+    InstigationState,
+    InstigationTickData,
+    InstigationTickStatus,
+    JobTick,
+)
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -75,11 +80,11 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data: JobTickData):
+    def create_job_tick(self, job_tick_data: InstigationTickData):
         """Add a job tick to storage.
 
         Args:
-            job_tick_data (JobTickData): The job tick to add
+            job_tick_data (InstigationTickData): The job tick to add
         """
 
     @abc.abstractmethod

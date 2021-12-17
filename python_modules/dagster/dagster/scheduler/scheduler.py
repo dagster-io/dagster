@@ -11,8 +11,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import (
     InstigationState,
     InstigationStatus,
+    InstigationTickData,
     InstigationTickStatus,
-    JobTickData,
     JobType,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
@@ -243,7 +243,7 @@ def launch_scheduled_runs_for_schedule(
                 )
         else:
             tick = instance.create_job_tick(
-                JobTickData(
+                InstigationTickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,
                     job_type=JobType.SCHEDULE,

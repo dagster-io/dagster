@@ -6,9 +6,9 @@ from dagster.core.definitions.run_request import JobType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.job import (
     InstigationState,
+    InstigationTickData,
     InstigationTickStatus,
     JobTick,
-    JobTickData,
     JobTickStatsSnapshot,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -169,7 +169,7 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
     def create_job_tick(self, job_tick_data):
-        check.inst_param(job_tick_data, "job_tick_data", JobTickData)
+        check.inst_param(job_tick_data, "job_tick_data", InstigationTickData)
 
         with self.connect() as conn:
             try:
