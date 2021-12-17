@@ -5,16 +5,16 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 from abc import ABC, abstractmethod
-from datetime import datetime
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from datetime import datetime
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
-    PartitionsDefinition,
     PartitionSetDefinition,
+    PartitionsDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
@@ -23,10 +23,10 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
-from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType, Partition
+from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -627,21 +627,23 @@ def external_asset_graph_from_defs(
 
         # temporary workaround to retrieve asset definition from job
         output = node_def.output_dict.get("result", None)
-
         partitions_def_data = None
-        if output._asset_partitions_def:
-            if isinstance(output._asset_partitions_def, TimeWindowPartitionsDefinition):
-                partitions_def_data = external_time_window_partitions_definition_from_def(
-                    output._asset_partitions_def
-                )
-            elif isinstance(output._asset_partitions_def, StaticPartitionsDefinition):
-                partitions_def_data = external_static_partitions_definition_from_def(
-                    output._asset_partitions_def
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    "Only static partition and time window partitions are currently supported."
-                )
+
+        if output and output._asset_partitions_def:
+            partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
+            if partitions_def:
+                if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                    partitions_def_data = external_time_window_partitions_definition_from_def(
+                        partitions_def
+                    )
+                elif isinstance(output._asset_partitions_def, StaticPartitionsDefinition):
+                    partitions_def_data = external_static_partitions_definition_from_def(
+                        partitions_def
+                    )
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        "Only static partition and time window partitions are currently supported."
+                    )
 
         asset_nodes.append(
             ExternalAssetNode(

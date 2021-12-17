@@ -1,5 +1,6 @@
 from collections import namedtuple
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -9,7 +10,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
 
 from dagster import check
@@ -399,7 +399,7 @@ class Out(
             metadata=output_def.metadata,
             asset_key=output_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
-            asset_partitions_def=output_def._asset_partitions_def,
+            asset_partitions_def=output_def._asset_partitions_def,  # pylint: disable=protected-access
         )
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":

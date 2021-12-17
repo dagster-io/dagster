@@ -1,7 +1,5 @@
 import graphene
 from dagster import AssetKey, check
-from dagster.core.definitions.partition import StaticPartitionsDefinition
-from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
