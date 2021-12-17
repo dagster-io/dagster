@@ -46,7 +46,7 @@ export const TimeElapsed = (props: Props) => {
     <Group direction="row" spacing={4} alignItems="center">
       <IconWIP name="timer" color={ColorsWIP.Gray400} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
-        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : ''}
+        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : '–'}
       </span>
     </Group>
   );
