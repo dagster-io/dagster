@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, RepositorySelector, RunStatus } from "./../../../types/globalTypes";
+import { PipelineSelector, RepositorySelector, AssetKeyInput, RunStatus } from "./../../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphLiveQuery
@@ -209,4 +209,5 @@ export interface AssetGraphLiveQuery {
 export interface AssetGraphLiveQueryVariables {
   pipelineSelector: PipelineSelector;
   repositorySelector: RepositorySelector;
+  assetKeys?: AssetKeyInput[] | null;
 }

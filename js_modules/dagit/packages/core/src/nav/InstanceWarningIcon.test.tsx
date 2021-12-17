@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
@@ -10,7 +9,7 @@ import {InstanceWarningIcon} from './InstanceWarningIcon';
 describe('InstanceWarningIcon', () => {
   const defaultMocks = {
     DaemonHealth: () => ({
-      allDaemonStatuses: () => new MockList(3),
+      allDaemonStatuses: () => [...new Array(3)],
     }),
   };
 
@@ -54,9 +53,9 @@ describe('InstanceWarningIcon', () => {
       const scheduleErrorMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
-            {daemonType: () => 'SCHEDULER', healthy: () => false, required: () => true},
-            {daemonType: () => 'SENSOR', healthy: () => true, required: () => true},
-            {daemonType: () => 'OTHER', healthy: () => true, required: () => true},
+            {daemonType: 'SCHEDULER', healthy: false, required: true},
+            {daemonType: 'SENSOR', healthy: true, required: true},
+            {daemonType: 'OTHER', healthy: true, required: true},
           ],
         }),
       };
@@ -79,7 +78,7 @@ describe('InstanceWarningIcon', () => {
         const pipelineMocks = {
           Pipeline: () => ({
             sensors: () => [],
-            schedules: () => [1],
+            schedules: () => [...new Array(1)],
           }),
         };
 
@@ -94,9 +93,9 @@ describe('InstanceWarningIcon', () => {
       const sensorErrorMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
-            {daemonType: () => 'SCHEDULER', healthy: () => true, required: () => true},
-            {daemonType: () => 'SENSOR', healthy: () => false, required: () => true},
-            {daemonType: () => 'OTHER', healthy: () => true, required: () => true},
+            {daemonType: 'SCHEDULER', healthy: true, required: true},
+            {daemonType: 'SENSOR', healthy: false, required: true},
+            {daemonType: 'OTHER', healthy: true, required: true},
           ],
         }),
       };
@@ -118,7 +117,7 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are sensors, and only a sensor error', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [1],
+            sensors: () => [...new Array(1)],
             schedules: () => [],
           }),
         };
@@ -134,9 +133,9 @@ describe('InstanceWarningIcon', () => {
       const errorMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
-            {daemonType: () => 'SCHEDULER', healthy: () => false, required: () => true},
-            {daemonType: () => 'SENSOR', healthy: () => false, required: () => true},
-            {daemonType: () => 'OTHER', healthy: () => true, required: () => true},
+            {daemonType: 'SCHEDULER', healthy: false, required: true},
+            {daemonType: 'SENSOR', healthy: false, required: true},
+            {daemonType: 'OTHER', healthy: true, required: true},
           ],
         }),
       };
@@ -158,7 +157,7 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are sensors, and only (both) sensor/schedule errors', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [1],
+            sensors: () => [...new Array(1)],
             schedules: () => [],
           }),
         };
@@ -173,7 +172,7 @@ describe('InstanceWarningIcon', () => {
         const pipelineMocks = {
           Pipeline: () => ({
             sensors: () => [],
-            schedules: () => [1],
+            schedules: () => [...new Array(1)],
           }),
         };
 
@@ -186,8 +185,8 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are schedules and sensors, and only (both) sensor/schedule errors', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [1],
-            schedules: () => [1],
+            sensors: () => [...new Array(1)],
+            schedules: () => [...new Array(1)],
           }),
         };
 
@@ -202,9 +201,9 @@ describe('InstanceWarningIcon', () => {
       const otherErrorMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
-            {daemonType: () => 'SCHEDULER', healthy: () => true, required: () => true},
-            {daemonType: () => 'SENSOR', healthy: () => true, required: () => true},
-            {daemonType: () => 'OTHER', healthy: () => false, required: () => true},
+            {daemonType: 'SCHEDULER', healthy: true, required: true},
+            {daemonType: 'SENSOR', healthy: true, required: true},
+            {daemonType: 'OTHER', healthy: false, required: true},
           ],
         }),
       };

@@ -65,21 +65,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
-    ASSETS_GRAPH_LIVE_QUERY,
-    {
-      variables: {pipelineSelector, repositorySelector},
-      notifyOnNetworkStatusChange: true,
-      pollInterval: 5 * 1000,
-    },
-  );
-
-  useDocumentTitle('Assets');
-  useDidLaunchEvent(liveResult.refetch);
-
-  const graphData = React.useMemo(() => {
+  const {graphData, graphAssetKeys} = React.useMemo(() => {
     if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
-      return null;
+      return {graphAssetKeys: [], graphData: null};
     }
     const assetNodes = queryResult.data.pipelineOrError.assetNodes;
     const queryOps = filterByQuery(
@@ -89,9 +77,22 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     const queryAssetNodes = assetNodes.filter((a) =>
       queryOps.all.some((op) => op.name === a.opName),
     );
+    const graphData = buildGraphData(queryAssetNodes, explorerPath.pipelineName);
+    return {
+      graphAssetKeys: queryAssetNodes.map((n) => ({path: n.assetKey.path})),
+      graphData: graphData,
+    };
+  }, [queryResult.data, handles, explorerPath.pipelineName, explorerPath.opsQuery]);
 
-    return buildGraphData(queryAssetNodes, explorerPath.pipelineName);
-  }, [queryResult, handles, explorerPath.pipelineName, explorerPath.opsQuery]);
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      skip: graphAssetKeys.length === 0,
+      variables: {pipelineSelector, repositorySelector, assetKeys: graphAssetKeys},
+      notifyOnNetworkStatusChange: true,
+      pollInterval: 5 * 1000,
+    },
+  );
 
   const liveDataByNode = React.useMemo(() => {
     if (!liveResult.data || !graphData) {
@@ -107,10 +108,13 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     return buildLiveData(graphData, liveAssetNodes, inProgressRunsByStep);
   }, [graphData, liveResult]);
 
+  useDocumentTitle('Assets');
+  useDidLaunchEvent(liveResult.refetch);
+
   return (
     <Loading allowStaleData queryResult={queryResult}>
-      {({pipelineOrError}) => {
-        if (pipelineOrError.__typename !== 'Pipeline' || !graphData) {
+      {() => {
+        if (!graphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -331,6 +335,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery(
     $pipelineSelector: PipelineSelector!
     $repositorySelector: RepositorySelector!
+    $assetKeys: [AssetKeyInput!]
   ) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
@@ -345,7 +350,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
     pipelineOrError(params: $pipelineSelector) {
       ... on Pipeline {
         id
-        assetNodes(loadMaterializations: true) {
+        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
           id
           ...AssetNodeLiveFragment
         }
