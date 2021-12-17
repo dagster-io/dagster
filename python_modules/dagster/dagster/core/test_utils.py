@@ -20,7 +20,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
