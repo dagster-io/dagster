@@ -627,19 +627,19 @@ def external_asset_graph_from_defs(
 
         # temporary workaround to retrieve asset definition from job
         output = node_def.output_dict.get("result", None)
-        op_asset_def = (
-            output.metadata.get("asset_def", None) if output and output.metadata else None
-        )
+
+        # temporary workaround to retrieve asset definition from job
+        op_assets_def = output._assets_definition
 
         partitions_def_data = None
-        if op_asset_def and op_asset_def.partitions_def:
-            if isinstance(op_asset_def.partitions_def, TimeWindowPartitionsDefinition):
+        if op_assets_def and op_assets_def.partitions_def:
+            if isinstance(op_assets_def.partitions_def, TimeWindowPartitionsDefinition):
                 partitions_def_data = external_time_window_partitions_definition_from_def(
-                    op_asset_def.partitions_def
+                    op_assets_def.partitions_def
                 )
-            elif isinstance(op_asset_def.partitions_def, StaticPartitionsDefinition):
+            elif isinstance(op_assets_def.partitions_def, StaticPartitionsDefinition):
                 partitions_def_data = external_static_partitions_definition_from_def(
-                    op_asset_def.partitions_def
+                    op_assets_def.partitions_def
                 )
             else:
                 raise DagsterInvalidDefinitionError(

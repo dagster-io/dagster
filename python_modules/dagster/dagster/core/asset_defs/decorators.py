@@ -134,7 +134,7 @@ class _Asset:
             fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
-        metadata = dict(self.metadata or {})
+        metadata = self.metadata or {}
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
@@ -154,8 +154,7 @@ class _Asset:
         )(fn)
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
-
-        asset_def = AssetsDefinition(
+        assets_def = AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
@@ -171,9 +170,9 @@ class _Asset:
         )
 
         # temporary workaround to retrieve asset definition from job
-        metadata["asset_def"] = asset_def
+        op.output_defs[0]._assets_definition = assets_def
 
-        return asset_def
+        return assets_def
 
 
 @experimental_decorator

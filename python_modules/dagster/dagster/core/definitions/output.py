@@ -1,5 +1,16 @@
 from collections import namedtuple
-from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    NamedTuple,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    TYPE_CHECKING,
+)
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -10,6 +21,9 @@ from dagster.utils.backcompat import experimental_arg_warning
 from .inference import InferredOutputProps
 from .input import NoValueSentinel
 from .utils import DEFAULT_OUTPUT, check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetsDefinition
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
 
@@ -60,8 +74,11 @@ class OutputDefinition:
         metadata=None,
         asset_key=None,
         asset_partitions=None,
+        assets_definition=None
         # make sure new parameters are updated in combine_with_inferred below
     ):
+        from dagster.core.asset_defs import AssetsDefinition
+
         self._name = (
             check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
             if name is not NoNameSentinel
@@ -99,6 +116,12 @@ class OutputDefinition:
             self._asset_partitions_fn = lambda _: asset_partitions
         else:
             self._asset_partitions_fn = None
+
+        if assets_definition:
+            experimental_arg_warning("assets_definition", "OutputDefinition.__init__")
+        self._assets_definition = check.opt_inst_param(
+            assets_definition, "assets_definition", AssetsDefinition
+        )
 
     @property
     def name(self):
@@ -212,6 +235,7 @@ class OutputDefinition:
             metadata=self._metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
+            assets_definition=self._assets_definition,
         )
 
 
@@ -305,6 +329,7 @@ class Out(
             ("metadata", Optional[Dict[str, Any]]),
             ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
             ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
+            ("assets_definition", Optional["AssetsDefinition"]),
         ],
     )
 ):
@@ -347,8 +372,11 @@ class Out(
         metadata=None,
         asset_key=None,
         asset_partitions=None,
+        assets_definition=None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
+        if assets_definition:
+            experimental_arg_warning("assets_definition", "Out.__new__")
         return super(Out, cls).__new__(
             cls,
             dagster_type=dagster_type,
@@ -358,6 +386,7 @@ class Out(
             metadata=metadata,
             asset_key=asset_key,
             asset_partitions=asset_partitions,
+            assets_definition=assets_definition,
         )
 
     @staticmethod
@@ -370,6 +399,7 @@ class Out(
             metadata=output_def.metadata,
             asset_key=output_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
+            assets_definition=output_def._assets_definition,
         )
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
@@ -386,6 +416,7 @@ class Out(
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
+            assets_definition=self.assets_definition,
         )
 
 
