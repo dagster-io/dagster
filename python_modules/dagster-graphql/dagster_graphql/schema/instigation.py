@@ -11,7 +11,7 @@ from dagster.core.scheduler.job import (
     JobState,
     JobTick,
     JobType,
-    ScheduleJobData,
+    ScheduleInstigationData,
     SensorInstigationData,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -76,7 +76,7 @@ class GrapheneScheduleData(graphene.ObjectType):
         name = "ScheduleData"
 
     def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleJobData)
+        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigationData)
         super().__init__(
             cronSchedule=job_specific_data.cron_schedule,
             startTimestamp=job_specific_data.start_timestamp,

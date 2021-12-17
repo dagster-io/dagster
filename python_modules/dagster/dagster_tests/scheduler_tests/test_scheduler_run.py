@@ -39,7 +39,7 @@ from dagster.core.scheduler.job import (
     JobTickData,
     JobTickStatus,
     JobType,
-    ScheduleJobData,
+    ScheduleInstigationData,
 )
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -1262,7 +1262,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 unloadable_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
             )
@@ -1419,7 +1419,7 @@ def test_bad_load_repository(external_repo_context, capfd):
                 invalid_repo_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
             )
@@ -1468,7 +1468,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
                 invalid_repo_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
             )
@@ -1507,7 +1507,7 @@ def test_bad_load_repository_location(capfd):
                 fake_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
             )

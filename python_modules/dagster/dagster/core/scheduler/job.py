@@ -40,9 +40,11 @@ register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigationData})
 
 
 @whitelist_for_serdes
-class ScheduleJobData(namedtuple("_ScheduleJobData", "cron_schedule start_timestamp scheduler")):
+class ScheduleInstigationData(
+    namedtuple("_ScheduleInstigationData", "cron_schedule start_timestamp scheduler")
+):
     def __new__(cls, cron_schedule, start_timestamp=None, scheduler=None):
-        return super(ScheduleJobData, cls).__new__(
+        return super(ScheduleInstigationData, cls).__new__(
             cls,
             check.str_param(cron_schedule, "cron_schedule"),
             # Time in UTC at which the user started running the schedule (distinct from
@@ -53,10 +55,13 @@ class ScheduleJobData(namedtuple("_ScheduleJobData", "cron_schedule start_timest
         )
 
 
+register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigationData})
+
+
 def check_job_data(job_type, job_specific_data):
     check.inst_param(job_type, "job_type", JobType)
     if job_type == JobType.SCHEDULE:
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleJobData)
+        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigationData)
     elif job_type == JobType.SENSOR:
         check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigationData)
     else:

@@ -6,7 +6,7 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.job import InstigationStatus, JobState, JobType, ScheduleJobData
+from dagster.core.scheduler.job import InstigationStatus, JobState, JobType, ScheduleInstigationData
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -374,7 +374,7 @@ def test_get_unloadable_job(graphql_context):
                 _get_unloadable_schedule_origin("unloadable_running"),
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
                     graphql_context.instance.scheduler.__class__.__name__,
@@ -387,7 +387,7 @@ def test_get_unloadable_job(graphql_context):
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 JobType.SCHEDULE,
                 InstigationStatus.STOPPED,
-                ScheduleJobData(
+                ScheduleInstigationData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
                     graphql_context.instance.scheduler.__class__.__name__,

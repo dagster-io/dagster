@@ -503,13 +503,13 @@ class ExternalSchedule:
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
     def get_default_instigation_state(self, instance):
-        from dagster.core.scheduler.job import JobState, InstigationStatus, ScheduleJobData
+        from dagster.core.scheduler.job import JobState, InstigationStatus, ScheduleInstigationData
 
         return JobState(
             self.get_external_origin(),
             JobType.SCHEDULE,
             InstigationStatus.STOPPED,
-            ScheduleJobData(
+            ScheduleInstigationData(
                 self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
             ),
         )
