@@ -13,7 +13,7 @@ from dagster.core.scheduler.job import (
     InstigationStatus,
     InstigationTickData,
     InstigationTickStatus,
-    JobType,
+    InstigationType,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -101,7 +101,7 @@ def launch_scheduled_runs(
 
     schedules = [
         s
-        for s in instance.all_stored_job_state(job_type=JobType.SCHEDULE)
+        for s in instance.all_stored_job_state(job_type=InstigationType.SCHEDULE)
         if s.status == InstigationStatus.RUNNING
     ]
 
@@ -246,7 +246,7 @@ def launch_scheduled_runs_for_schedule(
                 InstigationTickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,
-                    job_type=JobType.SCHEDULE,
+                    job_type=InstigationType.SCHEDULE,
                     status=InstigationTickStatus.STARTED,
                     timestamp=schedule_timestamp,
                 )

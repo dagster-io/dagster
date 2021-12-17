@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigationType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.job import InstigationState, InstigationStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -80,7 +80,9 @@ def stop_sensor(graphene_info, job_origin_id):
 def get_unloadable_sensor_states_or_error(graphene_info):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
-    sensor_states = graphene_info.context.instance.all_stored_job_state(job_type=JobType.SENSOR)
+    sensor_states = graphene_info.context.instance.all_stored_job_state(
+        job_type=InstigationType.SENSOR
+    )
     external_sensors = [
         sensor
         for repository_location in graphene_info.context.repository_locations

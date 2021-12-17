@@ -25,7 +25,7 @@ from ..storage.tags import check_tags
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import JobType, RunRequest, SkipReason
+from .run_request import InstigationType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -377,8 +377,8 @@ class ScheduleDefinition:
         return self._target.pipeline_name
 
     @property
-    def job_type(self) -> JobType:
-        return JobType.SCHEDULE
+    def job_type(self) -> InstigationType:
+        return InstigationType.SCHEDULE
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:

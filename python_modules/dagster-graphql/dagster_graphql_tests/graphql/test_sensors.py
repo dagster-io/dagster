@@ -1,5 +1,5 @@
 import pendulum
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigationType
 from dagster.core.scheduler.job import InstigationState, InstigationStatus
 from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
@@ -255,7 +255,7 @@ def test_sensor_next_ticks(graphql_context):
     # test default sensor with no tick
     graphql_context.instance.add_job_state(
         InstigationState(
-            external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+            external_sensor.get_external_origin(), InstigationType.SENSOR, InstigationStatus.RUNNING
         )
     )
     result = execute_dagster_graphql(
@@ -307,7 +307,7 @@ def test_sensor_tick_range(graphql_context):
     # turn the sensor on
     graphql_context.instance.add_job_state(
         InstigationState(
-            external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+            external_sensor.get_external_origin(), InstigationType.SENSOR, InstigationStatus.RUNNING
         )
     )
 

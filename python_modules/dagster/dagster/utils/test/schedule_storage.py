@@ -12,7 +12,7 @@ from dagster.core.scheduler.job import (
     InstigationStatus,
     InstigationTickData,
     InstigationTickStatus,
-    JobType,
+    InstigationType,
     ScheduleInstigationData,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -75,7 +75,7 @@ class TestScheduleStorage:
     ):
         return InstigationState(
             cls.fake_repo_target().get_job_origin(schedule_name),
-            JobType.SCHEDULE,
+            InstigationType.SCHEDULE,
             status,
             ScheduleInstigationData(cron_schedule, start_timestamp=None, scheduler=scheduler),
         )
@@ -83,7 +83,7 @@ class TestScheduleStorage:
     @classmethod
     def build_sensor(cls, sensor_name, status=InstigationStatus.STOPPED):
         external_job_origin = cls.fake_repo_target().get_job_origin(sensor_name)
-        return InstigationState(external_job_origin, JobType.SENSOR, status)
+        return InstigationState(external_job_origin, InstigationType.SENSOR, status)
 
     def test_basic_schedule_storage(self, storage):
         assert storage
@@ -92,7 +92,7 @@ class TestScheduleStorage:
         storage.add_job_state(schedule)
         schedules = storage.all_stored_job_state(
             self.fake_repo_target().get_id(),
-            JobType.SCHEDULE,
+            InstigationType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -113,7 +113,9 @@ class TestScheduleStorage:
         storage.add_job_state(schedule_2)
         storage.add_job_state(schedule_3)
 
-        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
+        schedules = storage.all_stored_job_state(
+            self.fake_repo_target().get_id(), InstigationType.SCHEDULE
+        )
         assert len(schedules) == 3
 
         assert any(s.job_name == "my_schedule" for s in schedules)
@@ -158,7 +160,9 @@ class TestScheduleStorage:
         )
         storage.update_job_state(new_schedule)
 
-        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
+        schedules = storage.all_stored_job_state(
+            self.fake_repo_target().get_id(), InstigationType.SCHEDULE
+        )
         assert len(schedules) == 1
 
         schedule = schedules[0]
@@ -174,7 +178,9 @@ class TestScheduleStorage:
         )
         storage.update_job_state(stopped_schedule)
 
-        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
+        schedules = storage.all_stored_job_state(
+            self.fake_repo_target().get_id(), InstigationType.SCHEDULE
+        )
         assert len(schedules) == 1
 
         schedule = schedules[0]
@@ -201,7 +207,9 @@ class TestScheduleStorage:
         storage.add_job_state(schedule)
         storage.delete_job_state(schedule.job_origin_id)
 
-        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
+        schedules = storage.all_stored_job_state(
+            self.fake_repo_target().get_id(), InstigationType.SCHEDULE
+        )
         assert len(schedules) == 0
 
     def test_delete_schedule_not_found(self, storage):
@@ -230,7 +238,7 @@ class TestScheduleStorage:
         return InstigationTickData(
             "my_schedule",
             "my_schedule",
-            JobType.SCHEDULE,
+            InstigationType.SCHEDULE,
             status,
             current_time,
             [run_id] if run_id else [],
@@ -465,7 +473,7 @@ class TestScheduleStorage:
         return InstigationTickData(
             "my_sensor",
             "my_sensor",
-            JobType.SENSOR,
+            InstigationType.SENSOR,
             status,
             current_time,
             [run_id] if run_id else [],

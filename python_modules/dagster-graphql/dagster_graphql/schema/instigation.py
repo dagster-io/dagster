@@ -10,7 +10,7 @@ from dagster.core.scheduler.job import (
     InstigationState,
     InstigationStatus,
     InstigationTick,
-    JobType,
+    InstigationType,
     ScheduleInstigationData,
     SensorInstigationData,
 )
@@ -152,7 +152,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
         if self._job_state.status != InstigationStatus.RUNNING:
             return None
 
-        if self._job_state.job_type != JobType.SCHEDULE:
+        if self._job_state.job_type != InstigationType.SCHEDULE:
             return None
 
         repository_origin = self._job_state.origin.external_repository_origin
@@ -291,10 +291,10 @@ class GrapheneInstigationState(graphene.ObjectType):
         if not self._job_state.job_specific_data:
             return None
 
-        if self._job_state.job_type == JobType.SENSOR:
+        if self._job_state.job_type == InstigationType.SENSOR:
             return GrapheneSensorData(self._job_state.job_specific_data)
 
-        if self._job_state.job_type == JobType.SCHEDULE:
+        if self._job_state.job_type == InstigationType.SCHEDULE:
             return GrapheneScheduleData(self._job_state.job_specific_data)
 
         return None
@@ -302,7 +302,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_runs(self, graphene_info, **kwargs):
         from .pipelines.pipeline import GrapheneRun
 
-        if self._job_state.job_type == JobType.SENSOR:
+        if self._job_state.job_type == InstigationType.SENSOR:
             filters = PipelineRunsFilter.for_sensor(self._job_state)
         else:
             filters = PipelineRunsFilter.for_schedule(self._job_state)
@@ -315,7 +315,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         ]
 
     def resolve_runsCount(self, graphene_info):
-        if self._job_state.job_type == JobType.SENSOR:
+        if self._job_state.job_type == InstigationType.SENSOR:
             filters = PipelineRunsFilter.for_sensor(self._job_state)
         else:
             filters = PipelineRunsFilter.for_schedule(self._job_state)
@@ -343,13 +343,13 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_nextTick(self, graphene_info):
         # sensor
-        if self._job_state.job_type == JobType.SENSOR:
+        if self._job_state.job_type == InstigationType.SENSOR:
             return get_sensor_next_tick(graphene_info, self._job_state)
         else:
             return get_schedule_next_tick(graphene_info, self._job_state)
 
     def resolve_runningCount(self, graphene_info):
-        if self._job_state.job_type == JobType.SENSOR:
+        if self._job_state.job_type == InstigationType.SENSOR:
             return 1 if self._job_state.status == InstigationStatus.RUNNING else 0
         else:
             return graphene_info.context.instance.running_schedule_count(
