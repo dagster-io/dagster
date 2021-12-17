@@ -41,7 +41,10 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 
     return GrapheneAssetConnection(
         nodes=[
-            GrapheneAsset(key=asset_key, definition=asset_nodes_by_asset_key.get(asset_key))
+            GrapheneAsset(
+                key=asset_key,
+                definition=asset_nodes_by_asset_key.get(asset_key),
+            )
             for asset_key in asset_keys
         ]
     )

@@ -350,7 +350,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
     pipelineOrError(params: $pipelineSelector) {
       ... on Pipeline {
         id
-        assetNodes(assetKeys: $assetKeys) {
+        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
           id
           ...AssetNodeLiveFragment
         }
