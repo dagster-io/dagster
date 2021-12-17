@@ -2,7 +2,11 @@ import graphene
 from dagster import AssetKey, check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.external_data import ExternalAssetNode
+from dagster.core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
+)
 
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -48,6 +52,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    partitionKeys = non_null_list(graphene.String)
 
     class Meta:
         name = "AssetNode"
@@ -153,6 +158,19 @@ class GrapheneAssetNode(graphene.ObjectType):
             for job_name in job_names
             if self._external_repository.has_external_pipeline(job_name)
         ]
+
+    def resolve_partitionKeys(self, _graphene_info):
+        # TODO: Add functionality for dynamic partitions definition
+        partitions_def_data = self._external_asset_node.partitions_def_data
+        if partitions_def_data:
+            if isinstance(
+                partitions_def_data, ExternalStaticPartitionsDefinitionData
+            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
+                return [
+                    partition.name
+                    for partition in partitions_def_data.get_partitions_definition().get_partitions()
+                ]
+        return []
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

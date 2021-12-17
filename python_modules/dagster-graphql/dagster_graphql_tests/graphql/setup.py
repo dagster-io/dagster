@@ -22,6 +22,7 @@ from dagster import (
     EventMetadataEntry,
     ExpectationResult,
     Field,
+    HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
     InputDefinition,
@@ -39,6 +40,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    StaticPartitionsDefinition,
     String,
     check,
     composite_solid,
@@ -1315,6 +1317,48 @@ def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argumen
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+
+@asset(partitions_def=static_partitions_def)
+def upstream_static_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
+def downstream_static_partitioned_asset(
+    upstream_static_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    assert upstream_static_partitioned_asset
+
+
+static_partitioned_assets_job = build_assets_job(
+    "static_partitioned_assets_job",
+    assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+)
+
+
+hourly_partition = HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
+
+
+@asset(partitions_def=hourly_partition)
+def upstream_time_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=hourly_partition)
+def downstream_time_partitioned_asset(
+    upstream_time_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    return upstream_time_partitioned_asset + 1
+
+
+time_partitioned_assets_job = build_assets_job(
+    "time_partitioned_assets_job",
+    [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
+)
+
+
 @job
 def two_ins_job():
     @op
@@ -1384,6 +1428,8 @@ def define_pipelines():
         hanging_job,
         two_ins_job,
         two_assets_job,
+        static_partitioned_assets_job,
+        time_partitioned_assets_job,
     ]
 
 

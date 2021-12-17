@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 
 import pendulum
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
 from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -124,6 +125,7 @@ def schedule_partition_range(
     return partitions
 
 
+@whitelist_for_serdes
 class ScheduleType(Enum):
     HOURLY = "HOURLY"
     DAILY = "DAILY"
@@ -169,7 +171,7 @@ class PartitionsDefinition(ABC, Generic[T]):
 
 
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
+    PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
