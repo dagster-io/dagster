@@ -41,7 +41,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationState, InstigationStatus, JobTickStatus
+from dagster.core.scheduler.job import InstigationState, InstigationStatus, InstigationTickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -446,7 +446,7 @@ def test_simple_sensor(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             assert (
@@ -473,7 +473,7 @@ def test_simple_sensor(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 expected_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
                 [run.run_id],
             )
 
@@ -606,7 +606,7 @@ def test_error_sensor(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor",
             )
@@ -655,7 +655,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 [],
                 "Error in config for pipeline",
             )
@@ -674,7 +674,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 [],
                 "Error in config for pipeline",
             )
@@ -717,7 +717,11 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SUCCESS, [run.run_id]
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                InstigationTickStatus.SUCCESS,
+                [run.run_id],
             )
 
             captured = capfd.readouterr()
@@ -770,7 +774,7 @@ def test_launch_once(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
                 expected_run_ids=[run.run_id],
             )
 
@@ -785,7 +789,7 @@ def test_launch_once(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
             captured = capfd.readouterr()
             assert (
@@ -814,7 +818,7 @@ def test_launch_once(external_repo_context, capfd):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
 
@@ -841,7 +845,7 @@ def test_custom_interval_sensor(external_repo_context):
             evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
-            validate_tick(ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED)
+            validate_tick(ticks[0], external_sensor, freeze_datetime, InstigationTickStatus.SKIPPED)
 
             freeze_datetime = freeze_datetime.add(seconds=30)
 
@@ -859,7 +863,9 @@ def test_custom_interval_sensor(external_repo_context):
             assert len(ticks) == 2
 
             expected_datetime = create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=1)
-            validate_tick(ticks[0], external_sensor, expected_datetime, JobTickStatus.SKIPPED)
+            validate_tick(
+                ticks[0], external_sensor, expected_datetime, InstigationTickStatus.SKIPPED
+            )
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -1008,7 +1014,11 @@ def test_sensor_start_stop(external_repo_context):
             ticks = instance.get_job_ticks(external_origin_id)
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SUCCESS, [run.run_id]
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                InstigationTickStatus.SUCCESS,
+                [run.run_id],
             )
 
             freeze_datetime = freeze_datetime.add(seconds=15)
@@ -1061,7 +1071,7 @@ def test_large_sensor(external_repo_context):
                 ticks[0],
                 external_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
 
 
@@ -1089,7 +1099,7 @@ def test_cursor_sensor(external_repo_context):
                 skip_ticks[0],
                 skip_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
             assert skip_ticks[0].cursor == "1"
 
@@ -1099,7 +1109,7 @@ def test_cursor_sensor(external_repo_context):
                 run_ticks[0],
                 run_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
             assert run_ticks[0].cursor == "1"
 
@@ -1113,7 +1123,7 @@ def test_cursor_sensor(external_repo_context):
                 skip_ticks[0],
                 skip_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
             assert skip_ticks[0].cursor == "2"
 
@@ -1123,7 +1133,7 @@ def test_cursor_sensor(external_repo_context):
                 run_ticks[0],
                 run_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
             assert run_ticks[0].cursor == "2"
 
@@ -1151,7 +1161,7 @@ def test_asset_sensor(external_repo_context):
                 ticks[0],
                 foo_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1168,7 +1178,7 @@ def test_asset_sensor(external_repo_context):
                 ticks[0],
                 foo_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
             run = instance.get_runs()[0]
             assert run.run_config == {}
@@ -1199,7 +1209,7 @@ def test_asset_job_sensor(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1216,7 +1226,7 @@ def test_asset_job_sensor(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
             run = instance.get_runs()[0]
             assert run.run_config == {}
@@ -1244,7 +1254,7 @@ def test_pipeline_failure_sensor(external_repo_context):
                 ticks[0],
                 failure_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1274,7 +1284,7 @@ def test_pipeline_failure_sensor(external_repo_context):
                 ticks[0],
                 failure_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
 
 
@@ -1298,7 +1308,7 @@ def test_run_failure_sensor_filtered(external_repo_context):
                 ticks[0],
                 failure_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1328,7 +1338,7 @@ def test_run_failure_sensor_filtered(external_repo_context):
                 ticks[0],
                 failure_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1359,7 +1369,7 @@ def test_run_failure_sensor_filtered(external_repo_context):
                 ticks[0],
                 failure_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
 
 
@@ -1383,7 +1393,7 @@ def test_run_status_sensor(external_repo_context):
                 ticks[0],
                 success_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1413,7 +1423,7 @@ def test_run_status_sensor(external_repo_context):
                 ticks[0],
                 success_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                InstigationTickStatus.SKIPPED,
             )
 
         with pendulum.test(freeze_datetime):
@@ -1440,7 +1450,7 @@ def test_run_status_sensor(external_repo_context):
                 ticks[0],
                 success_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
 
 
@@ -1504,7 +1514,7 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                     ticks[0],
                     failure_sensor,
                     freeze_datetime,
-                    JobTickStatus.SKIPPED,
+                    InstigationTickStatus.SKIPPED,
                 )
 
                 freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1547,7 +1557,7 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                     ticks[0],
                     failure_sensor,
                     freeze_datetime,
-                    JobTickStatus.SUCCESS,
+                    InstigationTickStatus.SUCCESS,
                 )
                 assert len(ticks[0].origin_run_ids) == 1
                 assert ticks[0].origin_run_ids[0] == run2.run_id
@@ -1571,7 +1581,7 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                     ticks[0],
                     failure_sensor,
                     freeze_datetime,
-                    JobTickStatus.SUCCESS,
+                    InstigationTickStatus.SUCCESS,
                 )
                 assert len(ticks[0].origin_run_ids) == 1
                 assert ticks[0].origin_run_ids[0] == run1.run_id
@@ -1603,7 +1613,7 @@ def test_pipeline_failure_sensor_empty_run_records(external_repo_context, storag
                     ticks[0],
                     failure_sensor,
                     freeze_datetime,
-                    JobTickStatus.SKIPPED,
+                    InstigationTickStatus.SKIPPED,
                 )
 
                 freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1643,7 +1653,7 @@ def test_pipeline_failure_sensor_empty_run_records(external_repo_context, storag
                     ticks[0],
                     failure_sensor,
                     freeze_datetime,
-                    JobTickStatus.SKIPPED,
+                    InstigationTickStatus.SKIPPED,
                 )
 
 
@@ -1670,7 +1680,7 @@ def test_multi_job_sensor(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
 
             run = instance.get_runs()[0]
@@ -1689,7 +1699,7 @@ def test_multi_job_sensor(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                InstigationTickStatus.SUCCESS,
             )
             run = instance.get_runs()[0]
             assert run.run_config == {"solids": {"config_solid": {"config": {"foo": "blah"}}}}
@@ -1721,7 +1731,7 @@ def test_bad_run_request_untargeted(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 None,
                 (
                     "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
@@ -1753,7 +1763,7 @@ def test_bad_run_request_mismatch(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 None,
                 (
                     "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
@@ -1785,7 +1795,7 @@ def test_bad_run_request_unspecified(external_repo_context):
                 ticks[0],
                 job_sensor,
                 freeze_datetime,
-                JobTickStatus.FAILURE,
+                InstigationTickStatus.FAILURE,
                 None,
                 (
                     "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "

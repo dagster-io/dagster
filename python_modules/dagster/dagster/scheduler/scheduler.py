@@ -11,8 +11,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import (
     InstigationState,
     InstigationStatus,
+    InstigationTickStatus,
     JobTickData,
-    JobTickStatus,
     JobType,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
@@ -164,11 +164,11 @@ def launch_scheduled_runs_for_schedule(
     start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
 
     if latest_tick:
-        if latest_tick.status == JobTickStatus.STARTED:
+        if latest_tick.status == InstigationTickStatus.STARTED:
             # Scheduler was interrupted while performing this tick, re-do it
             start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
         elif (
-            latest_tick.status == JobTickStatus.FAILURE
+            latest_tick.status == InstigationTickStatus.FAILURE
             and latest_tick.failure_count <= max_tick_retries
         ):
             # Tick failed and hasn't reached its retry limit, retry it
@@ -235,7 +235,7 @@ def launch_scheduled_runs_for_schedule(
         schedule_time_str = schedule_time.strftime(default_date_format_string())
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
-            if latest_tick.status == JobTickStatus.FAILURE:
+            if latest_tick.status == InstigationTickStatus.FAILURE:
                 logger.info(f"Retrying previously failed schedule execution at {schedule_time_str}")
             else:
                 logger.info(
@@ -247,7 +247,7 @@ def launch_scheduled_runs_for_schedule(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,
                     job_type=JobType.SCHEDULE,
-                    status=JobTickStatus.STARTED,
+                    status=InstigationTickStatus.STARTED,
                     timestamp=schedule_timestamp,
                 )
             )
@@ -344,7 +344,7 @@ def _schedule_runs_at_time(
         logger.info(f"No run requests returned for {external_schedule.name}, skipping")
 
         # Update tick to skipped state and return
-        tick_context.update_state(JobTickStatus.SKIPPED)
+        tick_context.update_state(InstigationTickStatus.SKIPPED)
         return
 
     for run_request in schedule_execution_data.run_requests:
@@ -394,7 +394,7 @@ def _schedule_runs_at_time(
         yield
 
     _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
-    tick_context.update_state(JobTickStatus.SUCCESS)
+    tick_context.update_state(InstigationTickStatus.SUCCESS)
 
 
 def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):

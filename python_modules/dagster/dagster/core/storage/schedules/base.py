@@ -3,7 +3,7 @@ from typing import Iterable
 
 from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import InstigationState, JobTick, JobTickData, JobTickStatus
+from dagster.core.scheduler.job import InstigationState, InstigationTickStatus, JobTick, JobTickData
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -91,12 +91,14 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def purge_job_ticks(self, job_origin_id: str, tick_status: JobTickStatus, before: float):
+    def purge_job_ticks(
+        self, job_origin_id: str, tick_status: InstigationTickStatus, before: float
+    ):
         """Wipe ticks for a job for a certain status and timestamp.
 
         Args:
             job_origin_id (str): The id of the ExternalJob target to delete
-            tick_status (JobTickStatus): The tick status to wipe
+            tick_status (InstigationTickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
         """
 
