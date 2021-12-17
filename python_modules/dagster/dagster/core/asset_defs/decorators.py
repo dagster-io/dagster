@@ -134,13 +134,12 @@ class _Asset:
             fn, self.namespace, self.ins or {}, self.non_argument_deps
         )
 
-        metadata = self.metadata or {}
-
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
-            metadata=metadata,
+            metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
+            asset_partitions_def=self.partitions_def,
         )
         op = _Op(
             name=asset_name,
@@ -154,7 +153,7 @@ class _Asset:
         )(fn)
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
-        assets_def = AssetsDefinition(
+        return AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
@@ -168,11 +167,6 @@ class _Asset:
             if self.partition_mappings
             else None,
         )
-
-        # temporary workaround to retrieve asset definition from job
-        op.output_defs[0]._assets_definition = assets_def
-
-        return assets_def
 
 
 @experimental_decorator
