@@ -1,7 +1,7 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import StepMaterializationData
+from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
@@ -612,10 +612,12 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
-        key_filter = set(kwargs.get("assetKeys", []))
         if not asset_nodes:
             return []
-        matching = [node for node in asset_nodes if not key_filter or node.asset_key in key_filter]
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+        matching = [node for node in asset_nodes if not key_filter or node.asset_key in asset_keys]
         if not matching:
             return []
 
