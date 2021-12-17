@@ -142,8 +142,6 @@ def cleanup_test_instance(instance):
     # that might be accessing the run history DB.
     instance.run_launcher.join()
 
-    cleanup_telemetry_logger()
-
 
 def create_run_for_test(
     instance,
