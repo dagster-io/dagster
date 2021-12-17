@@ -7,7 +7,9 @@ import packaging
 import pytest
 import requests
 from dagster import file_relative_path
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import (
+    PipelineRunStatus,
+)
 from dagster.utils import merge_dicts
 from dagster_graphql import DagsterGraphQLClient
 
@@ -217,16 +219,25 @@ def test_sensor_run(graphql_client):
             "sensorName": "the_sensor",
         },
     )
-    response = graphql_client._execute(START_SENSOR_MUTATION, {"sensorSelector": sensor_selector})
-    assert response["startSensor"]["__typename"] == "Sensor"
-    time.sleep(5)
-
-    graphql_client._execute(
-        STOP_SENSORS_QUERY, {"jobOriginId": response["startSensor"]["jobOriginId"]}
+    start_sensor_response = graphql_client._execute(
+        START_SENSOR_MUTATION, {"sensorSelector": sensor_selector}
     )
+    assert start_sensor_response["startSensor"]["__typename"] == "Sensor"
 
     runs_list = []
-    while are_all_runs_complete(runs_list):
+
+    while not runs_list:
+        response = graphql_client._execute(RUNS_QUERY)
+        runs_list = response["pipelineRunsOrError"]["results"]
+
+    graphql_client._execute(
+        STOP_SENSORS_QUERY, {"jobOriginId": start_sensor_response["startSensor"]["jobOriginId"]}
+    )
+
+    response = graphql_client._execute(RUNS_QUERY)
+    runs_list = response["pipelineRunsOrError"]["results"]
+
+    while not are_all_runs_complete(runs_list):
         response = graphql_client._execute(RUNS_QUERY)
         runs_list = response["pipelineRunsOrError"]["results"]
 
@@ -234,10 +245,18 @@ def test_sensor_run(graphql_client):
         assert run["status"] == "SUCCESS"
 
 
+def run_has_started(runs_list):
+    """Returns true if at least one run has been queued"""
+    return len(runs_list) > 0
+
+
+COMPLETED_STATUSES = {
+    PipelineRunStatus.NOT_STARTED,
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.CANCELED,
+}
+
+
 def are_all_runs_complete(runs_list):
-    return runs_list and all(
-        [
-            run["status"] == "SUCCESS" or run["status"] == "FAILURE" or run["status"] == "CANCELED"
-            for run in runs_list
-        ]
-    )
+    return all([run["status"] in COMPLETED_STATUSES for run in runs_list])
