@@ -53,11 +53,39 @@ class _ScheduleLaunchContext:
         self._write()
 
 
-def execute_scheduler_iteration(instance, workspace, logger, max_catchup_runs, max_tick_retries):
-    end_datetime_utc = pendulum.now("UTC")
-    yield from launch_scheduled_runs(
-        instance, workspace, logger, end_datetime_utc, max_catchup_runs, max_tick_retries
-    )
+MIN_INTERVAL_LOOP_TIME = 5
+RELOAD_WORKSPACE = 60
+
+
+def execute_scheduler_iteration_loop(
+    instance, workspace, logger, max_catchup_runs, max_tick_retries
+):
+    workspace_loaded_time = pendulum.now("UTC").timestamp()
+
+    workspace_iteration = 0
+    start_time = pendulum.now("UTC").timestamp()
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
+            workspace.cleanup()
+            workspace_loaded_time = pendulum.now("UTC").timestamp()
+            workspace_iteration = 0
+
+        end_datetime_utc = pendulum.now("UTC")
+        yield from launch_scheduled_runs(
+            instance,
+            workspace,
+            logger,
+            end_datetime_utc=end_datetime_utc,
+            max_catchup_runs=max_catchup_runs,
+            max_tick_retries=max_tick_retries,
+            log_verbose_checks=(workspace_iteration == 0),
+        )
+        loop_duration = pendulum.now("UTC").timestamp() - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        time.sleep(sleep_time)
+        yield
+        workspace_iteration += 1
 
 
 def launch_scheduled_runs(
@@ -68,6 +96,7 @@ def launch_scheduled_runs(
     max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries=0,
     debug_crash_flags=None,
+    log_verbose_checks=True,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace, "workspace", IWorkspace)
@@ -79,12 +108,16 @@ def launch_scheduled_runs(
     ]
 
     if not schedules:
-        logger.info("Not checking for any runs since no schedules have been started.")
+        if log_verbose_checks:
+            # Only log the "No schedules have been started" warning once per workspace reload
+            # to avoid spamming the logs
+            logger.info("Not checking for any runs since no schedules have been started.")
         yield
         return
 
-    schedule_names = ", ".join([schedule.job_name for schedule in schedules])
-    logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
+    if log_verbose_checks:
+        schedule_names = ", ".join([schedule.job_name for schedule in schedules])
+        logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
     for schedule_state in schedules:
         error_info = None
@@ -101,6 +134,7 @@ def launch_scheduled_runs(
                 max_catchup_runs,
                 max_tick_retries,
                 (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
+                log_verbose_checks=log_verbose_checks,
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -120,6 +154,7 @@ def launch_scheduled_runs_for_schedule(
     max_catchup_runs,
     max_tick_retries,
     debug_crash_flags=None,
+    log_verbose_checks=True,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(schedule_state, "schedule_state", JobState)
@@ -179,7 +214,8 @@ def launch_scheduled_runs_for_schedule(
         tick_times.append(next_time)
 
     if not tick_times:
-        logger.info(f"No new runs for {schedule_name}")
+        if log_verbose_checks:
+            logger.info(f"No new runs for {schedule_name}")
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:

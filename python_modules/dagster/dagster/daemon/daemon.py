@@ -10,7 +10,7 @@ from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
-from dagster.scheduler import execute_scheduler_iteration
+from dagster.scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.log import default_system_logger
 
@@ -209,7 +209,7 @@ class SchedulerDaemon(DagsterDaemon):
         return "SCHEDULER"
 
     def run_iteration(self, instance, workspace):
-        yield from execute_scheduler_iteration(
+        yield from execute_scheduler_iteration_loop(
             instance,
             workspace,
             self._logger,
