@@ -43,6 +43,11 @@ from dagster import (
     SolidExecutionContext,
     StaticPartitionsDefinition,
     String,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableRecord,
+    TableSchema,
     check,
     composite_solid,
     dagster_type_loader,
@@ -664,6 +669,29 @@ def materialization_pipeline():
                 EventMetadataEntry.int(LONG_INT, "long int"),
                 EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
                 EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                EventMetadataEntry.table(
+                    label="table",
+                    records=[
+                        TableRecord(foo=1, bar=2),
+                        TableRecord(foo=3, bar=4),
+                    ],
+                ),
+                EventMetadataEntry.table_schema(
+                    label="table_schema",
+                    schema=TableSchema(
+                        columns=[
+                            TableColumn(
+                                name="foo",
+                                type="integer",
+                                constraints=TableColumnConstraints(unique=True),
+                            ),
+                            TableColumn(name="bar", type="string"),
+                        ],
+                        constraints=TableConstraints(
+                            other=["some constraint"],
+                        ),
+                    ),
+                ),
             ],
         )
         yield Output(None)

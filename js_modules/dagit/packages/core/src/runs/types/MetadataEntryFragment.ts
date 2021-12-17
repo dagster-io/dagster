@@ -7,6 +7,12 @@
 // GraphQL fragment: MetadataEntryFragment
 // ====================================================
 
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
 export interface MetadataEntryFragment_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -84,4 +90,4 @@ export interface MetadataEntryFragment_EventAssetMetadataEntry {
   assetKey: MetadataEntryFragment_EventAssetMetadataEntry_assetKey;
 }
 
-export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
+export type MetadataEntryFragment = MetadataEntryFragment_EventTableSchemaMetadataEntry | MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
