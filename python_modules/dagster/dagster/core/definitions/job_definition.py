@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
 from .executor_definition import ExecutorDefinition
@@ -150,6 +151,29 @@ class JobDefinition(PipelineDefinition):
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
             run_config = base_mode.partitioned_config.get_run_config(partition_key)
+
+        input_values = check.opt_dict_param(input_values, "input_values")
+        mode_def = self.mode_definitions[0]
+        if input_values and mode_def.config_mapping:
+            raise DagsterInvalidInvocationError(
+                f"Attempted to invoke `execute_in_process` with input_values on job '{self.name}', which has config_mapping. If your job has config_mapping, please provide input values via the inputs field of run_config."
+            )
+
+        if input_values and mode_def.partitioned_config:
+            raise DagsterInvalidInvocationError(
+                f"Attempted to invoke `execute_in_process` with input_values on job '{self.name}', which has partitioned_config. If your job has partitioned_config, please provide input values via the inputs field of run_config."
+            )
+
+        if isinstance(run_config, dict) and "inputs" in run_config and input_values:
+            raise DagsterInvalidInvocationError(
+                "Attempted to invoke `execute_in_process` with both input config and input_values specified. Please use one or the other way to specify the top-level inputs."
+            )
+
+        for input_name, value in input_values.items():
+            if not "inputs" in run_config:
+                run_config["inputs"] = {}
+
+            run_config["inputs"][input_name] = {"value": value}
 
         return core_execute_in_process(
             node=self._graph_def,

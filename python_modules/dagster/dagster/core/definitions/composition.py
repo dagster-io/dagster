@@ -599,7 +599,7 @@ class PendingNodeInvocation:
 
     def execute_in_process(
         self,
-        run_config: Any = None,
+        run_config: Dict[str, Any] = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -617,10 +617,17 @@ class PendingNodeInvocation:
         from .job_definition import JobDefinition
         from .executor_definition import execute_in_process_executor
 
-        if len(self.node_def.input_defs) > 0:
-            raise DagsterInvariantViolationError(
-                "Graphs with inputs cannot be used with execute_in_process at this time."
+        input_values = check.opt_dict_param(input_values, "input_values")
+        run_config = check.opt_dict_param(run_config, "run_config")
+        if input_values and ("inputs" in run_config):
+            raise DagsterInvalidInvocationError(
+                "Attempted to invoke `execute_in_process` with both input config and input_values specified. Please use one or the other way to specify the top-level inputs."
             )
+
+        for input_name, value in input_values.items():
+            if not "inputs" in run_config:
+                run_config["inputs"] = {}
+            run_config["inputs"][input_name] = {"value": value}
 
         ephemeral_job = JobDefinition(
             name=self.given_alias,

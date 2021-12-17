@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from dagster import (
     DagsterInvariantViolationError,
@@ -10,10 +12,10 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.check import CheckError
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.output import GraphOut
+from dagster.core.errors import DagsterInvalidInvocationError
 
 
 def get_solids():
@@ -262,8 +264,9 @@ def graph_with_input():
 
 
 def test_graph_execute_in_process_with_inputs():
-    result = graph_with_input().execute_in_process(input_values={"x": 2})
-    assert result.output_for_node("my_op") == 3
+    for the_graph in [graph_with_input(), graph_with_input().alias("blah")]:
+        result = the_graph.execute_in_process(input_values={"x": 2})
+        assert result.output_for_node("my_op") == 3
 
 
 def test_graph_execute_in_process_with_inputs_and_config():
@@ -276,3 +279,42 @@ def test_graph_execute_in_process_with_inputs_and_config():
         graph_with_input().execute_in_process(
             input_values={"x": 2}, run_config={"inputs": {"x": {"value": 2}}}
         )
+
+
+def test_job_execute_in_process_with_inputs():
+    result = graph_with_input().to_job().execute_in_process(input_values={"x": 2})
+    assert result.output_for_node("my_op") == 3
+
+
+def test_job_execute_in_process_with_inputs_and_config():
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke `execute_in_process` with both input config "
+        "and input_values specified. Please use one or the other way to "
+        "specify the top-level inputs.",
+    ):
+        graph_with_input().to_job().execute_in_process(
+            input_values={"x": 2}, run_config={"inputs": {"x": {"value": 2}}}
+        )
+
+
+def test_job_inputs_execute_in_process_with_config_mapping():
+    the_job = graph_with_input().to_job(config={"inputs": {"x": {"value": 2}}})
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke `execute_in_process` with input_values on job 'my_graph', which has config_mapping.",
+    ):
+        the_job.execute_in_process(input_values={"x": 2})
+
+
+def test_job_inputs_execute_in_process_with_partitioned_config():
+    @daily_partitioned_config(start_date=datetime(2020, 1, 1))
+    def my_partitioned_config(_start, _end):
+        return {"inputs": {"x": {"value": 2}}}
+
+    the_job = graph_with_input().to_job(config=my_partitioned_config)
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke `execute_in_process` with input_values on job 'my_graph', which has partitioned_config.",
+    ):
+        the_job.execute_in_process(input_values={"x": 2})
