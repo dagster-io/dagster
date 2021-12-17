@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import qs from 'query-string';
+import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
