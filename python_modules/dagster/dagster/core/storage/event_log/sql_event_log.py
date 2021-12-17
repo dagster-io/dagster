@@ -97,6 +97,11 @@ class SqlEventLogStorage(EventLogStorage):
             partition=partition,
         )
 
+    def has_asset_key_index_cols(self):
+        with self.index_connection() as conn:
+            column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
+            return "last_materialization_timestamp" in column_names
+
     def store_asset(self, event):
         check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
@@ -114,7 +119,7 @@ class SqlEventLogStorage(EventLogStorage):
         # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
         #
         # https://github.com/dagster-io/dagster/issues/3945
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+        if self.has_asset_key_index_cols():
             insert_statement = (
                 AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
                     asset_key=event.dagster_event.asset_key.to_string(),
@@ -749,12 +754,15 @@ class SqlEventLogStorage(EventLogStorage):
         result = []
 
         while should_query:
-            rows, has_more, new_cursor = self._fetch_raw_asset_rows(
+            rows, has_more, current_cursor = self._fetch_raw_asset_rows(
                 asset_keys=asset_keys, prefix=prefix, limit=fetch_limit, cursor=current_cursor
             )
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
-            current_cursor = new_cursor
+
+        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
+            self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
 
@@ -767,13 +775,20 @@ class SqlEventLogStorage(EventLogStorage):
         # Returns a tuple of (rows, has_more, cursor), where each row is a tuple of serialized
         # asset_key, materialization, and asset_details
 
-        query = db.select(
-            [
-                AssetKeyTable.c.asset_key,
-                AssetKeyTable.c.last_materialization,
-                AssetKeyTable.c.asset_details,
-            ]
-        ).order_by(AssetKeyTable.c.asset_key.asc())
+        columns = [
+            AssetKeyTable.c.asset_key,
+            AssetKeyTable.c.last_materialization,
+            AssetKeyTable.c.asset_details,
+        ]
+
+        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        if self.has_asset_key_index_cols() and not is_partial_query:
+            # if the schema has been migrated, fetch the last_materialization_timestamp to see if
+            # we can lazily migrate the data table
+            columns.append(AssetKeyTable.c.last_materialization_timestamp)
+            columns.append(AssetKeyTable.c.wipe_timestamp)
+
+        query = db.select(columns).order_by(AssetKeyTable.c.asset_key.asc())
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
@@ -817,29 +832,9 @@ class SqlEventLogStorage(EventLogStorage):
                 wiped_timestamps_by_asset_key[asset_key] = asset_details.last_wipe_timestamp
 
         if wiped_timestamps_by_asset_key:
-            backcompat_query = (
-                db.select(
-                    [
-                        SqlEventLogStorageTable.c.asset_key,
-                        db.func.max(SqlEventLogStorageTable.c.timestamp),
-                    ]
-                )
-                .where(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [
-                            asset_key.to_string()
-                            for asset_key in wiped_timestamps_by_asset_key.keys()
-                        ]
-                    )
-                )
-                .group_by(SqlEventLogStorageTable.c.asset_key)
-                .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+            materialization_times = self._fetch_backcompat_materialization_times(
+                wiped_timestamps_by_asset_key.keys()
             )
-            with self.index_connection() as conn:
-                backcompat_rows = conn.execute(backcompat_query).fetchall()
-            materialization_times = {
-                AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows
-            }
             for asset_key, wiped_timestamp in wiped_timestamps_by_asset_key.items():
                 materialization_time = materialization_times.get(asset_key)
                 if not materialization_time or utc_datetime_from_naive(
@@ -850,7 +845,47 @@ class SqlEventLogStorage(EventLogStorage):
 
         has_more = limit and len(rows) == limit
         new_cursor = rows[-1][0] if rows else None
+
         return row_by_asset_key.values(), has_more, new_cursor
+
+    def _fetch_backcompat_materialization_times(self, asset_keys):
+        # fetches the latest materialization timestamp for the given asset_keys.  Uses the (slower)
+        # raw event log table.
+        backcompat_query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.timestamp),
+                ]
+            )
+            .where(
+                SqlEventLogStorageTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in asset_keys]
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+        )
+        with self.index_connection() as conn:
+            backcompat_rows = conn.execute(backcompat_query).fetchall()
+        return {AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows}
+
+    def _can_mark_assets_as_migrated(self, rows):
+        if not self.has_asset_key_index_cols():
+            return False
+
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            # we have already migrated
+            return False
+
+        for row in rows:
+            row_dict = row._asdict()
+            if not row_dict.get("last_materialization_timestamp"):
+                return False
+            if row_dict.get("asset_details") and not row_dict.get("wipe_timestamp"):
+                return False
+
+        return True
 
     def _apply_asset_filter_to_query(
         self,
@@ -992,7 +1027,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         wipe_timestamp = pendulum.now("UTC").timestamp()
 
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+        if self.has_asset_key_index_cols():
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
@@ -1003,10 +1038,6 @@ class SqlEventLogStorage(EventLogStorage):
                         )
                     )
                     .values(
-                        last_materialization=None,
-                        last_run_id=None,
-                        last_materialization_timestamp=None,
-                        tags=None,
                         asset_details=serialize_dagster_namedtuple(
                             AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
@@ -1025,8 +1056,6 @@ class SqlEventLogStorage(EventLogStorage):
                         )
                     )
                     .values(
-                        last_materialization=None,
-                        last_run_id=None,
                         asset_details=serialize_dagster_namedtuple(
                             AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
