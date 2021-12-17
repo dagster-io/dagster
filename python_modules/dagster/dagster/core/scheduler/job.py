@@ -4,7 +4,11 @@ from enum import Enum
 from dagster import check
 from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation.origin import ExternalJobOrigin
-from dagster.serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
+from dagster.serdes.serdes import (
+    register_serdes_enum_fallbacks,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
@@ -19,17 +23,20 @@ register_serdes_enum_fallbacks({"JobStatus": InstigationStatus})
 
 
 @whitelist_for_serdes
-class SensorJobData(
-    namedtuple("_SensorJobData", "last_tick_timestamp last_run_key min_interval cursor")
+class SensorInstigationData(
+    namedtuple("_SensorInstigationData", "last_tick_timestamp last_run_key min_interval cursor")
 ):
     def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None, cursor=None):
-        return super(SensorJobData, cls).__new__(
+        return super(SensorInstigationData, cls).__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
             check.opt_int_param(min_interval, "min_interval"),
             check.opt_str_param(cursor, "cursor"),
         )
+
+
+register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigationData})
 
 
 @whitelist_for_serdes
@@ -51,7 +58,7 @@ def check_job_data(job_type, job_specific_data):
     if job_type == JobType.SCHEDULE:
         check.inst_param(job_specific_data, "job_specific_data", ScheduleJobData)
     elif job_type == JobType.SENSOR:
-        check.opt_inst_param(job_specific_data, "job_specific_data", SensorJobData)
+        check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigationData)
     else:
         check.failed(
             "Unexpected job type {}, expected one of JobType.SENSOR, JobType.SCHEDULE".format(

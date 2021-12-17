@@ -1703,7 +1703,7 @@ records = instance.get_event_records(
     # Schedule Storage
 
     def start_sensor(self, external_sensor):
-        from dagster.core.scheduler.job import JobState, InstigationStatus, SensorJobData
+        from dagster.core.scheduler.job import JobState, InstigationStatus, SensorInstigationData
         from dagster.core.definitions.run_request import JobType
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
@@ -1714,7 +1714,7 @@ records = instance.get_event_records(
                     external_sensor.get_external_origin(),
                     JobType.SENSOR,
                     InstigationStatus.RUNNING,
-                    SensorJobData(min_interval=external_sensor.min_interval_seconds),
+                    SensorInstigationData(min_interval=external_sensor.min_interval_seconds),
                 )
             )
         elif job_state.status != InstigationStatus.RUNNING:

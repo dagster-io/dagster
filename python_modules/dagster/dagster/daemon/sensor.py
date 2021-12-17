@@ -10,7 +10,12 @@ from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationStatus, JobTickData, JobTickStatus, SensorJobData
+from dagster.core.scheduler.job import (
+    InstigationStatus,
+    JobTickData,
+    JobTickStatus,
+    SensorInstigationData,
+)
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.workspace import IWorkspace
@@ -93,7 +98,7 @@ class SensorLaunchContext:
                 last_run_key = self._tick.run_keys[-1]
             self._instance.update_job_state(
                 self._job_state.with_data(
-                    SensorJobData(
+                    SensorInstigationData(
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
                         min_interval=self._external_sensor.min_interval_seconds,

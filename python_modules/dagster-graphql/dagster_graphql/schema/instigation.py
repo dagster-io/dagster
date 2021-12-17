@@ -12,7 +12,7 @@ from dagster.core.scheduler.job import (
     JobTick,
     JobType,
     ScheduleJobData,
-    SensorJobData,
+    SensorInstigationData,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -61,7 +61,7 @@ class GrapheneSensorData(graphene.ObjectType):
         name = "SensorData"
 
     def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", SensorJobData)
+        check.inst_param(job_specific_data, "job_specific_data", SensorInstigationData)
         super().__init__(
             lastTickTimestamp=job_specific_data.last_tick_timestamp,
             lastRunKey=job_specific_data.last_run_key,

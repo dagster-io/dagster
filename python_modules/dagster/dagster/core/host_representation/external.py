@@ -583,13 +583,13 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     def get_default_instigation_state(self, _instance):
-        from dagster.core.scheduler.job import JobState, InstigationStatus, SensorJobData
+        from dagster.core.scheduler.job import JobState, InstigationStatus, SensorInstigationData
 
         return JobState(
             self.get_external_origin(),
             JobType.SENSOR,
             InstigationStatus.STOPPED,
-            SensorJobData(min_interval=self.min_interval_seconds),
+            SensorInstigationData(min_interval=self.min_interval_seconds),
         )
 
     @property
