@@ -24,7 +24,11 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+)
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -562,11 +566,12 @@ class GraphDefinition(NodeDefinition):
 
     def execute_in_process(
         self,
-        run_config: Any = None,
+        run_config: Dict[str, Any] = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        input_values: Optional[Dict[str, Any]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -590,7 +595,7 @@ class GraphDefinition(NodeDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
-
+            input_values (Optional[Dict[str, Any]]): Input values to provide to the top-level graph, if it has inputs. Can only provide one of this and the top-level inputs section of the run_config.
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
         """
@@ -611,7 +616,18 @@ class GraphDefinition(NodeDefinition):
             name=self._name, graph_def=self, mode_def=in_proc_mode
         ).get_job_def_for_op_selection(op_selection)
 
-        run_config = run_config if run_config is not None else {}
+        run_config = check.opt_dict_param(run_config, "run_config")
+        input_values = check.opt_dict_param(input_values, "input_values")
+        if "inputs" in run_config and input_values:
+            raise DagsterInvalidInvocationError(
+                "Attempted to invoke `execute_in_process` with both input config and input_values specified. Please use one or the other way to specify the top-level inputs."
+            )
+
+        for input_name, value in input_values.items():
+            if not "inputs" in run_config:
+                run_config["inputs"] = {}
+            run_config["inputs"][input_name] = {"value": value}
+
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         return core_execute_in_process(

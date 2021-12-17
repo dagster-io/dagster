@@ -75,6 +75,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        input_values: Optional[Dict[str, Any]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.

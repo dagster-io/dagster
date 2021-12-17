@@ -10,6 +10,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.check import CheckError
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.output import GraphOut
@@ -246,3 +247,32 @@ def test_partitions_key():
         my_op()
 
     assert my_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def graph_with_input():
+    @op
+    def my_op(x: int) -> int:
+        return x + 1
+
+    @graph
+    def my_graph(x):
+        my_op(x)
+
+    return my_graph
+
+
+def test_graph_execute_in_process_with_inputs():
+    result = graph_with_input().execute_in_process(input_values={"x": 2})
+    assert result.output_for_node("my_op") == 3
+
+
+def test_graph_execute_in_process_with_inputs_and_config():
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke `execute_in_process` with both input config "
+        "and input_values specified. Please use one or the other way to "
+        "specify the top-level inputs.",
+    ):
+        graph_with_input().execute_in_process(
+            input_values={"x": 2}, run_config={"inputs": {"x": {"value": 2}}}
+        )
