@@ -67,7 +67,7 @@ class DagitWebserver(GraphQLServer):
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> List[Middleware]:
-        return [Middleware(TraceMiddleware)]
+        return [Middleware(DagsterTracedCounterMiddleware)]
 
     async def dagit_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -250,8 +250,8 @@ def debug_app():
     return default_app(debug=True)
 
 
-class TraceMiddleware:
-    """Trace middleware for ASGI applications
+class DagsterTracedCounterMiddleware:
+    """Middleware for counting traced dagster calls
     Args:
       app (ASGI application): ASGI application
     """
