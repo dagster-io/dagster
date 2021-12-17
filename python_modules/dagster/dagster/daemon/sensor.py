@@ -10,7 +10,7 @@ from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
+from dagster.core.scheduler.job import InstigationStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.workspace import IWorkspace
@@ -174,7 +174,7 @@ def execute_sensor_iteration(
     sensor_jobs = [
         s
         for s in instance.all_stored_job_state(job_type=JobType.SENSOR)
-        if s.status == JobStatus.RUNNING
+        if s.status == InstigationStatus.RUNNING
     ]
     if not sensor_jobs:
         if not workspace_iteration:

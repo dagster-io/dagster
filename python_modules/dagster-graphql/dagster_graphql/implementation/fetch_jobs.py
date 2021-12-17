@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation import InstigationSelector
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.scheduler.job import InstigationStatus
 
 from .utils import capture_error
 
@@ -24,7 +24,8 @@ def get_unloadable_job_states_or_error(graphene_info, job_type=None):
     unloadable_states = [
         job_state
         for job_state in job_states
-        if job_state.job_origin_id not in job_origin_ids and job_state.status == JobStatus.RUNNING
+        if job_state.job_origin_id not in job_origin_ids
+        and job_state.status == InstigationStatus.RUNNING
     ]
 
     return GrapheneInstigationStates(

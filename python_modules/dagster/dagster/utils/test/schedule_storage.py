@@ -8,8 +8,8 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.job import (
+    InstigationStatus,
     JobState,
-    JobStatus,
     JobTickData,
     JobTickStatus,
     JobType,
@@ -67,7 +67,11 @@ class TestScheduleStorage:
 
     @classmethod
     def build_schedule(
-        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED, scheduler=FAKE_SCHEDULER_NAME
+        cls,
+        schedule_name,
+        cron_schedule,
+        status=InstigationStatus.STOPPED,
+        scheduler=FAKE_SCHEDULER_NAME,
     ):
         return JobState(
             cls.fake_repo_target().get_job_origin(schedule_name),
@@ -77,7 +81,7 @@ class TestScheduleStorage:
         )
 
     @classmethod
-    def build_sensor(cls, sensor_name, status=JobStatus.STOPPED):
+    def build_sensor(cls, sensor_name, status=InstigationStatus.STOPPED):
         external_job_origin = cls.fake_repo_target().get_job_origin(sensor_name)
         return JobState(external_job_origin, JobType.SENSOR, status)
 
@@ -145,7 +149,7 @@ class TestScheduleStorage:
 
         now_time = get_current_datetime_in_utc().timestamp()
 
-        new_schedule = schedule.with_status(JobStatus.RUNNING).with_data(
+        new_schedule = schedule.with_status(InstigationStatus.RUNNING).with_data(
             ScheduleJobData(
                 cron_schedule=schedule.job_specific_data.cron_schedule,
                 start_timestamp=now_time,
@@ -159,11 +163,11 @@ class TestScheduleStorage:
 
         schedule = schedules[0]
         assert schedule.job_name == "my_schedule"
-        assert schedule.status == JobStatus.RUNNING
+        assert schedule.status == InstigationStatus.RUNNING
         assert schedule.job_specific_data.start_timestamp == now_time
         assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
-        stopped_schedule = schedule.with_status(JobStatus.STOPPED).with_data(
+        stopped_schedule = schedule.with_status(InstigationStatus.STOPPED).with_data(
             ScheduleJobData(schedule.job_specific_data.cron_schedule, scheduler=FAKE_SCHEDULER_NAME)
         )
         storage.update_job_state(stopped_schedule)
@@ -173,7 +177,7 @@ class TestScheduleStorage:
 
         schedule = schedules[0]
         assert schedule.job_name == "my_schedule"
-        assert schedule.status == JobStatus.STOPPED
+        assert schedule.status == InstigationStatus.STOPPED
         assert schedule.job_specific_data.start_timestamp == None
         assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
@@ -390,7 +394,7 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
         storage.add_job_state(job)
 
-        new_job = job.with_status(JobStatus.RUNNING)
+        new_job = job.with_status(InstigationStatus.RUNNING)
         storage.update_job_state(new_job)
 
         jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
@@ -398,9 +402,9 @@ class TestScheduleStorage:
 
         job = jobs[0]
         assert job.job_name == "my_sensor"
-        assert job.status == JobStatus.RUNNING
+        assert job.status == InstigationStatus.RUNNING
 
-        stopped_job = job.with_status(JobStatus.STOPPED)
+        stopped_job = job.with_status(InstigationStatus.STOPPED)
         storage.update_job_state(stopped_job)
 
         jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
@@ -408,7 +412,7 @@ class TestScheduleStorage:
 
         job = jobs[0]
         assert job.job_name == "my_sensor"
-        assert job.status == JobStatus.STOPPED
+        assert job.status == InstigationStatus.STOPPED
 
     def test_update_job_not_found(self, storage):
         assert storage

@@ -4,15 +4,18 @@ from enum import Enum
 from dagster import check
 from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation.origin import ExternalJobOrigin
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class JobStatus(Enum):
+class InstigationStatus(Enum):
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
+
+
+register_serdes_enum_fallbacks({"JobStatus": InstigationStatus})
 
 
 @whitelist_for_serdes
@@ -66,7 +69,7 @@ class JobState(namedtuple("_JobState", "origin job_type status job_specific_data
             cls,
             check.inst_param(origin, "origin", ExternalJobOrigin),
             check.inst_param(job_type, "job_type", JobType),
-            check.inst_param(status, "status", JobStatus),
+            check.inst_param(status, "status", InstigationStatus),
             check_job_data(job_type, job_specific_data),
         )
 
@@ -87,7 +90,7 @@ class JobState(namedtuple("_JobState", "origin job_type status job_specific_data
         return self.origin.get_id()
 
     def with_status(self, status):
-        check.inst_param(status, "status", JobStatus)
+        check.inst_param(status, "status", InstigationStatus)
         return JobState(
             self.origin,
             job_type=self.job_type,

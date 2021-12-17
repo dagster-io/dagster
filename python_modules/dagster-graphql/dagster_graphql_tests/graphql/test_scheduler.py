@@ -6,7 +6,7 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.job import JobState, JobStatus, JobType, ScheduleJobData
+from dagster.core.scheduler.job import InstigationStatus, JobState, JobType, ScheduleJobData
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -201,7 +201,10 @@ def test_start_and_stop_schedule(graphql_context):
         START_SCHEDULES_QUERY,
         variables={"scheduleSelector": schedule_selector},
     )
-    assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
+    assert (
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigationStatus.RUNNING.value
+    )
 
     schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
 
@@ -213,7 +216,7 @@ def test_start_and_stop_schedule(graphql_context):
     )
     assert (
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
-        == JobStatus.STOPPED.value
+        == InstigationStatus.STOPPED.value
     )
 
 
@@ -305,7 +308,10 @@ def test_next_tick(graphql_context):
         START_SCHEDULES_QUERY,
         variables={"scheduleSelector": schedule_selector},
     )
-    assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
+    assert (
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigationStatus.RUNNING.value
+    )
 
     # get schedule next tick
     result = execute_dagster_graphql(
@@ -331,7 +337,10 @@ def test_next_tick_bad_schedule(graphql_context):
         START_SCHEDULES_QUERY,
         variables={"scheduleSelector": schedule_selector},
     )
-    assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
+    assert (
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigationStatus.RUNNING.value
+    )
 
     # get schedule next tick
     result = execute_dagster_graphql(
@@ -364,7 +373,7 @@ def test_get_unloadable_job(graphql_context):
             JobState(
                 _get_unloadable_schedule_origin("unloadable_running"),
                 JobType.SCHEDULE,
-                JobStatus.RUNNING,
+                InstigationStatus.RUNNING,
                 ScheduleJobData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
@@ -377,7 +386,7 @@ def test_get_unloadable_job(graphql_context):
             JobState(
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 JobType.SCHEDULE,
-                JobStatus.STOPPED,
+                InstigationStatus.STOPPED,
                 ScheduleJobData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),

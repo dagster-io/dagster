@@ -15,7 +15,7 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
+from dagster.core.scheduler.job import InstigationStatus, JobState, SensorJobData
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -153,17 +153,20 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                     external_sensor.get_external_origin_id()
                 )
                 if running_filter and (
-                    not stored_sensor_state or stored_sensor_state.status == JobStatus.STOPPED
+                    not stored_sensor_state
+                    or stored_sensor_state.status == InstigationStatus.STOPPED
                 ):
                     continue
-                if stopped_filter and stored_sensor_state and JobStatus.RUNNING:
+                if stopped_filter and stored_sensor_state and InstigationStatus.RUNNING:
                     continue
 
                 if name_filter:
                     print_fn(external_sensor.name)
                     continue
 
-                status = stored_sensor_state.status if stored_sensor_state else JobStatus.STOPPED
+                status = (
+                    stored_sensor_state.status if stored_sensor_state else InstigationStatus.STOPPED
+                )
                 sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
                 if not first:
                     print_fn("*" * len(sensor_title))
@@ -361,7 +364,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                     JobState(
                         external_sensor.get_external_origin(),
                         JobType.SENSOR,
-                        JobStatus.STOPPED,
+                        InstigationStatus.STOPPED,
                         SensorJobData(
                             min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
                         ),

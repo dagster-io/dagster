@@ -8,7 +8,13 @@ from dagster import check
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
+from dagster.core.scheduler.job import (
+    InstigationStatus,
+    JobState,
+    JobTickData,
+    JobTickStatus,
+    JobType,
+)
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
@@ -96,7 +102,7 @@ def launch_scheduled_runs(
     schedules = [
         s
         for s in instance.all_stored_job_state(job_type=JobType.SCHEDULE)
-        if s.status == JobStatus.RUNNING
+        if s.status == InstigationStatus.RUNNING
     ]
 
     if not schedules:

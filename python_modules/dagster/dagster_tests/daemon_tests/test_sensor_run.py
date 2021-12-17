@@ -41,7 +41,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
+from dagster.core.scheduler.job import InstigationStatus, JobState, JobTickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -429,7 +429,9 @@ def test_simple_sensor(external_repo_context, capfd):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -510,7 +512,9 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
                 valid_origin.job_name,
             )
 
-            instance.add_job_state(JobState(invalid_repo_origin, JobType.SENSOR, JobStatus.RUNNING))
+            instance.add_job_state(
+                JobState(invalid_repo_origin, JobType.SENSOR, InstigationStatus.RUNNING)
+            )
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
@@ -552,7 +556,9 @@ def test_bad_load_sensor(external_repo_context, capfd):
                 "invalid_sensor",
             )
 
-            instance.add_job_state(JobState(invalid_repo_origin, JobType.SENSOR, JobStatus.RUNNING))
+            instance.add_job_state(
+                JobState(invalid_repo_origin, JobType.SENSOR, InstigationStatus.RUNNING)
+            )
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
@@ -583,7 +589,9 @@ def test_error_sensor(external_repo_context, capfd):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("error_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -630,7 +638,9 @@ def test_wrong_config_sensor(external_repo_context, capfd):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -692,7 +702,9 @@ def test_launch_failure(external_repo_context, capfd):
 
             external_sensor = external_repo.get_external_sensor("always_on_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -739,7 +751,9 @@ def test_launch_once(external_repo_context, capfd):
 
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -817,7 +831,9 @@ def test_custom_interval_sensor(external_repo_context):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
@@ -871,7 +887,9 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
             external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
 
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
+                )
             )
 
             # create a tick
@@ -940,7 +958,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
 
         with pendulum.test(freeze_datetime):
             instance.add_job_state(
-                JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, InstigationStatus.RUNNING)
             )
             sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
             daemon_shutdown_event = threading.Event()
