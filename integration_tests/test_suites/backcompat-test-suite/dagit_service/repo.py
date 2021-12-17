@@ -34,7 +34,7 @@ def basic():
 the_job = basic.to_job(name="the_job")
 
 
-@sensor(job=the_job, minimum_interval_seconds=1)
+@sensor(job=the_job, minimum_interval_seconds=60)
 def the_sensor():
     yield RunRequest(run_key=None, run_config={})
 

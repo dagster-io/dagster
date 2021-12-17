@@ -76,6 +76,47 @@ mutation($jobOriginId: String!) {
   }
 }
 """
+GET_SENSOR_QUERY = """
+query SensorQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      name
+      targets {
+        pipelineName
+        solidSelection
+        mode
+      }
+      minIntervalSeconds
+      nextTick {
+        timestamp
+      }
+      sensorState {
+        status
+        runs {
+          id
+          runId
+        }
+        runsCount
+        ticks {
+            id
+            status
+            timestamp
+            runIds
+            error {
+                message
+                stack
+            }
+        }
+      }
+    }
+  }
+}
+"""
 RUNS_QUERY = """
 query PipelineRunsRootQuery {
   pipelineRunsOrError {
@@ -230,9 +271,17 @@ def test_sensor_run(graphql_client):
         response = graphql_client._execute(RUNS_QUERY)
         runs_list = response["pipelineRunsOrError"]["results"]
 
-    graphql_client._execute(
+    stop_sensor_response = graphql_client._execute(
         STOP_SENSORS_QUERY, {"jobOriginId": start_sensor_response["startSensor"]["jobOriginId"]}
     )
+
+    assert stop_sensor_response["stopSensor"]["instigationState"]["status"] == "STOPPED"
+
+    get_sensor_response = graphql_client._execute(
+        GET_SENSOR_QUERY, {"sensorSelector": sensor_selector}
+    )
+
+    get_sensor_response
 
     response = graphql_client._execute(RUNS_QUERY)
     runs_list = response["pipelineRunsOrError"]["results"]
