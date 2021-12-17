@@ -625,18 +625,18 @@ def external_asset_graph_from_defs(
         node_def = node_tuple_list[0][0]
         job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
 
-        # temporary workaround to retrieve asset definition from job
+        # temporary workaround to retrieve asset partition definition from job
         output = node_def.output_dict.get("result", None)
         partitions_def_data = None
 
-        if output and output._asset_partitions_def:
+        if output and output._asset_partitions_def:  # pylint: disable=protected-access
             partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
             if partitions_def:
                 if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                     partitions_def_data = external_time_window_partitions_definition_from_def(
                         partitions_def
                     )
-                elif isinstance(output._asset_partitions_def, StaticPartitionsDefinition):
+                elif isinstance(partitions_def, StaticPartitionsDefinition):
                     partitions_def_data = external_static_partitions_definition_from_def(
                         partitions_def
                     )
