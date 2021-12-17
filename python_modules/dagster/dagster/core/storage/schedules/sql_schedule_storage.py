@@ -6,9 +6,9 @@ from dagster.core.definitions.run_request import JobType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.job import (
     InstigationState,
+    InstigationTick,
     InstigationTickData,
     InstigationTickStatus,
-    JobTick,
     JobTickStatsSnapshot,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -133,7 +133,7 @@ class SqlScheduleStorage(ScheduleStorage):
         if len(rows) == 0:
             return None
 
-        return JobTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
+        return InstigationTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
 
     def _add_filter_limit(self, query, before=None, after=None, limit=None):
         check.opt_float_param(before, "before")
@@ -165,7 +165,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         rows = self.execute(query)
         return list(
-            map(lambda r: JobTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+            map(lambda r: InstigationTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
     def create_job_tick(self, job_tick_data):
@@ -184,14 +184,14 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
-                return JobTick(tick_id, job_tick_data)
+                return InstigationTick(tick_id, job_tick_data)
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert JobTick for job {job_tick_data.job_name} in storage"
+                    f"Unable to insert InstigationTick for job {job_tick_data.job_name} in storage"
                 ) from exc
 
     def update_job_tick(self, tick):
-        check.inst_param(tick, "tick", JobTick)
+        check.inst_param(tick, "tick", InstigationTick)
 
         with self.connect() as conn:
             conn.execute(

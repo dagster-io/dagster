@@ -135,9 +135,9 @@ register_serdes_enum_fallbacks({"JobTickStatus": InstigationTickStatus})
 
 
 @whitelist_for_serdes
-class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
+class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def __new__(cls, tick_id, job_tick_data):
-        return super(JobTick, cls).__new__(
+        return super(InstigationTick, cls).__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
             check.inst_param(job_tick_data, "job_tick_data", InstigationTickData),
@@ -207,6 +207,9 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     @property
     def failure_count(self) -> int:
         return self.job_tick_data.failure_count
+
+
+register_serdes_tuple_fallbacks({"JobTick": InstigationTick})
 
 
 @whitelist_for_serdes

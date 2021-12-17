@@ -9,7 +9,7 @@ from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.job import (
     InstigationState,
     InstigationStatus,
-    JobTick,
+    InstigationTick,
     JobType,
     ScheduleInstigationData,
     SensorInstigationData,
@@ -103,7 +103,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
         name = "InstigationTick"
 
     def __init__(self, _, job_tick):
-        self._job_tick = check.inst_param(job_tick, "job_tick", JobTick)
+        self._job_tick = check.inst_param(job_tick, "job_tick", InstigationTick)
 
         super().__init__(
             status=job_tick.status,

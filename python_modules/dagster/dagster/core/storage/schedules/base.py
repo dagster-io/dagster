@@ -5,9 +5,9 @@ from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.job import (
     InstigationState,
+    InstigationTick,
     InstigationTickData,
     InstigationTickStatus,
-    JobTick,
 )
 
 
@@ -64,7 +64,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     @abc.abstractmethod
     def get_job_ticks(
         self, job_origin_id: str, before: float = None, after: float = None, limit: int = None
-    ) -> Iterable[JobTick]:
+    ) -> Iterable[InstigationTick]:
         """Get the ticks for a given job.
 
         Args:
@@ -72,7 +72,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_latest_job_tick(self, job_origin_id: str) -> JobTick:
+    def get_latest_job_tick(self, job_origin_id: str) -> InstigationTick:
         """Get the most recent tick for a given job.
 
         Args:
@@ -88,11 +88,11 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def update_job_tick(self, tick: JobTick):
+    def update_job_tick(self, tick: InstigationTick):
         """Update a job tick already in storage.
 
         Args:
-            tick (JobTick): The job tick to update
+            tick (InstigationTick): The job tick to update
         """
 
     @abc.abstractmethod
