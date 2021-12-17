@@ -5,7 +5,6 @@ import time
 
 import pendulum
 from dagster import check
-from dagster.core.events import EngineEventData
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -25,8 +24,12 @@ class _ScheduleLaunchContext:
         self._logger = logger
         self._tick = tick
 
-    def update_state(self, status, **kwargs):
-        self._tick = self._tick.with_status(status=status, **kwargs)
+    @property
+    def failure_count(self) -> int:
+        return self._tick.job_tick_data.failure_count
+
+    def update_state(self, status, error=None, **kwargs):
+        self._tick = self._tick.with_status(status=status, error=error, **kwargs)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -41,15 +44,19 @@ class _ScheduleLaunchContext:
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(JobTickStatus.FAILURE, error=error_data)
+            self.update_state(
+                JobTickStatus.FAILURE,
+                error=error_data,
+                failure_count=self.failure_count + 1,
+            )
 
         self._write()
 
 
-def execute_scheduler_iteration(instance, workspace, logger, max_catchup_runs):
+def execute_scheduler_iteration(instance, workspace, logger, max_catchup_runs, max_tick_retries):
     end_datetime_utc = pendulum.now("UTC")
     yield from launch_scheduled_runs(
-        instance, workspace, logger, end_datetime_utc, max_catchup_runs
+        instance, workspace, logger, end_datetime_utc, max_catchup_runs, max_tick_retries
     )
 
 
@@ -59,6 +66,7 @@ def launch_scheduled_runs(
     logger,
     end_datetime_utc,
     max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
+    max_tick_retries=0,
     debug_crash_flags=None,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
@@ -91,6 +99,7 @@ def launch_scheduled_runs(
                 repo_location,
                 end_datetime_utc,
                 max_catchup_runs,
+                max_tick_retries,
                 (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
             )
         except Exception:
@@ -109,6 +118,7 @@ def launch_scheduled_runs_for_schedule(
     repo_location,
     end_datetime_utc,
     max_catchup_runs,
+    max_tick_retries,
     debug_crash_flags=None,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
@@ -123,6 +133,12 @@ def launch_scheduled_runs_for_schedule(
     if latest_tick:
         if latest_tick.status == JobTickStatus.STARTED:
             # Scheduler was interrupted while performing this tick, re-do it
+            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
+        elif (
+            latest_tick.status == JobTickStatus.FAILURE
+            and latest_tick.failure_count <= max_tick_retries
+        ):
+            # Tick failed and hasn't reached its retry limit, retry it
             start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
         else:
             start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp + 1)
@@ -182,10 +198,15 @@ def launch_scheduled_runs_for_schedule(
 
     for schedule_time in tick_times:
         schedule_timestamp = schedule_time.timestamp()
+        schedule_time_str = schedule_time.strftime(default_date_format_string())
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
-            logger.info("Resuming previously interrupted schedule execution")
-
+            if latest_tick.status == JobTickStatus.FAILURE:
+                logger.info(f"Retrying previously failed schedule execution at {schedule_time_str}")
+            else:
+                logger.info(
+                    f"Resuming previously interrupted schedule execution at {schedule_time_str}"
+                )
         else:
             tick = instance.create_job_tick(
                 JobTickData(
@@ -274,7 +295,7 @@ def _schedule_runs_at_time(
         if run:
             if run.status != PipelineRunStatus.NOT_STARTED:
                 # A run already exists and was launched for this time period,
-                # but the scheduler must have crashed before the tick could be put
+                # but the scheduler must have crashed or errored before the tick could be put
                 # into a SUCCESS state
 
                 logger.info(
@@ -288,17 +309,14 @@ def _schedule_runs_at_time(
                     f"Run {run.run_id} already created for this execution of {external_schedule.name}"
                 )
         else:
-            run, errors = _create_scheduler_run(
+            run = _create_scheduler_run(
                 instance,
-                logger,
                 schedule_time,
                 repo_location,
                 external_schedule,
                 external_pipeline,
                 run_request,
             )
-            for error in errors:
-                yield error
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
@@ -340,7 +358,6 @@ def _get_existing_run_for_request(instance, external_schedule, schedule_time, ru
 
 def _create_scheduler_run(
     instance,
-    logger,
     schedule_time,
     repo_location,
     external_schedule,
@@ -350,20 +367,14 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    execution_plan_errors = []
-    execution_plan_snapshot = None
-
-    try:
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            run_config,
-            external_schedule.mode,
-            step_keys_to_execute=None,
-            known_state=None,
-        )
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except Exception:
-        execution_plan_errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        run_config,
+        external_schedule.mode,
+        step_keys_to_execute=None,
+        known_state=None,
+    )
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
@@ -373,9 +384,7 @@ def _create_scheduler_run(
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
-    # If the run was scheduled correctly but there was an error creating its
-    # run config, enter it into the run DB with a FAILURE status
-    possibly_invalid_pipeline_run = instance.create_run(
+    return instance.create_run(
         pipeline_name=external_schedule.pipeline_name,
         run_id=None,
         run_config=run_config,
@@ -383,11 +392,7 @@ def _create_scheduler_run(
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,
-        status=(
-            PipelineRunStatus.FAILURE
-            if len(execution_plan_errors) > 0
-            else PipelineRunStatus.NOT_STARTED
-        ),
+        status=PipelineRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
@@ -397,15 +402,3 @@ def _create_scheduler_run(
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
-
-    if len(execution_plan_errors) > 0:
-        for error in execution_plan_errors:
-            instance.report_engine_event(
-                error.message,
-                possibly_invalid_pipeline_run,
-                EngineEventData.engine_error(error),
-            )
-        instance.report_run_failed(possibly_invalid_pipeline_run)
-        error_string = "\n".join([error.to_string() for error in execution_plan_errors])
-        logger.error(f"Failed to fetch execution plan for {external_schedule.name}: {error_string}")
-    return (possibly_invalid_pipeline_run, execution_plan_errors)

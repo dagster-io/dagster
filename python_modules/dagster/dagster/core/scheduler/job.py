@@ -183,12 +183,16 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def origin_run_ids(self):
         return self.job_tick_data.origin_run_ids
 
+    @property
+    def failure_count(self) -> int:
+        return self.job_tick_data.failure_count
+
 
 @whitelist_for_serdes
 class JobTickData(
     namedtuple(
         "_JobTickData",
-        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason cursor origin_run_ids",
+        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason cursor origin_run_ids failure_count",
     )
 ):
     def __new__(
@@ -204,6 +208,7 @@ class JobTickData(
         skip_reason=None,
         cursor=None,
         origin_run_ids=None,
+        failure_count=None,
     ):
         """
         This class defines the data that is serialized and stored in ``JobStorage``. We depend
@@ -224,6 +229,8 @@ class JobTickData(
                 only when the status is ``JobTickStatus.Failure``
             skip_reason (str): message for why the tick was skipped
             origin_run_ids (List[str]): The runs originating the job.
+            failure_count (int): The number of times this tick has failed. If the status is not
+                FAILED, this is the number of previous failures before it reached the current state.
         """
         _validate_job_tick_args(job_type, status, run_ids, error, skip_reason)
         return super(JobTickData, cls).__new__(
@@ -239,16 +246,20 @@ class JobTickData(
             skip_reason,  # validated in _validate_job_tick_args
             cursor=check.opt_str_param(cursor, "cursor"),
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
+            failure_count=check.opt_int_param(failure_count, "failure_count", 0),
         )
 
-    def with_status(self, status, error=None, timestamp=None):
+    def with_status(self, status, error=None, timestamp=None, failure_count=None):
         return JobTickData(
             **merge_dicts(
                 self._asdict(),
                 {
                     "status": status,
+                    "error": error,
                     "timestamp": timestamp if timestamp is not None else self.timestamp,
-                    "error": error if error is not None else self.error,
+                    "failure_count": (
+                        failure_count if failure_count is not None else self.failure_count
+                    ),
                 },
             )
         )
@@ -261,6 +272,16 @@ class JobTickData(
                 {
                     "run_ids": [*self.run_ids, run_id],
                     "run_keys": [*self.run_keys, run_key] if run_key else self.run_keys,
+                },
+            )
+        )
+
+    def with_failure_count(self, failure_count):
+        return JobTickData(
+            **merge_dicts(
+                self._asdict(),
+                {
+                    "failure_count": failure_count,
                 },
             )
         )
