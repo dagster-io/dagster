@@ -3106,7 +3106,7 @@ __metadata:
     eslint-plugin-prettier: ^3.3.1
     eslint-plugin-react: ^7.22.0
     eslint-plugin-react-hooks: ^4.2.0
-    faker: 5.2.0
+    faker: 5.5.3
     fuse.js: ^6.4.2
     graphql: ^15.5.0
     graphql-tag: ^2.12.1
@@ -12895,10 +12895,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"faker@npm:5.2.0":
-  version: 5.2.0
-  resolution: "faker@npm:5.2.0"
-  checksum: 26ea6e06679052f3ea2637e9dfa2db227b14a37ccc29db33976290a2dec344b3806f78d08c6c1fdeaa866960104936d6c802e86e1114bdca7fb337675bbb57e5
+"faker@npm:5.5.3":
+  version: 5.5.3
+  resolution: "faker@npm:5.5.3"
+  checksum: 684fd64c8d3897e54248f95b4f6319f75d97691b8500cd13adf4af2c28f9204f766c1d1aaa6b41338f0beaaa87256c3132f8708a1a8f189d122b92f6b98081c3
   languageName: node
   linkType: hard
 
