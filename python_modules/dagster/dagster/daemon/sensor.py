@@ -133,6 +133,9 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
+RELOAD_WORKSPACE = 60
+
+
 def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -140,9 +143,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    manager_loaded_time = pendulum.now("UTC").timestamp()
-
-    RELOAD_LOCATION_MANAGER_INTERVAL = 60
+    workspace_loaded_time = pendulum.now("UTC").timestamp()
 
     workspace_iteration = 0
     start_time = pendulum.now("UTC").timestamp()
@@ -152,9 +153,9 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
             # provide a way of organically ending the loop to support test environment
             break
 
-        if start_time - manager_loaded_time > RELOAD_LOCATION_MANAGER_INTERVAL:
+        if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
             workspace.cleanup()
-            manager_loaded_time = pendulum.now("UTC").timestamp()
+            workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
         yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
