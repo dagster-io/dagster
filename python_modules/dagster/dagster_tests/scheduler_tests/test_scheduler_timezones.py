@@ -1,6 +1,6 @@
 import pendulum
 import pytest
-from dagster.core.scheduler.job import InstigationTickStatus
+from dagster.core.scheduler.instigation import InstigationTickStatus
 from dagster.core.test_utils import get_logger_output_from_capfd
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone

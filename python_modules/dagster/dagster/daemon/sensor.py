@@ -10,7 +10,7 @@ from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationStatus,
     InstigationTickData,
     InstigationTickStatus,

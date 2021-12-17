@@ -15,7 +15,11 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationState, InstigationStatus, SensorInstigationData
+from dagster.core.scheduler.instigation import (
+    InstigationState,
+    InstigationStatus,
+    SensorInstigationData,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 

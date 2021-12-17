@@ -3,7 +3,7 @@ from typing import Iterable
 
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigationTick,
     InstigationTickData,

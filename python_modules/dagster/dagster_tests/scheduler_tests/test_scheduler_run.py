@@ -33,7 +33,7 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigationStatus,
     InstigationTickData,

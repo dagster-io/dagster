@@ -9,7 +9,11 @@ from dagster.core.definitions.run_request import InstigationType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationState, InstigationStatus, ScheduleInstigationData
+from dagster.core.scheduler.instigation import (
+    InstigationState,
+    InstigationStatus,
+    ScheduleInstigationData,
+)
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils import mkdir_p

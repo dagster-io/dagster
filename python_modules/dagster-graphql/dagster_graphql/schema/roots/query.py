@@ -7,7 +7,7 @@ from dagster.core.host_representation import (
     ScheduleSelector,
     SensorSelector,
 )
-from dagster.core.scheduler.job import InstigationType
+from dagster.core.scheduler.instigation import InstigationType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets

@@ -2,7 +2,7 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
-from dagster.core.scheduler.job import InstigationTickStatsSnapshot
+from dagster.core.scheduler.instigation import InstigationTickStatsSnapshot
 from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import start_schedule, stop_schedule

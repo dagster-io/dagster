@@ -12,7 +12,7 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationStatus
+from dagster.core.scheduler.instigation import InstigationStatus
 from dagster.core.scheduler.scheduler import DagsterDaemonScheduler
 
 

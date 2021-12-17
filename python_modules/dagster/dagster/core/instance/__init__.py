@@ -1653,7 +1653,7 @@ records = instance.get_event_records(
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo
         from dagster.core.definitions.run_request import InstigationType
-        from dagster.core.scheduler.job import InstigationStatus
+        from dagster.core.scheduler.instigation import InstigationStatus
 
         errors = []
 
@@ -1703,7 +1703,7 @@ records = instance.get_event_records(
     # Schedule Storage
 
     def start_sensor(self, external_sensor):
-        from dagster.core.scheduler.job import (
+        from dagster.core.scheduler.instigation import (
             InstigationState,
             InstigationStatus,
             SensorInstigationData,
@@ -1725,7 +1725,7 @@ records = instance.get_event_records(
             self.update_job_state(job_state.with_status(InstigationStatus.RUNNING))
 
     def stop_sensor(self, job_origin_id):
-        from dagster.core.scheduler.job import InstigationStatus
+        from dagster.core.scheduler.instigation import InstigationStatus
 
         job_state = self.get_job_state(job_origin_id)
         if job_state:

@@ -6,7 +6,7 @@ import yaml
 from dagster import check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigationStatus,
     InstigationTick,

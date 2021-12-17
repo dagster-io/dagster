@@ -1,7 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationTickStatus
+from dagster.core.scheduler.instigation import InstigationTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (

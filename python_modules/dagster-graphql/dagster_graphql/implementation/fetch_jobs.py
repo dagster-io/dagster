@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.host_representation import InstigationSelector
-from dagster.core.scheduler.job import InstigationStatus
+from dagster.core.scheduler.instigation import InstigationStatus
 
 from .utils import capture_error
 

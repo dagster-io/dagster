@@ -8,7 +8,7 @@ from dagster import check
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigationStatus,
     InstigationTickData,

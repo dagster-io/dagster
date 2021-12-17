@@ -1,5 +1,5 @@
 import graphene
-from dagster.core.scheduler.job import InstigationTickStatus
+from dagster.core.scheduler.instigation import InstigationTickStatus
 
 from ..errors import GraphenePythonError
 from ..instigation import GrapheneInstigationTickStatus

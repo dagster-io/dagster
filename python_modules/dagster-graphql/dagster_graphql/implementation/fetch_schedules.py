@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.core.scheduler.job import InstigationStatus
+from dagster.core.scheduler.instigation import InstigationStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 

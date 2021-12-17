@@ -41,7 +41,11 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationState, InstigationStatus, InstigationTickStatus
+from dagster.core.scheduler.instigation import (
+    InstigationState,
+    InstigationStatus,
+    InstigationTickStatus,
+)
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (

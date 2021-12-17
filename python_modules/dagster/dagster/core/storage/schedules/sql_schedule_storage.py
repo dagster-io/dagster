@@ -4,7 +4,7 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler.job import (
+from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigationTick,
     InstigationTickData,

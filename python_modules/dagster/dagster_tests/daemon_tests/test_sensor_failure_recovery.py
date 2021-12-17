@@ -2,7 +2,11 @@ import pendulum
 import pytest
 from dagster.core.definitions.run_request import InstigationType
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationState, InstigationStatus, InstigationTickStatus
+from dagster.core.scheduler.instigation import (
+    InstigationState,
+    InstigationStatus,
+    InstigationTickStatus,
+)
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import (
