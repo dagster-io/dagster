@@ -18,7 +18,7 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample, foo
+from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
 from .spark_asset import daily_temperature_high_diffs
 
 
@@ -85,7 +85,7 @@ class LocalFileSystemIOManager(IOManager):
 
 spark_weather_job = build_assets_job(
     "spark_weather",
-    assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs, foo],
+    assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
     source_assets=[sfo_q2_weather_sample],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())

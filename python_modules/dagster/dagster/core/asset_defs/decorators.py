@@ -236,10 +236,6 @@ def multi_asset(
             tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
 
-        print("-----------")
-        print(outs)
-        print(ins_by_input_names)
-
         return AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
