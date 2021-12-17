@@ -61,6 +61,10 @@ export const defaultMocks = {
   Solid: () => ({
     name: hyphenatedName,
   }),
+  PythonError: () => ({
+    message: () => 'A wild python error appeared!',
+    stack: () => [],
+  }),
 
   // Disambiguate error unions. If you'd like to mock an error, define a custom mock
   // for the type.
