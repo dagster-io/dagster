@@ -34,8 +34,8 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.job import (
+    InstigationState,
     InstigationStatus,
-    JobState,
     JobTickData,
     JobTickStatus,
     JobType,
@@ -1258,7 +1258,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             instance.start_schedule_and_update_storage_state(good_schedule)
             instance.start_schedule_and_update_storage_state(bad_schedule)
 
-            unloadable_schedule_state = JobState(
+            unloadable_schedule_state = InstigationState(
                 unloadable_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
@@ -1415,7 +1415,7 @@ def test_bad_load_repository(external_repo_context, capfd):
                 valid_schedule_origin.job_name,
             )
 
-            schedule_state = JobState(
+            schedule_state = InstigationState(
                 invalid_repo_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
@@ -1464,7 +1464,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
                 "invalid_schedule",
             )
 
-            schedule_state = JobState(
+            schedule_state = InstigationState(
                 invalid_repo_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,
@@ -1503,7 +1503,7 @@ def test_bad_load_repository_location(capfd):
             second=59,
         )
         with pendulum.test(initial_datetime):
-            schedule_state = JobState(
+            schedule_state = InstigationState(
                 fake_origin,
                 JobType.SCHEDULE,
                 InstigationStatus.RUNNING,

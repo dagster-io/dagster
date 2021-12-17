@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions.run_request import JobType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.job import (
-    JobState,
+    InstigationState,
     JobTick,
     JobTickData,
     JobTickStatsSnapshot,
@@ -66,7 +66,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
 
     def add_job_state(self, job):
-        check.inst_param(job, "job", JobState)
+        check.inst_param(job, "job", InstigationState)
         with self.connect() as conn:
             try:
                 conn.execute(
@@ -80,16 +80,16 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"JobState {job.job_origin_id} is already present in storage"
+                    f"InstigationState {job.job_origin_id} is already present in storage"
                 ) from exc
 
         return job
 
     def update_job_state(self, job):
-        check.inst_param(job, "job", JobState)
+        check.inst_param(job, "job", InstigationState)
         if not self.get_job_state(job.job_origin_id):
             raise DagsterInvariantViolationError(
-                "JobState {id} is not present in storage".format(id=job.job_origin_id)
+                "InstigationState {id} is not present in storage".format(id=job.job_origin_id)
             )
 
         with self.connect() as conn:
@@ -107,7 +107,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if not self.get_job_state(job_origin_id):
             raise DagsterInvariantViolationError(
-                "JobState {id} is not present in storage".format(id=job_origin_id)
+                "InstigationState {id} is not present in storage".format(id=job_origin_id)
             )
 
         with self.connect() as conn:

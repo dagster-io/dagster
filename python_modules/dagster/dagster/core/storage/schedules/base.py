@@ -3,7 +3,7 @@ from typing import Iterable
 
 from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import JobState, JobTick, JobTickData, JobTickStatus
+from dagster.core.scheduler.job import InstigationState, JobTick, JobTickData, JobTickStatus
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -16,8 +16,8 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     @abc.abstractmethod
     def all_stored_job_state(
         self, repository_origin_id: str = None, job_type: JobType = None
-    ) -> Iterable[JobState]:
-        """Return all JobStates present in storage
+    ) -> Iterable[InstigationState]:
+        """Return all InstigationStates present in storage
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
@@ -25,7 +25,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_job_state(self, job_origin_id: str) -> JobState:
+    def get_job_state(self, job_origin_id: str) -> InstigationState:
         """Return the unique job with the given id
 
         Args:
@@ -33,19 +33,19 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def add_job_state(self, job: JobState):
+    def add_job_state(self, job: InstigationState):
         """Add a job to storage.
 
         Args:
-            job (JobState): The job to add
+            job (InstigationState): The job to add
         """
 
     @abc.abstractmethod
-    def update_job_state(self, job: JobState):
+    def update_job_state(self, job: InstigationState):
         """Update a job in storage.
 
         Args:
-            job (JobState): The job to update
+            job (InstigationState): The job to update
         """
 
     @abc.abstractmethod

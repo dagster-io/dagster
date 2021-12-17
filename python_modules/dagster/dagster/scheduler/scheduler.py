@@ -9,8 +9,8 @@ from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import (
+    InstigationState,
     InstigationStatus,
-    JobState,
     JobTickData,
     JobTickStatus,
     JobType,
@@ -155,7 +155,7 @@ def launch_scheduled_runs_for_schedule(
     log_verbose_checks=True,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(schedule_state, "schedule_state", JobState)
+    check.inst_param(schedule_state, "schedule_state", InstigationState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
 

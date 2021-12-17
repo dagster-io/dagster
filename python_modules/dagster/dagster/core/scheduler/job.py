@@ -75,9 +75,9 @@ def check_job_data(job_type, job_specific_data):
 
 
 @whitelist_for_serdes
-class JobState(namedtuple("_JobState", "origin job_type status job_specific_data")):
+class InstigationState(namedtuple("_InstigationState", "origin job_type status job_specific_data")):
     def __new__(cls, origin, job_type, status, job_specific_data=None):
-        return super(JobState, cls).__new__(
+        return super(InstigationState, cls).__new__(
             cls,
             check.inst_param(origin, "origin", ExternalJobOrigin),
             check.inst_param(job_type, "job_type", JobType),
@@ -103,7 +103,7 @@ class JobState(namedtuple("_JobState", "origin job_type status job_specific_data
 
     def with_status(self, status):
         check.inst_param(status, "status", InstigationStatus)
-        return JobState(
+        return InstigationState(
             self.origin,
             job_type=self.job_type,
             status=status,
@@ -112,12 +112,15 @@ class JobState(namedtuple("_JobState", "origin job_type status job_specific_data
 
     def with_data(self, job_specific_data):
         check_job_data(self.job_type, job_specific_data)
-        return JobState(
+        return InstigationState(
             self.origin,
             job_type=self.job_type,
             status=self.status,
             job_specific_data=job_specific_data,
         )
+
+
+register_serdes_tuple_fallbacks({"JobState": InstigationState})
 
 
 @whitelist_for_serdes

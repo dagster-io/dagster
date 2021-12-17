@@ -503,9 +503,13 @@ class ExternalSchedule:
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
     def get_default_instigation_state(self, instance):
-        from dagster.core.scheduler.job import JobState, InstigationStatus, ScheduleInstigationData
+        from dagster.core.scheduler.job import (
+            InstigationState,
+            InstigationStatus,
+            ScheduleInstigationData,
+        )
 
-        return JobState(
+        return InstigationState(
             self.get_external_origin(),
             JobType.SCHEDULE,
             InstigationStatus.STOPPED,
@@ -583,9 +587,13 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     def get_default_instigation_state(self, _instance):
-        from dagster.core.scheduler.job import JobState, InstigationStatus, SensorInstigationData
+        from dagster.core.scheduler.job import (
+            InstigationState,
+            InstigationStatus,
+            SensorInstigationData,
+        )
 
-        return JobState(
+        return InstigationState(
             self.get_external_origin(),
             JobType.SENSOR,
             InstigationStatus.STOPPED,

@@ -9,7 +9,7 @@ from dagster.core.definitions.run_request import JobType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationStatus, JobState, ScheduleInstigationData
+from dagster.core.scheduler.job import InstigationState, InstigationStatus, ScheduleInstigationData
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils import mkdir_p
@@ -53,7 +53,7 @@ class Scheduler(abc.ABC):
         return schedule_state
 
     def _create_new_schedule_state(self, instance, external_schedule):
-        schedule_state = JobState(
+        schedule_state = InstigationState(
             external_schedule.get_external_origin(),
             JobType.SCHEDULE,
             InstigationStatus.STOPPED,

@@ -2,7 +2,7 @@ import pendulum
 import pytest
 from dagster.core.definitions.run_request import JobType
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import InstigationStatus, JobState, JobTickStatus
+from dagster.core.scheduler.job import InstigationState, InstigationStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import (
@@ -54,7 +54,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
             instance.add_job_state(
-                JobState(
+                InstigationState(
                     external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
                 )
             )
@@ -137,7 +137,7 @@ def test_failure_after_run_created_before_run_launched(
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
-                JobState(
+                InstigationState(
                     external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
                 )
             )
@@ -219,7 +219,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
-                JobState(
+                InstigationState(
                     external_sensor.get_external_origin(), JobType.SENSOR, InstigationStatus.RUNNING
                 )
             )
