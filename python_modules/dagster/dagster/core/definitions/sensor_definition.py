@@ -370,7 +370,7 @@ class SensorDefinition:
         target_names = [target.pipeline_name for target in self._targets]
 
         if run_requests and not self._targets:
-            raise DagsterInvariantViolationError(
+            raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor without a specified target. Targets can be specified by providing "
                 "a job or pipeline_name."
@@ -378,12 +378,12 @@ class SensorDefinition:
 
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
-                raise DagsterInvariantViolationError(
+                raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
                     f"specify job_name for the requested run. Expected one of: {target_names}"
                 )
             elif run_request.job_name and run_request.job_name not in target_names:
-                raise DagsterInvariantViolationError(
+                raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
@@ -457,7 +457,7 @@ def wrap_sensor_evaluation(
             yield result
 
         elif result is not None:
-            raise DagsterInvariantViolationError(
+            raise Exception(
                 (
                     "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
                     "{result} of type {type_}.  Should only return SkipReason or "

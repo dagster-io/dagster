@@ -19,28 +19,6 @@ class DagsterSchedulerError(DagsterError):
     """Base class for all Dagster Scheduler errors"""
 
 
-class DagsterScheduleReconciliationError(DagsterError):
-    """Error raised during schedule state reconcilation. During reconcilation, exceptions that are
-    raised when trying to start or stop a schedule are collected and passed to this wrapper exception.
-    The individual exceptions can be accessed by the `errors` property."""
-
-    def __init__(self, preamble, errors, *args, **kwargs):
-        self.errors = errors
-
-        error_msg = preamble
-        error_messages = []
-        for i_error, error in enumerate(self.errors):
-            error_messages.append(str(error))
-            error_msg += "\n    Error {i_error}: {error_message}".format(
-                i_error=i_error + 1, error_message=str(error)
-            )
-
-        self.message = error_msg
-        self.error_messages = error_messages
-
-        super(DagsterScheduleReconciliationError, self).__init__(error_msg, *args, **kwargs)
-
-
 class DagsterScheduleDoesNotExist(DagsterSchedulerError):
     """Errors raised when ending a job for a schedule."""
 

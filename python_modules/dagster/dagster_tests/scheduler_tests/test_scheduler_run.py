@@ -28,6 +28,8 @@ from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
+    GrpcServerRepositoryLocation,
+    GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
@@ -53,9 +55,12 @@ from dagster.core.test_utils import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
+from dagster.grpc.client import EphemeralDagsterGrpcClient
+from dagster.grpc.server import open_server_process
 from dagster.scheduler.scheduler import launch_scheduled_runs
+from dagster.seven import wait_for_process
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster.utils import merge_dicts
+from dagster.utils import find_free_port, merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 _COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
@@ -433,16 +438,18 @@ def instance_with_schedules(external_repo_context, overrides=None):
                 yield (instance, workspace, external_repo)
 
 
-@contextmanager
-def default_repo():
-    loadable_target_origin = LoadableTargetOrigin(
+def _loadable_target_origin():
+    return LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=__file__,
         working_directory=os.getcwd(),
     )
 
+
+@contextmanager
+def default_repo():
     with ManagedGrpcPythonEnvRepositoryLocationOrigin(
-        loadable_target_origin=loadable_target_origin,
+        loadable_target_origin=_loadable_target_origin(),
         location_name="test_location",
     ).create_test_location() as location:
         yield location.get_repository("the_repo")
@@ -468,7 +475,7 @@ def validate_tick(
     assert tick_data.status == expected_status
     assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
-        assert expected_error in tick_data.error.message
+        assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
 
 
@@ -2006,3 +2013,82 @@ def test_manual_partition_with_solid_selection(external_repo_context):
                     started_steps.add(event.dagster_event.step_key)
 
             assert started_steps == {"end"}  # matches solid_selection
+
+
+@contextmanager
+def _grpc_server_external_repo(port):
+    server_process = open_server_process(
+        port=port,
+        socket=None,
+        loadable_target_origin=_loadable_target_origin(),
+    )
+    try:
+        # shuts down server when it leaves this contextmanager
+        with EphemeralDagsterGrpcClient(port=port, socket=None, server_process=server_process):
+            location_origin = GrpcServerRepositoryLocationOrigin(
+                host="localhost", port=port, location_name="test_location"
+            )
+            with GrpcServerRepositoryLocation(origin=location_origin) as location:
+                yield location.get_repository("the_repo")
+
+    finally:
+        if server_process.poll() is None:
+            wait_for_process(server_process, timeout=30)
+
+
+def test_grpc_server_down():
+    port = find_free_port()
+    location_origin = GrpcServerRepositoryLocationOrigin(
+        host="localhost", port=port, location_name="test_location"
+    )
+    schedule_origin = ExternalJobOrigin(
+        external_repository_origin=ExternalRepositoryOrigin(
+            repository_location_origin=location_origin,
+            repository_name="the_repo",
+        ),
+        job_name="simple_schedule",
+    )
+
+    initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+
+    with schedule_instance() as instance:
+        with create_test_daemon_workspace() as workspace:
+            with pendulum.test(initial_datetime):
+                with _grpc_server_external_repo(port) as external_repo:
+                    external_schedule = external_repo.get_external_schedule("simple_schedule")
+                    instance.start_schedule_and_update_storage_state(external_schedule)
+                    workspace.get_location(location_origin)
+
+                # Server is no longer running, ticks fail but indicate it will resume once it is reachable
+                for _trial in range(3):
+                    list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                    assert instance.get_runs_count() == 0
+                    ticks = instance.get_job_ticks(schedule_origin.get_id())
+                    assert len(ticks) == 1
+
+                    validate_tick(
+                        ticks[0],
+                        external_schedule,
+                        initial_datetime,
+                        JobTickStatus.FAILURE,
+                        [],
+                        "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                        expected_failure_count=0,
+                    )
+
+                # Server starts back up, tick now succeeds
+                with _grpc_server_external_repo(port) as external_repo:
+                    list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                    assert instance.get_runs_count() == 1
+                    ticks = instance.get_job_ticks(schedule_origin.get_id())
+                    assert len(ticks) == 1
+
+                    expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
+
+                    validate_tick(
+                        ticks[0],
+                        external_schedule,
+                        expected_datetime,
+                        JobTickStatus.SUCCESS,
+                        [run.run_id for run in instance.get_runs()],
+                    )

@@ -2,9 +2,9 @@ import os
 import re
 import time
 
-import grpc
 import pytest
 from dagster import check, seven
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster.grpc.server import GrpcServerProcess, open_server_process
 from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
@@ -78,15 +78,17 @@ def test_server_port():
 
 def test_client_bad_port():
     port = find_free_port()
-    with pytest.raises(grpc.RpcError, match="failed to connect to all addresses"):
+    with pytest.raises(DagsterUserCodeUnreachableError) as exc_info:
         DagsterGrpcClient(port=port).ping("foobar")
+    assert "failed to connect to all addresses" in str(exc_info.getrepr())
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_client_bad_socket():
     with safe_tempfile_path() as bad_socket:
-        with pytest.raises(grpc.RpcError, match="failed to connect to all addresses"):
+        with pytest.raises(DagsterUserCodeUnreachableError) as exc_info:
             DagsterGrpcClient(socket=bad_socket).ping("foobar")
+        assert "failed to connect to all addresses" in str(exc_info.getrepr())
 
 
 @pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
@@ -172,7 +174,7 @@ def test_detect_server_restart():
         interrupt_ipc_subprocess_pid(server_process.pid)
 
     seven.wait_for_process(server_process, timeout=5)
-    with pytest.raises(grpc._channel._InactiveRpcError):  # pylint: disable=protected-access
+    with pytest.raises(DagsterUserCodeUnreachableError):
         api_client.get_server_id()
 
     # Create second server and query ID

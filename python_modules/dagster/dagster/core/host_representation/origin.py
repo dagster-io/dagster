@@ -5,10 +5,9 @@ from collections import namedtuple
 from contextlib import contextmanager
 from typing import Set
 
-import grpc
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
 
@@ -291,7 +290,7 @@ class GrpcServerRepositoryLocationOrigin(
     def shutdown_server(self):
         try:
             self.create_client().shutdown_server()
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             # Server already shutdown
             pass
 
