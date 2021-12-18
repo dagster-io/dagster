@@ -14,6 +14,8 @@ class InstigationType(Enum):
 
 
 register_serdes_enum_fallbacks({"JobType": InstigationType})
+# for internal backcompat
+JobType = InstigationType
 
 
 @whitelist_for_serdes

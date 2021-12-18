@@ -20,6 +20,8 @@ class InstigationStatus(Enum):
 
 
 register_serdes_enum_fallbacks({"JobStatus": InstigationStatus})
+# for internal backcompat
+JobStatus = InstigationStatus
 
 
 @whitelist_for_serdes
@@ -37,6 +39,8 @@ class SensorInstigationData(
 
 
 register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigationData})
+# for internal backcompat
+SensorJobData = SensorInstigationData
 
 
 @whitelist_for_serdes
@@ -56,6 +60,8 @@ class ScheduleInstigationData(
 
 
 register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigationData})
+# for internal backcompat
+ScheduleJobData = ScheduleInstigationData
 
 
 def check_job_data(job_type, job_specific_data):
@@ -121,6 +127,8 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
 
 
 register_serdes_tuple_fallbacks({"JobState": InstigationState})
+# for internal backcompat
+JobState = InstigationState
 
 
 @whitelist_for_serdes
@@ -132,6 +140,8 @@ class InstigationTickStatus(Enum):
 
 
 register_serdes_enum_fallbacks({"JobTickStatus": InstigationTickStatus})
+# for internal backcompat
+JobTickStatus = InstigationTickStatus
 
 
 @whitelist_for_serdes
@@ -210,6 +220,8 @@ class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
 
 
 register_serdes_tuple_fallbacks({"JobTick": InstigationTick})
+# for internal backcompat
+JobTick = InstigationTick
 
 
 @whitelist_for_serdes
@@ -333,6 +345,8 @@ class InstigationTickData(
 
 
 register_serdes_tuple_fallbacks({"JobTickData": InstigationTickData})
+# for internal backcompat
+JobTickData = InstigationTickData
 
 
 def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
@@ -374,3 +388,7 @@ class InstigationTickStatsSnapshot(
             ticks_skipped=check.int_param(ticks_skipped, "ticks_skipped"),
             ticks_failed=check.int_param(ticks_failed, "ticks_failed"),
         )
+
+
+# for internal backcompat
+JobTickStatsSnapshot = InstigationTickStatsSnapshot
