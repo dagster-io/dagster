@@ -306,7 +306,6 @@ export function layoutPipeline(
     height: maxHeight + marginy,
     parent: null,
   };
-  console.log(result);
 
   if (parentOp) {
     // Now that we've computed the pipeline layout fully, lay out the
