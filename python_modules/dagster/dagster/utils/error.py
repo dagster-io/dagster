@@ -22,7 +22,7 @@ class SerializableErrorInfo(namedtuple("SerializableErrorInfo", "message stack c
     def to_string(self):
         stack_str = "\nStack Trace:\n" + "".join(self.stack) if self.stack else ""
         cause_str = (
-            "\nThe above exception was the direct cause of the following exception:\n"
+            "\nThe above exception was caused by the following exception:\n"
             + self.cause.to_string()
             if self.cause
             else ""

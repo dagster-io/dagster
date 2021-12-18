@@ -152,7 +152,7 @@ def test_construct_log_string_with_error_raise_from():
 
     expected_substr = textwrap.dedent(
         """
-        The above exception was the direct cause of the following exception:
+        The above exception was caused by the following exception:
         ValueError: inner error
 
         Stack Trace:
