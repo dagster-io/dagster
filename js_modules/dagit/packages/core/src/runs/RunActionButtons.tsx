@@ -275,7 +275,7 @@ function usePipelineAvailabilityErrorForRun(
       // Only the repo is a match.
       return {
         icon: 'warning',
-        tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
+        tooltip: `The workspace version of "${run.pipeline.name}" may be different than the one used for the original run.`,
         disabled: false,
       };
     }
@@ -286,7 +286,7 @@ function usePipelineAvailabilityErrorForRun(
         icon: 'warning',
         tooltip: (
           <Group direction="column" spacing={4}>
-            <div>{`The pipeline "${run.pipeline.name}" is not in the same repository as the original pipeline run.`}</div>
+            <div>{`The original run loaded "${run.pipeline.name}" from a different repository.`}</div>
             {run.repositoryOrigin ? (
               <div>
                 Original repository:{' '}
