@@ -36,6 +36,7 @@ if __name__ == "__main__":
             f"dagster{pin}",
             "celery>=4.3.0",
             "click>=5.0,<9.0",
+            "amqp<5.0.8",  # 5.0.8 doesn't work with the version of rabbitmq in our tests and docs
         ],
         extras_require={
             "flower": ["flower"],
