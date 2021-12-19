@@ -121,7 +121,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
               <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
                 {'View All in Asset Catalog '}
-                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+                <IconWIP name="open_in_new" color={ColorsWIP.Link} />
               </AssetCatalogLink>
             </Box>
           </>
@@ -134,18 +134,6 @@ export const AssetMaterializations: React.FC<Props> = ({
           />
         </SidebarSection>
       </>
-    );
-  }
-
-  if (!reversed.length) {
-    return (
-      <Box padding={{vertical: 20}}>
-        <NonIdealState
-          icon="asset"
-          title="No materializations"
-          description="No materializations were found for this asset."
-        />
-      </Box>
     );
   }
 
@@ -172,20 +160,30 @@ export const AssetMaterializations: React.FC<Props> = ({
           ) : null}
         </Box>
         <CurrentRunsBanner liveData={liveData} />
-        <AssetMaterializationTable
-          hasPartitions={hasPartitions}
-          hasLineage={hasLineage}
-          materializations={bucketed}
-          focused={
-            (bucketed.find((b) => Number(b.timestamp) <= Number(asOf)) || bucketed[0])?.timestamp
-          }
-          setFocused={(asOf) =>
-            setParams({
-              ...params,
-              asOf: paramsTimeWindowOnly || asOf !== bucketed[0]?.timestamp ? asOf : undefined,
-            })
-          }
-        />
+        {reversed.length > 0 ? (
+          <AssetMaterializationTable
+            hasPartitions={hasPartitions}
+            hasLineage={hasLineage}
+            materializations={bucketed}
+            focused={
+              (bucketed.find((b) => Number(b.timestamp) <= Number(asOf)) || bucketed[0])?.timestamp
+            }
+            setFocused={(asOf) =>
+              setParams({
+                ...params,
+                asOf: paramsTimeWindowOnly || asOf !== bucketed[0]?.timestamp ? asOf : undefined,
+              })
+            }
+          />
+        ) : (
+          <Box padding={{vertical: 20}}>
+            <NonIdealState
+              icon="asset"
+              title="No materializations"
+              description="No materializations were found for this asset."
+            />
+          </Box>
+        )}
       </Box>
       <Box style={{width: '40%'}} border={{side: 'left', color: ColorsWIP.KeylineGray, width: 1}}>
         <AssetMaterializationGraphs
