@@ -13,6 +13,7 @@ import {Subheading} from '../ui/Text';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -24,10 +25,9 @@ export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
 }> = ({repo, assetNode, liveDataByNode}) => {
-  const repoAddress = React.useMemo(
-    () => (repo ? {location: repo.repositoryLocation.name, name: repo.repository.name} : undefined),
-    [repo],
-  );
+  const repoAddress = repo
+    ? buildRepoAddress(repo.repository.name, repo.repositoryLocation.name)
+    : undefined;
 
   if (!repoAddress) {
     return (
