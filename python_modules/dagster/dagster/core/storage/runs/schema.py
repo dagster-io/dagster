@@ -24,6 +24,8 @@ RunsTable = db.Table(
     db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("start_time", db.Float),
+    db.Column("end_time", db.Float),
 )
 
 # Secondary Index migration table, used to track data migrations, both for event_logs and runs.
