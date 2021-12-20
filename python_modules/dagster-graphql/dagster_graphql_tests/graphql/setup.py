@@ -17,6 +17,7 @@ from dagster import (
     DagsterInstance,
     DynamicOutput,
     DynamicOutputDefinition,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     EventMetadataEntry,
@@ -1358,6 +1359,27 @@ time_partitioned_assets_job = build_assets_job(
     [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
 )
 
+dynamic_partitions_fn = lambda _current_time: [str(x) for x in range(10)]
+dynamic_partitions = DynamicPartitionsDefinition(dynamic_partitions_fn)
+
+
+@asset(partitions_def=dynamic_partitions)
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=dynamic_partitions)
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    return upstream_dynamic_partitioned_asset + 1
+
+
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    [upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
+)
+
 
 @job
 def two_ins_job():
@@ -1430,6 +1452,7 @@ def define_pipelines():
         two_assets_job,
         static_partitioned_assets_job,
         time_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
     ]
 
 

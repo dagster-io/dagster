@@ -399,6 +399,25 @@ class TestAssetAwareEventLog(
         assert asset_node["partitionKeys"][0] == "2021-05-05-01:00"
         assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
 
+        selector = infer_pipeline_selector(graphql_context, "dynamic_partitioned_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_PARTITIONS_FROM_KEYS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+        assert len(result.data["pipelineOrError"]["assetNodes"]) == 2
+        asset_node = result.data["pipelineOrError"]["assetNodes"][0]
+
+        assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) == 10
+        assert asset_node["partitionKeys"] == [str(num) for num in range(10)]
+
+        # TODO: add test for dynamic partition function that errors
+        # TODO: add test for dynamic partiion funciton that returns empty array or no array
+
 
 class TestPersistentInstanceAssetInProgress(
     make_graphql_context_test_suite(

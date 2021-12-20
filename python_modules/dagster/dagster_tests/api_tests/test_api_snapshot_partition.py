@@ -6,6 +6,7 @@ from dagster.api.snapshot_partition import (
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
+    sync_get_external_asset_partition_keys_grpc,
 )
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation import (
@@ -108,3 +109,18 @@ def test_external_partition_set_execution_params_grpc():
         )
         assert isinstance(data, ExternalPartitionSetExecutionParamData)
         assert len(data.partition_data) == 3
+
+
+def test_external_asset_partition_keys_grpc():
+    with get_bar_repo_repository_location() as repository_location:
+        repository_handle = repository_location.get_repository("bar_repo").handle
+
+        data = sync_get_external_asset_partition_keys_grpc(
+            repository_location.client,
+            repository_handle,
+            "qux",
+            "upstream_dynamic_partitioned_asset",
+        )
+        assert isinstance(data, ExternalPartitionNamesData)
+        assert len(data.partition_names) == 10
+        assert data.partition_names == [str(num) for num in range(10)]

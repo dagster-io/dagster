@@ -25,6 +25,11 @@ from dagster import (
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
+from datetime import datetime
+
+from dagster import HourlyPartitionsDefinition, DynamicPartitionsDefinition
+from dagster.core.asset_defs import build_assets_job, asset
+
 
 def create_single_node_pipeline(name, called):
     called[name] = called[name] + 1
@@ -571,3 +576,31 @@ def test_foreign_assets():
         return [foo, bar]
 
     assert my_repo.foreign_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+
+
+def test_asset_partition_key():
+    dynamic_partitions_fn = lambda _current_time: [str(x) for x in range(10)]
+    dynamic_partitions = DynamicPartitionsDefinition(dynamic_partitions_fn)
+
+    @asset(partitions_def=dynamic_partitions)
+    def upstream_dynamic_partitioned_asset():
+        return 1
+
+    @asset(partitions_def=dynamic_partitions)
+    def downstream_dynamic_partitioned_asset(
+        upstream_dynamic_partitioned_asset,
+    ):  # pylint: disable=redefined-outer-name
+        return upstream_dynamic_partitioned_asset + 1
+
+    dynamic_partitioned_assets_job = build_assets_job(
+        "dynamic_partitioned_assets_job",
+        [upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
+    )
+
+    @repository
+    def my_repo():
+        return [dynamic_partitioned_assets_job]
+
+    assert my_repo.get_asset_partition_keys(
+        "dynamic_partitioned_assets_job", "upstream_dynamic_partitioned_asset"
+    ) == [str(num) for num in range(10)]

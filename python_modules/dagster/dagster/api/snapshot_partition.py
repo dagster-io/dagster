@@ -8,7 +8,12 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
+from dagster.grpc.types import (
+    PartitionArgs,
+    PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
+    AssetPartitionArgs,
+)
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
@@ -119,5 +124,32 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     )
     if isinstance(result, ExternalPartitionExecutionErrorData):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result
+
+
+def sync_get_external_asset_partition_keys_grpc(api_client, repository_handle, job_name, op_name):
+    from dagster.grpc.client import DagsterGrpcClient
+
+    check.inst_param(api_client, "api_client", DagsterGrpcClient)
+    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    check.str_param(job_name, "job_name")
+    check.str_param(op_name, "op_name")
+
+    repository_origin = repository_handle.get_external_origin()
+
+    result = deserialize_json_to_dagster_namedtuple(
+        api_client.external_asset_partition_keys(
+            asset_partition_args=AssetPartitionArgs(
+                repository_origin=repository_origin,
+                job_name=job_name,
+                op_name=op_name,
+            ),
+        ),
+    )
+    #     (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
+    # )
+    # if isinstance(result, ExternalPartitionExecutionErrorData):
+    #     raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

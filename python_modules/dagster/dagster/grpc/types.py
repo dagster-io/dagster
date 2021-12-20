@@ -253,6 +253,19 @@ class PartitionNamesArgs(namedtuple("_PartitionNamesArgs", "repository_origin pa
 
 
 @whitelist_for_serdes
+class AssetPartitionArgs(namedtuple("_AssetPartitionArgs", "repository_origin job_name op_name")):
+    def __new__(cls, repository_origin, job_name, op_name):
+        return super(AssetPartitionArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
+            ),
+            job_name=check.str_param(job_name, "job_name"),
+            op_name=check.str_param(op_name, "op_name"),
+        )
+
+
+@whitelist_for_serdes
 class PartitionSetExecutionParamArgs(
     namedtuple(
         "_PartitionSetExecutionParamArgs",

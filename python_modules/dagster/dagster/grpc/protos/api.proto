@@ -12,6 +12,7 @@ service DagsterApi {
   rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
   rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
+  rpc ExternalAssetPartitionKeys (ExternalAssetPartitionKeysRequest) returns (ExternalAssetPartitionKeysReply) {}
   rpc ExternalNotebookData (ExternalNotebookDataRequest) returns (ExternalNotebookDataReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
@@ -66,6 +67,14 @@ message ExternalPartitionNamesRequest {
 
 message ExternalPartitionNamesReply {
   string serialized_external_partition_names_or_external_partition_execution_error = 1;
+}
+
+message ExternalAssetPartitionKeysRequest {
+  string serialized_asset_partition_keys_args = 1;
+}
+
+message ExternalAssetPartitionKeysReply {
+  string serialized_external_asset_partition_keys = 1;
 }
 
 message ExternalNotebookDataRequest {

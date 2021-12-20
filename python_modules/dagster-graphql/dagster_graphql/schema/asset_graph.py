@@ -6,6 +6,7 @@ from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
+    ExternalDynamicPartitionsDefinitionData,
 )
 
 from .asset_key import GrapheneAssetKey
@@ -160,16 +161,22 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_partitionKeys(self, _graphene_info):
-        # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
-        if partitions_def_data:
-            if isinstance(
-                partitions_def_data, ExternalStaticPartitionsDefinitionData
-            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
-                return [
-                    partition.name
-                    for partition in partitions_def_data.get_partitions_definition().get_partitions()
-                ]
+        if isinstance(partitions_def_data, ExternalStaticPartitionsDefinitionData) or isinstance(
+            partitions_def_data, ExternalTimeWindowPartitionsDefinitionData
+        ):
+            return [
+                partition.name
+                for partition in partitions_def_data.get_partitions_definition().get_partitions()
+            ]
+        elif isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            if self._external_asset_node.job_names[0]:
+                result = _graphene_info.context.get_external_asset_partition_keys(
+                    self._external_repository.handle,
+                    self._external_asset_node.job_names[0],
+                    self._external_asset_node.op_name,
+                )
+                return [key for key in result.partition_names]
         return []
 
 

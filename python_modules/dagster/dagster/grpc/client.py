@@ -25,6 +25,7 @@ from .types import (
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
+    AssetPartitionArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
@@ -166,6 +167,17 @@ class DagsterGrpcClient:
         )
 
         return res.serialized_external_partition_names_or_external_partition_execution_error
+
+    def external_asset_partition_keys(self, asset_partition_args):
+        check.inst_param(asset_partition_args, "asset_partition_args", AssetPartitionArgs)
+
+        res = self._query(
+            "ExternalAssetPartitionKeys",
+            api_pb2.ExternalAssetPartitionKeysRequest,
+            serialized_asset_partition_keys_args=serialize_dagster_namedtuple(asset_partition_args),
+        )
+
+        return res.serialized_external_asset_partition_keys
 
     def external_partition_config(self, partition_args):
         check.inst_param(partition_args, "partition_args", PartitionArgs)

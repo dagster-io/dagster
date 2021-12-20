@@ -57,6 +57,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionNamesReply.FromString,
         )
+        self.ExternalAssetPartitionKeys = channel.unary_unary(
+            "/api.DagsterApi/ExternalAssetPartitionKeys",
+            request_serializer=api__pb2.ExternalAssetPartitionKeysRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalAssetPartitionKeysReply.FromString,
+        )
         self.ExternalNotebookData = channel.unary_unary(
             "/api.DagsterApi/ExternalNotebookData",
             request_serializer=api__pb2.ExternalNotebookDataRequest.SerializeToString,
@@ -169,6 +174,12 @@ class DagsterApiServicer(object):
         raise NotImplementedError("Method not implemented!")
 
     def ExternalPartitionNames(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ExternalAssetPartitionKeys(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
@@ -295,6 +306,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalPartitionNames,
             request_deserializer=api__pb2.ExternalPartitionNamesRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionNamesReply.SerializeToString,
+        ),
+        "ExternalAssetPartitionKeys": grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalAssetPartitionKeys,
+            request_deserializer=api__pb2.ExternalAssetPartitionKeysRequest.FromString,
+            response_serializer=api__pb2.ExternalAssetPartitionKeysReply.SerializeToString,
         ),
         "ExternalNotebookData": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalNotebookData,
@@ -568,6 +584,35 @@ class DagsterApi(object):
             "/api.DagsterApi/ExternalPartitionNames",
             api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             api__pb2.ExternalPartitionNamesReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalAssetPartitionKeys(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ExternalAssetPartitionKeys",
+            api__pb2.ExternalAssetPartitionKeysRequest.SerializeToString,
+            api__pb2.ExternalAssetPartitionKeysReply.FromString,
             options,
             channel_credentials,
             insecure,

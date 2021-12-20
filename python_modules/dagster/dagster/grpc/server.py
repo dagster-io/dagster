@@ -47,6 +47,7 @@ from .impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
     start_run_in_subprocess,
+    get_asset_partition_keys,
 )
 from .types import (
     CanCancelExecutionRequest,
@@ -61,6 +62,7 @@ from .types import (
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
+    AssetPartitionArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
@@ -380,6 +382,23 @@ class DagsterApiServer(DagsterApiServicer):
                 get_partition_names(
                     recon_repo,
                     partition_names_args.partition_set_name,
+                )
+            )
+        )
+
+    def ExternalAssetPartitionKeys(self, request, _context):
+        asset_partition_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_asset_partition_keys_args
+        )
+
+        check.inst_param(asset_partition_args, "asset_partition_args", AssetPartitionArgs)
+
+        recon_repo = self._recon_repository_from_origin(asset_partition_args.repository_origin)
+
+        return api_pb2.ExternalAssetPartitionKeysReply(
+            serialized_external_asset_partition_keys=serialize_dagster_namedtuple(
+                get_asset_partition_keys(
+                    recon_repo, asset_partition_args.job_name, asset_partition_args.op_name
                 )
             )
         )

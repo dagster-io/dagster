@@ -325,6 +325,12 @@ class RepositoryData(ABC):
             )
         return partition_sets_with_name[0]
 
+    def get_asset_partition_keys(self, job_name, op_name):
+        output = self.get_job(job_name).solid_named(op_name).output_dict.get("result", None)
+        if output and output._asset_partitions_def:
+            partitions_def = output._asset_partitions_def
+            return partitions_def.get_partition_keys()
+
     def get_schedule_names(self):
         """Get the names of all schedules in the repository.
 
@@ -814,6 +820,12 @@ class CachingRepositoryData(RepositoryData):
 
         return self._partition_sets.get_definition(partition_set_name)
 
+    def get_asset_partition_keys(self, job_name, op_name):
+        output = self.get_job(job_name).solid_named(op_name).output_dict.get("result", None)
+        if output and output._asset_partitions_def:
+            partitions_def = output._asset_partitions_def
+            return partitions_def.get_partition_keys()
+
     def get_schedule_names(self):
         """Get the names of all schedules in the repository.
 
@@ -1048,6 +1060,9 @@ class RepositoryDefinition:
 
     def get_partition_set_def(self, name):
         return self._repository_data.get_partition_set(name)
+
+    def get_asset_partition_keys(self, job_name, op_name):
+        return self._repository_data.get_asset_partition_keys(job_name, op_name)
 
     @property
     def schedule_defs(self):

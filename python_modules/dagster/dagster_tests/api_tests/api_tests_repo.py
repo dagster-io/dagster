@@ -15,6 +15,8 @@ from dagster import (
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.test_utils import default_mode_def_for_test
+from dagster import HourlyPartitionsDefinition, DynamicPartitionsDefinition
+from dagster.core.asset_defs import build_assets_job, asset
 
 
 @lambda_solid
@@ -143,6 +145,28 @@ def define_baz_partitions():
     }
 
 
+dynamic_partitions_fn = lambda _current_time: [str(x) for x in range(10)]
+dynamic_partitions = DynamicPartitionsDefinition(dynamic_partitions_fn)
+
+
+@asset(partitions_def=dynamic_partitions)
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=dynamic_partitions)
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    return upstream_dynamic_partitioned_asset + 1
+
+
+qux_job = build_assets_job(
+    "qux_job",
+    [upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
+)
+
+
 @sensor(pipeline_name="foo")
 def sensor_foo(_):
     yield RunRequest(run_key=None, run_config={"foo": "FOO"}, tags={"foo": "foo_tag"})
@@ -161,6 +185,9 @@ def bar_repo():
             "foo": define_foo_pipeline,
             "bar": lambda: bar_pipeline,
             "baz": lambda: baz_pipeline,
+        },
+        "jobs": {
+            "qux": qux_job,
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),

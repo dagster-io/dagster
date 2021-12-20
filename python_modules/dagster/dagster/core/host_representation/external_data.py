@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
-from dagster import StaticPartitionsDefinition, check
+from dagster import DynamicPartitionsDefinition, StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
@@ -336,6 +336,13 @@ class ExternalPartitionsDefinitionData(ABC):
 
 
 @whitelist_for_serdes
+class ExternalDynamicPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData, namedtuple("_ExternalDynamicPartitionsDefinitionData", "")
+):
+    pass
+
+
+@whitelist_for_serdes
 class ExternalTimeWindowPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
     namedtuple(
@@ -640,10 +647,8 @@ def external_asset_graph_from_defs(
                     partitions_def_data = external_static_partitions_definition_from_def(
                         partitions_def
                     )
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        "Only static partition and time window partitions are currently supported."
-                    )
+                elif isinstance(partitions_def, DynamicPartitionsDefinition):
+                    partitions_def_data = ExternalDynamicPartitionsDefinitionData()
 
         asset_nodes.append(
             ExternalAssetNode(

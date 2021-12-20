@@ -255,6 +255,13 @@ class BaseWorkspaceRequestContext(IWorkspace):
         repository_location = self.get_repository_location(repository_location_name)
         return repository_location.get_external_notebook_data(notebook_path=notebook_path)
 
+    def get_external_asset_partition_keys(
+        self, repository_handle: RepositoryHandle, job_name: str, op_name: str
+    ):
+        return self.get_repository_location(
+            repository_handle.location_name
+        ).get_external_asset_partition_keys(repository_handle, job_name, op_name)
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(

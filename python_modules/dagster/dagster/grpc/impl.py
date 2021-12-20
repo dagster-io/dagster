@@ -321,6 +321,22 @@ def get_partition_names(recon_repo, partition_set_name):
         )
 
 
+def get_asset_partition_keys(recon_repo, job_name, op_name):
+    definition = recon_repo.get_definition()
+    partition_names = definition.get_asset_partition_keys(job_name, op_name)
+    try:
+        # TODO: update exceptions and error
+        with user_code_error_boundary(
+            PartitionExecutionError,
+            lambda: f"Error occurred during the execution of the partition generation function for ",
+        ):
+            return ExternalPartitionNamesData(partition_names=partition_names)
+    except PartitionExecutionError:
+        return ExternalPartitionExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
 def get_partition_tags(recon_repo, partition_set_name, partition_name):
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(partition_set_name)

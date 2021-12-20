@@ -15,6 +15,7 @@ from dagster.api.snapshot_partition import (
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
+    sync_get_external_asset_partition_keys_grpc,
 )
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
@@ -688,6 +689,17 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         return sync_get_external_partition_names_grpc(
             self.client, repository_handle, partition_set_name
+        )
+
+    def get_external_asset_partition_keys(
+        self, repository_handle: RepositoryHandle, job_name, op_name
+    ):
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.str_param(job_name, "job_name")
+        check.str_param(op_name, "op_name")
+
+        return sync_get_external_asset_partition_keys_grpc(
+            self.client, repository_handle, job_name, op_name
         )
 
     def get_external_schedule_execution_data(
