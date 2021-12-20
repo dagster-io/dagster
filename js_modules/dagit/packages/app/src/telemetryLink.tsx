@@ -2,7 +2,9 @@ import {ApolloLink} from '@apollo/client';
 import {TelemetryAction, logTelemetry} from '@dagit/core/app/Telemetry';
 
 const TELEMETRY_WHITELIST = new Set([
+  'PipelineExplorerRootQuery',
   'PipelineRunsRootQuery',
+  'RunRootQuery',
   'RunsRootQuery',
   'ScheduleRootQuery',
   'SensorRootQuery',
