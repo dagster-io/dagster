@@ -136,10 +136,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
-        kwargs = {}
-
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
+        kwargs = {}
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
             kwargs["start_time"] = datetime_as_float(datetime.now())
 
@@ -151,6 +150,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             kwargs["end_time"] = datetime_as_float(datetime.now())
 
         with self.connect() as conn:
+
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
@@ -313,18 +313,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         )
         limit = check.opt_int_param(limit, "limit")
 
+        columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
+
+        if self.has_run_stats_index_cols():
+            columns += ["start_time", "end_time"]
         # only fetch columns we use to build RunRecord
         query = self._runs_query(
             filters=filters,
             limit=limit,
-            columns=["id", "run_body", "create_timestamp", "update_timestamp"],
+            columns=columns,
             order_by=order_by,
             ascending=ascending,
         )
 
         rows = self.fetchall(query)
-
-        has_run_stats_index_cols = self.has_run_stats_index_cols()
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
@@ -334,11 +336,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
                 start_time=check.opt_inst(row["start_time"], float)
-                if has_run_stats_index_cols and "start_time" in row
+                if "start_time" in row
                 else None,
-                end_time=check.opt_inst(row["end_time"], float)
-                if has_run_stats_index_cols and "end_time" in row
-                else None,
+                end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
         ]
