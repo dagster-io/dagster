@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Type
+from typing import Any, Dict, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -484,6 +484,8 @@ class RunRecord(NamedTuple):
     pipeline_run: PipelineRun
     create_timestamp: datetime
     update_timestamp: datetime
+    start_time: Optional[float]
+    end_time: Optional[float]
 
 
 ###################################################################################################

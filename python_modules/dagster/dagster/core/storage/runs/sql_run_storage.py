@@ -15,7 +15,7 @@ from dagster.core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent
+from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -136,6 +136,18 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
+        kwargs = {}
+
+        if event.event_type == DagsterEventType.PIPELINE_START:
+            kwargs["start_time"] = datetime_as_float(datetime.now())
+
+        if event.event_type in {
+            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.PIPELINE_FAILURE,
+            DagsterEventType.PIPELINE_SUCCESS,
+        }:
+            kwargs["end_time"] = datetime_as_float(datetime.now())
+
         with self.connect() as conn:
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
@@ -144,6 +156,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
                     update_timestamp=pendulum.now("UTC"),
+                    **kwargs,
                 )
             )
 
@@ -317,6 +330,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 ),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
+                start_time=check.opt_inst(row["start_time"], float),
+                end_time=check.opt_inst(row["end_time"], float),
             )
             for row in rows
         ]
