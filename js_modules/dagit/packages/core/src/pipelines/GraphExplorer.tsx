@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Breadcrumbs} from '@blueprintjs/core';
 import Color from 'color';
-import * as querystring from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -244,7 +244,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 onClickOp={handleClickOp}
                 repoAddress={repoAddress}
                 isGraph={isGraph}
-                {...querystring.parse(location.search || '')}
+                {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />
             )}
           />

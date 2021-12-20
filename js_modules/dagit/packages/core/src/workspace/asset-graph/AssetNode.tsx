@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import {isEqual} from 'lodash';
-import qs from 'query-string';
+import qs from 'qs';
 import React, {CSSProperties} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';

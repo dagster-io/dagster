@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as qs from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';

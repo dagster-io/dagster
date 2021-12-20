@@ -1,4 +1,4 @@
-import * as querystring from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 
@@ -26,24 +26,24 @@ export const LaunchpadSetupRoot: React.FC<Props> = (props) => {
   useJobTitle(explorerPath, isJob);
 
   const [data, onSave] = useStorage(repoAddress.name, pipelineName);
-  const qs = querystring.parse(window.location.search);
+  const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {
-    if (qs.config || qs.mode || qs.solidSelection) {
+    if (queryString.config || queryString.mode || queryString.solidSelection) {
       const newSession: Partial<IExecutionSession> = {};
-      if (typeof qs.config === 'string') {
-        newSession.runConfigYaml = qs.config;
+      if (typeof queryString.config === 'string') {
+        newSession.runConfigYaml = queryString.config;
       }
-      if (typeof qs.mode === 'string') {
-        newSession.mode = qs.mode;
+      if (typeof queryString.mode === 'string') {
+        newSession.mode = queryString.mode;
       }
-      if (qs.solidSelection instanceof Array) {
-        newSession.solidSelection = qs.solidSelection;
-      } else if (typeof qs.solidSelection === 'string') {
-        newSession.solidSelection = [qs.solidSelection];
+      if (queryString.solidSelection instanceof Array) {
+        newSession.solidSelection = queryString.solidSelection as string[];
+      } else if (typeof queryString.solidSelection === 'string') {
+        newSession.solidSelection = [queryString.solidSelection];
       }
-      if (typeof qs.solidSelectionQuery === 'string') {
-        newSession.solidSelectionQuery = qs.solidSelectionQuery;
+      if (typeof queryString.solidSelectionQuery === 'string') {
+        newSession.solidSelectionQuery = queryString.solidSelectionQuery;
       }
 
       onSave(applyCreateSession(data, newSession));

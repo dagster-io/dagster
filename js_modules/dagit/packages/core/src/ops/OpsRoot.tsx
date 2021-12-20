@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import * as querystring from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
@@ -152,7 +152,7 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const history = useHistory();
   const location = useLocation();
 
-  const {q, typeExplorer} = querystring.parse(location.search);
+  const {q, typeExplorer} = qs.parse(location.search, {ignoreQueryPrefix: true});
   const suggestions = searchSuggestionsForOps(usedSolids);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
@@ -161,14 +161,12 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.replace({
-      search: `?${querystring.stringify({q: stringFromValue(search)})}`,
+      search: `?${qs.stringify({q: stringFromValue(search)})}`,
     });
   };
 
   const onClickOp = (defName: string) => {
-    history.replace(
-      workspacePathFromAddress(repoAddress, `/ops/${defName}?${querystring.stringify({q})}`),
-    );
+    history.replace(workspacePathFromAddress(repoAddress, `/ops/${defName}?${qs.stringify({q})}`));
   };
 
   React.useEffect(() => {
