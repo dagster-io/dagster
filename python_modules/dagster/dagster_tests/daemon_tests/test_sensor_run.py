@@ -448,9 +448,9 @@ def test_simple_sensor(external_repo_context, capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == """2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == """2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
             )
 
             freeze_datetime = freeze_datetime.add(seconds=30)
@@ -476,10 +476,10 @@ def test_simple_sensor(external_repo_context, capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == """2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == """2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
                     run_id=run.run_id
                 )
             )
@@ -927,7 +927,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
                 execute_sensor_iteration_loop(
                     instance,
                     workspace,
-                    get_default_daemon_logger("SensorDaemon"),
+                    get_default_daemon_logger("dagster.daemon.SensorDaemon"),
                     until=freeze_datetime.add(seconds=65).timestamp(),
                 )
             )

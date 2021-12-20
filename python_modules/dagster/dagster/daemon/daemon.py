@@ -1,3 +1,4 @@
+import logging
 import sys
 import time
 from abc import abstractclassmethod, abstractmethod
@@ -14,11 +15,10 @@ from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.log import default_system_logger
 
 
 def get_default_daemon_logger(daemon_name):
-    return default_system_logger(daemon_name)
+    return logging.getLogger(f"dagster.daemon.{daemon_name}")
 
 
 DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors

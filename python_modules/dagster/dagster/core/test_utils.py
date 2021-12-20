@@ -28,6 +28,7 @@ from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.log import configure_loggers
 
 
 def step_output_event_filter(pipe_iterator):
@@ -439,6 +440,7 @@ def in_process_test_workspace(instance, recon_repo):
 @contextmanager
 def create_test_daemon_workspace():
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    configure_loggers()
     with create_daemon_grpc_server_registry() as grpc_server_registry:
         with DynamicWorkspace(grpc_server_registry) as workspace:
             yield workspace
