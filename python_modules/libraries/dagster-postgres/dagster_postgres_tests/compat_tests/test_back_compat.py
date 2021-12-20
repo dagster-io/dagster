@@ -6,7 +6,16 @@ import subprocess
 import tempfile
 
 import pytest
-from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Output,
+    execute_pipeline,
+    job,
+    pipeline,
+    reconstructable,
+    solid,
+)
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -344,3 +353,51 @@ def _migration_regex(storage_name, current_revision, expected_revision=None):
     instruction = re.escape("Please run `dagster instance migrate`.")
 
     return "{} {} {}".format(warning, revision, instruction)
+
+
+def get_the_job():
+    @job
+    def the_job():
+        pass
+
+    return the_job
+
+
+def test_0_13_12_add_start_time_end_time(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_13_12_pre_start_time_end_time/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # Ensure that you don't get a migration required exception if not trying to use the
+        # migration-required column.
+        assert len(instance.get_runs()) == 1
+
+        # Ensure that you don't get a migration required exception when running a pipeline
+        # pre-migration.
+        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 2
+
+        instance.upgrade()
+
+        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 3
+        latest_run_record = instance.get_run_records()[0]
+        assert latest_run_record.end_time > latest_run_record.start_time
+
+        earliest_run_record = instance.get_run_records()[-1]
+        assert earliest_run_record.start_time is None
+        assert earliest_run_record.end_time is None

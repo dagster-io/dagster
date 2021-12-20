@@ -1,0 +1,1175 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.1
+-- Dumped by pg_dump version 14.0
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: test-schema; Type: SCHEMA; Schema: -; Owner: test
+--
+
+CREATE SCHEMA "test-schema";
+
+
+ALTER SCHEMA "test-schema" OWNER TO test;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    wipe_timestamp timestamp without time zone,
+    last_materialization_timestamp timestamp without time zone,
+    tags text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    mode text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: cereals; Type: TABLE; Schema: test-schema; Owner: test
+--
+
+CREATE TABLE "test-schema".cereals (
+    name text,
+    mfr text,
+    type text,
+    calories integer,
+    protein integer,
+    fat integer,
+    sodium integer,
+    fiber double precision,
+    carbo double precision,
+    sugars integer,
+    potass integer,
+    vitamins integer,
+    shelf integer,
+    weight double precision,
+    cups double precision,
+    rating double precision
+);
+
+
+ALTER TABLE "test-schema".cereals OWNER TO test;
+
+--
+-- Name: sort_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_by_calories AS
+ SELECT cereals.name,
+    cereals.mfr,
+    cereals.type,
+    cereals.calories,
+    cereals.protein,
+    cereals.fat,
+    cereals.sodium,
+    cereals.fiber,
+    cereals.carbo,
+    cereals.sugars,
+    cereals.potass,
+    cereals.vitamins,
+    cereals.shelf,
+    cereals.weight,
+    cereals.cups,
+    cereals.rating
+   FROM "test-schema".cereals
+  ORDER BY cereals.calories;
+
+
+ALTER TABLE "test-schema".sort_by_calories OWNER TO test;
+
+--
+-- Name: least_caloric; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".least_caloric AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+ LIMIT 1;
+
+
+ALTER TABLE "test-schema".least_caloric OWNER TO test;
+
+--
+-- Name: sort_cold_cereals_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_cold_cereals_by_calories AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+  WHERE (sort_by_calories.type = 'C'::text);
+
+
+ALTER TABLE "test-schema".sort_cold_cereals_by_calories OWNER TO test;
+
+--
+-- Name: sort_hot_cereals_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_hot_cereals_by_calories AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+  WHERE (sort_by_calories.type = 'H'::text);
+
+
+ALTER TABLE "test-schema".sort_hot_cereals_by_calories OWNER TO test;
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+f4b6a4885876
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, wipe_timestamp, last_materialization_timestamp, tags, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+1	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037514.010169, "user_message": ""}	PIPELINE_STARTING	2021-12-20 21:58:34.010169	\N	\N	\N
+2	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "58212"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for run (pid: 58212).", "pid": null, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for run (pid: 58212).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037516.3287091, "user_message": "Started process for run (pid: 58212)."}	ENGINE_EVENT	2021-12-20 21:58:36.328709	\N	\N	\N
+3	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of run for \\"composition\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - RUN_START - Started execution of run for \\"composition\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037520.9545128, "user_message": "Started execution of run for \\"composition\\"."}	PIPELINE_START	2021-12-20 21:58:40.954513	\N	\N	\N
+4	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "58212"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['add_four.emit_two.emit_one', 'add_four.emit_two.emit_one_2', 'add_four.emit_two.add', 'add_four.emit_two_2.emit_one', 'add_four.emit_two_2.emit_one_2', 'add_four.emit_two_2.add', 'add_four.add', 'int_to_float', 'div_four.div_two', 'div_four.div_two_2']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 58212)", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - ENGINE_EVENT - Executing steps in process (pid: 58212)", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037520.9899762, "user_message": "Executing steps in process (pid: 58212)"}	ENGINE_EVENT	2021-12-20 21:58:40.989976	\N	\N	\N
+5	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037521.097007, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2021-12-20 21:58:41.097007	\N	\N	\N
+6	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.41ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.mem_io_manager", "name": "InMemoryIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037521.112894, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2021-12-20 21:58:41.112894	\N	\N	\N
+7	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two.emit_one", "step_keys": ["add_four.emit_two.emit_one"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two.emit_one"}, "message": "Started capturing logs for step: add_four.emit_two.emit_one.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two.emit_one.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one", "timestamp": 1640037521.179557, "user_message": "Started capturing logs for step: add_four.emit_two.emit_one."}	LOGS_CAPTURED	2021-12-20 21:58:41.179557	add_four.emit_two.emit_one	\N	\N
+8	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two.emit_one"}, "message": "Started execution of step \\"add_four.emit_two.emit_one\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one - STEP_START - Started execution of step \\"add_four.emit_two.emit_one\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one", "timestamp": 1640037521.227656, "user_message": "Started execution of step \\"add_four.emit_two.emit_one\\"."}	STEP_START	2021-12-20 21:58:41.227656	add_four.emit_two.emit_one	\N	\N
+9	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two.emit_one"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two.emit_one"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one", "timestamp": 1640037521.263412, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:41.263412	add_four.emit_two.emit_one	\N	\N
+10	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two.emit_one"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one", "timestamp": 1640037521.286651, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:41.286651	add_four.emit_two.emit_one	\N	\N
+11	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 53.146590999999965}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two.emit_one"}, "message": "Finished execution of step \\"add_four.emit_two.emit_one\\" in 53ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two.emit_one\\" in 53ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one", "timestamp": 1640037521.31016, "user_message": "Finished execution of step \\"add_four.emit_two.emit_one\\" in 53ms."}	STEP_SUCCESS	2021-12-20 21:58:41.31016	add_four.emit_two.emit_one	\N	\N
+24	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two_2.emit_one_2"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two_2.emit_one_2"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one_2 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one_2", "timestamp": 1640037521.7971609, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:41.797161	add_four.emit_two_2.emit_one_2	\N	\N
+12	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two.emit_one_2", "step_keys": ["add_four.emit_two.emit_one_2"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two.emit_one_2"}, "message": "Started capturing logs for step: add_four.emit_two.emit_one_2.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one_2 - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two.emit_one_2.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one_2", "timestamp": 1640037521.394868, "user_message": "Started capturing logs for step: add_four.emit_two.emit_one_2."}	LOGS_CAPTURED	2021-12-20 21:58:41.394868	add_four.emit_two.emit_one_2	\N	\N
+13	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two.emit_one_2"}, "message": "Started execution of step \\"add_four.emit_two.emit_one_2\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one_2 - STEP_START - Started execution of step \\"add_four.emit_two.emit_one_2\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one_2", "timestamp": 1640037521.421031, "user_message": "Started execution of step \\"add_four.emit_two.emit_one_2\\"."}	STEP_START	2021-12-20 21:58:41.421031	add_four.emit_two.emit_one_2	\N	\N
+14	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two.emit_one_2"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two.emit_one_2"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one_2 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one_2", "timestamp": 1640037521.439292, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:41.439292	add_four.emit_two.emit_one_2	\N	\N
+15	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two.emit_one_2"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one_2 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one_2", "timestamp": 1640037521.463843, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:41.463843	add_four.emit_two.emit_one_2	\N	\N
+29	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two.emit_one"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037521.9970748, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one\\""}	LOADED_INPUT	2021-12-20 21:58:41.997075	add_four.emit_two.add	\N	\N
+16	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 58.821823000000606}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two.emit_one_2"}, "message": "Finished execution of step \\"add_four.emit_two.emit_one_2\\" in 58ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.emit_one_2 - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two.emit_one_2\\" in 58ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.emit_one_2", "timestamp": 1640037521.494874, "user_message": "Finished execution of step \\"add_four.emit_two.emit_one_2\\" in 58ms."}	STEP_SUCCESS	2021-12-20 21:58:41.494874	add_four.emit_two.emit_one_2	\N	\N
+17	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two_2.emit_one", "step_keys": ["add_four.emit_two_2.emit_one"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two_2.emit_one"}, "message": "Started capturing logs for step: add_four.emit_two_2.emit_one.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two_2.emit_one.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one", "timestamp": 1640037521.58181, "user_message": "Started capturing logs for step: add_four.emit_two_2.emit_one."}	LOGS_CAPTURED	2021-12-20 21:58:41.58181	add_four.emit_two_2.emit_one	\N	\N
+18	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two_2.emit_one"}, "message": "Started execution of step \\"add_four.emit_two_2.emit_one\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one - STEP_START - Started execution of step \\"add_four.emit_two_2.emit_one\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one", "timestamp": 1640037521.604803, "user_message": "Started execution of step \\"add_four.emit_two_2.emit_one\\"."}	STEP_START	2021-12-20 21:58:41.604803	add_four.emit_two_2.emit_one	\N	\N
+19	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two_2.emit_one"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two_2.emit_one"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one", "timestamp": 1640037521.628277, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:41.628277	add_four.emit_two_2.emit_one	\N	\N
+30	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two.emit_one_2"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one_2\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one_2\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037522.015313, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.emit_one_2\\""}	LOADED_INPUT	2021-12-20 21:58:42.015313	add_four.emit_two.add	\N	\N
+20	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two_2.emit_one"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one", "timestamp": 1640037521.649076, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:41.649076	add_four.emit_two_2.emit_one	\N	\N
+21	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 55.83948700000008}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one", "step_key": "add_four.emit_two_2.emit_one"}, "message": "Finished execution of step \\"add_four.emit_two_2.emit_one\\" in 55ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two_2.emit_one\\" in 55ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one", "timestamp": 1640037521.6807811, "user_message": "Finished execution of step \\"add_four.emit_two_2.emit_one\\" in 55ms."}	STEP_SUCCESS	2021-12-20 21:58:41.680781	add_four.emit_two_2.emit_one	\N	\N
+22	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two_2.emit_one_2", "step_keys": ["add_four.emit_two_2.emit_one_2"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two_2.emit_one_2"}, "message": "Started capturing logs for step: add_four.emit_two_2.emit_one_2.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one_2 - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two_2.emit_one_2.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one_2", "timestamp": 1640037521.750091, "user_message": "Started capturing logs for step: add_four.emit_two_2.emit_one_2."}	LOGS_CAPTURED	2021-12-20 21:58:41.750091	add_four.emit_two_2.emit_one_2	\N	\N
+23	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two_2.emit_one_2"}, "message": "Started execution of step \\"add_four.emit_two_2.emit_one_2\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one_2 - STEP_START - Started execution of step \\"add_four.emit_two_2.emit_one_2\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one_2", "timestamp": 1640037521.772129, "user_message": "Started execution of step \\"add_four.emit_two_2.emit_one_2\\"."}	STEP_START	2021-12-20 21:58:41.772129	add_four.emit_two_2.emit_one_2	\N	\N
+25	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two_2.emit_one_2"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one_2 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one_2", "timestamp": 1640037521.817625, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:41.817625	add_four.emit_two_2.emit_one_2	\N	\N
+26	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 43.87882200000082}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "emit_one_2", "step_key": "add_four.emit_two_2.emit_one_2"}, "message": "Finished execution of step \\"add_four.emit_two_2.emit_one_2\\" in 43ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.emit_one_2", "solid_handle": {"__class__": "SolidHandle", "name": "emit_one_2", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.emit_one_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.emit_one_2 - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two_2.emit_one_2\\" in 43ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.emit_one_2", "timestamp": 1640037521.838024, "user_message": "Finished execution of step \\"add_four.emit_two_2.emit_one_2\\" in 43ms."}	STEP_SUCCESS	2021-12-20 21:58:41.838024	add_four.emit_two_2.emit_one_2	\N	\N
+27	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two.add", "step_keys": ["add_four.emit_two.add"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Started capturing logs for step: add_four.emit_two.add.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two.add.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037521.90447, "user_message": "Started capturing logs for step: add_four.emit_two.add."}	LOGS_CAPTURED	2021-12-20 21:58:41.90447	add_four.emit_two.add	\N	\N
+28	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Started execution of step \\"add_four.emit_two.add\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - STEP_START - Started execution of step \\"add_four.emit_two.add\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037521.924872, "user_message": "Started execution of step \\"add_four.emit_two.add\\"."}	STEP_START	2021-12-20 21:58:41.924872	add_four.emit_two.add	\N	\N
+31	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "numbers", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "numbers", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - STEP_INPUT - Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037522.042499, "user_message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:42.042499	add_four.emit_two.add	\N	\N
+32	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two.add"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037522.0888572, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:42.088857	add_four.emit_two.add	\N	\N
+33	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037522.115133, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:42.115133	add_four.emit_two.add	\N	\N
+34	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 80.36702999999967}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two.add"}, "message": "Finished execution of step \\"add_four.emit_two.add\\" in 80ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two.add - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two.add\\" in 80ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two.add", "timestamp": 1640037522.161348, "user_message": "Finished execution of step \\"add_four.emit_two.add\\" in 80ms."}	STEP_SUCCESS	2021-12-20 21:58:42.161348	add_four.emit_two.add	\N	\N
+40	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.emit_two_2.add"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.3989482, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:42.398948	add_four.emit_two_2.add	\N	\N
+35	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.emit_two_2.add", "step_keys": ["add_four.emit_two_2.add"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Started capturing logs for step: add_four.emit_two_2.add.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - LOGS_CAPTURED - Started capturing logs for step: add_four.emit_two_2.add.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.236626, "user_message": "Started capturing logs for step: add_four.emit_two_2.add."}	LOGS_CAPTURED	2021-12-20 21:58:42.236626	add_four.emit_two_2.add	\N	\N
+36	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Started execution of step \\"add_four.emit_two_2.add\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - STEP_START - Started execution of step \\"add_four.emit_two_2.add\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.2577019, "user_message": "Started execution of step \\"add_four.emit_two_2.add\\"."}	STEP_START	2021-12-20 21:58:42.257702	add_four.emit_two_2.add	\N	\N
+37	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two_2.emit_one"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.323364, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one\\""}	LOADED_INPUT	2021-12-20 21:58:42.323364	add_four.emit_two_2.add	\N	\N
+38	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two_2.emit_one_2"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one_2\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one_2\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.344652, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.emit_one_2\\""}	LOADED_INPUT	2021-12-20 21:58:42.344652	add_four.emit_two_2.add	\N	\N
+39	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "numbers", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "numbers", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - STEP_INPUT - Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.3768342, "user_message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:42.376834	add_four.emit_two_2.add	\N	\N
+41	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.4204202, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:42.42042	add_four.emit_two_2.add	\N	\N
+42	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 45.72759900000101}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.emit_two_2.add"}, "message": "Finished execution of step \\"add_four.emit_two_2.add\\" in 45ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.emit_two_2.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "emit_two_2", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}}, "step_key": "add_four.emit_two_2.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.emit_two_2.add - STEP_SUCCESS - Finished execution of step \\"add_four.emit_two_2.add\\" in 45ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.emit_two_2.add", "timestamp": 1640037522.4409542, "user_message": "Finished execution of step \\"add_four.emit_two_2.add\\" in 45ms."}	STEP_SUCCESS	2021-12-20 21:58:42.440954	add_four.emit_two_2.add	\N	\N
+43	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "add_four.add", "step_keys": ["add_four.add"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Started capturing logs for step: add_four.add.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - LOGS_CAPTURED - Started capturing logs for step: add_four.add.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.5186949, "user_message": "Started capturing logs for step: add_four.add."}	LOGS_CAPTURED	2021-12-20 21:58:42.518695	add_four.add	\N	\N
+44	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Started execution of step \\"add_four.add\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - STEP_START - Started execution of step \\"add_four.add\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.543543, "user_message": "Started execution of step \\"add_four.add\\"."}	STEP_START	2021-12-20 21:58:42.543543	add_four.add	\N	\N
+45	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two.add"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.add\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.add\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.6361651, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two.add\\""}	LOADED_INPUT	2021-12-20 21:58:42.636165	add_four.add	\N	\N
+46	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "numbers", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.emit_two_2.add"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.add\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - LOADED_INPUT - Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.add\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.6585972, "user_message": "Loaded input \\"numbers\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.emit_two_2.add\\""}	LOADED_INPUT	2021-12-20 21:58:42.658597	add_four.add	\N	\N
+47	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "numbers", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "numbers", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - STEP_INPUT - Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.6969202, "user_message": "Got input \\"numbers\\" of type \\"[Int]\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:42.69692	add_four.add	\N	\N
+48	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "add_four.add"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.726133, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:42.726133	add_four.add	\N	\N
+49	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.757331, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:42.757331	add_four.add	\N	\N
+50	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 53.64487200000134}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "add", "step_key": "add_four.add"}, "message": "Finished execution of step \\"add_four.add\\" in 53ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "add_four.add", "solid_handle": {"__class__": "SolidHandle", "name": "add", "parent": {"__class__": "SolidHandle", "name": "add_four", "parent": null}}}, "step_key": "add_four.add", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - add_four.add - STEP_SUCCESS - Finished execution of step \\"add_four.add\\" in 53ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "add_four.add", "timestamp": 1640037522.7764769, "user_message": "Finished execution of step \\"add_four.add\\" in 53ms."}	STEP_SUCCESS	2021-12-20 21:58:42.776477	add_four.add	\N	\N
+51	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "int_to_float", "step_keys": ["int_to_float"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Started capturing logs for step: int_to_float.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - LOGS_CAPTURED - Started capturing logs for step: int_to_float.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.8495512, "user_message": "Started capturing logs for step: int_to_float."}	LOGS_CAPTURED	2021-12-20 21:58:42.849551	int_to_float	\N	\N
+52	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Started execution of step \\"int_to_float\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - STEP_START - Started execution of step \\"int_to_float\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.869356, "user_message": "Started execution of step \\"int_to_float\\"."}	STEP_START	2021-12-20 21:58:42.869356	int_to_float	\N	\N
+53	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "num", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "add_four.add"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.add\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - LOADED_INPUT - Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.add\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.8981829, "user_message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"add_four.add\\""}	LOADED_INPUT	2021-12-20 21:58:42.898183	int_to_float	\N	\N
+54	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "num", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "num", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Got input \\"num\\" of type \\"Int\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - STEP_INPUT - Got input \\"num\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.921348, "user_message": "Got input \\"num\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:42.921348	int_to_float	\N	\N
+55	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "int_to_float"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.950363, "user_message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:42.950363	int_to_float	\N	\N
+56	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.9671721, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:42.967172	int_to_float	\N	\N
+57	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 40.00379600000059}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "int_to_float", "step_key": "int_to_float"}, "message": "Finished execution of step \\"int_to_float\\" in 40ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "int_to_float", "solid_handle": {"__class__": "SolidHandle", "name": "int_to_float", "parent": null}}, "step_key": "int_to_float", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - int_to_float - STEP_SUCCESS - Finished execution of step \\"int_to_float\\" in 40ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "int_to_float", "timestamp": 1640037522.986645, "user_message": "Finished execution of step \\"int_to_float\\" in 40ms."}	STEP_SUCCESS	2021-12-20 21:58:42.986645	int_to_float	\N	\N
+58	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "div_four.div_two", "step_keys": ["div_four.div_two"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Started capturing logs for step: div_four.div_two.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - LOGS_CAPTURED - Started capturing logs for step: div_four.div_two.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.057981, "user_message": "Started capturing logs for step: div_four.div_two."}	LOGS_CAPTURED	2021-12-20 21:58:43.057981	div_four.div_two	\N	\N
+59	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Started execution of step \\"div_four.div_two\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - STEP_START - Started execution of step \\"div_four.div_two\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.080597, "user_message": "Started execution of step \\"div_four.div_two\\"."}	STEP_START	2021-12-20 21:58:43.080597	div_four.div_two	\N	\N
+60	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "num", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "int_to_float"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"int_to_float\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - LOADED_INPUT - Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"int_to_float\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.1103292, "user_message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"int_to_float\\""}	LOADED_INPUT	2021-12-20 21:58:43.110329	div_four.div_two	\N	\N
+61	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "num", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "num", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Got input \\"num\\" of type \\"Float\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - STEP_INPUT - Got input \\"num\\" of type \\"Float\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.140536, "user_message": "Got input \\"num\\" of type \\"Float\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:43.140536	div_four.div_two	\N	\N
+62	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "div_four.div_two"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.17328, "user_message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:43.17328	div_four.div_two	\N	\N
+63	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.194361, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:43.194361	div_four.div_two	\N	\N
+64	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 46.083018999999226}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two", "step_key": "div_four.div_two"}, "message": "Finished execution of step \\"div_four.div_two\\" in 46ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two", "solid_handle": {"__class__": "SolidHandle", "name": "div_two", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two - STEP_SUCCESS - Finished execution of step \\"div_four.div_two\\" in 46ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two", "timestamp": 1640037523.2137961, "user_message": "Finished execution of step \\"div_four.div_two\\" in 46ms."}	STEP_SUCCESS	2021-12-20 21:58:43.213796	div_four.div_two	\N	\N
+65	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "div_four.div_two_2", "step_keys": ["div_four.div_two_2"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Started capturing logs for step: div_four.div_two_2.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - LOGS_CAPTURED - Started capturing logs for step: div_four.div_two_2.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.273063, "user_message": "Started capturing logs for step: div_four.div_two_2."}	LOGS_CAPTURED	2021-12-20 21:58:43.273063	div_four.div_two_2	\N	\N
+66	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Started execution of step \\"div_four.div_two_2\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - STEP_START - Started execution of step \\"div_four.div_two_2\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.292232, "user_message": "Started execution of step \\"div_four.div_two_2\\"."}	STEP_START	2021-12-20 21:58:43.292232	div_four.div_two_2	\N	\N
+67	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "num", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "div_four.div_two"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"div_four.div_two\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - LOADED_INPUT - Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"div_four.div_two\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.315781, "user_message": "Loaded input \\"num\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"div_four.div_two\\""}	LOADED_INPUT	2021-12-20 21:58:43.315781	div_four.div_two_2	\N	\N
+68	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "num", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "num", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Got input \\"num\\" of type \\"Float\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - STEP_INPUT - Got input \\"num\\" of type \\"Float\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.339354, "user_message": "Got input \\"num\\" of type \\"Float\\". (Type check passed)."}	STEP_INPUT	2021-12-20 21:58:43.339354	div_four.div_two_2	\N	\N
+69	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "div_four.div_two_2"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Float\\". (Type check passed).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.36659, "user_message": "Yielded output \\"result\\" of type \\"Float\\". (Type check passed)."}	STEP_OUTPUT	2021-12-20 21:58:43.36659	div_four.div_two_2	\N	\N
+70	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.387864, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-12-20 21:58:43.387864	div_four.div_two_2	\N	\N
+71	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 47.680725999999396}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "composition", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_name": "div_two_2", "step_key": "div_four.div_two_2"}, "message": "Finished execution of step \\"div_four.div_two_2\\" in 47ms.", "pid": 58212, "pipeline_name": "composition", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}, "step_handle": {"__class__": "StepHandle", "key": "div_four.div_two_2", "solid_handle": {"__class__": "SolidHandle", "name": "div_two_2", "parent": {"__class__": "SolidHandle", "name": "div_four", "parent": null}}}, "step_key": "div_four.div_two_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - div_four.div_two_2 - STEP_SUCCESS - Finished execution of step \\"div_four.div_two_2\\" in 47ms.", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": "div_four.div_two_2", "timestamp": 1640037523.409747, "user_message": "Finished execution of step \\"div_four.div_two_2\\" in 47ms."}	STEP_SUCCESS	2021-12-20 21:58:43.409747	div_four.div_two_2	\N	\N
+72	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "58212"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['add_four.emit_two.emit_one', 'add_four.emit_two.emit_one_2', 'add_four.emit_two.add', 'add_four.emit_two_2.emit_one', 'add_four.emit_two_2.emit_one_2', 'add_four.emit_two_2.add', 'add_four.add', 'int_to_float', 'div_four.div_two', 'div_four.div_two_2']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 58212) in 2.44s", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - ENGINE_EVENT - Finished steps in process (pid: 58212) in 2.44s", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037523.445018, "user_message": "Finished steps in process (pid: 58212) in 2.44s"}	ENGINE_EVENT	2021-12-20 21:58:43.445018	\N	\N	\N
+73	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of run for \\"composition\\".", "pid": 58212, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "composition - f1e0df44-6395-4e6e-aaf3-d867a26e3662 - 58212 - RUN_SUCCESS - Finished execution of run for \\"composition\\".", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037523.459706, "user_message": "Finished execution of run for \\"composition\\"."}	PIPELINE_SUCCESS	2021-12-20 21:58:43.459706	\N	\N	\N
+74	f1e0df44-6395-4e6e-aaf3-d867a26e3662	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for run exited (pid: 58212).", "pid": null, "pipeline_name": "composition", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for run exited (pid: 58212).", "pipeline_name": "composition", "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "step_key": null, "timestamp": 1640037523.501665, "user_message": "Process for run exited (pid: 58212)."}	ENGINE_EVENT	2021-12-20 21:58:43.501665	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+1	f1e0df44-6395-4e6e-aaf3-d867a26e3662	dagster/solid_selection	*
+2	f1e0df44-6395-4e6e-aaf3-d867a26e3662	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, mode, status, run_body, partition, partition_set, create_timestamp, update_timestamp) FROM stdin;
+1	f1e0df44-6395-4e6e-aaf3-d867a26e3662	02b1a8d94e127d59f40e7eebd6a889989531d67c	composition	\N	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "93a98d910dabb4149a4a7f998147f0ef34c35a09", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": "/Users/christopherdecarolis/.pyenv/versions/3.8.6/envs/workenv-3.8.6/bin/python", "module_name": "dagster_test.toys.repo", "package_name": null, "python_file": null, "working_directory": null}, "location_name": "dagster_test.toys.repo"}, "repository_name": "toys_repository"}, "pipeline_name": "composition"}, "mode": "default", "parent_run_id": null, "pipeline_code_origin": {"__class__": "PipelinePythonOrigin", "pipeline_name": "composition", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "ModuleCodePointer", "fn_name": "toys_repository", "module": "dagster_test.toys.repo"}, "container_image": null, "executable_path": "/Users/christopherdecarolis/.pyenv/versions/3.8.6/envs/workenv-3.8.6/bin/python"}}, "pipeline_name": "composition", "pipeline_snapshot_id": "02b1a8d94e127d59f40e7eebd6a889989531d67c", "root_run_id": null, "run_config": {"solids": {"add_four": {"inputs": {"num": 0}}}}, "run_id": "f1e0df44-6395-4e6e-aaf3-d867a26e3662", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/hy/3g1v320524152x2v4bv8924r0000gn/T/tmp9y0m3f2y\\"}", "dagster/solid_selection": "*"}}	\N	\N	2021-12-20 16:58:34.001626	2021-12-20 16:58:43.493508
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	run_partitions	2021-12-20 16:58:06.450117	2021-12-20 16:58:06.444343
+2	asset_key_table	2021-12-20 16:58:06.526873	2021-12-20 16:58:06.521991
+3	asset_key_index_columns	2021-12-20 16:58:06.551006	2021-12-20 16:58:06.545834
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	02b1a8d94e127d59f40e7eebd6a889989531d67c	\\x789ced5d5973db3812fe2b2e3dcfba081007316f9e64b2e3da8c3d157b1eb662170ba7cd8d246a45293b9e54fefb8297441da4214aa46547a94a2522411c5f7fdde8c6f96d108672c893240c073f9f0dfe88267a188df5cd984f92c77836f8e96c20e3b1891ec2443eea110f93f2cdcf67df56bf7d97a5bbc99255bfe7c36158e6913e0ec553f8453f65195c8c9fea32ba7d9a64d548b3503a91d368328be2b14d309e0f87f6a11ecf47e1573e9ceb64f9d0447aa82abf1fa2af7a1c8ef948a739a7c5d98779e98b5fd1581595c8b25cabc3bfecebf38bab7f0fbedbb489e4433e0d8b4f8a3266365538e1533e4adb55169e26bf984ef9d3f94df6d19f635bfbf3cbf1ec1f377aa8e52c9e9e734619138c020520979a7a1caa20f07c1904f62ff111a0caa310ef0ed1e06394ccce627376a81ab4c2bb7856c27db8aa3889ecd3a78b9d84f679b07fddee2b527fe4137d8e80d29e868a0a8a314418780063e509c54540a12f89d1522b5fec2fe2dd8a3b9c3c772eb72be1ed56914c52bfc4f1b005f2edd0cb4b5be2b7f8e980c7cdbb8b8f179fb600b2edab9cc6d977bf5c5f7fccbeaab7511f8631afb5e68707212f6e89c2f27787307cf8787d71fb0c0e56e1fb43212d6c8941f9ab43042eaf9e6b7fd5f8a5d45c5a3fa1b1c220103ed301e1c897d840ad2537d80f243044520a80c0acc79e7cd5121da0ea3bc11ffe7975797db59b792ab57df7aaddaf4b275399651b95e7719f6a3ff0a8f2a96486302909648c4ac4b1411c50a2b1f48f423c6debdeb97c167668f7ba6d08a82727af03f174ea91b5174e61205bfa63d506decca6d1f861d946eda1d42d608ab154d65c40003d827c2c2084884a63d53480e4386c5bebca772ea0bc662b3272ae5c2ea3f233208c008472cd9947038f73421966f67f9ea440a84012acad3f073b12c8e7ad997e485f2f73357c3e9c859369fc35523a4566369debca9b2cf79027e17f92781c26b3699ad3b7efb5558a9270aaff3b8fa65966860f9334b7d2575051c2c5d0be2ab12f999139bc8afb8cfb5a634d04129ef221c6c268c330f140c03c6e9435601e4be5797c6dd3e38334edfe191dda995cae0af3ebc75fdfdd5e6ff3c79e1d1b58540a29e22b8e7d8e3c2110348c70ae2055106b1970463051c863b4ab0ea243c6df1563477769d5ef06536dad844e8a5f85e8b35fdfed9f960c8ac669b5a44e92ed24921c338f28c63d9f5268fd2da435550c795c61cc30e586535f01d1ad7eac2131e27fa54362723e9deaf12c7de8fd74d61140235baba81122638ccf8d34d662136af58b23dbb51a11180a19005c0b4f074623edae67ce94ee53cf5ed8116ba767a5349be85594e4c08d82ab2535d23cb6530209ec0bab17c647d00f80f294876d80e21310f84a32260523d6fb85adb5a6d3764d22f965a8df62cbb2ccd61b967ac7ceaa7970a7fe10aaf9c2230c27d53ca96637aa998dfa38ebe6c147ab0ea19b2f3cbc74d2cd936e76a39bf9889fb3721e7ca8f210caf9c2c35727e53c296737ca590c283a6be7c187420fa29d181a6e436b5bb60f14c3d0fed469bd6cbcad998228a01453745c639927ed7c31ed7426bb2baffa24bb8146136594241e070c511e98405369fb4aca3d0005a21ec142a213d94f643fd6966ded8ad26582ceaae9ac057da86626118f19236d5cc938f039943e0398688f4889a40092f8ccc7460aafc50ab467f532e4c38827d9e36f83241e4699a60ee2499235e7b827ddbe86b3ffc5db494e2ca44c68020163404aca08d01c6b42a842be569c5b3f04fafe91ceb9154d0be1be8d7b4e2776a39fab42dc7eba7c771bdefc76f1c7af7b2885108861e41940bd404983fd741290498629d08233c6b0073538aeb8a95356447138e263fea0a7db6941adf011651e08309602226cbd6ba588ef6b08a8b0224456c28053575ab80aa0575a00242dc519d71ef5a011d4b61822c588e418215f30c4ecffb02447458b4e7b445bdf0d3eecbd5ec88d22cec2e8952210012e5160ad1ac7868240098210125cd300312302c209d40881a3a2888be5b81b5c5e7db8be1bb4b41fc3f8211ceaaf7a5817c977d815de0d147f48667adabaf6d9bf2d872076a345af64f5316684401b176aec29eb9a2b4388edbe8340f8881a61fb784fa9a08b98ec15fb7e5cd52c487add7e9f1e45b3301ed7046e6fa36d3d39b5ce7ad5afb60bce05208010c1a5e1c6c69a3800405b47cdc704006814f57dd945a4d7f942b245f7922e872abbaa74cd542aa5fcd9a20f684ba27c89d6760239db774702b98aaa570275b759edd5b8bfeb9c98eac466bac1899d4762dd6871e86d7407a205824007d2931ea792794c402fe09262a4a52254583d205853a53aa0c5c98be8cea4e670168b4d6d6df385a6a94d2d7bd3cd27212c97a3eed351d70eacd9588f5b5661a29824d4f24e618d02a819958428483537d452ed6d4353e7c3b883e3666b5cb5ba5f5bc3546020878c60cfe728900820e27b34e001d14652811107be0cdea6adb9ab2c672fd8d4964c7f6939cf3ea8ebba9cd7681fa5c36ffdc1073dad59d0ae85d50584b127a1e719910e33420d8c6f20009ed2e9460f0430955d9b91e598ea7ec2b44e483c9f5a526c6faef358ea51ceb9159ab6b565ca569b6b4bcb8050ca140334ddb76394e5a7e76941b4b57a8406c4d5e4b91a977e4d9eeb94e9dbf5bad72798f9ec71afd13867487b15b4b3e3f7dafab66e43b0ed6179362b7f14f66cbdbef17c3699cf362c5aabe352dce8ee4cac5ee9ee3c63f876edda0e547612b433a4bd0a3a10be6f94f248201462cc02a959bae9525b6f0462185003987dde85a05fb35d3ba89de8d6912d968c2c83dec51a92fd1cdb26dfcf79e1889bea3893b457d56194095fc1548cc8f85a301bcea7c18a64462019606d34b3a65cfe403672c4a75ff4349cc5b66271523b2bdb2de157f75eb70edbb2eddcb511b8f369046e0c77e652af0ce78812c3024325d23e440a094230371442050c948a1ac684078f6bfb980b4bbc96ac58ddfbbf4e8e6c2fef89dbebdc766651bfdc761d913d393eafd4f1d975ecbf033fc879ad81a326b972b6574d723ea5e5b5f512cf1d7bd3c15205673fc08d30cea2e99530ce23c33fb6e95d1b58b5e62c34f1bc6689b78d807ca088810810e693807318f8820063acc901861ac87c4844d0ebecebb3a1e73edb20eab1700e178f72762c1acfd200ca94675a76be20ce591dfb3512ae07c875d4abb841e75ac95ea1739e423da60eb9f3c15b6b996a96cf3a2fe873d32767f87b2585730771ea74578cf1b66867c73d2e3fc05457df915ce955ecbbdcab9a61f174df2cbb88239dd77bb95928675bd0af85723dcaf298ba2d4706b73934b483f0d27928ce9147ae12eb8b47f9fc426f37412c4fce5e9de0706d6ecbfb205298aefed97425446ad8ca3d15619626ad7232e152375c02f53eff20addf55997cfd32a8954cddae84aa64dba89e2a4a2643feb47ee19365bb9847c359345eaa5b65f2bd0eeb4aa92bb740d9b04ad9fa173762ed7304c488dbfc23ebdbfc5d9fdf2ea7bdacb57b53b49f1beebd690b7279b54503ca8d77ddacc35ce1f476a40f72dd4757d0974dadc3bee6be9db6e02feead6840bff98e9d7de0dfe33a8faef0ffb032e8b145005b2ffa690b7f71334503f84d97fbec037debab3aba02fe72dc087b7a5dd9f941b1ff6c73bbdf40bff4658a262d8a7595c1c7cb9bdb7a091cf012bb7a3914ed5df59ab6e09a419e817b15cf1eb7ba2d6db12d336ce676259513b657d7b7bf956ec736788bcab822532dbf8e7675fe5c5b6096ee59032ecff870fba8fd3e77c074a5f9cbe66e9542ee49ea491acbcce56c3e6d7420f5448f951ecba79b3275d57fcc22dc301a7f8d254f0595e7b425f4ba49135e2ed29532ce0663c2ac32351f5ea6292ab558f970ed58144b01f5649f45d24666c314c18a019a4f6c7bb545221f255916789f4546956f477c325989c3f256da8070516075e6267fbb754ec7122b8ffc3606538e188fb502afb3d7bff1b11a2e54b3f8647357ee2a162bf31edfdbe05c9d155acd7b65bee807c779c1b95618afcf4e35c87005ebfbef9b51f77b3d8acf26c5adc567b3473e3b1bf12f3a399b273abd1c55c6a3499c44337d968f8d9da7593e4cf9e471a54a65b262c35c9a197f58315365d7142b9d7d5987eaef36c17b6d1afb947cf35a63361fb324958cf22199301f0c4fbfda349d3fe8810b9ba4b87dd46745fb2c0186b12dfdac98bd39cbb13f1ffcb439b1935179a1eef9f769ba72fb5da3c03e1589ba10d90beeafd99ee19643e332f0a6713c2beffa6eb7f36e45066b5ab9b024d1387b9634b81199197ebf4c5af5211636215cdaa63ab1be2bd39619360977218337e6ea8862a7ed4b773b8bc30336bbdd03e41ac276dd5971d0c3460f79304761f72a554f59a881f0982b579c80d0d4f19796ada850bd02171c5f76c8d5c1e7d5219a4653977a5e3939b222d376da98a7b9d8dff34465d1fa2f5bf0980fc3ad3e5d8edce6bb52f98af79b345b3199d568a0e07f133ab9daec01cf52f41599374e87176a98d5baa8e17360e6b5ac43b356cd0bc49e7b5f836883769c3a85dee3dfca79cc9b61d921edd92b8eca4a285a07be4d00f76d9317c3f8c769956bedc75208d560a232767028abdc0cd09bb3cb4b1a9eacf36b73d9d343470fefb2e7c77dbe2997bd389db506c263aedc5edd438301af5ad16ae070f26d0fe3dbdeafc8bbd15cfd10235b87715eaa93cecff92f99a55e8fe15e07c5cb54e162847431e9e760ab4e7ceaca19dee2d3bf06aff344a73674dae8218b7efa643edea6bcbb1edfac9b877d4b1624f34e973fff0fb4f09cd4	PIPELINE
+2	93a98d910dabb4149a4a7f998147f0ef34c35a09	\\x789ced5b6d4fdb3010fe2b289f2744cb5bbbaf0834b42190ba7d9a2acbd457b0489c2c76600cf5bfcf97a4cd7b6869dab825df8a5fce77cfdd3d3d5fcd9b45c8c4a65212627d3db02effc22450dc1577361523413df9e82aebcb81457dc5a774a224f1c0975c2a607abdf203d09310ee727d22a80328860be2f9ee04a4c4bd5c70c5a94d9e84fb22885454e12211d8b69ef4b807361740647c1ae128d93aeadff7e8800d4fa0d73f67a7c3e9c9119c03dcb3333a180c8783e1e9718f9d9d4ff080c5d667d4cd157a7f0f871578e4095e25512e8974c4837f5b9431327503ff101cae887a71a30fae80d0d4ca59d22f9fd723a513a45f2f38355f215aafc80b8fffe642a15953dba5a183187f8ee6f183de5936a60f19c7b84804e2adc2f923bd009d1f9de305eaddd5d7b86abe85d1077d844fd4ab07883faefea143e6f05a84aacea34404cebd7658e841ade5040773875cf9ae7313d88a7b368cc23572a11429956373461ea9607689b411ce7e8b26537ac4887ad407ade00abb4270335b31a867b3854165b8a14908d96da0b411b87b4a05e12249a71db00e33cb0d0da85667616322dda19ec7c5431c143103c472e627fb20b5c3ad54fea6f5c9261d2ad3c1bb097863e2a900f8c21553fe509a89eb005905c91841093ca97ca04e1698b20cdb4ae41570d99243c633a4f0fcaa380a9fb86031e0a07d9128f65d4f1c5edcdedcfdfa7989ba5b0e28caa8a2842b704210c70bd5de65fbc8cc3abacf317d62a32e0b7401a178e8b84a04ef9255186392e83580f130a5b6846888bd6ae97c921df4e14fc0fd746da2eb82c066c4d14587af8b10fe0fe63b66c6a47ce8d2b42a710d94776f18207584909c5a112086d8ab87948e1a9455c2305d1db20ace738268de45bb5ec36c1099f6bfa0939bc5ce16419fc33ffad2655c0593c4ceb6cb980c2ce5b54cfe5add1535e616351b4ae1770ba27c8cac51191544ed3e7a6b9557b529996e677579b98dbc4c236e48782d9d9c69dd9bc8d08cbc3d0173f3b91ab596bb6cdd66b646981b12622be76ba47d93191b4bdc1b48d7cadaae8151eaa30f39f893b43036824dfb97e4f40fa43bdfc6d87f1f19d8cac844500bbfc92cdfce487ecaef4a31f31b1a8d27f3d2555812270d14602961fb80e1c62e4bb9973a5d86ee486ba3d5346db8bd9197b837906e236bbb26c78e35398cc8dcc61a1d45997b04ec5af9bb56b3e36afebab5f0c0acbacb5171615c2449630fd6e6af6b8b98b57271cb3c089eb57949cb6a92b91595bd523686b40bd1b65fb49d827c4576a88ef44ad62d73f4ea3c5b2ac51cdb3b62ac03fb435f443570b7c2aa85086c95598bdad4b2ab6145f1e7e0d7a6c37e5986fd682d5b21c72404dae3d9e20f6dc6b06cfe1fc00c284133afcd5b25caac261992cce3d6d1e376e8b13e5eab582ebf6b757e2b48d880f219821acffe031c50e6e0	EXECUTION_PLAN
+\.
+
+
+--
+-- Data for Name: cereals; Type: TABLE DATA; Schema: test-schema; Owner: test
+--
+
+COPY "test-schema".cereals (name, mfr, type, calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating) FROM stdin;
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 1, false);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 74, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 2, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 3, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_event_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_event_type ON public.event_logs USING btree (dagster_event_type, id);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
