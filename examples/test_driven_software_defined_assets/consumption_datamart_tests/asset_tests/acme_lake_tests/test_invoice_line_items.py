@@ -1,6 +1,7 @@
 import pytest
 
 from consumption_datamart.assets.acme_lake.invoice_line_items import invoice_order_lines, InvoiceOrderItemsDataFrameType
+from consumption_datamart.assets.acme_lake.sql_lake_io_manager import asset_lake_input_manager
 from consumption_datamart.resources.datawarehouse_resources import inmemory_datawarehouse_resource
 from dagster.core.asset_defs import build_assets_job
 
@@ -12,7 +13,8 @@ def invoice_order_asset_job_results():
         resource_defs={
             "datawarehouse": inmemory_datawarehouse_resource.configured({
                 "log_sql": False
-            })
+            }),
+            "lake_input_manager": asset_lake_input_manager.configured({}),
         },
         assets=[
             invoice_order_lines
@@ -55,4 +57,4 @@ class Test_invoice_line_items:
     def test_asset_materialization_should_contain_a_warnings_count(self, invoice_order_asset_job_results):
         asset_materialization = self.get_invoice_order_lines_materialization(invoice_order_asset_job_results)
 
-        assert asset_materialization.metadata_entries[2].entry_data.value == 2
+        assert asset_materialization.metadata_entries[2].entry_data.value == 4

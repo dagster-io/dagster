@@ -5,9 +5,10 @@ import pandas
 from sqlalchemy import Column, String, Date, DateTime, Boolean, Integer, Float, Numeric
 from sqlalchemy.ext.mutable import MutableList
 
-from dagster import EventMetadata
+from dagster import EventMetadata, check
 from dagster_pandas import PandasColumn
 from dagster_pandas import create_dagster_pandas_dataframe_type
+from dagster_pandas.constraints import DataFrameConstraint
 
 
 def _make_pandas_column_from_sqlalchemy_column(
@@ -90,16 +91,24 @@ def _make_pandas_column_from_sqlalchemy_column(
     return pandas_column
 
 
+class DataFrameQualityConstraint(DataFrameConstraint):
+    def __init__(self, schema):
+        self.schema = schema
+        description = f"Calculate a quality score for the dataframe of type {self.schema}"
+        super(DataFrameQualityConstraint, self).__init__(
+            error_description=description, markdown_description=description
+        )
+
+    def validate(self, df):
+        check.inst_param(df, "dataframe", pandas.DataFrame)
+        self.schema.calculate_data_quality(df)
+
+
 def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, dataframe_loader=None):
-    columns = []
+    if dataframe_constraints is None:
+        dataframe_constraints = []
 
-    # Extract all fields of type Column in the (child) class
-    for field_name, field_value in schema.__dict__.items():
-        if isinstance(field_value, Column):
-            columns.append(field_value)
-
-    # Add standard columns
-    columns.append(Column('meta__warnings', String, nullable=True, comment="Semi-colon seperated list of data warnings detected in this rows data"))
+    columns = schema.get_columns()
 
     def _extract_event_metadata(df: pandas.DataFrame):
         warning_count = 0
@@ -119,6 +128,8 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, 
     def _convert_dtypes(df_orig):
         df = df_orig.copy()
         for column in columns:
+            if column.name not in df.columns:
+                df.loc[:, column.name] = numpy.NaN
             if isinstance(column.type, String):
                 objects_with_NaN = df[column.name].fillna(numpy.NaN)
                 strings_with_nan = objects_with_NaN.astype(str)
@@ -143,6 +154,9 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, 
         column_names = [column.name for column in columns]
         return _convert_dtypes(pandas.DataFrame(columns=column_names))
 
+    def _calculate_data_quality(df):
+        return schema.calculate_data_quality(df)
+
     data_frame_type = create_dagster_pandas_dataframe_type(
         name=name,
         columns=[_make_pandas_column_from_sqlalchemy_column(column) for column in columns],
@@ -150,8 +164,20 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, 
         dataframe_constraints=dataframe_constraints
     )
 
+    data_frame_type.calculate_data_quality = _calculate_data_quality
     data_frame_type.convert_dtypes = _convert_dtypes
     data_frame_type.extract_event_metadata = _extract_event_metadata
     data_frame_type.empty = _empty
 
     return data_frame_type
+
+
+def list_to_str(values: list):
+    s = ';'.join(str(v) for v in values if pandas.notna(v))
+    return s
+
+
+def str_to_list(values: str):
+    if pandas.isna(values):
+        return []
+    return values.split(';')

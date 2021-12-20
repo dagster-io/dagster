@@ -2,12 +2,13 @@ from sqlalchemy import Column, DateTime, String
 
 from consumption_datamart.assets.acme_lake.cloud_deployment_heartbeats import CloudDeploymentHeartbeatsDataFrameType
 from consumption_datamart.assets.acme_lake.invoice_line_items import InvoiceOrderItemsDataFrameType
+from consumption_datamart.assets.typed_dataframe.dataframe_schema import DataFrameSchema
 from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
 from dagster import Output
 from dagster.core.asset_defs import asset, AssetIn
 
 
-class FactUsageDailyDataFrameSchema:
+class FactUsageDailyDataFrameSchema(DataFrameSchema):
     dim_day_ts = Column(
         'ts', DateTime, nullable=False,
         comment="Day this row's data represents (UTC)")
@@ -17,7 +18,8 @@ class FactUsageDailyDataFrameSchema:
 
 
 FactUsageDailyDataFrameType = make_typed_dataframe_dagster_type(
-    "FactUsageDailyDataFrame", FactUsageDailyDataFrameSchema)
+    "FactUsageDailyDataFrame", FactUsageDailyDataFrameSchema()
+)
 
 
 @asset(

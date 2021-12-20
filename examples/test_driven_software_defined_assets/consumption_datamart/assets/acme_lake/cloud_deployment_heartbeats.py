@@ -3,14 +3,15 @@ import warnings
 from sqlalchemy import Column, String, Numeric, DateTime
 
 import dagster
-from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
-from dagster import AssetKey, Output, DagsterTypeLoader, dagster_type_loader, AssetMaterialization
-from dagster.core.asset_defs import ForeignAsset, asset
+from consumption_datamart.assets.typed_dataframe.dataframe_schema import DataFrameSchema
+from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type, list_to_str, str_to_list
+from dagster import AssetKey
+from dagster.core.asset_defs import ForeignAsset
 
 warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
 
 
-class CloudDeploymentHeartbeatsDataFrameSchema:
+class CloudDeploymentHeartbeatsDataFrameSchema(DataFrameSchema):
     order_date = Column(
         'ts', DateTime, nullable=False,
         comment="Timestamp when the heartbeat data was received  ")
@@ -30,13 +31,28 @@ class CloudDeploymentHeartbeatsDataFrameSchema:
         'memory_usage', Numeric(12, 2), nullable=False,
         comment="Quantity of Memory used (in GB) by this deployment at time: ts")
 
+    @staticmethod
+    def calculate_data_quality(df):
+        df['meta__warnings'] = df['meta__warnings'].apply(str_to_list)
 
-@dagster_type_loader(
-    required_resource_keys={"datawarehouse"},
-    config_schema={}
+        has_invalid_customer_id = ~df.customer_id.str.match(r'^CUST-\d+$')
+        df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id'])
+
+        df.loc[:, 'meta__warnings'] = df['meta__warnings'].apply(list_to_str)
+
+        return df
+
+
+CloudDeploymentHeartbeatsDataFrameType = make_typed_dataframe_dagster_type(
+    "CloudDeploymentHeartbeatsDataFrame",
+    schema=CloudDeploymentHeartbeatsDataFrameSchema()
 )
-def cloud_deployment_heartbeats_loader(context, _config):
-    df = context.resources.datawarehouse.read_sql_query('''
+
+cloud_deployment_heartbeats = ForeignAsset(
+    key=AssetKey(["acme_lake", "cloud_deployment_heartbeats"]),
+    io_manager_key="lake_input_manager",
+    metadata={
+        "load_sql": """
         SELECT
             ts
         ,   customer_id
@@ -45,30 +61,7 @@ def cloud_deployment_heartbeats_loader(context, _config):
         ,   vcpu_usage
         ,   memory_usage
         FROM acme_lake.cloud_deployment_heartbeats
-    ''')
-
-    df['meta__warnings'] = ''
-
-    typed_df = CloudDeploymentHeartbeatsDataFrameType.convert_dtypes(df)
-
-    # TODO: Figure out where to emit this metadata - yielding as AssetMaterialization like this causes a
-    # dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step input "cloud_deployment_heartbeats" -
-    # expected type "CloudDeploymentHeartbeatsDataFrame". Description: Must be a pandas.DataFrame. Got value of type. generator
-    # yield AssetMaterialization(
-    #     asset_key=context.asset_key,
-    #     metadata=context.dagster_type.extract_event_metadata(typed_df),
-    # )
-
-    return typed_df
-
-
-CloudDeploymentHeartbeatsDataFrameType = make_typed_dataframe_dagster_type(
-    "CloudDeploymentHeartbeatsDataFrame",
-    schema=CloudDeploymentHeartbeatsDataFrameSchema,
-    dataframe_loader=cloud_deployment_heartbeats_loader
-)
-
-cloud_deployment_heartbeats = ForeignAsset(
-    key=AssetKey(["acme_lake", "cloud_deployment_heartbeats"]),
-    io_manager_key="lake_input_manager",
+        """,
+        "dagster_type": CloudDeploymentHeartbeatsDataFrameType
+    }
 )

@@ -1,25 +1,17 @@
 import warnings
 
-import numpy
-import pandas
 from sqlalchemy import Column, String, Date, Numeric, Integer
 
 import dagster
-from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
-from dagster import Output, dagster_type_loader
+from consumption_datamart.assets.typed_dataframe.dataframe_schema import DataFrameSchema
+from consumption_datamart.assets.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type, list_to_str, str_to_list
+from dagster import Output
 from dagster.core.asset_defs import asset
 
 warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
 
 
-def list_to_str(values: list):
-    s = ';'.join(str(v) for v in values if pandas.notna(v))
-    if s == '':
-        return numpy.NaN
-    return s
-
-
-class InvoiceOrderItemsDataFrameSchema:
+class InvoiceOrderItemsDataFrameSchema(DataFrameSchema):
     invoice_id = Column(
         'invoice_id', String, nullable=False,
         comment="Id of the invoice")
@@ -42,14 +34,33 @@ class InvoiceOrderItemsDataFrameSchema:
         'subscription_term', Integer, nullable=False,
         comment="subscription_term")
 
+    @staticmethod
+    def calculate_data_quality(df):
+        df['meta__warnings'] = df['meta__warnings'].apply(str_to_list)
 
-@dagster_type_loader(
-    required_resource_keys={"datawarehouse"},
-    config_schema={}
+        has_invalid_customer_id = ~df.customer_id.str.match(r'^CUST-\d+$')
+        df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id'])
+
+        non_vcpu_sku = ~df.subscription_sku.str.contains('VCPU')
+        df.loc[non_vcpu_sku, 'meta__warnings'] = df.loc[non_vcpu_sku, 'meta__warnings'].apply(lambda w: w + ['non_vcpu_sku'])
+
+        df.loc[:, 'meta__warnings'] = df['meta__warnings'].apply(list_to_str)
+
+        return df
+
+
+InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type(
+    "InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema()
 )
-def invoice_order_lines_loader(context, _config):
-    df = context.resources.datawarehouse.read_sql_query('''
-        SELECT
+
+
+@asset(
+    namespace='acme_lake',
+    compute_kind='lake',
+    io_manager_key="lake_input_manager",
+    metadata={
+        "load_sql": """
+       SELECT
             invoice_id
         ,   order_date
         ,   customer_id
@@ -59,40 +70,16 @@ def invoice_order_lines_loader(context, _config):
         ,   subscription_quantity
         ,   subscription_term
         FROM acme_lake.invoice_line_items
-    ''')
-
-    df['meta__warnings'] = numpy.empty((df.shape[0], 0)).tolist()
-
-    has_invalid_customer_id = ~df.customer_id.str.match(r'^CUST-\d+$')
-    df.loc[has_invalid_customer_id, 'meta__warnings'] = df.loc[has_invalid_customer_id, 'meta__warnings'].apply(lambda w: w + ['invalid_customer_id'])
-
-    non_vcpu_sku = ~df.subscription_sku.str.contains('VCPU')
-    df.loc[non_vcpu_sku, 'meta__warnings'] = df.loc[non_vcpu_sku, 'meta__warnings'].apply(lambda w: w + ['non_vcpu_sku'])
-
-    df.loc[:, 'meta__warnings'] = df['meta__warnings'].apply(list_to_str)
-
-    typed_df = InvoiceOrderItemsDataFrameType.convert_dtypes(df)
-
-    return typed_df
-
-
-InvoiceOrderItemsDataFrameType = make_typed_dataframe_dagster_type(
-    "InvoiceOrderItemsDataFrame", InvoiceOrderItemsDataFrameSchema,
-    dataframe_loader=invoice_order_lines_loader,
-)
-
-
-@asset(
-    namespace='acme_lake',
-    compute_kind='lake',
-    dagster_type=InvoiceOrderItemsDataFrameType,
-    io_manager_key="lake_input_manager",
+        """,
+        "dagster_type": InvoiceOrderItemsDataFrameType
+    },
 )
 def invoice_order_lines(context) -> InvoiceOrderItemsDataFrameType:
     """An immutable snapshot containing all customer invoice line items"""
 
-    # TODO: Figure out a more elegant wat to dagster_type
-    context.dagster_type = InvoiceOrderItemsDataFrameType
+    asset_out = context.solid_def.outs['result']
+    dagster_type = asset_out.metadata['dagster_type']
+
     typed_df = context.resources.lake_input_manager.load_input(context)
 
-    return Output(typed_df, metadata=InvoiceOrderItemsDataFrameType.extract_event_metadata(typed_df))
+    yield Output(typed_df, metadata=dagster_type.extract_event_metadata(typed_df))
