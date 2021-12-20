@@ -606,4 +606,3 @@ def test_start_time_end_time():
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
-        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
