@@ -20,7 +20,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
@@ -141,8 +140,6 @@ def cleanup_test_instance(instance):
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
     instance.run_launcher.join()
-
-    cleanup_telemetry_logger()
 
 
 def create_run_for_test(
