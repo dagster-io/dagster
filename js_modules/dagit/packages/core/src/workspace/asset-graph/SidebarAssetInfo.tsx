@@ -2,16 +2,15 @@ import React from 'react';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
-import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
-import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
@@ -23,7 +22,6 @@ export const SidebarAssetInfo: React.FC<{
 }> = ({node, definition, repoAddress, liveData}) => {
   const Plugin = pluginForMetadata(definition.metadata);
   const {lastMaterialization} = liveData || {};
-  const {opName, jobName} = node;
 
   return (
     <>
@@ -34,25 +32,7 @@ export const SidebarAssetInfo: React.FC<{
             margin={{bottom: 8}}
           >
             <SidebarTitle>{displayNameForAssetKey(node.assetKey)}</SidebarTitle>
-
-            {jobName && opName && (
-              <LaunchRootExecutionButton
-                pipelineName={jobName}
-                disabled={false}
-                getVariables={() => ({
-                  executionParams: {
-                    mode: 'default',
-                    executionMetadata: {},
-                    runConfigData: {},
-                    selector: {
-                      ...repoAddressToSelector(repoAddress),
-                      pipelineName: jobName,
-                      solidSelection: [opName],
-                    },
-                  },
-                })}
-              />
-            )}
+            <LaunchAssetExecutionButton assets={[node]} repoAddress={repoAddress} />
           </Box>
           <Description description={node.description || null} />
         </Box>
@@ -81,8 +61,6 @@ export const SidebarAssetsInfo: React.FC<{
   nodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[];
   repoAddress: RepoAddress;
 }> = ({nodes, repoAddress}) => {
-  const {jobName} = nodes[0];
-  const opNames = nodes.map((n) => n.opName!).filter(Boolean);
   return (
     <SidebarSection title="Definition">
       <Box padding={{vertical: 16, horizontal: 24}}>
@@ -91,24 +69,7 @@ export const SidebarAssetsInfo: React.FC<{
           margin={{bottom: 8}}
         >
           <SidebarTitle>{`${nodes.length} Assets Selected`}</SidebarTitle>
-          {jobName && (
-            <LaunchRootExecutionButton
-              pipelineName={jobName}
-              disabled={false}
-              getVariables={() => ({
-                executionParams: {
-                  mode: 'default',
-                  executionMetadata: {},
-                  runConfigData: {},
-                  selector: {
-                    ...repoAddressToSelector(repoAddress),
-                    pipelineName: jobName,
-                    solidSelection: opNames,
-                  },
-                },
-              })}
-            />
-          )}
+          <LaunchAssetExecutionButton repoAddress={repoAddress} assets={nodes} />
         </Box>
       </Box>
     </SidebarSection>
