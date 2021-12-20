@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
-import {RouteComponentProps, useHistory} from 'react-router-dom';
+import {useHistory, useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -27,13 +27,15 @@ import {
   GraphExplorerRootQueryVariables,
 } from './types/GraphExplorerRootQuery';
 
-interface Props extends RouteComponentProps {
+interface Props {
   repoAddress: RepoAddress;
 }
 
 export const GraphRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
-  const path = explorerPathFromString(props.match.params[0]);
+  const params = useParams();
+
+  const path = explorerPathFromString(params[0]);
 
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
@@ -53,15 +55,17 @@ export const GraphRoot: React.FC<Props> = (props) => {
         border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
         style={{minHeight: 0, flex: 1, display: 'flex'}}
       >
-        <GraphExplorerRoot {...props} repoAddress={repoAddress} />
+        <GraphExplorerRoot repoAddress={repoAddress} />
       </Box>
     </div>
   );
 };
 
-const GraphExplorerRoot: React.FC<RouteComponentProps & {repoAddress: RepoAddress}> = (props) => {
-  const explorerPath = explorerPathFromString(props.match.params['0']);
+const GraphExplorerRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
+  const params = useParams();
+
+  const explorerPath = explorerPathFromString(params['0']);
   const history = useHistory();
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,

@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -10,8 +10,9 @@ import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
 
-export const AssetEntryRoot: React.FC<RouteComponentProps> = ({match}) => {
-  const currentPath: string[] = (match.params['0'] || '')
+export const AssetEntryRoot = () => {
+  const params = useParams();
+  const currentPath: string[] = (params['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);

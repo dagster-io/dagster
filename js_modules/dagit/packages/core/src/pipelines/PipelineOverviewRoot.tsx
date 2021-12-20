@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {RouteComponentProps, useHistory, useLocation} from 'react-router-dom';
+import {useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -16,13 +16,17 @@ import {
 import {SidebarPipelineOrJobOverview} from './SidebarPipelineOrJobOverview';
 import {useJobTitle} from './useJobTitle';
 
-type Props = RouteComponentProps<{0: string}> & {repoAddress: RepoAddress};
+interface Props {
+  repoAddress: RepoAddress;
+}
 
 export const PipelineOverviewRoot: React.FC<Props> = (props) => {
-  const {match, repoAddress} = props;
+  const {repoAddress} = props;
   const history = useHistory();
   const location = useLocation();
-  const explorerPath = explorerPathFromString(match.params['0']);
+  const params = useParams();
+
+  const explorerPath = explorerPathFromString(params['0']);
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
