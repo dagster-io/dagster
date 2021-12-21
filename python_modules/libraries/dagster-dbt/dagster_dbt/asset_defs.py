@@ -62,6 +62,15 @@ def _dbt_nodes_to_asset(
                 in_deps.append(dep_name)
             elif dep_type == "model":
                 out_deps.append(dep_name)
+        code_block = textwrap.indent(node_info["raw_sql"], "    ")
+        description_sections = [
+            node_info["description"],
+            "#### Columns:\n" + _columns_to_markdown(node_info["columns"])
+            if len(node_info["columns"]) > 0
+            else None,
+            f"#### Raw SQL:\n```\n{code_block}\n```",
+        ]
+        description = "\n\n".join(filter(None, description_sections))
 
         outs[node_name] = Out(
             dagster_type=None,
@@ -69,6 +78,7 @@ def _dbt_nodes_to_asset(
             in_deps=in_deps,
             out_deps=out_deps,
             is_required=False,
+            description=description,
         )
 
     @multi_asset(
