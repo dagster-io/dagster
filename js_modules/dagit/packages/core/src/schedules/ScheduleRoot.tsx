@@ -1,5 +1,6 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -23,15 +24,15 @@ import {
 } from './types/ScheduleRootQuery';
 
 interface Props {
-  scheduleName: string;
   repoAddress: RepoAddress;
-  runTab?: string;
 }
 
 const INTERVAL = 15 * 1000;
 
 export const ScheduleRoot: React.FC<Props> = (props) => {
-  const {scheduleName, repoAddress, runTab} = props;
+  const {repoAddress} = props;
+  const {scheduleName, runTab} = useParams<{scheduleName: string; runTab?: string}>();
+
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
   const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);

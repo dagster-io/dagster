@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
+import {useParams} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
@@ -29,12 +30,12 @@ const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
 
 interface Props {
-  pipelinePath: string;
   repoAddress?: RepoAddress;
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
-  const {pipelinePath, repoAddress = null} = props;
+  const {pipelinePath} = useParams<{pipelinePath: string}>();
+  const {repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName, snapshotId} = explorerPath;
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -21,12 +21,13 @@ import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 
 interface Props {
-  tab?: string;
   repoAddress: RepoAddress;
 }
 
 export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
-  const {repoAddress, tab} = props;
+  const {repoAddress} = props;
+  const {tab} = useParams<{tab?: string}>();
+
   const path = repoAddressAsString(repoAddress);
   const {flagAssetGraph} = useFeatureFlags();
   const repo = useRepository(repoAddress);
@@ -97,39 +98,31 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       />
       <Container>
         <Switch>
-          <Route
-            path="/workspace/:repoPath/schedules"
-            render={() => <SchedulesRoot repoAddress={repoAddress} />}
-          />
-          <Route
-            path="/workspace/:repoPath/sensors"
-            render={() => <SensorsRoot repoAddress={repoAddress} />}
-          />
-          <Route
-            path="/workspace/:repoPath/assets(/?.*)"
-            render={() => <RepositoryAssetsList repoAddress={repoAddress} />}
-          />
-          <Route
-            path="/workspace/:repoPath/ops/:name?"
-            render={(props) => <OpsRoot name={props.match.params.name} repoAddress={repoAddress} />}
-          />
+          <Route path="/workspace/:repoPath/schedules">
+            <SchedulesRoot repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/sensors">
+            <SensorsRoot repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/assets(/?.*)">
+            <RepositoryAssetsList repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/ops/:name?">
+            <OpsRoot repoAddress={repoAddress} />
+          </Route>
           <Route
             path="/workspace/:repoPath/solids/:name?"
             render={(props) => <Redirect to={props.match.url.replace(/\/solids\/?/, '/ops/')} />}
           />
-          <Route
-            path="/workspace/:repoPath/pipelines"
-            render={() => <RepositoryPipelinesList display="pipelines" repoAddress={repoAddress} />}
-          />
-          <Route
-            path="/workspace/:repoPath/jobs"
-            render={() => <RepositoryPipelinesList display="jobs" repoAddress={repoAddress} />}
-          />
-          <Route
-            path="/workspace/:repoPath/graphs"
-            exact
-            render={() => <RepositoryGraphsList repoAddress={repoAddress} />}
-          />
+          <Route path="/workspace/:repoPath/pipelines">
+            <RepositoryPipelinesList display="pipelines" repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/jobs">
+            <RepositoryPipelinesList display="jobs" repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/graphs" exact>
+            <RepositoryGraphsList repoAddress={repoAddress} />
+          </Route>
           <Route
             path="/workspace/:repoPath/(.*)?"
             render={() => <Redirect to={workspacePathFromAddress(repoAddress, `/jobs`)} />}

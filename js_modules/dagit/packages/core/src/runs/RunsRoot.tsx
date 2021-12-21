@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -52,7 +52,7 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RunsRoot: React.FC<RouteComponentProps> = () => {
+export const RunsRoot = () => {
   useDocumentTitle('Runs');
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);

@@ -1,5 +1,6 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -19,10 +20,8 @@ import {SensorRootQuery} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
 
-export const SensorRoot: React.FC<{
-  repoAddress: RepoAddress;
-  sensorName: string;
-}> = ({sensorName, repoAddress}) => {
+export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  const {sensorName} = useParams<{sensorName: string}>();
   useDocumentTitle(`Sensor: ${sensorName}`);
 
   const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);
