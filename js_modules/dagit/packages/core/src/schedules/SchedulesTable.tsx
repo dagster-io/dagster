@@ -67,7 +67,7 @@ export const SchedulesTable: React.FC<{
           </th>
           <th>
             <Box flex={{gap: 8, alignItems: 'end'}}>
-              Partition
+              Partition Set
               <Tooltip position="top" content={partitionStatus}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
