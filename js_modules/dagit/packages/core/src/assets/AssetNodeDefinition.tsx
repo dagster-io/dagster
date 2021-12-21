@@ -138,6 +138,18 @@ const JobGraphLink: React.FC<{
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
+    description
+    opName
+    jobs {
+      name
+      repository {
+        name
+        location {
+          name
+        }
+      }
+    }
+
     ...AssetNodeFragment
     ...AssetNodeLiveFragment
 

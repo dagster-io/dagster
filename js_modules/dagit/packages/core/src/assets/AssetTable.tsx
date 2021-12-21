@@ -176,14 +176,18 @@ const AssetEntryRow: React.FC<{
         ) : null}
         {shouldShowAssetGraphColumns ? (
           <td>
-            {first.definition && first.definition.jobName && (
+            {(first.definition?.jobs || []).map((job) => (
               <PipelineReference
+                key={job.id}
                 showIcon
-                pipelineName={first.definition.jobName}
-                pipelineHrefContext="repo-unknown"
+                pipelineName={job.name}
+                pipelineHrefContext={{
+                  name: job.repository.name,
+                  location: job.repository.location.name,
+                }}
                 isJob
               />
-            )}
+            ))}
           </td>
         ) : null}
         {canWipe ? (
@@ -267,8 +271,19 @@ export const ASSET_TABLE_FRAGMENT = gql`
     definition {
       id
       opName
-      jobName
       description
+      jobs {
+        id
+        name
+        repository {
+          id
+          name
+          location {
+            id
+            name
+          }
+        }
+      }
     }
   }
 `;

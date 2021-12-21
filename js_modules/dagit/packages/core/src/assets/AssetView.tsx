@@ -172,11 +172,6 @@ const ASSET_QUERY = gql`
         }
 
         definition {
-          id
-          description
-          opName
-          jobName
-
           ...AssetNodeDefinitionFragment
         }
       }

@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../app/Util';
+import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -29,7 +30,10 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
           }
           opName
           description
-          jobName
+          jobs {
+            id
+            name
+          }
         }
       }
       ... on RepositoryNotFoundError {
@@ -53,21 +57,13 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   });
 
   const repo = data?.repositoryOrError;
-  const assetsForTable = React.useMemo(() => {
-    if (!repo || repo.__typename !== 'Repository') {
-      return null;
-    }
-    const items = repo.assetNodes.map((asset) => ({
-      name: displayNameForAssetKey(asset.assetKey),
-      path: `/jobs/${asset.jobName}:default/${asset.assetKey.path
-        .map(encodeURIComponent)
-        .join('/')}`,
-      description: asset.description,
-      repoAddress,
-    }));
-
-    return items.sort((a, b) => a.name.localeCompare(b.name));
-  }, [repo, repoAddress]);
+  const assetsForTable = React.useMemo(
+    () =>
+      (repo?.__typename === 'Repository' ? [...repo.assetNodes] : []).sort((a, b) =>
+        displayNameForAssetKey(a.assetKey).localeCompare(displayNameForAssetKey(b.assetKey)),
+      ),
+    [repo],
+  );
 
   if (loading) {
     return null;
@@ -99,13 +95,34 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 
   return (
     <Table>
+      <thead>
+        <tr>
+          <th>Asset Key</th>
+          <th>Defined In</th>
+        </tr>
+      </thead>
       <tbody>
-        {assetsForTable.map(({name, description, path, repoAddress}) => (
-          <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
+        {assetsForTable.map((asset) => (
+          <tr key={asset.id}>
             <td>
               <Group direction="column" spacing={4}>
-                <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>
-                <Description>{description}</Description>
+                <Link to={`/instance/assets/${asset.assetKey.path.join('/')}`}>
+                  {displayNameForAssetKey(asset.assetKey)}
+                </Link>
+                <Description>{asset.description}</Description>
+              </Group>
+            </td>
+            <td>
+              <Group direction="column" spacing={4}>
+                {asset.jobs.map(({name}) => (
+                  <PipelineReference
+                    showIcon
+                    isJob
+                    key={name}
+                    pipelineName={name}
+                    pipelineHrefContext={repoAddress}
+                  />
+                ))}
               </Group>
             </td>
           </tr>
