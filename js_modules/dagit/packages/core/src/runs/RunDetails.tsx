@@ -63,10 +63,8 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
-                  return (
-                    <TimestampDisplay timestamp={run.stats.startTime} timeFormat={TIME_FORMAT} />
-                  );
+                if (run?.startTime) {
+                  return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
                   <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
@@ -80,10 +78,8 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.endTime) {
-                  return (
-                    <TimestampDisplay timestamp={run.stats.endTime} timeFormat={TIME_FORMAT} />
-                  );
+                if (run?.endTime) {
+                  return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
                   <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
@@ -97,10 +93,8 @@ export const RunDetails: React.FC<{
           value: (
             <LoadingOrValue loading={loading}>
               {() => {
-                if (run?.stats.__typename === 'RunStatsSnapshot' && run.stats.startTime) {
-                  return (
-                    <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
-                  );
+                if (run?.startTime) {
+                  return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
                 }
                 return (
                   <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>

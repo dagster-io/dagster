@@ -314,7 +314,7 @@ type Run implements PipelineRun {
   events(after: Cursor): [DagsterRunEvent!]!
   resolvedOpSelection: [String!]
   startTime: Float
-  endTIme: Float
+  endTime: Float
 }
 
 interface PipelineRun {
