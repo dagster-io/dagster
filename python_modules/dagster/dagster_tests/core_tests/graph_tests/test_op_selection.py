@@ -276,16 +276,7 @@ def test_op_selection_on_implicit_alias():
 
     result_2 = _reuse_ops_job.execute_in_process(op_selection=["return_one_2*"])
     assert result_2.success
-    assert (
-        len(
-            [
-                evt.step_key
-                for evt in result_2.all_node_events
-                if evt.event_type == DagsterEventType.STEP_SUCCESS
-            ]
-        )
-        == 2
-    )
+    assert len(_success_step_keys(result_2)) == 2
 
 
 def test_op_selection_with_config_mapping():
