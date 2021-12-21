@@ -13,6 +13,7 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.serdes import deserialize_value
+from dagster.utils.backoff import backoff
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
     DEFAULT_RUN_MAX_WAIT_TIME_SEC,
@@ -20,14 +21,13 @@ from dagster_databricks.databricks import (
     poll_run_state,
 )
 from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
 
 from .configs import (
     define_databricks_secrets_config,
     define_databricks_storage_config,
     define_databricks_submit_run_config,
 )
-from dagster.utils.backoff import backoff
-from requests import HTTPError
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"
@@ -222,8 +222,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     all_events = self.get_step_events(step_context.run_id, step_key)
                     # we get all available records on each poll, but we only want to process the
                     # ones we haven't seen before
-                    for event in all_events:
-                        print(event)
                     for event in all_events[processed_events:]:
                         # write each event from the DataBricks instance to the local instance
                         step_context.instance.handle_new_event(event)

@@ -6,10 +6,9 @@ from typing import List
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
-    run_step_from_ref,
     external_instance_from_step_run_ref,
+    run_step_from_ref,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import serialize_value
 

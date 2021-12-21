@@ -244,9 +244,7 @@ class DatabricksJobRunner:
         log.warn("Could not retrieve cluster logs!")
 
     def wait_for_run_to_complete(self, log, databricks_run_id):
-        return wait_for_run_to_complete(
-            self.client, log, databricks_run_id, self.poll_interval_sec, self.max_wait_time_sec
-        )
+        return wait_for_run_to_complete(self.client, log, databricks_run_id, self.max_wait_time_sec)
 
 
 def poll_run_state(
@@ -280,7 +278,7 @@ def poll_run_state(
     return False
 
 
-def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
+def wait_for_run_to_complete(client, log, databricks_run_id, max_wait_time_sec):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)

@@ -14,19 +14,18 @@ import site
 import sys
 import tempfile
 import time
-import zipfile
 import traceback
+import zipfile
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
-from io import StringIO
-from contextlib import redirect_stderr, redirect_stdout
 
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
-    run_step_from_ref,
     external_instance_from_step_run_ref,
+    run_step_from_ref,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.serdes import serialize_value
 
 # This won't be set in Databricks but is needed to be non-None for the
