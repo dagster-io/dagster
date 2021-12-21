@@ -366,7 +366,7 @@ def validate_tick(
     if expected_run_ids is not None:
         assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
-        assert expected_error in tick_data.error.message
+        assert expected_error in str(tick_data.error)
 
 
 def validate_run_started(run, expected_success=True):

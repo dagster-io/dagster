@@ -5,6 +5,7 @@ import time
 
 import pendulum
 from dagster import check
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -41,15 +42,6 @@ class _ScheduleLaunchContext:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        # Log the error if the failure wasn't an interrupt or the daemon generator stopping
-        if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
-            error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(
-                JobTickStatus.FAILURE,
-                error=error_data,
-                failure_count=self.failure_count + 1,
-            )
-
         self._write()
 
 
@@ -257,19 +249,46 @@ def launch_scheduled_runs_for_schedule(
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
-            _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
+            try:
+                _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
-            yield from _schedule_runs_at_time(
-                instance,
-                logger,
-                workspace,
-                repo_location,
-                external_repo,
-                external_schedule,
-                schedule_time,
-                tick_context,
-                debug_crash_flags,
-            )
+                yield from _schedule_runs_at_time(
+                    instance,
+                    logger,
+                    workspace,
+                    repo_location,
+                    external_repo,
+                    external_schedule,
+                    schedule_time,
+                    tick_context,
+                    debug_crash_flags,
+                )
+            except Exception as e:
+                if isinstance(e, DagsterUserCodeUnreachableError):
+                    try:
+                        raise DagsterSchedulerError(
+                            f"Unable to reach the user code server for schedule {schedule_name}. Schedule will resume execution once the server is available."
+                        ) from e
+                    except:
+                        error_data = serializable_error_info_from_exc_info(sys.exc_info())
+
+                        tick_context.update_state(
+                            JobTickStatus.FAILURE,
+                            error=error_data,
+                            # don't increment the failure count - retry forever until the server comes back up
+                            # or the schedule is turned off
+                            failure_count=tick_context.failure_count,
+                        )
+                        raise  # Raise the wrapped DagsterSchedulerError exception
+
+                else:
+                    error_data = serializable_error_info_from_exc_info(sys.exc_info())
+                    tick_context.update_state(
+                        JobTickStatus.FAILURE,
+                        error=error_data,
+                        failure_count=tick_context.failure_count + 1,
+                    )
+                    raise
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
