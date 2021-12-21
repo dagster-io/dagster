@@ -20,7 +20,7 @@ export const AssetNodeList: React.FC<{
       flex={{gap: 5}}
       padding={{horizontal: 12}}
       style={{
-        height: 110,
+        height: 112,
         overflowX: 'auto',
         width: '100%',
         whiteSpace: 'nowrap',
