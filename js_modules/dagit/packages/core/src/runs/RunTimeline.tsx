@@ -5,8 +5,15 @@ import styled from 'styled-components/macro';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {RunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {Popover} from '../ui/Popover';
+import {Mono} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
+
+import {RunStatusDot} from './RunStatusDots';
+import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {TimeElapsed} from './TimeElapsed';
 
 const ROW_HEIGHT = 24;
 const TIME_HEADER_HEIGHT = 36;
@@ -22,7 +29,12 @@ type RunForJob = {
 };
 
 interface Props {
-  jobs: {[jobKey: string]: RunForJob[]};
+  jobs: {
+    [jobKey: string]: {
+      path: string;
+      runs: RunForJob[];
+    };
+  };
   range: [number, number];
 }
 
@@ -32,13 +44,13 @@ export const RunTimeline = (props: Props) => {
   const jobList = React.useMemo(() => {
     const jobKeys = Object.keys(jobs);
     const earliest = jobKeys.reduce((accum, jobKey) => {
-      const startTimes = jobs[jobKey].map((job) => job.startTime || 0);
+      const startTimes = jobs[jobKey].runs.map((job) => job.startTime || 0);
       return {...accum, [jobKey]: Math.min(...startTimes)};
     }, {} as {[jobName: string]: number});
 
     return jobKeys
       .sort((a, b) => earliest[a] - earliest[b])
-      .map((jobKey) => ({jobKey, runs: jobs[jobKey]}));
+      .map((jobKey) => ({jobKey, ...jobs[jobKey]}));
   }, [jobs]);
 
   const height = ROW_HEIGHT * jobList.length;
@@ -47,10 +59,11 @@ export const RunTimeline = (props: Props) => {
     <Timeline $height={height}>
       <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
       <div>
-        {jobList.map(({jobKey, runs}, ii) => (
+        {jobList.map(({jobKey, path, runs}, ii) => (
           <RunTimelineRow
             key={jobKey}
             jobKey={jobKey}
+            jobPath={path}
             runs={runs}
             top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
             range={range}
@@ -82,7 +95,7 @@ const TimeDividers = (props: TimeDividersProps) => {
     const totalTime = end - start;
     const startGap = start % interval;
     const firstMarker = start - startGap;
-    const markerCount = Math.floor(totalTime / interval);
+    const markerCount = Math.ceil(totalTime / interval) + 1;
     return [...new Array(markerCount)]
       .map((_, ii) => {
         const time = firstMarker + ii * interval;
@@ -142,6 +155,7 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
+  box-shadow: inset 1px 0 0 ${ColorsWIP.KeylineGray}, inset -1px 0 0 ${ColorsWIP.KeylineGray};
 `;
 
 const DividerLine = styled.div`
@@ -155,9 +169,7 @@ const DividerLine = styled.div`
 const overlap = (
   a: {startTime: number; endTime: number},
   b: {startTime: number; endTime: number},
-) => {
-  return !(a.endTime <= b.startTime || b.endTime <= a.startTime);
-};
+) => !(a.endTime <= b.startTime || b.endTime <= a.startTime);
 
 type RunBatch = {
   runs: RunForJob[];
@@ -167,13 +179,48 @@ type RunBatch = {
 
 interface RowProps {
   jobKey: string;
+  jobPath: string;
   runs: RunForJob[];
   top: number;
   range: [number, number];
 }
 
+const mergeStatusToColor = (runs: RunForJob[]) => {
+  let anyInProgress = false;
+  let anyQueued = false;
+  let anyFailed = false;
+  let anySucceeded = false;
+
+  runs.forEach(({status}) => {
+    if (queuedStatuses.has(status)) {
+      anyQueued = true;
+    } else if (inProgressStatuses.has(status)) {
+      anyInProgress = true;
+    } else if (failedStatuses.has(status)) {
+      anyFailed = true;
+    } else if (successStatuses.has(status)) {
+      anySucceeded = true;
+    }
+  });
+
+  if (anyQueued) {
+    return ColorsWIP.Blue200;
+  }
+  if (anyInProgress) {
+    return ColorsWIP.Blue500;
+  }
+  if (anyFailed) {
+    return ColorsWIP.Red500;
+  }
+  if (anySucceeded) {
+    return ColorsWIP.Green500;
+  }
+
+  return ColorsWIP.Gray500;
+};
+
 const RunTimelineRow = (props: RowProps) => {
-  const {jobKey, runs, top, range} = props;
+  const {jobKey, jobPath, runs, top, range} = props;
   const [start, end] = range;
   const rangeLength = end - start;
 
@@ -214,18 +261,36 @@ const RunTimelineRow = (props: RowProps) => {
   return (
     <Row $top={top}>
       <JobName>
-        <Link to={`/${jobKey}`}>{jobKey}</Link>
+        <Link to={jobPath}>{jobKey}</Link>
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
+          const runCount = batch.runs.length;
+          const left = (batch.startTime - start) / rangeLength;
+          const width = (batch.endTime - batch.startTime) / rangeLength;
           return (
             <RunChunk
               key={batch.runs[0].id}
-              $status={batch.runs[0].status}
-              $left={(batch.startTime - start) / rangeLength}
-              $width={(batch.endTime - batch.startTime) / rangeLength}
+              $color={mergeStatusToColor(batch.runs)}
+              $multiple={runCount > 1}
+              style={{
+                left: `${(left * 100).toPrecision(5)}%`,
+                width: `${(width * 100).toPrecision(5)}%`,
+              }}
             >
-              {batch.runs.length > 1 ? <BatchCount>{batch.runs.length}</BatchCount> : null}
+              <Popover
+                content={<RunHoverContent jobKey={jobKey} batch={batch} />}
+                position="top"
+                interactionKind="hover"
+                className="chunk-popover-target"
+              >
+                <Box
+                  flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+                  style={{height: '100%'}}
+                >
+                  {runCount > 1 ? <BatchCount>{batch.runs.length}</BatchCount> : null}
+                </Box>
+              </Popover>
             </RunChunk>
           );
         })}
@@ -268,7 +333,7 @@ const JobName = styled.div`
   line-height: 16px;
   overflow: hidden;
   padding: 0 12px 0 20px;
-  text-overflow: ellpisis;
+  text-overflow: ellipsis;
   white-space: nowrap;
   width: ${LABEL_WIDTH}px;
 `;
@@ -280,39 +345,24 @@ const RunChunks = styled.div`
 `;
 
 interface ChunkProps {
-  $status: RunStatus;
-  $left: number;
-  $width: number;
+  $color: string;
+  $multiple: boolean;
 }
 
-const backgroundColor = ({$status}: ChunkProps) => {
-  switch ($status) {
-    case RunStatus.SUCCESS:
-      return ColorsWIP.Green500;
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
-      return ColorsWIP.Red500;
-    default:
-      return ColorsWIP.Blue500;
-  }
-};
-
-const RunChunk = styled.div.attrs((props: ChunkProps) => ({
-  style: {
-    left: `${(props.$left * 100).toPrecision(5)}%`,
-    width: `${(props.$width * 100).toPrecision(5)}%`,
-  },
-}))`
+const RunChunk = styled.div<ChunkProps>`
   align-items: center;
-  background-color: ${backgroundColor};
+  background-color: ${({$color}) => $color};
   border-radius: 2px;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
   height: ${ROW_HEIGHT - 4}px;
   position: absolute;
   top: 2px;
+  ${({$multiple}) => ($multiple ? 'min-width: 16px' : null)};
+
+  .chunk-popover-target {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
 `;
 
 const BatchCount = styled.div`
@@ -320,4 +370,46 @@ const BatchCount = styled.div`
   cursor: default;
   font-size: 12px;
   user-select: none;
+`;
+
+interface RunHoverContentProps {
+  jobKey: string;
+  batch: RunBatch;
+}
+
+const RunHoverContent = (props: RunHoverContentProps) => {
+  const {jobKey, batch} = props;
+  return (
+    <Box padding={4} style={{width: '220px'}}>
+      <Box padding={8} border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}>
+        <HoverContentJobName>{jobKey}</HoverContentJobName>
+      </Box>
+      {batch.runs.map((run, ii) => (
+        <Box
+          key={run.id}
+          border={ii > 0 ? {side: 'top', width: 1, color: ColorsWIP.KeylineGray} : null}
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          padding={8}
+        >
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <RunStatusDot status={run.status} size={8} />
+            <Link to={run.id}>
+              <Mono>{run.id.slice(0, 8)}</Mono>
+            </Link>
+          </Box>
+          <Mono>
+            <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
+          </Mono>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
+const HoverContentJobName = styled.strong`
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
 `;
