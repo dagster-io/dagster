@@ -193,6 +193,8 @@ class GrapheneRun(graphene.ObjectType):
         non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
+    startTime = graphene.Float()
+    endTime = graphene.Float()
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -205,6 +207,7 @@ class GrapheneRun(graphene.ObjectType):
             mode=pipeline_run.mode,
         )
         self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        self._run_record = None
 
     def resolve_id(self, _graphene_info):
         return self._pipeline_run.run_id
@@ -310,6 +313,22 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
         return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
+
+    def resolve_startTime(self, graphene_info):
+        if not self._run_record:
+            records = graphene_info.context.instance.get_run_records(
+                PipelineRunsFilter(run_ids=[self._pipeline_run.run_id])
+            )
+            self._run_record = records[0]
+        return self._run_record.start_time
+
+    def resolve_endTime(self, graphene_info):
+        if not self._run_record:
+            records = graphene_info.context.instance.get_run_records(
+                PipelineRunsFilter(run_ids=[self._pipeline_run.run_id])
+            )
+            self._run_record = records[0]
+        return self._run_record.end_time
 
 
 class GrapheneIPipelineSnapshotMixin:

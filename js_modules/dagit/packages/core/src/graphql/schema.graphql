@@ -313,6 +313,8 @@ type Run implements PipelineRun {
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
   resolvedOpSelection: [String!]
+  startTime: Float
+  endTIme: Float
 }
 
 interface PipelineRun {
