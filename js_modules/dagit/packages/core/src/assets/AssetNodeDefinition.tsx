@@ -17,6 +17,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetNodeList} from './AssetNodeList';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
@@ -42,66 +43,70 @@ export const AssetNodeDefinition: React.FC<{
   }
 
   return (
-    <Box
-      flex={{direction: 'row'}}
-      border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
-    >
-      <Box style={{flex: 1}}>
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-          flex={{justifyContent: 'space-between'}}
-        >
-          <Subheading>Definition in Repository</Subheading>
-          {assetNode.jobName && (
-            <PipelineReference
-              showIcon
-              pipelineName={assetNode.jobName}
-              pipelineHrefContext={'repo-unknown'}
-              isJob
+    <>
+      <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
+
+      <Box
+        flex={{direction: 'row'}}
+        border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
+      >
+        <Box style={{flex: 1}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between'}}
+          >
+            <Subheading>Definition in Repository</Subheading>
+            {assetNode.jobName && (
+              <PipelineReference
+                showIcon
+                pipelineName={assetNode.jobName}
+                pipelineHrefContext={'repo-unknown'}
+                isJob
+              />
+            )}
+          </Box>
+          <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
+            <Description
+              description={assetNode.description || 'No description provided.'}
+              maxHeight={260}
             />
-          )}
+          </Box>
         </Box>
-        <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
-          <Description
-            description={assetNode.description || 'No description provided.'}
-            maxHeight={318}
+        <Box
+          border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+          style={{width: '40%', height: 330}}
+          flex={{direction: 'column'}}
+        >
+          <Box
+            padding={{vertical: 16, left: 24, right: 12}}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
+            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
+          </Box>
+          <AssetNodeList
+            items={assetNode.dependencies}
+            liveDataByNode={liveDataByNode}
+            repoAddress={repoAddress}
+          />
+          <Box
+            padding={{vertical: 16, left: 24, right: 12}}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
+            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
+          </Box>
+          <AssetNodeList
+            items={assetNode.dependedBy}
+            liveDataByNode={liveDataByNode}
+            repoAddress={repoAddress}
           />
         </Box>
       </Box>
-      <Box
-        border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-        style={{width: '40%', height: 330}}
-        flex={{direction: 'column'}}
-      >
-        <Box
-          padding={{vertical: 16, left: 24, right: 12}}
-          flex={{justifyContent: 'space-between'}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
-          <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
-        </Box>
-        <AssetNodeList
-          items={assetNode.dependencies}
-          liveDataByNode={liveDataByNode}
-          repoAddress={repoAddress}
-        />
-        <Box
-          padding={{vertical: 16, left: 24, right: 12}}
-          flex={{justifyContent: 'space-between'}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
-          <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
-        </Box>
-        <AssetNodeList
-          items={assetNode.dependedBy}
-          liveDataByNode={liveDataByNode}
-          repoAddress={repoAddress}
-        />
-      </Box>
-    </Box>
+    </>
   );
 };
 

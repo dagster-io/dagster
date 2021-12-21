@@ -115,7 +115,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
-                displayJobName
               />
             )}
           </Box>
@@ -135,27 +134,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
           >
-            <Alert
-              intent="info"
-              title={
-                <span>
-                  This is a historical view of materializations as of{' '}
-                  <span style={{fontWeight: 600}}>
-                    <Timestamp
-                      timestamp={{ms: Number(params.asOf)}}
-                      timeFormat={{showSeconds: true, showTimezone: true}}
-                    />
-                  </span>
-                  .
-                </span>
-              }
-              description={
-                <ButtonLink onClick={() => setNavigatedDirectlyToTime(false)} underline="always">
-                  {definition
-                    ? 'Show definition and latest materializations'
-                    : 'Show latest materializations'}
-                </ButtonLink>
-              }
+            <HistoricalViewAlert
+              asOf={params.asOf}
+              onClick={() => setNavigatedDirectlyToTime(false)}
+              hasDefinition={!!definition}
             />
           </Box>
         ) : definition ? (
@@ -218,3 +200,32 @@ const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
   }
   ${IN_PROGRESS_RUNS_FRAGMENT}
 `;
+
+const HistoricalViewAlert: React.FC<{
+  asOf: string | undefined;
+  onClick: () => void;
+  hasDefinition: boolean;
+}> = ({asOf, onClick, hasDefinition}) => (
+  <Alert
+    intent="info"
+    title={
+      <span>
+        This is a historical view of materializations as of{' '}
+        <span style={{fontWeight: 600}}>
+          <Timestamp
+            timestamp={{ms: Number(asOf)}}
+            timeFormat={{showSeconds: true, showTimezone: true}}
+          />
+        </span>
+        .
+      </span>
+    }
+    description={
+      <ButtonLink onClick={onClick} underline="always">
+        {hasDefinition
+          ? 'Show definition and latest materializations'
+          : 'Show latest materializations'}
+      </ButtonLink>
+    }
+  />
+);

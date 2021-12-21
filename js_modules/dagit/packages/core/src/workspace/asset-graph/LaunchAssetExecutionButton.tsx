@@ -7,8 +7,7 @@ import {RepoAddress} from '../types';
 export const LaunchAssetExecutionButton: React.FC<{
   repoAddress: RepoAddress;
   assets: {opName: string | null; jobName: string | null}[];
-  displayJobName?: boolean;
-}> = ({repoAddress, assets, displayJobName}) => {
+}> = ({repoAddress, assets}) => {
   const jobName = assets[0].jobName;
   if (!jobName || !assets.every((a) => a.jobName === jobName && a.opName)) {
     return <span />;
@@ -18,7 +17,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     <LaunchRootExecutionButton
       pipelineName={jobName}
       disabled={false}
-      title={displayJobName ? `Refresh using ${jobName}` : 'Refresh'}
+      title={'Refresh'}
       getVariables={() => ({
         executionParams: {
           mode: 'default',
