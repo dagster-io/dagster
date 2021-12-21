@@ -50,9 +50,9 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return daily_temperature_highs.nlargest(10, "max_tmpf")
 ```
 
-`sfo_q2_weather_sample` represents our base temperature table. It's a `ForeignAsset`, meaning that it's generated outside Dagster.
+`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster.core.asset_defs" object="ForeignAsset" />, meaning that it's generated outside Dagster.
 
-`daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function - i.e. a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on - that allows swapping in different implementations in different environments. E.g. we might want to store data in a local csv file for easy testing, but store data a data warehouse in production.
+`daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function - i.e. a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" /> - that allows swapping in different implementations in different environments. E.g. we might want to store data in a local CSV file for easy testing, but store data a data warehouse in production.
 
 `hottest_dates` is a computed asset that depends on another computed asset - the `daily_temperture_highs` asset.
 
@@ -60,7 +60,7 @@ The framework infers asset dependencies by looking at the names of the arguments
 
 ### Building a job
 
-Having defined some assets, we can build a job that, when it runs, materializes them - i.e. it computes their contents' and writes them to a location in persistent storage.
+Having defined some assets, we can use <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> to build a job that, when it runs, materializes them - i.e. it computes their contents and writes them to a location in persistent storage.
 
 ```python file=../../software_defined_assets/software_defined_assets/weather_job.py startafter=build_assets_job_start endbefore=build_assets_job_end
 weather_job = build_assets_job(
@@ -73,9 +73,9 @@ weather_job = build_assets_job(
 )
 ```
 
-The order that we supply the asset to `build_assets_job` doesn't matter. `build_assets_job` determines the execution dependencies based on the dependencies declared in the assets. `sfo_q2_weather_sample` is included in `source_assets` because it's not computed as part of the job - just consumed by other assets in the job.
+The order that we supply the assets to <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> doesn't matter. <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> determines the execution dependencies based on the dependencies declared in the assets. `sfo_q2_weather_sample` is included in `source_assets` because it's not computed as part of the job - just consumed by other assets in the job.
 
-The functions we used to define our assets describe how to compute their contents, but now how to read and write them to persistent storage. For reading and writing, we define an `IOManager`. In this case, our `LocalFileSystemIOManager` stores DataFrames as CSVs on the local filesystem:
+The functions we used to define our assets describe how to compute their contents, but not how to read and write them to persistent storage. For reading and writing, we define an <PyObject object="IOManager" />. In this case, our `LocalFileSystemIOManager` stores DataFrames as CSVs on the local filesystem:
 
 ```python file=../../software_defined_assets/software_defined_assets/weather_job.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
@@ -135,7 +135,7 @@ spark_weather_job = build_assets_job(
 
 ### Defining a multi-type IOManager
 
-Because the same assets will be written and read into different Python types in different situations, we need to define an `IOManager` that can handle both of those types. Here's an extended version of the `IOManager` we defined before:
+Because the same assets will be written and read into different Python types in different situations, we need to define an <PyObject object="IOManager" /> that can handle both of those types. Here's an extended version of the <PyObject object="IOManager" /> we defined before:
 
 ```python file=../../software_defined_assets/software_defined_assets/spark_weather_job.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
