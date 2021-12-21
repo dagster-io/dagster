@@ -17,9 +17,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetNodeList} from './AssetNodeList';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
-import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 
 export const AssetNodeDefinition: React.FC<{
   repo: DagsterRepoOption | null;

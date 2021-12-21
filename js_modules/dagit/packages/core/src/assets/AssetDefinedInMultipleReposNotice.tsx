@@ -1,10 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
+
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
+
 import {AssetIdScanQuery} from './types/AssetIdScanQuery';
 
 export const AssetDefinedInMultipleReposNotice: React.FC<{
@@ -27,17 +29,17 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
 
   return (
     <Box
-      padding={{vertical: 16, horizontal: 24}}
+      padding={{vertical: 16, left: 24, right: 12}}
       border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
     >
       <Alert
         intent="info"
-        title={`Multiple assets with this name are loaded in your workspace. Showing the definition from ${buildRepoPath(
+        title={`Multiple repositories in your workspace include assets with this name. Showing the definition from ${buildRepoPath(
           loadedFromRepo.name,
           loadedFromRepo.location,
         )} below. (Also found in ${otherRepos
           .map((o) => buildRepoPath(o.name, o.location.name))
-          .join(', ')}). You may want to consider renaming an asset if they are separate entities.`}
+          .join(', ')}). You may want to consider renaming to avoid collisions.`}
       />
     </Box>
   );
@@ -49,8 +51,10 @@ const ASSET_ID_SCAN_QUERY = gql`
       __typename
       ... on RepositoryConnection {
         nodes {
+          id
           name
           location {
+            id
             name
           }
           assetNodes {

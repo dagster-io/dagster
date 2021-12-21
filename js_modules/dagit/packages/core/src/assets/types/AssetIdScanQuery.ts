@@ -13,6 +13,7 @@ export interface AssetIdScanQuery_repositoriesOrError_PythonError {
 
 export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_location {
   __typename: "RepositoryLocation";
+  id: string;
   name: string;
 }
 
@@ -23,6 +24,7 @@ export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes
 
 export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes {
   __typename: "Repository";
+  id: string;
   name: string;
   location: AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_location;
   assetNodes: AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_assetNodes[];
