@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from dagster import get_dagster_logger
+
 from .types import DbtOutput
 
 
