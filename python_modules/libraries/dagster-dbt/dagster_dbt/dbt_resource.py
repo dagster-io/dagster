@@ -1,6 +1,8 @@
+import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from dagster import get_dagster_logger
 from .types import DbtOutput
 
 
@@ -9,7 +11,7 @@ class DbtResource:
 
     def __init__(
         self,
-        logger: Optional[Any] = None,
+        logger: Optional[logging.Logger] = None,
     ):
         """Constructor
 
@@ -17,7 +19,7 @@ class DbtResource:
             logger (Optional[Any]): A property for injecting a logger dependency.
                 Default is ``None``.
         """
-        self._logger = logger
+        self._logger = logger or get_dagster_logger()
 
     def _format_params(
         self, flags: Dict[str, Any], replace_underscores: bool = False
@@ -42,8 +44,8 @@ class DbtResource:
         return flags
 
     @property
-    def logger(self) -> Optional[Any]:
-        """Optional[Any]: A property for injecting a logger dependency."""
+    def logger(self) -> logging.Logger:
+        """logging.Logger: A property for injecting a logger dependency."""
         return self._logger
 
     @abstractmethod
