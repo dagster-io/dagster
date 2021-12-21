@@ -53,6 +53,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
+    latestMaterializationPerPartition = graphene.Field(
+        non_null_list(GrapheneAssetMaterialization), partitions=graphene.List(graphene.String)
+    )
 
     class Meta:
         name = "AssetNode"
@@ -171,6 +174,37 @@ class GrapheneAssetNode(graphene.ObjectType):
                     for partition in partitions_def_data.get_partitions_definition().get_partitions()
                 ]
         return []
+
+    def resolve_latestMaterializationPerPartition(self, _graphene_info, **kwargs):
+        from ..implementation.fetch_assets import get_asset_events
+
+        get_timestamp = lambda event: event.timestamp
+        get_partition = (
+            lambda event: event.dagster_event.step_materialization_data.materialization.partition
+        )
+
+        partitions = kwargs.get("partitions")
+        events_for_partitions = get_asset_events(
+            _graphene_info,
+            self._external_asset_node.asset_key,
+            partitions,
+        )
+
+        latest_materialization_by_partition = {}
+        for event in events_for_partitions:
+            event_partition = get_partition(event)
+            if event_partition not in latest_materialization_by_partition:
+                latest_materialization_by_partition[event_partition] = event
+            else:
+                if get_timestamp(event) > get_timestamp(
+                    latest_materialization_by_partition[event_partition]
+                ):
+                    latest_materialization_by_partition[event_partition] = event
+
+        return [
+            GrapheneAssetMaterialization(event=event)
+            for event in latest_materialization_by_partition.values()
+        ]
 
 
 class GrapheneAssetNodeOrError(graphene.Union):
