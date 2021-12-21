@@ -18,6 +18,8 @@ import zipfile
 import traceback
 from queue import Empty, Queue
 from threading import Thread
+from io import StringIO
+from contextlib import redirect_stderr, redirect_stdout
 
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -105,18 +107,31 @@ def main(
         )
         event_writing_thread.start()
 
-        try:
-            sys.stderr = sys.stdout
-            instance = external_instance_from_step_run_ref(
-                step_run_ref, event_listener_fn=events_queue.put
-            )
-            # consume iterator
-            list(run_step_from_ref(step_run_ref, instance))
-        except Exception:
-            traceback.print_exc()
-        finally:
-            events_queue.put(DONE)
-            event_writing_thread.join()
+        with StringIO() as stderr, StringIO() as stdout, redirect_stderr(stderr), redirect_stdout(
+            stdout
+        ):
+            try:
+                instance = external_instance_from_step_run_ref(
+                    step_run_ref, event_listener_fn=events_queue.put
+                )
+                # consume iterator
+                list(run_step_from_ref(step_run_ref, instance))
+            except Exception as e:
+                # ensure that exceptiosn make their way into stdout
+                traceback.print_exc()
+                raise e
+            finally:
+                events_queue.put(DONE)
+                event_writing_thread.join()
+                # write final stdout and stderr
+                with open(os.path.dirname(step_run_ref_filepath) + "/stderr", "wb") as handle:
+                    stderr_str = stderr.getvalue()
+                    sys.stderr.write(stderr_str)
+                    handle.write(stderr_str.encode())
+                with open(os.path.dirname(step_run_ref_filepath) + "/stdout", "wb") as handle:
+                    stdout_str = stdout.getvalue()
+                    sys.stdout.write(stdout_str)
+                    handle.write(stdout_str.encode())
 
 
 if __name__ == "__main__":
