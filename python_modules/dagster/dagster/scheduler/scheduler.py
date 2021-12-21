@@ -6,7 +6,7 @@ import time
 import pendulum
 from dagster import check
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
+from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
@@ -324,11 +324,7 @@ def _schedule_runs_at_time(
         solid_selection=external_schedule.solid_selection,
     )
 
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
+    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
         instance=instance,
