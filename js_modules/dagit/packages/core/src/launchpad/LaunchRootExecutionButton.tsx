@@ -17,6 +17,7 @@ interface LaunchRootExecutionButtonProps {
   disabled: boolean;
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
   pipelineName: string;
+  title?: string;
 }
 
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
@@ -58,7 +59,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
       config={{
         icon: 'open_in_new',
         onClick: onLaunch,
-        title: 'Launch Run',
+        title: props.title || 'Launch Run',
         disabled: props.disabled || !canLaunchPipelineExecution,
         tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
       }}

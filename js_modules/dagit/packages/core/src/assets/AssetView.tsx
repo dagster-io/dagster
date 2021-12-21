@@ -13,6 +13,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
@@ -106,9 +107,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <AssetPageHeader
         currentPath={assetKey.path}
         right={
-          <div style={{marginTop: 4}}>
-            <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
-          </div>
+          <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
+            <Box margin={{top: 4}}>
+              <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+            </Box>
+            {definition && (
+              <LaunchAssetExecutionButton
+                assets={[definition]}
+                repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
+                displayJobName
+              />
+            )}
+          </Box>
         }
       />
 

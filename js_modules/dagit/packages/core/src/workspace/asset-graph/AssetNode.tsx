@@ -50,7 +50,7 @@ export const AssetNode: React.FC<{
             onClick={() => launch(repoAddress, definition)}
             text={
               <span>
-                Launch run to build{' '}
+                Refresh{' '}
                 <span style={{fontFamily: 'monospace', fontWeight: 600}}>
                   {displayNameForAssetKey(definition.assetKey)}
                 </span>
