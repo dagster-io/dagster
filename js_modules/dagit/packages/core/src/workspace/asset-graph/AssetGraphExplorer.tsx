@@ -77,12 +77,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     const queryAssetNodes = assetNodes.filter((a) =>
       queryOps.all.some((op) => op.name === a.opName),
     );
-    const graphData = buildGraphData(queryAssetNodes, explorerPath.pipelineName);
+    const graphData = buildGraphData(queryAssetNodes);
     return {
       graphAssetKeys: queryAssetNodes.map((n) => ({path: n.assetKey.path})),
       graphData: graphData,
     };
-  }, [queryResult.data, handles, explorerPath.pipelineName, explorerPath.opsQuery]);
+  }, [queryResult.data, handles, explorerPath.opsQuery]);
 
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
@@ -221,6 +221,11 @@ const AssetGraphExplorerWithData: React.FC<
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
 
+  const viewportEl = React.useRef<SVGViewport>();
+  React.useEffect(() => {
+    viewportEl.current?.autocenter();
+  }, [layout, viewportEl]);
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -229,6 +234,7 @@ const AssetGraphExplorerWithData: React.FC<
       first={
         <>
           <SVGViewport
+            ref={(r) => (viewportEl.current = r || undefined)}
             interactor={SVGViewport.Interactors.PanAndZoom}
             graphWidth={layout.width}
             graphHeight={layout.height}
@@ -265,7 +271,7 @@ const AssetGraphExplorerWithData: React.FC<
                       onClick={(e) => onSelectNode(e, {path}, graphNode)}
                       style={{overflow: 'visible'}}
                     >
-                      {!graphNode || graphNode.hidden ? (
+                      {!graphNode || !graphNode.definition.opName ? (
                         <ForeignNode assetKey={{path}} />
                       ) : (
                         <AssetNode
