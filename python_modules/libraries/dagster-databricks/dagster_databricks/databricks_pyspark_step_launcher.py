@@ -81,7 +81,9 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             description="If set, and if the specified cluster is configured to export logs, "
             "the system will wait after job completion for the logs to appear in the configured "
             "location. Note that logs are copied every 5 minutes, so enabling this will add "
-            "several minutes to the job runtime.",
+            "several minutes to the job runtime. NOTE: this integration will export stdout/stderr"
+            "from the remote Databricks process automatically, so this option is not generally "
+            "necessary.",
         ),
         "max_completion_wait_time_seconds": Field(
             IntSource,
@@ -206,6 +208,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     all_events = self.get_step_events(step_context.run_id, step_key)
                     # we get all available records on each poll, but we only want to process the
                     # ones we haven't seen before
+                    for event in all_events:
+                        print(event)
                     for event in all_events[processed_events:]:
                         # write each event from the DataBricks instance to the local instance
                         step_context.instance.handle_new_event(event)
@@ -225,7 +229,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             return deserialize_value(pickle.loads(serialized_records))
 
         try:
-            # reading from dbfs can be flaky, allow for retry
+            # reading from dbfs while it writes can be flaky
+            # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
                 retry_on=(pickle.UnpicklingError,),

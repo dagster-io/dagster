@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 import zipfile
+import traceback
 from queue import Empty, Queue
 from threading import Thread
 
@@ -105,10 +106,14 @@ def main(
         event_writing_thread.start()
 
         try:
+            sys.stderr = sys.stdout
             instance = external_instance_from_step_run_ref(
-                step_run_ref, event_listener_fn=put_events
+                step_run_ref, event_listener_fn=events_queue.put
             )
+            # consume iterator
             list(run_step_from_ref(step_run_ref, instance))
+        except Exception:
+            traceback.print_exc()
         finally:
             events_queue.put(DONE)
             event_writing_thread.join()
