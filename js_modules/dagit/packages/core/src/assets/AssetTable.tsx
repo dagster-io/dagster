@@ -91,7 +91,7 @@ export const AssetTable = ({
             <th>Asset Key</th>
             {flagAssetGraph ? <th>Description</th> : null}
             {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
-            {canWipeAssets ? <th>Actions</th> : null}
+            {canWipeAssets ? <th style={{width: 80}}>Actions</th> : null}
           </tr>
         </thead>
         <tbody>
