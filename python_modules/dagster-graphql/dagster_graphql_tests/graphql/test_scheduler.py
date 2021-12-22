@@ -8,7 +8,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigatorType,
     ScheduleInstigationData,
 )
@@ -208,7 +208,7 @@ def test_start_and_stop_schedule(graphql_context):
     )
     assert (
         start_result.data["startSchedule"]["scheduleState"]["status"]
-        == InstigationStatus.RUNNING.value
+        == InstigatorStatus.RUNNING.value
     )
 
     schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
@@ -221,7 +221,7 @@ def test_start_and_stop_schedule(graphql_context):
     )
     assert (
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
-        == InstigationStatus.STOPPED.value
+        == InstigatorStatus.STOPPED.value
     )
 
 
@@ -315,7 +315,7 @@ def test_next_tick(graphql_context):
     )
     assert (
         start_result.data["startSchedule"]["scheduleState"]["status"]
-        == InstigationStatus.RUNNING.value
+        == InstigatorStatus.RUNNING.value
     )
 
     # get schedule next tick
@@ -344,7 +344,7 @@ def test_next_tick_bad_schedule(graphql_context):
     )
     assert (
         start_result.data["startSchedule"]["scheduleState"]["status"]
-        == InstigationStatus.RUNNING.value
+        == InstigatorStatus.RUNNING.value
     )
 
     # get schedule next tick
@@ -378,7 +378,7 @@ def test_get_unloadable_job(graphql_context):
             InstigationState(
                 _get_unloadable_schedule_origin("unloadable_running"),
                 InstigatorType.SCHEDULE,
-                InstigationStatus.RUNNING,
+                InstigatorStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
@@ -391,7 +391,7 @@ def test_get_unloadable_job(graphql_context):
             InstigationState(
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 InstigatorType.SCHEDULE,
-                InstigationStatus.STOPPED,
+                InstigatorStatus.STOPPED,
                 ScheduleInstigationData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),

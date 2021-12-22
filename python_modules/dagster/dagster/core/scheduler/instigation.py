@@ -14,14 +14,14 @@ from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class InstigationStatus(Enum):
+class InstigatorStatus(Enum):
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
 
 
-register_serdes_enum_fallbacks({"JobStatus": InstigationStatus})
+register_serdes_enum_fallbacks({"JobStatus": InstigatorStatus})
 # for internal backcompat
-JobStatus = InstigationStatus
+JobStatus = InstigatorStatus
 
 
 @whitelist_for_serdes
@@ -87,7 +87,7 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
             cls,
             check.inst_param(origin, "origin", ExternalJobOrigin),
             check.inst_param(job_type, "job_type", InstigatorType),
-            check.inst_param(status, "status", InstigationStatus),
+            check.inst_param(status, "status", InstigatorStatus),
             check_job_data(job_type, job_specific_data),
         )
 
@@ -108,7 +108,7 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
         return self.origin.get_id()
 
     def with_status(self, status):
-        check.inst_param(status, "status", InstigationStatus)
+        check.inst_param(status, "status", InstigatorStatus)
         return InstigationState(
             self.origin,
             job_type=self.job_type,

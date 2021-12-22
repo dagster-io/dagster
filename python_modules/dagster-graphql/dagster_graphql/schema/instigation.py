@@ -8,7 +8,7 @@ from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTick,
     InstigatorType,
     ScheduleInstigationData,
@@ -149,7 +149,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
         )
 
     def resolve_evaluationResult(self, graphene_info):
-        if self._job_state.status != InstigationStatus.RUNNING:
+        if self._job_state.status != InstigatorStatus.RUNNING:
             return None
 
         if self._job_state.job_type != InstigatorType.SCHEDULE:
@@ -350,7 +350,7 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_runningCount(self, graphene_info):
         if self._job_state.job_type == InstigatorType.SENSOR:
-            return 1 if self._job_state.status == InstigationStatus.RUNNING else 0
+            return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
         else:
             return graphene_info.context.instance.running_schedule_count(
                 self._job_state.job_origin_id

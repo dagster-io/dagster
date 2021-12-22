@@ -17,7 +17,7 @@ from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     SensorInstigationData,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -158,10 +158,10 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 )
                 if running_filter and (
                     not stored_sensor_state
-                    or stored_sensor_state.status == InstigationStatus.STOPPED
+                    or stored_sensor_state.status == InstigatorStatus.STOPPED
                 ):
                     continue
-                if stopped_filter and stored_sensor_state and InstigationStatus.RUNNING:
+                if stopped_filter and stored_sensor_state and InstigatorStatus.RUNNING:
                     continue
 
                 if name_filter:
@@ -169,7 +169,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                     continue
 
                 status = (
-                    stored_sensor_state.status if stored_sensor_state else InstigationStatus.STOPPED
+                    stored_sensor_state.status if stored_sensor_state else InstigatorStatus.STOPPED
                 )
                 sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
                 if not first:
@@ -368,7 +368,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                     InstigationState(
                         external_sensor.get_external_origin(),
                         InstigatorType.SENSOR,
-                        InstigationStatus.STOPPED,
+                        InstigatorStatus.STOPPED,
                         SensorInstigationData(
                             min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
                         ),

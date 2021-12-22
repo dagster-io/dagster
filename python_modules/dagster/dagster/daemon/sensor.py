@@ -11,7 +11,7 @@ from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTickData,
     InstigationTickStatus,
     SensorInstigationData,
@@ -179,7 +179,7 @@ def execute_sensor_iteration(
     sensor_jobs = [
         s
         for s in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
-        if s.status == InstigationStatus.RUNNING
+        if s.status == InstigatorStatus.RUNNING
     ]
     if not sensor_jobs:
         if not workspace_iteration:

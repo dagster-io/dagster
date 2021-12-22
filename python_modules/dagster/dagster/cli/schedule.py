@@ -12,7 +12,7 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import InstigationStatus
+from dagster.core.scheduler.instigation import InstigatorStatus
 from dagster.core.scheduler.scheduler import DagsterDaemonScheduler
 
 
@@ -196,10 +196,10 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 )
                 if running_filter and (
                     not stored_schedule_state
-                    or stored_schedule_state.status == InstigationStatus.STOPPED
+                    or stored_schedule_state.status == InstigatorStatus.STOPPED
                 ):
                     continue
-                if stopped_filter and stored_schedule_state and InstigationStatus.RUNNING:
+                if stopped_filter and stored_schedule_state and InstigatorStatus.RUNNING:
                     continue
 
                 if name_filter:
@@ -209,7 +209,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 status = (
                     stored_schedule_state.status
                     if stored_schedule_state
-                    else InstigationStatus.STOPPED
+                    else InstigatorStatus.STOPPED
                 )
                 schedule_title = f"Schedule: {external_schedule.name} [{status.value}]"
                 if not first:
@@ -399,7 +399,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 for schedule_state in instance.all_stored_job_state(
                     external_repo.get_external_origin_id(), InstigatorType.SCHEDULE
                 ):
-                    if schedule_state.status == InstigationStatus.RUNNING:
+                    if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
                             external_schedule = external_repo.get_external_schedule(
                                 schedule_state.job_name
@@ -419,7 +419,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
-                if schedule_state != None and schedule_state.status != InstigationStatus.RUNNING:
+                if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
                             name=schedule_state.job_name

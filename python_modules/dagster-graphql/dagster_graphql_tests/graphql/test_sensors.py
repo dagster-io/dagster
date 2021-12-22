@@ -1,6 +1,6 @@
 import pendulum
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.scheduler.instigation import InstigationState, InstigationStatus
+from dagster.core.scheduler.instigation import InstigationState, InstigatorStatus
 from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
@@ -203,7 +203,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         assert (
-            result.data["startSensor"]["sensorState"]["status"] == InstigationStatus.RUNNING.value
+            result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
         )
 
     def test_stop_sensor(self, graphql_context):
@@ -217,7 +217,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
         assert (
             start_result.data["startSensor"]["sensorState"]["status"]
-            == InstigationStatus.RUNNING.value
+            == InstigatorStatus.RUNNING.value
         )
 
         job_origin_id = start_result.data["startSensor"]["jobOriginId"]
@@ -229,7 +229,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert (
             result.data["stopSensor"]["instigationState"]["status"]
-            == InstigationStatus.STOPPED.value
+            == InstigatorStatus.STOPPED.value
         )
 
 
@@ -255,7 +255,7 @@ def test_sensor_next_ticks(graphql_context):
     # test default sensor with no tick
     graphql_context.instance.add_job_state(
         InstigationState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigationStatus.RUNNING
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
     result = execute_dagster_graphql(
@@ -307,7 +307,7 @@ def test_sensor_tick_range(graphql_context):
     # turn the sensor on
     graphql_context.instance.add_job_state(
         InstigationState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigationStatus.RUNNING
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 

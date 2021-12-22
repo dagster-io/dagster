@@ -11,7 +11,7 @@ from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     ScheduleInstigationData,
 )
 from dagster.serdes import ConfigurableClass
@@ -60,7 +60,7 @@ class Scheduler(abc.ABC):
         schedule_state = InstigationState(
             external_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
-            InstigationStatus.STOPPED,
+            InstigatorStatus.STOPPED,
             ScheduleInstigationData(
                 external_schedule.cron_schedule, scheduler=self.__class__.__name__
             ),
@@ -71,7 +71,7 @@ class Scheduler(abc.ABC):
 
     def start_schedule_and_update_storage_state(self, instance, external_schedule):
         """
-        Updates the status of the given schedule to `InstigationStatus.RUNNING` in schedule storage,
+        Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,
         then calls `start_schedule`.
 
         This should not be overridden by subclasses.
@@ -90,7 +90,7 @@ class Scheduler(abc.ABC):
         if not schedule_state:
             schedule_state = self._create_new_schedule_state(instance, external_schedule)
 
-        if schedule_state.status == InstigationStatus.RUNNING:
+        if schedule_state.status == InstigatorStatus.RUNNING:
             raise DagsterSchedulerError(
                 "You have attempted to start schedule {name}, but it is already running".format(
                     name=external_schedule.name
@@ -98,7 +98,7 @@ class Scheduler(abc.ABC):
             )
 
         self.start_schedule(instance, external_schedule)
-        started_schedule = schedule_state.with_status(InstigationStatus.RUNNING).with_data(
+        started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigationData(
                 external_schedule.cron_schedule,
                 get_current_datetime_in_utc().timestamp(),
@@ -110,7 +110,7 @@ class Scheduler(abc.ABC):
 
     def stop_schedule_and_update_storage_state(self, instance, schedule_origin_id):
         """
-        Updates the status of the given schedule to `InstigationStatus.STOPPED` in schedule storage,
+        Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,
         then calls `stop_schedule`.
 
         This should not be overridden by subclasses.
@@ -124,7 +124,7 @@ class Scheduler(abc.ABC):
         schedule_state = self._get_schedule_state(instance, schedule_origin_id)
 
         self.stop_schedule(instance, schedule_origin_id)
-        stopped_schedule = schedule_state.with_status(InstigationStatus.STOPPED).with_data(
+        stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
             ScheduleInstigationData(
                 cron_schedule=schedule_state.job_specific_data.cron_schedule,
                 scheduler=self.__class__.__name__,
@@ -176,7 +176,7 @@ class Scheduler(abc.ABC):
     @abc.abstractmethod
     def start_schedule(self, instance, external_schedule):
         """Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
-        which first updates the status of the schedule in schedule storage to `InstigationStatus.RUNNING`,
+        which first updates the status of the schedule in schedule storage to `InstigatorStatus.RUNNING`,
         then calls this method.
 
         For example, in the cron scheduler, this method writes a cron job to the cron tab
@@ -193,7 +193,7 @@ class Scheduler(abc.ABC):
 
         This method is called by
         1) `stop_schedule_and_update_storage_state`,
-        which first updates the status of the schedule in schedule storage to `InstigationStatus.STOPPED`,
+        which first updates the status of the schedule in schedule storage to `InstigatorStatus.STOPPED`,
         then calls this method.
         2) `stop_schedule_and_delete_from_storage`, which deletes the schedule from schedule storage
         then calls this method.
@@ -296,7 +296,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         state = instance.get_job_state(schedule_origin_id)
         if not state:
             return 0
-        return 1 if state.status == InstigationStatus.RUNNING else 0
+        return 1 if state.status == InstigatorStatus.RUNNING else 0
 
     def wipe(self, instance):
         pass

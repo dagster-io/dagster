@@ -4,7 +4,7 @@ from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTickStatus,
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -61,7 +61,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
 
@@ -146,7 +146,7 @@ def test_failure_after_run_created_before_run_launched(
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
 
@@ -230,7 +230,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
 

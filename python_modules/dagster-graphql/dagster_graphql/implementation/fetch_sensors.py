@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.instigation import InstigationState, InstigationStatus
+from dagster.core.scheduler.instigation import InstigationState, InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -72,7 +72,7 @@ def stop_sensor(graphene_info, job_origin_id):
 
     instance.stop_sensor(job_origin_id)
     return GrapheneStopSensorMutationResult(
-        job_state=job_state.with_status(InstigationStatus.STOPPED)
+        job_state=job_state.with_status(InstigatorStatus.STOPPED)
     )
 
 
@@ -144,7 +144,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     repository = repository_location.get_repository(repository_origin.repository_name)
     external_sensor = repository.get_external_sensor(sensor_state.name)
 
-    if sensor_state.status != InstigationStatus.RUNNING:
+    if sensor_state.status != InstigatorStatus.RUNNING:
         return None
 
     latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)

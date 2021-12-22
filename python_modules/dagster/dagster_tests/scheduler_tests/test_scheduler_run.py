@@ -35,7 +35,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTickData,
     InstigationTickStatus,
     InstigatorType,
@@ -1263,7 +1263,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             unloadable_schedule_state = InstigationState(
                 unloadable_origin,
                 InstigatorType.SCHEDULE,
-                InstigationStatus.RUNNING,
+                InstigatorStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
@@ -1420,7 +1420,7 @@ def test_bad_load_repository(external_repo_context, capfd):
             schedule_state = InstigationState(
                 invalid_repo_origin,
                 InstigatorType.SCHEDULE,
-                InstigationStatus.RUNNING,
+                InstigatorStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
@@ -1469,7 +1469,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
             schedule_state = InstigationState(
                 invalid_repo_origin,
                 InstigatorType.SCHEDULE,
-                InstigationStatus.RUNNING,
+                InstigatorStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),
@@ -1508,7 +1508,7 @@ def test_bad_load_repository_location(capfd):
             schedule_state = InstigationState(
                 fake_origin,
                 InstigatorType.SCHEDULE,
-                InstigationStatus.RUNNING,
+                InstigatorStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
                 ),

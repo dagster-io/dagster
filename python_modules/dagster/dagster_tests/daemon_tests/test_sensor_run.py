@@ -43,7 +43,7 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTickStatus,
 )
 from dagster.core.storage.event_log.base import EventRecordsFilter
@@ -436,7 +436,7 @@ def test_simple_sensor(external_repo_context, capfd):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -520,7 +520,7 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
 
             instance.add_job_state(
                 InstigationState(
-                    invalid_repo_origin, InstigatorType.SENSOR, InstigationStatus.RUNNING
+                    invalid_repo_origin, InstigatorType.SENSOR, InstigatorStatus.RUNNING
                 )
             )
 
@@ -566,7 +566,7 @@ def test_bad_load_sensor(external_repo_context, capfd):
 
             instance.add_job_state(
                 InstigationState(
-                    invalid_repo_origin, InstigatorType.SENSOR, InstigationStatus.RUNNING
+                    invalid_repo_origin, InstigatorType.SENSOR, InstigatorStatus.RUNNING
                 )
             )
 
@@ -602,7 +602,7 @@ def test_error_sensor(external_repo_context, capfd):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -653,7 +653,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -719,7 +719,7 @@ def test_launch_failure(external_repo_context, capfd):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -774,7 +774,7 @@ def test_launch_once(external_repo_context, capfd):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             assert instance.get_runs_count() == 0
@@ -856,7 +856,7 @@ def test_custom_interval_sensor(external_repo_context):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -916,7 +916,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
                 InstigationState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
 
@@ -989,7 +989,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
                 InstigationState(
                     _get_unloadable_sensor_origin(),
                     InstigatorType.SENSOR,
-                    InstigationStatus.RUNNING,
+                    InstigatorStatus.RUNNING,
                 )
             )
             sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)

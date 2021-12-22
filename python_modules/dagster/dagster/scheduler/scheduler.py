@@ -10,7 +10,7 @@ from dagster.core.host_representation import PipelineSelector, RepositoryLocatio
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
-    InstigationStatus,
+    InstigatorStatus,
     InstigationTickData,
     InstigationTickStatus,
     InstigatorType,
@@ -102,7 +102,7 @@ def launch_scheduled_runs(
     schedules = [
         s
         for s in instance.all_stored_job_state(job_type=InstigatorType.SCHEDULE)
-        if s.status == InstigationStatus.RUNNING
+        if s.status == InstigatorStatus.RUNNING
     ]
 
     if not schedules:
