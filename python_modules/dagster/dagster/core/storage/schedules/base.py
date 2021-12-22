@@ -1,7 +1,7 @@
 import abc
 from typing import Iterable
 
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.instigation import (
     InstigationState,
@@ -20,13 +20,13 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def all_stored_job_state(
-        self, repository_origin_id: str = None, job_type: InstigationType = None
+        self, repository_origin_id: str = None, job_type: InstigatorType = None
     ) -> Iterable[InstigationState]:
         """Return all InstigationStates present in storage
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
-            job_type (Optional[InstigationType]): The InstigationType to scope results to
+            job_type (Optional[InstigatorType]): The InstigatorType to scope results to
         """
 
     @abc.abstractmethod

@@ -12,7 +12,7 @@ from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     repository_target_argument,
 )
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
@@ -32,7 +32,7 @@ def sensor_cli():
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
     sensor_states = instance.all_stored_job_state(
-        external_repository.get_origin_id(), InstigationType.SENSOR
+        external_repository.get_origin_id(), InstigatorType.SENSOR
     )
     external_sensors = external_repository.get_external_sensors()
     external_sensors_dict = {s.get_external_origin_id(): s for s in external_sensors}
@@ -146,7 +146,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_sensors_by_origin_id = {
                 stored_sensor_state.job_origin_id: stored_sensor_state
                 for stored_sensor_state in instance.all_stored_job_state(
-                    external_repo.get_external_origin_id(), job_type=InstigationType.SENSOR
+                    external_repo.get_external_origin_id(), job_type=InstigatorType.SENSOR
                 )
             }
 
@@ -367,7 +367,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                 instance.add_job_state(
                     InstigationState(
                         external_sensor.get_external_origin(),
-                        InstigationType.SENSOR,
+                        InstigatorType.SENSOR,
                         InstigationStatus.STOPPED,
                         SensorInstigationData(
                             min_interval=external_sensor.min_interval_seconds, cursor=cursor_value

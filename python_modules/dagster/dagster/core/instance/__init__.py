@@ -1652,13 +1652,13 @@ records = instance.get_event_records(
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo
-        from dagster.core.definitions.run_request import InstigationType
+        from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import InstigationStatus
 
         errors = []
 
         schedules = []
-        for schedule_state in self.all_stored_job_state(job_type=InstigationType.SCHEDULE):
+        for schedule_state in self.all_stored_job_state(job_type=InstigatorType.SCHEDULE):
             if (
                 schedule_state.status == InstigationStatus.RUNNING
                 and not self.running_schedule_count(schedule_state.job_origin_id)
@@ -1708,7 +1708,7 @@ records = instance.get_event_records(
             InstigationStatus,
             SensorInstigationData,
         )
-        from dagster.core.definitions.run_request import InstigationType
+        from dagster.core.definitions.run_request import InstigatorType
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 
@@ -1716,7 +1716,7 @@ records = instance.get_event_records(
             self.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                     SensorInstigationData(min_interval=external_sensor.min_interval_seconds),
                 )

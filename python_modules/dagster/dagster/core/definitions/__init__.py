@@ -101,7 +101,7 @@ from .reconstructable import (
 from .repository_definition import RepositoryData, RepositoryDefinition
 from .resource_definition import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
-from .run_request import InstigationType, RunRequest, SkipReason
+from .run_request import InstigatorType, RunRequest, SkipReason
 from .run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,

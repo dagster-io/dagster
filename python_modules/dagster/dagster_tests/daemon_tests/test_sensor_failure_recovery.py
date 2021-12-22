@@ -1,6 +1,6 @@
 import pendulum
 import pytest
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
@@ -60,7 +60,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -145,7 +145,7 @@ def test_failure_after_run_created_before_run_launched(
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -229,7 +229,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )

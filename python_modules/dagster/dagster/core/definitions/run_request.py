@@ -8,14 +8,14 @@ from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class InstigationType(Enum):
+class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
 
 
-register_serdes_enum_fallbacks({"JobType": InstigationType})
+register_serdes_enum_fallbacks({"JobType": InstigatorType})
 # for internal backcompat
-JobType = InstigationType
+JobType = InstigatorType
 
 
 @whitelist_for_serdes

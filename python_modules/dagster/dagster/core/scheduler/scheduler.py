@@ -5,7 +5,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import IntSource
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
@@ -59,7 +59,7 @@ class Scheduler(abc.ABC):
     def _create_new_schedule_state(self, instance, external_schedule):
         schedule_state = InstigationState(
             external_schedule.get_external_origin(),
-            InstigationType.SCHEDULE,
+            InstigatorType.SCHEDULE,
             InstigationStatus.STOPPED,
             ScheduleInstigationData(
                 external_schedule.cron_schedule, scheduler=self.__class__.__name__

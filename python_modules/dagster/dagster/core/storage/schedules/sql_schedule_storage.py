@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 import sqlalchemy as db
 from dagster import check
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.instigation import (
     InstigationState,
@@ -37,7 +37,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
-        check.opt_inst_param(job_type, "job_type", InstigationType)
+        check.opt_inst_param(job_type, "job_type", InstigatorType)
         base_query = db.select([JobTable.c.job_body, JobTable.c.job_origin_id]).select_from(
             JobTable
         )

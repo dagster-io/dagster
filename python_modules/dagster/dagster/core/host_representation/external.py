@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -511,7 +511,7 @@ class ExternalSchedule:
 
         return InstigationState(
             self.get_external_origin(),
-            InstigationType.SCHEDULE,
+            InstigatorType.SCHEDULE,
             InstigationStatus.STOPPED,
             ScheduleInstigationData(
                 self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
@@ -595,7 +595,7 @@ class ExternalSensor:
 
         return InstigationState(
             self.get_external_origin(),
-            InstigationType.SENSOR,
+            InstigatorType.SENSOR,
             InstigationStatus.STOPPED,
             SensorInstigationData(min_interval=self.min_interval_seconds),
         )

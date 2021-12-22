@@ -24,7 +24,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
@@ -364,7 +364,7 @@ def validate_tick(
     tick_data = tick.job_tick_data
     assert tick_data.job_origin_id == external_sensor.get_external_origin_id()
     assert tick_data.job_name == external_sensor.name
-    assert tick_data.job_type == InstigationType.SENSOR
+    assert tick_data.job_type == InstigatorType.SENSOR
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:
@@ -435,7 +435,7 @@ def test_simple_sensor(external_repo_context, capfd):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -520,7 +520,7 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
 
             instance.add_job_state(
                 InstigationState(
-                    invalid_repo_origin, InstigationType.SENSOR, InstigationStatus.RUNNING
+                    invalid_repo_origin, InstigatorType.SENSOR, InstigationStatus.RUNNING
                 )
             )
 
@@ -566,7 +566,7 @@ def test_bad_load_sensor(external_repo_context, capfd):
 
             instance.add_job_state(
                 InstigationState(
-                    invalid_repo_origin, InstigationType.SENSOR, InstigationStatus.RUNNING
+                    invalid_repo_origin, InstigatorType.SENSOR, InstigationStatus.RUNNING
                 )
             )
 
@@ -601,7 +601,7 @@ def test_error_sensor(external_repo_context, capfd):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -652,7 +652,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -718,7 +718,7 @@ def test_launch_failure(external_repo_context, capfd):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -773,7 +773,7 @@ def test_launch_once(external_repo_context, capfd):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -855,7 +855,7 @@ def test_custom_interval_sensor(external_repo_context):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -915,7 +915,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
             instance.add_job_state(
                 InstigationState(
                     external_sensor.get_external_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )
@@ -988,7 +988,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             instance.add_job_state(
                 InstigationState(
                     _get_unloadable_sensor_origin(),
-                    InstigationType.SENSOR,
+                    InstigatorType.SENSOR,
                     InstigationStatus.RUNNING,
                 )
             )

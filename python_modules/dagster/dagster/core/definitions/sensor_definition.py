@@ -30,7 +30,7 @@ from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .run_request import InstigationType, PipelineRunReaction, RunRequest, SkipReason
+from .run_request import InstigatorType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -275,8 +275,8 @@ class SensorDefinition:
         return self._name
 
     @property
-    def job_type(self) -> InstigationType:
-        return InstigationType.SENSOR
+    def job_type(self) -> InstigatorType:
+        return InstigatorType.SENSOR
 
     @property
     def description(self) -> Optional[str]:

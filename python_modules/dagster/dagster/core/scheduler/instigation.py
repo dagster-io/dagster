@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalJobOrigin
 from dagster.serdes.serdes import (
     register_serdes_enum_fallbacks,
@@ -65,14 +65,14 @@ ScheduleJobData = ScheduleInstigationData
 
 
 def check_job_data(job_type, job_specific_data):
-    check.inst_param(job_type, "job_type", InstigationType)
-    if job_type == InstigationType.SCHEDULE:
+    check.inst_param(job_type, "job_type", InstigatorType)
+    if job_type == InstigatorType.SCHEDULE:
         check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigationData)
-    elif job_type == InstigationType.SENSOR:
+    elif job_type == InstigatorType.SENSOR:
         check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigationData)
     else:
         check.failed(
-            "Unexpected job type {}, expected one of InstigationType.SENSOR, InstigationType.SCHEDULE".format(
+            "Unexpected job type {}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE".format(
                 job_type
             )
         )
@@ -86,7 +86,7 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
         return super(InstigationState, cls).__new__(
             cls,
             check.inst_param(origin, "origin", ExternalJobOrigin),
-            check.inst_param(job_type, "job_type", InstigationType),
+            check.inst_param(job_type, "job_type", InstigatorType),
             check.inst_param(status, "status", InstigationStatus),
             check_job_data(job_type, job_specific_data),
         )
@@ -255,7 +255,7 @@ class InstigationTickData(
         Arguments:
             job_origin_id (str): The id of the job target for this tick
             job_name (str): The name of the job for this tick
-            job_type (InstigationType): The type of this job for this tick
+            job_type (InstigatorType): The type of this job for this tick
             status (InstigationTickStatus): The status of the tick, which can be updated
             timestamp (float): The timestamp at which this job evaluation started
 
@@ -273,7 +273,7 @@ class InstigationTickData(
             cls,
             check.str_param(job_origin_id, "job_origin_id"),
             check.str_param(job_name, "job_name"),
-            check.inst_param(job_type, "job_type", InstigationType),
+            check.inst_param(job_type, "job_type", InstigatorType),
             check.inst_param(status, "status", InstigationTickStatus),
             check.float_param(timestamp, "timestamp"),
             check.opt_list_param(run_ids, "run_ids", of_type=str),
@@ -350,7 +350,7 @@ JobTickData = InstigationTickData
 
 
 def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
-    check.inst_param(job_type, "job_type", InstigationType)
+    check.inst_param(job_type, "job_type", InstigatorType)
     check.inst_param(status, "status", InstigationTickStatus)
 
     if status == InstigationTickStatus.SUCCESS:

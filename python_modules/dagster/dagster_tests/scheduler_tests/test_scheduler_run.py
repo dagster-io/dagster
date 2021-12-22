@@ -38,7 +38,7 @@ from dagster.core.scheduler.instigation import (
     InstigationStatus,
     InstigationTickData,
     InstigationTickStatus,
-    InstigationType,
+    InstigatorType,
     ScheduleInstigationData,
 )
 from dagster.core.storage.pipeline_run import (
@@ -693,7 +693,7 @@ def test_old_tick_schedule(external_repo_context):
                 InstigationTickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name="simple_schedule",
-                    job_type=InstigationType.SCHEDULE,
+                    job_type=InstigatorType.SCHEDULE,
                     status=InstigationTickStatus.STARTED,
                     timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
                 )
@@ -1262,7 +1262,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
 
             unloadable_schedule_state = InstigationState(
                 unloadable_origin,
-                InstigationType.SCHEDULE,
+                InstigatorType.SCHEDULE,
                 InstigationStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
@@ -1419,7 +1419,7 @@ def test_bad_load_repository(external_repo_context, capfd):
 
             schedule_state = InstigationState(
                 invalid_repo_origin,
-                InstigationType.SCHEDULE,
+                InstigatorType.SCHEDULE,
                 InstigationStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
@@ -1468,7 +1468,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
             schedule_state = InstigationState(
                 invalid_repo_origin,
-                InstigationType.SCHEDULE,
+                InstigatorType.SCHEDULE,
                 InstigationStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
@@ -1507,7 +1507,7 @@ def test_bad_load_repository_location(capfd):
         with pendulum.test(initial_datetime):
             schedule_state = InstigationState(
                 fake_origin,
-                InstigationType.SCHEDULE,
+                InstigatorType.SCHEDULE,
                 InstigationStatus.RUNNING,
                 ScheduleInstigationData(
                     "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"

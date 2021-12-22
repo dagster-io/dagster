@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import pendulum
 from dagster import check, seven
-from dagster.core.definitions.run_request import InstigationType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
@@ -178,7 +178,7 @@ def execute_sensor_iteration(
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
-        for s in instance.all_stored_job_state(job_type=InstigationType.SENSOR)
+        for s in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
         if s.status == InstigationStatus.RUNNING
     ]
     if not sensor_jobs:
@@ -220,7 +220,7 @@ def execute_sensor_iteration(
                 InstigationTickData(
                     job_origin_id=job_state.job_origin_id,
                     job_name=job_state.job_name,
-                    job_type=InstigationType.SENSOR,
+                    job_type=InstigatorType.SENSOR,
                     status=InstigationTickStatus.STARTED,
                     timestamp=now.timestamp(),
                 )
