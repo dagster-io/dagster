@@ -81,9 +81,9 @@ def check_job_data(job_type, job_specific_data):
 
 
 @whitelist_for_serdes
-class InstigationState(namedtuple("_InstigationState", "origin job_type status job_specific_data")):
+class InstigatorState(namedtuple("_InstigationState", "origin job_type status job_specific_data")):
     def __new__(cls, origin, job_type, status, job_specific_data=None):
-        return super(InstigationState, cls).__new__(
+        return super(InstigatorState, cls).__new__(
             cls,
             check.inst_param(origin, "origin", ExternalJobOrigin),
             check.inst_param(job_type, "job_type", InstigatorType),
@@ -109,7 +109,7 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
 
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)
-        return InstigationState(
+        return InstigatorState(
             self.origin,
             job_type=self.job_type,
             status=status,
@@ -118,7 +118,7 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
 
     def with_data(self, job_specific_data):
         check_job_data(self.job_type, job_specific_data)
-        return InstigationState(
+        return InstigatorState(
             self.origin,
             job_type=self.job_type,
             status=self.status,
@@ -126,9 +126,9 @@ class InstigationState(namedtuple("_InstigationState", "origin job_type status j
         )
 
 
-register_serdes_tuple_fallbacks({"JobState": InstigationState})
+register_serdes_tuple_fallbacks({"JobState": InstigatorState})
 # for internal backcompat
-JobState = InstigationState
+JobState = InstigatorState
 
 
 @whitelist_for_serdes

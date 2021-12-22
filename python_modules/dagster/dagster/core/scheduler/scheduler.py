@@ -10,7 +10,7 @@ from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigatorStatus,
     ScheduleInstigatorData,
 )
@@ -57,7 +57,7 @@ class Scheduler(abc.ABC):
         return schedule_state
 
     def _create_new_schedule_state(self, instance, external_schedule):
-        schedule_state = InstigationState(
+        schedule_state = InstigatorState(
             external_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,

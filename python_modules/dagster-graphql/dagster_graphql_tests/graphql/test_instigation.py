@@ -20,7 +20,7 @@ query JobQuery($instigationSelector: InstigationSelector!) {
       message
       stack
     }
-    ... on InstigationState {
+    ... on InstigatorState {
         id
         nextTick {
             timestamp
@@ -60,7 +60,7 @@ class TestNextTickRepository(
         )
 
         assert result.data
-        assert result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert result.data["instigationStateOrError"]["__typename"] == "InstigatorState"
         next_tick = result.data["instigationStateOrError"]["nextTick"]
         assert next_tick
 
@@ -84,6 +84,6 @@ class TestNextTickRepository(
         )
 
         assert result.data
-        assert result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert result.data["instigationStateOrError"]["__typename"] == "InstigatorState"
         next_tick = result.data["instigationStateOrError"]["nextTick"]
         assert next_tick

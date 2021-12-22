@@ -16,7 +16,7 @@ from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
 )
@@ -365,7 +365,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             job_state = instance.get_job_state(external_sensor.get_external_origin_id())
             if not job_state:
                 instance.add_job_state(
-                    InstigationState(
+                    InstigatorState(
                         external_sensor.get_external_origin(),
                         InstigatorType.SENSOR,
                         InstigatorStatus.STOPPED,

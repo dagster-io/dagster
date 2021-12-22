@@ -7,7 +7,7 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigatorStatus,
     InstigatorType,
     ScheduleInstigatorData,
@@ -375,7 +375,7 @@ def test_get_unloadable_job(graphql_context):
     )
     with pendulum.test(initial_datetime):
         instance.add_job_state(
-            InstigationState(
+            InstigatorState(
                 _get_unloadable_schedule_origin("unloadable_running"),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
@@ -388,7 +388,7 @@ def test_get_unloadable_job(graphql_context):
         )
 
         instance.add_job_state(
-            InstigationState(
+            InstigatorState(
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,

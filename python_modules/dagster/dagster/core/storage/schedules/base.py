@@ -4,7 +4,7 @@ from typing import Iterable
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigationTick,
     InstigationTickData,
     InstigationTickStatus,
@@ -21,7 +21,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     @abc.abstractmethod
     def all_stored_job_state(
         self, repository_origin_id: str = None, job_type: InstigatorType = None
-    ) -> Iterable[InstigationState]:
+    ) -> Iterable[InstigatorState]:
         """Return all InstigationStates present in storage
 
         Args:
@@ -30,7 +30,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_job_state(self, job_origin_id: str) -> InstigationState:
+    def get_job_state(self, job_origin_id: str) -> InstigatorState:
         """Return the unique job with the given id
 
         Args:
@@ -38,19 +38,19 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def add_job_state(self, job: InstigationState):
+    def add_job_state(self, job: InstigatorState):
         """Add a job to storage.
 
         Args:
-            job (InstigationState): The job to add
+            job (InstigatorState): The job to add
         """
 
     @abc.abstractmethod
-    def update_job_state(self, job: InstigationState):
+    def update_job_state(self, job: InstigatorState):
         """Update a job in storage.
 
         Args:
-            job (InstigationState): The job to update
+            job (InstigatorState): The job to update
         """
 
     @abc.abstractmethod

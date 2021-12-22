@@ -1704,7 +1704,7 @@ records = instance.get_event_records(
 
     def start_sensor(self, external_sensor):
         from dagster.core.scheduler.instigation import (
-            InstigationState,
+            InstigatorState,
             InstigatorStatus,
             SensorInstigatorData,
         )
@@ -1714,7 +1714,7 @@ records = instance.get_event_records(
 
         if not job_state:
             self.add_job_state(
-                InstigationState(
+                InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,

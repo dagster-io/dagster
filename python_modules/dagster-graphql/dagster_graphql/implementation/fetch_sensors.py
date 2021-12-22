@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.instigation import InstigationState, InstigatorStatus
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -127,7 +127,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(sensor_state, "sensor_state", InstigationState)
+    check.inst_param(sensor_state, "sensor_state", InstigatorState)
 
     repository_origin = sensor_state.origin.external_repository_origin
     if not graphene_info.context.has_repository_location(

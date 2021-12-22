@@ -504,12 +504,12 @@ class ExternalSchedule:
     # the schedule is first created in code)
     def get_default_instigation_state(self, instance):
         from dagster.core.scheduler.instigation import (
-            InstigationState,
+            InstigatorState,
             InstigatorStatus,
             ScheduleInstigatorData,
         )
 
-        return InstigationState(
+        return InstigatorState(
             self.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,
@@ -588,12 +588,12 @@ class ExternalSensor:
 
     def get_default_instigation_state(self, _instance):
         from dagster.core.scheduler.instigation import (
-            InstigationState,
+            InstigatorState,
             InstigatorStatus,
             SensorInstigatorData,
         )
 
-        return InstigationState(
+        return InstigatorState(
             self.get_external_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.STOPPED,

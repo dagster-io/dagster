@@ -7,7 +7,7 @@ from dagster import check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigatorStatus,
     InstigationTick,
     InstigatorType,
@@ -142,7 +142,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
         name = "FutureInstigationTick"
 
     def __init__(self, job_state, timestamp):
-        self._job_state = check.inst_param(job_state, "job_state", InstigationState)
+        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
         self._timestamp = timestamp
         super().__init__(
             timestamp=check.float_param(timestamp, "timestamp"),
@@ -275,7 +275,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         name = "InstigationState"
 
     def __init__(self, job_state):
-        self._job_state = check.inst_param(job_state, "job_state", InstigationState)
+        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
         super().__init__(
             id=job_state.job_origin_id,
             name=job_state.name,

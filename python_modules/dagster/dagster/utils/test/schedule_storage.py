@@ -8,7 +8,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.instigation import (
-    InstigationState,
+    InstigatorState,
     InstigatorStatus,
     InstigationTickData,
     InstigationTickStatus,
@@ -73,7 +73,7 @@ class TestScheduleStorage:
         status=InstigatorStatus.STOPPED,
         scheduler=FAKE_SCHEDULER_NAME,
     ):
-        return InstigationState(
+        return InstigatorState(
             cls.fake_repo_target().get_job_origin(schedule_name),
             InstigatorType.SCHEDULE,
             status,
@@ -83,7 +83,7 @@ class TestScheduleStorage:
     @classmethod
     def build_sensor(cls, sensor_name, status=InstigatorStatus.STOPPED):
         external_job_origin = cls.fake_repo_target().get_job_origin(sensor_name)
-        return InstigationState(external_job_origin, InstigatorType.SENSOR, status)
+        return InstigatorState(external_job_origin, InstigatorType.SENSOR, status)
 
     def test_basic_schedule_storage(self, storage):
         assert storage
