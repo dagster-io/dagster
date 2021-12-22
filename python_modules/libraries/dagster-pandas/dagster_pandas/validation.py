@@ -338,7 +338,7 @@ class PandasColumn:
     def categorical_column(
         name,
         categories,
-        of_types="object",
+        of_types="category",
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
