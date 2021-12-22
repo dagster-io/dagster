@@ -122,7 +122,7 @@ export function getReexecutionVariables(input: {
 }) {
   const {run, style, repositoryLocationName, repositoryName} = input;
 
-  if (!run || ('pipeline' in run && run.pipeline.__typename === 'UnknownPipeline')) {
+  if (!run || !run.pipelineSnapshotId) {
     return undefined;
   }
 
@@ -134,7 +134,7 @@ export function getReexecutionVariables(input: {
       repositoryLocationName,
       repositoryName,
       pipelineName: run.pipelineName,
-      solidSelection: 'solidSelection' in run ? run.solidSelection : run.pipeline.solidSelection,
+      solidSelection: run.solidSelection,
     },
   };
 

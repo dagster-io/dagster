@@ -38,7 +38,7 @@ export const RunRoot = () => {
     : null;
 
   const isJob = React.useMemo(
-    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipeline.name)),
+    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
 
@@ -83,7 +83,7 @@ export const RunRoot = () => {
                 <TagWIP icon="run">
                   Run of{' '}
                   <PipelineReference
-                    pipelineName={run?.pipeline.name}
+                    pipelineName={run?.pipelineName}
                     pipelineHrefContext={repoAddress || 'repo-unknown'}
                     snapshotId={snapshotID}
                     size="small"
@@ -130,13 +130,6 @@ const RUN_ROOT_QUERY = gql`
       __typename
       ... on Run {
         id
-        pipeline {
-          __typename
-          ... on PipelineReference {
-            name
-            solidSelection
-          }
-        }
         ...RunFragment
       }
     }

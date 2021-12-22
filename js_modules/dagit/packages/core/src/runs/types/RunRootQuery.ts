@@ -13,12 +13,6 @@ export interface RunRootQuery_pipelineRunOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface RunRootQuery_pipelineRunOrError_Run_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-  solidSelection: string[] | null;
-}
-
 export interface RunRootQuery_pipelineRunOrError_Run_tags {
   __typename: "PipelineTag";
   key: string;
@@ -94,7 +88,6 @@ export interface RunRootQuery_pipelineRunOrError_Run_stepStats {
 export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  pipeline: RunRootQuery_pipelineRunOrError_Run_pipeline;
   runConfig: any;
   runId: string;
   canTerminate: boolean;
@@ -104,6 +97,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineName: string;
+  solidSelection: string[] | null;
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
