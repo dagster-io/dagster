@@ -248,6 +248,10 @@ class InMemoryRunStorage(RunStorage):
                 run_group.append(curr_run)
         return (root_run.root_run_id, run_group)
 
+    def add_run_stats(self, run_id: str) -> None:
+        """In-memory storage does not make use of RunRecord"""
+        return None
+
     def get_run_groups(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:

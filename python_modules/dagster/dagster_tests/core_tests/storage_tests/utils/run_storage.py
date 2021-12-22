@@ -1165,3 +1165,47 @@ class TestRunStorage:
         storage.add_snapshot(ep_snapshot, snapshot_id=new_ep_snapshot_id)
         assert not storage.has_snapshot(ep_snapshot_id)
         assert storage.has_snapshot(new_ep_snapshot_id)
+
+    def test_run_record_stats(self, storage):
+        assert storage
+
+        self._skip_in_memory(storage)
+
+        run_id = make_new_run_id()
+        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+
+        storage.add_run(run_to_add)
+
+        run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
+
+        assert run_record.start_time is None
+        assert run_record.end_time is None
+
+        storage.handle_run_event(
+            run_id,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_START.value,
+                pipeline_name="pipeline_name",
+            ),
+        )
+
+        run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
+
+        assert run_record.start_time is not None
+        assert run_record.end_time is None
+
+        storage.handle_run_event(
+            run_id,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                pipeline_name="pipeline_name",
+            ),
+        )
+
+        run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
+
+        assert run_record.start_time is not None
+        assert run_record.end_time is not None
+        assert run_record.end_time > run_record.start_time

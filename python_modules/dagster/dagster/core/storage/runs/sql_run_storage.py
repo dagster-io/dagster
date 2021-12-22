@@ -401,6 +401,23 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
+    def add_run_stats(self, run_id: str) -> None:
+        from dagster.core.instance import DagsterInstance
+
+        check.str_param(run_id, "run_id")
+        instance = check.inst_param(self._instance, "instance", DagsterInstance)
+        run_stats = instance.get_run_stats(run_id)
+
+        with self.connect() as conn:
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run_id)
+                .values(
+                    start_time=run_stats.start_time,
+                    end_time=run_stats.end_time,
+                )
+            )
+
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         check.str_param(run_id, "run_id")
         pipeline_run = self.get_run_by_id(run_id)

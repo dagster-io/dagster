@@ -2,12 +2,15 @@ from contextlib import ExitStack
 
 from tqdm import tqdm
 
+from ..pipeline_run import PipelineRunsFilter
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 
 RUN_PARTITIONS = "run_partitions"
+RUN_START_END = "run_start_end"
 
 RUN_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
+    RUN_START_END: lambda: migrate_run_start_end,
 }
 
 RUN_CHUNK_SIZE = 100
@@ -51,3 +54,19 @@ def migrate_run_partition(storage, print_fn=None):
             continue
 
         storage.add_run_tags(run.run_id, run.tags)
+
+
+def migrate_run_start_end(storage, print_fn=None):
+    """
+    Utility method that updates the start and end times of historical runs using the completed event log.
+    """
+
+    if print_fn:
+        print_fn("Querying run and event log storage.")
+
+    for run in chunked_run_iterator(storage, print_fn):
+        run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run.run_id]))[0]
+        if run_record.start_time:
+            continue
+
+        storage.add_run_stats(run.run_id)

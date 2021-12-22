@@ -183,6 +183,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
             bool
         """
 
+    @abstractmethod
+    def add_run_stats(self, run_id: str) -> None:
+        """Add start and end times to run, retrieved from event log storage.
+
+        Args:
+            run_id (str)
+        """
+
     def add_snapshot(
         self,
         snapshot: Union[PipelineSnapshot, ExecutionPlanSnapshot],
