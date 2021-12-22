@@ -37,7 +37,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigationTickData,
-    InstigationTickStatus,
+    TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
 )
@@ -581,7 +581,7 @@ def test_simple_schedule(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 expected_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -613,7 +613,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
         # Verify advancing in time but not going past a tick doesn't add any new runs
         freeze_datetime = freeze_datetime.add(seconds=2)
@@ -629,7 +629,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
         freeze_datetime = freeze_datetime.add(days=2)
         with pendulum.test(freeze_datetime):
@@ -648,7 +648,7 @@ def test_simple_schedule(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
             assert (
-                len([tick for tick in ticks if tick.status == InstigationTickStatus.SUCCESS]) == 3
+                len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
             )
 
             runs_by_partition = {run.tags[PARTITION_NAME_TAG]: run for run in instance.get_runs()}
@@ -694,7 +694,7 @@ def test_old_tick_schedule(external_repo_context):
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name="simple_schedule",
                     job_type=InstigatorType.SCHEDULE,
-                    status=InstigationTickStatus.STARTED,
+                    status=TickStatus.STARTED,
                     timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
                 )
             )
@@ -782,7 +782,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                     ticks[0],
                     external_schedule,
                     expected_datetime,
-                    InstigationTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [run.run_id for run in instance.get_runs()],
                 )
 
@@ -825,7 +825,7 @@ def test_bad_env_fn_no_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [run.run_id for run in instance.get_runs()],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=1,
@@ -849,7 +849,7 @@ def test_bad_env_fn_no_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=1,
@@ -867,7 +867,7 @@ def test_bad_env_fn_no_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=1,
@@ -903,7 +903,7 @@ def test_bad_env_fn_with_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=1,
@@ -935,7 +935,7 @@ def test_bad_env_fn_with_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=3,
@@ -954,7 +954,7 @@ def test_bad_env_fn_with_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=3,
@@ -972,7 +972,7 @@ def test_bad_env_fn_with_retries(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
                 expected_failure_count=1,
@@ -1007,7 +1007,7 @@ def test_passes_on_retry():
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution of run_config_fn for schedule passes_on_retry_schedule",
                 expected_failure_count=1,
@@ -1027,7 +1027,7 @@ def test_passes_on_retry():
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
                 expected_failure_count=1,
             )
@@ -1048,7 +1048,7 @@ def test_passes_on_retry():
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
                 expected_failure_count=0,
             )
@@ -1084,7 +1084,7 @@ def test_bad_should_execute(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [run.run_id for run in instance.get_runs()],
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule",
                 expected_failure_count=1,
@@ -1125,7 +1125,7 @@ def test_skip(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.SKIPPED,
+                TickStatus.SKIPPED,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -1162,7 +1162,7 @@ def test_wrong_config_schedule(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "DagsterInvalidConfigError",
                 expected_failure_count=1,
@@ -1211,7 +1211,7 @@ def test_schedule_run_default_config(external_repo_context):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -1286,14 +1286,14 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 good_ticks[0],
                 good_schedule,
                 initial_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
             bad_ticks = instance.get_job_ticks(bad_origin.get_id())
             assert len(bad_ticks) == 1
 
-            assert bad_ticks[0].status == InstigationTickStatus.FAILURE
+            assert bad_ticks[0].status == TickStatus.FAILURE
 
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
@@ -1331,7 +1331,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 good_ticks[0],
                 good_schedule,
                 new_now,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [good_schedule_runs[0].run_id],
             )
 
@@ -1351,7 +1351,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 bad_ticks[0],
                 bad_schedule,
                 new_now,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [bad_schedule_runs[0].run_id],
             )
 
@@ -1390,7 +1390,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -1570,11 +1570,11 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
             hourly_ticks = instance.get_job_ticks(external_hourly_schedule.get_external_origin_id())
             assert len(hourly_ticks) == 1
-            assert hourly_ticks[0].status == InstigationTickStatus.SUCCESS
+            assert hourly_ticks[0].status == TickStatus.SUCCESS
 
             assert get_logger_output_from_capfd(
                 capfd, "SchedulerDaemon"
@@ -1595,12 +1595,12 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
             hourly_ticks = instance.get_job_ticks(external_hourly_schedule.get_external_origin_id())
             assert len(hourly_ticks) == 2
             assert (
-                len([tick for tick in hourly_ticks if tick.status == InstigationTickStatus.SUCCESS])
+                len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS])
                 == 2
             )
 
@@ -1656,7 +1656,7 @@ def test_launch_failure(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -1697,7 +1697,7 @@ def test_partitionless_schedule(capfd):
                 ticks[0],
                 external_schedule,
                 create_pendulum_time(year=2019, month=3, day=4, tz="US/Central"),
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -1754,7 +1754,7 @@ def test_max_catchup_runs(capfd):
                 ticks[0],
                 external_schedule,
                 first_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
             validate_run_started(
@@ -1769,7 +1769,7 @@ def test_max_catchup_runs(capfd):
                 ticks[1],
                 external_schedule,
                 second_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[1].run_id],
             )
 
@@ -1845,7 +1845,7 @@ def test_multi_runs(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 expected_datetime,
-                InstigationTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in runs],
             )
 
@@ -1867,7 +1867,7 @@ def test_multi_runs(external_repo_context, capfd):
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == InstigationTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
         freeze_datetime = freeze_datetime.add(days=1)
         with pendulum.test(freeze_datetime):
@@ -1879,7 +1879,7 @@ def test_multi_runs(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 2
             assert (
-                len([tick for tick in ticks if tick.status == InstigationTickStatus.SUCCESS]) == 2
+                len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
             )
             runs = instance.get_runs()
 
@@ -1918,7 +1918,7 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 freeze_datetime,
-                InstigationTickStatus.FAILURE,
+                TickStatus.FAILURE,
                 [],
                 "Error occurred during the execution function for schedule "
                 "multi_run_schedule_with_missing_run_key",

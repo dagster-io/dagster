@@ -7,7 +7,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigationTick,
     InstigationTickData,
-    InstigationTickStatus,
+    TickStatus,
 )
 
 
@@ -97,13 +97,13 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def purge_job_ticks(
-        self, job_origin_id: str, tick_status: InstigationTickStatus, before: float
+        self, job_origin_id: str, tick_status: TickStatus, before: float
     ):
         """Wipe ticks for a job for a certain status and timestamp.
 
         Args:
             job_origin_id (str): The id of the ExternalJob target to delete
-            tick_status (InstigationTickStatus): The tick status to wipe
+            tick_status (TickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
         """
 

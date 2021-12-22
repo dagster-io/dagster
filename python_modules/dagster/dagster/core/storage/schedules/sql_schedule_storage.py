@@ -9,7 +9,7 @@ from dagster.core.scheduler.instigation import (
     InstigationTick,
     InstigationTickData,
     InstigationTickStatsSnapshot,
-    InstigationTickStatus,
+    TickStatus,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -209,7 +209,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def purge_job_ticks(self, job_origin_id, tick_status, before):
         check.str_param(job_origin_id, "job_origin_id")
-        check.inst_param(tick_status, "tick_status", InstigationTickStatus)
+        check.inst_param(tick_status, "tick_status", TickStatus)
         check.float_param(before, "before")
 
         utc_before = utc_datetime_from_timestamp(before)
@@ -239,10 +239,10 @@ class SqlScheduleStorage(ScheduleStorage):
             counts[status] = count
 
         return InstigationTickStatsSnapshot(
-            ticks_started=counts.get(InstigationTickStatus.STARTED.value, 0),
-            ticks_succeeded=counts.get(InstigationTickStatus.SUCCESS.value, 0),
-            ticks_skipped=counts.get(InstigationTickStatus.SKIPPED.value, 0),
-            ticks_failed=counts.get(InstigationTickStatus.FAILURE.value, 0),
+            ticks_started=counts.get(TickStatus.STARTED.value, 0),
+            ticks_succeeded=counts.get(TickStatus.SUCCESS.value, 0),
+            ticks_skipped=counts.get(TickStatus.SKIPPED.value, 0),
+            ticks_failed=counts.get(TickStatus.FAILURE.value, 0),
         )
 
     def wipe(self):

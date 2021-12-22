@@ -11,7 +11,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigationTickData,
-    InstigationTickStatus,
+    TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
 )
@@ -233,7 +233,7 @@ class TestScheduleStorage:
             storage.add_job_state(schedule)
 
     def build_tick(
-        self, current_time, status=InstigationTickStatus.STARTED, run_id=None, error=None
+        self, current_time, status=TickStatus.STARTED, run_id=None, error=None
     ):
         return InstigationTickData(
             "my_schedule",
@@ -256,7 +256,7 @@ class TestScheduleStorage:
         tick = ticks[0]
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.STARTED
+        assert tick.status == TickStatus.STARTED
         assert tick.run_ids == []
         assert tick.error == None
 
@@ -266,8 +266,8 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_job_tick(self.build_tick(current_time))
 
-        updated_tick = tick.with_status(InstigationTickStatus.SUCCESS).with_run(run_id="1234")
-        assert updated_tick.status == InstigationTickStatus.SUCCESS
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_job_tick(updated_tick)
 
@@ -276,7 +276,7 @@ class TestScheduleStorage:
         tick = ticks[0]
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.SUCCESS
+        assert tick.status == TickStatus.SUCCESS
         assert tick.run_ids == ["1234"]
         assert tick.error == None
 
@@ -286,8 +286,8 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_job_tick(self.build_tick(current_time))
 
-        updated_tick = tick.with_status(InstigationTickStatus.SKIPPED)
-        assert updated_tick.status == InstigationTickStatus.SKIPPED
+        updated_tick = tick.with_status(TickStatus.SKIPPED)
+        assert updated_tick.status == TickStatus.SKIPPED
 
         storage.update_job_tick(updated_tick)
 
@@ -296,7 +296,7 @@ class TestScheduleStorage:
         tick = ticks[0]
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.SKIPPED
+        assert tick.status == TickStatus.SKIPPED
         assert tick.run_ids == []
         assert tick.error == None
 
@@ -307,10 +307,10 @@ class TestScheduleStorage:
         tick = storage.create_job_tick(self.build_tick(current_time))
 
         updated_tick = tick.with_status(
-            InstigationTickStatus.FAILURE,
+            TickStatus.FAILURE,
             error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
         )
-        assert updated_tick.status == InstigationTickStatus.FAILURE
+        assert updated_tick.status == TickStatus.FAILURE
 
         storage.update_job_tick(updated_tick)
 
@@ -320,7 +320,7 @@ class TestScheduleStorage:
         assert tick.tick_id > 0
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.FAILURE
+        assert tick.status == TickStatus.FAILURE
         assert tick.run_ids == []
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
@@ -337,17 +337,17 @@ class TestScheduleStorage:
 
         for x in range(3):
             storage.create_job_tick(
-                self.build_tick(current_time, InstigationTickStatus.SUCCESS, run_id=str(x)),
+                self.build_tick(current_time, TickStatus.SUCCESS, run_id=str(x)),
             )
 
         for x in range(4):
             storage.create_job_tick(
-                self.build_tick(current_time, InstigationTickStatus.SKIPPED),
+                self.build_tick(current_time, TickStatus.SKIPPED),
             )
 
         for x in range(5):
             storage.create_job_tick(
-                self.build_tick(current_time, InstigationTickStatus.FAILURE, error=error),
+                self.build_tick(current_time, TickStatus.FAILURE, error=error),
             )
 
         stats = storage.get_job_tick_stats("my_schedule")
@@ -468,7 +468,7 @@ class TestScheduleStorage:
             storage.add_job_state(job)
 
     def build_sensor_tick(
-        self, current_time, status=InstigationTickStatus.STARTED, run_id=None, error=None
+        self, current_time, status=TickStatus.STARTED, run_id=None, error=None
     ):
         return InstigationTickData(
             "my_sensor",
@@ -493,7 +493,7 @@ class TestScheduleStorage:
         assert tick.tick_id == tick_id
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.STARTED
+        assert tick.status == TickStatus.STARTED
         assert tick.run_ids == []
         assert tick.error == None
 
@@ -505,12 +505,12 @@ class TestScheduleStorage:
         one_day_ago = now.subtract(days=1).timestamp()
 
         storage.create_job_tick(
-            self.build_sensor_tick(five_days_ago, InstigationTickStatus.SKIPPED)
+            self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
         )
         storage.create_job_tick(
-            self.build_sensor_tick(four_days_ago, InstigationTickStatus.SKIPPED)
+            self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED)
         )
-        storage.create_job_tick(self.build_sensor_tick(one_day_ago, InstigationTickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 3
 
@@ -527,8 +527,8 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_job_tick(self.build_sensor_tick(current_time))
 
-        updated_tick = tick.with_status(InstigationTickStatus.SUCCESS).with_run(run_id="1234")
-        assert updated_tick.status == InstigationTickStatus.SUCCESS
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_job_tick(updated_tick)
 
@@ -538,7 +538,7 @@ class TestScheduleStorage:
         assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.SUCCESS
+        assert tick.status == TickStatus.SUCCESS
         assert tick.run_ids == ["1234"]
         assert tick.error == None
 
@@ -548,8 +548,8 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_job_tick(self.build_sensor_tick(current_time))
 
-        updated_tick = tick.with_status(InstigationTickStatus.SKIPPED)
-        assert updated_tick.status == InstigationTickStatus.SKIPPED
+        updated_tick = tick.with_status(TickStatus.SKIPPED)
+        assert updated_tick.status == TickStatus.SKIPPED
 
         storage.update_job_tick(updated_tick)
 
@@ -559,7 +559,7 @@ class TestScheduleStorage:
         assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.SKIPPED
+        assert tick.status == TickStatus.SKIPPED
         assert tick.run_ids == []
         assert tick.error == None
 
@@ -570,8 +570,8 @@ class TestScheduleStorage:
         tick = storage.create_job_tick(self.build_sensor_tick(current_time))
         error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
-        updated_tick = tick.with_status(InstigationTickStatus.FAILURE, error=error)
-        assert updated_tick.status == InstigationTickStatus.FAILURE
+        updated_tick = tick.with_status(TickStatus.FAILURE, error=error)
+        assert updated_tick.status == TickStatus.FAILURE
 
         storage.update_job_tick(updated_tick)
 
@@ -581,7 +581,7 @@ class TestScheduleStorage:
         assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
-        assert tick.status == InstigationTickStatus.FAILURE
+        assert tick.status == TickStatus.FAILURE
         assert tick.run_ids == []
         assert tick.error == error
 
@@ -593,15 +593,15 @@ class TestScheduleStorage:
         four_minutes_ago = now.subtract(minutes=4).timestamp()
         one_minute_ago = now.subtract(minutes=1).timestamp()
         storage.create_job_tick(
-            self.build_sensor_tick(five_minutes_ago, InstigationTickStatus.SKIPPED)
+            self.build_sensor_tick(five_minutes_ago, TickStatus.SKIPPED)
         )
         storage.create_job_tick(
             self.build_sensor_tick(
-                four_minutes_ago, InstigationTickStatus.SUCCESS, run_id="fake_run_id"
+                four_minutes_ago, TickStatus.SUCCESS, run_id="fake_run_id"
             )
         )
         one_minute_tick = storage.create_job_tick(
-            self.build_sensor_tick(one_minute_ago, InstigationTickStatus.SKIPPED)
+            self.build_sensor_tick(one_minute_ago, TickStatus.SKIPPED)
         )
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 3
@@ -611,7 +611,7 @@ class TestScheduleStorage:
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
         storage.purge_job_ticks(
-            "my_sensor", InstigationTickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
+            "my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
         )
 
         ticks = storage.get_job_ticks("my_sensor")

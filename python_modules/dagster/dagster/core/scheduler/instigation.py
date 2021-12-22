@@ -132,16 +132,16 @@ JobState = InstigatorState
 
 
 @whitelist_for_serdes
-class InstigationTickStatus(Enum):
+class TickStatus(Enum):
     STARTED = "STARTED"
     SKIPPED = "SKIPPED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
 
 
-register_serdes_enum_fallbacks({"JobTickStatus": InstigationTickStatus})
+register_serdes_enum_fallbacks({"JobTickStatus": TickStatus})
 # for internal backcompat
-JobTickStatus = InstigationTickStatus
+JobTickStatus = TickStatus
 
 
 @whitelist_for_serdes
@@ -154,7 +154,7 @@ class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         )
 
     def with_status(self, status, **kwargs):
-        check.inst_param(status, "status", InstigationTickStatus)
+        check.inst_param(status, "status", TickStatus)
         return self._replace(job_tick_data=self.job_tick_data.with_status(status, **kwargs))
 
     def with_reason(self, skip_reason):
@@ -256,13 +256,13 @@ class InstigationTickData(
             job_origin_id (str): The id of the job target for this tick
             job_name (str): The name of the job for this tick
             job_type (InstigatorType): The type of this job for this tick
-            status (InstigationTickStatus): The status of the tick, which can be updated
+            status (TickStatus): The status of the tick, which can be updated
             timestamp (float): The timestamp at which this job evaluation started
 
         Keyword Arguments:
             run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during job execution. This is set
-                only when the status is ``InstigationTickStatus.Failure``
+                only when the status is ``TickStatus.Failure``
             skip_reason (str): message for why the tick was skipped
             origin_run_ids (List[str]): The runs originating the job.
             failure_count (int): The number of times this tick has failed. If the status is not
@@ -274,7 +274,7 @@ class InstigationTickData(
             check.str_param(job_origin_id, "job_origin_id"),
             check.str_param(job_name, "job_name"),
             check.inst_param(job_type, "job_type", InstigatorType),
-            check.inst_param(status, "status", InstigationTickStatus),
+            check.inst_param(status, "status", TickStatus),
             check.float_param(timestamp, "timestamp"),
             check.opt_list_param(run_ids, "run_ids", of_type=str),
             check.opt_list_param(run_keys, "run_keys", of_type=str),
@@ -351,19 +351,19 @@ JobTickData = InstigationTickData
 
 def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
     check.inst_param(job_type, "job_type", InstigatorType)
-    check.inst_param(status, "status", InstigationTickStatus)
+    check.inst_param(status, "status", TickStatus)
 
-    if status == InstigationTickStatus.SUCCESS:
+    if status == TickStatus.SUCCESS:
         check.list_param(run_ids, "run_ids", of_type=str)
         check.invariant(error is None, desc="Job tick status is SUCCESS, but error was provided")
-    elif status == InstigationTickStatus.FAILURE:
+    elif status == TickStatus.FAILURE:
         check.inst_param(error, "error", SerializableErrorInfo)
     else:
         check.invariant(error is None, "Job tick status was not FAILURE but error was provided")
 
     if skip_reason:
         check.invariant(
-            status == InstigationTickStatus.SKIPPED,
+            status == TickStatus.SKIPPED,
             "Job tick status was not SKIPPED but skip_reason was provided",
         )
 
