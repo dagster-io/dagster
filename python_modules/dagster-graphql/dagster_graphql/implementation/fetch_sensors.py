@@ -1,7 +1,7 @@
 from dagster import check
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.job import JobState, JobStatus
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -71,14 +71,18 @@ def stop_sensor(graphene_info, job_origin_id):
         return GrapheneStopSensorMutationResult(job_state=None)
 
     instance.stop_sensor(job_origin_id)
-    return GrapheneStopSensorMutationResult(job_state=job_state.with_status(JobStatus.STOPPED))
+    return GrapheneStopSensorMutationResult(
+        job_state=job_state.with_status(InstigatorStatus.STOPPED)
+    )
 
 
 @capture_error
 def get_unloadable_sensor_states_or_error(graphene_info):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
-    sensor_states = graphene_info.context.instance.all_stored_job_state(job_type=JobType.SENSOR)
+    sensor_states = graphene_info.context.instance.all_stored_job_state(
+        job_type=InstigatorType.SENSOR
+    )
     external_sensors = [
         sensor
         for repository_location in graphene_info.context.repository_locations
@@ -123,7 +127,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(sensor_state, "sensor_state", JobState)
+    check.inst_param(sensor_state, "sensor_state", InstigatorState)
 
     repository_origin = sensor_state.origin.external_repository_origin
     if not graphene_info.context.has_repository_location(
@@ -140,7 +144,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     repository = repository_location.get_repository(repository_origin.repository_name)
     external_sensor = repository.get_external_sensor(sensor_state.name)
 
-    if sensor_state.status != JobStatus.RUNNING:
+    if sensor_state.status != InstigatorStatus.RUNNING:
         return None
 
     latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)

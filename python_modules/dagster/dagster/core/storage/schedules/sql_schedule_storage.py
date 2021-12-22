@@ -2,14 +2,14 @@ from abc import abstractmethod
 
 import sqlalchemy as db
 from dagster import check
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler.job import (
-    JobState,
-    JobTick,
-    JobTickData,
-    JobTickStatsSnapshot,
-    JobTickStatus,
+from dagster.core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorTick,
+    TickData,
+    TickStatsSnapshot,
+    TickStatus,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -37,7 +37,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
-        check.opt_inst_param(job_type, "job_type", JobType)
+        check.opt_inst_param(job_type, "job_type", InstigatorType)
         base_query = db.select([JobTable.c.job_body, JobTable.c.job_origin_id]).select_from(
             JobTable
         )
@@ -66,7 +66,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
 
     def add_job_state(self, job):
-        check.inst_param(job, "job", JobState)
+        check.inst_param(job, "job", InstigatorState)
         with self.connect() as conn:
             try:
                 conn.execute(
@@ -80,16 +80,16 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"JobState {job.job_origin_id} is already present in storage"
+                    f"InstigatorState {job.job_origin_id} is already present in storage"
                 ) from exc
 
         return job
 
     def update_job_state(self, job):
-        check.inst_param(job, "job", JobState)
+        check.inst_param(job, "job", InstigatorState)
         if not self.get_job_state(job.job_origin_id):
             raise DagsterInvariantViolationError(
-                "JobState {id} is not present in storage".format(id=job.job_origin_id)
+                "InstigatorState {id} is not present in storage".format(id=job.job_origin_id)
             )
 
         with self.connect() as conn:
@@ -107,7 +107,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if not self.get_job_state(job_origin_id):
             raise DagsterInvariantViolationError(
-                "JobState {id} is not present in storage".format(id=job_origin_id)
+                "InstigatorState {id} is not present in storage".format(id=job_origin_id)
             )
 
         with self.connect() as conn:
@@ -133,7 +133,7 @@ class SqlScheduleStorage(ScheduleStorage):
         if len(rows) == 0:
             return None
 
-        return JobTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
+        return InstigatorTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
 
     def _add_filter_limit(self, query, before=None, after=None, limit=None):
         check.opt_float_param(before, "before")
@@ -165,11 +165,11 @@ class SqlScheduleStorage(ScheduleStorage):
 
         rows = self.execute(query)
         return list(
-            map(lambda r: JobTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+            map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
     def create_job_tick(self, job_tick_data):
-        check.inst_param(job_tick_data, "job_tick_data", JobTickData)
+        check.inst_param(job_tick_data, "job_tick_data", TickData)
 
         with self.connect() as conn:
             try:
@@ -184,14 +184,14 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
-                return JobTick(tick_id, job_tick_data)
+                return InstigatorTick(tick_id, job_tick_data)
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert JobTick for job {job_tick_data.job_name} in storage"
+                    f"Unable to insert InstigatorTick for job {job_tick_data.job_name} in storage"
                 ) from exc
 
     def update_job_tick(self, tick):
-        check.inst_param(tick, "tick", JobTick)
+        check.inst_param(tick, "tick", InstigatorTick)
 
         with self.connect() as conn:
             conn.execute(
@@ -209,7 +209,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def purge_job_ticks(self, job_origin_id, tick_status, before):
         check.str_param(job_origin_id, "job_origin_id")
-        check.inst_param(tick_status, "tick_status", JobTickStatus)
+        check.inst_param(tick_status, "tick_status", TickStatus)
         check.float_param(before, "before")
 
         utc_before = utc_datetime_from_timestamp(before)
@@ -238,11 +238,11 @@ class SqlScheduleStorage(ScheduleStorage):
         for status, count in rows:
             counts[status] = count
 
-        return JobTickStatsSnapshot(
-            ticks_started=counts.get(JobTickStatus.STARTED.value, 0),
-            ticks_succeeded=counts.get(JobTickStatus.SUCCESS.value, 0),
-            ticks_skipped=counts.get(JobTickStatus.SKIPPED.value, 0),
-            ticks_failed=counts.get(JobTickStatus.FAILURE.value, 0),
+        return TickStatsSnapshot(
+            ticks_started=counts.get(TickStatus.STARTED.value, 0),
+            ticks_succeeded=counts.get(TickStatus.SUCCESS.value, 0),
+            ticks_skipped=counts.get(TickStatus.SKIPPED.value, 0),
+            ticks_failed=counts.get(TickStatus.FAILURE.value, 0),
         )
 
     def wipe(self):

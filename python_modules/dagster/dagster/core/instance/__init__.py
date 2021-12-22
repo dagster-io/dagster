@@ -1652,21 +1652,22 @@ records = instance.get_event_records(
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo
-        from dagster.core.definitions.run_request import JobType
-        from dagster.core.scheduler.job import JobStatus
+        from dagster.core.definitions.run_request import InstigatorType
+        from dagster.core.scheduler.instigation import InstigatorStatus
 
         errors = []
 
         schedules = []
-        for schedule_state in self.all_stored_job_state(job_type=JobType.SCHEDULE):
-            if schedule_state.status == JobStatus.RUNNING and not self.running_schedule_count(
-                schedule_state.job_origin_id
+        for schedule_state in self.all_stored_job_state(job_type=InstigatorType.SCHEDULE):
+            if (
+                schedule_state.status == InstigatorStatus.RUNNING
+                and not self.running_schedule_count(schedule_state.job_origin_id)
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be running, but the scheduler is not "
                     "running the schedule.".format(schedule_name=schedule_state.job_name)
                 )
-            elif schedule_state.status == JobStatus.STOPPED and self.running_schedule_count(
+            elif schedule_state.status == InstigatorStatus.STOPPED and self.running_schedule_count(
                 schedule_state.job_origin_id
             ):
                 errors.append(
@@ -1702,29 +1703,33 @@ records = instance.get_event_records(
     # Schedule Storage
 
     def start_sensor(self, external_sensor):
-        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
-        from dagster.core.definitions.run_request import JobType
+        from dagster.core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            SensorInstigatorData,
+        )
+        from dagster.core.definitions.run_request import InstigatorType
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 
         if not job_state:
             self.add_job_state(
-                JobState(
+                InstigatorState(
                     external_sensor.get_external_origin(),
-                    JobType.SENSOR,
-                    JobStatus.RUNNING,
-                    SensorJobData(min_interval=external_sensor.min_interval_seconds),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
             )
-        elif job_state.status != JobStatus.RUNNING:
-            self.update_job_state(job_state.with_status(JobStatus.RUNNING))
+        elif job_state.status != InstigatorStatus.RUNNING:
+            self.update_job_state(job_state.with_status(InstigatorStatus.RUNNING))
 
     def stop_sensor(self, job_origin_id):
-        from dagster.core.scheduler.job import JobStatus
+        from dagster.core.scheduler.instigation import InstigatorStatus
 
         job_state = self.get_job_state(job_origin_id)
         if job_state:
-            self.update_job_state(job_state.with_status(JobStatus.STOPPED))
+            self.update_job_state(job_state.with_status(InstigatorStatus.STOPPED))
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
