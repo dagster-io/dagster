@@ -146,7 +146,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
       <OpLinks
         ops={ops}
         layout={layout}
-        color={ColorsWIP.Gray500}
+        color={ColorsWIP.Blue500}
         onHighlight={setHighlighted}
         connections={layout.connections.filter(({from, to}) =>
           isHighlighted(highlighted, {

@@ -88,7 +88,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? ColorsWIP.Gray700 : ColorsWIP.Gray500)};
+    background: ${(p) => (p.$highlighted ? ColorsWIP.Blue500 : ColorsWIP.Gray500)};
     display: inline-block;
     margin: 6px;
   }
