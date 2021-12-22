@@ -8,7 +8,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigationTick,
     TickData,
-    InstigationTickStatsSnapshot,
+    TickStatsSnapshot,
     TickStatus,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -238,7 +238,7 @@ class SqlScheduleStorage(ScheduleStorage):
         for status, count in rows:
             counts[status] = count
 
-        return InstigationTickStatsSnapshot(
+        return TickStatsSnapshot(
             ticks_started=counts.get(TickStatus.STARTED.value, 0),
             ticks_succeeded=counts.get(TickStatus.SUCCESS.value, 0),
             ticks_skipped=counts.get(TickStatus.SKIPPED.value, 0),

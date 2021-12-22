@@ -2,7 +2,7 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
-from dagster.core.scheduler.instigation import InstigationTickStatsSnapshot
+from dagster.core.scheduler.instigation import TickStatsSnapshot
 from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import start_schedule, stop_schedule
@@ -63,7 +63,7 @@ class GrapheneScheduleTickStatsSnapshot(graphene.ObjectType):
             ticks_skipped=stats.ticks_skipped,
             ticks_failed=stats.ticks_failed,
         )
-        self._stats = check.inst_param(stats, "stats", InstigationTickStatsSnapshot)
+        self._stats = check.inst_param(stats, "stats", TickStatsSnapshot)
 
 
 class GrapheneScheduleStateResult(graphene.ObjectType):
