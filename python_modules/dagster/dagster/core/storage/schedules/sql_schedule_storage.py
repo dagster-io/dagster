@@ -6,7 +6,7 @@ from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.instigation import (
     InstigatorState,
-    InstigationTick,
+    InstigatorTick,
     TickData,
     TickStatsSnapshot,
     TickStatus,
@@ -133,7 +133,7 @@ class SqlScheduleStorage(ScheduleStorage):
         if len(rows) == 0:
             return None
 
-        return InstigationTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
+        return InstigatorTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
 
     def _add_filter_limit(self, query, before=None, after=None, limit=None):
         check.opt_float_param(before, "before")
@@ -165,7 +165,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         rows = self.execute(query)
         return list(
-            map(lambda r: InstigationTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+            map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
     def create_job_tick(self, job_tick_data):
@@ -184,14 +184,14 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
-                return InstigationTick(tick_id, job_tick_data)
+                return InstigatorTick(tick_id, job_tick_data)
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert InstigationTick for job {job_tick_data.job_name} in storage"
+                    f"Unable to insert InstigatorTick for job {job_tick_data.job_name} in storage"
                 ) from exc
 
     def update_job_tick(self, tick):
-        check.inst_param(tick, "tick", InstigationTick)
+        check.inst_param(tick, "tick", InstigatorTick)
 
         with self.connect() as conn:
             conn.execute(

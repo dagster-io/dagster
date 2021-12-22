@@ -145,9 +145,9 @@ JobTickStatus = TickStatus
 
 
 @whitelist_for_serdes
-class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
+class InstigatorTick(namedtuple("_InstigatorTick", "tick_id job_tick_data")):
     def __new__(cls, tick_id, job_tick_data):
-        return super(InstigationTick, cls).__new__(
+        return super(InstigatorTick, cls).__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
             check.inst_param(job_tick_data, "job_tick_data", TickData),
@@ -219,9 +219,9 @@ class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         return self.job_tick_data.failure_count
 
 
-register_serdes_tuple_fallbacks({"JobTick": InstigationTick})
+register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
 # for internal backcompat
-JobTick = InstigationTick
+JobTick = InstigatorTick
 
 
 @whitelist_for_serdes
