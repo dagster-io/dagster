@@ -534,7 +534,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_id(self, _graphene_info):
-        return f"{self._represented_pipeline.get_external_origin_id()}:{self._solid_def_snap.name}"
+        return f"{self._represented_pipeline.identifying_pipeline_snapshot_id}:{self._solid_def_snap.name}"
 
     def resolve_solids(self, _graphene_info):
         return build_solids(self._represented_pipeline, self._comp_solid_dep_index)
