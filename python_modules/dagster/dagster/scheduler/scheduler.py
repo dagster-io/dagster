@@ -279,7 +279,7 @@ def launch_scheduled_runs_for_schedule(
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
 
                         tick_context.update_state(
-                            JobTickStatus.FAILURE,
+                            TickStatus.FAILURE,
                             error=error_data,
                             # don't increment the failure count - retry forever until the server comes back up
                             # or the schedule is turned off
@@ -290,7 +290,7 @@ def launch_scheduled_runs_for_schedule(
                 else:
                     error_data = serializable_error_info_from_exc_info(sys.exc_info())
                     tick_context.update_state(
-                        JobTickStatus.FAILURE,
+                        TickStatus.FAILURE,
                         error=error_data,
                         failure_count=tick_context.failure_count + 1,
                     )

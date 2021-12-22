@@ -2070,7 +2070,7 @@ def test_grpc_server_down():
                         ticks[0],
                         external_schedule,
                         initial_datetime,
-                        JobTickStatus.FAILURE,
+                        TickStatus.FAILURE,
                         [],
                         "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
                         expected_failure_count=0,
@@ -2089,6 +2089,6 @@ def test_grpc_server_down():
                         ticks[0],
                         external_schedule,
                         expected_datetime,
-                        JobTickStatus.SUCCESS,
+                        TickStatus.SUCCESS,
                         [run.run_id for run in instance.get_runs()],
                     )
