@@ -475,17 +475,42 @@ class PipelineRunsFilter(
         return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
 
 
-class RunRecord(NamedTuple):
+class RunRecord(
+    NamedTuple(
+        "_RunRecord",
+        [
+            ("storage_id", int),
+            ("pipeline_run", PipelineRun),
+            ("create_timestamp", datetime),
+            ("update_timestamp", datetime),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+        ],
+    )
+):
     """Internal representation of a run record, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.
     """
 
-    storage_id: int
-    pipeline_run: PipelineRun
-    create_timestamp: datetime
-    update_timestamp: datetime
-    start_time: Optional[float]
-    end_time: Optional[float]
+    def __new__(
+        cls,
+        storage_id,
+        pipeline_run,
+        create_timestamp,
+        update_timestamp,
+        start_time=None,
+        end_time=None,
+    ):
+        return super(RunRecord, cls).__new__(
+            cls,
+            storage_id=check.int_param(storage_id, "storage_id"),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
+            update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
+            # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
+        )
 
 
 ###################################################################################################

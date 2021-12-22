@@ -24,6 +24,7 @@ RunsTable = db.Table(
     db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    # December 2021 - Added by PR 6038
     db.Column("start_time", db.Float),
     db.Column("end_time", db.Float),
 )
