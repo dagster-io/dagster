@@ -7,7 +7,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigationTick,
-    InstigationTickData,
+    TickData,
     InstigationTickStatsSnapshot,
     TickStatus,
 )
@@ -169,7 +169,7 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
     def create_job_tick(self, job_tick_data):
-        check.inst_param(job_tick_data, "job_tick_data", InstigationTickData)
+        check.inst_param(job_tick_data, "job_tick_data", TickData)
 
         with self.connect() as conn:
             try:

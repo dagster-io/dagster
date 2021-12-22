@@ -10,7 +10,7 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
-    InstigationTickData,
+    TickData,
     TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
@@ -235,7 +235,7 @@ class TestScheduleStorage:
     def build_tick(
         self, current_time, status=TickStatus.STARTED, run_id=None, error=None
     ):
-        return InstigationTickData(
+        return TickData(
             "my_schedule",
             "my_schedule",
             InstigatorType.SCHEDULE,
@@ -470,7 +470,7 @@ class TestScheduleStorage:
     def build_sensor_tick(
         self, current_time, status=TickStatus.STARTED, run_id=None, error=None
     ):
-        return InstigationTickData(
+        return TickData(
             "my_sensor",
             "my_sensor",
             InstigatorType.SENSOR,

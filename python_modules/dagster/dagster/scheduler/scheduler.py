@@ -11,7 +11,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
-    InstigationTickData,
+    TickData,
     TickStatus,
     InstigatorType,
 )
@@ -243,7 +243,7 @@ def launch_scheduled_runs_for_schedule(
                 )
         else:
             tick = instance.create_job_tick(
-                InstigationTickData(
+                TickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,
                     job_type=InstigatorType.SCHEDULE,

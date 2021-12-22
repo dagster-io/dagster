@@ -12,7 +12,7 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorStatus,
-    InstigationTickData,
+    TickData,
     TickStatus,
     SensorInstigatorData,
 )
@@ -217,7 +217,7 @@ def execute_sensor_iteration(
                 continue
 
             tick = instance.create_job_tick(
-                InstigationTickData(
+                TickData(
                     job_origin_id=job_state.job_origin_id,
                     job_name=job_state.job_name,
                     job_type=InstigatorType.SENSOR,

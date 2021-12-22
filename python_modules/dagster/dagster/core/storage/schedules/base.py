@@ -6,7 +6,7 @@ from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigationTick,
-    InstigationTickData,
+    TickData,
     TickStatus,
 )
 
@@ -80,11 +80,11 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data: InstigationTickData):
+    def create_job_tick(self, job_tick_data: TickData):
         """Add a job tick to storage.
 
         Args:
-            job_tick_data (InstigationTickData): The job tick to add
+            job_tick_data (TickData): The job tick to add
         """
 
     @abc.abstractmethod

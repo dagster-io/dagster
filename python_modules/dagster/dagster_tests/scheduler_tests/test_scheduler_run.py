@@ -36,7 +36,7 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
-    InstigationTickData,
+    TickData,
     TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
@@ -690,7 +690,7 @@ def test_old_tick_schedule(external_repo_context):
 
             # Create an old tick from several days ago
             instance.create_job_tick(
-                InstigationTickData(
+                TickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name="simple_schedule",
                     job_type=InstigatorType.SCHEDULE,

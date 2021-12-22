@@ -150,7 +150,7 @@ class InstigationTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         return super(InstigationTick, cls).__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
-            check.inst_param(job_tick_data, "job_tick_data", InstigationTickData),
+            check.inst_param(job_tick_data, "job_tick_data", TickData),
         )
 
     def with_status(self, status, **kwargs):
@@ -225,9 +225,9 @@ JobTick = InstigationTick
 
 
 @whitelist_for_serdes
-class InstigationTickData(
+class TickData(
     namedtuple(
-        "_InstigationTickData",
+        "_TickData",
         "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason cursor origin_run_ids failure_count",
     )
 ):
@@ -269,7 +269,7 @@ class InstigationTickData(
                 FAILED, this is the number of previous failures before it reached the current state.
         """
         _validate_job_tick_args(job_type, status, run_ids, error, skip_reason)
-        return super(InstigationTickData, cls).__new__(
+        return super(TickData, cls).__new__(
             cls,
             check.str_param(job_origin_id, "job_origin_id"),
             check.str_param(job_name, "job_name"),
@@ -286,7 +286,7 @@ class InstigationTickData(
         )
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
-        return InstigationTickData(
+        return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
@@ -302,7 +302,7 @@ class InstigationTickData(
 
     def with_run(self, run_id, run_key=None):
         check.str_param(run_id, "run_id")
-        return InstigationTickData(
+        return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
@@ -323,20 +323,20 @@ class InstigationTickData(
         )
 
     def with_reason(self, skip_reason):
-        return InstigationTickData(
+        return TickData(
             **merge_dicts(
                 self._asdict(), {"skip_reason": check.opt_str_param(skip_reason, "skip_reason")}
             )
         )
 
     def with_cursor(self, cursor):
-        return InstigationTickData(
+        return TickData(
             **merge_dicts(self._asdict(), {"cursor": check.opt_str_param(cursor, "cursor")})
         )
 
     def with_origin_run(self, origin_run_id):
         check.str_param(origin_run_id, "origin_run_id")
-        return InstigationTickData(
+        return TickData(
             **merge_dicts(
                 self._asdict(),
                 {"origin_run_ids": [*self.origin_run_ids, origin_run_id]},
@@ -344,9 +344,9 @@ class InstigationTickData(
         )
 
 
-register_serdes_tuple_fallbacks({"JobTickData": InstigationTickData})
+register_serdes_tuple_fallbacks({"JobTickData": TickData})
 # for internal backcompat
-JobTickData = InstigationTickData
+JobTickData = TickData
 
 
 def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
