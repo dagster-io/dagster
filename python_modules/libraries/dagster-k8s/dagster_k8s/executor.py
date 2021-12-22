@@ -186,6 +186,10 @@ class K8sStepHandler(StepHandler):
             pod_name=pod_name,
             component="step_worker",
             user_defined_k8s_config=user_defined_k8s_config,
+            labels={
+                "dagster/job": step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                "dagster/op": step_key,
+            },
         )
 
         events.append(
