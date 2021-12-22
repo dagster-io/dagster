@@ -12,6 +12,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_in_progress_runs_for_job,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster.core.scheduler.instigation import InstigatorType
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
@@ -184,11 +185,25 @@ class GrapheneRepository(graphene.ObjectType):
         return GrapheneRepositoryLocation(self._repository_location)
 
     def resolve_schedules(self, graphene_info):
-
         schedules = self._repository.get_external_schedules()
+        schedule_states_by_name = {
+            state.name: state
+            for state in graphene_info.context.instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SCHEDULE,
+            )
+        }
 
         return sorted(
-            [GrapheneSchedule(graphene_info, schedule) for schedule in schedules],
+            [
+                GrapheneSchedule(
+                    graphene_info,
+                    schedule,
+                    schedule_states_by_name.get(schedule.name),
+                    fetched_state=True,
+                )
+                for schedule in schedules
+            ],
             key=lambda schedule: schedule.name,
         )
 

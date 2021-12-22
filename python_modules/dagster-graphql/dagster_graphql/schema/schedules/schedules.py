@@ -2,6 +2,7 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster.core.scheduler.instigation import InstigatorState
 
 from ..errors import (
     GraphenePythonError,
@@ -37,13 +38,18 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, graphene_info, external_schedule):
+    def __init__(self, graphene_info, external_schedule, schedule_state=None, fetched_state=False):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-        self._schedule_state = graphene_info.context.instance.get_job_state(
-            self._external_schedule.get_external_origin_id()
-        )
+        if not fetched_state:
+            self._schedule_state = graphene_info.context.instance.get_job_state(
+                self._external_schedule.get_external_origin_id()
+            )
+        else:
+            self._schedule_state = check.opt_inst_param(
+                schedule_state, "schedule_state", InstigatorState
+            )
 
         if not self._schedule_state:
             # Also include a ScheduleState for a stopped schedule that may not
