@@ -457,16 +457,19 @@ class TestEventLogStorage:
         assert a_stats.step_key == "A"
         assert a_stats.status.value == "SUCCESS"
         assert a_stats.end_time - a_stats.start_time == 100
+        assert len(a_stats.attempts_list) == 1
 
         b_stats = [stats for stats in step_stats if stats.step_key == "B"][0]
         assert b_stats.step_key == "B"
         assert b_stats.status.value == "FAILURE"
         assert b_stats.end_time - b_stats.start_time == 50
+        assert len(b_stats.attempts_list) == 1
 
         c_stats = [stats for stats in step_stats if stats.step_key == "C"][0]
         assert c_stats.step_key == "C"
         assert c_stats.status.value == "SKIPPED"
         assert c_stats.end_time - c_stats.start_time == 25
+        assert len(c_stats.attempts_list) == 1
 
         d_stats = [stats for stats in step_stats if stats.step_key == "D"][0]
         assert d_stats.step_key == "D"
@@ -474,6 +477,7 @@ class TestEventLogStorage:
         assert d_stats.end_time - d_stats.start_time == 150
         assert len(d_stats.materializations) == 3
         assert len(d_stats.expectation_results) == 2
+        assert len(c_stats.attempts_list) == 1
 
     def test_secondary_index(self, storage):
         if not isinstance(storage, SqlEventLogStorage):
@@ -1023,10 +1027,12 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 1
+        assert len(step_stats[0].attempts_list) == 1
         assert step_stats[1].step_key == "should_fail"
         assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
         assert step_stats[1].attempts == 1
+        assert len(step_stats[1].attempts_list) == 1
 
     def test_run_step_stats_with_retries(self, storage):
         @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
@@ -1046,6 +1052,7 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.FAILURE
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
+        assert len(step_stats[0].attempts_list) == 4
 
     # After adding the IN_PROGRESS field to the StepEventStatus enum, tests in internal fail
     # Temporarily skipping this test
@@ -1075,23 +1082,26 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.IN_PROGRESS
         assert not step_stats[0].end_time
         assert step_stats[0].attempts == 1
+        assert len(step_stats[0].attempts_list) == 1
 
         assert step_stats[1].step_key == "C"
         assert step_stats[1].status == StepEventStatus.SKIPPED
         assert step_stats[1].end_time > step_stats[1].start_time
         assert step_stats[1].attempts == 1
+        assert len(step_stats[1].attempts_list) == 1
 
         assert step_stats[2].step_key == "D"
         assert step_stats[2].status == StepEventStatus.IN_PROGRESS
         assert not step_stats[2].end_time
         assert step_stats[2].attempts == 1
+        assert len(step_stats[2].attempts_list) == 1
 
         assert step_stats[3].step_key == "E"
         assert step_stats[3].status == StepEventStatus.IN_PROGRESS
         assert not step_stats[3].end_time
         assert step_stats[3].attempts == 2
+        assert len(step_stats[3].attempts_list) == 2
 
-    @pytest.mark.skip("skip until we can support in cloud")
     def test_run_step_stats_with_resource_markers(self, storage):
         @solid(required_resource_keys={"foo"})
         def foo_solid():
