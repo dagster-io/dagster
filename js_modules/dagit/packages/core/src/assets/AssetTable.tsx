@@ -176,18 +176,20 @@ const AssetEntryRow: React.FC<{
         ) : null}
         {shouldShowAssetGraphColumns ? (
           <td>
-            {(first.definition?.jobs || []).map((job) => (
-              <PipelineReference
-                key={job.id}
-                showIcon
-                pipelineName={job.name}
-                pipelineHrefContext={{
-                  name: job.repository.name,
-                  location: job.repository.location.name,
-                }}
-                isJob
-              />
-            ))}
+            <Box flex={{direction: 'column', gap: 2}}>
+              {(first.definition?.jobs || []).map((job) => (
+                <PipelineReference
+                  key={job.id}
+                  isJob
+                  showIcon
+                  pipelineName={job.name}
+                  pipelineHrefContext={{
+                    name: job.repository.name,
+                    location: job.repository.location.name,
+                  }}
+                />
+              ))}
+            </Box>
           </td>
         ) : null}
         {canWipe ? (

@@ -28,21 +28,23 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_jobs_repository_location {
+export interface AssetQuery_assetOrError_Asset_definition_repository_location {
   __typename: "RepositoryLocation";
+  id: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_jobs_repository {
+export interface AssetQuery_assetOrError_Asset_definition_repository {
   __typename: "Repository";
+  id: string;
   name: string;
-  location: AssetQuery_assetOrError_Asset_definition_jobs_repository_location;
+  location: AssetQuery_assetOrError_Asset_definition_repository_location;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_jobs {
   __typename: "Pipeline";
+  id: string;
   name: string;
-  repository: AssetQuery_assetOrError_Asset_definition_jobs_repository;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_assetKey {
@@ -191,6 +193,12 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations 
   partition: string | null;
   runOrError: AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError;
   materializationEvent: AssetQuery_assetOrError_Asset_definition_assetMaterializations_materializationEvent;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey {
@@ -345,8 +353,8 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  jobs: AssetQuery_assetOrError_Asset_definition_dependencies_asset_jobs[];
   description: string | null;
-  jobName: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
 }
@@ -354,6 +362,12 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
 export interface AssetQuery_assetOrError_Asset_definition_dependencies {
   __typename: "AssetDependency";
   asset: AssetQuery_assetOrError_Asset_definition_dependencies_asset;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
@@ -508,8 +522,8 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  jobs: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_jobs[];
   description: string | null;
-  jobName: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
 }
@@ -522,10 +536,10 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy {
 export interface AssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
+  repository: AssetQuery_assetOrError_Asset_definition_repository;
   description: string | null;
   opName: string | null;
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
-  jobName: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   dependencies: AssetQuery_assetOrError_Asset_definition_dependencies[];

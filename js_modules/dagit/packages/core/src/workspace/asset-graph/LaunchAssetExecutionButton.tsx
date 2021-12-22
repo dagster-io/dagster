@@ -1,21 +1,19 @@
 import React from 'react';
 
 import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
-import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 export const LaunchAssetExecutionButton: React.FC<{
   repoAddress: RepoAddress;
-  assets: {opName: string | null; jobName: string | null}[];
-}> = ({repoAddress, assets}) => {
-  const jobName = assets[0].jobName;
-  if (!jobName || !assets.every((a) => a.jobName === jobName && a.opName)) {
+  assetJobName: string;
+  assets: {opName: string | null}[];
+}> = ({repoAddress, assets, assetJobName}) => {
+  if (!assets.every((a) => a.opName)) {
     return <span />;
   }
-
   return (
     <LaunchRootExecutionButton
-      pipelineName={jobName}
+      pipelineName={assetJobName}
       disabled={false}
       title={'Refresh'}
       getVariables={() => ({
@@ -24,9 +22,10 @@ export const LaunchAssetExecutionButton: React.FC<{
           executionMetadata: {},
           runConfigData: {},
           selector: {
-            ...repoAddressToSelector(repoAddress),
-            pipelineName: jobName,
-            solidSelection: assets.map((a) => a.opName!),
+            repositoryLocationName: repoAddress.location,
+            repositoryName: repoAddress.name,
+            pipelineName: assetJobName,
+            solidSelection: assets.map((o) => o.opName!),
           },
         },
       })}

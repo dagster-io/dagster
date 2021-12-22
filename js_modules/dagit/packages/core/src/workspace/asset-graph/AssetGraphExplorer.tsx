@@ -1,6 +1,7 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
 import _, {uniq, without} from 'lodash';
 import React from 'react';
+import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
@@ -40,7 +41,7 @@ import {
   AssetGraphQueryVariables,
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
 } from './types/AssetGraphQuery';
-import {useFetchAssetDefinitionLocation} from './useFetchAssetDefinitionLocation';
+import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
 
 type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 
@@ -162,7 +163,9 @@ const AssetGraphExplorerWithData: React.FC<
     graphData,
   } = props;
 
-  const fetchAssetDefinitionLocation = useFetchAssetDefinitionLocation();
+  const history = useHistory();
+  const findAssetInWorkspace = useFindAssetInWorkspace();
+
   const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
   const selectedGraphNodes = selectedDefinitions.map(
     (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
@@ -170,29 +173,40 @@ const AssetGraphExplorerWithData: React.FC<
   const focusedGraphNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
-    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node) => {
+    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
       e.stopPropagation();
 
-      const def = (node && node.definition) || (await fetchAssetDefinitionLocation(assetKey));
-      if (!def || !def.opName) {
+      let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
+
+      if (node?.definition) {
+        // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
+        clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
+      } else {
+        // The asset's definition was not provided in our query for job.assetNodes. This means
+        // it's in another job or is a foreign asset not defined in the repository at all.
+        clicked = await findAssetInWorkspace(assetKey);
+      }
+
+      if (!clicked.opName || !clicked.jobName) {
+        // We were unable to find this asset in the workspace - show it in the asset catalog.
+        history.push(`/instance/assets/${assetKey.path.join('/')}`);
         return;
       }
 
-      const {opName, jobName} = def;
       let nextOpsQuery = explorerPath.opsQuery;
-      let nextOpsNameSelection = opName;
+      let nextOpsNameSelection = clicked.opName;
 
-      if (jobName !== explorerPath.pipelineName) {
+      if (clicked.jobName !== explorerPath.pipelineName) {
         nextOpsQuery = '';
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
         const added =
-          e.shiftKey && focusedGraphNode
+          e.shiftKey && focusedGraphNode && node
             ? opsInRange({graph: graphData, from: focusedGraphNode, to: node})
-            : [opName];
+            : [clicked.opName];
 
-        nextOpsNameSelection = (existing.includes(opName)
-          ? without(existing, opName)
+        nextOpsNameSelection = (existing.includes(clicked.opName)
+          ? without(existing, clicked.opName)
           : uniq([...existing, ...added])
         ).join(',');
       }
@@ -202,12 +216,19 @@ const AssetGraphExplorerWithData: React.FC<
           ...explorerPath,
           opNames: [nextOpsNameSelection],
           opsQuery: nextOpsQuery,
-          pipelineName: jobName || explorerPath.pipelineName,
+          pipelineName: clicked.jobName,
         },
         'replace',
       );
     },
-    [fetchAssetDefinitionLocation, explorerPath, onChangeExplorerPath, focusedGraphNode, graphData],
+    [
+      explorerPath,
+      onChangeExplorerPath,
+      findAssetInWorkspace,
+      history,
+      focusedGraphNode,
+      graphData,
+    ],
   );
 
   const queryResultAssets = React.useMemo(
@@ -282,6 +303,7 @@ const AssetGraphExplorerWithData: React.FC<
                               .definition.metadata
                           }
                           selected={focusedGraphNode === graphNode}
+                          jobName={explorerPath.pipelineName}
                           repoAddress={repoAddress}
                           secondaryHighlight={selectedGraphNodes.includes(graphNode)}
                         />
@@ -317,11 +339,13 @@ const AssetGraphExplorerWithData: React.FC<
           <RightInfoPanelContent>
             {selectedGraphNodes.length > 1 ? (
               <SidebarAssetsInfo
+                jobName={explorerPath.pipelineName}
                 nodes={selectedGraphNodes.map((n) => n.definition)}
                 repoAddress={repoAddress}
               />
             ) : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
               <SidebarAssetInfo
+                jobName={explorerPath.pipelineName}
                 node={selectedGraphNodes[0].definition}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
                 definition={selectedDefinitions[0]}

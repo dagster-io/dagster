@@ -7,7 +7,6 @@ import {displayNameForAssetKey} from '../app/Util';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 
@@ -15,7 +14,6 @@ import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {RepositoryAssetsListQuery} from './types/RepositoryAssetsListQuery';
-import {workspacePath} from './workspacePath';
 
 const REPOSITORY_ASSETS_LIST_QUERY = gql`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
@@ -105,15 +103,15 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
         {assetsForTable.map((asset) => (
           <tr key={asset.id}>
             <td>
-              <Group direction="column" spacing={4}>
+              <Box flex={{direction: 'column', gap: 4}}>
                 <Link to={`/instance/assets/${asset.assetKey.path.join('/')}`}>
                   {displayNameForAssetKey(asset.assetKey)}
                 </Link>
                 <Description>{asset.description}</Description>
-              </Group>
+              </Box>
             </td>
             <td>
-              <Group direction="column" spacing={4}>
+              <Box flex={{direction: 'column', gap: 2}}>
                 {asset.jobs.map(({name}) => (
                   <PipelineReference
                     showIcon
@@ -123,7 +121,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
                     pipelineHrefContext={repoAddress}
                   />
                 ))}
-              </Group>
+              </Box>
             </td>
           </tr>
         ))}

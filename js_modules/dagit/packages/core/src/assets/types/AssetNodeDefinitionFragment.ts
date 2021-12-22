@@ -9,21 +9,10 @@ import { RunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: AssetNodeDefinitionFragment
 // ====================================================
 
-export interface AssetNodeDefinitionFragment_jobs_repository_location {
-  __typename: "RepositoryLocation";
-  name: string;
-}
-
-export interface AssetNodeDefinitionFragment_jobs_repository {
-  __typename: "Repository";
-  name: string;
-  location: AssetNodeDefinitionFragment_jobs_repository_location;
-}
-
 export interface AssetNodeDefinitionFragment_jobs {
   __typename: "Pipeline";
+  id: string;
   name: string;
-  repository: AssetNodeDefinitionFragment_jobs_repository;
 }
 
 export interface AssetNodeDefinitionFragment_assetKey {
@@ -172,6 +161,12 @@ export interface AssetNodeDefinitionFragment_assetMaterializations {
   partition: string | null;
   runOrError: AssetNodeDefinitionFragment_assetMaterializations_runOrError;
   materializationEvent: AssetNodeDefinitionFragment_assetMaterializations_materializationEvent;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
 }
 
 export interface AssetNodeDefinitionFragment_dependencies_asset_assetKey {
@@ -326,8 +321,8 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  jobs: AssetNodeDefinitionFragment_dependencies_asset_jobs[];
   description: string | null;
-  jobName: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations[];
 }
@@ -335,6 +330,12 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
 export interface AssetNodeDefinitionFragment_dependencies {
   __typename: "AssetDependency";
   asset: AssetNodeDefinitionFragment_dependencies_asset;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
 }
 
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetKey {
@@ -489,8 +490,8 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  jobs: AssetNodeDefinitionFragment_dependedBy_asset_jobs[];
   description: string | null;
-  jobName: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations[];
 }
@@ -506,7 +507,6 @@ export interface AssetNodeDefinitionFragment {
   description: string | null;
   opName: string | null;
   jobs: AssetNodeDefinitionFragment_jobs[];
-  jobName: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];
   dependencies: AssetNodeDefinitionFragment_dependencies[];

@@ -620,8 +620,8 @@ type AssetNode {
   assetKey: AssetKey!
   description: String
   opName: String
-  jobName: String
   jobs: [Pipeline!]!
+  repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!

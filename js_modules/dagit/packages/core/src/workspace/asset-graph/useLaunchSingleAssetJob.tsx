@@ -15,11 +15,8 @@ export const useLaunchSingleAssetJob = () => {
   );
 
   return React.useCallback(
-    async (
-      repoAddress: RepoAddress,
-      definition: {jobName: string | null; opName: string | null},
-    ) => {
-      if (!definition.jobName) {
+    async (repoAddress: RepoAddress, jobName: string | null, opName: string | null) => {
+      if (!jobName || !opName) {
         return;
       }
 
@@ -27,16 +24,13 @@ export const useLaunchSingleAssetJob = () => {
         const result = await launchPipelineExecution({
           variables: {
             executionParams: {
-              selector: {
-                pipelineName: definition.jobName,
-                ...repoAddressToSelector(repoAddress),
-              },
               mode: 'default',
-              stepKeys: [definition.opName],
+              selector: {pipelineName: jobName, ...repoAddressToSelector(repoAddress)},
+              stepKeys: [opName],
             },
           },
         });
-        handleLaunchResult(basePath, definition.jobName, result, true);
+        handleLaunchResult(basePath, jobName, result, true);
       } catch (error) {
         showLaunchError(error as Error);
       }

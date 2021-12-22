@@ -99,7 +99,10 @@ GET_ASSET_IN_PROGRESS_RUNS = """
                 assetNodes {
                     opName
                     description
-                    jobName
+                    jobs {
+                        id
+                        name
+                    }
                 }
                 inProgressRunsByStep {
                     stepKey
