@@ -70,7 +70,7 @@ export const Run: React.FC<RunProps> = (props) => {
 
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
-    run ? `${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]` : `Run: ${runId}`,
+    run ? `${run.pipelineName} ${runId.slice(0, 8)} [${run.status}]` : `Run: ${runId}`,
   );
 
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
@@ -231,7 +231,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     : [];
 
   const onLaunch = async (style: ReExecutionStyle) => {
-    if (!run || run.pipeline.__typename === 'UnknownPipeline' || !repoMatch) {
+    if (!run || !run.pipelineSnapshotId || !repoMatch) {
       return;
     }
 
@@ -244,7 +244,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
     try {
       const result = await launchPipelineReexecution({variables});
-      handleLaunchResult(basePath, run.pipeline.name, result);
+      handleLaunchResult(basePath, run.pipelineName, result);
     } catch (error) {
       showLaunchError(error as Error);
     }

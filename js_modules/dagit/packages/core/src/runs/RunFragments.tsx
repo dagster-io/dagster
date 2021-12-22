@@ -36,13 +36,7 @@ export const RunFragments = {
       rootRunId
       parentRunId
       pipelineName
-      pipeline {
-        __typename
-        ... on PipelineReference {
-          name
-          solidSelection
-        }
-      }
+      solidSelection
       pipelineSnapshotId
       executionPlan {
         artifactsPersisted
