@@ -12,9 +12,9 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorStatus,
+    SensorInstigatorData,
     TickData,
     TickStatus,
-    SensorInstigatorData,
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags

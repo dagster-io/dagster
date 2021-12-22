@@ -41,11 +41,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    TickStatus,
-)
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -883,9 +879,7 @@ def test_custom_interval_sensor(external_repo_context):
             assert len(ticks) == 2
 
             expected_datetime = create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=1)
-            validate_tick(
-                ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED
-            )
+            validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

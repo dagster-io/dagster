@@ -10,10 +10,10 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
-    TickData,
-    TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
+    TickData,
+    TickStatus,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc
@@ -232,9 +232,7 @@ class TestScheduleStorage:
         with pytest.raises(Exception):
             storage.add_job_state(schedule)
 
-    def build_tick(
-        self, current_time, status=TickStatus.STARTED, run_id=None, error=None
-    ):
+    def build_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
         return TickData(
             "my_schedule",
             "my_schedule",
@@ -467,9 +465,7 @@ class TestScheduleStorage:
         with pytest.raises(Exception):
             storage.add_job_state(job)
 
-    def build_sensor_tick(
-        self, current_time, status=TickStatus.STARTED, run_id=None, error=None
-    ):
+    def build_sensor_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
         return TickData(
             "my_sensor",
             "my_sensor",
@@ -504,12 +500,8 @@ class TestScheduleStorage:
         four_days_ago = now.subtract(days=4).timestamp()
         one_day_ago = now.subtract(days=1).timestamp()
 
-        storage.create_job_tick(
-            self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
-        )
-        storage.create_job_tick(
-            self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED)
-        )
+        storage.create_job_tick(self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED))
         storage.create_job_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 3
@@ -592,13 +584,9 @@ class TestScheduleStorage:
         five_minutes_ago = now.subtract(minutes=5).timestamp()
         four_minutes_ago = now.subtract(minutes=4).timestamp()
         one_minute_ago = now.subtract(minutes=1).timestamp()
+        storage.create_job_tick(self.build_sensor_tick(five_minutes_ago, TickStatus.SKIPPED))
         storage.create_job_tick(
-            self.build_sensor_tick(five_minutes_ago, TickStatus.SKIPPED)
-        )
-        storage.create_job_tick(
-            self.build_sensor_tick(
-                four_minutes_ago, TickStatus.SUCCESS, run_id="fake_run_id"
-            )
+            self.build_sensor_tick(four_minutes_ago, TickStatus.SUCCESS, run_id="fake_run_id")
         )
         one_minute_tick = storage.create_job_tick(
             self.build_sensor_tick(one_minute_ago, TickStatus.SKIPPED)

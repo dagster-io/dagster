@@ -3,12 +3,7 @@ from typing import Iterable
 
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorTick,
-    TickData,
-    TickStatus,
-)
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -96,9 +91,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def purge_job_ticks(
-        self, job_origin_id: str, tick_status: TickStatus, before: float
-    ):
+    def purge_job_ticks(self, job_origin_id: str, tick_status: TickStatus, before: float):
         """Wipe ticks for a job for a certain status and timestamp.
 
         Args:

@@ -202,9 +202,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data
 
-        assert (
-            result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
-        )
+        assert result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
 
     def test_stop_sensor(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")

@@ -11,9 +11,9 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
+    InstigatorType,
     TickData,
     TickStatus,
-    InstigatorType,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter

@@ -36,10 +36,10 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
-    TickData,
-    TickStatus,
     InstigatorType,
     ScheduleInstigatorData,
+    TickData,
+    TickStatus,
 )
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -647,9 +647,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
-            assert (
-                len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
-            )
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
 
             runs_by_partition = {run.tags[PARTITION_NAME_TAG]: run for run in instance.get_runs()}
 
@@ -1599,10 +1597,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             hourly_ticks = instance.get_job_ticks(external_hourly_schedule.get_external_origin_id())
             assert len(hourly_ticks) == 2
-            assert (
-                len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS])
-                == 2
-            )
+            assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
@@ -1878,9 +1873,7 @@ def test_multi_runs(external_repo_context, capfd):
             assert instance.get_runs_count() == 4
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 2
-            assert (
-                len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
-            )
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
             runs = instance.get_runs()
 
             assert (
