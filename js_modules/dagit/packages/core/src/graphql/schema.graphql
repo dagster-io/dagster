@@ -492,13 +492,11 @@ type ExecutionStep {
 
 type ExecutionStepInput {
   name: String!
-  type: DagsterType!
   dependsOn: [ExecutionStep!]!
 }
 
 type ExecutionStepOutput {
   name: String!
-  type: DagsterType!
 }
 
 enum StepKind {
