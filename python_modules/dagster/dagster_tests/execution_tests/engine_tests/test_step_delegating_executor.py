@@ -21,12 +21,15 @@ class TestStepHandler(StepHandler):
     saw_baz_solid = False
     check_step_health_count = 0  # type: ignore
     terminate_step_count = 0  # type: ignore
+    verify_step_count = 0  # type: ignore
 
     @property
     def name(self):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
+        if step_handler_context.execute_step_args.should_verify_step:
+            TestStepHandler.verify_step_count += 1
         if step_handler_context.execute_step_args.step_keys_to_execute[0] == "baz_solid":
             TestStepHandler.saw_baz_solid = True
             assert step_handler_context.step_tags["baz_solid"] == {"foo": "bar"}
@@ -52,6 +55,7 @@ class TestStepHandler(StepHandler):
         cls.launch_step_count = 0
         cls.check_step_health_count = 0
         cls.terminate_step_count = 0
+        cls.verify_step_count = 0
 
     @classmethod
     def wait_for_processes(cls):
@@ -117,6 +121,7 @@ def test_execute():
     assert any(["STEP_START" in event for event in result.event_list])
     assert result.success
     assert TestStepHandler.saw_baz_solid
+    assert TestStepHandler.verify_step_count == 0
 
 
 def test_skip_execute():
@@ -213,3 +218,53 @@ def test_execute_intervals():
     assert TestStepHandler.terminate_step_count == 0
     # every step should get checked at least once
     assert TestStepHandler.check_step_health_count >= 3
+
+
+@executor(
+    name="test_step_delegating_executor_verify_step",
+    requirements=multiple_process_executor_requirements(),
+    config_schema=Permissive(),
+)
+def test_step_delegating_executor_verify_step(exc_init):
+    return StepDelegatingExecutor(
+        TestStepHandler(),
+        retries=RetryMode.DISABLED,
+        sleep_seconds=exc_init.executor_config.get("sleep_seconds"),
+        check_step_health_interval_seconds=exc_init.executor_config.get(
+            "check_step_health_interval_seconds"
+        ),
+        should_verify_step=True,
+    )
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            executor_defs=[test_step_delegating_executor_verify_step],
+            resource_defs={"io_manager": fs_io_manager},
+        )
+    ]
+)
+def foo_pipline_verify_step():
+    baz_solid(bar_solid())
+    bar_solid()
+
+
+def test_execute_verify_step():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(foo_pipline_verify_step),
+            instance=instance,
+            run_config={"execution": {"test_step_delegating_executor_verify_step": {"config": {}}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert any(
+        [
+            "Starting execution with step handler TestStepHandler" in event
+            for event in result.event_list
+        ]
+    )
+    assert result.success
+    assert TestStepHandler.verify_step_count == 3
