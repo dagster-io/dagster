@@ -231,12 +231,12 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
       <Table>
         <thead>
           <tr>
-            <th style={{width: '120px'}}>Backfill Id</th>
+            <th style={{width: 120}}>Backfill Id</th>
             <th>Partition Set</th>
             <th style={{textAlign: 'right'}}>Progress</th>
             <th>Status</th>
             <th>Created</th>
-            <th></th>
+            <th style={{width: 80}} />
           </tr>
         </thead>
         <tbody>
@@ -348,7 +348,7 @@ const BackfillRow = ({
         <BackfillStatusTable backfill={backfill} />
       </td>
       <td>{backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}</td>
-      <td style={{width: '100px'}}>
+      <td>
         <Popover
           content={
             <MenuWIP>

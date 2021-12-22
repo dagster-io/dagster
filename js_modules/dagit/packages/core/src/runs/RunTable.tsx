@@ -104,7 +104,7 @@ export const RunTable = (props: RunTableProps) => {
       <Table>
         <thead>
           <tr>
-            <th style={{paddingTop: 0, paddingBottom: 0}}>
+            <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
               {canTerminateOrDelete ? (
                 <Checkbox
                   indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
@@ -117,10 +117,10 @@ export const RunTable = (props: RunTableProps) => {
                 />
               ) : null}
             </th>
-            <th>Status</th>
-            <th>Run ID</th>
+            <th style={{width: 120}}>Status</th>
+            <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
-            <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
+            <th style={{width: 90}}>Snapshot ID</th>
             <th style={{width: 180}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />

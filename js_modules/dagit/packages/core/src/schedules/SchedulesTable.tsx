@@ -46,10 +46,10 @@ export const SchedulesTable: React.FC<{
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>
-          <th style={{minWidth: '300px'}}>Schedule name</th>
-          <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{minWidth: '170px'}}>Next tick</th>
-          <th style={{width: '120px'}}>
+          <th>Schedule name</th>
+          <th style={{width: '15%'}}>Schedule</th>
+          <th style={{width: '10%'}}>Next tick</th>
+          <th style={{width: '10%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
@@ -57,7 +57,7 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: 130}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last run
               <Tooltip position="top" content={lastRun}>
@@ -65,7 +65,7 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: '30%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Partition Set
               <Tooltip position="top" content={partitionStatus}>
@@ -73,7 +73,7 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th />
+          <th style={{width: 80}} />
         </tr>
       </thead>
       <tbody>
