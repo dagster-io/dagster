@@ -1,6 +1,6 @@
 import pytest
-from dagster import graph
 from dagster import __version__ as dagster_version
+from dagster import graph
 from dagster.core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
@@ -402,30 +402,40 @@ def test_construct_dagster_k8s_job_with_job_op_labels():
         instance_config_map="test",
     )
     job1 = construct_dagster_k8s_job(
-        cfg, [], "job123",
-        k8s_labels={
-            "job": "some_job",
-            "op": "some_op",
+        cfg,
+        [],
+        "job123",
+        labels={
+            "dagster/job": "some_job",
+            "dagster/op": "some_op",
         },
     ).to_dict()
-    expected_labels1 = dict(**common_labels, **{
-        "dagster.io/job": "some_job",
-        "dagster.io/op": "some_op",
-    })
+    expected_labels1 = dict(
+        **common_labels,
+        **{
+            "dagster/job": "some_job",
+            "dagster/op": "some_op",
+        },
+    )
     assert job1["metadata"]["labels"] == expected_labels1
     assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
 
     job2 = construct_dagster_k8s_job(
-        cfg, [], "job456",
-        k8s_labels={
-            "job": "long_job_name_64____01234567890123456789012345678901234567890123",
-            "op": "long_op_name_64_____01234567890123456789012345678901234567890123",
+        cfg,
+        [],
+        "job456",
+        labels={
+            "dagster/job": "long_job_name_64____01234567890123456789012345678901234567890123",
+            "dagster/op": "long_op_name_64_____01234567890123456789012345678901234567890123",
         },
     ).to_dict()
-    expected_labels2 = dict(**common_labels, **{
-        # The last character should be truncated.
-        "dagster.io/job": "long_job_name_64____0123456789012345678901234567890123456789012",
-        "dagster.io/op": "long_op_name_64_____0123456789012345678901234567890123456789012",
-    })
+    expected_labels2 = dict(
+        **common_labels,
+        **{
+            # The last character should be truncated.
+            "dagster/job": "long_job_name_64____0123456789012345678901234567890123456789012",
+            "dagster/op": "long_op_name_64_____0123456789012345678901234567890123456789012",
+        },
+    )
     assert job2["metadata"]["labels"] == expected_labels2
     assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2

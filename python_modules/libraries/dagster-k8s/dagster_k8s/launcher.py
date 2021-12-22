@@ -290,8 +290,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
-            k8s_labels={
-                "job": pipeline_origin.pipeline_name,
+            labels={
+                "dagster/job": pipeline_origin.pipeline_name,
             },
         )
 

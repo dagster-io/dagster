@@ -485,7 +485,7 @@ def construct_dagster_k8s_job(
     user_defined_k8s_config=None,
     pod_name=None,
     component=None,
-    k8s_labels=None,
+    labels=None,
     env_vars=None,
 ):
     """Constructs a Kubernetes Job object for a dagster-graphql invocation.
@@ -500,8 +500,8 @@ def construct_dagster_k8s_job(
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
             app.kubernetes.io/component. Defaults to None.
-        k8s_labels(Dict[str, str]): Additional labels to be attached to k8s jobs and pod templates.
-            The resulting labels are "dagster.io/<key>: <value_possibly_truncated>".
+        labels(Dict[str, str]): Additional labels to be attached to k8s jobs and pod templates.
+            Long label values are may be truncated.
         env_vars(Dict[str, str]): Additional environment variables to add to the K8s Container.
 
     Returns:
@@ -520,7 +520,7 @@ def construct_dagster_k8s_job(
     pod_name = check.opt_str_param(pod_name, "pod_name", default=job_name + "-pod")
     check.opt_str_param(component, "component")
     check.opt_dict_param(env_vars, "env_vars", key_type=str, value_type=str)
-    check.opt_dict_param(k8s_labels, "k8s_labels", key_type=str, value_type=str)
+    check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
@@ -548,8 +548,8 @@ def construct_dagster_k8s_job(
     additional_labels = {
         # Truncate too long label values to fit into 63-characters limit.
         # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-        f"dagster.io/{k}": v[:63]
-        for k, v in (k8s_labels or {}).items()
+        k: v[:63]
+        for k, v in (labels or {}).items()
     }
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
