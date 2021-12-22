@@ -12,7 +12,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigatorStatus,
-    ScheduleInstigationData,
+    ScheduleInstigatorData,
 )
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
@@ -61,7 +61,7 @@ class Scheduler(abc.ABC):
             external_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 external_schedule.cron_schedule, scheduler=self.__class__.__name__
             ),
         )
@@ -99,7 +99,7 @@ class Scheduler(abc.ABC):
 
         self.start_schedule(instance, external_schedule)
         started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 external_schedule.cron_schedule,
                 get_current_datetime_in_utc().timestamp(),
                 scheduler=self.__class__.__name__,
@@ -125,7 +125,7 @@ class Scheduler(abc.ABC):
 
         self.stop_schedule(instance, schedule_origin_id)
         stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 cron_schedule=schedule_state.job_specific_data.cron_schedule,
                 scheduler=self.__class__.__name__,
             )

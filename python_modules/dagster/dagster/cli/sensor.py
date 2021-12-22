@@ -18,7 +18,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigationState,
     InstigatorStatus,
-    SensorInstigationData,
+    SensorInstigatorData,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -369,7 +369,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                         external_sensor.get_external_origin(),
                         InstigatorType.SENSOR,
                         InstigatorStatus.STOPPED,
-                        SensorInstigationData(
+                        SensorInstigatorData(
                             min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
                         ),
                     )
@@ -377,7 +377,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             else:
                 instance.update_job_state(
                     job_state.with_data(
-                        SensorInstigationData(
+                        SensorInstigatorData(
                             last_tick_timestamp=job_state.job_specific_data.last_tick_timestamp,
                             last_run_key=job_state.job_specific_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,

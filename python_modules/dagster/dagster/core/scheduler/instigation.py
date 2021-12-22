@@ -25,11 +25,11 @@ JobStatus = InstigatorStatus
 
 
 @whitelist_for_serdes
-class SensorInstigationData(
-    namedtuple("_SensorInstigationData", "last_tick_timestamp last_run_key min_interval cursor")
+class SensorInstigatorData(
+    namedtuple("_SensorInstigatorData", "last_tick_timestamp last_run_key min_interval cursor")
 ):
     def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None, cursor=None):
-        return super(SensorInstigationData, cls).__new__(
+        return super(SensorInstigatorData, cls).__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
@@ -38,17 +38,17 @@ class SensorInstigationData(
         )
 
 
-register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigationData})
+register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigatorData})
 # for internal backcompat
-SensorJobData = SensorInstigationData
+SensorJobData = SensorInstigatorData
 
 
 @whitelist_for_serdes
-class ScheduleInstigationData(
-    namedtuple("_ScheduleInstigationData", "cron_schedule start_timestamp scheduler")
+class ScheduleInstigatorData(
+    namedtuple("_ScheduleInstigatorData", "cron_schedule start_timestamp scheduler")
 ):
     def __new__(cls, cron_schedule, start_timestamp=None, scheduler=None):
-        return super(ScheduleInstigationData, cls).__new__(
+        return super(ScheduleInstigatorData, cls).__new__(
             cls,
             check.str_param(cron_schedule, "cron_schedule"),
             # Time in UTC at which the user started running the schedule (distinct from
@@ -59,17 +59,17 @@ class ScheduleInstigationData(
         )
 
 
-register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigationData})
+register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigatorData})
 # for internal backcompat
-ScheduleJobData = ScheduleInstigationData
+ScheduleJobData = ScheduleInstigatorData
 
 
 def check_job_data(job_type, job_specific_data):
     check.inst_param(job_type, "job_type", InstigatorType)
     if job_type == InstigatorType.SCHEDULE:
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigationData)
+        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigatorData)
     elif job_type == InstigatorType.SENSOR:
-        check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigationData)
+        check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigatorData)
     else:
         check.failed(
             "Unexpected job type {}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE".format(

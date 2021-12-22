@@ -13,7 +13,7 @@ from dagster.core.scheduler.instigation import (
     InstigationTickData,
     InstigationTickStatus,
     InstigatorType,
-    ScheduleInstigationData,
+    ScheduleInstigatorData,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc
@@ -77,7 +77,7 @@ class TestScheduleStorage:
             cls.fake_repo_target().get_job_origin(schedule_name),
             InstigatorType.SCHEDULE,
             status,
-            ScheduleInstigationData(cron_schedule, start_timestamp=None, scheduler=scheduler),
+            ScheduleInstigatorData(cron_schedule, start_timestamp=None, scheduler=scheduler),
         )
 
     @classmethod
@@ -152,7 +152,7 @@ class TestScheduleStorage:
         now_time = get_current_datetime_in_utc().timestamp()
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 cron_schedule=schedule.job_specific_data.cron_schedule,
                 start_timestamp=now_time,
                 scheduler=FAKE_SCHEDULER_NAME,
@@ -172,7 +172,7 @@ class TestScheduleStorage:
         assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
         stopped_schedule = schedule.with_status(InstigatorStatus.STOPPED).with_data(
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 schedule.job_specific_data.cron_schedule, scheduler=FAKE_SCHEDULER_NAME
             )
         )

@@ -506,14 +506,14 @@ class ExternalSchedule:
         from dagster.core.scheduler.instigation import (
             InstigationState,
             InstigatorStatus,
-            ScheduleInstigationData,
+            ScheduleInstigatorData,
         )
 
         return InstigationState(
             self.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,
-            ScheduleInstigationData(
+            ScheduleInstigatorData(
                 self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
             ),
         )
@@ -590,14 +590,14 @@ class ExternalSensor:
         from dagster.core.scheduler.instigation import (
             InstigationState,
             InstigatorStatus,
-            SensorInstigationData,
+            SensorInstigatorData,
         )
 
         return InstigationState(
             self.get_external_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.STOPPED,
-            SensorInstigationData(min_interval=self.min_interval_seconds),
+            SensorInstigatorData(min_interval=self.min_interval_seconds),
         )
 
     @property
