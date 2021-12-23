@@ -17,10 +17,23 @@ def get_sensors_or_error(graphene_info, repository_selector):
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
-
+    sensors = repository.get_external_sensors()
+    sensor_states_by_name = {
+        state.name: state
+        for state in graphene_info.context.instance.all_stored_job_state(
+            repository_origin_id=repository.get_external_origin_id(),
+            job_type=InstigatorType.SENSOR,
+        )
+    }
     return GrapheneSensors(
         results=[
-            GrapheneSensor(graphene_info, sensor) for sensor in repository.get_external_sensors()
+            GrapheneSensor(
+                graphene_info,
+                sensor,
+                sensor_states_by_name.get(sensor.name),
+                fetched_state=True,
+            )
+            for sensor in sensors
         ]
     )
 
