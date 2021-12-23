@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
 from dagster.core.scheduler.instigation import InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -57,9 +58,21 @@ def get_schedules_or_error(graphene_info, repository_selector):
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
     external_schedules = repository.get_external_schedules()
+    schedule_states_by_name = {
+        state.name: state
+        for state in graphene_info.context.instance.all_stored_job_state(
+            repository_origin_id=repository.get_external_origin_id(),
+            job_type=InstigatorType.SCHEDULE,
+        )
+    }
 
     results = [
-        GrapheneSchedule(graphene_info, external_schedule=external_schedule)
+        GrapheneSchedule(
+            graphene_info,
+            external_schedule=external_schedule,
+            schedule_state=schedule_states_by_name.get(external_schedule.name),
+            fetched_state=True,
+        )
         for external_schedule in external_schedules
     ]
 
