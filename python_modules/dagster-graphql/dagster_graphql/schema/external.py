@@ -209,8 +209,23 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_sensors(self, graphene_info):
         sensors = self._repository.get_external_sensors()
+        sensor_states_by_name = {
+            state.name: state
+            for state in graphene_info.context.instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SENSOR,
+            )
+        }
         return sorted(
-            [GrapheneSensor(graphene_info, sensor) for sensor in sensors],
+            [
+                GrapheneSensor(
+                    graphene_info,
+                    sensor,
+                    sensor_states_by_name.get(sensor.name),
+                    fetched_state=True,
+                )
+                for sensor in sensors
+            ],
             key=lambda sensor: sensor.name,
         )
 
