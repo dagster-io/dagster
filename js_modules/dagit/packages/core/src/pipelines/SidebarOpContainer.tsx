@@ -10,6 +10,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SidebarOpInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
 import {
   SidebarGraphSolidQuery,
@@ -141,6 +142,15 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
             : undefined
         }
       />
+      {!isGraph && repoAddress && (
+        <SidebarOpExecutionGraphs
+          key={`${handleID}-graphs`}
+          handleID={handleID}
+          solidName={solidContainer!.solidHandle!.solid.name}
+          pipelineName={explorerPath.pipelineName}
+          repoAddress={repoAddress}
+        />
+      )}
       <SidebarOpDefinition
         key={`${handleID}-def`}
         showingSubgraph={showingSubgraph}
