@@ -14,7 +14,10 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../../runs/RunUtils';
+import {Box} from '../../ui/Box';
+import {ColorsWIP} from '../../ui/Colors';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
+import {IconWIP} from '../../ui/Icon';
 import {Loading} from '../../ui/Loading';
 import {NonIdealState} from '../../ui/NonIdealState';
 import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
@@ -24,7 +27,8 @@ import {RepoAddress} from '../types';
 import {AssetLinks} from './AssetLinks';
 import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
-import {SidebarAssetInfo, SidebarAssetsInfo} from './SidebarAssetInfo';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   buildGraphData,
   buildLiveData,
@@ -321,7 +325,24 @@ const AssetGraphExplorerWithData: React.FC<
             <LargeDAGNotice nodeType="asset" />
           ) : undefined}
 
-          <div style={{position: 'absolute', right: 8, top: 6}}>
+          <div style={{position: 'absolute', right: 12, top: 12}}>
+            <LaunchAssetExecutionButton
+              title={
+                selectedGraphNodes.length === 0
+                  ? 'Refresh All'
+                  : selectedGraphNodes.length === 1
+                  ? 'Refresh Selected'
+                  : `Refresh Selected (${selectedGraphNodes.length})`
+              }
+              repoAddress={repoAddress}
+              assetJobName={explorerPath.pipelineName}
+              assets={(selectedGraphNodes.length
+                ? selectedGraphNodes
+                : Object.values(graphData.nodes)
+              ).map((n) => n.definition)}
+            />
+          </div>
+          <div style={{position: 'absolute', left: 24, top: 16}}>
             <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
           </div>
           <AssetQueryInputContainer>
@@ -338,14 +359,15 @@ const AssetGraphExplorerWithData: React.FC<
         <RightInfoPanel>
           <RightInfoPanelContent>
             {selectedGraphNodes.length > 1 ? (
-              <SidebarAssetsInfo
-                jobName={explorerPath.pipelineName}
-                nodes={selectedGraphNodes.map((n) => n.definition)}
-                repoAddress={repoAddress}
-              />
+              <Box
+                style={{height: '70%', color: ColorsWIP.Gray400}}
+                flex={{justifyContent: 'center', alignItems: 'center', gap: 4, direction: 'column'}}
+              >
+                <IconWIP size={48} name="asset" color={ColorsWIP.Gray400} />
+                {`${selectedGraphNodes.length} Assets Selected`}
+              </Box>
             ) : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
               <SidebarAssetInfo
-                jobName={explorerPath.pipelineName}
                 node={selectedGraphNodes[0].definition}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
                 definition={selectedDefinitions[0]}

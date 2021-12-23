@@ -10,17 +10,15 @@ import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
 import {RepoAddress} from '../types';
 
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  jobName: string;
   definition: GraphExplorerSolidHandleFragment_solid_definition;
   node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
   liveData: LiveDataForNode;
   repoAddress: RepoAddress;
-}> = ({jobName, node, definition, repoAddress, liveData}) => {
+}> = ({node, definition, repoAddress, liveData}) => {
   const Plugin = pluginForMetadata(definition.metadata);
   const {lastMaterialization} = liveData || {};
 
@@ -33,11 +31,6 @@ export const SidebarAssetInfo: React.FC<{
             margin={{bottom: 8}}
           >
             <SidebarTitle>{displayNameForAssetKey(node.assetKey)}</SidebarTitle>
-            <LaunchAssetExecutionButton
-              assets={[node]}
-              assetJobName={jobName}
-              repoAddress={repoAddress}
-            />
           </Box>
           <Description description={node.description || null} />
         </Box>
@@ -59,29 +52,5 @@ export const SidebarAssetInfo: React.FC<{
         setParams={() => {}}
       />
     </>
-  );
-};
-
-export const SidebarAssetsInfo: React.FC<{
-  jobName: string;
-  nodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[];
-  repoAddress: RepoAddress;
-}> = ({nodes, jobName, repoAddress}) => {
-  return (
-    <SidebarSection title="Definition">
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Box
-          flex={{gap: 8, justifyContent: 'space-between', alignItems: 'baseline'}}
-          margin={{bottom: 8}}
-        >
-          <SidebarTitle>{`${nodes.length} Assets Selected`}</SidebarTitle>
-          <LaunchAssetExecutionButton
-            repoAddress={repoAddress}
-            assets={nodes}
-            assetJobName={jobName}
-          />
-        </Box>
-      </Box>
-    </SidebarSection>
   );
 };
