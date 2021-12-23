@@ -12,7 +12,6 @@ import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
@@ -20,7 +19,7 @@ import {
   IN_PROGRESS_RUNS_FRAGMENT,
   LiveData,
 } from '../workspace/asset-graph/Utils';
-import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetMaterializations} from './AssetMaterializations';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
@@ -62,19 +61,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   const definition = asset?.definition;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
-
-  // Note: Todo create a better way to link an Asset to a Repo
-  const {options} = useRepositoryOptions();
-  const [repo] = definition?.jobName ? findRepoContainingPipeline(options, definition.jobName) : [];
+  const repoAddress = definition
+    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+    : null;
 
   const bonusResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
     ASSET_NODE_DEFINITION_RUNS_QUERY,
     {
-      skip: !definition?.jobName,
+      skip: !repoAddress,
       variables: {
         repositorySelector: {
-          repositoryLocationName: repo?.repositoryLocation.name || '',
-          repositoryName: repo?.repository.name || '',
+          repositoryLocationName: repoAddress ? repoAddress.location : '',
+          repositoryName: repoAddress ? repoAddress.name : '',
         },
       },
       notifyOnNetworkStatusChange: true,
@@ -105,16 +103,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   return (
     <div>
       <AssetPageHeader
-        currentPath={assetKey.path}
+        assetKey={assetKey}
+        repoAddress={repoAddress}
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
               <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
             </Box>
-            {definition && (
+            {definition && definition.jobs.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
-                repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
+                assetJobName={definition.jobs[0].name}
+                repoAddress={repoAddress}
               />
             )}
           </Box>
@@ -140,8 +140,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition ? (
-          <AssetNodeDefinition repo={repo} assetNode={definition} liveDataByNode={liveDataByNode} />
+        ) : definition && repoAddress ? (
+          <AssetNodeDefinition
+            repoAddress={repoAddress}
+            assetNode={definition}
+            liveDataByNode={liveDataByNode}
+          />
         ) : undefined}
       </div>
       <AssetMaterializations
@@ -173,10 +177,14 @@ const ASSET_QUERY = gql`
 
         definition {
           id
-          description
-          opName
-          jobName
-
+          repository {
+            id
+            name
+            location {
+              id
+              name
+            }
+          }
           ...AssetNodeDefinitionFragment
         }
       }

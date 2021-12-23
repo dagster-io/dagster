@@ -8,22 +8,18 @@ import {
   AssetForNavigationQueryVariables,
 } from './types/AssetForNavigationQuery';
 
-export function useFetchAssetDefinitionLocation() {
+export function useFindAssetInWorkspace() {
   const apollo = useApolloClient();
 
   return React.useCallback(
-    async (
-      key: AssetKeyInput,
-    ): Promise<{
-      opName: string | null;
-      jobName: string | null;
-    }> => {
+    async (key: AssetKeyInput): Promise<{opName: string | null; jobName: string | null}> => {
       const {data} = await apollo.query<AssetForNavigationQuery, AssetForNavigationQueryVariables>({
         query: ASSET_FOR_NAVIGATION_QUERY,
         variables: {key},
       });
       if (data?.assetOrError.__typename === 'Asset' && data?.assetOrError.definition) {
-        return data?.assetOrError.definition;
+        const def = data.assetOrError.definition;
+        return {opName: def.opName, jobName: def.jobs[0]?.name || null};
       }
       return {opName: null, jobName: null};
     },
@@ -40,7 +36,10 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
         definition {
           id
           opName
-          jobName
+          jobs {
+            id
+            name
+          }
         }
       }
     }

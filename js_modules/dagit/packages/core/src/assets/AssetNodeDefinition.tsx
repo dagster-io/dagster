@@ -8,12 +8,9 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {Caption, Subheading} from '../ui/Text';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -22,30 +19,13 @@ import {AssetNodeList} from './AssetNodeList';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
-  repo: DagsterRepoOption | null;
+  repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
-}> = ({repo, assetNode, liveDataByNode}) => {
-  const repoAddress = repo
-    ? buildRepoAddress(repo.repository.name, repo.repositoryLocation.name)
-    : undefined;
-
-  if (!repoAddress) {
-    return (
-      <Box padding={{vertical: 20}}>
-        <NonIdealState
-          icon="asset"
-          title="No software-defined metadata"
-          description="The definition of this asset could not be found in a repository."
-        />
-      </Box>
-    );
-  }
-
+}> = ({repoAddress, assetNode, liveDataByNode}) => {
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
-
       <Box
         flex={{direction: 'row'}}
         border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
@@ -54,17 +34,23 @@ export const AssetNodeDefinition: React.FC<{
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-            flex={{justifyContent: 'space-between'}}
+            flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Definition in Repository</Subheading>
-            {assetNode.jobName && (
-              <PipelineReference
-                showIcon
-                pipelineName={assetNode.jobName}
-                pipelineHrefContext={'repo-unknown'}
-                isJob
-              />
-            )}
+            <Box flex={{alignItems: 'baseline', gap: 8, wrap: 'wrap'}}>
+              {assetNode.jobs.map((job) => (
+                <PipelineReference
+                  key={job.id}
+                  isJob
+                  showIcon
+                  pipelineName={job.name}
+                  pipelineHrefContext={repoAddress}
+                />
+              ))}
+              {assetNode.jobs.length === 0 && !assetNode.opName && (
+                <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
+              )}
+            </Box>
           </Box>
           <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
             <Description
@@ -115,14 +101,14 @@ const JobGraphLink: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
 }> = ({direction, assetNode, repoAddress}) =>
-  assetNode.jobName &&
+  assetNode.jobs.length > 0 &&
   assetNode.opName &&
   (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0 ? (
     <Link
       to={workspacePathFromAddress(
         repoAddress,
         `/jobs/${explorerPathToString({
-          pipelineName: assetNode.jobName,
+          pipelineName: assetNode.jobs[0].name,
           opNames: [assetNode.opName],
           opsQuery: direction === 'upstream' ? `*${assetNode.opName}` : `${assetNode.opName}*`,
         })}`,
@@ -138,6 +124,13 @@ const JobGraphLink: React.FC<{
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
+    description
+    opName
+    jobs {
+      id
+      name
+    }
+
     ...AssetNodeFragment
     ...AssetNodeLiveFragment
 
@@ -145,6 +138,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        jobs {
+          id
+          name
+        }
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }
@@ -153,6 +150,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        jobs {
+          id
+          name
+        }
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }

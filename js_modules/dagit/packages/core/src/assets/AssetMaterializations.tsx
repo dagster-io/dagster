@@ -176,7 +176,10 @@ export const AssetMaterializations: React.FC<Props> = ({
             }
           />
         ) : (
-          <Box padding={{vertical: 20}}>
+          <Box
+            padding={{vertical: 20}}
+            border={{side: 'top', color: ColorsWIP.KeylineGray, width: 1}}
+          >
             <NonIdealState
               icon="asset"
               title="No materializations"
