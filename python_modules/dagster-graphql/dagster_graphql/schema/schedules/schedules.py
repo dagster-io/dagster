@@ -1,8 +1,8 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.core.scheduler.instigation import InstigatorState
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from ..errors import (
     GraphenePythonError,

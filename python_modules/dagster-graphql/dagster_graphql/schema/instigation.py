@@ -349,12 +349,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             return get_schedule_next_tick(graphene_info, self._job_state)
 
     def resolve_runningCount(self, graphene_info):
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
-        else:
-            return graphene_info.context.instance.running_schedule_count(
-                self._job_state.job_origin_id
-            )
+        return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
 
 
 class GrapheneInstigationStates(graphene.ObjectType):

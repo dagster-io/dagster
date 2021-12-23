@@ -6,13 +6,13 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_runs import (
     get_in_progress_runs_by_step,
     get_in_progress_runs_for_job,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster.core.scheduler.instigation import InstigatorType
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
