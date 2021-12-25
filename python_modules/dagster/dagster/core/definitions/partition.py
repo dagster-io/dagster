@@ -1,12 +1,14 @@
 import copy
 import inspect
 from abc import ABC, abstractmethod
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
+from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
@@ -123,11 +125,35 @@ def schedule_partition_range(
     return partitions
 
 
+@whitelist_for_serdes
 class ScheduleType(Enum):
     HOURLY = "HOURLY"
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
+
+    @property
+    def ordinal(self):
+        return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
+
+    @property
+    def delta(self):
+        if self == ScheduleType.HOURLY:
+            return timedelta(hours=1)
+        elif self == ScheduleType.DAILY:
+            return timedelta(days=1)
+        elif self == ScheduleType.WEEKLY:
+            return timedelta(weeks=1)
+        elif self == ScheduleType.MONTHLY:
+            return relativedelta(months=1)
+        else:
+            check.failed(f"Unexpected ScheduleType {self}")
+
+    def __gt__(self, other):
+        return self.ordinal > other.ordinal
+
+    def __lt__(self, other):
+        return self.ordinal < other.ordinal
 
 
 class PartitionsDefinition(ABC, Generic[T]):
@@ -145,7 +171,7 @@ class PartitionsDefinition(ABC, Generic[T]):
 
 
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
+    PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)

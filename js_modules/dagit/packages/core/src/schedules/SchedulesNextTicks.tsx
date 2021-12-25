@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as qs from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -17,7 +17,7 @@ import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {MenuItemWIP, MenuLink, MenuWIP} from '../ui/Menu';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
@@ -247,11 +247,11 @@ const NextTickMenuItems: React.FC<{
           icon="open_in_new"
           onClick={() => onItemOpen(true)}
         />
-        <MenuItemWIP
+        <MenuLink
           text="Open in Launchpad..."
           icon="edit"
           target="_blank"
-          href={workspacePathFromAddress(
+          to={workspacePathFromAddress(
             repoAddress,
             `/pipeline_or_job/${schedule.pipelineName}/playground/setup?${qs.stringify({
               mode: schedule.mode,
@@ -375,11 +375,11 @@ const NextTickDialog: React.FC<{
                       <Popover
                         content={
                           <MenuWIP>
-                            <MenuItemWIP
+                            <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
                               target="_blank"
-                              href={workspacePathFromAddress(
+                              to={workspacePathFromAddress(
                                 repoAddress,
                                 `/${isJob ? 'jobs' : 'pipelines'}/${
                                   schedule.pipelineName

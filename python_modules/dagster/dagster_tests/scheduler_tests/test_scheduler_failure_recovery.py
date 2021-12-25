@@ -1,13 +1,14 @@
 import pendulum
 import pytest
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobTickStatus
+from dagster.core.scheduler.instigation import TickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,
+    get_logger_output_from_capfd,
     get_terminate_signal,
 )
 from dagster.scheduler.scheduler import launch_scheduled_runs
@@ -80,17 +81,15 @@ def test_failure_recovery_before_run_created(
 
             assert scheduler_process.exitcode != 0
 
-            captured = capfd.readouterr()
             assert (
-                captured.out.replace("\r\n", "\n")
-                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
-"""
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
+                == """2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00 +0000"""
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
 
             assert instance.get_runs_count() == 0
 
@@ -118,17 +117,15 @@ def test_failure_recovery_before_run_created(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
-            captured = capfd.readouterr()
             assert (
-                captured.out.replace("\r\n", "\n")
-                == """2019-02-26 18:05:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule
-""".format(
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
+                == """2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00 +0000
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution at 2019-02-27 00:00:00 +0000
+2019-02-26 18:05:00 -0600 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
@@ -173,7 +170,7 @@ def test_failure_recovery_after_run_created(
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
 
             assert instance.get_runs_count() == 1
 
@@ -227,7 +224,7 @@ def test_failure_recovery_after_run_created(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -300,7 +297,11 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 run_ids = [run.run_id for run in instance.get_runs()]
 
             validate_tick(
-                ticks[0], external_schedule, initial_datetime, JobTickStatus.STARTED, run_ids
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                TickStatus.STARTED,
+                run_ids,
             )
 
         frozen_datetime = frozen_datetime.add(minutes=1)
@@ -325,7 +326,7 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -385,6 +386,6 @@ def test_failure_recovery_between_multi_runs(external_repo_context, crash_locati
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )

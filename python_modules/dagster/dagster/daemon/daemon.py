@@ -1,4 +1,3 @@
-import logging
 import sys
 from abc import abstractclassmethod, abstractmethod
 from collections import deque
@@ -6,36 +5,23 @@ from contextlib import AbstractContextManager
 
 import pendulum
 from dagster import DagsterInstance, check
+from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
-from dagster.scheduler import execute_scheduler_iteration
+from dagster.scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.log import default_format_string
-
-
-def _mockable_localtime(_):
-    now_time = pendulum.now()
-    return now_time.timetuple()
+from dagster.utils.log import default_system_logger
 
 
 def get_default_daemon_logger(daemon_name):
-    handler = logging.StreamHandler(sys.stdout)
-    logger = logging.getLogger(daemon_name)
-    logger.setLevel(logging.INFO)
-    logger.handlers = [handler]
-
-    formatter = logging.Formatter(default_format_string(), "%Y-%m-%d %H:%M:%S")
-
-    formatter.converter = _mockable_localtime
-
-    handler.setFormatter(formatter)
-    return logger
+    return default_system_logger(daemon_name)
 
 
 DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
+TELEMETRY_LOGGING_INTERVAL = 3600  # Interval (in seconds) at which to log that daemon is alive
 
 
 class DagsterDaemon(AbstractContextManager):
@@ -45,6 +31,7 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
+        self._last_log_time = None
         self._errors = deque(
             maxlen=DAEMON_HEARTBEAT_ERROR_LIMIT
         )  # (SerializableErrorInfo, timestamp) tuples
@@ -207,6 +194,12 @@ class DagsterDaemon(AbstractContextManager):
                 errors=[error for (error, timestamp) in self._errors],
             )
         )
+        if (
+            not self._last_log_time
+            or (curr_time - self._last_log_time).total_seconds() >= TELEMETRY_LOGGING_INTERVAL
+        ):
+            log_action(instance, DAEMON_ALIVE)
+            self._last_log_time = curr_time
 
     @abstractmethod
     def run_iteration(self, instance, workspace):
@@ -225,8 +218,12 @@ class SchedulerDaemon(DagsterDaemon):
         return "SCHEDULER"
 
     def run_iteration(self, instance, workspace):
-        yield from execute_scheduler_iteration(
-            instance, workspace, self._logger, instance.scheduler.max_catchup_runs
+        yield from execute_scheduler_iteration_loop(
+            instance,
+            workspace,
+            self._logger,
+            instance.scheduler.max_catchup_runs,
+            instance.scheduler.max_tick_retries,
         )
 
 

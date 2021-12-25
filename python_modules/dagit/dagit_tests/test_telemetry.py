@@ -19,7 +19,9 @@ def path_to_file(path):
 # Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
 # azure pipeline, then this test would fail, because TF_BUILD would be set implicitly, resulting in
 # no logs being uploaded. The same applies in the reverse way, if only TF_BUILD is set to None.
-@pytest.mark.parametrize("env", [{"BUILDKITE": None, "TF_BUILD": None}])
+@pytest.mark.parametrize(
+    "env", [{"BUILDKITE": None, "TF_BUILD": None, "DAGSTER_DISABLE_TELEMETRY": None}]
+)
 @responses.activate
 def test_dagster_telemetry_upload(env):
     logger = logging.getLogger("dagster_telemetry_logger")
@@ -28,8 +30,8 @@ def test_dagster_telemetry_upload(env):
 
     responses.add(responses.POST, DAGSTER_TELEMETRY_URL)
 
-    with environ(env):
-        with instance_for_test():
+    with instance_for_test():
+        with environ(env):
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -53,11 +55,18 @@ def test_dagster_telemetry_upload(env):
             assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 1)
 
 
-@pytest.mark.parametrize("env", [{"BUILDKITE": "True"}, {"TF_BUILD": "True"}])
+@pytest.mark.parametrize(
+    "env",
+    [
+        {"BUILDKITE": "True", "DAGSTER_DISABLE_TELEMETRY": None},
+        {"TF_BUILD": "True", "DAGSTER_DISABLE_TELEMETRY": None},
+        {"DAGSTER_DISABLE_TELEMETRY": "True"},
+    ],
+)
 @responses.activate
 def test_dagster_telemetry_no_test_env_upload(env):
-    with environ(env):
-        with instance_for_test():
+    with instance_for_test():
+        with environ(env):
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"

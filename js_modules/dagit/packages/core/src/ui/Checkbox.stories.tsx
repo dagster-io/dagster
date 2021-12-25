@@ -76,3 +76,74 @@ export const Default = () => {
     </Group>
   );
 };
+
+export const Small = () => {
+  const [state, setState] = useState<'true' | 'false' | 'indeterminate'>('false');
+  const onChange = () =>
+    setState(({true: 'indeterminate', indeterminate: 'false', false: 'true'} as const)[state]);
+
+  return (
+    <Group spacing={8} direction="column">
+      {[ColorsWIP.Blue500, ColorsWIP.ForestGreen, ColorsWIP.Gray800].map((fillColor) => (
+        <Group spacing={24} direction="row" key={fillColor}>
+          <Checkbox
+            size="small"
+            label="Hello world"
+            checked={state === 'false' ? false : true}
+            indeterminate={state === 'indeterminate'}
+            fillColor={fillColor}
+            onChange={onChange}
+            format="check"
+          />
+          <Checkbox
+            size="small"
+            label="Hello world"
+            checked={state === 'false' ? false : true}
+            indeterminate={state === 'indeterminate'}
+            fillColor={fillColor}
+            onChange={onChange}
+            format="star"
+          />
+          <Checkbox
+            size="small"
+            label="Hello world"
+            checked={state === 'false' ? false : true}
+            indeterminate={state === 'indeterminate'}
+            fillColor={fillColor}
+            onChange={onChange}
+            format="switch"
+          />
+        </Group>
+      ))}
+      <Group spacing={24} direction="row">
+        <Checkbox
+          disabled
+          size="small"
+          label="Hello world"
+          checked={state === 'false' ? false : true}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="check"
+        />
+        <Checkbox
+          disabled
+          size="small"
+          label="Hello world"
+          checked={state === 'false' ? false : true}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="star"
+        />
+        <Checkbox
+          disabled
+          size="small"
+          label="Hello world"
+          checked={state === 'false' ? false : true}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="switch"
+        />
+      </Group>
+    </Group>
+  );
+};

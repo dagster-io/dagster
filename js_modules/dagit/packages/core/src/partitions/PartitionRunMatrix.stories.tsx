@@ -79,7 +79,7 @@ function buildRun(
   statuses: {[stepKey: string]: StepEventStatus},
   tags: PartitionSetLoaderRunFragment_tags[] = [],
 ) {
-  const id = faker.random.uuid().slice(0, 8);
+  const id = faker.datatype.uuid().slice(0, 8);
   const startTime = new Date(isoDateString).getTime() / 1000;
   const result: PartitionSetLoaderRunFragment = {
     __typename: 'Run',

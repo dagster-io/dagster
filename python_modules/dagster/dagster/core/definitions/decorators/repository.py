@@ -105,8 +105,8 @@ def repository(
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition]]``.
-        Use this form when you have no need to lazy load pipelines or other definitions. This is the
-        typical use case.
+    Use this form when you have no need to lazy load pipelines or other definitions. This is the
+    typical use case.
 
     2. A dict of the form:
 
@@ -124,9 +124,9 @@ def repository(
     which can be helpful for performance when there are many definitions in a repository, or
     when constructing the definitions is costly.
 
-    3. :py:class:`RepositoryData`. Return this object if you need fine-grained
-        control over the construction and indexing of definitions within the repository, e.g., to
-        create definitions dynamically from .yaml files in a directory.
+    3. A :py:class:`RepositoryData`. Return this object if you need fine-grained
+    control over the construction and indexing of definitions within the repository, e.g., to
+    create definitions dynamically from .yaml files in a directory.
 
     Args:
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
@@ -211,7 +211,7 @@ def repository(
             def __init__(self, yaml_directory):
                 self._yaml_directory = yaml_directory
 
-            def get_all_jobs(self):
+            def get_all_pipelines(self):
                 return [
                     self._construct_job_def_from_yaml_file(
                       self._yaml_file_for_job_name(file_name)

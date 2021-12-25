@@ -5,7 +5,7 @@ from dagster import seven
 from dagster.config import Field
 from dagster.core.definitions.logger_definition import logger
 from dagster.core.utils import coerce_valid_log_level
-from dagster.utils.log import default_format_string
+from dagster.utils.log import default_date_format_string, default_format_string
 
 
 @logger(
@@ -28,6 +28,7 @@ def colored_console_logger(init_context):
         logger=logger_,
         level=level,
         fmt=default_format_string(),
+        datefmt=default_date_format_string(),
         field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
         level_styles={"debug": {}, "error": {"color": "red"}},
     )

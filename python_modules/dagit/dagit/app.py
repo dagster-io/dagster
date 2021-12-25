@@ -12,6 +12,8 @@ from dagster.core.instance import is_dagit_telemetry_enabled
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
+from dagster.seven import json
+from dagster.utils import Counter, traced_counter
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
@@ -231,12 +233,25 @@ def instantiate_app_with_views(
     bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
+    app.before_request(initialize_counts)
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
+    app.after_request(return_counts)
 
     CORS(app)
 
     return app
+
+
+def initialize_counts():
+    traced_counter.set(Counter())
+
+
+def return_counts(response):
+    counter = traced_counter.get()
+    if counter and isinstance(counter, Counter):
+        response.headers["x-dagster-call-counts"] = json.dumps(counter.counts())
+    return response
 
 
 def create_app_from_workspace_process_context(
@@ -257,8 +272,6 @@ def create_app_from_workspace_process_context(
             raise Exception(f'The path prefix should not include a trailing "/": got {path_prefix}')
 
     warn_if_compute_logs_disabled()
-
-    print("Loading repository...")  # pylint: disable=print-call
 
     log_workspace_stats(instance, workspace_process_context)
 

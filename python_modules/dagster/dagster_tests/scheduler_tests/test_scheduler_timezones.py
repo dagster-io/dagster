@@ -1,6 +1,7 @@
 import pendulum
 import pytest
-from dagster.core.scheduler.job import JobTickStatus
+from dagster.core.scheduler.instigation import TickStatus
+from dagster.core.test_utils import get_logger_output_from_capfd
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
@@ -50,13 +51,10 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
 
-            captured = capfd.readouterr()
-
             assert (
-                captured.out
-                == """2019-02-27 21:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 21:59:59 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule
-"""
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
+                == """2019-02-27 21:59:59 -0800 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
+2019-02-27 21:59:59 -0800 - SchedulerDaemon - INFO - No new runs for daily_central_time_schedule"""
             )
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
@@ -81,7 +79,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
                 ticks[0],
                 external_schedule,
                 expected_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -92,14 +90,11 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
                 create_pendulum_time(2019, 2, 27, tz="US/Central"),
             )
 
-            captured = capfd.readouterr()
-
             assert (
-                captured.out
-                == """2019-02-27 22:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00-0600
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule
-""".format(
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
+                == """2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
+2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00 -0600
+2019-02-27 22:00:01 -0800 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
             )
@@ -116,7 +111,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -188,7 +183,7 @@ def test_differing_timezones(external_repo_context):
                 ticks[0],
                 external_eastern_schedule,
                 expected_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
@@ -230,7 +225,7 @@ def test_differing_timezones(external_repo_context):
                 ticks[0],
                 external_schedule,
                 expected_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -253,11 +248,11 @@ def test_differing_timezones(external_repo_context):
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
             ticks = instance.get_job_ticks(eastern_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 # Verify that a schedule that runs in US/Central late enough in the day that it executes on
@@ -317,7 +312,7 @@ def test_different_days_in_different_timezones(external_repo_context):
                 ticks[0],
                 external_schedule,
                 expected_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -340,7 +335,7 @@ def test_different_days_in_different_timezones(external_repo_context):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -396,7 +391,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 
@@ -489,7 +484,7 @@ def test_hourly_dst_fall_back(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 
@@ -575,7 +570,7 @@ def test_daily_dst_spring_forward(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 
@@ -658,7 +653,7 @@ def test_daily_dst_fall_back(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 
@@ -751,7 +746,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 
@@ -834,7 +829,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
                     ticks[i],
                     external_schedule,
                     expected_datetimes_utc[i],
-                    JobTickStatus.SUCCESS,
+                    TickStatus.SUCCESS,
                     [instance.get_runs()[i].run_id],
                 )
 

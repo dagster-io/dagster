@@ -49,7 +49,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
   }
 `;
 
-export const SuggestWIP = <T extends unknown>(props: React.PropsWithChildren<SuggestProps<T>>) => {
+export const SuggestWIP = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => {
   const popoverProps: Partial<IPopoverProps> = {
     ...props.popoverProps,
     minimal: true,

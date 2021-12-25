@@ -97,6 +97,66 @@ def test_two_asset_pipeline():
     ]
 
 
+def test_two_downstream_assets_pipeline():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2_a(asset1):
+        assert asset1 == 1
+
+    @asset
+    def asset2_b(asset1):
+        assert asset1 == 1
+
+    @pipeline
+    def my_graph():
+        r = asset1()
+        asset2_a(r)
+        asset2_b(r)
+
+    external_asset_nodes = external_asset_graph_from_defs([my_graph], foreign_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("asset2_a"), input_name="asset1"
+                ),
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("asset2_b"), input_name="asset1"
+                ),
+            ],
+            op_name="asset1",
+            op_description=None,
+            job_names=["my_graph"],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("asset2_a"),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"), input_name="asset1")
+            ],
+            depended_by=[],
+            op_name="asset2_a",
+            op_description=None,
+            job_names=["my_graph"],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("asset2_b"),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"), input_name="asset1")
+            ],
+            depended_by=[],
+            op_name="asset2_b",
+            op_description=None,
+            job_names=["my_graph"],
+        ),
+    ]
+
+
 def test_cross_pipeline_asset_dependency():
     @asset
     def asset1():

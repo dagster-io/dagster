@@ -32,14 +32,15 @@ export const ApolloTestProvider: React.FC<Props> = (props) => {
   const {children, mocks = [], typeDefs} = props;
 
   const client = React.useMemo(() => {
-    const toMerge = Array.isArray(mocks) ? mocks : [mocks];
-    const withMerge = mergeResolvers([defaultMocks, ...toMerge]);
+    const mocksToMerge = Array.isArray(mocks) ? mocks : [mocks];
+    const mocksWithMerge = mergeResolvers([defaultMocks, ...mocksToMerge]);
+
     const schema = makeExecutableSchema({typeDefs});
-    const withMocks = addMocksToSchema({schema, mocks: withMerge});
+    const mockedSchema = addMocksToSchema({schema, mocks: mocksWithMerge});
     const cache = createAppCache();
     return new ApolloClient({
       cache,
-      link: new SchemaLink({schema: withMocks}),
+      link: new SchemaLink({schema: mockedSchema}),
     });
   }, [mocks, typeDefs]);
 

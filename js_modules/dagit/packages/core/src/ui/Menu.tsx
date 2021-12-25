@@ -1,8 +1,10 @@
 // eslint-disable-next-line no-restricted-imports
-import {Menu, MenuDivider, MenuItem} from '@blueprintjs/core';
+import {Intent, Menu, MenuDivider, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
+import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {Box} from './Box';
 import {ColorsWIP} from './Colors';
 import {IconName, IconWIP, IconWrapper} from './Icon';
 
@@ -44,26 +46,54 @@ const intentToIconColor = (intent: React.ComponentProps<typeof MenuItem>['intent
   }
 };
 
-interface ItemProps extends Omit<React.ComponentProps<typeof MenuItem>, 'icon'> {
+const iconWithColor = (icon?: IconName | JSX.Element, intent?: Intent) => {
+  if (icon) {
+    if (typeof icon === 'string') {
+      return <IconWIP name={icon} color={intentToIconColor(intent)} />;
+    }
+    return icon;
+  }
+  return null;
+};
+
+interface CommonMenuItemProps {
   icon?: IconName | JSX.Element;
 }
 
+interface ItemProps
+  extends CommonMenuItemProps,
+    Omit<React.ComponentProps<typeof MenuItem>, 'href' | 'icon'> {}
+
 export const MenuItemWIP: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
+  return (
+    <StyledMenuItem
+      {...rest}
+      $textColor={intentToTextColor(intent)}
+      icon={iconWithColor(icon, intent)}
+    />
+  );
+};
 
-  const textColor = intentToTextColor(intent);
-  const iconColor = intentToIconColor(intent);
-  const iconWithColor = () => {
-    if (icon) {
-      if (typeof icon === 'string') {
-        return <IconWIP name={icon} color={iconColor} />;
-      }
-      return icon;
-    }
-    return null;
-  };
+interface MenuLinkProps
+  extends CommonMenuItemProps,
+    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick'>,
+    LinkProps {}
 
-  return <StyledMenuItem {...rest} $textColor={textColor} icon={iconWithColor()} />;
+/**
+ * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
+ */
+export const MenuLink: React.FC<MenuLinkProps> = (props) => {
+  const {icon, intent, text, ...rest} = props;
+
+  return (
+    <StyledMenuLink {...rest}>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        {iconWithColor(icon, intent)}
+        <div>{text}</div>
+      </Box>
+    </StyledMenuLink>
+  );
 };
 
 export const MenuDividerWIP = styled(MenuDivider)`
@@ -125,5 +155,41 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
     color: ${({$textColor}) => $textColor};
     box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 2px;
     outline: none;
+  }
+`;
+
+const StyledMenuLink = styled(Link)`
+  text-decoration: none;
+
+  border-radius: 4px;
+  display: block;
+  line-height: 20px;
+  padding: 6px 8px 6px 12px;
+  transition: background-color 50ms, box-shadow 150ms;
+  align-items: flex-start;
+  user-select: none;
+
+  /**
+   * Use margin instead of align-items: center because the contents of the menu item may wrap 
+   * in unusual circumstances.
+   */
+  ${IconWrapper} {
+    margin-top: 2px;
+  }
+
+  ${IconWrapper}:first-child {
+    margin-left: -4px;
+  }
+
+  &&&:link,
+  &&&:visited,
+  &&&:hover,
+  &&&:active {
+    color: ${ColorsWIP.Gray900};
+    text-decoration: none;
+  }
+
+  &&&:hover {
+    background: ${ColorsWIP.Gray100};
   }
 `;

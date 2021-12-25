@@ -17,6 +17,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
@@ -67,7 +68,7 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import get_loadable_targets
+from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -812,6 +813,10 @@ class DagsterGrpcServer:
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=max_workers),
             compression=grpc.Compression.Gzip,
+            options=[
+                ("grpc.max_send_message_length", max_send_bytes()),
+                ("grpc.max_receive_message_length", max_rx_bytes()),
+            ],
         )
         self._server_termination_event = threading.Event()
 
@@ -932,7 +937,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
         try:
             client.ping("")
             return
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             last_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         if time.time() - start_time > timeout:
@@ -982,6 +987,7 @@ def open_server_process(
         + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
         + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
+        + (["--log-level", "WARNING"])  # don't log INFO messages for automatically spun up servers
     )
 
     if loadable_target_origin:

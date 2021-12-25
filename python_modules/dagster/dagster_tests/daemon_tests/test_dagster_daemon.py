@@ -118,14 +118,3 @@ def test_different_intervals(caplog):
                 time.sleep(0.5)
 
             init_time = pendulum.now("UTC")
-            while True:
-                now = pendulum.now("UTC")
-
-                if _scheduler_ran(caplog) == 2:
-                    assert _run_coordinator_ran(caplog) > 2
-                    break
-
-                if (now - init_time).total_seconds() > 45:
-                    raise Exception("Timed out waiting for schedule daemon to execute twice")
-
-                time.sleep(0.5)

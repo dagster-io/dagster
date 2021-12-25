@@ -5,7 +5,7 @@ description: Dagster can orchestrate dbt models.
 
 # Using dbt with Dagster
 
-This guide explains how you can run a [dbt](https://docs.getdbt.com/docs/introduction) project as part of a Dagster job.
+This guide explains how you can run a [dbt](https://docs.getdbt.com/docs/introduction) project as part of a Dagster job. This guide focuses on dbt Core, the open-source dbt offering. Dagster also offers an integration with the hosted version of dbt, [dbt Cloud](https://docs.getdbt.com/docs/dbt-cloud/cloud-overview). Check out the [API docs](/\_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cloud_resource) to learn more.
 
 ## What is dbt?
 
@@ -84,9 +84,7 @@ Note that you can pass in any keyword to these functions that you wish, and they
 
 #### Using dbt_cli_resource to run your entire dbt project
 
-One common way to use this integration is to have the resource run all of the models in a dbt project. To do this, just configure the resource so it knows where your dbt project is, and
-
-and fire off a `dbt.run()` command!
+One common way to use this integration is to have the a step in your job run all of the models in a dbt project. For this case, the easiest method is to configure the resource so it knows where your dbt project is, and import the `dbt_run_op` to use in your job.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run endbefore=end_marker_dbt_cli_run dedent=4
 from dagster import job
@@ -98,8 +96,6 @@ my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/proje
 def my_dbt_job():
     dbt_run_op()
 ```
-
-This is essentially equivalent to the following code:
 
 #### Using dbt_cli_resource to run a specific set of models
 
@@ -141,7 +137,7 @@ def run_models(context, some_condition: bool):
 
 #### Using a different dbt profile for different dagster modes
 
-Dagster supports [multiple jobs for the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
+Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
 from dagster import graph
@@ -257,10 +253,6 @@ def run_staging_models_and_wait(context):
 def my_dbt_job():
     run_staging_models_and_wait()
 ```
-
-## Use dbt Cloud in a Dagster job
-
-`dagster_dbt` currently does not provide ops or resources for invoking dbt commands via dbt Cloud. However, this use case is possible by writing your own op to create and start Jobs via [the dbt Cloud API](https://docs.getdbt.com/docs/dbt-cloud/cloud-api). For more details about each HTTP endpoint, [visit the official documentation for the dbt Cloud API](https://docs.getdbt.com/dbt-cloud/api).
 
 ## Advanced Configuration
 

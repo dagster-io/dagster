@@ -6,6 +6,7 @@ from dagster.core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,
+    get_logger_output_from_capfd,
 )
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
@@ -70,12 +71,10 @@ def test_simple(external_repo_context, capfd):
         launch_process.join(timeout=60)
         backfill = instance.get_backfill("simple")
         assert backfill.status == BulkActionStatus.COMPLETED
-        captured = capfd.readouterr()
         assert (
-            captured.out.replace("\r\n", "\n")
-            == """2021-02-16 18:00:00 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions
-"""
+            get_logger_output_from_capfd(capfd, "BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
 
@@ -110,11 +109,9 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
-        captured = capfd.readouterr()
         assert (
-            captured.out.replace("\r\n", "\n")
-            == """2021-02-16 18:00:00 - BackfillDaemon - INFO - Starting backfill for simple
-"""
+            get_logger_output_from_capfd(capfd, "BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -128,12 +125,10 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
         )
         launch_process.start()
         launch_process.join(timeout=60)
-        captured = capfd.readouterr()
         assert (
-            captured.out.replace("\r\n", "\n")
-            == """2021-02-16 18:00:00 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions
-"""
+            get_logger_output_from_capfd(capfd, "BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -172,11 +167,9 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
-        captured = capfd.readouterr()
         assert (
-            captured.out.replace("\r\n", "\n")
-            == """2021-02-16 18:00:00 - BackfillDaemon - INFO - Starting backfill for simple
-"""
+            get_logger_output_from_capfd(capfd, "BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -190,13 +183,11 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
         )
         launch_process.start()
         launch_process.join(timeout=60)
-        captured = capfd.readouterr()
         assert (
-            captured.out.replace("\r\n", "\n")
-            == """2021-02-16 18:00:00 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 - BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
-2021-02-16 18:00:00 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions
-"""
+            get_logger_output_from_capfd(capfd, "BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
+2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")

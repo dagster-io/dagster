@@ -94,7 +94,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!]): [AssetNode!]!
+  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -620,11 +620,14 @@ type AssetNode {
   assetKey: AssetKey!
   description: String
   opName: String
-  jobName: String
   jobs: [Pipeline!]!
+  repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  dependedByKeys: [AssetKey!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  partitionKeys: [String!]!
 }
 
 type AssetDependency {
@@ -1213,7 +1216,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!]): [AssetNode!]!
+  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 type UsedSolid {

@@ -64,7 +64,7 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
     screen.getByText(`[B]`).click();
-    expect(querySearch).toEqual('?cursor=basdasd&limit=100&q=Navigated');
+    expect(querySearch).toEqual('?q=Navigated&cursor=basdasd&limit=100');
   });
 
   it('omits query params when their values are set to the default', () => {
@@ -119,9 +119,9 @@ describe('useQueryPersistedState', () => {
     );
 
     screen.getByText(`[A]`).click();
-    expect(querySearch).toEqual('?param1=Navigated&word=hello');
+    expect(querySearch).toEqual('?word=hello&param1=Navigated');
     screen.getByText(`[hello]`).click();
-    expect(querySearch).toEqual('?param1=Navigated&word=world'); // would reset param1=A in case of bug
+    expect(querySearch).toEqual('?word=world&param1=Navigated'); // would reset param1=A in case of bug
   });
 
   it('can be used to represent arbitrary state shapes via custom encode/decode methods', () => {
@@ -262,10 +262,10 @@ describe('useQueryPersistedState', () => {
     );
 
     screen.getByText(`[]`).click();
-    expect(querySearch).toEqual('?value[]=Added0');
+    expect(querySearch).toEqual('?value%5B%5D=Added0');
     screen.getByText(`["Added0"]`).click();
     screen.getByText(`["Added0","Added1"]`).click();
-    expect(querySearch).toEqual('?value[]=Added0&value[]=Added1&value[]=Added2');
+    expect(querySearch).toEqual('?value%5B%5D=Added0&value%5B%5D=Added1&value%5B%5D=Added2');
   });
 
   it('correctly encodes arrays alongside other values, using bracket syntax', () => {
@@ -293,9 +293,11 @@ describe('useQueryPersistedState', () => {
     );
 
     screen.getByText(`{"hello":false,"items":[]}`).click();
-    expect(querySearch).toEqual('?hello=true&items[]=Added0');
+    expect(querySearch).toEqual('?hello=true&items%5B%5D=Added0');
     screen.getByText(`{"hello":true,"items":["Added0"]}`).click();
     screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`).click();
-    expect(querySearch).toEqual('?hello=true&items[]=Added0&items[]=Added1&items[]=Added2');
+    expect(querySearch).toEqual(
+      '?hello=true&items%5B%5D=Added0&items%5B%5D=Added1&items%5B%5D=Added2',
+    );
   });
 });

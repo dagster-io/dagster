@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -503,13 +503,17 @@ class ExternalSchedule:
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
     def get_default_instigation_state(self, instance):
-        from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
+        from dagster.core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            ScheduleInstigatorData,
+        )
 
-        return JobState(
+        return InstigatorState(
             self.get_external_origin(),
-            JobType.SCHEDULE,
-            JobStatus.STOPPED,
-            ScheduleJobData(
+            InstigatorType.SCHEDULE,
+            InstigatorStatus.STOPPED,
+            ScheduleInstigatorData(
                 self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
             ),
         )
@@ -583,13 +587,17 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     def get_default_instigation_state(self, _instance):
-        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
+        from dagster.core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            SensorInstigatorData,
+        )
 
-        return JobState(
+        return InstigatorState(
             self.get_external_origin(),
-            JobType.SENSOR,
-            JobStatus.STOPPED,
-            SensorJobData(min_interval=self.min_interval_seconds),
+            InstigatorType.SENSOR,
+            InstigatorStatus.STOPPED,
+            SensorInstigatorData(min_interval=self.min_interval_seconds),
         )
 
     @property

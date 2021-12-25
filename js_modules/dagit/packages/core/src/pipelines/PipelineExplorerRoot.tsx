@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {RouteComponentProps, useHistory} from 'react-router-dom';
+import {useHistory, useParams} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -23,8 +23,9 @@ import {
   PipelineExplorerRootQueryVariables,
 } from './types/PipelineExplorerRootQuery';
 
-export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (props) => {
-  const explorerPath = explorerPathFromString(props.match.params['0']);
+export const PipelineExplorerSnapshotRoot = () => {
+  const params = useParams();
+  const explorerPath = explorerPathFromString(params['0']);
   const {pipelineName, snapshotId} = explorerPath;
   const history = useHistory();
 

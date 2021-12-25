@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -18,6 +19,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.core.test_utils import (
     environ,
     instance_for_test,
@@ -28,7 +30,9 @@ from dagster.core.test_utils import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
+from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess
+from dagster.grpc.types import CancelExecutionRequest
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
@@ -469,6 +473,63 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                         ("ENGINE_EVENT", "Process for run exited"),
                     ],
                 )
+
+
+@pytest.mark.parametrize("run_config", run_configs())
+def test_cleanup_after_force_terminate(run_config):
+    with instance_for_test() as instance, get_managed_grpc_server_workspace(instance) as workspace:
+        external_pipeline = (
+            workspace.get_repository_location("test")
+            .get_repository("nope")
+            .get_full_external_pipeline("sleepy_pipeline")
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=sleepy_pipeline,
+            run_config=run_config,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+
+        run_id = pipeline_run.run_id
+
+        instance.launch_run(pipeline_run.run_id, workspace)
+
+        poll_for_step_start(instance, run_id)
+
+        # simulate the sequence of events that happen during force-termination:
+        # run moves immediately into canceled status while termination happens
+        instance.report_run_canceling(pipeline_run)
+
+        instance.report_run_canceled(pipeline_run)
+
+        reloaded_run = instance.get_run_by_id(run_id)
+        grpc_info = json.loads(reloaded_run.tags.get(GRPC_INFO_TAG))
+        client = DagsterGrpcClient(
+            port=grpc_info.get("port"),
+            socket=grpc_info.get("socket"),
+            host=grpc_info.get("host"),
+        )
+        client.cancel_execution(CancelExecutionRequest(run_id=run_id))
+
+        # Wait for the run worker to clean up
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > 30:
+                raise Exception("Timed out waiting for cleanup message")
+
+            logs = instance.all_logs(run_id)
+            if any(
+                [
+                    "Computational resources were cleaned up after the run was forcibly marked as canceled."
+                    in str(event)
+                    for event in logs
+                ]
+            ):
+                break
+
+            time.sleep(1)
+
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.CANCELED
 
 
 def _get_engine_events(event_records):

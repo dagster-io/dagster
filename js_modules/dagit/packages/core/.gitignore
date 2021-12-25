@@ -8,6 +8,7 @@
 
 # built files and types
 /lib
+/storybook-static
 
 # misc
 .DS_Store

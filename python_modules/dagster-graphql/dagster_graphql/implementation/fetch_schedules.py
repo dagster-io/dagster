@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.scheduler.instigation import InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -105,7 +105,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
 def get_schedule_next_tick(graphene_info, schedule_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
-    if schedule_state.status != JobStatus.RUNNING:
+    if schedule_state.status != InstigatorStatus.RUNNING:
         return None
 
     repository_origin = schedule_state.origin.external_repository_origin

@@ -139,6 +139,7 @@ class _Asset:
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
+            asset_partitions_def=self.partitions_def,
         )
         op = _Op(
             name=asset_name,
@@ -152,7 +153,6 @@ class _Asset:
         )(fn)
 
         out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
-
         return AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()

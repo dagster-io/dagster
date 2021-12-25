@@ -32,8 +32,8 @@ export const SensorsTable: React.FC<{
         <tr>
           <th style={{width: '60px'}}></th>
           <th>Sensor Name</th>
-          <th style={{width: '150px'}}>Frequency</th>
-          <th style={{width: '120px'}}>
+          <th style={{width: '15%'}}>Frequency</th>
+          <th style={{width: '15%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
@@ -41,7 +41,7 @@ export const SensorsTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: '20%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>

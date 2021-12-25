@@ -1,6 +1,6 @@
 import pendulum
-from dagster.core.definitions.run_request import JobType
-from dagster.core.scheduler.job import JobState, JobStatus
+from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
@@ -202,7 +202,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data
 
-        assert result.data["startSensor"]["sensorState"]["status"] == JobStatus.RUNNING.value
+        assert result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
 
     def test_stop_sensor(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
@@ -213,7 +213,10 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             START_SENSORS_QUERY,
             variables={"sensorSelector": sensor_selector},
         )
-        assert start_result.data["startSensor"]["sensorState"]["status"] == JobStatus.RUNNING.value
+        assert (
+            start_result.data["startSensor"]["sensorState"]["status"]
+            == InstigatorStatus.RUNNING.value
+        )
 
         job_origin_id = start_result.data["startSensor"]["jobOriginId"]
         result = execute_dagster_graphql(
@@ -222,7 +225,10 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"jobOriginId": job_origin_id},
         )
         assert result.data
-        assert result.data["stopSensor"]["instigationState"]["status"] == JobStatus.STOPPED.value
+        assert (
+            result.data["stopSensor"]["instigationState"]["status"]
+            == InstigatorStatus.STOPPED.value
+        )
 
 
 def test_sensor_next_ticks(graphql_context):
@@ -246,7 +252,9 @@ def test_sensor_next_ticks(graphql_context):
 
     # test default sensor with no tick
     graphql_context.instance.add_job_state(
-        JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
     )
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
@@ -296,7 +304,9 @@ def test_sensor_tick_range(graphql_context):
 
     # turn the sensor on
     graphql_context.instance.add_job_state(
-        JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
     )
 
     now = pendulum.now("US/Central")

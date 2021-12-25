@@ -251,10 +251,10 @@ function usePipelineAvailabilityErrorForRun(
     return null;
   }
 
-  if (run?.pipeline.__typename === 'UnknownPipeline') {
+  if (!run.pipelineSnapshotId) {
     return {
       icon: 'error',
-      tooltip: `"${run.pipeline.name}" could not be found.`,
+      tooltip: `"${run.pipelineName}" could not be found.`,
       disabled: true,
     };
   }
@@ -275,7 +275,7 @@ function usePipelineAvailabilityErrorForRun(
       // Only the repo is a match.
       return {
         icon: 'warning',
-        tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
+        tooltip: `The workspace version of "${run.pipelineName}" may be different than the one used for the original run.`,
         disabled: false,
       };
     }
@@ -286,7 +286,7 @@ function usePipelineAvailabilityErrorForRun(
         icon: 'warning',
         tooltip: (
           <Group direction="column" spacing={4}>
-            <div>{`The pipeline "${run.pipeline.name}" is not in the same repository as the original pipeline run.`}</div>
+            <div>{`The original run loaded "${run.pipelineName}" from a different repository.`}</div>
             {run.repositoryOrigin ? (
               <div>
                 Original repository:{' '}
@@ -305,7 +305,7 @@ function usePipelineAvailabilityErrorForRun(
     // Only the pipeline name matched. This could be from any repo in the workspace.
     return {
       icon: 'warning',
-      tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
+      tooltip: `The pipeline "${run.pipelineName}" may be a different version from the original pipeline run.`,
       disabled: false,
     };
   }
@@ -317,7 +317,7 @@ function usePipelineAvailabilityErrorForRun(
 
   const tooltip = (
     <Group direction="column" spacing={8}>
-      <div>{`"${run.pipeline.name}" is not available in the current workspace.`}</div>
+      <div>{`"${run.pipelineName}" is not available in the current workspace.`}</div>
       {repoForRun && repoLocationForRun ? (
         <div>{`Load repository ${buildRepoPath(
           repoForRun,

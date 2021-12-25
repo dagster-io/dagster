@@ -12,10 +12,13 @@ from dagster.cli.workspace.cli_target import get_workspace_process_context_from_
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster.seven import json
+from dagster.utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
 from nbconvert import HTMLExporter
+from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import HTTPConnection, Request
@@ -28,6 +31,7 @@ from starlette.responses import (
 )
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
+from starlette.types import Message
 
 from .graphql import GraphQLServer
 from .version import __version__
@@ -63,7 +67,7 @@ class DagitWebserver(GraphQLServer):
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> List[Middleware]:
-        return []
+        return [Middleware(DagsterTracedCounterMiddleware)]
 
     async def dagit_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -244,3 +248,27 @@ def default_app(debug=False):
 
 def debug_app():
     return default_app(debug=True)
+
+
+class DagsterTracedCounterMiddleware:
+    """Middleware for counting traced dagster calls
+    Args:
+      app (ASGI application): ASGI application
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        traced_counter.set(Counter())
+
+        def send_wrapper(message: Message):
+            if message["type"] == "http.response.start":
+                counter = traced_counter.get()
+                if counter and isinstance(counter, Counter):
+                    headers = MutableHeaders(scope=message)
+                    headers.append("x-dagster-call-counts", json.dumps(counter.counts()))
+
+            return send(message)
+
+        await self.app(scope, receive, send_wrapper)

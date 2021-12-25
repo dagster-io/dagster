@@ -4,7 +4,7 @@ import {Select as BlueprintSelect, SelectProps} from '@blueprintjs/select';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
 
-export const SelectWIP = <T extends unknown>(props: React.PropsWithChildren<SelectProps<T>>) => {
+export const SelectWIP = <T,>(props: React.PropsWithChildren<SelectProps<T>>) => {
   const popoverProps: Partial<IPopoverProps> = {
     ...props.popoverProps,
     minimal: true,

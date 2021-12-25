@@ -1,8 +1,14 @@
 import graphene
 from dagster import AssetKey, check
+from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.external_data import ExternalAssetNode
+from dagster.core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
+)
 
+from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
@@ -35,34 +41,58 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
     opName = graphene.String()
-    jobName = graphene.String()
     jobs = non_null_list(GraphenePipeline)
+    repository = graphene.NonNull(lambda: external.GrapheneRepository)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
+    dependencyKeys = non_null_list(GrapheneAssetKey)
+    dependedByKeys = non_null_list(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    partitionKeys = non_null_list(graphene.String)
 
     class Meta:
         name = "AssetNode"
 
-    def __init__(self, external_repository, external_asset_node):
+    def __init__(
+        self,
+        external_repository,
+        external_asset_node,
+        latest_materialization=None,
+        fetched_materialization=False,
+    ):
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
         self._external_asset_node = check.inst_param(
             external_asset_node, "external_asset_node", ExternalAssetNode
         )
+        self._latest_materialization = check.opt_inst_param(
+            latest_materialization, "latest_materialization", EventLogEntry
+        )
+        # we need a separate flag, because the asset might not have been materialized, so the None
+        # value has significance
+        self._fetched_materialization = check.bool_param(
+            fetched_materialization, "fetched_materialization"
+        )
+
         super().__init__(
             id=external_asset_node.asset_key.to_string(),
             assetKey=external_asset_node.asset_key,
             opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
-            jobName=external_asset_node.job_names[0] if external_asset_node.job_names else None,
         )
+
+    def resolve_repository(self, _graphene_info):
+        loc = None
+        for location in _graphene_info.context.repository_locations:
+            if self._external_repository in location.get_repositories().values():
+                loc = location
+        return external.GrapheneRepository(self._external_repository, loc)
 
     def resolve_dependencies(self, _graphene_info):
         return [
@@ -84,6 +114,18 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.depended_by
         ]
 
+    def resolve_dependencyKeys(self, _graphene_info):
+        return [
+            GrapheneAssetKey(path=dep.upstream_asset_key.path)
+            for dep in self._external_asset_node.dependencies
+        ]
+
+    def resolve_dependencyByKeys(self, _graphene_info):
+        return [
+            GrapheneAssetKey(path=dep.downstream_asset_key.path)
+            for dep in self._external_asset_node.depended_by
+        ]
+
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
 
@@ -96,14 +138,23 @@ class GrapheneAssetNode(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        limit = kwargs.get("limit")
+        partitions = kwargs.get("partitions")
+        if self._fetched_materialization and limit == 1 and not partitions and not before_timestamp:
+            return (
+                [GrapheneAssetMaterialization(event=self._latest_materialization)]
+                if self._latest_materialization
+                else []
+            )
+
         return [
             GrapheneAssetMaterialization(event=event)
             for event in get_asset_events(
                 graphene_info,
                 self._external_asset_node.asset_key,
-                kwargs.get("partitions"),
+                partitions,
                 before_timestamp=before_timestamp,
-                limit=kwargs.get("limit"),
+                limit=limit,
             )
         ]
 
@@ -114,6 +165,19 @@ class GrapheneAssetNode(graphene.ObjectType):
             for job_name in job_names
             if self._external_repository.has_external_pipeline(job_name)
         ]
+
+    def resolve_partitionKeys(self, _graphene_info):
+        # TODO: Add functionality for dynamic partitions definition
+        partitions_def_data = self._external_asset_node.partitions_def_data
+        if partitions_def_data:
+            if isinstance(
+                partitions_def_data, ExternalStaticPartitionsDefinitionData
+            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
+                return [
+                    partition.name
+                    for partition in partitions_def_data.get_partitions_definition().get_partitions()
+                ]
+        return []
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

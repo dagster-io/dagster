@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import * as querystring from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
-import {useHistory, useLocation} from 'react-router-dom';
+import {useHistory, useLocation, useParams} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
@@ -112,12 +112,12 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
 }
 
 interface Props {
-  name?: string;
   repoAddress: RepoAddress;
 }
 
 export const OpsRoot: React.FC<Props> = (props) => {
-  const {name, repoAddress} = props;
+  const {name} = useParams<{name?: string}>();
+  const {repoAddress} = props;
 
   useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
@@ -147,12 +147,12 @@ export const OpsRoot: React.FC<Props> = (props) => {
   );
 };
 
-const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
+const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = (props) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
 
-  const {q, typeExplorer} = querystring.parse(location.search);
+  const {q, typeExplorer} = qs.parse(location.search, {ignoreQueryPrefix: true});
   const suggestions = searchSuggestionsForOps(usedSolids);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
@@ -161,14 +161,12 @@ const OpsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.replace({
-      search: `?${querystring.stringify({q: stringFromValue(search)})}`,
+      search: `?${qs.stringify({q: stringFromValue(search)})}`,
     });
   };
 
   const onClickOp = (defName: string) => {
-    history.replace(
-      workspacePathFromAddress(repoAddress, `/ops/${defName}?${querystring.stringify({q})}`),
-    );
+    history.replace(workspacePathFromAddress(repoAddress, `/ops/${defName}?${qs.stringify({q})}`));
   };
 
   React.useEffect(() => {

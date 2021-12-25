@@ -107,7 +107,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-interface Props {
+export interface AppProviderProps {
   appCache: InMemoryCache;
   config: {
     apolloLinks: ApolloLink[];
@@ -118,7 +118,7 @@ interface Props {
   };
 }
 
-export const AppProvider: React.FC<Props> = (props) => {
+export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const {appCache, config} = props;
   const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
 

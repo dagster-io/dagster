@@ -1,7 +1,7 @@
 import threading
 import time
 
-import grpc
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import ephemeral_grpc_api_client
 
 
@@ -28,7 +28,7 @@ def test_streaming_terminate():
 
         try:
             api_client.shutdown_server()
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             # shutting down sometimes happens so fast that it terminates the calling RPC
             pass
 

@@ -5,6 +5,8 @@ import traceback
 from collections import namedtuple
 from contextlib import contextmanager
 
+import coloredlogs
+import pendulum
 from dagster import check, seven
 from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
@@ -189,12 +191,43 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
+def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
+    """Uses pendulum.now to determine the logging time, causing pendulum
+    mocking to affect the logger timestamp in tests."""
+    return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
+
+
+def default_system_logger(logger_name: str, level: str = "INFO"):
+    """ Logger for Dagster system processes like dagit, the daemon, and code servers."""
+    handler = logging.StreamHandler(sys.stdout)
+    system_logger = logging.getLogger(logger_name)
+    system_logger.setLevel(level)
+    system_logger.handlers = [handler]
+
+    formatter = coloredlogs.ColoredFormatter(
+        fmt=default_format_string(),
+        datefmt=default_date_format_string(),
+        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+        level_styles={"debug": {}, "error": {"color": "red"}},
+    )
+
+    formatter.formatTime = _mockable_formatTime
+
+    handler.setFormatter(formatter)
+
+    return system_logger
+
+
 def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
+def default_date_format_string():
+    return "%Y-%m-%d %H:%M:%S %z"
+
+
 def define_default_formatter():
-    return logging.Formatter(default_format_string())
+    return logging.Formatter(default_format_string(), default_date_format_string())
 
 
 @contextmanager

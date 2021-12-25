@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import * as qs from 'query-string';
+import qs from 'qs';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -9,7 +9,7 @@ import {usePermissions} from '../app/Permissions';
 import {ButtonWIP} from '../ui/Button';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
-import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {MenuDividerWIP, MenuItemWIP, MenuLink, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -110,11 +110,11 @@ export const RunActionsMenu: React.FC<{
                 disabled={infoReady}
                 targetTagName="div"
               >
-                <MenuItemWIP
+                <MenuLink
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  href={launchpadPath()}
+                  to={launchpadPath()}
                 />
               </Tooltip>
               <Tooltip
@@ -154,11 +154,11 @@ export const RunActionsMenu: React.FC<{
               )}
               <MenuDividerWIP />
             </>
-            <MenuItemWIP
+            <MenuLink
               text="Download Debug File"
               icon="download_for_offline"
               download
-              href={`${rootServerURI}/download_debug/${run.runId}`}
+              to={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
               <MenuItemWIP

@@ -1,10 +1,10 @@
 from contextlib import ExitStack
 
-import grpc
 import pytest
 import yaml
 from dagster import seven
 from dagster.check import CheckError
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.test_utils import environ
 from dagster.core.workspace.load import location_origins_from_config
@@ -137,7 +137,7 @@ def test_ssl_grpc_server_workspace():
             try:
                 with origin.create_location():
                     assert False
-            except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            except DagsterUserCodeUnreachableError:
                 pass
 
     finally:

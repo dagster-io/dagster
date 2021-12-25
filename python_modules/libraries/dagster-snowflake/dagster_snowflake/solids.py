@@ -39,8 +39,8 @@ def snowflake_op_for_query(sql, parameters=None):
     """This function is an op factory that constructs an op to execute a snowflake query.
 
     Note that you can only use `snowflake_op_for_query` if you know the query you'd like to
-    execute at pipeline construction time. If you'd like to execute queries dynamically during
-    pipeline execution, you should manually execute those queries in your custom op using the
+    execute at graph construction time. If you'd like to execute queries dynamically during
+    job execution, you should manually execute those queries in your custom op using the
     snowflake resource.
 
     Args:
