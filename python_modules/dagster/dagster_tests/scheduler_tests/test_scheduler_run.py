@@ -30,6 +30,7 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
 )
+from dagster.core.host_representation.origin import IN_PROCESS_NAME
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -45,6 +46,7 @@ from dagster.core.test_utils import (
     instance_for_test,
     mock_system_timezone,
 )
+from dagster.core.workspace.load_target import GrpcServerTarget, ModuleTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.grpc.client import EphemeralDagsterGrpcClient
 from dagster.grpc.server import open_server_process
@@ -54,7 +56,7 @@ from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import find_free_port
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
-from .conftest import default_repo, loadable_target_origin
+from .conftest import default_repo, loadable_target_origin, workspace_load_target
 
 _COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
 
@@ -661,7 +663,9 @@ def test_no_started_schedules(instance, workspace, external_repo):
 
 def test_schedule_without_timezone(instance):
     with mock_system_timezone("US/Eastern"):
-        with create_test_daemon_workspace() as workspace:
+        with create_test_daemon_workspace(
+            workspace_load_target=workspace_load_target()
+        ) as workspace:
             with default_repo() as external_repo:
                 external_schedule = external_repo.get_external_schedule(
                     "daily_schedule_without_timezone"
@@ -672,7 +676,6 @@ def test_schedule_without_timezone(instance):
                 )
 
                 with pendulum.test(initial_datetime):
-
                     instance.start_schedule_and_update_storage_state(external_schedule)
 
                     list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
@@ -1050,6 +1053,15 @@ def _get_unloadable_schedule_origin():
     ).get_instigator_origin("doesnt_exist")
 
 
+def _get_unloadable_workspace_load_target():
+    return ModuleTarget(
+        module_name="doesnt_exist",
+        attribute=None,
+        location_name=IN_PROCESS_NAME,
+        working_directory=None,
+    )
+
+
 def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_repo):
     good_schedule = external_repo.get_external_schedule("simple_schedule")
     bad_schedule = external_repo.get_external_schedule("bad_should_execute_schedule_on_odd_days")
@@ -1258,41 +1270,42 @@ def test_bad_load_schedule(instance, workspace, external_repo):
         assert len(ticks) == 0
 
 
-def test_bad_load_repository_location(instance, workspace):
-    fake_origin = _get_unloadable_schedule_origin()
-    initial_datetime = create_pendulum_time(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    )
-    with pendulum.test(initial_datetime):
-        schedule_state = InstigatorState(
-            fake_origin,
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
-            ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+def test_bad_load_repository_location(instance):
+    with create_test_daemon_workspace(_get_unloadable_workspace_load_target()) as workspace:
+        fake_origin = _get_unloadable_schedule_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
         )
-        instance.add_job_state(schedule_state)
+        with pendulum.test(initial_datetime):
+            schedule_state = InstigatorState(
+                fake_origin,
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
+            )
+            instance.add_job_state(schedule_state)
 
-    initial_datetime = initial_datetime.add(seconds=1)
-    with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        initial_datetime = initial_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
-        assert instance.get_runs_count() == 0
+            assert instance.get_runs_count() == 0
 
-        ticks = instance.get_job_ticks(fake_origin.get_id())
+            ticks = instance.get_job_ticks(fake_origin.get_id())
 
-        assert len(ticks) == 0
+            assert len(ticks) == 0
 
-    initial_datetime = initial_datetime.add(days=1)
-    with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-        assert instance.get_runs_count() == 0
-        ticks = instance.get_job_ticks(fake_origin.get_id())
-        assert len(ticks) == 0
+        initial_datetime = initial_datetime.add(days=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(fake_origin.get_id())
+            assert len(ticks) == 0
 
 
 def test_multiple_schedules_on_different_time_ranges(instance, workspace, external_repo):
@@ -1617,7 +1630,6 @@ def test_manual_partition_with_solid_selection(instance, workspace, external_rep
         external_schedule = external_repo.get_external_schedule("manual_partition_schedule")
         schedule_origin = external_schedule.get_external_origin()
         instance.start_schedule_and_update_storage_state(external_schedule)
-
         freeze_datetime = freeze_datetime.add(seconds=2)
 
     with pendulum.test(freeze_datetime):
@@ -1689,7 +1701,7 @@ def test_skip_reason_schedule(instance, workspace, external_repo):
         )
 
 
-def test_grpc_server_down(instance, workspace):
+def test_grpc_server_down(instance):
     port = find_free_port()
     location_origin = GrpcServerRepositoryLocationOrigin(
         host="localhost", port=port, location_name="test_location"
@@ -1703,43 +1715,45 @@ def test_grpc_server_down(instance, workspace):
     )
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+    with create_test_daemon_workspace(
+        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location")
+    ) as workspace:
+        with pendulum.test(initial_datetime):
+            with _grpc_server_external_repo(port) as external_repo:
+                external_schedule = external_repo.get_external_schedule("simple_schedule")
+                instance.start_schedule_and_update_storage_state(external_schedule)
+                workspace.get_location(location_origin)
 
-    with pendulum.test(initial_datetime):
-        with _grpc_server_external_repo(port) as external_repo:
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
-            instance.start_schedule_and_update_storage_state(external_schedule)
-            workspace.get_location(location_origin)
+            # Server is no longer running, ticks fail but indicate it will resume once it is reachable
+            for _trial in range(3):
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                assert instance.get_runs_count() == 0
+                ticks = instance.get_job_ticks(schedule_origin.get_id())
+                assert len(ticks) == 1
 
-        # Server is no longer running, ticks fail but indicate it will resume once it is reachable
-        for _trial in range(3):
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 1
+                validate_tick(
+                    ticks[0],
+                    external_schedule,
+                    initial_datetime,
+                    TickStatus.FAILURE,
+                    [],
+                    "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                    expected_failure_count=0,
+                )
 
-            validate_tick(
-                ticks[0],
-                external_schedule,
-                initial_datetime,
-                TickStatus.FAILURE,
-                [],
-                "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
-                expected_failure_count=0,
-            )
+            # Server starts back up, tick now succeeds
+            with _grpc_server_external_repo(port) as external_repo:
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                assert instance.get_runs_count() == 1
+                ticks = instance.get_job_ticks(schedule_origin.get_id())
+                assert len(ticks) == 1
 
-        # Server starts back up, tick now succeeds
-        with _grpc_server_external_repo(port) as external_repo:
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 1
+                expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
 
-            expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
-
-            validate_tick(
-                ticks[0],
-                external_schedule,
-                expected_datetime,
-                TickStatus.SUCCESS,
-                [run.run_id for run in instance.get_runs()],
-            )
+                validate_tick(
+                    ticks[0],
+                    external_schedule,
+                    expected_datetime,
+                    TickStatus.SUCCESS,
+                    [run.run_id for run in instance.get_runs()],
+                )
