@@ -19,5 +19,9 @@ def inmemory_datawarehouse_resource(init_context):
                 'acme_lake', f'file:acme_lake?mode=memory',
                 init_sql_file=str((base_dir / "consumption_datamart_tests/test_data/acme_lake.sqlite3.sql").resolve())
             ),
+            SQLiteSchema(
+                'consumption_datamart', f'file:consumption_datamart?mode=memory',
+                init_sql_file=str((base_dir / "consumption_datamart_tests/test_data/consumption_datamart.sqlite3.sql").resolve())
+            ),
         ]
     )
