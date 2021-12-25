@@ -17,6 +17,7 @@ from dagster.core.execution.context.output import build_output_context
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
+    GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     RepositoryLocation,
 )
@@ -225,23 +226,17 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
     def get_external_origin(self):
         """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
-        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
-        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
-        work, we need to inject this one.
+        Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
+        gRPC server repo location origin. As a result the normal origin won't work, we need to
+        inject this one.
         """
 
         return ExternalJobOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=InProcessRepositoryLocationOrigin(
-                    recon_repo=ReconstructableRepository(
-                        pointer=FileCodePointer(
-                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
-                            fn_name="define_demo_execution_repo",
-                        ),
-                        container_image=self._container_image,
-                        executable_path="python",
-                    )
+                repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                    host="user-code-deployment-1",
+                    port=3030,
+                    location_name="user-code-deployment-1",
                 ),
                 repository_name="demo_execution_repo",
             ),

@@ -58,53 +58,31 @@ def celery_k8s_config():
     return cfg
 
 
-def get_celery_engine_config(additional_env_config_maps=None):
+def get_celery_engine_config(image_pull_policy=None, additional_env_config_maps=None):
+    job_config = get_celery_engine_job_config(image_pull_policy, additional_env_config_maps)
+    return {"execution": {CELERY_K8S_CONFIG_KEY: {"config": job_config["execution"]["config"]}}}
+
+
+def get_celery_engine_job_config(image_pull_policy=None, additional_env_config_maps=None):
     return {
         "execution": {
-            CELERY_K8S_CONFIG_KEY: {
-                "config": {
-                    "job_image": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE"},
+            "config": merge_dicts(
+                {
                     "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
-                    "image_pull_policy": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY"},
                     "env_config_maps": (
                         [
                             {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
                         ]
                         + (additional_env_config_maps if additional_env_config_maps else [])
                     ),
-                }
-            }
-        }
-    }
-
-
-def get_celery_engine_job_config(additional_env_config_maps=None):
-    return {
-        "execution": {
-            "config": {
-                "job_image": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE"},
-                "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
-                "image_pull_policy": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY"},
-                "env_config_maps": (
-                    [
-                        {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
-                    ]
-                    + (additional_env_config_maps if additional_env_config_maps else [])
+                },
+                (
+                    {
+                        "image_pull_policy": image_pull_policy,
+                    }
+                    if image_pull_policy
+                    else {}
                 ),
-            }
-        }
-    }
-
-
-def get_celery_engine_grpc_config():
-    return {
-        "execution": {
-            CELERY_K8S_CONFIG_KEY: {
-                "config": {
-                    "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
-                    "image_pull_policy": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY"},
-                    "env_config_maps": [{"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"}],
-                }
-            }
+            )
         }
     }

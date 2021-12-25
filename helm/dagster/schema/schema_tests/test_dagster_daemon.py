@@ -10,8 +10,11 @@ from schema.charts.dagster.subschema.daemon import (
     TagConcurrencyLimit,
 )
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
+
+from .utils import create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
@@ -62,6 +65,56 @@ def test_daemon_default_image_tag_is_chart_version(template: HelmTemplate, chart
     _, image_tag = image.split(":")
 
     assert image_tag == chart_version
+
+
+def test_daemon_command_with_user_deployments(template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            image=kubernetes.Image.construct(repository=repository, tag=tag)
+        ),
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+    )
+    daemon_deployments = template.render(helm_values)
+
+    assert len(daemon_deployments) == 1
+
+    command = daemon_deployments[0].spec.template.spec.containers[0].command
+    assert command == [
+        "/bin/bash",
+        "-c",
+        "dagster-daemon run -w /dagster-workspace/workspace.yaml",
+    ]
+
+
+def test_daemon_command_without_user_deployments(template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            image=kubernetes.Image.construct(repository=repository, tag=tag)
+        ),
+        dagsterUserDeployments=UserDeployments(
+            enabled=False,
+            enableSubchart=False,
+            deployments=[],
+        ),
+    )
+    daemon_deployments = template.render(helm_values)
+
+    assert len(daemon_deployments) == 1
+
+    command = daemon_deployments[0].spec.template.spec.containers[0].command
+    assert command == [
+        "/bin/bash",
+        "-c",
+        "dagster-daemon run",
+    ]
 
 
 def test_daemon_image(template: HelmTemplate):

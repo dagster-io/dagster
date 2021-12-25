@@ -43,6 +43,17 @@ from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 
+def image_pull_policy():
+    # This is because when running local tests, we need to load the image into the kind cluster (and
+    # then not attempt to pull it) because we don't want to require credentials for a private
+    # registry / pollute the private registry / set up and network a local registry as a condition
+    # of running tests
+    if IS_BUILDKITE:
+        return "Always"
+    else:
+        return "IfNotPresent"
+
+
 def celery_mode_defs(resources=None, name="default"):
     from dagster_celery import celery_executor
     from dagster_celery_k8s import celery_k8s_job_executor
@@ -409,30 +420,6 @@ def define_schedules():
         return {}
 
     @schedule(
-        name="frequent_large_grpc_pipe",
-        pipeline_name="large_pipeline_celery",
-        cron_schedule="*/5 * * * *",
-    )
-    def frequent_large_grpc_pipe():
-        from dagster_celery_k8s.config import get_celery_engine_grpc_config
-
-        cfg = get_celery_engine_grpc_config()
-        cfg["storage"] = {"s3": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}}
-        return cfg
-
-    @schedule(
-        name="frequent_large_pipe",
-        pipeline_name="large_pipeline_celery",
-        cron_schedule="*/5 * * * *",
-    )
-    def frequent_large_pipe():
-        from dagster_celery_k8s.config import get_celery_engine_config
-
-        cfg = get_celery_engine_config()
-        cfg["storage"] = {"s3": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}}
-        return cfg
-
-    @schedule(
         pipeline_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
@@ -448,13 +435,14 @@ def define_schedules():
                     file_relative_path(__file__, os.path.join("..", "environments", "env_s3.yaml")),
                 ]
             ),
-            get_celery_engine_config(additional_env_config_maps=additional_env_config_maps),
+            get_celery_engine_config(
+                image_pull_policy=image_pull_policy(),
+                additional_env_config_maps=additional_env_config_maps,
+            ),
         )
 
     return {
         "daily_optional_outputs": daily_optional_outputs,
-        "frequent_large_pipe": frequent_large_pipe,
-        "frequent_large_grpc_pipe": frequent_large_grpc_pipe,
         "frequent_celery": frequent_celery,
     }
 

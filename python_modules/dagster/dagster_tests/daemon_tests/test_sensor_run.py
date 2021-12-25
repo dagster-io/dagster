@@ -1,7 +1,6 @@
 import os
 import random
 import string
-import sys
 import tempfile
 import threading
 import time
@@ -34,7 +33,6 @@ from dagster.core.host_representation import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -45,7 +43,7 @@ from dagster.core.test_utils import (
     get_logger_output_from_capfd,
     instance_for_test,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -309,30 +307,28 @@ def the_other_repo():
 
 
 @contextmanager
-def instance_with_sensors(external_repo_context, overrides=None):
+def instance_with_sensors(overrides=None):
     with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace() as workspace:
-            with external_repo_context() as external_repo:
+        with create_test_daemon_workspace(workspace_load_target()) as workspace:
+            with default_repo() as external_repo:
                 yield (instance, workspace, external_repo)
 
 
 @contextmanager
 def default_repo():
-    loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
-        working_directory=os.getcwd(),
-    )
-
-    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
-        loadable_target_origin=loadable_target_origin,
-        location_name="test_location",
-    ).create_test_location() as location:
+    load_target = workspace_load_target()
+    origin = load_target.create_origins()[0]
+    with origin.create_single_location() as location:
         yield location.get_repository("the_repo")
 
 
-def repos():
-    return [default_repo]
+def workspace_load_target():
+    return PythonFileTarget(
+        python_file=__file__,
+        attribute=None,
+        working_directory=os.getcwd(),
+        location_name="test_location",
+    )
 
 
 def evaluate_sensors(instance, workspace):
@@ -411,13 +407,12 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_simple_sensor(external_repo_context, capfd):
+def test_simple_sensor(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -485,13 +480,12 @@ def test_simple_sensor(external_repo_context, capfd):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_bad_load_sensor_repository(external_repo_context, capfd):
+def test_bad_load_sensor_repository(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -534,13 +528,12 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_bad_load_sensor(external_repo_context, capfd):
+def test_bad_load_sensor(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -577,13 +570,12 @@ def test_bad_load_sensor(external_repo_context, capfd):
             assert "Could not find sensor invalid_sensor in repository the_repo." in captured.out
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_error_sensor(external_repo_context, capfd):
+def test_error_sensor(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -621,8 +613,7 @@ def test_error_sensor(external_repo_context, capfd):
             ) in captured.out
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_wrong_config_sensor(external_repo_context, capfd):
+def test_wrong_config_sensor(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(
             year=2019,
@@ -634,7 +625,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
         ),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -689,14 +680,12 @@ def test_wrong_config_sensor(external_repo_context, capfd):
             assert ("Error in config for pipeline") in captured.out
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_launch_failure(external_repo_context, capfd):
+def test_launch_failure(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
     with instance_with_sensors(
-        external_repo_context,
         overrides={
             "run_launcher": {
                 "module": "dagster.core.test_utils",
@@ -740,8 +729,7 @@ def test_launch_failure(external_repo_context, capfd):
             assert "The entire purpose of this is to throw on launch" in captured.out
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_launch_once(external_repo_context, capfd):
+def test_launch_once(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(
             year=2019,
@@ -754,7 +742,7 @@ def test_launch_once(external_repo_context, capfd):
         ),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -832,12 +820,11 @@ def test_launch_once(external_repo_context, capfd):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_custom_interval_sensor(external_repo_context):
+def test_custom_interval_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -878,8 +865,7 @@ def test_custom_interval_sensor(external_repo_context):
             validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
+def test_custom_interval_sensor_with_offset(monkeypatch):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
     )
@@ -892,7 +878,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
 
     monkeypatch.setattr(time, "sleep", fake_sleep)
 
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -946,8 +932,7 @@ def _get_unloadable_sensor_origin():
     ).get_job_origin("doesnt_exist")
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_error_sensor_daemon(external_repo_context, monkeypatch):
+def test_error_sensor_daemon(monkeypatch):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
     )
@@ -961,7 +946,6 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
     monkeypatch.setattr(time, "sleep", fake_sleep)
 
     with instance_with_sensors(
-        external_repo_context,
         overrides={
             "run_launcher": {
                 "module": "dagster.core.test_utils",
@@ -1001,13 +985,12 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             assert len(heartbeat.errors) == DAEMON_HEARTBEAT_ERROR_LIMIT
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_sensor_start_stop(external_repo_context):
+def test_sensor_start_stop():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1064,13 +1047,12 @@ def test_sensor_start_stop(external_repo_context):
             assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_large_sensor(external_repo_context):
+def test_large_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1089,13 +1071,12 @@ def test_large_sensor(external_repo_context):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_cursor_sensor(external_repo_context):
+def test_cursor_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1152,13 +1133,12 @@ def test_cursor_sensor(external_repo_context):
             assert run_ticks[0].cursor == "2"
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_asset_sensor(external_repo_context):
+def test_asset_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1200,13 +1180,12 @@ def test_asset_sensor(external_repo_context):
             assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_asset_job_sensor(external_repo_context):
+def test_asset_job_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1248,10 +1227,9 @@ def test_asset_job_sensor(external_repo_context):
             assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_pipeline_failure_sensor(external_repo_context):
+def test_pipeline_failure_sensor():
     freeze_datetime = pendulum.now()
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1302,10 +1280,9 @@ def test_pipeline_failure_sensor(external_repo_context):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_run_failure_sensor_filtered(external_repo_context):
+def test_run_failure_sensor_filtered():
     freeze_datetime = pendulum.now()
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1387,10 +1364,9 @@ def test_run_failure_sensor_filtered(external_repo_context):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_run_status_sensor(external_repo_context):
+def test_run_status_sensor():
     freeze_datetime = pendulum.now()
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1499,18 +1475,15 @@ def sql_event_log_storage_config_fn(temp_dir):
     }
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize(
     "storage_config_fn",
     [default_storage_config_fn, sqlite_storage_config_fn],
 )
-def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
+def test_run_status_sensor_interleave(storage_config_fn):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
 
-        with instance_with_sensors(
-            external_repo_context, overrides=storage_config_fn(temp_dir)
-        ) as (
+        with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace,
             external_repo,
@@ -1601,15 +1574,12 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                 assert ticks[0].origin_run_ids[0] == run1.run_id
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
-def test_pipeline_failure_sensor_empty_run_records(external_repo_context, storage_config_fn):
+def test_pipeline_failure_sensor_empty_run_records(storage_config_fn):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
 
-        with instance_with_sensors(
-            external_repo_context, overrides=storage_config_fn(temp_dir)
-        ) as (
+        with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace,
             external_repo,
@@ -1671,13 +1641,12 @@ def test_pipeline_failure_sensor_empty_run_records(external_repo_context, storag
                 )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_multi_job_sensor(external_repo_context):
+def test_multi_job_sensor():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1722,13 +1691,12 @@ def test_multi_job_sensor(external_repo_context):
             assert run.pipeline_name == "config_graph"
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_bad_run_request_untargeted(external_repo_context):
+def test_bad_run_request_untargeted():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1754,13 +1722,12 @@ def test_bad_run_request_untargeted(external_repo_context):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_bad_run_request_mismatch(external_repo_context):
+def test_bad_run_request_mismatch():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,
@@ -1786,13 +1753,12 @@ def test_bad_run_request_mismatch(external_repo_context):
             )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_bad_run_request_unspecified(external_repo_context):
+def test_bad_run_request_unspecified():
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         workspace,
         external_repo,

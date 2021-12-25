@@ -69,9 +69,7 @@ def test_get_validated_celery_k8s_executor_config():
 
     with environ(
         {
-            "DAGSTER_K8S_PIPELINE_RUN_IMAGE": "foo",
             "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "default",
-            "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY": "Always",
             "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "config-pipeline-env",
         }
     ):
@@ -80,8 +78,7 @@ def test_get_validated_celery_k8s_executor_config():
         assert res == {
             "backend": "rpc://",
             "retries": {"enabled": {}},
-            "job_image": "foo",
-            "image_pull_policy": "Always",
+            "image_pull_policy": "IfNotPresent",
             "env_config_maps": ["config-pipeline-env"],
             "load_incluster_config": True,
             "job_namespace": "default",
@@ -98,7 +95,6 @@ def test_get_validated_celery_k8s_executor_config():
             "TEST_CELERY_BROKER": "redis://some-redis-host:6379/0",
             "TEST_CELERY_BACKEND": "redis://some-redis-host:6379/0",
             "TEST_PIPELINE_RUN_IMAGE": "foo",
-            "TEST_PIPELINE_RUN_IMAGE_PULL_POLICY": "Always",
             "TEST_K8S_PULL_SECRET_1": "super-secret-1",
             "TEST_K8S_PULL_SECRET_2": "super-secret-2",
             "TEST_SERVICE_ACCOUNT_NAME": "my-cool-service-acccount",
@@ -122,7 +118,7 @@ def test_get_validated_celery_k8s_executor_config():
                     },
                     "retries": {"disabled": {}},
                     "job_image": {"env": "TEST_PIPELINE_RUN_IMAGE"},
-                    "image_pull_policy": {"env": "TEST_PIPELINE_RUN_IMAGE_PULL_POLICY"},
+                    "image_pull_policy": "IfNotPresent",
                     "image_pull_secrets": [
                         {"name": {"env": "TEST_K8S_PULL_SECRET_1"}},
                         {"name": {"env": "TEST_K8S_PULL_SECRET_2"}},
@@ -149,7 +145,7 @@ def test_get_validated_celery_k8s_executor_config():
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
-            "image_pull_policy": "Always",
+            "image_pull_policy": "IfNotPresent",
             "image_pull_secrets": [{"name": "super-secret-1"}, {"name": "super-secret-2"}],
             "service_account_name": "my-cool-service-acccount",
             "env_config_maps": ["config-pipeline-env"],
@@ -184,9 +180,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
 
     with environ(
         {
-            "DAGSTER_K8S_PIPELINE_RUN_IMAGE": "foo",
             "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "default",
-            "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY": "Always",
             "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "config-pipeline-env",
         }
     ):
@@ -195,8 +189,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         assert res == {
             "backend": "rpc://",
             "retries": {"enabled": {}},
-            "job_image": "foo",
-            "image_pull_policy": "Always",
+            "image_pull_policy": "IfNotPresent",
             "env_config_maps": ["config-pipeline-env"],
             "load_incluster_config": True,
             "job_namespace": "default",
@@ -238,7 +231,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
                         },
                         "retries": {"disabled": {}},
                         "job_image": {"env": "TEST_PIPELINE_RUN_IMAGE"},
-                        "image_pull_policy": {"env": "TEST_PIPELINE_RUN_IMAGE_PULL_POLICY"},
+                        "image_pull_policy": "IfNotPresent",
                         "image_pull_secrets": [
                             {"name": {"env": "TEST_K8S_PULL_SECRET_1"}},
                             {"name": {"env": "TEST_K8S_PULL_SECRET_2"}},
@@ -266,7 +259,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
-            "image_pull_policy": "Always",
+            "image_pull_policy": "IfNotPresent",
             "image_pull_secrets": [{"name": "super-secret-1"}, {"name": "super-secret-2"}],
             "service_account_name": "my-cool-service-acccount",
             "env_config_maps": ["config-pipeline-env"],

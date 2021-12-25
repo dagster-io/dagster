@@ -36,7 +36,7 @@ def docker_postgres_instance(overrides=None, conn_args=None):
 
 @contextmanager
 def start_daemon(timeout=60):
-    p = open_ipc_subprocess(["dagster-daemon", "run"])
+    p = open_ipc_subprocess(["dagster-daemon", "run", "--empty-workspace"])
     try:
         yield
     finally:

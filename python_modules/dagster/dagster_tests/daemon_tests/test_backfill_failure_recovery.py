@@ -13,7 +13,7 @@ from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_backfill import instance_for_context, repos
+from .test_backfill import default_repo, instance_for_context, workspace_load_target
 
 
 def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
@@ -27,7 +27,9 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace() as workspace:
+            with pendulum.test(execution_datetime), create_test_daemon_workspace(
+                workspace_load_target=workspace_load_target()
+            ) as workspace:
                 list(
                     execute_backfill_iteration(
                         instance,
@@ -43,9 +45,8 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_simple(external_repo_context, capfd):
-    with instance_for_context(external_repo_context) as (
+def test_simple(capfd):
+    with instance_for_context(default_repo) as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -81,10 +82,9 @@ def test_simple(external_repo_context, capfd):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_before_submit(external_repo_context, crash_signal, capfd):
-    with instance_for_context(external_repo_context) as (
+def test_before_submit(crash_signal, capfd):
+    with instance_for_context(default_repo) as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -139,10 +139,9 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_crash_after_submit(external_repo_context, crash_signal, capfd):
-    with instance_for_context(external_repo_context) as (
+def test_crash_after_submit(crash_signal, capfd):
+    with instance_for_context(default_repo) as (
         instance,
         _grpc_server_registry,
         external_repo,

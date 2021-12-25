@@ -8,7 +8,7 @@ import pendulum
 from dagster import check
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
@@ -20,6 +20,8 @@ from dagster.daemon.daemon import (
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
+
+from .workspace import DaemonWorkspace
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
@@ -66,6 +68,7 @@ def create_daemon_grpc_server_registry():
 @contextmanager
 def daemon_controller_from_instance(
     instance,
+    workspace_load_target,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     wait_for_processes_on_exit=False,
@@ -73,8 +76,8 @@ def daemon_controller_from_instance(
     error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
     grpc_server_registry = None
-
     try:
         with ExitStack() as stack:
             grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry())
@@ -83,7 +86,7 @@ def daemon_controller_from_instance(
             # Create this in each daemon to generate a workspace per-daemon
             @contextmanager
             def gen_workspace(_instance):
-                with DynamicWorkspace(grpc_server_registry) as workspace:
+                with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
                     yield workspace
 
             with DagsterDaemonController(

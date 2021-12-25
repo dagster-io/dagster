@@ -63,7 +63,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def created_workspace_load_target(kwargs):
+def get_workspace_load_target(kwargs):
     check.dict_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
@@ -168,7 +168,7 @@ def get_workspace_process_context_from_kwargs(
     from dagster.core.workspace import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
-        instance, created_workspace_load_target(kwargs), version=version, read_only=read_only
+        instance, get_workspace_load_target(kwargs), version=version, read_only=read_only
     )
 
 

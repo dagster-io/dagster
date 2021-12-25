@@ -420,6 +420,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         with self._lock:
             self._load_workspace()
 
+    @property
+    def workspace_load_target(self):
+        return self._workspace_load_target
+
     def add_state_subscriber(self, subscriber):
         self._state_subscribers.append(subscriber)
 

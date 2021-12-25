@@ -18,17 +18,17 @@ from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from .test_scheduler_run import (
     instance_with_schedules,
     logger,
-    repos,
     validate_run_started,
     validate_tick,
     wait_for_all_runs_to_start,
+    workspace_load_target,
 )
 
 
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with create_test_daemon_workspace() as workspace:
+            with create_test_daemon_workspace(workspace_load_target()) as workspace:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(
@@ -46,15 +46,12 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_recovery_before_run_created(
-    external_repo_context, crash_location, crash_signal, capfd
-):
+def test_failure_recovery_before_run_created(crash_location, crash_signal, capfd):
     # Verify that if the scheduler crashes or is interrupted before a run is created,
     # it will create exactly one tick/run when it is re-launched
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -134,15 +131,12 @@ def test_failure_recovery_before_run_created(
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["RUN_CREATED", "RUN_LAUNCHED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_recovery_after_run_created(
-    external_repo_context, crash_location, crash_signal, capfd
-):
+def test_failure_recovery_after_run_created(crash_location, crash_signal, capfd):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -248,13 +242,12 @@ def test_failure_recovery_after_run_created(
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["TICK_SUCCESS"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_recovery_after_tick_success(external_repo_context, crash_location, crash_signal):
+def test_failure_recovery_after_tick_success(crash_location, crash_signal):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -334,11 +327,10 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["RUN_ADDED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_recovery_between_multi_runs(external_repo_context, crash_location, crash_signal):
-    with instance_with_schedules(external_repo_context) as (
+def test_failure_recovery_between_multi_runs(crash_location, crash_signal):
+    with instance_with_schedules() as (
         instance,
         _grpc_server_registry,
         external_repo,

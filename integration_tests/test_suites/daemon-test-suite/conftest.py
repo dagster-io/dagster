@@ -27,7 +27,7 @@ def foo_example_workspace_fixture(instance):
             python_file=file_relative_path(__file__, "repo.py"),
             attribute=None,
             working_directory=None,
-            location_name="example_repo_location",
+            location_name=None,
         ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
@@ -35,6 +35,4 @@ def foo_example_workspace_fixture(instance):
 
 @pytest.fixture
 def foo_example_repo(foo_example_workspace):
-    return foo_example_workspace.get_repository_location("example_repo_location").get_repository(
-        "example_repo"
-    )
+    return foo_example_workspace.repository_locations[0].get_repository("example_repo")

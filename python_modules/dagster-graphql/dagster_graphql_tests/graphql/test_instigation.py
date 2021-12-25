@@ -31,10 +31,14 @@ query JobQuery($instigationSelector: InstigationSelector!) {
 """
 
 
-def _create_sensor_tick(instance):
-    with create_test_daemon_workspace() as workspace:
+def _create_sensor_tick(graphql_context):
+    with create_test_daemon_workspace(
+        graphql_context.process_context.workspace_load_target
+    ) as workspace:
         list(
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"), workspace)
+            execute_sensor_iteration(
+                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+            )
         )
 
 
@@ -77,7 +81,7 @@ class TestNextTickRepository(
         # need to be running and create a sensor tick in the last 30 seconds in order to generate a
         # future tick
         graphql_context.instance.start_sensor(external_sensor)
-        _create_sensor_tick(graphql_context.instance)
+        _create_sensor_tick(graphql_context)
 
         result = execute_dagster_graphql(
             graphql_context, INSTIGATION_QUERY, variables={"instigationSelector": selector}

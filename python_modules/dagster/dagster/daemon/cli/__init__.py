@@ -8,6 +8,7 @@ from contextlib import ExitStack
 import click
 import pendulum
 from dagster import __version__ as dagster_version
+from dagster.cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.daemon.controller import (
@@ -33,16 +34,21 @@ def _get_heartbeat_tolerance():
     name="run",
     help="Run any daemons configured on the DagsterInstance.",
 )
-def run_command():
+@workspace_target_argument
+def run_command(**kwargs):
     with capture_interrupts():
         with DagsterInstance.get() as instance:
-            _daemon_run_command(instance)
+            _daemon_run_command(instance, kwargs)
 
 
 @telemetry_wrapper
-def _daemon_run_command(instance):
+def _daemon_run_command(instance, kwargs):
+    workspace_load_target = get_workspace_load_target(kwargs)
+
     with daemon_controller_from_instance(
-        instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()
+        instance,
+        workspace_load_target=workspace_load_target,
+        heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
     ) as controller:
         controller.check_daemon_loop()
 

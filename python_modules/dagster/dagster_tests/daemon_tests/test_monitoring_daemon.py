@@ -15,6 +15,7 @@ from dagster.core.test_utils import (
     environ,
     instance_for_test,
 )
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
 from dagster.serdes import ConfigurableClass
@@ -82,7 +83,7 @@ def instance():
 
 @pytest.fixture
 def workspace():
-    with create_test_daemon_workspace() as workspace:
+    with create_test_daemon_workspace(workspace_load_target=EmptyWorkspaceTarget()) as workspace:
         yield workspace
 
 

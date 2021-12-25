@@ -21,9 +21,9 @@ from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
+from dagster.daemon.workspace import DaemonWorkspace
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter
@@ -436,10 +436,10 @@ def in_process_test_workspace(instance, recon_repo):
 
 
 @contextmanager
-def create_test_daemon_workspace():
+def create_test_daemon_workspace(workspace_load_target):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     with create_daemon_grpc_server_registry() as grpc_server_registry:
-        with DynamicWorkspace(grpc_server_registry) as workspace:
+        with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
             yield workspace
 
 

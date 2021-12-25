@@ -4,6 +4,7 @@ import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
@@ -40,7 +41,9 @@ def test_healthy():
         )
 
         with daemon_controller_from_instance(
-            instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
 
             while True:
@@ -82,7 +85,10 @@ def test_healthy():
 
 def test_healthy_with_different_daemons():
     with instance_for_test() as instance:
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+        ):
 
             with instance_for_test(
                 overrides={
@@ -116,7 +122,9 @@ def test_thread_die_daemon(monkeypatch):
 
         init_time = pendulum.now("UTC")
         with daemon_controller_from_instance(
-            instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
                 now = pendulum.now("UTC")
@@ -156,6 +164,7 @@ def test_transient_heartbeat_failure(mocker):
 
         with daemon_controller_from_instance(
             instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
             heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
         ) as controller:
@@ -201,6 +210,7 @@ def test_error_daemon(monkeypatch):
         init_time = pendulum.now("UTC")
         with daemon_controller_from_instance(
             instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
             gen_daemons=gen_daemons,
             error_interval_seconds=10,
@@ -323,7 +333,9 @@ def test_multiple_error_daemon(monkeypatch):
         heartbeat_interval_seconds = 1
 
         with daemon_controller_from_instance(
-            instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
 
@@ -361,7 +373,9 @@ def test_warn_multiple_daemons(capsys):
         heartbeat_interval_seconds = 1
 
         with daemon_controller_from_instance(
-            instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
                 now = pendulum.now("UTC")
@@ -392,7 +406,9 @@ def test_warn_multiple_daemons(capsys):
 
         # No warning when a second controller starts up again
         with daemon_controller_from_instance(
-            instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
                 now = pendulum.now("UTC")
@@ -424,7 +440,9 @@ def test_warn_multiple_daemons(capsys):
 
             # Starting up a controller while one is running produces the warning though
             with daemon_controller_from_instance(
-                instance, heartbeat_interval_seconds=heartbeat_interval_seconds
+                instance,
+                workspace_load_target=EmptyWorkspaceTarget(),
+                heartbeat_interval_seconds=heartbeat_interval_seconds,
             ):
                 # Wait for heartbeats while two controllers are running at once and there will
                 # be a warning

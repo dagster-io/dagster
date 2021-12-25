@@ -202,7 +202,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_test_location(self):
-        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+        """Back-compat after create_test_location was renamed to create_single_location"""
+        with self.create_single_location() as location:
+            yield location
+
+    @contextmanager
+    def create_single_location(self):
+        from .repository_location import GrpcServerRepositoryLocation
         from .grpc_server_registry import ProcessGrpcServerRegistry
         from dagster.core.workspace.context import (
             DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
@@ -214,9 +220,18 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with workspace.get_location(self) as location:
-                    yield location
+            endpoint = grpc_server_registry.get_grpc_endpoint(self)
+            with GrpcServerRepositoryLocation(
+                origin=self,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                heartbeat=True,
+                watch_server=False,
+                grpc_server_registry=grpc_server_registry,
+            ) as location:
+                yield location
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):

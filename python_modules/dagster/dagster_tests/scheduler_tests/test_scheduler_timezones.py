@@ -1,5 +1,4 @@
 import pendulum
-import pytest
 from dagster.core.scheduler.instigation import TickStatus
 from dagster.core.test_utils import get_logger_output_from_capfd
 from dagster.scheduler.scheduler import launch_scheduled_runs
@@ -9,7 +8,6 @@ from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 from .test_scheduler_run import (
     instance_with_schedules,
     logger,
-    repos,
     the_repo,
     validate_run_started,
     validate_tick,
@@ -17,10 +15,9 @@ from .test_scheduler_run import (
 )
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_non_utc_timezone_run(external_repo_context, capfd):
+def test_non_utc_timezone_run(capfd):
     # Verify that schedule runs at the expected time in a non-UTC timezone
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -114,10 +111,9 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             assert ticks[0].status == TickStatus.SUCCESS
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_differing_timezones(external_repo_context):
+def test_differing_timezones():
     # Two schedules, one using US/Central, the other on US/Eastern
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -257,9 +253,8 @@ def test_differing_timezones(external_repo_context):
 
 # Verify that a schedule that runs in US/Central late enough in the day that it executes on
 # a different day in UTC still runs and creates its partition names based on the US/Central time
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_different_days_in_different_timezones(external_repo_context):
-    with instance_with_schedules(external_repo_context) as (
+def test_different_days_in_different_timezones():
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -338,10 +333,9 @@ def test_different_days_in_different_timezones(external_repo_context):
             assert ticks[0].status == TickStatus.SUCCESS
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_hourly_dst_spring_forward(external_repo_context):
+def test_hourly_dst_spring_forward():
     # Verify that an hourly schedule still runs hourly during the spring DST transition
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -418,10 +412,9 @@ def test_hourly_dst_spring_forward(external_repo_context):
             assert len(ticks) == 3
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_hourly_dst_fall_back(external_repo_context):
+def test_hourly_dst_fall_back():
     # Verify that an hourly schedule still runs hourly during the fall DST transition
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -511,10 +504,9 @@ def test_hourly_dst_fall_back(external_repo_context):
             assert len(ticks) == 4
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_daily_dst_spring_forward(external_repo_context):
+def test_daily_dst_spring_forward():
     # Verify that a daily schedule still runs once per day during the spring DST transition
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -594,10 +586,9 @@ def test_daily_dst_spring_forward(external_repo_context):
             assert len(ticks) == 3
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_daily_dst_fall_back(external_repo_context):
+def test_daily_dst_fall_back():
     # Verify that a daily schedule still runs once per day during the fall DST transition
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -677,11 +668,10 @@ def test_daily_dst_fall_back(external_repo_context):
             assert len(ticks) == 3
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_execute_during_dst_transition_spring_forward(external_repo_context):
+def test_execute_during_dst_transition_spring_forward():
     # Verify that a daily schedule that is supposed to execute at a time that is skipped
     # by the DST transition does not execute for that day
-    with instance_with_schedules(external_repo_context) as (
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,
@@ -770,9 +760,8 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
             assert len(ticks) == 3
 
 
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_execute_during_dst_transition_fall_back(external_repo_context):
-    with instance_with_schedules(external_repo_context) as (
+def test_execute_during_dst_transition_fall_back():
+    with instance_with_schedules() as (
         instance,
         workspace,
         external_repo,

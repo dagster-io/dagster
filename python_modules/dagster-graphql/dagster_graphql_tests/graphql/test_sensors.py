@@ -266,7 +266,7 @@ def test_sensor_next_ticks(graphql_context):
     assert not next_tick
 
     # test default sensor with last tick
-    _create_tick(graphql_context.instance)
+    _create_tick(graphql_context)
 
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
@@ -278,10 +278,14 @@ def test_sensor_next_ticks(graphql_context):
     assert next_tick
 
 
-def _create_tick(instance):
-    with create_test_daemon_workspace() as workspace:
+def _create_tick(graphql_context):
+    with create_test_daemon_workspace(
+        graphql_context.process_context.workspace_load_target
+    ) as workspace:
         list(
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"), workspace)
+            execute_sensor_iteration(
+                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+            )
         )
 
 
@@ -312,15 +316,15 @@ def test_sensor_tick_range(graphql_context):
     now = pendulum.now("US/Central")
     one = now.subtract(days=2).subtract(hours=1)
     with pendulum.test(one):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     two = now.subtract(days=1).subtract(hours=1)
     with pendulum.test(two):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     three = now.subtract(hours=1)
     with pendulum.test(three):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     result = execute_dagster_graphql(
         graphql_context,

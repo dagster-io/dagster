@@ -12,7 +12,6 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 
 
 @pipeline
@@ -96,40 +95,29 @@ def test_process_server_registry():
     with ProcessGrpcServerRegistry(
         reload_interval=5, heartbeat_ttl=10, startup_timeout=5
     ) as registry:
-        with DynamicWorkspace(registry) as workspace:
-            endpoint_one = registry.get_grpc_endpoint(origin)
-            location_one = workspace.get_location(origin)
+        endpoint_one = registry.get_grpc_endpoint(origin)
+        endpoint_two = registry.get_grpc_endpoint(origin)
 
-            endpoint_two = registry.get_grpc_endpoint(origin)
-            location_two = workspace.get_location(origin)
+        assert endpoint_two == endpoint_one
 
-            assert endpoint_two == endpoint_one
-            assert location_two == location_one
+        assert _can_connect(origin, endpoint_one)
+        assert _can_connect(origin, endpoint_two)
 
-            assert _can_connect(origin, endpoint_one)
-            assert _can_connect(origin, endpoint_two)
+        start_time = time.time()
+        while True:
 
-            start_time = time.time()
-            while True:
+            # Registry should return a new server endpoint after 5 seconds
+            endpoint_three = registry.get_grpc_endpoint(origin)
 
-                # Registry should return a new server endpoint after 5 seconds
-                endpoint_three = registry.get_grpc_endpoint(origin)
+            if endpoint_three.server_id != endpoint_one.server_id:
+                break
 
-                if endpoint_three.server_id != endpoint_one.server_id:
+            if time.time() - start_time > 15:
+                raise Exception("Server ID never changed")
 
-                    # Location manager now produces a new location as well
-                    location_three = workspace.get_location(origin)
-                    assert location_three != location_one
+            time.sleep(1)
 
-                    break
-
-                if time.time() - start_time > 15:
-                    raise Exception("Server ID never changed")
-
-                time.sleep(1)
-
-            assert _can_connect(origin, endpoint_three)
-            # Leave workspace context, all heartbeats stop
+        assert _can_connect(origin, endpoint_three)
 
         start_time = time.time()
         while True:
@@ -230,25 +218,18 @@ def test_custom_loadable_target_origin():
     origin = RegisteredRepositoryLocationOrigin("test_location")
 
     with TestMockProcessGrpcServerRegistry() as registry:
-        with DynamicWorkspace(registry) as workspace:
-            registry.mocked_loadable_target_origin = first_loadable_target_origin
+        registry.mocked_loadable_target_origin = first_loadable_target_origin
 
-            endpoint_one = registry.get_grpc_endpoint(origin)
-            assert registry.get_grpc_endpoint(origin).server_id == endpoint_one.server_id
+        endpoint_one = registry.get_grpc_endpoint(origin)
+        assert registry.get_grpc_endpoint(origin).server_id == endpoint_one.server_id
 
-            location_one = workspace.get_location(origin)
-            assert location_one.has_repository("repo")
+        # Swap in a new LoadableTargetOrigin - the same origin new returns a different
+        # endpoint
+        registry.mocked_loadable_target_origin = second_loadable_target_origin
 
-            # Swap in a new LoadableTargetOrigin - the same origin new returns a different
-            # endpoint and repository
-            registry.mocked_loadable_target_origin = second_loadable_target_origin
+        endpoint_two = registry.get_grpc_endpoint(origin)
 
-            endpoint_two = registry.get_grpc_endpoint(origin)
-
-            assert endpoint_two.server_id != endpoint_one.server_id
-            location_two = workspace.get_location(origin)
-
-            assert location_two.has_repository("other_repo")
+        assert endpoint_two.server_id != endpoint_one.server_id
 
     registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_one)
