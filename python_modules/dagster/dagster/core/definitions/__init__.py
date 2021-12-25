@@ -115,6 +115,7 @@ from .schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     ScheduleExecutionContext,
+    ScheduleStatus,
 )
 from .sensor_definition import (
     AssetSensorDefinition,

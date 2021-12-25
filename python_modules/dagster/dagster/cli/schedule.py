@@ -10,6 +10,7 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.definitions.schedule_definition import ScheduleStatus
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import InstigatorStatus
@@ -194,24 +195,24 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 stored_schedule_state = stored_schedules_by_origin_id.get(
                     external_schedule.get_external_origin_id()
                 )
-                if running_filter and (
-                    not stored_schedule_state
-                    or stored_schedule_state.status == InstigatorStatus.STOPPED
-                ):
+
+                is_running = external_schedule.status == ScheduleStatus.RUNNING or (
+                    not external_schedule.status
+                    and stored_schedule_state
+                    and stored_schedule_state.status == InstigatorStatus.RUNNING
+                )
+
+                if running_filter and not is_running:
                     continue
-                if stopped_filter and stored_schedule_state and InstigatorStatus.RUNNING:
+                if stopped_filter and is_running:
                     continue
 
                 if name_filter:
                     print_fn(external_schedule.name)
                     continue
 
-                status = (
-                    stored_schedule_state.status
-                    if stored_schedule_state
-                    else InstigatorStatus.STOPPED
-                )
-                schedule_title = f"Schedule: {external_schedule.name} [{status.value}]"
+                status = "RUNNING" if is_running else "STOPPED"
+                schedule_title = f"Schedule: {external_schedule.name} [{status}]"
                 if not first:
                     print_fn("*" * len(schedule_title))
 

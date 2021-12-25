@@ -1,6 +1,7 @@
 import copy
 from contextlib import ExitStack
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -31,6 +32,12 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from .decorators.schedule import DecoratedScheduleFunction
+
+
+@whitelist_for_serdes
+class ScheduleStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
 
 
 class ScheduleEvaluationContext:
@@ -129,6 +136,7 @@ class ScheduleExecutionData(NamedTuple):
     skip_message: Optional[str]
 
 
+# NEed to get all callsites of ScheduleDefinition
 class ScheduleDefinition:
     """Define a schedule that targets a job
 
@@ -171,6 +179,9 @@ class ScheduleDefinition:
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
 
     def __init__(
@@ -192,6 +203,7 @@ class ScheduleDefinition:
         ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        status: Optional[ScheduleStatus] = None,
     ):
         from .decorators.schedule import DecoratedScheduleFunction
 
@@ -316,6 +328,8 @@ class ScheduleDefinition:
                         schedule_name=name, timezone=self._execution_timezone
                     )
                 )
+
+        self._status = check.opt_inst_param(status, "status", ScheduleStatus)
 
     def __call__(self, *args, **kwargs):
         from .decorators.schedule import DecoratedScheduleFunction
@@ -462,6 +476,10 @@ class ScheduleDefinition:
             return self._target.load()
 
         check.failed("Target is not loadable")
+
+    @property
+    def status(self) -> Optional[ScheduleStatus]:
+        return self._status
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:

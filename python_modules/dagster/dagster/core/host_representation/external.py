@@ -5,6 +5,7 @@ from typing import Optional, Sequence
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.definitions.schedule_definition import ScheduleStatus
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -499,6 +500,10 @@ class ExternalSchedule:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
+    @property
+    def status(self) -> Optional[ScheduleStatus]:
+        return self._external_schedule_data.status
+
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
@@ -512,7 +517,11 @@ class ExternalSchedule:
         return InstigatorState(
             self.get_external_origin(),
             InstigatorType.SCHEDULE,
-            InstigatorStatus.STOPPED,
+            (
+                InstigatorStatus.AUTOMATICALLY_RUNNING
+                if self.status == ScheduleStatus.RUNNING
+                else InstigatorStatus.STOPPED
+            ),
             ScheduleInstigatorData(
                 self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
             ),

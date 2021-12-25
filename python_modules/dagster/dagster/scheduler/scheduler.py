@@ -5,13 +5,15 @@ import time
 
 import pendulum
 from dagster import check
+from dagster.core.definitions.schedule_definition import ScheduleStatus
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import PipelineSelector, RepositoryLocation
+from dagster.core.host_representation import ExternalSchedule, PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorType,
+    ScheduleInstigatorData,
     TickData,
     TickStatus,
 )
@@ -99,11 +101,85 @@ def launch_scheduled_runs(
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace, "workspace", IWorkspace)
 
-    schedules = [
-        s
-        for s in instance.all_stored_job_state(job_type=InstigatorType.SCHEDULE)
-        if s.status == InstigatorStatus.RUNNING
-    ]
+    workspace_snapshot = {
+        location_entry.origin: location_entry
+        for location_entry in workspace.get_workspace_snapshot().values()
+    }
+
+    all_schedule_states = {
+        schedule_state.origin.get_id(): schedule_state
+        for schedule_state in instance.all_stored_job_state(job_type=InstigatorType.SCHEDULE)
+    }
+
+    schedules = {}
+    for location_entry in workspace_snapshot.values():
+        repo_location = location_entry.repository_location
+        if repo_location:
+            for repo in repo_location.get_repositories().values():
+                for schedule in repo.get_external_schedules():
+                    origin_id = schedule.get_external_origin().get_id()
+                    if schedule.status == ScheduleStatus.RUNNING or (
+                        not schedule.status
+                        and origin_id in all_schedule_states
+                        and all_schedule_states[origin_id].status == InstigatorStatus.RUNNING
+                    ):
+                        schedules[origin_id] = schedule
+        elif location_entry.load_error and log_verbose_checks:
+            logger.warning(
+                f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
+            )
+
+    # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
+    # and can no longer be found in the workspace (so that if they are later added
+    # back again, their timestamps will start at the correct place)
+    schedule_state_ids_to_delete = {
+        origin_id
+        for origin_id, schedule_state in all_schedule_states.items()
+        if origin_id not in schedules
+        and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+    }
+    for origin_id in schedule_state_ids_to_delete:
+        instance.schedule_storage.delete_job_state(origin_id)
+
+    if log_verbose_checks:
+        unloadable_schedule_states = {
+            origin_id: schedule_state
+            for origin_id, schedule_state in all_schedule_states.items()
+            if origin_id not in schedules and schedule_state.status == InstigatorStatus.RUNNING
+        }
+
+        for schedule_state in unloadable_schedule_states.values():
+            schedule_name = schedule_state.origin.job_name
+            repo_location_origin = (
+                schedule_state.origin.external_repository_origin.repository_location_origin
+            )
+
+            repo_location_name = repo_location_origin.location_name
+            repo_name = schedule_state.origin.external_repository_origin.repository_name
+            if (
+                repo_location_origin not in workspace_snapshot
+                or not workspace_snapshot[repo_location_origin].repository_location
+            ):
+                logger.warning(
+                    f"Schedule {schedule_state.job_name} was started from a location "
+                    f"{repo_location_name} that can no longer be found in the workspace, or has "
+                    "metadata that has changed since the schedule was started. You can turn off "
+                    "this schedule in the Dagit UI from the Status tab."
+                )
+            elif not workspace_snapshot[repo_location_origin].repository_location.has_repository(
+                repo_name
+            ):
+                logger.warning(
+                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    + f"run schedule {schedule_name}. If this repository no longer exists, you can "
+                    + "turn off the schedule in the Dagit UI from the Status tab.",
+                )
+            else:
+                logger.warning(
+                    f"Could not find schedule {schedule_name} in repository {repo_name}. If this "
+                    "schedule no longer exists, you can turn it off in the Dagit UI from the "
+                    "Status tab.",
+                )
 
     if not schedules:
         if log_verbose_checks:
@@ -114,20 +190,51 @@ def launch_scheduled_runs(
         return
 
     if log_verbose_checks:
-        schedule_names = ", ".join([schedule.job_name for schedule in schedules])
+        schedule_names = ", ".join([schedule.name for schedule in schedules.values()])
         logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
-    for schedule_state in schedules:
+    for external_schedule in schedules.values():
         error_info = None
         try:
-            origin = schedule_state.origin.external_repository_origin.repository_location_origin
-            repo_location = workspace.get_location(origin)
+            schedule_state = all_schedule_states.get(
+                external_schedule.get_external_origin().get_id()
+            )
+            if not schedule_state:
+                assert external_schedule.status == ScheduleStatus.RUNNING
+                schedule_state = InstigatorState(
+                    external_schedule.get_external_origin(),
+                    InstigatorType.SCHEDULE,
+                    InstigatorStatus.AUTOMATICALLY_RUNNING,
+                    ScheduleInstigatorData(
+                        external_schedule.cron_schedule,
+                        end_datetime_utc.timestamp(),
+                        scheduler="DagsterDaemonScheduler",
+                    ),
+                )
+                instance.add_job_state(schedule_state)
+            elif (
+                schedule_state
+                and external_schedule.status == ScheduleStatus.RUNNING
+                and schedule_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING
+            ):
+                # A schedule that was previously manually controlled has now set its status in code
+                schedule_state = schedule_state.with_status(
+                    InstigatorStatus.AUTOMATICALLY_RUNNING
+                ).with_data(
+                    ScheduleInstigatorData(
+                        external_schedule.cron_schedule,
+                        end_datetime_utc.timestamp(),
+                        scheduler="DagsterDaemonScheduler",
+                    )
+                )
+                instance.update_job_state(schedule_state)
+
             yield from launch_scheduled_runs_for_schedule(
                 instance,
                 logger,
+                external_schedule,
                 schedule_state,
                 workspace,
-                repo_location,
                 end_datetime_utc,
                 max_catchup_runs,
                 max_tick_retries,
@@ -137,7 +244,7 @@ def launch_scheduled_runs(
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
-                f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
+                f"Scheduler caught an error for schedule {external_schedule.name} : {error_info.to_string()}"
             )
         yield error_info
 
@@ -145,9 +252,9 @@ def launch_scheduled_runs(
 def launch_scheduled_runs_for_schedule(
     instance,
     logger,
-    schedule_state,
+    external_schedule: ExternalSchedule,
+    schedule_state: InstigatorState,
     workspace,
-    repo_location,
     end_datetime_utc,
     max_catchup_runs,
     max_tick_retries,
@@ -155,46 +262,37 @@ def launch_scheduled_runs_for_schedule(
     log_verbose_checks=True,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(schedule_state, "schedule_state", InstigatorState)
+    check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
 
-    latest_tick = instance.get_latest_job_tick(schedule_state.job_origin_id)
+    job_origin_id = external_schedule.get_external_origin_id()
+    latest_tick = instance.get_latest_job_tick(job_origin_id)
 
-    start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
+    start_timestamp_utc = (
+        schedule_state.job_specific_data.start_timestamp if schedule_state else None
+    )
 
     if latest_tick:
-        if latest_tick.status == TickStatus.STARTED:
-            # Scheduler was interrupted while performing this tick, re-do it
-            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
-        elif (
+        if latest_tick.status == TickStatus.STARTED or (
             latest_tick.status == TickStatus.FAILURE
             and latest_tick.failure_count <= max_tick_retries
         ):
-            # Tick failed and hasn't reached its retry limit, retry it
-            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
+            # Scheduler was interrupted while performing this tick, re-do it
+            start_timestamp_utc = (
+                max(start_timestamp_utc, latest_tick.timestamp)
+                if start_timestamp_utc
+                else latest_tick.timestamp
+            )
         else:
-            start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp + 1)
+            start_timestamp_utc = (
+                max(start_timestamp_utc, latest_tick.timestamp + 1)
+                if start_timestamp_utc
+                else latest_tick.timestamp + 1
+            )
+    else:
+        start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
 
-    schedule_name = schedule_state.job_name
-    repo_name = schedule_state.origin.external_repository_origin.repository_name
-
-    if not repo_location.has_repository(repo_name):
-        raise DagsterSchedulerError(
-            f"Could not find repository {repo_name} in location {repo_location.name} to "
-            + f"run schedule {schedule_name}. If this repository no longer exists, you can "
-            + "turn off the schedule in the Dagit UI.",
-        )
-
-    external_repo = repo_location.get_repository(repo_name)
-
-    if not external_repo.has_external_schedule(schedule_name):
-        raise DagsterSchedulerError(
-            f"Could not find schedule {schedule_name} in repository {repo_name}. If this "
-            "schedule no longer exists, you can turn it off in the Dagit UI.",
-        )
-
-    external_schedule = external_repo.get_external_schedule(schedule_name)
+    schedule_name = external_schedule.name
 
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
@@ -262,8 +360,6 @@ def launch_scheduled_runs_for_schedule(
                     instance,
                     logger,
                     workspace,
-                    repo_location,
-                    external_repo,
                     external_schedule,
                     schedule_time,
                     tick_context,
@@ -314,8 +410,6 @@ def _schedule_runs_at_time(
     instance,
     logger,
     workspace,
-    repo_location,
-    external_repo,
     external_schedule,
     schedule_time,
     tick_context,
@@ -323,18 +417,25 @@ def _schedule_runs_at_time(
 ):
     schedule_name = external_schedule.name
 
+    schedule_origin = external_schedule.get_external_origin()
+    repository_handle = external_schedule.handle.repository_handle
+
     pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
-        repository_name=external_repo.name,
+        location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
+        repository_name=schedule_origin.external_repository_origin.repository_name,
         pipeline_name=external_schedule.pipeline_name,
         solid_selection=external_schedule.solid_selection,
+    )
+
+    repo_location = workspace.get_location(
+        schedule_origin.external_repository_origin.repository_location_origin
     )
 
     external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
         instance=instance,
-        repository_handle=external_repo.handle,
+        repository_handle=repository_handle,
         schedule_name=external_schedule.name,
         scheduled_execution_time=schedule_time,
     )

@@ -26,7 +26,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
-from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext, ScheduleStatus
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -481,6 +481,7 @@ class PartitionSetDefinition(Generic[T]):
         description=None,
         decorated_fn=None,
         job=None,
+        status=None,
     ):
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
@@ -500,6 +501,9 @@ class PartitionSetDefinition(Generic[T]):
                 Supported strings for timezones are the ones provided by the
                 `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
             description (Optional[str]): A human-readable description of the schedule.
+            status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+                the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+                it cannot be changed in Dagit.
 
         Returns:
             PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
@@ -513,6 +517,7 @@ class PartitionSetDefinition(Generic[T]):
         check.callable_param(partition_selector, "partition_selector")
         check.opt_str_param(execution_timezone, "execution_timezone")
         check.opt_str_param(description, "description")
+        check.opt_inst_param(status, "status", ScheduleStatus)
 
         def _execution_fn(context):
             check.inst_param(context, "context", ScheduleEvaluationContext)
@@ -597,6 +602,7 @@ class PartitionSetDefinition(Generic[T]):
             description=description,
             decorated_fn=decorated_fn,
             job=job,
+            status=status,
         )
 
 
@@ -620,6 +626,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         description=None,
         decorated_fn=None,
         job=None,
+        status=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -635,6 +642,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             execution_fn=execution_fn,
             description=description,
             job=job,
+            status=status,
         )
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition

@@ -12,7 +12,7 @@ from .partition import (
     ScheduleType,
 )
 from .run_request import SkipReason
-from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext, ScheduleStatus
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 
@@ -24,6 +24,7 @@ def build_schedule_from_partitioned_job(
     hour_of_day: Optional[int] = None,
     day_of_week: Optional[int] = None,
     day_of_month: Optional[int] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> ScheduleDefinition:
     """
     Creates a schedule from a time window-partitioned job.
@@ -83,6 +84,7 @@ def build_schedule_from_partitioned_job(
         execution_timezone=partitions_def.timezone,
         description=description,
         job=job,
+        status=status,
     )
 
     return schedule_def

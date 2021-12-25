@@ -1645,42 +1645,14 @@ records = instance.get_event_records(
     def stop_schedule_and_delete_from_storage(self, schedule_origin_id):
         return self._scheduler.stop_schedule_and_delete_from_storage(self, schedule_origin_id)
 
-    def running_schedule_count(self, schedule_origin_id):
-        if self._scheduler:
-            return self._scheduler.running_schedule_count(self, schedule_origin_id)
-        return 0
-
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo
         from dagster.core.definitions.run_request import InstigatorType
-        from dagster.core.scheduler.instigation import InstigatorStatus
 
         errors = []
 
         schedules = []
         for schedule_state in self.all_stored_job_state(job_type=InstigatorType.SCHEDULE):
-            if (
-                schedule_state.status == InstigatorStatus.RUNNING
-                and not self.running_schedule_count(schedule_state.job_origin_id)
-            ):
-                errors.append(
-                    "Schedule {schedule_name} is set to be running, but the scheduler is not "
-                    "running the schedule.".format(schedule_name=schedule_state.job_name)
-                )
-            elif schedule_state.status == InstigatorStatus.STOPPED and self.running_schedule_count(
-                schedule_state.job_origin_id
-            ):
-                errors.append(
-                    "Schedule {schedule_name} is set to be stopped, but the scheduler is still running "
-                    "the schedule.".format(schedule_name=schedule_state.job_name)
-                )
-
-            if self.running_schedule_count(schedule_state.job_origin_id) > 1:
-                errors.append(
-                    "Duplicate jobs found: More than one job for schedule {schedule_name} are "
-                    "running on the scheduler.".format(schedule_name=schedule_state.job_name)
-                )
-
             schedule_info = {
                 schedule_state.job_name: {
                     "status": schedule_state.status.value,

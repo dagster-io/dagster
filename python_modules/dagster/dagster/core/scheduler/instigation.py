@@ -15,7 +15,8 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class InstigatorStatus(Enum):
-    RUNNING = "RUNNING"
+    RUNNING = "RUNNING"  # Running after being manually turned on in Dagit
+    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"  # Running due to setting the status in code
     STOPPED = "STOPPED"
 
 

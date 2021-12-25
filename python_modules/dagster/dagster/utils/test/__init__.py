@@ -411,9 +411,6 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def stop_schedule(self, instance, schedule_origin_id):
         pass
 
-    def running_schedule_count(self, instance, schedule_origin_id):
-        return 0
-
     def get_logs_path(self, _instance, schedule_origin_id):
         check.str_param(schedule_origin_id, "schedule_origin_id")
         return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")

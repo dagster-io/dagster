@@ -42,7 +42,7 @@ from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
 from ..pipeline_definition import PipelineDefinition
 from ..run_request import RunRequest, SkipReason
-from ..schedule_definition import ScheduleDefinition, is_context_provided
+from ..schedule_definition import ScheduleDefinition, ScheduleStatus, is_context_provided
 
 if TYPE_CHECKING:
     from dagster import ScheduleEvaluationContext, Partition
@@ -76,6 +76,7 @@ def schedule(
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
     job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> Callable[
     [
         Callable[
@@ -128,6 +129,9 @@ def schedule(
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
 
     def inner(
@@ -205,6 +209,7 @@ def schedule(
             description=description,
             execution_fn=evaluation_fn,
             job=job,
+            status=status,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
@@ -229,6 +234,7 @@ def monthly_schedule(
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs monthly.
 
@@ -270,6 +276,9 @@ def monthly_schedule(
             that executes during month N will fill in the partition for month N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -285,6 +294,7 @@ def monthly_schedule(
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_months_offset, "partition_months_offset")
     check.opt_str_param(description, "description")
+    check.opt_inst_param(status, "status", ScheduleStatus)
 
     if (
         start_date.day != 1
@@ -362,6 +372,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            status=status,
         )
         update_wrapper(schedule_def, wrapped=fn)
 
@@ -385,6 +396,7 @@ def weekly_schedule(
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -426,6 +438,9 @@ def weekly_schedule(
             that executes during week N will fill in the partition for week N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -441,6 +456,7 @@ def weekly_schedule(
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_weeks_offset, "partition_weeks_offset")
     check.opt_str_param(description, "description")
+    check.opt_inst_param(status, "status", ScheduleStatus)
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -513,6 +529,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            status=status,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
@@ -535,6 +552,7 @@ def daily_schedule(
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -574,6 +592,9 @@ def daily_schedule(
             that executes during day N will fill in the partition for day N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
     check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -588,6 +609,7 @@ def daily_schedule(
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_days_offset, "partition_days_offset")
     check.opt_str_param(description, "description")
+    check.opt_inst_param(status, "status", ScheduleStatus)
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -652,6 +674,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            status=status,
         )
         update_wrapper(schedule_def, wrapped=fn)
         return schedule_def
@@ -673,6 +696,7 @@ def hourly_schedule(
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    status: Optional[ScheduleStatus] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs hourly.
 
@@ -714,6 +738,9 @@ def hourly_schedule(
             that executes during hour N will fill in the partition for hour N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        status (Optional[ScheduleStatus]): Whether the schedule is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -728,6 +755,7 @@ def hourly_schedule(
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_hours_offset, "partition_hours_offset")
     check.opt_str_param(description, "description")
+    check.opt_inst_param(status, "status", ScheduleStatus)
 
     if start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -806,6 +834,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            status=status,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

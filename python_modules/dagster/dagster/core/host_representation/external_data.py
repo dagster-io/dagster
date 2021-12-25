@@ -24,11 +24,12 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster.core.definitions.schedule_definition import ScheduleStatus
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -178,11 +179,17 @@ class ExternalPresetData(
         )
 
 
-@whitelist_for_serdes
+class ExternalScheduleDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"status"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=ExternalScheduleDataSerializer)
 class ExternalScheduleData(
     namedtuple(
         "_ExternalScheduleData",
-        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description",
+        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description status",
     )
 ):
     def __new__(
@@ -196,6 +203,7 @@ class ExternalScheduleData(
         partition_set_name,
         execution_timezone,
         description=None,
+        status=None,
     ):
         return super(ExternalScheduleData, cls).__new__(
             cls,
@@ -208,6 +216,7 @@ class ExternalScheduleData(
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
             description=check.opt_str_param(description, "description"),
+            status=check.opt_inst_param(status, "status", ScheduleStatus),
         )
 
 
@@ -690,6 +699,7 @@ def external_schedule_data_from_def(schedule_def):
         else None,
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
+        status=schedule_def.status,
     )
 
 

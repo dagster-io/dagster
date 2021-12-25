@@ -45,7 +45,7 @@ class GrapheneSchedule(graphene.ObjectType):
             self._external_schedule.get_external_origin_id()
         )
 
-        if not self._schedule_state:
+        if self._external_schedule.status or not self._schedule_state:
             # Also include a ScheduleState for a stopped schedule that may not
             # have a stored database row yet
             self._schedule_state = self._external_schedule.get_default_instigation_state(

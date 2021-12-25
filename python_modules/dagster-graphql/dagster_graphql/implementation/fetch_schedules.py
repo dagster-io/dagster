@@ -105,7 +105,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
 def get_schedule_next_tick(graphene_info, schedule_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
-    if schedule_state.status != InstigatorStatus.RUNNING:
+    if schedule_state.status == InstigatorStatus.STOPPED:
         return None
 
     repository_origin = schedule_state.origin.external_repository_origin
@@ -120,6 +120,10 @@ def get_schedule_next_tick(graphene_info, schedule_state):
         return None
 
     repository = repository_location.get_repository(repository_origin.repository_name)
+
+    if not repository.has_external_schedule(schedule_state.name):
+        return None
+
     external_schedule = repository.get_external_schedule(schedule_state.name)
     time_iter = external_schedule.execution_time_iterator(
         get_timestamp_from_utc_datetime(get_current_datetime_in_utc())

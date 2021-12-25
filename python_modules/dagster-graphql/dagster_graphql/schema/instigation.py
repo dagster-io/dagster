@@ -42,6 +42,18 @@ class GrapheneInstigationStatus(graphene.Enum):
     class Meta:
         name = "InstigationStatus"
 
+    @staticmethod
+    def create_from_python_enum(instigator_status: InstigatorStatus):
+        if (
+            instigator_status == InstigatorStatus.RUNNING
+            or instigator_status == InstigatorStatus.AUTOMATICALLY_RUNNING
+        ):
+            return GrapheneInstigationStatus.RUNNING
+        elif instigator_status == InstigatorStatus.STOPPED:
+            return GrapheneInstigationStatus.STOPPED
+        else:
+            raise Exception(f"Unexpected instigator status {instigator_status}")
+
 
 class GrapheneInstigationTickStatus(graphene.Enum):
     STARTED = "STARTED"
@@ -149,7 +161,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
         )
 
     def resolve_evaluationResult(self, graphene_info):
-        if self._job_state.status != InstigatorStatus.RUNNING:
+        if self._job_state.status == InstigatorStatus.STOPPED:
             return None
 
         if self._job_state.job_type != InstigatorType.SCHEDULE:
@@ -168,6 +180,10 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
             return None
 
         repository = repository_location.get_repository(repository_origin.repository_name)
+
+        if not repository.has_external_schedule(self._job_state.name):
+            return None
+
         external_schedule = repository.get_external_schedule(self._job_state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
@@ -280,7 +296,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             id=job_state.job_origin_id,
             name=job_state.name,
             instigationType=job_state.job_type,
-            status=job_state.status,
+            status=GrapheneInstigationStatus.create_from_python_enum(job_state.status),
         )
 
     def resolve_repositoryOrigin(self, _graphene_info):
@@ -348,13 +364,15 @@ class GrapheneInstigationState(graphene.ObjectType):
         else:
             return get_schedule_next_tick(graphene_info, self._job_state)
 
-    def resolve_runningCount(self, graphene_info):
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
-        else:
-            return graphene_info.context.instance.running_schedule_count(
-                self._job_state.job_origin_id
+    def resolve_runningCount(self, _graphene_info):
+        return (
+            1
+            if (
+                self._job_state.status == InstigatorStatus.RUNNING
+                or self._job_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             )
+            else 0
+        )
 
 
 class GrapheneInstigationStates(graphene.ObjectType):
