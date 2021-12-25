@@ -15,7 +15,12 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class InstigatorStatus(Enum):
+    # User has taken some action to start the run instigator
     RUNNING = "RUNNING"
+
+    # The run instigator is running, but only because of its default setting
+    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"
+
     STOPPED = "STOPPED"
 
 
@@ -90,6 +95,10 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
             check.inst_param(status, "status", InstigatorStatus),
             check_job_data(job_type, job_specific_data),
         )
+
+    @property
+    def is_running(self):
+        return self.status != InstigatorStatus.STOPPED
 
     @property
     def name(self):

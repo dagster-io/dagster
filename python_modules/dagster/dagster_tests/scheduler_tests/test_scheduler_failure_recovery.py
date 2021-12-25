@@ -59,7 +59,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -119,7 +119,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -201,7 +201,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -277,7 +277,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
