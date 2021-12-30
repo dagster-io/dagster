@@ -1,4 +1,5 @@
 import sys
+import time
 from abc import abstractclassmethod, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
@@ -25,11 +26,9 @@ TELEMETRY_LOGGING_INTERVAL = 3600  # Interval (in seconds) at which to log that 
 
 
 class DagsterDaemon(AbstractContextManager):
-    def __init__(self, interval_seconds):
+    def __init__(self):
         self._logger = get_default_daemon_logger(type(self).__name__)
-        self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
 
-        self._last_iteration_time = None
         self._last_heartbeat_time = None
         self._last_log_time = None
         self._errors = deque(
@@ -47,7 +46,7 @@ class DagsterDaemon(AbstractContextManager):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
 
-    def run_loop(
+    def run_daemon_loop(
         self,
         instance_ref,
         daemon_uuid,
@@ -62,89 +61,46 @@ class DagsterDaemon(AbstractContextManager):
             with gen_workspace(instance) as workspace:
                 check.inst_param(workspace, "workspace", IWorkspace)
 
-                while not daemon_shutdown_event.is_set() and (
-                    not until or pendulum.now("UTC") < until
-                ):
-                    curr_time = pendulum.now("UTC")
-                    if (
-                        not self._last_iteration_time
-                        or (curr_time - self._last_iteration_time).total_seconds()
-                        >= self.interval_seconds
-                    ):
-                        self._last_iteration_time = curr_time
-                        self._run_iteration(
-                            instance,
-                            daemon_uuid,
-                            daemon_shutdown_event,
-                            workspace,
-                            heartbeat_interval_seconds,
-                            error_interval_seconds,
-                            until,
-                        )
+                daemon_generator = self.core_loop(instance, workspace)
 
-                    try:
-                        self._check_add_heartbeat(
-                            instance,
-                            daemon_uuid,
-                            heartbeat_interval_seconds,
-                            error_interval_seconds,
-                        )
-                    except Exception:
-                        self._logger.error(
-                            "Failed to add heartbeat: \n{}".format(
-                                serializable_error_info_from_exc_info(sys.exc_info())
-                            )
-                        )
-                    daemon_shutdown_event.wait(0.5)
-
-    def _run_iteration(
-        self,
-        instance,
-        daemon_uuid,
-        daemon_shutdown_event,
-        workspace,
-        heartbeat_interval_seconds,
-        error_interval_seconds,
-        until=None,
-    ):
-        # Clear out the workspace locations after each iteration
-        workspace.cleanup()
-
-        daemon_generator = self.run_iteration(instance, workspace)
-
-        try:
-            while (not daemon_shutdown_event.is_set()) and (
-                not until or pendulum.now("UTC") < until
-            ):
                 try:
-                    result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
-                    if result:
-                        self._errors.appendleft((result, pendulum.now("UTC")))
-                except StopIteration:
-                    break
-                except Exception:
-                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                    self._logger.error("Caught error:\n{}".format(error_info))
-                    self._errors.appendleft((error_info, pendulum.now("UTC")))
-                    break
-                finally:
-                    try:
-                        self._check_add_heartbeat(
-                            instance,
-                            daemon_uuid,
-                            heartbeat_interval_seconds,
-                            error_interval_seconds,
-                        )
-                    except Exception:
-                        self._logger.error(
-                            "Failed to add heartbeat: \n{}".format(
-                                serializable_error_info_from_exc_info(sys.exc_info())
+                    while (not daemon_shutdown_event.is_set()) and (
+                        not until or pendulum.now("UTC") < until
+                    ):
+                        try:
+                            result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
+                            if result:
+                                self._errors.appendleft((result, pendulum.now("UTC")))
+                        except StopIteration:
+                            self._logger.error(
+                                "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
                             )
-                        )
-
-        finally:
-            # cleanup the generator if it was stopped part-way through
-            daemon_generator.close()
+                            break
+                        except Exception:
+                            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                            self._logger.error(
+                                "Caught error, daemon loop will restart:\n{}".format(error_info)
+                            )
+                            self._errors.appendleft((error_info, pendulum.now("UTC")))
+                            daemon_generator.close()
+                            daemon_generator = self.core_loop(instance, workspace)
+                        finally:
+                            try:
+                                self._check_add_heartbeat(
+                                    instance,
+                                    daemon_uuid,
+                                    heartbeat_interval_seconds,
+                                    error_interval_seconds,
+                                )
+                            except Exception:
+                                self._logger.error(
+                                    "Failed to add heartbeat: \n{}".format(
+                                        serializable_error_info_from_exc_info(sys.exc_info())
+                                    )
+                                )
+                finally:
+                    # cleanup the generator if it was stopped part-way through
+                    daemon_generator.close()
 
     def _check_add_heartbeat(
         self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
@@ -202,14 +158,39 @@ class DagsterDaemon(AbstractContextManager):
             self._last_log_time = curr_time
 
     @abstractmethod
-    def run_iteration(self, instance, workspace):
+    def core_loop(self, instance, workspace):
         """
-        Execute the daemon. In order to avoid blocking the controller thread for extended periods,
-        daemons can yield control during this method. Yields can be either NoneType or a
-        SerializableErrorInfo
+        Execute the daemon loop, which should be a generator function that never finishes.
+        Should periodically yield so that the controller can check for heartbeats. Yields can be either NoneType or a SerializableErrorInfo.
 
         returns: generator (SerializableErrorInfo).
         """
+
+
+class IntervalDaemon(DagsterDaemon):
+    def __init__(self, interval_seconds):
+        self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
+        super().__init__()
+
+    def core_loop(self, instance, workspace):
+        while True:
+            start_time = time.time()
+            # Clear out the workspace locations after each iteration
+            workspace.cleanup()
+            try:
+                yield from self.run_iteration(instance, workspace)
+            except Exception:
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                self._logger.error("Caught error:\n{}".format(error_info))
+                yield error_info
+            while time.time() - start_time < self.interval_seconds:
+                yield
+                time.sleep(0.5)
+            yield
+
+    @abstractmethod
+    def run_iteration(self, instance, workspace):
+        pass
 
 
 class SchedulerDaemon(DagsterDaemon):
@@ -217,7 +198,7 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def run_iteration(self, instance, workspace):
+    def core_loop(self, instance, workspace):
         yield from execute_scheduler_iteration_loop(
             instance,
             workspace,
@@ -232,11 +213,11 @@ class SensorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SENSOR"
 
-    def run_iteration(self, instance, workspace):
+    def core_loop(self, instance, workspace):
         yield from execute_sensor_iteration_loop(instance, workspace, self._logger)
 
 
-class BackfillDaemon(DagsterDaemon):
+class BackfillDaemon(IntervalDaemon):
     @classmethod
     def daemon_type(cls):
         return "BACKFILL"
@@ -245,7 +226,7 @@ class BackfillDaemon(DagsterDaemon):
         yield from execute_backfill_iteration(instance, workspace, self._logger)
 
 
-class MonitoringDaemon(DagsterDaemon):
+class MonitoringDaemon(IntervalDaemon):
     @classmethod
     def daemon_type(cls):
         return "MONITORING"
