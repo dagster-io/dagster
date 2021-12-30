@@ -105,12 +105,12 @@ def test_thread_die_daemon(monkeypatch):
 
         iteration_ran = {"ran": False}
 
-        def run_iteration_error(_, _instance, _workspace):
+        def run_loop_error(_, _instance, _workspace):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
             yield  # pylint: disable=unreachable
 
-        monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
+        monkeypatch.setattr(SensorDaemon, "run_loop", run_loop_error)
 
         heartbeat_interval_seconds = 1
 
@@ -178,21 +178,25 @@ def test_error_daemon(monkeypatch):
 
         error_count = {"count": 0}
 
-        def run_iteration_error(_, _instance, _workspace):
+        def run_loop_error(_, _instance, _workspace):
             if should_raise_errors:
+                time.sleep(0.5)
                 error_count["count"] = error_count["count"] + 1
                 raise DagsterInvariantViolationError("foobar:" + str(error_count["count"]))
-            yield
+
+            while True:
+                yield
+                time.sleep(0.5)
 
         def _get_error_number(error):
             error_message = error.message.strip()
             return int(error_message.split("foobar:")[1])
 
-        monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
+        monkeypatch.setattr(SensorDaemon, "run_loop", run_loop_error)
 
         heartbeat_interval_seconds = 1
 
-        gen_daemons = lambda instance: [SensorDaemon(interval_seconds=1)]
+        gen_daemons = lambda instance: [SensorDaemon()]
 
         init_time = pendulum.now("UTC")
         with daemon_controller_from_instance(
@@ -303,12 +307,16 @@ def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster.daemon.daemon import SensorDaemon
 
-        def run_iteration_error(_, _instance, _workspace):
+        def run_loop_error(_, _instance, _workspace):
             # ?message stack cls_name cause"
             yield SerializableErrorInfo("foobar", None, None, None)
             yield SerializableErrorInfo("bizbuz", None, None, None)
 
-        monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
+            while True:
+                yield
+                time.sleep(0.5)
+
+        monkeypatch.setattr(SensorDaemon, "run_loop", run_loop_error)
 
         init_time = pendulum.now("UTC")
 

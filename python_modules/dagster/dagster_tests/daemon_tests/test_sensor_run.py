@@ -26,11 +26,7 @@ from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster.core.definitions.sensor_definition import (
-    DEFAULT_SENSOR_DAEMON_INTERVAL,
-    RunRequest,
-    SkipReason,
-)
+from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
@@ -986,9 +982,9 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
                     InstigatorStatus.RUNNING,
                 )
             )
-            sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
+            sensor_daemon = SensorDaemon()
             daemon_shutdown_event = threading.Event()
-            sensor_daemon.run_loop(
+            sensor_daemon.start_loop(
                 instance.get_ref(),
                 "my_uuid",
                 daemon_shutdown_event,
