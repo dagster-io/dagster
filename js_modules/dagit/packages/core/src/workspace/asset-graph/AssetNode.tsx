@@ -55,7 +55,7 @@ export const AssetNode: React.FC<{
               }}
               text={
                 <span>
-                  Refresh{' '}
+                  Rematerialize{' '}
                   <span style={{fontFamily: 'monospace', fontWeight: 600}}>
                     {displayNameForAssetKey(definition.assetKey)}
                   </span>

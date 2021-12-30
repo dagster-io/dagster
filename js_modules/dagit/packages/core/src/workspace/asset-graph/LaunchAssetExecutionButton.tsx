@@ -16,7 +16,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     <LaunchRootExecutionButton
       pipelineName={assetJobName}
       disabled={false}
-      title={title || 'Refresh'}
+      title={title || 'Rematerialize'}
       getVariables={() => ({
         executionParams: {
           mode: 'default',

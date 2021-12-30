@@ -329,10 +329,10 @@ const AssetGraphExplorerWithData: React.FC<
             <LaunchAssetExecutionButton
               title={
                 selectedGraphNodes.length === 0
-                  ? 'Refresh All'
+                  ? 'Rematerialize All'
                   : selectedGraphNodes.length === 1
-                  ? 'Refresh Selected'
-                  : `Refresh Selected (${selectedGraphNodes.length})`
+                  ? 'Rematerialize Selected'
+                  : `Rematerialize Selected (${selectedGraphNodes.length})`
               }
               repoAddress={repoAddress}
               assetJobName={explorerPath.pipelineName}
