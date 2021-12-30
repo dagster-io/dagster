@@ -290,6 +290,11 @@ DataFrameToTypes = {
                 False,
                 "Options to be passed in to the compute method.",
             ),
+            "schema": (
+                Any,
+                False,
+                "Global schema to use for the output dataset.",
+            ),
         },
     },
     "hdf": {
