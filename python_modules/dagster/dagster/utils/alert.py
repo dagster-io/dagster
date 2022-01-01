@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     )
     from dagster.core.definitions.graph_definition import GraphDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
+    from dagster.core.definitions.sensor_definition import SensorStatus
 
 
 def _default_failure_email_body(context) -> str:
@@ -85,6 +86,7 @@ def make_email_on_pipeline_failure_sensor(
     pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
+    status: Optional["SensorStatus"] = None,
 ):
     """Create a pipeline failure sensor that sends email via the SMTP protocol.
 
@@ -107,7 +109,9 @@ def make_email_on_pipeline_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed pipeline run.
-
+        status (Optional[SensorStatus]): Whether the sensor is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
     Examples:
 
         .. code-block:: python
@@ -147,7 +151,7 @@ def make_email_on_pipeline_failure_sensor(
         pipeline_failure_sensor,
     )
 
-    @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection)
+    @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection, status=status)
     def email_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         email_body = email_body_fn(context)
@@ -188,6 +192,7 @@ def make_email_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     job_selection: Optional[List[Union["PipelineDefinition", "GraphDefinition"]]] = None,
+    status: Optional["SensorStatus"] = None,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
 
@@ -210,6 +215,9 @@ def make_email_on_run_failure_sensor(
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        status (Optional[SensorStatus]): Whether the sensor is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
 
     Examples:
 
@@ -250,7 +258,7 @@ def make_email_on_run_failure_sensor(
         run_failure_sensor,
     )
 
-    @run_failure_sensor(name=name, job_selection=job_selection)
+    @run_failure_sensor(name=name, job_selection=job_selection, status=status)
     def email_on_run_failure(context: RunFailureSensorContext):
 
         email_body = email_body_fn(context)

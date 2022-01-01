@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 
+from dagster import SensorStatus
 from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
@@ -28,6 +29,7 @@ def make_teams_on_pipeline_failure_sensor(
     verify: Optional[bool] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
+    status: Optional[SensorStatus] = None,
 ):
     """Create a sensor on pipeline failures that will message the given MS Teams webhook URL.
 
@@ -43,6 +45,9 @@ def make_teams_on_pipeline_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "teams_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed pipeline run.
+        status (Optional[SensorStatus]): Whether the sensor is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
 
     Examples:
 
@@ -81,7 +86,7 @@ def make_teams_on_pipeline_failure_sensor(
         verify=verify,
     )
 
-    @pipeline_failure_sensor(name=name)
+    @pipeline_failure_sensor(name=name, status=status)
     def teams_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         text = message_fn(context)

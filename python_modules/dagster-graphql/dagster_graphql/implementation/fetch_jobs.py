@@ -46,7 +46,7 @@ def get_job_state_or_error(graphene_info, selector):
         job_state = graphene_info.context.instance.get_job_state(
             external_sensor.get_external_origin_id()
         )
-        if not job_state:
+        if external_sensor.status or not job_state:
             job_state = external_sensor.get_default_instigation_state(
                 graphene_info.context.instance
             )

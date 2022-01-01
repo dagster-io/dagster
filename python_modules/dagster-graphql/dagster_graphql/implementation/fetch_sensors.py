@@ -142,9 +142,13 @@ def get_sensor_next_tick(graphene_info, sensor_state):
         return None
 
     repository = repository_location.get_repository(repository_origin.repository_name)
+
+    if not repository.has_external_sensor(sensor_state.name):
+        return None
+
     external_sensor = repository.get_external_sensor(sensor_state.name)
 
-    if sensor_state.status != InstigatorStatus.RUNNING:
+    if sensor_state.status == InstigatorStatus.STOPPED:
         return None
 
     latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)

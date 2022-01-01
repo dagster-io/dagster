@@ -1682,6 +1682,11 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
+        check.invariant(
+            not external_sensor.status,
+            "Can only manually start a sensor that does not have its status set in code",
+        )
+
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 
         if not job_state:

@@ -2,7 +2,6 @@ import os
 import random
 import string
 import tempfile
-import threading
 import time
 from contextlib import contextmanager
 
@@ -22,18 +21,13 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster.core.definitions.sensor_definition import RunRequest, SensorStatus, SkipReason
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
-from dagster.core.host_representation import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
-)
+from dagster.core.host_representation import ExternalJobOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
@@ -43,13 +37,8 @@ from dagster.core.test_utils import (
     get_logger_output_from_capfd,
     instance_for_test,
 )
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget, PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.controller import (
-    DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
-    DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-)
-from dagster.daemon.daemon import DAEMON_HEARTBEAT_ERROR_LIMIT, SensorDaemon
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
@@ -306,26 +295,48 @@ def the_other_repo():
     ]
 
 
+@sensor(pipeline_name="the_pipeline", status=SensorStatus.RUNNING)
+def always_running_sensor(context):
+    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+        return SkipReason()
+
+    return RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(pipeline_name="the_pipeline", status=SensorStatus.STOPPED)
+def never_running_sensor(context):
+    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+        return SkipReason()
+
+    return RunRequest(run_key=None, run_config={}, tags={})
+
+
+@repository
+def the_status_in_code_repo():
+    return [
+        the_pipeline,
+        always_running_sensor,
+        never_running_sensor,
+    ]
+
+
 @contextmanager
-def instance_with_sensors(overrides=None):
+def instance_with_sensors(overrides=None, attribute="the_repo"):
     with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace(workspace_load_target()) as workspace:
-            with default_repo() as external_repo:
-                yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace(workspace_load_target(attribute)) as workspace:
+            yield (
+                instance,
+                workspace,
+                next(
+                    iter(workspace.get_workspace_snapshot().values())
+                ).repository_location.get_repository(attribute),
+            )
 
 
-@contextmanager
-def default_repo():
-    load_target = workspace_load_target()
-    origin = load_target.create_origins()[0]
-    with origin.create_single_location() as location:
-        yield location.get_repository("the_repo")
-
-
-def workspace_load_target():
+def workspace_load_target(attribute="the_repo"):
     return PythonFileTarget(
         python_file=__file__,
-        attribute=None,
+        attribute=attribute,
         working_directory=os.getcwd(),
         location_name="test_location",
     )
@@ -521,7 +532,6 @@ def test_bad_load_sensor_repository(capfd):
             assert len(ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Sensor daemon caught an error for sensor simple_sensor" in captured.out
             assert (
                 "Could not find repository invalid_repo_name in location test_location to run sensor simple_sensor"
                 in captured.out
@@ -566,7 +576,6 @@ def test_bad_load_sensor(capfd):
             assert len(ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Sensor daemon caught an error for sensor invalid_sensor" in captured.out
             assert "Could not find sensor invalid_sensor in repository the_repo." in captured.out
 
 
@@ -925,64 +934,10 @@ def test_custom_interval_sensor_with_offset(monkeypatch):
 
 
 def _get_unloadable_sensor_origin():
-    working_directory = os.path.dirname(__file__)
-    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    load_target = workspace_load_target()
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+        load_target.create_origins()[0], "fake_repository"
     ).get_job_origin("doesnt_exist")
-
-
-def test_error_sensor_daemon(monkeypatch):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
-    )
-
-    sleeps = []
-
-    def fake_sleep(s):
-        sleeps.append(s)
-        pendulum.set_test_now(pendulum.now().add(seconds=s))
-
-    monkeypatch.setattr(time, "sleep", fake_sleep)
-
-    with instance_with_sensors(
-        overrides={
-            "run_launcher": {
-                "module": "dagster.core.test_utils",
-                "class": "ExplodingRunLauncher",
-            },
-        },
-    ) as (instance, workspace, _external_repo):
-
-        @contextmanager
-        def _gen_workspace(_instance):
-            yield workspace
-
-        with pendulum.test(freeze_datetime):
-            instance.add_job_state(
-                InstigatorState(
-                    _get_unloadable_sensor_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.RUNNING,
-                )
-            )
-            sensor_daemon = SensorDaemon()
-            daemon_shutdown_event = threading.Event()
-            sensor_daemon.start_loop(
-                instance.get_ref(),
-                "my_uuid",
-                daemon_shutdown_event,
-                _gen_workspace,
-                heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-                error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
-                until=freeze_datetime.add(seconds=65),
-            )
-
-            heartbeats = instance.get_daemon_heartbeats()
-            heartbeat = heartbeats["SENSOR"]
-            assert heartbeat
-            assert heartbeat.errors
-            assert len(heartbeat.errors) == DAEMON_HEARTBEAT_ERROR_LIMIT
 
 
 def test_sensor_start_stop():
@@ -1783,3 +1738,118 @@ def test_bad_run_request_unspecified():
                     "['the_graph', 'config_graph']"
                 ),
             )
+
+
+def test_status_in_code_sensor():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_for_test() as instance:
+        with create_test_daemon_workspace(
+            workspace_load_target(attribute="the_status_in_code_repo")
+        ) as workspace:
+            external_repo = next(
+                iter(workspace.get_workspace_snapshot().values())
+            ).repository_location.get_repository("the_status_in_code_repo")
+
+            with pendulum.test(freeze_datetime):
+
+                running_sensor = external_repo.get_external_sensor("always_running_sensor")
+                not_running_sensor = external_repo.get_external_sensor("never_running_sensor")
+
+                always_running_origin = running_sensor.get_external_origin()
+                never_running_origin = not_running_sensor.get_external_origin()
+
+                assert instance.get_runs_count() == 0
+                assert len(instance.get_job_ticks(always_running_origin.get_id())) == 0
+                assert len(instance.get_job_ticks(never_running_origin.get_id())) == 0
+
+                assert len(instance.all_stored_job_state()) == 0
+
+                evaluate_sensors(instance, workspace)
+
+                assert instance.get_runs_count() == 0
+
+                assert len(instance.all_stored_job_state()) == 1
+                instigator_state = instance.get_job_state(always_running_origin.get_id())
+                assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+
+                ticks = instance.get_job_ticks(running_sensor.get_external_origin_id())
+                assert len(ticks) == 1
+                validate_tick(
+                    ticks[0],
+                    running_sensor,
+                    freeze_datetime,
+                    TickStatus.SKIPPED,
+                )
+
+                assert len(instance.get_job_ticks(never_running_origin.get_id())) == 0
+
+            freeze_datetime = freeze_datetime.add(seconds=30)
+            with pendulum.test(freeze_datetime):
+                evaluate_sensors(instance, workspace)
+                wait_for_all_runs_to_start(instance)
+                assert instance.get_runs_count() == 1
+                run = instance.get_runs()[0]
+                validate_run_started(run)
+                ticks = instance.get_job_ticks(running_sensor.get_external_origin_id())
+                assert len(ticks) == 2
+
+                expected_datetime = create_pendulum_time(
+                    year=2019, month=2, day=28, hour=0, minute=0, second=29
+                )
+                validate_tick(
+                    ticks[0],
+                    running_sensor,
+                    expected_datetime,
+                    TickStatus.SUCCESS,
+                    [run.run_id],
+                )
+
+                assert len(instance.get_job_ticks(never_running_origin.get_id())) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        # Now try with an empty workspace - ticks are still there, but the job state is deleted
+        # once it's no longer present in the workspace
+        with create_test_daemon_workspace(EmptyWorkspaceTarget()) as empty_workspace:
+            with pendulum.test(freeze_datetime):
+                evaluate_sensors(instance, empty_workspace)
+                ticks = instance.get_job_ticks(running_sensor.get_external_origin_id())
+                assert len(ticks) == 2
+                assert len(instance.all_stored_job_state()) == 0
+
+
+def test_change_sensor_to_running_in_code():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="the_status_in_code_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        running_sensor = external_repo.get_external_sensor("always_running_sensor")
+        with pendulum.test(freeze_datetime):
+            instance.add_job_state(
+                InstigatorState(
+                    running_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            assert len(instance.all_stored_job_state()) == 1
+
+            ticks = instance.get_job_ticks(running_sensor.get_external_origin_id())
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+            instigator_state = instance.get_job_state(running_sensor.get_external_origin().get_id())
+
+            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+
+            ticks = instance.get_job_ticks(running_sensor.get_external_origin_id())
+            assert len(ticks) == 1

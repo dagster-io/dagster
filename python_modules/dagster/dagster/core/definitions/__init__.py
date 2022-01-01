@@ -122,6 +122,7 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,
+    SensorStatus,
 )
 from .solid_container import create_execution_structure
 from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition

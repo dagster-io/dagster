@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.schedule_definition import ScheduleStatus
-from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL, SensorStatus
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
@@ -547,6 +547,10 @@ class ExternalSensor:
         return self._external_sensor_data.name
 
     @property
+    def handle(self):
+        return self._handle
+
+    @property
     def pipeline_name(self):
         target = self._get_single_target()
         return target.pipeline_name if target else None
@@ -605,13 +609,21 @@ class ExternalSensor:
         return InstigatorState(
             self.get_external_origin(),
             InstigatorType.SENSOR,
-            InstigatorStatus.STOPPED,
+            (
+                InstigatorStatus.AUTOMATICALLY_RUNNING
+                if self.status == SensorStatus.RUNNING
+                else InstigatorStatus.STOPPED
+            ),
             SensorInstigatorData(min_interval=self.min_interval_seconds),
         )
 
     @property
     def metadata(self):
         return self._external_sensor_data.metadata
+
+    @property
+    def status(self) -> Optional[SensorStatus]:
+        return self._external_sensor_data.status
 
 
 class ExternalPartitionSet:

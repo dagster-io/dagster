@@ -64,7 +64,7 @@ class GrapheneSensor(graphene.ObjectType):
             self._external_sensor.get_external_origin_id()
         )
 
-        if not self._sensor_state:
+        if self._external_sensor.status or not self._sensor_state:
             # Also include a SensorState for a stopped sensor that may not
             # have a stored database row yet
             self._sensor_state = self._external_sensor.get_default_instigation_state(

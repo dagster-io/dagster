@@ -6,11 +6,12 @@ from collections import namedtuple
 import pendulum
 from dagster import check, seven
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.definitions.sensor_definition import SensorExecutionData
+from dagster.core.definitions.sensor_definition import SensorExecutionData, SensorStatus
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
+    InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
     TickData,
@@ -163,7 +164,9 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
             workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
-        yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
+        yield from execute_sensor_iteration(
+            instance, logger, workspace, log_verbose_checks=(not workspace_iteration)
+        )
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
@@ -172,54 +175,133 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
 
 def execute_sensor_iteration(
-    instance, logger, workspace, workspace_iteration=None, debug_crash_flags=None
+    instance, logger, workspace, log_verbose_checks=True, debug_crash_flags=None
 ):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
-    sensor_jobs = [
-        s
-        for s in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
-        if s.status == InstigatorStatus.RUNNING
-    ]
-    if not sensor_jobs:
-        if not workspace_iteration:
+
+    workspace_snapshot = {
+        location_entry.origin: location_entry
+        for location_entry in workspace.get_workspace_snapshot().values()
+    }
+
+    all_sensor_states = {
+        sensor_state.origin.get_id(): sensor_state
+        for sensor_state in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
+    }
+
+    sensors = {}
+    for location_entry in workspace_snapshot.values():
+        repo_location = location_entry.repository_location
+        if repo_location:
+            for repo in repo_location.get_repositories().values():
+                for sensor in repo.get_external_sensors():
+                    origin_id = sensor.get_external_origin().get_id()
+                    if sensor.status == SensorStatus.RUNNING or (
+                        not sensor.status
+                        and origin_id in all_sensor_states
+                        and all_sensor_states[origin_id].status == InstigatorStatus.RUNNING
+                    ):
+                        sensors[origin_id] = sensor
+        elif location_entry.load_error and log_verbose_checks:
+            logger.warning(
+                f"Could not load location {location_entry.origin.location_name} to check for sensors due to the following error: {location_entry.load_error}"
+            )
+
+    # Remove any sensor states that were previously created with AUTOMATICALLY_RUNNING
+    # and can no longer be found in the workspace (so that if they are later added
+    # back again, their timestamps will start at the correct place)
+    sensor_state_ids_to_delete = {
+        origin_id
+        for origin_id, sensor_state in all_sensor_states.items()
+        if origin_id not in sensors
+        and sensor_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+    }
+    for origin_id in sensor_state_ids_to_delete:
+        instance.delete_job_state(origin_id)
+
+    if log_verbose_checks:
+        unloadable_sensor_states = {
+            origin_id: sensor_state
+            for origin_id, sensor_state in all_sensor_states.items()
+            if origin_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
+        }
+
+        for sensor_state in unloadable_sensor_states.values():
+            sensor_name = sensor_state.origin.job_name
+            repo_location_origin = (
+                sensor_state.origin.external_repository_origin.repository_location_origin
+            )
+
+            repo_location_name = repo_location_origin.location_name
+            repo_name = sensor_state.origin.external_repository_origin.repository_name
+            if (
+                repo_location_origin not in workspace_snapshot
+                or not workspace_snapshot[repo_location_origin].repository_location
+            ):
+                logger.warning(
+                    f"Sensor {sensor_state.job_name} was started from a location "
+                    f"{repo_location_name} that can no longer be found in the workspace, or has "
+                    "metadata that has changed since the sensor was started. You can turn off "
+                    "this sensor in the Dagit UI from the Status tab."
+                )
+            elif not workspace_snapshot[repo_location_origin].repository_location.has_repository(
+                repo_name
+            ):
+                logger.warning(
+                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    + f"run sensor {sensor_name}. If this repository no longer exists, you can "
+                    + "turn off the sensor in the Dagit UI from the Status tab.",
+                )
+            else:
+                logger.warning(
+                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
+                    "sensor no longer exists, you can turn it off in the Dagit UI from the "
+                    "Status tab.",
+                )
+
+    if not sensors:
+        if log_verbose_checks:
             logger.info("Not checking for any runs since no sensors have been started.")
         yield
         return
 
-    for job_state in sensor_jobs:
-        sensor_debug_crash_flags = (
-            debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
-        )
+    now = pendulum.now("UTC")
+
+    for external_sensor in sensors.values():
+        sensor_name = external_sensor.name
+        sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         error_info = None
         try:
-            origin = job_state.origin.external_repository_origin.repository_location_origin
-            repo_location = workspace.get_location(origin)
-
-            repo_name = job_state.origin.external_repository_origin.repository_name
-
-            if not repo_location.has_repository(repo_name):
-                raise DagsterSensorDaemonError(
-                    f"Could not find repository {repo_name} in location {repo_location.name} to "
-                    + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagit UI.",
+            sensor_state = all_sensor_states.get(external_sensor.get_external_origin().get_id())
+            if not sensor_state:
+                assert external_sensor.status == SensorStatus.RUNNING
+                sensor_state = InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.AUTOMATICALLY_RUNNING,
+                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
-
-            external_repo = repo_location.get_repository(repo_name)
-            if not external_repo.has_external_sensor(job_state.job_name):
-                raise DagsterSensorDaemonError(
-                    f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagit UI.",
+                instance.add_job_state(sensor_state)
+            elif (
+                sensor_state
+                and external_sensor.status == SensorStatus.RUNNING
+                and sensor_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING
+            ):
+                # A sensor that was previously manually controlled has now set its status in code
+                sensor_state = sensor_state.with_status(
+                    InstigatorStatus.AUTOMATICALLY_RUNNING
+                ).with_data(
+                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
-
-            now = pendulum.now("UTC")
-            if _is_under_min_interval(job_state, now):
+                instance.update_job_state(sensor_state)
+            elif _is_under_min_interval(sensor_state, external_sensor, now):
                 continue
 
             tick = instance.create_job_tick(
                 TickData(
-                    job_origin_id=job_state.job_origin_id,
-                    job_name=job_state.job_name,
+                    job_origin_id=sensor_state.job_origin_id,
+                    job_name=sensor_state.job_name,
                     job_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,
                     timestamp=now.timestamp(),
@@ -228,26 +310,23 @@ def execute_sensor_iteration(
 
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-            external_sensor = external_repo.get_external_sensor(job_state.job_name)
             with SensorLaunchContext(
-                external_sensor, job_state, tick, instance, logger
+                external_sensor, sensor_state, tick, instance, logger
             ) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                 yield from _evaluate_sensor(
                     tick_context,
                     instance,
                     workspace,
-                    repo_location,
-                    external_repo,
                     external_sensor,
-                    job_state,
+                    sensor_state,
                     sensor_debug_crash_flags,
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name,
+                    sensor_name=external_sensor.name,
                     error_info=error_info.to_string(),
                 )
             )
@@ -258,16 +337,21 @@ def _evaluate_sensor(
     context,
     instance,
     workspace,
-    repo_location,
-    external_repo,
     external_sensor,
     job_state,
     sensor_debug_crash_flags=None,
 ):
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
+
+    sensor_origin = external_sensor.get_external_origin()
+    repository_handle = external_sensor.handle.repository_handle
+    repo_location = workspace.get_location(
+        sensor_origin.external_repository_origin.repository_location_origin
+    )
+
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
         instance,
-        external_repo.handle,
+        repository_handle,
         external_sensor.name,
         job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
@@ -331,7 +415,7 @@ def _evaluate_sensor(
 
         pipeline_selector = PipelineSelector(
             location_name=repo_location.name,
-            repository_name=external_repo.name,
+            repository_name=sensor_origin.external_repository_origin.repository_name,
             pipeline_name=target_data.pipeline_name,
             solid_selection=target_data.solid_selection,
         )
@@ -393,18 +477,18 @@ def _evaluate_sensor(
     yield
 
 
-def _is_under_min_interval(job_state, now):
+def _is_under_min_interval(job_state, external_sensor, now):
     if not job_state.job_specific_data:
         return False
 
     if not job_state.job_specific_data.last_tick_timestamp:
         return False
 
-    if not job_state.job_specific_data.min_interval:
+    if not external_sensor.min_interval_seconds:
         return False
 
     elapsed = now.timestamp() - job_state.job_specific_data.last_tick_timestamp
-    return elapsed < job_state.job_specific_data.min_interval
+    return elapsed < external_sensor.min_interval_seconds
 
 
 def _get_or_create_sensor_run(
@@ -429,7 +513,7 @@ def _get_or_create_sensor_run(
         run = existing_runs[0]
         if run.status != PipelineRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
-            # but the scheduler must have crashed before the tick could be put
+            # but the daemon must have crashed before the tick could be put
             # into a SUCCESS state
             context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)

@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+from dagster import SensorStatus
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
@@ -65,6 +66,7 @@ def make_slack_on_pipeline_failure_sensor(
     pipeline_selection: List[str] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
+    status: Optional[SensorStatus] = None,
 ):
     """Create a sensor on pipeline failures that will message the given Slack channel.
 
@@ -90,6 +92,9 @@ def make_slack_on_pipeline_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed pipeline run.
+        status (Optional[SensorStatus]): Whether the sensor is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
 
     Examples:
 
@@ -124,7 +129,7 @@ def make_slack_on_pipeline_failure_sensor(
 
     slack_client = WebClient(token=slack_token)
 
-    @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection)
+    @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection, status=status)
     def slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         blocks, main_body_text = _build_slack_blocks_and_text(
@@ -144,6 +149,7 @@ def make_slack_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    status: Optional[SensorStatus] = None,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
 
@@ -169,6 +175,9 @@ def make_slack_on_run_failure_sensor(
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        status (Optional[SensorStatus]): Whether the sensor is running or not. If this is set,
+            the status starts as STOPPED but can be started in Dagit. If the status is set in code,
+            it cannot be changed in Dagit.
 
     Examples:
 
@@ -203,7 +212,7 @@ def make_slack_on_run_failure_sensor(
 
     slack_client = WebClient(token=slack_token)
 
-    @run_failure_sensor(name=name, job_selection=job_selection)
+    @run_failure_sensor(name=name, job_selection=job_selection, status=status)
     def slack_on_run_failure(context: RunFailureSensorContext):
         blocks, main_body_text = _build_slack_blocks_and_text(
             context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url

@@ -13,6 +13,7 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.definitions.sensor_definition import SensorStatus
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
@@ -156,22 +157,22 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 stored_sensor_state = stored_sensors_by_origin_id.get(
                     external_sensor.get_external_origin_id()
                 )
-                if running_filter and (
-                    not stored_sensor_state
-                    or stored_sensor_state.status == InstigatorStatus.STOPPED
-                ):
+                is_running = external_sensor.status == SensorStatus.RUNNING or (
+                    not external_sensor.status
+                    and stored_sensor_state
+                    and stored_sensor_state.status == InstigatorStatus.RUNNING
+                )
+                if running_filter and not is_running:
                     continue
-                if stopped_filter and stored_sensor_state and InstigatorStatus.RUNNING:
+                if stopped_filter and is_running:
                     continue
 
                 if name_filter:
                     print_fn(external_sensor.name)
                     continue
 
-                status = (
-                    stored_sensor_state.status if stored_sensor_state else InstigatorStatus.STOPPED
-                )
-                sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
+                status = "RUNNING" if is_running else "STOPPED"
+                sensor_title = f"Sensor: {external_sensor.name} [{status}]"
                 if not first:
                     print_fn("*" * len(sensor_title))
 

@@ -25,7 +25,7 @@ from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.schedule_definition import ScheduleStatus
-from dagster.core.definitions.sensor_definition import AssetSensorDefinition
+from dagster.core.definitions.sensor_definition import AssetSensorDefinition, SensorStatus
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
@@ -262,11 +262,17 @@ class ExternalSensorMetadata(namedtuple("_ExternalSensorMetadata", "asset_keys")
         )
 
 
-@whitelist_for_serdes
+class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"status"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
 class ExternalSensorData(
     namedtuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description target_dict metadata",
+        "name pipeline_name solid_selection mode min_interval description target_dict metadata status",
     )
 ):
     def __new__(
@@ -279,6 +285,7 @@ class ExternalSensorData(
         description=None,
         target_dict=None,
         metadata=None,
+        status=None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -307,6 +314,7 @@ class ExternalSensorData(
             description=check.opt_str_param(description, "description"),
             target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            status=check.opt_inst_param(status, "status", SensorStatus),
         )
 
 
@@ -754,6 +762,7 @@ def external_sensor_data_from_def(sensor_def):
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
+        status=sensor_def.status,
     )
 
 
