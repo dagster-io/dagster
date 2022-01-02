@@ -86,7 +86,9 @@ class GrapheneSensor(graphene.ObjectType):
         return self._external_sensor.get_external_origin_id()
 
     def resolve_sensorState(self, _graphene_info):
-        return GrapheneInstigationState(self._sensor_state)
+        return GrapheneInstigationState(
+            self._sensor_state, can_change_status=(not self._external_sensor.status)
+        )
 
     def resolve_nextTick(self, graphene_info):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
@@ -145,7 +147,7 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
         if not self._job_state:
             return None
 
-        return GrapheneInstigationState(job_state=self._job_state)
+        return GrapheneInstigationState(job_state=self._job_state, can_change_status=True)
 
 
 class GrapheneStopSensorMutationResultOrError(graphene.Union):

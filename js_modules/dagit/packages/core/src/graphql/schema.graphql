@@ -1029,6 +1029,7 @@ type InstigationState {
   ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
   nextTick: FutureInstigationTick
   runningCount: Int!
+  canChangeStatus: Boolean!
 }
 
 enum InstigationType {

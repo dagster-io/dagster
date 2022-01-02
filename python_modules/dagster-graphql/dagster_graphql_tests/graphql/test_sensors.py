@@ -81,6 +81,7 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       }
       sensorState {
         status
+        canChangeStatus
         runs {
           id
           runId
@@ -138,6 +139,7 @@ mutation($sensorSelector: SensorSelector!) {
       jobOriginId
       sensorState {
         status
+        canChangeStatus
       }
     }
   }
@@ -155,6 +157,7 @@ mutation($jobOriginId: String!) {
     ... on StopSensorMutationResult {
       instigationState {
         status
+        canChangeStatus
       }
     }
   }
@@ -203,6 +206,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
+        assert result.data["startSensor"]["sensorState"]["canChangeStatus"] == True
 
     def test_stop_sensor(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
@@ -217,6 +221,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             start_result.data["startSensor"]["sensorState"]["status"]
             == InstigatorStatus.RUNNING.value
         )
+        assert start_result.data["startSensor"]["sensorState"]["canChangeStatus"] == True
 
         job_origin_id = start_result.data["startSensor"]["jobOriginId"]
         result = execute_dagster_graphql(
@@ -229,6 +234,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             result.data["stopSensor"]["instigationState"]["status"]
             == InstigatorStatus.STOPPED.value
         )
+        assert result.data["stopSensor"]["instigationState"]["canChangeStatus"] == True
 
 
 def test_sensor_next_ticks(graphql_context):

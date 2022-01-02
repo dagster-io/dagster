@@ -286,17 +286,19 @@ class GrapheneInstigationState(graphene.ObjectType):
     )
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
+    canChangeStatus = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "InstigationState"
 
-    def __init__(self, job_state):
+    def __init__(self, job_state, can_change_status):
         self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
         super().__init__(
             id=job_state.job_origin_id,
             name=job_state.name,
             instigationType=job_state.job_type,
             status=GrapheneInstigationStatus.create_from_python_enum(job_state.status),
+            canChangeStatus=check.bool_param(can_change_status, "can_change_status"),
         )
 
     def resolve_repositoryOrigin(self, _graphene_info):

@@ -39,6 +39,8 @@ from dagster import (
     PythonObjectDagsterType,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    ScheduleStatus,
+    SensorStatus,
     SolidExecutionContext,
     StaticPartitionsDefinition,
     String,
@@ -962,6 +964,20 @@ def define_schedules():
         pipeline_name="no_config_pipeline",
     )
 
+    no_config_pipeline_hourly_schedule_running_in_code = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule_running_in_code",
+        cron_schedule="0 0 * * *",
+        pipeline_name="no_config_pipeline",
+        status=ScheduleStatus.RUNNING,
+    )
+
+    no_config_pipeline_hourly_schedule_stopped_in_code = ScheduleDefinition(
+        name="no_config_pipeline_hourly_schedule_stopped_in_code",
+        cron_schedule="0 0 * * *",
+        pipeline_name="no_config_pipeline",
+        status=ScheduleStatus.STOPPED,
+    )
+
     no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
@@ -1096,6 +1112,8 @@ def define_schedules():
         run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
+        no_config_pipeline_hourly_schedule_running_in_code,
+        no_config_pipeline_hourly_schedule_stopped_in_code,
         no_config_should_execute,
         dynamic_config,
         partition_based,
@@ -1154,6 +1172,20 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(pipeline_name="no_config_pipeline", mode="default", status=SensorStatus.RUNNING)
+    def always_no_config_sensor_running_in_code(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
+    @sensor(pipeline_name="no_config_pipeline", mode="default", status=SensorStatus.STOPPED)
+    def always_no_config_sensor_stopped_in_code(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def once_no_config_sensor(_):
         return RunRequest(
@@ -1179,6 +1211,8 @@ def define_sensors():
 
     return [
         always_no_config_sensor,
+        always_no_config_sensor_running_in_code,
+        always_no_config_sensor_stopped_in_code,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,

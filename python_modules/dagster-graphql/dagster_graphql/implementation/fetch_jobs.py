@@ -29,7 +29,10 @@ def get_unloadable_job_states_or_error(graphene_info, job_type=None):
     ]
 
     return GrapheneInstigationStates(
-        results=[GrapheneInstigationState(job_state=job_state) for job_state in unloadable_states]
+        results=[
+            GrapheneInstigationState(job_state=job_state, can_change_status=True)
+            for job_state in unloadable_states
+        ]
     )
 
 
@@ -50,6 +53,7 @@ def get_job_state_or_error(graphene_info, selector):
             job_state = external_sensor.get_default_instigation_state(
                 graphene_info.context.instance
             )
+        can_change_status = not external_sensor.status
     elif repository.has_external_schedule(selector.name):
         external_schedule = repository.get_external_schedule(selector.name)
         job_state = graphene_info.context.instance.get_job_state(
@@ -59,7 +63,8 @@ def get_job_state_or_error(graphene_info, selector):
             job_state = external_schedule.get_default_instigation_state(
                 graphene_info.context.instance
             )
+        can_change_status = not external_schedule.status
     else:
         check.failed(f"Could not find a definition for {selector.name}")
 
-    return GrapheneInstigationState(job_state=job_state)
+    return GrapheneInstigationState(job_state=job_state, can_change_status=can_change_status)

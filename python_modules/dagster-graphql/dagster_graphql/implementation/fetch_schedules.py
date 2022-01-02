@@ -20,7 +20,9 @@ def start_schedule(graphene_info, schedule_selector):
     schedule_state = instance.start_schedule_and_update_storage_state(
         repository.get_external_schedule(schedule_selector.schedule_name)
     )
-    return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
+    return GrapheneScheduleStateResult(
+        GrapheneInstigationState(schedule_state, can_change_status=True)
+    )
 
 
 @capture_error
@@ -31,7 +33,9 @@ def stop_schedule(graphene_info, schedule_origin_id):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     instance = graphene_info.context.instance
     schedule_state = instance.stop_schedule_and_update_storage_state(schedule_origin_id)
-    return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
+    return GrapheneScheduleStateResult(
+        GrapheneInstigationState(schedule_state, can_change_status=True)
+    )
 
 
 @capture_error

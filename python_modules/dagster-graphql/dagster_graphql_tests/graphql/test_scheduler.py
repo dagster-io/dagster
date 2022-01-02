@@ -85,6 +85,7 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           id
           timestamp
         }
+        canChangeStatus
       }
     }
   }
@@ -99,6 +100,7 @@ query getUnloadableSchedules {
         id
         name
         status
+        canChangeStatus
       }
     }
     ... on PythonError {
@@ -126,6 +128,7 @@ mutation(
       scheduleState {
         id
         status
+        canChangeStatus
       }
     }
   }
@@ -149,6 +152,7 @@ mutation(
       scheduleState {
         id
         status
+        canChangeStatus
       }
     }
   }
@@ -210,6 +214,7 @@ def test_start_and_stop_schedule(graphql_context):
         start_result.data["startSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.RUNNING.value
     )
+    assert start_result.data["startSchedule"]["scheduleState"]["canChangeStatus"] == True
 
     schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
 
@@ -223,6 +228,7 @@ def test_start_and_stop_schedule(graphql_context):
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.STOPPED.value
     )
+    assert stop_result.data["stopRunningSchedule"]["scheduleState"]["canChangeStatus"] == True
 
 
 def test_get_single_schedule_definition(graphql_context):
@@ -237,6 +243,7 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["scheduleState"]
+    assert result.data["scheduleOrError"]["scheduleState"]["canChangeStatus"]
 
     result = execute_dagster_graphql(
         context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
@@ -405,4 +412,7 @@ def test_get_unloadable_job(graphql_context):
     assert (
         result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
         == "unloadable_running"
+    )
+    assert (
+        result.data["unloadableInstigationStatesOrError"]["results"][0]["canChangeStatus"] == True
     )

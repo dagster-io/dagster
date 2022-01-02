@@ -58,7 +58,9 @@ class GrapheneSchedule(graphene.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            scheduleState=GrapheneInstigationState(self._schedule_state),
+            scheduleState=GrapheneInstigationState(
+                self._schedule_state, can_change_status=(not external_schedule.status)
+            ),
             execution_timezone=(
                 self._external_schedule.execution_timezone
                 if self._external_schedule.execution_timezone

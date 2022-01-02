@@ -1,5 +1,4 @@
 from dagster import check
-from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -73,35 +72,6 @@ def stop_sensor(graphene_info, job_origin_id):
     instance.stop_sensor(job_origin_id)
     return GrapheneStopSensorMutationResult(
         job_state=job_state.with_status(InstigatorStatus.STOPPED)
-    )
-
-
-@capture_error
-def get_unloadable_sensor_states_or_error(graphene_info):
-    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
-
-    sensor_states = graphene_info.context.instance.all_stored_job_state(
-        job_type=InstigatorType.SENSOR
-    )
-    external_sensors = [
-        sensor
-        for repository_location in graphene_info.context.repository_locations
-        for repository in repository_location.get_repositories().values()
-        for sensor in repository.get_external_sensors()
-    ]
-
-    sensor_origin_ids = {
-        external_sensor.get_external_origin_id() for external_sensor in external_sensors
-    }
-
-    unloadable_states = [
-        sensor_state
-        for sensor_state in sensor_states
-        if sensor_state.job_origin_id not in sensor_origin_ids
-    ]
-
-    return GrapheneInstigationStates(
-        results=[GrapheneInstigationState(job_state=job_state) for job_state in unloadable_states]
     )
 
 
