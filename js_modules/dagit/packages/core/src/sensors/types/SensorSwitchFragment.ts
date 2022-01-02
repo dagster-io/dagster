@@ -13,6 +13,7 @@ export interface SensorSwitchFragment_sensorState {
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface SensorSwitchFragment {

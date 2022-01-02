@@ -85,6 +85,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_targets {

@@ -64,6 +64,7 @@ export interface OverviewJobFragment_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface OverviewJobFragment_schedules {
@@ -85,6 +86,7 @@ export interface OverviewJobFragment_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface OverviewJobFragment_sensors {

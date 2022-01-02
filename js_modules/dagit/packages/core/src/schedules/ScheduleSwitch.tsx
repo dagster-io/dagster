@@ -26,7 +26,7 @@ interface Props {
 export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
-  const {status, id} = scheduleState;
+  const {status, id, canChangeStatus} = scheduleState;
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
 
@@ -62,7 +62,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSchedule && canStopRunningSchedule) {
+  if (canStartSchedule && canStopRunningSchedule && canChangeStatus) {
     return (
       <Checkbox
         format="switch"
@@ -75,7 +75,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   }
 
   const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
-  const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
+  const disabled = !canChangeStatus || toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
     <Checkbox
@@ -87,11 +87,20 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     />
   );
 
-  return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
-  ) : (
-    switchElement
-  );
+  let tooltip = null;
+  if (!canChangeStatus) {
+    if (running) {
+      tooltip =
+        'Schedule is set as running in code. To stop it, set its status to ScheduleStatus.STOPPED in code.';
+    } else {
+      tooltip =
+        'Schedule is set as stopped in code. To stop it, set its status to ScheduleStatus.RUNNING in code.';
+    }
+  } else if (lacksPermission) {
+    tooltip = DISABLED_MESSAGE;
+  }
+
+  return tooltip ? <Tooltip content={tooltip}>{switchElement}</Tooltip> : switchElement;
 };
 
 export const SCHEDULE_SWITCH_FRAGMENT = gql`
@@ -102,6 +111,7 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
     scheduleState {
       id
       status
+      canChangeStatus
     }
   }
 `;

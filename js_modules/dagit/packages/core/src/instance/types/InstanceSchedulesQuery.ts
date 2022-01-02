@@ -129,6 +129,7 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
   runs: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticks: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
@@ -252,6 +253,7 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
   runs: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates {

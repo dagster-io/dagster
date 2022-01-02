@@ -17,6 +17,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleSta
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
@@ -38,6 +39,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors {

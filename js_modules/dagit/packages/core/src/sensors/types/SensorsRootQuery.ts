@@ -98,6 +98,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState {
   runs: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs[];
   ticks: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_targets {
@@ -204,6 +205,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
   runs: SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates {

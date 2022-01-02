@@ -92,6 +92,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   runs: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs[];
   ticks: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks_results {
@@ -216,6 +217,7 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   runs: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates {

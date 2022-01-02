@@ -13,6 +13,7 @@ export interface ScheduleSwitchFragment_scheduleState {
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface ScheduleSwitchFragment {

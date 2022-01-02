@@ -60,6 +60,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
       ...TickTagFragment
     }
     runningCount
+    canChangeStatus
   }
   ${REPOSITORY_ORIGIN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}

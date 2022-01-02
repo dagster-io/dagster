@@ -81,6 +81,7 @@ export interface SensorFragment_sensorState {
   runs: SensorFragment_sensorState_runs[];
   ticks: SensorFragment_sensorState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface SensorFragment_targets {

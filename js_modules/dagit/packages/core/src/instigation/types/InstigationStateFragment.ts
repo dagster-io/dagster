@@ -76,4 +76,5 @@ export interface InstigationStateFragment {
   runs: InstigationStateFragment_runs[];
   ticks: InstigationStateFragment_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }

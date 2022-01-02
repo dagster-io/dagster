@@ -70,6 +70,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules {
@@ -91,6 +92,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors {

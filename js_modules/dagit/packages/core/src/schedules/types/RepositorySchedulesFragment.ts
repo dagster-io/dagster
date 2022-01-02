@@ -88,6 +88,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState {
   runs: RepositorySchedulesFragment_schedules_scheduleState_runs[];
   ticks: RepositorySchedulesFragment_schedules_scheduleState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface RepositorySchedulesFragment_schedules_futureTicks_results {

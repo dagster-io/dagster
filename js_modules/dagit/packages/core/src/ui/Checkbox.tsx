@@ -7,6 +7,8 @@ import {ColorsWIP} from './Colors';
 
 const DISABLED_COLOR = ColorsWIP.Gray300;
 
+const DISABLED_CHECKED_COLOR = ColorsWIP.Blue200;
+
 type Format = 'check' | 'star' | 'switch';
 type Size = 'small' | 'large';
 
@@ -185,7 +187,7 @@ const Base = ({
         disabled={disabled}
         checked={checked}
         indeterminate={indeterminate}
-        fillColor={disabled ? DISABLED_COLOR : fillColor}
+        fillColor={disabled ? (checked ? DISABLED_CHECKED_COLOR : DISABLED_COLOR) : fillColor}
       />
       {label}
     </label>

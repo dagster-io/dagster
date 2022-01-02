@@ -128,6 +128,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   runs: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs[];
   ticks: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_targets {
@@ -256,6 +257,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   runs: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates {

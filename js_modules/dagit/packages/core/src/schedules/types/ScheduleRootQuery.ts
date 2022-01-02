@@ -82,6 +82,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results {

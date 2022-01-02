@@ -28,7 +28,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
-  const {status} = sensorState;
+  const {status, canChangeStatus} = sensorState;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
@@ -52,7 +52,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSensor && canStopSensor) {
+  if (canStartSensor && canStopSensor && canChangeStatus) {
     return (
       <Checkbox
         format="switch"
@@ -65,7 +65,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   }
 
   const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
-  const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
+  const disabled = !canChangeStatus || toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
     <Checkbox
@@ -77,11 +77,20 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     />
   );
 
-  return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
-  ) : (
-    switchElement
-  );
+  let tooltip = null;
+  if (!canChangeStatus) {
+    if (running) {
+      tooltip =
+        'Sensor is set as running in code. To stop it, set its status to SensorStatus.STOPPED in code.';
+    } else {
+      tooltip =
+        'Sensor is set as stopped in code. To stop it, set its status to SensorStatus.RUNNING in code.';
+    }
+  } else if (lacksPermission) {
+    tooltip = DISABLED_MESSAGE;
+  }
+
+  return tooltip ? <Tooltip content={tooltip}>{switchElement}</Tooltip> : switchElement;
 };
 
 export const SENSOR_SWITCH_FRAGMENT = gql`
@@ -92,6 +101,7 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
     sensorState {
       id
       status
+      canChangeStatus
     }
   }
 `;

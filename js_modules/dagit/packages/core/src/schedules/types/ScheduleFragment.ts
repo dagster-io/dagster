@@ -82,6 +82,7 @@ export interface ScheduleFragment_scheduleState {
   runs: ScheduleFragment_scheduleState_runs[];
   ticks: ScheduleFragment_scheduleState_ticks[];
   runningCount: number;
+  canChangeStatus: boolean;
 }
 
 export interface ScheduleFragment_futureTicks_results {
