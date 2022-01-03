@@ -1,8 +1,6 @@
-import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -11,12 +9,10 @@ import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {showLaunchError} from '../launchpad/showLaunchError';
 import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
-import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -26,20 +22,11 @@ import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-  getReexecutionVariables,
-  handleLaunchResult,
-  ReExecutionStyle,
-} from './RunUtils';
-import {
-  LaunchPipelineReexecution,
-  LaunchPipelineReexecutionVariables,
-} from './types/LaunchPipelineReexecution';
-import {
   RunDagsterRunEventFragment,
   RunDagsterRunEventFragment_ExecutionStepFailureEvent,
 } from './types/RunDagsterRunEventFragment';
 import {RunFragment} from './types/RunFragment';
+import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
@@ -164,14 +151,8 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   onSetLogsFilter,
   onSetSelectionQuery,
 }) => {
-  const [launchPipelineReexecution] = useMutation<
-    LaunchPipelineReexecution,
-    LaunchPipelineReexecutionVariables
-  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const repoMatch = useRepositoryForRun(run);
+  const onLaunch = useJobReExecution(run);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-
-  const {basePath} = React.useContext(AppContext);
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
@@ -229,26 +210,6 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
         }, [] as string[])
     : [];
-
-  const onLaunch = async (style: ReExecutionStyle) => {
-    if (!run || !run.pipelineSnapshotId || !repoMatch) {
-      return;
-    }
-
-    const variables = getReexecutionVariables({
-      run,
-      style,
-      repositoryLocationName: repoMatch.match.repositoryLocation.name,
-      repositoryName: repoMatch.match.repository.name,
-    });
-
-    try {
-      const result = await launchPipelineReexecution({variables});
-      handleLaunchResult(basePath, run.pipelineName, result);
-    } catch (error) {
-      showLaunchError(error as Error);
-    }
-  };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
