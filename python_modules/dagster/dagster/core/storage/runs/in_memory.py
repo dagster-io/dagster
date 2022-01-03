@@ -156,6 +156,7 @@ class InMemoryRunStorage(RunStorage):
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
         raise NotImplementedError("In memory run storage does not track timestamp yet.")
 
@@ -247,10 +248,6 @@ class InMemoryRunStorage(RunStorage):
             if curr_run.root_run_id == root_run.run_id:
                 run_group.append(curr_run)
         return (root_run.root_run_id, run_group)
-
-    def add_run_stats(self, run_id: str) -> None:
-        """In-memory storage does not make use of RunRecord"""
-        return None
 
     def get_run_groups(
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None

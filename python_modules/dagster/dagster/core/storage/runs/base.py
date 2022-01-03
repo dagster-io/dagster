@@ -141,6 +141,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -181,14 +182,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Returns:
             bool
-        """
-
-    @abstractmethod
-    def add_run_stats(self, run_id: str) -> None:
-        """Add start and end times to run, retrieved from event log storage.
-
-        Args:
-            run_id (str)
         """
 
     def add_snapshot(
