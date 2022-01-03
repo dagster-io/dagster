@@ -1731,9 +1731,11 @@ records = instance.get_event_records(
         if job_state:
             self.update_job_state(job_state.with_status(InstigatorStatus.STOPPED))
 
+    @traced
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
 
+    @traced
     def get_job_state(self, job_origin_id):
         return self._schedule_storage.get_job_state(job_origin_id)
 
@@ -1746,17 +1748,20 @@ records = instance.get_event_records(
     def delete_job_state(self, job_origin_id):
         return self._schedule_storage.delete_job_state(job_origin_id)
 
+    @traced
     def get_job_tick(self, job_origin_id, timestamp):
         matches = self._schedule_storage.get_job_ticks(
             job_origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
 
+    @traced
     def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         return self._schedule_storage.get_job_ticks(
             job_origin_id, before=before, after=after, limit=limit
         )
 
+    @traced
     def get_latest_job_tick(self, job_origin_id):
         return self._schedule_storage.get_latest_job_tick(job_origin_id)
 
@@ -1766,6 +1771,7 @@ records = instance.get_event_records(
     def update_job_tick(self, tick):
         return self._schedule_storage.update_job_tick(tick)
 
+    @traced
     def get_job_tick_stats(self, job_origin_id):
         return self._schedule_storage.get_job_tick_stats(job_origin_id)
 
