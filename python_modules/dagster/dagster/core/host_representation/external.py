@@ -6,7 +6,6 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -352,24 +351,12 @@ class ExternalExecutionPlan:
     was compiled in another process or persisted in an instance.
     """
 
-    def __init__(self, execution_plan_snapshot, represented_pipeline):
+    def __init__(self, execution_plan_snapshot):
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
-        self.represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
-        )
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
-
-        if (
-            execution_plan_snapshot.pipeline_snapshot_id
-            != represented_pipeline.identifying_pipeline_snapshot_id
-        ):
-            raise DagsterInvariantViolationError(
-                "The target snapshot ID from the execution plan snapshot does not match the "
-                "passed in target snapshot. "
-            )
 
         self._step_keys_in_plan = (
             set(execution_plan_snapshot.step_keys_to_execute)

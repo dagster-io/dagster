@@ -47,11 +47,7 @@ def get_retry_steps_from_parent_run(
             f"Could not load execution plan snapshot for run {parent_run_id}"
         )
 
-    historical_pipeline = instance.get_historical_pipeline(parent_run.pipeline_snapshot_id)
-
-    execution_plan = ExternalExecutionPlan(
-        execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=historical_pipeline
-    )
+    execution_plan = ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
 
     # keep track of steps with dicts that point:
     # * step_key -> set(step_handle) in the normal case

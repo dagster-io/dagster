@@ -357,8 +357,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
                 external_pipeline.identifying_pipeline_snapshot_id,
-            ),
-            represented_pipeline=external_pipeline,
+            )
         )
 
     def get_external_partition_config(
@@ -654,10 +653,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             instance=instance,
         )
 
-        return ExternalExecutionPlan(
-            execution_plan_snapshot=execution_plan_snapshot_or_error,
-            represented_pipeline=external_pipeline,
-        )
+        return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
