@@ -885,9 +885,9 @@ class CachingRepositoryData(RepositoryData):
                     raise DagsterInvalidDefinitionError(
                         (
                             f"Conflicting definitions found in repository with name '{solid_def.name}'. "
-                            "Solid & Graph/CompositeSolid definition names must be unique within a "
-                            f"repository. {solid_def.__class__.__name__} is defined in pipeline "
-                            f"'{first_name}' and in pipeline '{second_name}'."
+                            "Op/Graph/Solid definition names must be unique within a "
+                            f"repository. {solid_def.__class__.__name__} is defined in {pipeline.target_type} "
+                            f"'{first_name}' and in {pipeline.target_type} '{second_name}'."
                         )
                     )
 
