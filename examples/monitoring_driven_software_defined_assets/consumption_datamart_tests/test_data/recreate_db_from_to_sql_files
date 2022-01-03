@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+basedir="$(dirname "${BASH_SOURCE[0]}")/../../"
+pushd $basedir
+
+  CONSUMPTION_DATAMART_PATH="$PWD/consumption_datamart_tests/test_data/consumption_datamart.db"
+  echo "(Re)creating $CONSUMPTION_DATAMART_PATH..."
+  rm $CONSUMPTION_DATAMART_PATH
+  sqlite3 $CONSUMPTION_DATAMART_PATH < schema/consumption_datamart.sqlite3.sql
+
+  ACME_LAKE_PATH="$PWD/consumption_datamart_tests/test_data/acme_lake.db"
+  echo "(Re)creating $ACME_LAKE_PATH..."
+  rm $ACME_LAKE_PATH
+  sqlite3 $ACME_LAKE_PATH < consumption_datamart_tests/test_data/acme_lake.sqlite3.sql
+
+  echo "DONE.  Attach using:"
+  echo "ATTACH DATABASE 'file:$CONSUMPTION_DATAMART_PATH' AS consumption_datamart;"
+  echo "ATTACH DATABASE 'file:$ACME_LAKE_PATH' AS acme_lake;"
+popd
