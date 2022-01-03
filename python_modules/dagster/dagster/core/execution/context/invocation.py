@@ -52,9 +52,11 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         resources_config: Dict[str, Any],
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
+        run_id: str,
     ):  # pylint: disable=super-init-not-called
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
         from dagster.core.execution.api import ephemeral_instance_if_missing
+        from dagster.core.storage.pipeline_run import PipelineRun
 
         self._solid_config = solid_config
 
@@ -70,10 +72,12 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._resources_config = resources_config
         # Open resource context manager
         self._resources_contain_cm = False
+        self._pipeline_run = PipelineRun(run_id=run_id)
         self._resources_cm = build_resources(
             resources=check.opt_dict_param(resources_dict, "resources_dict", key_type=str),
             instance=instance,
             resource_config=resources_config,
+            pipeline_run=self._pipeline_run,
         )
         self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -82,6 +86,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
         self._partition_key = partition_key
+        self._run_id = run_id
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -145,7 +150,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     @property
     def run_id(self) -> str:
         """str: Hard-coded value to indicate that we are directly invoking solid."""
-        return "EPHEMERAL"
+        return self._run_id
 
     @property
     def run_config(self) -> dict:
@@ -231,6 +236,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             alias=solid_def_or_invocation.given_alias
             if isinstance(solid_def_or_invocation, PendingNodeInvocation)
             else None,
+            run_id=self._run_id,
         )
 
 
@@ -295,6 +301,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         tags: Optional[Dict[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         alias: Optional[str],
+        run_id: str,
     ):
         self._solid_def = solid_def
         self._solid_config = solid_config
@@ -306,6 +313,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._hook_defs = hook_defs
         self._alias = alias if alias else self._solid_def.name
         self._resources_config = resources_config
+        self._run_id = run_id
 
     @property
     def solid_config(self) -> Any:
@@ -348,7 +356,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     @property
     def run_id(self) -> str:
         """str: Hard-coded value to indicate that we are directly invoking solid."""
-        return "EPHEMERAL"
+        return self._run_id
 
     @property
     def run_config(self) -> dict:
@@ -423,6 +431,7 @@ def build_op_context(
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
     partition_key: Optional[str] = None,
+    run_id: str = "EPHEMERAL",
 ) -> OpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -462,6 +471,7 @@ def build_op_context(
         solid_config=op_config,
         instance=instance,
         partition_key=partition_key,
+        run_id=run_id,
     )
 
 
@@ -472,6 +482,7 @@ def build_solid_context(
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
     partition_key: Optional[str] = None,
+    run_id: str = "EPHEMERAL",
 ) -> UnboundSolidExecutionContext:
     """Builds solid execution context from provided parameters.
 
@@ -515,4 +526,5 @@ def build_solid_context(
         solid_config=solid_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
+        run_id=check.str_param(run_id, "run_id"),
     )

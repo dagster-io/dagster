@@ -927,3 +927,15 @@ def test_build_context_with_resources_config(context_builder):
             resources={"my_resource": my_resource},
             resources_config={"bad_resource": {"config": "foo"}},
         )
+
+
+def test_invocation_with_resource_run_id():
+    @solid(required_resource_keys={"foo"})
+    def basic(context):
+        assert context.run_id == "bar"
+
+    @resource
+    def the_resource(context):
+        assert context.run_id == "bar"
+
+    basic(build_solid_context(run_id="bar", resources={"foo": the_resource}))
