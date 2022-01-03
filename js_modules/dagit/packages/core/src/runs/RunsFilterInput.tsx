@@ -83,11 +83,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
-      obj.runIds = [item.value];
+      obj.runIds = obj.runIds || [];
+      obj.runIds.push(item.value);
     } else if (item.token === 'status') {
-      if (!obj.statuses) {
-        obj.statuses = [];
-      }
+      obj.statuses = obj.statuses || [];
       obj.statuses.push(item.value as RunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
