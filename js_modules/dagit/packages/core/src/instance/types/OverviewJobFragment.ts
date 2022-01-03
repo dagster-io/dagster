@@ -66,12 +66,24 @@ export interface OverviewJobFragment_schedules_scheduleState {
   status: InstigationStatus;
 }
 
+export interface OverviewJobFragment_schedules_futureTicks_results {
+  __typename: "FutureInstigationTick";
+  timestamp: number;
+}
+
+export interface OverviewJobFragment_schedules_futureTicks {
+  __typename: "FutureInstigationTicks";
+  results: OverviewJobFragment_schedules_futureTicks_results[];
+}
+
 export interface OverviewJobFragment_schedules {
   __typename: "Schedule";
   id: string;
   mode: string;
   name: string;
   scheduleState: OverviewJobFragment_schedules_scheduleState;
+  executionTimezone: string | null;
+  futureTicks: OverviewJobFragment_schedules_futureTicks;
   cronSchedule: string;
 }
 

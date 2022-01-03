@@ -72,12 +72,24 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   status: InstigationStatus;
 }
 
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks_results {
+  __typename: "FutureInstigationTick";
+  timestamp: number;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks {
+  __typename: "FutureInstigationTicks";
+  results: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks_results[];
+}
+
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules {
   __typename: "Schedule";
   id: string;
   mode: string;
   name: string;
   scheduleState: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState;
+  executionTimezone: string | null;
+  futureTicks: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks;
   cronSchedule: string;
 }
 

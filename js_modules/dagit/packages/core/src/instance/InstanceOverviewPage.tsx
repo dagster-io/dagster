@@ -39,6 +39,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {InstanceTabs} from './InstanceTabs';
+import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {InstanceOverviewInitialQuery} from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
@@ -444,7 +445,10 @@ const JobSection = (props: JobSectionProps) => {
                 </td>
                 <td>
                   {job.schedules.length || job.sensors.length ? (
-                    <ScheduleOrSensorTag job={job} repoAddress={repoAddress} />
+                    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
+                      <ScheduleOrSensorTag job={job} repoAddress={repoAddress} />
+                      {job.schedules.length ? <NextTick schedules={job.schedules} /> : null}
+                    </Box>
                   ) : (
                     <div style={{color: ColorsWIP.Gray500}}>None</div>
                   )}
@@ -497,6 +501,7 @@ const OVERVIEW_JOB_FRAGMENT = gql`
         id
         status
       }
+      ...ScheduleFutureTicksFragment
       ...ScheduleSwitchFragment
     }
     sensors {
@@ -515,6 +520,7 @@ const OVERVIEW_JOB_FRAGMENT = gql`
   }
 
   ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
   ${RUN_METADATA_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
