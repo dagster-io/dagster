@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-from croniter import croniter
 from dagster import check
 from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
+from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -197,9 +197,10 @@ class ScheduleDefinition:
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
-        if not croniter.is_valid(self._cron_schedule):
+        if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''.  "
+                "Dagster recognizes cron expressions consisting of 5 space-separated fields."
             )
 
         if job is not None:
