@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-from croniter import croniter
 from dagster import check
 from dagster.seven import funcsigs
 
