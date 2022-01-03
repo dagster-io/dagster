@@ -38,25 +38,11 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, graphene_info, external_schedule, schedule_state=None, fetched_state=False):
+    def __init__(self, external_schedule, schedule_state):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-        if not fetched_state:
-            self._schedule_state = graphene_info.context.instance.get_job_state(
-                self._external_schedule.get_external_origin_id()
-            )
-        else:
-            self._schedule_state = check.opt_inst_param(
-                schedule_state, "schedule_state", InstigatorState
-            )
-
-        if not self._schedule_state:
-            # Also include a ScheduleState for a stopped schedule that may not
-            # have a stored database row yet
-            self._schedule_state = self._external_schedule.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+        self._schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
 
         super().__init__(
             name=external_schedule.name,
@@ -115,6 +101,19 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp):
         return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
+
+    @staticmethod
+    def with_default_state(instance, external_schedule, stored_state):
+        """Helper function to populate the GrapheneSchedule with the default state if no stored
+        state could be found"""
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.opt_inst_param(stored_state, "stored_state", InstigatorState)
+        return GrapheneSchedule(
+            external_schedule,
+            stored_state
+            if stored_state
+            else external_schedule.get_default_instigation_state(instance),
+        )
 
 
 class GrapheneScheduleOrError(graphene.Union):

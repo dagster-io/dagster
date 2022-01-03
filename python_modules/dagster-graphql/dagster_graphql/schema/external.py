@@ -196,11 +196,10 @@ class GrapheneRepository(graphene.ObjectType):
 
         return sorted(
             [
-                GrapheneSchedule(
-                    graphene_info,
+                GrapheneSchedule.with_default_state(
+                    graphene_info.context.instance,
                     schedule,
                     schedule_states_by_name.get(schedule.name),
-                    fetched_state=True,
                 )
                 for schedule in schedules
             ],
