@@ -201,6 +201,10 @@ class ScheduleDefinition:
             raise DagsterInvalidDefinitionError(
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
             )
+        if len(self._cron_schedule.split(" ")) != 5:
+            raise DagsterInvalidDefinitionError(
+                f"Found non-standard cron schedule '{self._cron_schedule}' for schedule '{name}''."
+            )
 
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)

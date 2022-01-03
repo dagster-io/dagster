@@ -732,6 +732,12 @@ def test_schedule_decorators_bad():
         def bad_cron_string_two(context):
             return {}
 
+    with pytest.raises(DagsterInvalidDefinitionError, match="non-standard cron schedule"):
+
+        @schedule(cron_schedule="@daily", pipeline_name="foo_pipeline")
+        def bad_cron_string_three(context):
+            return {}
+
 
 def test_scheduled_jobs():
     from dagster import Field, String
