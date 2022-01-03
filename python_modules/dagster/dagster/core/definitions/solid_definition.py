@@ -36,6 +36,7 @@ from .solid_invocation import solid_invocation_result
 
 if TYPE_CHECKING:
     from .decorators.solid import DecoratedSolidFunction
+    from ..execution.context.invocation import UnboundSolidExecutionContext
 
 
 class SolidDefinition(NodeDefinition):
@@ -137,12 +138,23 @@ class SolidDefinition(NodeDefinition):
         )
 
     def __call__(self, *args, **kwargs) -> Any:
-        from .composition import is_in_composition
+        from .composition import (
+            is_in_composition,
+            enter_invalid_composition_context,
+            is_in_invalid_invocation_context,
+            current_invalid_invocation_node,
+            exit_invalid_composition_context,
+        )
         from .decorators.solid import DecoratedSolidFunction
         from ..execution.context.invocation import UnboundSolidExecutionContext
 
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)
+        elif is_in_invalid_invocation_context():
+            name, source = current_invalid_invocation_node()
+            raise DagsterInvalidInvocationError(
+                f"Attempted to invoke @{self.node_type_str} '{self.name}' within {source} '{name}', which is undefined behavior. In order to compose invocations, check out the graph API: https://docs.dagster.io/concepts/ops-jobs-graphs/nesting-graphs#nesting-graphs"
+            )
         else:
             node_label = self.node_type_str  # string "solid" for solids, "op" for ops
 
@@ -167,7 +179,8 @@ class SolidDefinition(NodeDefinition):
                             "but no context was provided when invoking."
                         )
                     context = args[0]
-                    return solid_invocation_result(self, context, *args[1:], **kwargs)
+                    return _wrap_invocation(self, context, args[1:], kwargs)
+
                 # Context argument is provided under kwargs
                 else:
                     context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
@@ -183,7 +196,8 @@ class SolidDefinition(NodeDefinition):
                         for kwarg, val in kwargs.items()
                         if not kwarg == context_param_name
                     }
-                    return solid_invocation_result(self, context, *args, **kwargs_sans_context)
+                    enter_invalid_composition_context(self.name, f"@{node_label}")
+                    return _wrap_invocation(self, context, args, kwargs_sans_context)
 
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
@@ -191,7 +205,7 @@ class SolidDefinition(NodeDefinition):
                         f"Compute function of {node_label} '{self.name}' has no context argument, but "
                         "context was provided when invoking."
                     )
-                return solid_invocation_result(self, None, *args, **kwargs)
+                return _wrap_invocation(self, None, args, kwargs)
 
     @property
     def node_type_str(self) -> str:
@@ -263,6 +277,26 @@ class SolidDefinition(NodeDefinition):
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
+
+
+def _wrap_invocation(
+    solid_def: SolidDefinition, context: Optional["UnboundSolidExecutionContext"], args, kwargs
+) -> Any:
+    from .composition import (
+        is_in_composition,
+        enter_invalid_composition_context,
+        is_in_invalid_invocation_context,
+        current_invalid_invocation_node,
+        exit_invalid_composition_context,
+    )
+
+    enter_invalid_composition_context(solid_def.name, f"@{solid_def.node_type_str}")
+    try:
+        result = solid_invocation_result(solid_def, context, *args, **kwargs)
+    finally:
+        exit_invalid_composition_context()
+
+    return result
 
 
 class CompositeSolidDefinition(GraphDefinition):

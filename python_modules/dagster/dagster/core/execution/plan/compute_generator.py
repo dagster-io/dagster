@@ -62,9 +62,18 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
 
 
 def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
-    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-    for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-        yield event
+    from ...definitions.composition import (
+        enter_invalid_composition_context,
+        exit_invalid_composition_context,
+    )
+
+    enter_invalid_composition_context(context.solid_def.name, f"@{context.solid_def.node_type_str}")
+    try:
+        result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+        for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+            yield event
+    finally:
+        exit_invalid_composition_context()
 
 
 def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):

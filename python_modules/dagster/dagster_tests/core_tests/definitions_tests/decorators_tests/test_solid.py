@@ -20,6 +20,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -456,3 +457,22 @@ def test_input_default():
 
     result = execute_solid(foo)
     assert result.output_value() == "ok"
+
+
+def test_solid_within_solid():
+    @solid
+    def basic():
+        pass
+
+    @solid
+    def shouldnt_work():
+        basic()
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @solid 'basic' within @solid 'shouldnt_work', which is undefined behavior. In order to compose invocations, check out the graph API",
+    ):
+        shouldnt_work()
+
+    # Ensure that after exiting, proper usage isn't flagged
+    basic()

@@ -17,6 +17,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.types.dagster_type import Int, String
 
 
@@ -487,3 +488,22 @@ def test_error_message_mixed_ops_and_solids():
         "{'config': {'foo': '...'}}}}}",
     ):
         nested_job.execute_in_process()
+
+
+def test_invoke_op_within_op():
+    @op
+    def basic():
+        pass
+
+    @op
+    def shouldnt_work():
+        basic()
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @op 'basic' within @op 'shouldnt_work', which is undefined behavior. In order to compose invocations, check out the graph API",
+    ):
+        shouldnt_work()
+
+    # Ensure that after exiting, proper usage isn't flagged
+    basic()

@@ -32,6 +32,7 @@ from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
 )
 from dagster.loggers import json_console_logger
 
@@ -1008,3 +1009,23 @@ def test_nothing_inputs_graph():
     the_job = my_pipeline.to_job()
     result = the_job.execute_in_process()
     assert result.success
+
+
+def test_graph_with_invalid_op_invocation():
+    @op
+    def basic():
+        pass
+
+    @op
+    def shouldnt_work():
+        basic()
+
+    @graph
+    def the_graph():
+        shouldnt_work()
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @op 'basic' within @op 'shouldnt_work', which is undefined behavior.",
+    ):
+        the_graph.execute_in_process()
