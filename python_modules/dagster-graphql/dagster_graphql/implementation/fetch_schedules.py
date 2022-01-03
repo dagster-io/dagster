@@ -67,11 +67,10 @@ def get_schedules_or_error(graphene_info, repository_selector):
     }
 
     results = [
-        GrapheneSchedule(
-            graphene_info,
-            external_schedule=external_schedule,
-            schedule_state=schedule_states_by_name.get(external_schedule.name),
-            fetched_state=True,
+        GrapheneSchedule.with_default_state(
+            graphene_info.context.instance,
+            external_schedule,
+            schedule_states_by_name.get(external_schedule.name),
         )
         for external_schedule in external_schedules
     ]
@@ -89,11 +88,21 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
     repository = location.get_repository(pipeline_selector.repository_name)
     external_schedules = repository.get_external_schedules()
 
-    return [
-        GrapheneSchedule(graphene_info, external_schedule=external_schedule)
-        for external_schedule in external_schedules
-        if external_schedule.pipeline_name == pipeline_selector.pipeline_name
-    ]
+    results = []
+    for external_schedule in external_schedules:
+        if external_schedule.pipeline_name != pipeline_selector.pipeline_name:
+            continue
+
+        schedule_state = graphene_info.context.instance.get_job_state(
+            external_schedule.get_external_origin_id()
+        )
+        results.append(
+            GrapheneSchedule.with_default_state(
+                graphene_info.context.instance, external_schedule, schedule_state
+            )
+        )
+
+    return results
 
 
 @capture_error
@@ -112,7 +121,12 @@ def get_schedule_or_error(graphene_info, schedule_selector):
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
 
-    return GrapheneSchedule(graphene_info, external_schedule=external_schedule)
+    schedule_state = graphene_info.context.instance.get_job_state(
+        external_schedule.get_external_origin_id()
+    )
+    return GrapheneSchedule.with_default_state(
+        graphene_info.context.instance, external_schedule, schedule_state
+    )
 
 
 def get_schedule_next_tick(graphene_info, schedule_state):
