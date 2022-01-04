@@ -58,7 +58,7 @@ def chunked_run_records_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SI
             has_more = chunk_size and len(chunk) >= chunk_size
 
             for run in chunk:
-                cursor = run.run_id
+                cursor = run.pipeline_run.run_id
                 yield run
 
             if progress:
@@ -103,7 +103,7 @@ def migrate_run_start_end(storage, print_fn=None):
         if run_record.start_time:
             continue
 
-        storage.add_run_stats(run_record.pipeline_run.run_id)
+        add_run_stats(storage, run_record.pipeline_run.run_id)
 
 
 def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
