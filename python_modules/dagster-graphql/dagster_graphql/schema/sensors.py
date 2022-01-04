@@ -58,18 +58,11 @@ class GrapheneSensor(graphene.ObjectType):
     class Meta:
         name = "Sensor"
 
-    def __init__(self, graphene_info, external_sensor, sensor_state=None, fetched_state=False):
+    def __init__(self, external_sensor, sensor_state):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
-        if not fetched_state:
-            self._sensor_state = graphene_info.context.instance.get_job_state(
-                self._external_sensor.get_external_origin_id()
-            )
-        else:
-            self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
+        self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
 
         if not self._sensor_state:
-            # Also include a SensorState for a stopped sensor that may not
-            # have a stored database row yet
             self._sensor_state = self._external_sensor.get_default_instigation_state()
 
         super().__init__(
