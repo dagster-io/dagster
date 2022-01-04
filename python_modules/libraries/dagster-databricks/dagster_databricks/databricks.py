@@ -257,8 +257,6 @@ def poll_run_state(
     max_wait_time_sec: float,
 ):
     run_state = client.get_run_state(databricks_run_id)
-    print("------" * 10)
-    print(run_state)
     if run_state.has_terminated():
         if run_state.is_successful():
             log.info("Run %s completed successfully" % databricks_run_id)
