@@ -92,6 +92,12 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             description="If the Databricks job run takes more than this many seconds, then "
             "consider it failed and terminate the step.",
         ),
+        "poll_interval_sec": Field(
+            float,
+            is_required=False,
+            default_value=5.0,
+            description="How frequently Dagster will poll Databricks to determine the state of the job.",
+        ),
     }
 )
 def databricks_pyspark_step_launcher(context):
@@ -122,6 +128,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         staging_prefix,
         wait_for_logs,
         max_completion_wait_time_seconds,
+        poll_interval_sec=5,
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
     ):
@@ -149,6 +156,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_runner = DatabricksJobRunner(
             host=databricks_host,
             token=databricks_token,
+            poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
 

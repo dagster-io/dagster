@@ -111,7 +111,7 @@ class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress."""
 
     def __init__(
-        self, host, token, poll_interval_sec=10, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
+        self, host, token, poll_interval_sec=5, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
     ):
         """Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net
@@ -244,7 +244,9 @@ class DatabricksJobRunner:
         log.warn("Could not retrieve cluster logs!")
 
     def wait_for_run_to_complete(self, log, databricks_run_id):
-        return wait_for_run_to_complete(self.client, log, databricks_run_id, self.max_wait_time_sec)
+        return wait_for_run_to_complete(
+            self.client, log, databricks_run_id, self.poll_interval_sec, self.max_wait_time_sec
+        )
 
 
 def poll_run_state(
@@ -255,6 +257,8 @@ def poll_run_state(
     max_wait_time_sec: float,
 ):
     run_state = client.get_run_state(databricks_run_id)
+    print("------" * 10)
+    print(run_state)
     if run_state.has_terminated():
         if run_state.is_successful():
             log.info("Run %s completed successfully" % databricks_run_id)
@@ -278,7 +282,7 @@ def poll_run_state(
     return False
 
 
-def wait_for_run_to_complete(client, log, databricks_run_id, max_wait_time_sec):
+def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
@@ -286,3 +290,4 @@ def wait_for_run_to_complete(client, log, databricks_run_id, max_wait_time_sec):
     while True:
         if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec):
             return
+        time.sleep(poll_interval_sec)
