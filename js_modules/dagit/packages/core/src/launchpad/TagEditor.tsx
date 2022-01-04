@@ -211,7 +211,7 @@ interface ITagEditorLinkProps {
 
 const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   <ShortcutHandler
-    shortcutLabel={'⌥T'}
+    shortcutLabel="⌥T"
     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
     onShortcut={onRequestOpen}
   >

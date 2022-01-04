@@ -118,9 +118,7 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content={
-                  'Re-execute is unavailable because the pipeline is not present in the current workspace.'
-                }
+                content="Re-execute is unavailable because the pipeline is not present in the current workspace."
                 position="bottom"
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"

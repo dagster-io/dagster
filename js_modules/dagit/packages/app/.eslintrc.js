@@ -53,6 +53,7 @@ module.exports = {
         ],
       },
     ],
+    'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',

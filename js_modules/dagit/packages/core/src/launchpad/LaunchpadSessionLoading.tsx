@@ -9,8 +9,8 @@ const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
 
 export const LaunchpadSessionLoading = () => (
   <SplitPanelContainer
-    axis={'vertical'}
-    identifier={'execution'}
+    axis="vertical"
+    identifier="execution"
     firstInitialPercent={75}
     firstMinSize={100}
     first={
@@ -19,6 +19,6 @@ export const LaunchpadSessionLoading = () => (
         <SessionSettingsBar />
       </>
     }
-    second={<LoadingOverlay isLoading message={'Loading pipeline and partition sets...'} />}
+    second={<LoadingOverlay isLoading message="Loading pipeline and partition sets..." />}
   />
 );

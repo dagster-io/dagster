@@ -226,7 +226,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItemWIP text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text="View skip reason..." onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {

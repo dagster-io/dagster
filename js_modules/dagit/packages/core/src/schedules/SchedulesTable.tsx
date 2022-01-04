@@ -173,7 +173,7 @@ const ScheduleRow: React.FC<{
       </td>
       <td>
         {cronSchedule ? (
-          <Tooltip position={'bottom'} content={cronSchedule}>
+          <Tooltip position="bottom" content={cronSchedule}>
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (

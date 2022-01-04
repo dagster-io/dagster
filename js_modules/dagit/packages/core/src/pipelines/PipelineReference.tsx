@@ -48,7 +48,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <IconWIP color={ColorsWIP.Gray400} name={'job'} />
+          <IconWIP color={ColorsWIP.Gray400} name="job" />
         </Box>
       )}
       <span>

@@ -121,7 +121,7 @@ export const GanttChartTimescale = ({
         {ticks}
         {highlightedMs.length === 2 && (
           <div
-            key={`highlight-duration`}
+            key="highlight-duration"
             className="tick duration"
             style={{
               left: (highlightedMs[0] - startMs) * pxPerMs + 2,

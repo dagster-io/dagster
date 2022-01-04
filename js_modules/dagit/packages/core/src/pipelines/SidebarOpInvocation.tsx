@@ -24,7 +24,7 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
 
   return (
     <div>
-      <SidebarSection title={'Invocation'}>
+      <SidebarSection title="Invocation">
         <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
           {showInputs || showOutputs ? (

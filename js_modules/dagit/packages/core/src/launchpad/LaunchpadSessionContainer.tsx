@@ -522,8 +522,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     <>
       <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
       <SplitPanelContainer
-        axis={'vertical'}
-        identifier={'execution'}
+        axis="vertical"
+        identifier="execution"
         firstMinSize={100}
         firstInitialPercent={75}
         first={
@@ -576,7 +576,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
               {tagsFromSession.length ? null : (
                 <>
                   <ShortcutHandler
-                    shortcutLabel={'⌥T'}
+                    shortcutLabel="⌥T"
                     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
                     onShortcut={openTagEditor}
                   >
