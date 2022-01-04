@@ -36,7 +36,7 @@ if "DATABRICKS_TOKEN" not in os.environ:
 DONE = object()
 
 
-def event_writing_loop(events_queue, put_events_fn):
+def event_writing_loop(events_queue: Queue, put_events_fn):
     """
     Periodically check whether the instance has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to DBFS.

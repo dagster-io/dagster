@@ -320,6 +320,10 @@ def test_dynamic_job():
             assert result.result_for_solid("total").output_value() == 6
 
 
+@pytest.mark.skip(
+    reason="Reexecution will fail with step launchers because it relies on querying event log "
+    "storage which is not present on the external step"
+)
 @pytest.mark.parametrize(
     "job_fn",
     [
@@ -328,7 +332,7 @@ def test_dynamic_job():
         define_basic_job_last_launched,
     ],
 )
-def test_reexecution_all(job_fn):
+def test_reexecution(job_fn):
     with tempfile.TemporaryDirectory() as tmpdir:
         run_config = {
             "resources": {
