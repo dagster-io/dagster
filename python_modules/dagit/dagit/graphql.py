@@ -10,6 +10,7 @@ from graphql.error import GraphQLError
 from graphql.error import format_error as format_graphql_error
 from graphql.execution import ExecutionResult
 from rx import Observable
+from rx.concurrency import thread_pool_scheduler
 from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -111,7 +112,7 @@ class GraphQLServer(ABC):
         variables = data.get("variables")
         operation_name = data.get("operationName")
 
-        result = await run_in_threadpool(  # threadpool = aio event loop
+        result = await run_in_threadpool(
             self._graphql_schema.execute,
             query,
             variables=variables,
@@ -136,6 +137,7 @@ class GraphQLServer(ABC):
         """
         observables = {}
         tasks = {}
+        event_loop = get_event_loop()
 
         await websocket.accept(subprotocol=GraphQLWS.PROTOCOL)
 
@@ -160,7 +162,6 @@ class GraphQLServer(ABC):
                         variables = data.get("variables")
                         operation_name = data.get("operation_name")
 
-                        # correct scoping?
                         request_context = self.make_request_context(websocket)
                         async_result = self._graphql_schema.execute(
                             query,
@@ -184,10 +185,12 @@ class GraphQLServer(ABC):
                         continue
 
                     # in the future we should get back async gen directly, back compat for now
-                    disposable, async_gen = _disposable_and_async_gen_from_obs(async_result)
+                    disposable, async_gen = _disposable_and_async_gen_from_obs(
+                        async_result, event_loop
+                    )
 
                     observables[operation_id] = disposable
-                    tasks[operation_id] = get_event_loop().create_task(
+                    tasks[operation_id] = event_loop.create_task(
                         _handle_async_results(async_gen, operation_id, websocket)
                     )
                 elif message_type == GraphQLWS.STOP:
@@ -259,7 +262,7 @@ async def _send_message(
     return await websocket.send_json(data)
 
 
-def _disposable_and_async_gen_from_obs(obs: Observable):
+def _disposable_and_async_gen_from_obs(obs: Observable, loop):
     """
     Compatability layer for legacy Observable to async generator
 
@@ -268,7 +271,10 @@ def _disposable_and_async_gen_from_obs(obs: Observable):
     """
     queue: Queue = Queue()
 
-    disposable = obs.subscribe(on_next=queue.put_nowait)
+    # process observable in a thread, handle results in aio loop
+    disposable = obs.subscribe_on(thread_pool_scheduler).subscribe(
+        on_next=lambda i: loop.call_soon_threadsafe(queue.put_nowait, i)
+    )
 
     async def async_gen():
         while True:
