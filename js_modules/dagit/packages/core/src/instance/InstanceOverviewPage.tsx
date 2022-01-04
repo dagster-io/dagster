@@ -20,7 +20,7 @@ import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
+import {AnchorButton, ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
@@ -40,6 +40,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {InstanceTabs} from './InstanceTabs';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
+import {StepSummaryForRun} from './StepSummaryForRun';
 import {InstanceOverviewInitialQuery} from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
@@ -405,8 +406,8 @@ const JobSection = (props: JobSectionProps) => {
         <thead>
           <tr>
             <th style={{width: '40%'}}>Job</th>
-            <th style={{width: '30%'}}>Trigger</th>
-            <th style={{width: '30%'}}>Latest run</th>
+            <th style={{width: '25%'}}>Trigger</th>
+            <th style={{width: '35%'}}>Latest run</th>
             <th />
           </tr>
         </thead>
@@ -454,14 +455,29 @@ const JobSection = (props: JobSectionProps) => {
                   )}
                 </td>
                 <td>
-                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                    <TagWIP intent={intent(job.runs[0].status)}>
-                      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                        <RunStatusIndicator status={job.runs[0].status} size={10} />
-                        <RunTime run={job.runs[0]} />
-                      </Box>
-                    </TagWIP>
-                    <RunElapsed run={job.runs[0]} />
+                  <Box
+                    flex={{
+                      direction: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
+                      <TagWIP intent={intent(job.runs[0].status)}>
+                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                          <RunStatusIndicator status={job.runs[0].status} size={10} />
+                          <RunTime run={job.runs[0]} />
+                        </Box>
+                      </TagWIP>
+                      {failedStatuses.has(job.runs[0].status) ||
+                      inProgressStatuses.has(job.runs[0].status) ? (
+                        <StepSummaryForRun runId={job.runs[0].id} />
+                      ) : null}
+                    </Box>
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                      <RunElapsed run={job.runs[0]} />
+                      <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
+                    </Box>
                   </Box>
                 </td>
                 <td>
