@@ -209,7 +209,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
                 values={search}
                 onChange={(search) => onSearch(search)}
                 suggestionProviders={suggestions}
-                placeholder={'Filter by name or input/output type...'}
+                placeholder="Filter by name or input/output type..."
               />
             </Box>
             <div style={{flex: 1}}>

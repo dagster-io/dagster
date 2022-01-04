@@ -155,7 +155,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
               </div>
               <Placeholder>{searchPlaceholder}</Placeholder>
             </Box>
-            <SlashShortcut>{'/'}</SlashShortcut>
+            <SlashShortcut>/</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>

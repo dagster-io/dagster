@@ -260,7 +260,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
     return (
       <div>
         <ShortcutHandler
-          shortcutLabel={'⌥E'}
+          shortcutLabel="⌥E"
           shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
           onShortcut={() => button.current?.click()}
         >
@@ -285,10 +285,10 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
 
               return (
                 <MenuWIP ulRef={itemsParentRef}>
-                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Presets`} />}
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text="Presets" />}
                   {renderedPresetItems}
                   {bothTypesPresent && <MenuDividerWIP />}
-                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Partition Sets`} />}
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text="Partition Sets" />}
                   {renderedPartitionSetItems}
                 </MenuWIP>
               );

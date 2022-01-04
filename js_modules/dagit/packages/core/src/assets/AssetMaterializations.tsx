@@ -104,7 +104,7 @@ export const AssetMaterializations: React.FC<Props> = ({
     return (
       <>
         <CurrentRunsBanner liveData={liveData} />
-        <SidebarSection title={'Materialization in Last Run'}>
+        <SidebarSection title="Materialization in Last Run">
           <>
             {latest ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
@@ -126,7 +126,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </Box>
           </>
         </SidebarSection>
-        <SidebarSection title={'Materialization Plots'}>
+        <SidebarSection title="Materialization Plots">
           <AssetMaterializationGraphs
             xAxis={xAxis}
             asSidebarSection
@@ -242,7 +242,7 @@ const AssetMaterializationGraphs: React.FC<{
             <Box padding={{horizontal: 24, vertical: 16}}>
               <AssetValueGraph
                 label={label}
-                width={'100%'}
+                width="100%"
                 data={graphDataByMetadataLabel[label]}
                 xHover={xHover}
                 onHoverX={(x) => x !== xHover && setXHover(x)}
