@@ -179,7 +179,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
 
-        get_timestamp = lambda event: event.timestamp
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
