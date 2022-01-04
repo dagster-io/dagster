@@ -19,6 +19,9 @@ const RUN_STATUS_COLORS = {
   FAILURE: ColorsWIP.Red500,
   CANCELING: ColorsWIP.Red500,
   CANCELED: ColorsWIP.Red500,
+
+  // Not technically a RunStatus, but useful.
+  SCHEDULED: ColorsWIP.Blue200,
 };
 
 export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
@@ -35,13 +38,16 @@ export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = Re
 );
 
 interface RunStatusProps {
-  status: RunStatus;
+  status: RunStatus | 'SCHEDULED';
   size?: number;
 }
 
 export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
     return <Spinner purpose="caption-text" />;
+  }
+  if (status === 'SCHEDULED') {
+    return <RunStatusDot status={status} size={size || 12} />;
   }
   return (
     <RunStatusDot
@@ -67,7 +73,7 @@ const pulseAnimation = keyframes`
 `;
 
 export const RunStatusDot = styled.div<{
-  status: RunStatus;
+  status: RunStatus | 'SCHEDULED';
   size: number;
   pulse?: boolean;
 }>`

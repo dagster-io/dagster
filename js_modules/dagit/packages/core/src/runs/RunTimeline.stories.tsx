@@ -38,7 +38,9 @@ export const OneRow = () => {
 
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
-    return {[jobKey]: {path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])}};
+    return {
+      [jobKey]: {label: jobKey, path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])},
+    };
   }, [twoHoursAgo, now]);
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
@@ -53,6 +55,7 @@ export const RowWithOverlappingRuns = () => {
     const [first, second, third] = generateRuns(3, [twoHoursAgo, now]);
     return {
       [jobKey]: {
+        label: jobKey,
         path: `/${jobKey}`,
         runs: [{...first}, {...first}, {...second}, {...second}, {...second}, third],
       },

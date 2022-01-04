@@ -317,6 +317,7 @@ export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
 export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on Run {
     id
+    runId
     status
     stats {
       ... on RunStatsSnapshot {

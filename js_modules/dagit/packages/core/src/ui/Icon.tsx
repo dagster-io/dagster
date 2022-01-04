@@ -106,6 +106,7 @@ const Icons = {
   toggle_off: require('./icon-svgs/toggle_off.svg'),
   toggle_on: require('./icon-svgs/toggle_on.svg'),
   tune: require('./icon-svgs/tune.svg'),
+  unfold_less: require('./icon-svgs/unfold_less.svg'),
   unfold_more: require('./icon-svgs/unfold_more.svg'),
   view_list: require('./icon-svgs/view_list.svg'),
   visibility: require('./icon-svgs/visibility.svg'),
