@@ -55,6 +55,7 @@ class ScheduleInstigatorData(
             # `start_date` on partition-based schedules, which is used to define
             # the range of partitions)
             check.opt_float_param(start_timestamp, "start_timestamp"),
+            # this is a vestigial parameter that is not used and will be removed in the future
             check.opt_str_param(scheduler, "scheduler"),
         )
 

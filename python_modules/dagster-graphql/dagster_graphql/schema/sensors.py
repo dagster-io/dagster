@@ -67,9 +67,7 @@ class GrapheneSensor(graphene.ObjectType):
         if not self._sensor_state:
             # Also include a SensorState for a stopped sensor that may not
             # have a stored database row yet
-            self._sensor_state = self._external_sensor.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            self._sensor_state = self._external_sensor.get_default_instigation_state()
 
         super().__init__(
             name=external_sensor.name,
