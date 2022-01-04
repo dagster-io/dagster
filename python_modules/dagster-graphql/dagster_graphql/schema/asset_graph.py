@@ -53,8 +53,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
-    latestMaterializationPerPartition = graphene.Field(
-        non_null_list(GrapheneAssetMaterialization), partitions=graphene.List(graphene.String)
+    latestMaterializationByPartition = graphene.Field(
+        graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
+        partitions=graphene.List(graphene.String),
     )
 
     class Meta:
@@ -175,7 +176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 ]
         return []
 
-    def resolve_latestMaterializationPerPartition(self, _graphene_info, **kwargs):
+    def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
 
         get_timestamp = lambda event: event.timestamp
@@ -191,19 +192,22 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
         latest_materialization_by_partition = {}
-        for event in events_for_partitions:
+        for event in events_for_partitions:  # events are sorted in order of newest to oldest
             event_partition = get_partition(event)
             if event_partition not in latest_materialization_by_partition:
                 latest_materialization_by_partition[event_partition] = event
-            else:
-                if get_timestamp(event) > get_timestamp(
-                    latest_materialization_by_partition[event_partition]
-                ):
-                    latest_materialization_by_partition[event_partition] = event
+            if len(latest_materialization_by_partition) == len(partitions):
+                break
+
+        # return materializations in the same order as the provided partitions, None if
+        # materialization does not exist
+        ordered_materializations = [
+            latest_materialization_by_partition.get(partition) for partition in partitions
+        ]
 
         return [
-            GrapheneAssetMaterialization(event=event)
-            for event in latest_materialization_by_partition.values()
+            GrapheneAssetMaterialization(event=event) if event else None
+            for event in ordered_materializations
         ]
 
 

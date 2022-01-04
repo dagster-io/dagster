@@ -151,7 +151,7 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
                 assetNodes {
                     id
                     partitionKeys
-                    latestMaterializationPerPartition(partitions: $partitions) {
+                    latestMaterializationByPartition(partitions: $partitions) {
                         partition
                         materializationEvent {
                             stepStats {
@@ -435,7 +435,8 @@ class TestAssetAwareEventLog(
         assert result.data["pipelineOrError"]
         assert result.data["pipelineOrError"]["assetNodes"]
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert len(asset_node["latestMaterializationPerPartition"]) == 0
+        assert len(asset_node["latestMaterializationByPartition"]) == 1
+        assert asset_node["latestMaterializationByPartition"][0] == None
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -447,8 +448,8 @@ class TestAssetAwareEventLog(
         assert result.data["pipelineOrError"]
         assert result.data["pipelineOrError"]["assetNodes"]
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert len(asset_node["latestMaterializationPerPartition"]) == 1
-        materialization = asset_node["latestMaterializationPerPartition"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 1
+        materialization = asset_node["latestMaterializationByPartition"][0]
         start_time = materialization["materializationEvent"]["stepStats"]["startTime"]
         assert materialization["partition"] == "c"
 
@@ -456,7 +457,7 @@ class TestAssetAwareEventLog(
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
-            variables={"pipelineSelector": selector, "partitions": ["c"]},
+            variables={"pipelineSelector": selector, "partitions": ["c", "a"]},
         )
         assert (
             result.data
@@ -464,10 +465,12 @@ class TestAssetAwareEventLog(
             and result.data["pipelineOrError"]["assetNodes"]
         )
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
-        assert len(asset_node["latestMaterializationPerPartition"]) == 1
-        materialization = asset_node["latestMaterializationPerPartition"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 2
+        materialization = asset_node["latestMaterializationByPartition"][0]
         new_start_time = materialization["materializationEvent"]["stepStats"]["startTime"]
         assert new_start_time > start_time
+
+        assert asset_node["latestMaterializationByPartition"][1] == None
 
 
 class TestPersistentInstanceAssetInProgress(
