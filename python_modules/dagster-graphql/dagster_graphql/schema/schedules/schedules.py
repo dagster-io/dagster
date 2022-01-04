@@ -42,7 +42,11 @@ class GrapheneSchedule(graphene.ObjectType):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-        self._schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
+        self._schedule_state = check.opt_inst_param(
+            schedule_state, "schedule_state", InstigatorState
+        )
+        if not self._schedule_state:
+            self._schedule_state = external_schedule.get_default_instigation_state()
 
         super().__init__(
             name=external_schedule.name,
@@ -101,19 +105,6 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp):
         return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
-
-    @staticmethod
-    def with_default_state(instance, external_schedule, stored_state):
-        """Helper function to populate the GrapheneSchedule with the default state if no stored
-        state could be found"""
-        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
-        check.opt_inst_param(stored_state, "stored_state", InstigatorState)
-        return GrapheneSchedule(
-            external_schedule,
-            stored_state
-            if stored_state
-            else external_schedule.get_default_instigation_state(instance),
-        )
 
 
 class GrapheneScheduleOrError(graphene.Union):
