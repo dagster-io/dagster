@@ -1208,4 +1208,4 @@ class TestRunStorage:
 
         assert run_record.start_time is not None
         assert run_record.end_time is not None
-        assert run_record.end_time > run_record.start_time
+        assert run_record.end_time >= run_record.start_time
