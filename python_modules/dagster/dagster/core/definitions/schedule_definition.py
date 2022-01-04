@@ -424,9 +424,11 @@ class ScheduleDefinition:
             execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
 
+        skip_message: Optional[str] = None
+
         if not result or result == [None]:
             run_requests = []
-            skip_message = None
+            skip_message = "Schedule function returned an empty result"
         elif len(result) == 1:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest))

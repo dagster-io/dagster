@@ -309,8 +309,7 @@ def _evaluate_sensor(
                     )
         elif sensor_runtime_data.skip_message:
             context.logger.info(
-                f"Sensor returned false for {external_sensor.name}, skipping: "
-                f"{sensor_runtime_data.skip_message}"
+                f"Sensor {external_sensor.name} skipped: {sensor_runtime_data.skip_message}"
             )
             context.update_state(
                 TickStatus.SKIPPED,
@@ -318,7 +317,7 @@ def _evaluate_sensor(
                 cursor=sensor_runtime_data.cursor,
             )
         else:
-            context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
+            context.logger.info(f"No run requests returned for {external_sensor.name}, skipping")
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
         yield
