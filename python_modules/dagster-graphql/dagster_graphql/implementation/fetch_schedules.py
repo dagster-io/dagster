@@ -67,8 +67,7 @@ def get_schedules_or_error(graphene_info, repository_selector):
     }
 
     results = [
-        GrapheneSchedule.with_default_state(
-            graphene_info.context.instance,
+        GrapheneSchedule(
             external_schedule,
             schedule_states_by_name.get(external_schedule.name),
         )
@@ -96,11 +95,7 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
         schedule_state = graphene_info.context.instance.get_job_state(
             external_schedule.get_external_origin_id()
         )
-        results.append(
-            GrapheneSchedule.with_default_state(
-                graphene_info.context.instance, external_schedule, schedule_state
-            )
-        )
+        results.append(GrapheneSchedule(external_schedule, schedule_state))
 
     return results
 
@@ -124,9 +119,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
     schedule_state = graphene_info.context.instance.get_job_state(
         external_schedule.get_external_origin_id()
     )
-    return GrapheneSchedule.with_default_state(
-        graphene_info.context.instance, external_schedule, schedule_state
-    )
+    return GrapheneSchedule(external_schedule, schedule_state)
 
 
 def get_schedule_next_tick(graphene_info, schedule_state):
