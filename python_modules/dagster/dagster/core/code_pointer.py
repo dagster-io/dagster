@@ -101,7 +101,7 @@ def load_python_file(python_file, working_directory):
                 raise DagsterImportError(
                     f"Encountered ImportError: `{msg}` while importing module {module_name} from "
                     f"file {python_file}. Consider using the module-based options `-m` for "
-                    "CLI-based targets or the `python_package` workspace.yaml target."
+                    "CLI-based targets or the `python_package` workspace target."
                 ) from ie
 
             working_directory = os.path.abspath(os.path.expanduser(working_directory))
@@ -112,7 +112,7 @@ def load_python_file(python_file, working_directory):
                 f"directory `{working_directory}`. If another working directory should be "
                 "used, please explicitly specify the appropriate path using the `-d` or "
                 "`--working-directory` for CLI based targets or the `working_directory` "
-                "configuration option for `python_file`-based workspace.yaml targets. "
+                "configuration option for `python_file`-based workspace targets. "
             ) from ie
 
     error = None
@@ -146,13 +146,13 @@ def load_python_file(python_file, working_directory):
             f"Module `{module_name}` was resolved using the working directory. The ability to "
             "implicitly load modules from the working directory is deprecated and "
             "will be removed in a future release. Please explicitly specify the "
-            "`working_directory` config option in your workspace.yaml or install "
+            "`working_directory` config option in your workspace or install "
             f"`{module_name}` to your python environment."
         )
         return module
-    except RuntimeError:
-        # We might be here because numpy throws run time errors at import time when being imported
-        # multiple times... we should also use the original import error as the root
+    except (RuntimeError, ImportError):
+        # RuntimeError is because numpy throws run time errors at import time when being imported
+        # multiple times
         python_file = os.path.abspath(os.path.expanduser(python_file))
 
         raise DagsterImportError(
@@ -160,11 +160,8 @@ def load_python_file(python_file, working_directory):
             f" {python_file}. If relying on the working directory to resolve modules, please "
             "explicitly specify the appropriate path using the `-d` or "
             "`--working-directory` for CLI based targets or the `working_directory` "
-            "configuration option for `python_file`-based workspace.yaml targets. " + error.msg
+            "configuration option for `python_file`-based workspace targets. " + error.msg
         ) from error
-    except ImportError:
-        # raise the original import error
-        raise error
 
 
 def load_python_module(module_name, warn_only=False, remove_from_path_fn=None):

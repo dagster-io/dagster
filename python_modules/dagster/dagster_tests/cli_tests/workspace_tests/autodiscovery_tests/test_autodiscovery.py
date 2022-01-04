@@ -6,6 +6,7 @@ import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
+from dagster.core.errors import DagsterImportError
 from dagster.core.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
@@ -203,10 +204,10 @@ def test_local_directory_file():
     path = file_relative_path(__file__, "autodiscover_file_in_directory/repository.py")
 
     with restore_sys_modules():
-        with pytest.raises(ImportError) as exc_info:
+        with pytest.raises(DagsterImportError) as exc_info:
             loadable_targets_from_python_file(path)
 
-        assert str(exc_info.value) == "No module named 'autodiscover_src'"
+        assert "No module named 'autodiscover_src'" in str(exc_info.value)
 
     with pytest.warns(
         UserWarning,
@@ -215,7 +216,7 @@ def test_local_directory_file():
                 "Module `{module}` was resolved using the working directory. The ability to "
                 "implicitly load modules from the working directory is deprecated and will be removed "
                 "in a future release. Please explicitly specify the `working_directory` config option "
-                "in your workspace.yaml or install `{module}` to your python environment."
+                "in your workspace or install `{module}` to your python environment."
             ).format(module="autodiscover_src")
         ),
     ):
