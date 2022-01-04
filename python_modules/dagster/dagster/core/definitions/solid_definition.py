@@ -156,56 +156,70 @@ class SolidDefinition(NodeDefinition):
                 f"Attempted to invoke @{self.node_type_str} '{self.name}' within {source} '{name}', which is undefined behavior. In order to compose invocations, check out the graph API: https://docs.dagster.io/concepts/ops-jobs-graphs/nesting-graphs#nesting-graphs"
             )
         else:
-            node_label = self.node_type_str  # string "solid" for solids, "op" for ops
+            enter_invalid_composition_context(self.name, f"@{self.node_type_str}")
+            try:
+                result = self.invoke(*args, **kwargs)
+            finally:
+                exit_invalid_composition_context()
 
-            if not isinstance(self.compute_fn, DecoratedSolidFunction):
+            return result
+
+    def invoke(self, *args, **kwargs) -> Any:
+        from .composition import (
+            is_in_composition,
+            enter_invalid_composition_context,
+            is_in_invalid_invocation_context,
+            current_invalid_invocation_node,
+            exit_invalid_composition_context,
+        )
+        from .decorators.solid import DecoratedSolidFunction
+        from ..execution.context.invocation import UnboundSolidExecutionContext
+
+        node_label = self.node_type_str  # string "solid" for solids, "op" for ops
+
+        if not isinstance(self.compute_fn, DecoratedSolidFunction):
+            raise DagsterInvalidInvocationError(
+                f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
+                "directly invoked."
+            )
+        if self.compute_fn.has_context_arg():
+            if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
-                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
-                    "directly invoked."
+                    f"Compute function of {node_label} '{self.name}' has context argument, but no context "
+                    "was provided when invoking."
                 )
-            if self.compute_fn.has_context_arg():
-                if len(args) + len(kwargs) == 0:
+            if len(args) > 0:
+                if args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has context argument, but no context "
-                        "was provided when invoking."
+                        f"Compute function of {node_label} '{self.name}' has context argument, "
+                        "but no context was provided when invoking."
                     )
-                if len(args) > 0:
-                    if args[0] is not None and not isinstance(
-                        args[0], UnboundSolidExecutionContext
-                    ):
-                        raise DagsterInvalidInvocationError(
-                            f"Compute function of {node_label} '{self.name}' has context argument, "
-                            "but no context was provided when invoking."
-                        )
-                    context = args[0]
-                    return _wrap_invocation(self, context, args[1:], kwargs)
+                context = args[0]
+                return solid_invocation_result(self, context, *args[1:], **kwargs)
 
-                # Context argument is provided under kwargs
-                else:
-                    context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
-                    if context_param_name not in kwargs:
-                        raise DagsterInvalidInvocationError(
-                            f"Compute function of {node_label} '{self.name}' has context argument "
-                            f"'{context_param_name}', but no value for '{context_param_name}' was "
-                            f"found when invoking. Provided kwargs: {kwargs}"
-                        )
-                    context = kwargs[context_param_name]
-                    kwargs_sans_context = {
-                        kwarg: val
-                        for kwarg, val in kwargs.items()
-                        if not kwarg == context_param_name
-                    }
-                    enter_invalid_composition_context(self.name, f"@{node_label}")
-                    return _wrap_invocation(self, context, args, kwargs_sans_context)
-
+            # Context argument is provided under kwargs
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
+                if context_param_name not in kwargs:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has no context argument, but "
-                        "context was provided when invoking."
+                        f"Compute function of {node_label} '{self.name}' has context argument "
+                        f"'{context_param_name}', but no value for '{context_param_name}' was "
+                        f"found when invoking. Provided kwargs: {kwargs}"
                     )
-                return _wrap_invocation(self, None, args, kwargs)
+                context = kwargs[context_param_name]
+                kwargs_sans_context = {
+                    kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
+                }
+                return solid_invocation_result(self, context, *args, **kwargs_sans_context)
+
+        else:
+            if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                raise DagsterInvalidInvocationError(
+                    f"Compute function of {node_label} '{self.name}' has no context argument, but "
+                    "context was provided when invoking."
+                )
+            return solid_invocation_result(self, None, *args, **kwargs)
 
     @property
     def node_type_str(self) -> str:
@@ -277,26 +291,6 @@ class SolidDefinition(NodeDefinition):
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
-
-
-def _wrap_invocation(
-    solid_def: SolidDefinition, context: Optional["UnboundSolidExecutionContext"], args, kwargs
-) -> Any:
-    from .composition import (
-        is_in_composition,
-        enter_invalid_composition_context,
-        is_in_invalid_invocation_context,
-        current_invalid_invocation_node,
-        exit_invalid_composition_context,
-    )
-
-    enter_invalid_composition_context(solid_def.name, f"@{solid_def.node_type_str}")
-    try:
-        result = solid_invocation_result(solid_def, context, *args, **kwargs)
-    finally:
-        exit_invalid_composition_context()
-
-    return result
 
 
 class CompositeSolidDefinition(GraphDefinition):
