@@ -217,10 +217,8 @@ class GrapheneRepository(graphene.ObjectType):
         return sorted(
             [
                 GrapheneSensor(
-                    graphene_info,
                     sensor,
                     sensor_states_by_name.get(sensor.name),
-                    fetched_state=True,
                 )
                 for sensor in sensors
             ],
