@@ -39,6 +39,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {InstanceTabs} from './InstanceTabs';
+import {JobMenu} from './JobMenu';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {StepSummaryForRun} from './StepSummaryForRun';
 import {InstanceOverviewInitialQuery} from './types/InstanceOverviewInitialQuery';
@@ -481,7 +482,7 @@ const JobSection = (props: JobSectionProps) => {
                   </Box>
                 </td>
                 <td>
-                  <ButtonWIP icon={<IconWIP name="expand_more" />} />
+                  <JobMenu job={job} repoAddress={repoAddress} />
                 </td>
               </tr>
             );

@@ -4,7 +4,6 @@ import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
@@ -13,7 +12,7 @@ import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
-import {doneStatuses} from './RunStatuses';
+import {doneStatuses, failedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
 import {ReExecutionStyle} from './RunUtils';
 import {StepSelection} from './StepSelection';
@@ -106,6 +105,10 @@ function stepSelectionFromRunTags(
   );
 }
 
+export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status);
+export const canRunFromFailure = (run: RunFragment) =>
+  run.executionPlan && failedStatuses.has(run.status);
+
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
@@ -115,16 +118,12 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const selection = stepSelectionWithState(props.selection, metadata);
   const selectionOfCurrentRun = stepSelectionFromRunTags(run, graph, metadata);
 
-  const isFinalStatus = !!doneStatuses.has(run.status);
-  const isFailedWithPlan =
-    run.executionPlan && (run.status === RunStatus.FAILURE || run.status === RunStatus.CANCELED);
-
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
     title: 'All Steps in Root Run',
     tooltip: 'Re-execute the pipeline run from scratch',
-    disabled: !isFinalStatus,
+    disabled: !canRunAllSteps(run),
     onClick: () => onLaunch({type: 'all'}),
   };
 
@@ -168,7 +167,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From Selected',
-    disabled: !isFinalStatus || selection.keys.length !== 1,
+    disabled: !doneStatuses.has(run.status) || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
       if (!run.executionPlan) {
@@ -190,11 +189,13 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     },
   };
 
+  const fromFailureEnabled = canRunFromFailure(run);
+
   const fromFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From Failure',
-    disabled: !isFailedWithPlan,
-    tooltip: !isFailedWithPlan
+    disabled: !fromFailureEnabled,
+    tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
       : 'Retry the pipeline run, skipping steps that completed successfully',
     onClick: () => onLaunch({type: 'from-failure'}),
@@ -236,7 +237,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
-      <CancelRunButton run={run} isFinalStatus={isFinalStatus} />
+      <CancelRunButton run={run} isFinalStatus={!doneStatuses.has(run.status)} />
     </Group>
   );
 };
