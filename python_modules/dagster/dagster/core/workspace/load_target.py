@@ -38,26 +38,30 @@ class PythonFileTarget(
 
 
 class ModuleTarget(
-    namedtuple("ModuleTarget", "module_name attribute location_name"), WorkspaceLoadTarget
+    namedtuple("ModuleTarget", "module_name attribute working_directory location_name"),
+    WorkspaceLoadTarget,
 ):
     def create_origins(self):
         return [
             location_origin_from_module_name(
                 self.module_name,
                 self.attribute,
+                self.working_directory,
                 location_name=self.location_name,
             )
         ]
 
 
 class PackageTarget(
-    namedtuple("PackageTarget", "package_name attribute location_name"), WorkspaceLoadTarget
+    namedtuple("PackageTarget", "package_name attribute working_directory location_name"),
+    WorkspaceLoadTarget,
 ):
     def create_origins(self):
         return [
             location_origin_from_package_name(
                 self.package_name,
                 self.attribute,
+                self.working_directory,
                 location_name=self.location_name,
             )
         ]

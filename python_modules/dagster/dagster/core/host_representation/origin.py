@@ -70,10 +70,6 @@ class RepositoryLocationOrigin(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_cli_args(self):
-        pass
-
-    @abstractmethod
     def get_display_metadata(self):
         pass
 
@@ -105,9 +101,6 @@ class RegisteredRepositoryLocationOrigin(
     def __new__(cls, location_name):
         return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
 
-    def get_cli_args(self):
-        raise NotImplementedError
-
     def get_display_metadata(self):
         return {}
 
@@ -135,9 +128,6 @@ class InProcessRepositoryLocationOrigin(
     @property
     def location_name(self):
         return IN_PROCESS_NAME
-
-    def get_cli_args(self):
-        check.invariant(False, "Cannot get CLI args for an in process repository location")
 
     @property
     def is_reload_supported(self):
@@ -175,9 +165,6 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             if location_name
             else _assign_loadable_target_origin_name(loadable_target_origin),
         )
-
-    def get_cli_args(self):
-        return " ".join(self.loadable_target_origin.get_cli_args())
 
     def get_display_metadata(self):
         metadata = {
@@ -245,14 +232,6 @@ class GrpcServerRepositoryLocationOrigin(
             else _assign_grpc_location_name(port, socket, host),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
-
-    def get_cli_args(self):
-        if self.port:
-            return "--grpc-host {host} --grpc-port {port}".format(host=self.host, port=self.port)
-        else:
-            return "--grpc-host {host} --grpc-socket {socket}".format(
-                host=self.host, socket=self.socket
-            )
 
     def get_display_metadata(self):
         metadata = {
@@ -324,9 +303,6 @@ class ExternalRepositoryOrigin(
     def get_partition_set_origin(self, partition_set_name):
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
-    def get_cli_args(self):
-        return self.repository_location_origin.get_cli_args() + " -r " + self.repository_name
-
 
 @whitelist_for_serdes
 class ExternalPipelineOrigin(
@@ -346,9 +322,6 @@ class ExternalPipelineOrigin(
             ),
             check.str_param(pipeline_name, "pipeline_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)
@@ -370,9 +343,6 @@ class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_or
             ),
             check.str_param(job_name, "job_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)
@@ -396,9 +366,6 @@ class ExternalPartitionSetOrigin(
             ),
             check.str_param(partition_set_name, "partition_set_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)

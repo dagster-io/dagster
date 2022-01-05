@@ -420,7 +420,7 @@ def get_mocked_system_timezone():
 
 
 # Test utility for creating a test workspace for a function
-class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         self._origin = origin
 
@@ -431,7 +431,7 @@ class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
 @contextmanager
 def in_process_test_workspace(instance, recon_repo):
     with WorkspaceProcessContext(
-        instance, TestInProcessWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+        instance, InProcessTestWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 

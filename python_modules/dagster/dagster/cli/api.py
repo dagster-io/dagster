@@ -350,6 +350,14 @@ def execute_step_command(input_json):
 )
 @python_origin_target_argument
 @click.option(
+    "--empty-working-directory",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Indicates that the working directory should be empty and should not set to the current "
+    "directory as a default",
+)
+@click.option(
     "--ipc-output-file",
     type=click.Path(),
     help="[INTERNAL] This option should generally not be used by users. Internal param used by "
@@ -415,7 +423,11 @@ def grpc_command(
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
-            working_directory=get_working_directory_from_kwargs(kwargs),
+            working_directory=(
+                None
+                if kwargs.get("empty_working_directory")
+                else get_working_directory_from_kwargs(kwargs)
+            ),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
             package_name=kwargs["package_name"],
