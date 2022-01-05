@@ -8,6 +8,7 @@ from ...utils import kubernetes
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
+    executablePath: Optional[str]
     dagsterApiGrpcArgs: List[str]
     port: int
     replicaCount: Optional[int] = 1

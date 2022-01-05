@@ -41,7 +41,11 @@ spec:
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+          {{- if $deployment.executablePath }}
+          command: [{{ $deployment.executablePath }}, "-m", "dagster"]
+          {{- else }}
           command: ["dagster"]
+          {{- end }}
           args: ["api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           env:
             - name: DAGSTER_CURRENT_IMAGE

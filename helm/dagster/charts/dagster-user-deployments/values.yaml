@@ -43,6 +43,11 @@ deployments:
       - "-f"
       - "/example_project/example_repo/repo.py"
     port: 3030
+
+    # Python executable to use to run the dagster gRPC sever module. By default, assumes that there
+    # is a `dagster` entrypoint available on the container.
+    executablePath: ~
+
     # Additional volumes that should be included in the Deployment's Pod. See:
     # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
     #
