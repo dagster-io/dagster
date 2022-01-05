@@ -382,7 +382,6 @@ def test_get_unloadable_job(graphql_context):
                 ScheduleInstigatorData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
-                    graphql_context.instance.scheduler.__class__.__name__,
                 ),
             )
         )
@@ -395,7 +394,6 @@ def test_get_unloadable_job(graphql_context):
                 ScheduleInstigatorData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
-                    graphql_context.instance.scheduler.__class__.__name__,
                 ),
             )
         )

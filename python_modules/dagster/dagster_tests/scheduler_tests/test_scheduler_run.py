@@ -1262,9 +1262,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 unloadable_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(
-                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                ),
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
             )
             instance.add_job_state(unloadable_schedule_state)
 
@@ -1419,9 +1417,7 @@ def test_bad_load_repository(external_repo_context, capfd):
                 invalid_repo_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(
-                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                ),
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
             )
             instance.add_job_state(schedule_state)
 
@@ -1468,9 +1464,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
                 invalid_repo_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(
-                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                ),
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
             )
             instance.add_job_state(schedule_state)
 
@@ -1507,9 +1501,7 @@ def test_bad_load_repository_location(capfd):
                 fake_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(
-                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                ),
+                ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
             )
             instance.add_job_state(schedule_state)
 
