@@ -45,9 +45,10 @@ SensorJobData = SensorInstigatorData
 
 @whitelist_for_serdes
 class ScheduleInstigatorData(
-    namedtuple("_ScheduleInstigatorData", "cron_schedule start_timestamp scheduler")
+    namedtuple("_ScheduleInstigatorData", "cron_schedule start_timestamp")
 ):
-    def __new__(cls, cron_schedule, start_timestamp=None, scheduler=None):
+    # removed scheduler, 1/5/2022 (0.13.13)
+    def __new__(cls, cron_schedule, start_timestamp=None):
         return super(ScheduleInstigatorData, cls).__new__(
             cls,
             check.str_param(cron_schedule, "cron_schedule"),
@@ -55,8 +56,6 @@ class ScheduleInstigatorData(
             # `start_date` on partition-based schedules, which is used to define
             # the range of partitions)
             check.opt_float_param(start_timestamp, "start_timestamp"),
-            # this is a vestigial parameter that is not used and will be removed in the future
-            check.opt_str_param(scheduler, "scheduler"),
         )
 
 
