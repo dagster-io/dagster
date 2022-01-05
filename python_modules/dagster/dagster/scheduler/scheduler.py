@@ -36,7 +36,14 @@ class _ScheduleLaunchContext:
         return self._tick.job_tick_data.failure_count
 
     def update_state(self, status, error=None, **kwargs):
+        skip_reason = kwargs.get("skip_reason")
+        if "skip_reason" in kwargs:
+            del kwargs["skip_reason"]
+
         self._tick = self._tick.with_status(status=status, error=error, **kwargs)
+
+        if skip_reason:
+            self._tick = self._tick.with_reason(skip_reason=skip_reason)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -199,10 +206,11 @@ def launch_scheduled_runs_for_schedule(
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
         timezone_str = "UTC"
-        logger.warn(
-            f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
-            "an execution_timezone in its definition."
-        )
+        if log_verbose_checks:
+            logger.warn(
+                f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
+                "an execution_timezone in its definition."
+            )
 
     tick_times = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
@@ -341,10 +349,17 @@ def _schedule_runs_at_time(
     yield
 
     if not schedule_execution_data.run_requests:
-        logger.info(f"No run requests returned for {external_schedule.name}, skipping")
+        if schedule_execution_data.skip_message:
+            logger.info(
+                f"Schedule {external_schedule.name} skipped: {schedule_execution_data.skip_message}"
+            )
+        else:
+            logger.info(f"No run requests returned for {external_schedule.name}, skipping")
 
         # Update tick to skipped state and return
-        tick_context.update_state(TickStatus.SKIPPED)
+        tick_context.update_state(
+            TickStatus.SKIPPED, skip_reason=schedule_execution_data.skip_message
+        )
         return
 
     for run_request in schedule_execution_data.run_requests:

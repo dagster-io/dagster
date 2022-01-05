@@ -450,7 +450,7 @@ def test_simple_sensor(external_repo_context, capfd):
             assert (
                 get_logger_output_from_capfd(capfd, "SensorDaemon")
                 == """2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping"""
+2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
             )
 
             freeze_datetime = freeze_datetime.add(seconds=30)

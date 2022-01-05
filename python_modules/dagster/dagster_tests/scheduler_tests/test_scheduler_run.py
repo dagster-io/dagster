@@ -252,6 +252,15 @@ def wrong_config_schedule(_date):
     return {}
 
 
+@schedule(
+    pipeline_name="the_pipeline",
+    cron_schedule="0 0 * * *",
+    execution_timezone="UTC",
+)
+def empty_schedule(_date):
+    pass  # No RunRequests
+
+
 def define_multi_run_schedule():
     def gen_runs(context):
         if not context.scheduled_execution_time:
@@ -409,6 +418,7 @@ def the_repo():
         two_step_pipeline,
         manual_partition_schedule,
         default_config_schedule,
+        empty_schedule,
     ]
 
 
@@ -467,6 +477,7 @@ def validate_tick(
     expected_run_ids,
     expected_error=None,
     expected_failure_count=0,
+    expected_skip_reason=None,
 ):
     tick_data = tick.job_tick_data
     assert tick_data.job_origin_id == external_schedule.get_external_origin_id()
@@ -477,6 +488,7 @@ def validate_tick(
     if expected_error:
         assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
+    assert tick_data.skip_reason == expected_skip_reason
 
 
 def validate_run_started(
@@ -1125,13 +1137,14 @@ def test_skip(external_repo_context, capfd):
                 initial_datetime,
                 TickStatus.SKIPPED,
                 [run.run_id for run in instance.get_runs()],
+                expected_skip_reason="should_execute function for skip_schedule returned false.",
             )
 
             assert (
                 get_logger_output_from_capfd(capfd, "SchedulerDaemon")
                 == """2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: skip_schedule
 2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `skip_schedule` at 2019-02-27 00:00:00 +0000
-2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - No run requests returned for skip_schedule, skipping"""
+2019-02-26 18:00:00 -0600 - SchedulerDaemon - INFO - Schedule skip_schedule skipped: should_execute function for skip_schedule returned false."""
             )
 
 
@@ -2026,6 +2039,49 @@ def _grpc_server_external_repo(port):
     finally:
         if server_process.poll() is None:
             wait_for_process(server_process, timeout=30)
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_skip_reason_schedule(external_repo_context, capfd):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("empty_schedule")
+
+            schedule_origin = external_schedule.get_external_origin()
+
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+
+            assert (
+                get_logger_output_from_capfd(capfd, "SchedulerDaemon")
+                == """2019-02-27 18:00:00 -0600 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: empty_schedule
+2019-02-27 18:00:00 -0600 - SchedulerDaemon - INFO - Evaluating schedule `empty_schedule` at 2019-02-28 00:00:00 +0000
+2019-02-27 18:00:00 -0600 - SchedulerDaemon - INFO - Schedule empty_schedule skipped: Schedule function returned an empty result"""
+            )
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28, tz="UTC")
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SKIPPED,
+                [],
+                expected_skip_reason="Schedule function returned an empty result",
+            )
 
 
 def test_grpc_server_down():
