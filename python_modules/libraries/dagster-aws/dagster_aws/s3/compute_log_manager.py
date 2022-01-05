@@ -154,7 +154,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             self._s3_session.head_object(
                 Bucket=self._s3_bucket, Key=self._bucket_key(run_id, key, io_type)
             )
-        except ClientError as e:
+        except ClientError:
             return False
 
         return True
