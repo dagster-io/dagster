@@ -327,13 +327,7 @@ const AssetGraphExplorerWithData: React.FC<
 
           <div style={{position: 'absolute', right: 12, top: 12}}>
             <LaunchAssetExecutionButton
-              title={
-                selectedGraphNodes.length === 0
-                  ? 'Rematerialize All'
-                  : selectedGraphNodes.length === 1
-                  ? 'Rematerialize Selected'
-                  : `Rematerialize Selected (${selectedGraphNodes.length})`
-              }
+              title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
               repoAddress={repoAddress}
               assetJobName={explorerPath.pipelineName}
               assets={(selectedGraphNodes.length
@@ -493,4 +487,15 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
+};
+
+const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
+  const isRematerializeForAll = (nodes.length
+    ? nodes.map((n) => liveDataByNode[n.id])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
+    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
+  }`;
 };

@@ -114,6 +114,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 assetJobName={definition.jobs[0].name}
+                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
                 repoAddress={repoAddress}
               />
             )}

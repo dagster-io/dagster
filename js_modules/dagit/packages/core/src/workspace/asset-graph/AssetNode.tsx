@@ -55,7 +55,7 @@ export const AssetNode: React.FC<{
               }}
               text={
                 <span>
-                  Rematerialize{' '}
+                  {event ? 'Rematerialize ' : 'Materialize '}
                   <span style={{fontFamily: 'monospace', fontWeight: 600}}>
                     {displayNameForAssetKey(definition.assetKey)}
                   </span>
