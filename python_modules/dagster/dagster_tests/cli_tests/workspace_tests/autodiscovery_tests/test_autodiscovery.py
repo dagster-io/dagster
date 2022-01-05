@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 
 import pytest
@@ -103,14 +102,15 @@ def test_no_loadable_targets():
 
 def test_single_repository_in_module():
     loadable_targets = loadable_targets_from_python_module(
-        "dagster.utils.test.toys.single_repository"
+        "dagster.utils.test.toys.single_repository",
+        working_directory=None,
     )
     assert len(loadable_targets) == 1
     symbol = loadable_targets[0].attribute
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_module(
-        "dagster.utils.test.toys.single_repository", symbol
+        "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
     isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
@@ -118,14 +118,15 @@ def test_single_repository_in_module():
 
 def test_single_repository_in_package():
     loadable_targets = loadable_targets_from_python_package(
-        "dagster.utils.test.toys.single_repository"
+        "dagster.utils.test.toys.single_repository",
+        working_directory=None,
     )
     assert len(loadable_targets) == 1
     symbol = loadable_targets[0].attribute
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_python_package(
-        "dagster.utils.test.toys.single_repository", symbol
+        "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
     isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
@@ -152,52 +153,26 @@ def test_local_directory_module():
     if "autodiscover_in_module" in sys.modules:
         del sys.modules["autodiscover_in_module"]
 
-    with pytest.raises(ImportError):
+    with pytest.raises(DagsterImportError):
         loadable_targets_from_python_module(
-            "complete_bogus_module", remove_from_path_fn=_current_test_directory_paths
+            "complete_bogus_module",
+            working_directory=os.path.dirname(__file__),
+            remove_from_path_fn=_current_test_directory_paths,
         )
 
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Module autodiscover_in_module was resolved using the working directory. The ability "
-            "to load uninstalled modules from the working directory is deprecated and will be "
-            "removed in a future release.  Please use the python-file based load arguments or "
-            "install autodiscover_in_module to your python environment."
-        ),
-    ):
-        loadable_targets = loadable_targets_from_python_module(
-            "autodiscover_in_module", remove_from_path_fn=_current_test_directory_paths
-        )
-    assert len(loadable_targets) == 1
-
-
-def test_local_directory_package():
-    # this is testing that modules in a local directory that are NOT installed packages will raise
-    # an error, when using the loadable_targets_from_python_package function
-
-    # pytest will insert the current directory onto the path when the current directory does is not
-    # a module
-    assert not os.path.exists(file_relative_path(__file__, "__init__.py"))
-    assert os.path.dirname(__file__) in sys.path
-
-    if "autodiscover_in_module" in sys.modules:
-        del sys.modules["autodiscover_in_module"]
-
-    with pytest.raises(ImportError):
-        loadable_targets_from_python_package(
-            "complete_bogus_module", remove_from_path_fn=_current_test_directory_paths
+    with pytest.raises(DagsterImportError):
+        loadable_targets_from_python_module(
+            "autodiscover_in_module",
+            working_directory=None,
+            remove_from_path_fn=_current_test_directory_paths,
         )
 
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_package(
-            "autodiscover_in_module", remove_from_path_fn=_current_test_directory_paths
-        )
-
-    assert str(exc_info.value) == (
-        "Module autodiscover_in_module not found. Packages must be installed rather than relying "
-        "on the working directory to resolve module loading."
+    loadable_targets = loadable_targets_from_python_module(
+        "autodiscover_in_module",
+        working_directory=os.path.dirname(__file__),
+        remove_from_path_fn=_current_test_directory_paths,
     )
+    assert len(loadable_targets) == 1
 
 
 def test_local_directory_file():
@@ -209,16 +184,5 @@ def test_local_directory_file():
 
         assert "No module named 'autodiscover_src'" in str(exc_info.value)
 
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            (
-                "Module `{module}` was resolved using the working directory. The ability to "
-                "implicitly load modules from the working directory is deprecated and will be removed "
-                "in a future release. Please explicitly specify the `working_directory` config option "
-                "in your workspace or install `{module}` to your python environment."
-            ).format(module="autodiscover_src")
-        ),
-    ):
-        with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
-            loadable_targets_from_python_file(path)
+    with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
+        loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))

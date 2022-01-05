@@ -60,11 +60,8 @@ class ReconstructableRepository(
         return cls(FileCodePointer(file, fn_name, working_directory), container_image)
 
     @classmethod
-    def for_module(cls, module, fn_name, container_image=None):
-        return cls(ModuleCodePointer(module, fn_name), container_image)
-
-    def get_cli_args(self):
-        return self.pointer.get_cli_args()
+    def for_module(cls, module, fn_name, working_directory=None, container_image=None):
+        return cls(ModuleCodePointer(module, fn_name, working_directory), container_image)
 
     def get_python_origin(self):
         return RepositoryPythonOrigin(
@@ -189,7 +186,7 @@ class ReconstructablePipeline(
 
     @staticmethod
     def for_module(module, fn_name):
-        return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name))
+        return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self):
         return pack_value(self)
@@ -367,6 +364,7 @@ def build_reconstructable_target(
     reconstructor_function_name,
     reconstructable_args=None,
     reconstructable_kwargs=None,
+    reconstructor_working_directory=None,
 ):
     """
     Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
@@ -432,6 +430,9 @@ def build_reconstructable_target(
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
     check.str_param(reconstructor_function_name, "reconstructor_function_name")
+    check.opt_str_param(
+        reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
+    )
 
     reconstructable_args = list(check.opt_tuple_param(reconstructable_args, "reconstructable_args"))
     reconstructable_kwargs = list(
@@ -444,7 +445,9 @@ def build_reconstructable_target(
     )
 
     reconstructor_pointer = ModuleCodePointer(
-        reconstructor_module_name, reconstructor_function_name
+        reconstructor_module_name,
+        reconstructor_function_name,
+        working_directory=reconstructor_working_directory,
     )
 
     pointer = CustomPointer(reconstructor_pointer, reconstructable_args, reconstructable_kwargs)
@@ -486,12 +489,14 @@ def _check_is_loadable(definition):
     return definition
 
 
-def load_def_in_module(module_name, attribute):
-    return def_from_pointer(CodePointer.from_module(module_name, attribute))
+def load_def_in_module(module_name, attribute, working_directory):
+    return def_from_pointer(CodePointer.from_module(module_name, attribute, working_directory))
 
 
-def load_def_in_package(package_name, attribute):
-    return def_from_pointer(CodePointer.from_python_package(package_name, attribute))
+def load_def_in_package(package_name, attribute, working_directory):
+    return def_from_pointer(
+        CodePointer.from_python_package(package_name, attribute, working_directory)
+    )
 
 
 def load_def_in_python_file(python_file, attribute, working_directory):

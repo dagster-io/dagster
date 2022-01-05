@@ -2,16 +2,14 @@ import importlib
 import inspect
 import os
 import sys
-import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import get_import_error_message, import_module_from_path
-from dagster.utils import alter_sys_path, frozenlist, load_yaml_from_path
+from dagster.utils import alter_sys_path, frozenlist
 
 
 class CodePointer(ABC):
@@ -23,21 +21,19 @@ class CodePointer(ABC):
     def describe(self):
         pass
 
-    @abstractmethod
-    def get_loadable_target_origin(self, executable_path):
-        pass
-
     @staticmethod
-    def from_module(module_name, definition):
+    def from_module(module_name, definition, working_directory):
         check.str_param(module_name, "module_name")
         check.str_param(definition, "definition")
-        return ModuleCodePointer(module_name, definition)
+        check.opt_str_param(working_directory, "working_directory")
+        return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
-    def from_python_package(module_name, attribute):
+    def from_python_package(module_name, attribute, working_directory):
         check.str_param(module_name, "module_name")
         check.str_param(attribute, "attribute")
-        return PackageCodePointer(module_name, attribute)
+        check.opt_str_param(working_directory, "working_directory")
+        return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
     def from_python_file(python_file, definition, working_directory):
@@ -46,22 +42,6 @@ class CodePointer(ABC):
         check.opt_str_param(working_directory, "working_directory")
         return FileCodePointer(
             python_file=python_file, fn_name=definition, working_directory=working_directory
-        )
-
-    @staticmethod
-    def from_legacy_repository_yaml(file_path):
-        check.str_param(file_path, "file_path")
-        config = load_yaml_from_path(file_path)
-        repository_config = check.dict_elem(config, "repository")
-        module_name = check.opt_str_elem(repository_config, "module")
-        file_name = check.opt_str_elem(repository_config, "file")
-        fn_name = check.str_elem(repository_config, "fn")
-
-        return (
-            CodePointer.from_module(module_name, fn_name)
-            if module_name
-            # rebase file in config off of the path in the config file
-            else CodePointer.from_python_file(rebase_file(file_name, file_path), fn_name, None)
         )
 
 
@@ -82,131 +62,87 @@ def load_python_file(python_file, working_directory):
     Takes a path to a python file and returns a loaded module
     """
     check.str_param(python_file, "python_file")
+    check.opt_str_param(working_directory, "working_directory")
 
     # First verify that the file exists
     os.stat(python_file)
 
     module_name = os.path.splitext(os.path.basename(python_file))[0]
-    cwd = sys.path[0]
-    if working_directory:
-        try:
-            with alter_sys_path(to_add=[working_directory], to_remove=[cwd]):
-                return import_module_from_path(module_name, python_file)
-        except ImportError as ie:
-            msg = get_import_error_message(ie)
-            python_file = os.path.abspath(os.path.expanduser(python_file))
 
-            if msg == "attempted relative import with no known parent package":
+    # Use the passed in working directory for local imports (sys.path[0] isn't
+    # consistently set in the different entry points that Dagster uses to import code)
+    script_path = sys.path[0]
+    try:
+        with alter_sys_path(
+            to_add=([working_directory] if working_directory else []), to_remove=[script_path]
+        ):
+            return import_module_from_path(module_name, python_file)
+    except ImportError as ie:
+        python_file = os.path.abspath(os.path.expanduser(python_file))
 
-                raise DagsterImportError(
-                    f"Encountered ImportError: `{msg}` while importing module {module_name} from "
-                    f"file {python_file}. Consider using the module-based options `-m` for "
-                    "CLI-based targets or the `python_package` workspace target."
-                ) from ie
+        msg = get_import_error_message(ie)
+        if msg == "attempted relative import with no known parent package":
+            raise DagsterImportError(
+                f"Encountered ImportError: `{msg}` while importing module {module_name} from "
+                f"file {python_file}. Consider using the module-based options `-m` for "
+                "CLI-based targets or the `python_module` workspace target."
+            ) from ie
 
-            working_directory = os.path.abspath(os.path.expanduser(working_directory))
-
+        if working_directory:
+            abs_working_directory = os.path.abspath(os.path.expanduser(working_directory))
             raise DagsterImportError(
                 f"Encountered ImportError: `{msg}` while importing module {module_name} from "
                 f"file {python_file}. Local modules were resolved using the working "
-                f"directory `{working_directory}`. If another working directory should be "
+                f"directory `{abs_working_directory}`. If another working directory should be "
                 "used, please explicitly specify the appropriate path using the `-d` or "
                 "`--working-directory` for CLI based targets or the `working_directory` "
                 "configuration option for `python_file`-based workspace targets. "
             ) from ie
-
-    error = None
-    sys_modules = {k: v for k, v in sys.modules.items()}
-
-    with alter_sys_path(to_add=[], to_remove=[cwd]):
-        try:
-            module = import_module_from_path(module_name, python_file)
-        except ImportError as ie:
-            # importing alters sys.modules in ways that may interfere with the import below, even
-            # if the import has failed.  to work around this, we need to manually clear any modules
-            # that have been cached in sys.modules due to the speculative import call
-            # Also, we are mutating sys.modules instead of straight-up assigning to sys_modules,
-            # because some packages will do similar shenanigans to sys.modules (e.g. numpy)
-            to_delete = set(sys.modules) - set(sys_modules)
-            for key in to_delete:
-                del sys.modules[key]
-            error = ie
-
-    if not error:
-        return module
-
-    try:
-        module = import_module_from_path(module_name, python_file)
-        # if here, we were able to resolve the module with the working directory on the
-        # path, but should warn because we may not always invoke from the same directory
-        # (e.g. from cron)
-        module_name = error.name if hasattr(error, "name") else module_name
-
-        warnings.warn(
-            f"Module `{module_name}` was resolved using the working directory. The ability to "
-            "implicitly load modules from the working directory is deprecated and "
-            "will be removed in a future release. Please explicitly specify the "
-            "`working_directory` config option in your workspace or install "
-            f"`{module_name}` to your python environment."
-        )
-        return module
-    except (RuntimeError, ImportError):
-        # RuntimeError is because numpy throws run time errors at import time when being imported
-        # multiple times
-        python_file = os.path.abspath(os.path.expanduser(python_file))
-
-        raise DagsterImportError(
-            f"Encountered ImportError: `{error.msg}` while importing module {module_name} from file"
-            f" {python_file}. If relying on the working directory to resolve modules, please "
-            "explicitly specify the appropriate path using the `-d` or "
-            "`--working-directory` for CLI based targets or the `working_directory` "
-            "configuration option for `python_file`-based workspace targets. " + error.msg
-        ) from error
+        else:
+            raise DagsterImportError(
+                f"Encountered ImportError: `{msg}` while importing module {module_name} from file"
+                f" {python_file}. If relying on the working directory to resolve modules, please "
+                "explicitly specify the appropriate path using the `-d` or "
+                "`--working-directory` for CLI based targets or the `working_directory` "
+                "configuration option for `python_file`-based workspace targets. "
+            ) from ie
 
 
-def load_python_module(module_name, warn_only=False, remove_from_path_fn=None):
+def load_python_module(module_name, working_directory, remove_from_path_fn=None):
     check.str_param(module_name, "module_name")
-    check.bool_param(warn_only, "warn_only")
+    check.opt_str_param(working_directory, "working_directory")
     check.opt_callable_param(remove_from_path_fn, "remove_from_path_fn")
 
-    error = None
-
+    # Use the passed in working directory for local imports (sys.path[0] isn't
+    # consistently set in the different entry points that Dagster uses to import code)
     remove_paths = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
-    remove_paths.insert(0, sys.path[0])  # remove the working directory
+    remove_paths.insert(0, sys.path[0])  # remove the script path
 
-    with alter_sys_path(to_add=[], to_remove=remove_paths):
+    with alter_sys_path(
+        to_add=([working_directory] if working_directory else []), to_remove=remove_paths
+    ):
         try:
-            module = importlib.import_module(module_name)
+            return importlib.import_module(module_name)
         except ImportError as ie:
-            error = ie
-
-    if error:
-        try:
-            module = importlib.import_module(module_name)
-
-            # if here, we were able to resolve the module with the working directory on the path,
-            # but should error because we may not always invoke from the same directory (e.g. from
-            # cron)
-            if warn_only:
-                warnings.warn(
-                    f"Module {module_name} was resolved using the working directory. The ability to"
-                    " load uninstalled modules from the working directory is deprecated and "
-                    "will be removed in a future release.  Please use the python-file based "
-                    f"load arguments or install {module_name} to your python environment."
-                )
+            msg = get_import_error_message(ie)
+            if working_directory:
+                abs_working_directory = os.path.abspath(os.path.expanduser(working_directory))
+                raise DagsterImportError(
+                    f"Encountered ImportError: `{msg}` while importing module {module_name}. "
+                    f"Local modules were resolved using the working "
+                    f"directory `{abs_working_directory}`. If another working directory should be "
+                    "used, please explicitly specify the appropriate path using the `-d` or "
+                    "`--working-directory` for CLI based targets or the `working_directory` "
+                    "configuration option for workspace targets. "
+                ) from ie
             else:
-                raise DagsterInvariantViolationError(
-                    f"Module {module_name} not found. Packages must be installed rather than "
-                    "relying on the working directory to resolve module loading."
-                ) from error
-        except RuntimeError:
-            # We might be here because numpy throws run time errors at import time when being
-            # imported multiple times, just raise the original import error
-            raise error
-        except ImportError as ie:
-            raise error
-
-    return module
+                raise DagsterImportError(
+                    f"Encountered ImportError: `{msg}` while importing module {module_name}. "
+                    f"If relying on the working directory to resolve modules, please "
+                    "explicitly specify the appropriate path using the `-d` or "
+                    "`--working-directory` for CLI based targets or the `working_directory` "
+                    "configuration option for workspace targets. "
+                ) from ie
 
 
 @whitelist_for_serdes
@@ -241,37 +177,21 @@ class FileCodePointer(
         else:
             return "{self.python_file}::{self.fn_name}".format(self=self)
 
-    def get_cli_args(self):
-        if self.working_directory:
-            return "-f {python_file} -a {fn_name} -d {directory}".format(
-                python_file=os.path.abspath(os.path.expanduser(self.python_file)),
-                fn_name=self.fn_name,
-                directory=os.path.abspath(os.path.expanduser(self.working_directory)),
-            )
-        else:
-            return "-f {python_file} -a {fn_name}".format(
-                python_file=os.path.abspath(os.path.expanduser(self.python_file)),
-                fn_name=self.fn_name,
-            )
-
-    def get_loadable_target_origin(self, executable_path):
-        return LoadableTargetOrigin(
-            executable_path=executable_path,
-            python_file=self.python_file,
-            attribute=self.fn_name,
-            working_directory=self.working_directory,
-        )
-
 
 @whitelist_for_serdes
-class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), CodePointer):
-    def __new__(cls, module, fn_name):
+class ModuleCodePointer(
+    namedtuple("_ModuleCodePointer", "module fn_name working_directory"), CodePointer
+):
+    def __new__(cls, module, fn_name, working_directory=None):
         return super(ModuleCodePointer, cls).__new__(
-            cls, check.str_param(module, "module"), check.str_param(fn_name, "fn_name")
+            cls,
+            check.str_param(module, "module"),
+            check.str_param(fn_name, "fn_name"),
+            check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
-        module = load_python_module(self.module, warn_only=True)
+        module = load_python_module(self.module, self.working_directory)
 
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
@@ -284,26 +204,21 @@ class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), Code
     def describe(self):
         return "from {self.module} import {self.fn_name}".format(self=self)
 
-    def get_cli_args(self):
-        return "-m {module} -a {fn_name}".format(module=self.module, fn_name=self.fn_name)
-
-    def get_loadable_target_origin(self, executable_path):
-        return LoadableTargetOrigin(
-            executable_path=executable_path,
-            module_name=self.module,
-            attribute=self.fn_name,
-        )
-
 
 @whitelist_for_serdes
-class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), CodePointer):
-    def __new__(cls, module, attribute):
+class PackageCodePointer(
+    namedtuple("_PackageCodePointer", "module attribute working_directory"), CodePointer
+):
+    def __new__(cls, module, attribute, working_directory=None):
         return super(PackageCodePointer, cls).__new__(
-            cls, check.str_param(module, "module"), check.str_param(attribute, "attribute")
+            cls,
+            check.str_param(module, "module"),
+            check.str_param(attribute, "attribute"),
+            check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
-        module = load_python_module(self.module)
+        module = load_python_module(self.module, self.working_directory)
 
         if not hasattr(module, self.attribute):
             raise DagsterInvariantViolationError(
@@ -315,16 +230,6 @@ class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), 
 
     def describe(self):
         return "from {self.module} import {self.attribute}".format(self=self)
-
-    def get_cli_args(self):
-        return "-m {module} -a {attribute}".format(module=self.module, attribute=self.attribute)
-
-    def get_loadable_target_origin(self, executable_path):
-        return LoadableTargetOrigin(
-            executable_path=executable_path,
-            module_name=self.module,
-            attribute=self.attribute,
-        )
 
 
 def get_python_file_from_target(target):
@@ -385,6 +290,3 @@ class CustomPointer(
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )
-
-    def get_loadable_target_origin(self, executable_path):
-        raise NotImplementedError()

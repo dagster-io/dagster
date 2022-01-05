@@ -2,6 +2,7 @@ import os
 
 from click import UsageError
 from dagster import check
+from dagster.cli.workspace.cli_target import get_working_directory_from_kwargs
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 
 
@@ -27,7 +28,11 @@ def recon_repo_for_cli_args(kwargs):
     elif kwargs.get("module_name") and kwargs.get("fn_name"):
         _cli_load_invariant(kwargs.get("repository_yaml") is None)
         _cli_load_invariant(kwargs.get("python_file") is None)
-        return ReconstructableRepository.for_module(kwargs["module_name"], kwargs["fn_name"])
+        return ReconstructableRepository.for_module(
+            kwargs["module_name"],
+            kwargs["fn_name"],
+            get_working_directory_from_kwargs(kwargs),
+        )
 
     elif kwargs.get("python_file") and kwargs.get("fn_name"):
         _cli_load_invariant(kwargs.get("repository_yaml") is None)
@@ -35,7 +40,7 @@ def recon_repo_for_cli_args(kwargs):
         return ReconstructableRepository.for_file(
             os.path.abspath(kwargs["python_file"]),
             kwargs["fn_name"],
-            kwargs.get("working_directory") if kwargs.get("working_directory") else os.getcwd(),
+            get_working_directory_from_kwargs(kwargs),
         )
     else:
         _cli_load_invariant(False)

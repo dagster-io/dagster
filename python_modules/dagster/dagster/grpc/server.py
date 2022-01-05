@@ -143,6 +143,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_python_package(
                 loadable_target_origin.package_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
         else:
             repository_code_pointer_dict[
@@ -150,6 +151,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_module(
                 loadable_target_origin.module_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
 
     return repository_code_pointer_dict
