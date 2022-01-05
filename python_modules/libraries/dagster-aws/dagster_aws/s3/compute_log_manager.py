@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 
 import boto3
+from botocore.errorfactory import ClientError
 from dagster import Field, StringSource, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -148,10 +149,15 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         local_path = self.get_local_path(run_id, key, io_type)
         if os.path.exists(local_path):
             return False
-        s3_objects = self._s3_session.list_objects(
-            Bucket=self._s3_bucket, Prefix=self._bucket_key(run_id, key, io_type)
-        )
-        return len(s3_objects) > 0
+
+        try:  # https://stackoverflow.com/a/38376288/14656695
+            self._s3_session.head_object(
+                Bucket=self._s3_bucket, Key=self._bucket_key(run_id, key, io_type)
+            )
+        except ClientError as e:
+            return False
+
+        return True
 
     def _from_local_file_data(self, run_id, key, io_type, local_file_data):
         is_complete = self.is_watch_completed(run_id, key)
