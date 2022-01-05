@@ -1,5 +1,49 @@
 # Changelog
 
+# 0.13.13
+
+### New
+
+* [dagster-dbt] dbt rpc resources now surface dbt log messages in the Dagster event log.
+* [dagster-databricks] The `databricks_pyspark_step_launcher` now streams Dagster logs back from Databricks rather than waiting for the step to completely finish before exporting all events. Fixed an issue where all events from the external step would share the same timestamp. Immediately after execution, stdout and stderr logs captured from the Databricks worker will be automatically surfaced to the event log, removing the need to set the `wait_for_logs` option in most scenarios.
+* [dagster-databricks] The `databricks_pyspark_step_launcher` now supports dynamically mapped steps.
+* If the scheduler is unable to reach a code server when executing a schedule tick, it will now wait until the code server is reachable again before continuing, instead of marking the schedule tick as failed.
+* The scheduler will now check every 5 seconds for new schedules to run, instead of every 30 seconds.
+* The run viewer and workspace pages of Dagit are significantly more performant.
+* Dagit loads large (100+ node) asset graphs faster and retrieves information about the assets being rendered only.
+* When viewing an asset graph in Dagit, you can now rematerialize the entire graph by clicking a single “Refresh” button, or select assets to rematerialize them individually. You can also launch a job to rebuild an asset directly from the asset details page.
+* When viewing a software-defined asset, Dagit displays its upstream and downstream assets in two lists instead of a mini-graph for easier scrolling and navigation. The statuses of these assets are updated in real-time. This new UI also resolves a bug where only one downstream asset would appear.
+
+### Bugfixes
+
+* Fixed bug where `execute_in_process` would not work for graphs with nothing inputs.
+* In the Launchpad in Dagit, the `Ctrl+A` command did not correctly allow select-all behavior in the editor for non-Mac users, this has now been fixed.
+* When viewing a DAG in Dagit and hovering on a specific input or output for an op, the connections between the highlighted inputs and outputs were too subtle to see. These are now a bright blue color.
+* In Dagit, when viewing an in-progress run, a caching bug prevented the page from updating in real time in some cases. For instance, runs might appear to be stuck in a queued state long after being dequeued. This has been fixed.
+* Fixed a bug in the `k8s_job_executor` where the same step could start twice in rare cases.
+* Enabled faster queries for the asset catalog by migrating asset database entries to store extra materialization data.
+* [dagster-aws] Viewing the compute logs for in-progress ops for instances configured with the `S3ComputeLogManager` would cause errors in Dagit.  This is now fixed.
+* [dagster-pandas] Fixed bug where Pandas categorical dtype did not work by default with dagster-pandas `categorical_column` constraint.
+* Fixed an issue where schedules that yielded a `SkipReason` from the schedule function did not display the skip reason in the tick timeline in Dagit, or output the skip message in the dagster-daemon log output.
+* Fixed an issue where the snapshot link of a finished run in Dagit would sometimes fail to load with a GraphQL error.
+* Dagit now supports software-defined assets that are defined in multiple jobs within a repo, and displays a warning when assets in two repos share the same name.
+
+### Breaking Changes
+
+* We previously allowed schedules to be defined with cron strings like `@daily` rather than `0 0 * * *`.  However, these schedules would fail to actually run successfully in the daemon and would also cause errors when viewing certain pages in Dagit.  We now raise an `DagsterInvalidDefinitionError` for schedules that do not have a cron expression consisting of a 5 space-separated fields.
+
+### Community Contributions
+
+* In dagster-dask, a schema can now be conditionally specified for ops materializing outputs to parquet files, thank you [@kudryk](https://github.com/kudryk)!
+* Dagster-gcp change from [@AndreaGiardini](https://github.com/AndreaGiardini) that replaces `get_bucket()` calls with `bucket()`, to avoid unnecessary bucket metadata fetches, thanks!
+* Typo fix from [@sebastianbertoli](https://github.com/sebastianbertoli), thank you!
+* [dagster-k8s] Kubernetes jobs and pods created by Dagster now have labels identifying the name of the Dagster job or op they are running. Thanks [@skirino](https://github.com/skirino)!
+
+### Experimental
+
+* [dagit] Made performance improvements for loading the asset graph.
+* [dagit] The debug console logging output now tracks calls to fetch data from the database, to help track inefficient queries.
+
 # 0.13.12
 
 ### New
