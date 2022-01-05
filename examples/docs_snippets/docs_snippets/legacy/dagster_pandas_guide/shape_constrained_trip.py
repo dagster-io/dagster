@@ -18,6 +18,7 @@ def load_shape_constrained_trip_dataframe() -> DataFrame:
         script_relative_path("./ebike_trips.csv"),
         parse_dates=["start_time", "end_time"],
         date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),
+        dtype={'color': 'category'},
     )
 
 
