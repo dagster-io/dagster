@@ -130,7 +130,21 @@ Finally, the `dagster-user-deployments` subchart can now be managed in its own r
 
 ### Kubernetes Job and Pod TTL management
 
-If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day.
+If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
+
+```python
+@job(
+  tags = {
+    'dagster-k8s/config': {
+      'job_spec_config': {
+        'ttl_seconds_after_finished': 7200
+      }
+    }
+  }
+)
+def my_job():
+  my_op()
+```
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 
