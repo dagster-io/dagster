@@ -1,7 +1,6 @@
 from gzip import GzipFile
 
 import click
-import uvicorn
 from dagster import DagsterInstance, check
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.workspace import WorkspaceProcessContext
@@ -12,7 +11,6 @@ from .cli import (
     DEFAULT_DAGIT_PORT,
     host_dagit_ui_with_workspace_process_context,
 )
-from .starlette import DagitWebserver
 from .version import __version__
 
 
@@ -28,12 +26,7 @@ from .version import __version__
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
     default=DEFAULT_DAGIT_PORT,
 )
-@click.option(
-    "--asgi",
-    is_flag=True,
-    help="Launch asgi webserver with uvicorn",
-)
-def dagit_debug_command(input_files, port, asgi):
+def dagit_debug_command(input_files, port):
     debug_payloads = []
     for input_file in input_files:
         click.echo("Loading {} ...".format(input_file))
@@ -51,22 +44,12 @@ def dagit_debug_command(input_files, port, asgi):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-
-    if asgi:
-        uvicorn.run(
-            DagitWebserver(
-                WorkspaceProcessContext(instance, None, version=__version__)
-            ).create_asgi_app(debug=True),
-            port=port,
-        )
-    else:
-        host_dagit_ui_with_workspace_process_context(
-            workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
-            port=port,
-            port_lookup=True,
-            host=DEFAULT_DAGIT_HOST,
-            path_prefix="",
-        )
+    host_dagit_ui_with_workspace_process_context(
+        workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
+        port=port,
+        host=DEFAULT_DAGIT_HOST,
+        path_prefix="",
+    )
 
 
 def main():
