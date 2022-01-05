@@ -185,6 +185,9 @@ GET_ASSET_OBSERVATIONS = """
                                 metadataEntries {
                                     label
                                     description
+                                    ... on EventTextMetadataEntry {
+                                        text
+                                    }
                                 }
                             }
                         }
@@ -603,15 +606,29 @@ class TestAssetAwareEventLog(
 
     def test_asset_observations(self, graphql_context):
         _create_run(graphql_context, "observation_job")
-        print("HELLO???")
         selector = infer_pipeline_selector(graphql_context, "observation_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_OBSERVATIONS,
             variables={"repositorySelector": infer_repository_selector(graphql_context)},
         )
-        print(result.data)
-        assert False
+
+        assert result.data
+        assert result.data["repositoryOrError"] and result.data["repositoryOrError"]["assetNodes"]
+
+        asset_node = [
+            asset_node
+            for asset_node in result.data["repositoryOrError"]["assetNodes"]
+            if asset_node["opName"] == "asset_yields_observation"
+        ][0]
+
+        assert asset_node["assetObservations"]
+
+        metadata = asset_node["assetObservations"][0]["observationEvent"]["observation"][
+            "metadataEntries"
+        ]
+        assert metadata
+        assert metadata[0]["text"] == "FOO"
 
 
 class TestPersistentInstanceAssetInProgress(
