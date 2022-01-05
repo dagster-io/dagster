@@ -19,10 +19,6 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.error import SerializableErrorInfo
 
-FAKE_SCHEDULER_NAME = "FakeSchedulerClassName"
-
-OTHER_FAKE_SCHEDULER_NAME = "OtherFakeSchedulerClassName"
-
 
 class TestScheduleStorage:
     """
@@ -71,13 +67,12 @@ class TestScheduleStorage:
         schedule_name,
         cron_schedule,
         status=InstigatorStatus.STOPPED,
-        scheduler=FAKE_SCHEDULER_NAME,
     ):
         return InstigatorState(
             cls.fake_repo_target().get_job_origin(schedule_name),
             InstigatorType.SCHEDULE,
             status,
-            ScheduleInstigatorData(cron_schedule, start_timestamp=None, scheduler=scheduler),
+            ScheduleInstigatorData(cron_schedule, start_timestamp=None),
         )
 
     @classmethod
@@ -100,7 +95,6 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.cron_schedule == "* * * * *"
         assert schedule.job_specific_data.start_timestamp == None
-        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -122,8 +116,6 @@ class TestScheduleStorage:
         assert any(s.job_name == "my_schedule_2" for s in schedules)
         assert any(s.job_name == "my_schedule_3" for s in schedules)
 
-        assert all(s.job_specific_data.scheduler == FAKE_SCHEDULER_NAME for s in schedules)
-
     def test_get_schedule_state(self, storage):
         assert storage
 
@@ -133,7 +125,6 @@ class TestScheduleStorage:
 
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.start_timestamp == None
-        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
@@ -155,7 +146,6 @@ class TestScheduleStorage:
             ScheduleInstigatorData(
                 cron_schedule=schedule.job_specific_data.cron_schedule,
                 start_timestamp=now_time,
-                scheduler=FAKE_SCHEDULER_NAME,
             )
         )
         storage.update_job_state(new_schedule)
@@ -169,12 +159,9 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.status == InstigatorStatus.RUNNING
         assert schedule.job_specific_data.start_timestamp == now_time
-        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
         stopped_schedule = schedule.with_status(InstigatorStatus.STOPPED).with_data(
-            ScheduleInstigatorData(
-                schedule.job_specific_data.cron_schedule, scheduler=FAKE_SCHEDULER_NAME
-            )
+            ScheduleInstigatorData(schedule.job_specific_data.cron_schedule)
         )
         storage.update_job_state(stopped_schedule)
 
@@ -187,7 +174,6 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.status == InstigatorStatus.STOPPED
         assert schedule.job_specific_data.start_timestamp == None
-        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_update_schedule_not_found(self, storage):
         assert storage
