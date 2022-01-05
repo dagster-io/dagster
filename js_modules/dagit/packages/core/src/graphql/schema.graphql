@@ -677,6 +677,7 @@ type AssetNode {
   partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  assetObservations: [AssetObservation!]!
 }
 
 type AssetDependency {
@@ -687,6 +688,31 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
+}
+
+type AssetObservation {
+  observationEvent: ObservationEvent!
+  runOrError: RunOrError!
+  partition: String
+}
+
+type ObservationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  observation: Observation!
+  stepStats: RunStepStats!
+}
+
+type Observation implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
 }
 
 union DagsterRunEvent =

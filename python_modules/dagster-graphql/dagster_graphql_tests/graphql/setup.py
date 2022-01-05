@@ -13,6 +13,7 @@ from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Bool,
     DagsterInstance,
     DynamicOutput,
@@ -1373,6 +1374,18 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@asset
+def asset_yields_observation():
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
+    yield Output(5)
+
+
+observation_job = build_assets_job(
+    "observation_job", assets=[asset_yields_observation], executor_def=in_process_executor
+)
+
+
 @job
 def two_ins_job():
     @op
@@ -1445,6 +1458,7 @@ def define_pipelines():
         static_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        observation_job,
     ]
 
 

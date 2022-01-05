@@ -168,6 +168,33 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
     }
 """
 
+GET_ASSET_OBSERVATIONS = """
+    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                assetNodes {
+                    opName
+                    description
+                    jobName
+                    assetObservations {
+                        observationEvent {
+                            observation {
+                                assetKey {
+                                    path
+                                }
+                                metadataEntries {
+                                    label
+                                    description
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
 GET_MATERIALIZATION_COUNT_BY_PARTITION = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
         pipelineOrError(params: $pipelineSelector) {
@@ -573,6 +600,18 @@ class TestAssetAwareEventLog(
 
         assert materialization_count[2]["partition"] == "c"
         assert materialization_count[2]["materializationCount"] == 2
+
+    def test_asset_observations(self, graphql_context):
+        _create_run(graphql_context, "observation_job")
+        print("HELLO???")
+        selector = infer_pipeline_selector(graphql_context, "observation_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OBSERVATIONS,
+            variables={"repositorySelector": infer_repository_selector(graphql_context)},
+        )
+        print(result.data)
+        assert False
 
 
 class TestPersistentInstanceAssetInProgress(

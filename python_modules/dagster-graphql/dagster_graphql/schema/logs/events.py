@@ -290,6 +290,27 @@ class GrapheneMaterialization(graphene.ObjectType):
         return GrapheneAssetKey(path=asset_key.path)
 
 
+class GrapheneObservation(graphene.ObjectType):
+    assetKey = graphene.Field(GrapheneAssetKey)
+
+    class Meta:
+        interfaces = (GrapheneDisplayableEvent,)
+        name = "Observation"
+
+    def resolve_metadataEntries(self, _graphene_info):
+        from ...implementation.events import _to_metadata_entries
+
+        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+
+    def resolve_assetKey(self, _graphene_info):
+        asset_key = self.asset_key  # pylint: disable=no-member
+
+        if not asset_key:
+            return None
+
+        return GrapheneAssetKey(path=asset_key.path)
+
+
 class GrapheneExpectationResult(graphene.ObjectType):
     success = graphene.NonNull(graphene.Boolean)
 
@@ -418,6 +439,24 @@ class GrapheneStepMaterializationEvent(graphene.ObjectType):
             )
             for lineage_info in self._asset_lineage
         ]
+
+
+class GrapheneObservationEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "ObservationEvent"
+
+    observation = graphene.NonNull(GrapheneObservation)
+    stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
+
+    def __init__(self, observation, **basic_params):
+        super().__init__(observation=observation, **basic_params)
+
+    def resolve_stepStats(self, graphene_info):
+        run_id = self.runId  # pylint: disable=no-member
+        step_key = self.stepKey  # pylint: disable=no-member
+        stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
+        return stats[0]
 
 
 class GrapheneHandledOutputEvent(graphene.ObjectType):

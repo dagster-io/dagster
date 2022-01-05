@@ -13,6 +13,7 @@ from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import (
     GrapheneAssetMaterialization,
+    GrapheneAssetObservation,
     GrapheneMaterializationCount,
     GraphenePipeline,
 )
@@ -64,6 +65,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
+    assetObservations = non_null_list(GrapheneAssetObservation)
 
     class Meta:
         name = "AssetNode"
@@ -243,6 +245,29 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
             for partition_key in partition_keys
+        ]
+
+    def resolve_assetObservations(self, graphene_info, **kwargs):
+        from ..implementation.fetch_assets import get_asset_observations
+
+        try:
+            before_timestamp = (
+                int(kwargs.get("beforeTimestampMillis")) / 1000.0
+                if kwargs.get("beforeTimestampMillis")
+                else None
+            )
+        except ValueError:
+            before_timestamp = None
+
+        return [
+            GrapheneAssetObservation(event=event)
+            for event in get_asset_observations(
+                graphene_info,
+                self._external_asset_node.asset_key,
+                kwargs.get("partitions"),
+                before_timestamp=before_timestamp,
+                limit=kwargs.get("limit"),
+            )
         ]
 
 
