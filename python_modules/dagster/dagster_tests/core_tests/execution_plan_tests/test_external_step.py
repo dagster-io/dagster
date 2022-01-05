@@ -10,6 +10,7 @@ from dagster import (
     DynamicOutput,
     Field,
     ModeDefinition,
+    ResourceDefinition,
     RetryRequested,
     String,
     execute_pipeline,
@@ -19,6 +20,7 @@ from dagster import (
     op,
     pipeline,
     reconstructable,
+    reexecute_pipeline,
     resource,
     solid,
 )
@@ -104,6 +106,51 @@ def define_dynamic_job():
         total(all_incs.collect())
 
     return my_job
+
+
+def _define_basic_job(launch_initial, launch_final):
+    initial_launcher = (
+        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
+    )
+    final_launcher = (
+        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
+    )
+
+    @op(required_resource_keys={"initial_launcher"})
+    def op1():
+        return 1
+
+    @op(required_resource_keys={"initial_launcher"})
+    def op2():
+        return 2
+
+    @op(required_resource_keys={"final_launcher"})
+    def combine(a, b):
+        return a + b
+
+    @job(
+        resource_defs={
+            "initial_launcher": initial_launcher,
+            "final_launcher": final_launcher,
+            "io_manager": fs_io_manager,
+        }
+    )
+    def my_job():
+        combine(op1(), op2())
+
+    return my_job
+
+
+def define_basic_job_all_launched():
+    return _define_basic_job(True, True)
+
+
+def define_basic_job_first_launched():
+    return _define_basic_job(True, False)
+
+
+def define_basic_job_last_launched():
+    return _define_basic_job(False, True)
 
 
 def define_basic_pipeline():
@@ -271,6 +318,50 @@ def test_dynamic_job():
                 instance=instance,
             )
             assert result.result_for_solid("total").output_value() == 6
+
+
+@pytest.mark.skip(
+    reason="Reexecution will fail with step launchers because it relies on querying event log "
+    "storage which is not present on the external step"
+)
+@pytest.mark.parametrize(
+    "job_fn",
+    [
+        define_basic_job_all_launched,
+        define_basic_job_first_launched,
+        define_basic_job_last_launched,
+    ],
+)
+def test_reexecution(job_fn):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "initial_launcher": {
+                    "config": {"scratch_dir": tmpdir},
+                },
+                "final_launcher": {
+                    "config": {"scratch_dir": tmpdir},
+                },
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+        with instance_for_test() as instance:
+            run1 = execute_pipeline(
+                pipeline=reconstructable(job_fn),
+                run_config=run_config,
+                instance=instance,
+            )
+            assert run1.success
+            assert run1.result_for_solid("combine").output_value() == 3
+            run2 = reexecute_pipeline(
+                pipeline=reconstructable(job_fn),
+                parent_run_id=run1.run_id,
+                run_config=run_config,
+                instance=instance,
+                step_selection=["combine"],
+            )
+            assert run2.success
+            assert run2.result_for_solid("combine").output_value() == 3
 
 
 def test_launcher_requests_retry():
