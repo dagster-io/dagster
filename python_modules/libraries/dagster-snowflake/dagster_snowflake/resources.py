@@ -64,6 +64,7 @@ class SnowflakeConnection:
                     "validate_default_parameters",
                     "paramstyle",
                     "timezone",
+                    "authenticator",
                 )
                 if context.resource_config.get(k) is not None
             }
