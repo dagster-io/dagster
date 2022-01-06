@@ -25,7 +25,11 @@ from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.core.test_utils import in_process_test_workspace
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
@@ -149,6 +153,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
                     "define_demo_execution_repo",
                 ),
                 container_image=self.repository.container_image,
+                entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
             ),
         )
 
@@ -182,6 +187,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                     "define_demo_execution_repo",
                 ),
                 container_image=self._container_image,
+                entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
             ),
         )
 
@@ -203,6 +209,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                         ),
                         container_image=self._container_image,
                         executable_path="python",
+                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
                     )
                 ),
                 repository_name="demo_execution_repo",
@@ -241,6 +248,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
                         ),
                         container_image=self._container_image,
                         executable_path="python",
+                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
                     )
                 ),
                 repository_name="demo_execution_repo",

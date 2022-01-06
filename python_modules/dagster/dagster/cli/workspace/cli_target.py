@@ -11,7 +11,11 @@ from dagster.core.definitions.reconstructable import repository_def_from_target_
 from dagster.core.host_representation.external import ExternalRepository
 from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.core.workspace.context import WorkspaceRequestContext
 from dagster.core.workspace.load_target import (
     EmptyWorkspaceTarget,
@@ -554,7 +558,11 @@ def get_repository_python_origin_from_kwargs(kwargs):
             )
         else:
             check.failed("Must specify a Python file or module name")
-        return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
+        return RepositoryPythonOrigin(
+            executable_path=sys.executable,
+            code_pointer=code_pointer,
+            entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+        )
 
     code_pointer_dict = _get_code_pointer_dict_from_kwargs(kwargs)
     if provided_repo_name is None and len(code_pointer_dict) == 1:
@@ -576,7 +584,11 @@ def get_repository_python_origin_from_kwargs(kwargs):
     else:
         code_pointer = code_pointer_dict[provided_repo_name]
 
-    return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
+    return RepositoryPythonOrigin(
+        executable_path=sys.executable,
+        code_pointer=code_pointer,
+        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+    )
 
 
 @contextmanager

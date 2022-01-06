@@ -28,7 +28,10 @@ def recon_pipeline_from_origin(origin):
 def recon_repository_from_origin(origin):
     check.inst_param(origin, "origin", RepositoryPythonOrigin)
     return ReconstructableRepository(
-        origin.code_pointer, origin.container_image, origin.executable_path
+        origin.code_pointer,
+        origin.container_image,
+        origin.executable_path,
+        origin.entry_point,
     )
 
 
