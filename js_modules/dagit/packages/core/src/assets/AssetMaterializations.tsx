@@ -19,10 +19,10 @@ import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
-import {AssetValueGraph} from './AssetValueGraph';
+import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetViewParams} from './AssetView';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
-import {AssetKey, AssetNumericHistoricalData} from './types';
+import {AssetKey} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
   AssetMaterializationsQuery,
@@ -276,7 +276,9 @@ const extractNumericData = (
   assetMaterializations: AssetMaterializationFragment[],
   xAxis: 'time' | 'partition',
 ) => {
-  const series: AssetNumericHistoricalData = {};
+  const series: {
+    [metadataEntryLabel: string]: AssetValueGraphData;
+  } = {};
 
   // Build a set of the numeric metadata entry labels (note they may be sparsely emitted)
   const numericMetadataLabels = uniq(

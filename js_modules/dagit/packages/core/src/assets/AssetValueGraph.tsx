@@ -5,12 +5,23 @@ import {Line} from 'react-chartjs-2';
 
 import {ColorsWIP} from '../ui/Colors';
 
-import {AssetNumericHistoricalData} from './types';
+export interface AssetValueGraphData {
+  minY: number;
+  maxY: number;
+  minXNumeric: number;
+  maxXNumeric: number;
+  xAxis: 'time' | 'partition';
+  values: {
+    x: number | string; // time or partition
+    xNumeric: number; // time or partition index
+    y: number;
+  }[];
+}
 
 export const AssetValueGraph: React.FC<{
   label: string;
   width: string;
-  data: AssetNumericHistoricalData[0];
+  data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
 }> = (props) => {
@@ -53,7 +64,7 @@ export const AssetValueGraph: React.FC<{
     elements: {
       point: {
         radius: ((context: any) =>
-          context.dataset.data[context.dataIndex].x === xHover ? 13 : 2) as any,
+          context.dataset.data[context.dataIndex]?.x === xHover ? 13 : 2) as any,
       },
     },
     scales: {

@@ -194,7 +194,7 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   }
 `;
 
-const StepStatusDot = styled.div`
+export const StepStatusDot = styled.div`
   width: 12px;
   height: 12px;
   flex-shrink: 0;
