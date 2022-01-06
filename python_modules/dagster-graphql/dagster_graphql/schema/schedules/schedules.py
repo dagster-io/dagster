@@ -29,7 +29,10 @@ class GrapheneSchedule(graphene.ObjectType):
     scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
-        GrapheneFutureInstigationTicks, cursor=graphene.Float(), limit=graphene.Int()
+        GrapheneFutureInstigationTicks,
+        cursor=graphene.Float(),
+        limit=graphene.Int(),
+        until=graphene.Float(),
     )
     futureTick = graphene.NonNull(
         GrapheneFutureInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
@@ -88,13 +91,27 @@ class GrapheneSchedule(graphene.ObjectType):
         cursor = kwargs.get(
             "cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
         )
-        limit = kwargs.get("limit", 10)
-
         tick_times = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
 
-        for _ in range(limit):
-            tick_times.append(next(time_iter).timestamp())
+        until = float(kwargs.get("until")) if kwargs.get("until") else None
+
+        if until:
+            currentTime = None
+            while (not currentTime or currentTime < until) and (
+                not kwargs.get("limit") or len(tick_times) < kwargs.get("limit")
+            ):
+                try:
+                    currentTime = next(time_iter).timestamp()
+                    if currentTime < until:
+                        tick_times.append(currentTime)
+                except StopIteration:
+                    break
+        else:
+            limit = kwargs.get("limit", 10)
+
+            for _ in range(limit):
+                tick_times.append(next(time_iter).timestamp())
 
         future_ticks = [
             GrapheneFutureInstigationTick(self._schedule_state, tick_time)
