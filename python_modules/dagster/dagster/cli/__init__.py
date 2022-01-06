@@ -18,6 +18,20 @@ from .sensor import sensor_cli
 
 
 def create_dagster_cli():
+    try:
+        import typer
+        from dagster_cloud.cli.entrypoint import app
+
+        cloud_cli = typer.main.get_command(app)
+    except ImportError:
+
+        @click.command(help="CLI tools for working with Dagster Cloud.")
+        def cloud_cli():
+            raise click.ClickException(
+                "The `dagster cloud` commands are only available if the `dagster-cloud` package is installed. "
+                "To install `dagster-cloud`, run `pip install dagster[cloud]."
+            )
+
     commands = {
         "api": api_cli,
         "pipeline": pipeline_cli,
@@ -29,6 +43,7 @@ def create_dagster_cli():
         "asset": asset_cli,
         "debug": debug_cli,
         "new-project": new_project_cli,
+        "cloud": cloud_cli,
     }
 
     @click.group(

@@ -114,6 +114,7 @@ if __name__ == "__main__":
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
             ],
+            "cloud": ["typer", "dagster-cloud"],
         },
         entry_points={
             "console_scripts": [
