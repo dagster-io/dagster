@@ -1480,6 +1480,22 @@ snapshots['test_query_all_solids 1'] = {
                         }
                     }
                 ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'yield_partition_materialization'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'partition_materialization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'yield_partition_materialization'
+                        }
+                    }
+                ]
             }
         ]
     }

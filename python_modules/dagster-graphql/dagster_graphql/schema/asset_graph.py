@@ -54,6 +54,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
+    latestMaterializationByPartition = graphene.Field(
+        graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
+        partitions=graphene.List(graphene.String),
+    )
 
     class Meta:
         name = "AssetNode"
@@ -178,6 +182,39 @@ class GrapheneAssetNode(graphene.ObjectType):
                     for partition in partitions_def_data.get_partitions_definition().get_partitions()
                 ]
         return []
+
+    def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
+        from ..implementation.fetch_assets import get_asset_events
+
+        get_partition = (
+            lambda event: event.dagster_event.step_materialization_data.materialization.partition
+        )
+
+        partitions = kwargs.get("partitions")
+        events_for_partitions = get_asset_events(
+            _graphene_info,
+            self._external_asset_node.asset_key,
+            partitions,
+        )
+
+        latest_materialization_by_partition = {}
+        for event in events_for_partitions:  # events are sorted in order of newest to oldest
+            event_partition = get_partition(event)
+            if event_partition not in latest_materialization_by_partition:
+                latest_materialization_by_partition[event_partition] = event
+            if len(latest_materialization_by_partition) == len(partitions):
+                break
+
+        # return materializations in the same order as the provided partitions, None if
+        # materialization does not exist
+        ordered_materializations = [
+            latest_materialization_by_partition.get(partition) for partition in partitions
+        ]
+
+        return [
+            GrapheneAssetMaterialization(event=event) if event else None
+            for event in ordered_materializations
+        ]
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

@@ -637,6 +637,7 @@ type AssetNode {
   dependedByKeys: [AssetKey!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   partitionKeys: [String!]!
+  latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
 }
 
 type AssetDependency {
