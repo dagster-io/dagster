@@ -58,6 +58,24 @@ def test_daily_partitions_with_end_offset():
     ]
 
 
+def test_daily_partitions_with_negative_end_offset():
+    @daily_partitioned_config(start_date="2021-05-01", end_offset=-2)
+    def my_partitioned_config(_start, _end):
+        return {}
+
+    assert [
+        partition.value
+        for partition in my_partitioned_config.partitions_def.get_partitions(
+            datetime.strptime("2021-05-07", DATE_FORMAT)
+        )
+    ] == [
+        time_window("2021-05-01", "2021-05-02"),
+        time_window("2021-05-02", "2021-05-03"),
+        time_window("2021-05-03", "2021-05-04"),
+        time_window("2021-05-04", "2021-05-05"),
+    ]
+
+
 def test_monthly_partitions():
     @monthly_partitioned_config(start_date="2021-05-01")
     def my_partitioned_config(_start, _end):
