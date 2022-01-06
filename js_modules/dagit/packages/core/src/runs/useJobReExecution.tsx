@@ -1,5 +1,6 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
+import {useLocation} from 'react-router';
 
 import {AppContext} from '../app/AppContext';
 import {showLaunchError} from '../launchpad/showLaunchError';
@@ -24,6 +25,7 @@ export const useJobReExecution = (run: RunFragment | undefined | null) => {
     LaunchPipelineReexecutionVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const repoMatch = useRepositoryForRun(run);
+  const location = useLocation();
 
   return React.useCallback(
     async (style: ReExecutionStyle) => {
@@ -40,11 +42,13 @@ export const useJobReExecution = (run: RunFragment | undefined | null) => {
 
       try {
         const result = await launchPipelineReexecution({variables});
-        handleLaunchResult(basePath, run.pipelineName, result);
+        handleLaunchResult(basePath, run.pipelineName, result, {
+          querystring: location.search,
+        });
       } catch (error) {
         showLaunchError(error as Error);
       }
     },
-    [basePath, launchPipelineReexecution, repoMatch, run],
+    [basePath, launchPipelineReexecution, repoMatch, run, location.search],
   );
 };
