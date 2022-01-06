@@ -1,9 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {WarningTooltip} from './WarningTooltip';

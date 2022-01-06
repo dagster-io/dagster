@@ -1,5 +1,6 @@
+import {tokenizedValueFromString} from '@dagster-io/ui';
+
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {tokenizedValueFromString} from '../ui/TokenizingField';
 
 import {DefaultLogLevels, LogLevel} from './LogLevel';
 import {LogFilter} from './LogsProvider';

@@ -1,11 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {PageHeader} from '../ui/PageHeader';
-import {Heading, Subheading} from '../ui/Text';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';

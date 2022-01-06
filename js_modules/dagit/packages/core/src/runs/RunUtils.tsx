@@ -1,14 +1,11 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, Group, IconWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Popover} from '../ui/Popover';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';

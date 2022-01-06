@@ -1,4 +1,14 @@
 import {Intent} from '@blueprintjs/core';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  IconWIP,
+  MenuItemWIP,
+  MenuWIP,
+  Popover,
+  TextInput,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -8,14 +18,6 @@ import styled from 'styled-components/macro';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {workspacePipelinePath} from '../workspace/workspacePath';
-
-import {Box} from './Box';
-import {ButtonWIP} from './Button';
-import {ColorsWIP} from './Colors';
-import {IconWIP} from './Icon';
-import {MenuItemWIP, MenuWIP} from './Menu';
-import {Popover} from './Popover';
-import {TextInput} from './TextInput';
 
 interface GraphQueryInputProps {
   intent?: Intent;

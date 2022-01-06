@@ -1,10 +1,9 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, CaptionMono} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
-import {CaptionMono} from '../ui/Text';
 
 import {ScheduleFutureTicksFragment} from './types/ScheduleFutureTicksFragment';
 

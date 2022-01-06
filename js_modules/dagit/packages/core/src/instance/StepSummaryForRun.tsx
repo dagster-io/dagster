@@ -1,12 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
+import {ColorsWIP, CaptionMono} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 import {StepEventStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
-import {CaptionMono} from '../ui/Text';
 
 import {StepSummaryForRunQuery} from './types/StepSummaryForRunQuery';
 

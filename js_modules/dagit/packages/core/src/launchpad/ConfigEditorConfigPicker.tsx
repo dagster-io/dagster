@@ -1,5 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  IconWIP,
+  IconWrapper,
+  MenuDividerWIP,
+  MenuItemWIP,
+  MenuWIP,
+  SelectWIP,
+  Spinner,
+  SuggestWIP,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -9,14 +22,6 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {SelectWIP} from '../ui/Select';
-import {Spinner} from '../ui/Spinner';
-import {SuggestWIP} from '../ui/Suggest';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

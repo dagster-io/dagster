@@ -1,17 +1,22 @@
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogFooter,
+  DialogHeader,
+  DialogWIP,
+  Group,
+  IconWIP,
+  IconWrapper,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogFooter, DialogHeader, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

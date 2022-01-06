@@ -1,5 +1,15 @@
 import {gql} from '@apollo/client';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
+import {
+  ColorsWIP,
+  IconWIP,
+  markdownToPlaintext,
+  MenuItemWIP,
+  MenuWIP,
+  Spinner,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
 import React, {CSSProperties} from 'react';
@@ -13,13 +23,6 @@ import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {ColorsWIP} from '../../ui/Colors';
-import {IconWIP} from '../../ui/Icon';
-import {markdownToPlaintext} from '../../ui/Markdown';
-import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
-import {Spinner} from '../../ui/Spinner';
-import {Tooltip} from '../../ui/Tooltip';
-import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 

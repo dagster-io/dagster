@@ -1,10 +1,8 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Subheading} from '../ui/Text';
 
 import {PreviousRunsFragment} from './types/PreviousRunsFragment';
 

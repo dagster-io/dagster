@@ -1,3 +1,14 @@
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  Group,
+  IconWIP,
+  NonIdealState,
+  Spinner,
+  SpinnerWrapper,
+  SplitPanelContainer,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,15 +24,7 @@ import {
   IStepState,
 } from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
-import {Box} from '../ui/Box';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner, SpinnerWrapper} from '../ui/Spinner';
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
   BOTTOM_INSET,

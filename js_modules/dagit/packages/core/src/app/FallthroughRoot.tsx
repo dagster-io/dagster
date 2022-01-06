@@ -1,11 +1,7 @@
+import {Box, ExternalAnchorButton, ColorsWIP, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
-import {ExternalAnchorButton} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 

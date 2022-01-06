@@ -1,4 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonGroup,
+  ColorsWIP,
+  IconWIP,
+  NonIdealState,
+  Spinner,
+  Caption,
+  Subheading,
+} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -7,13 +17,6 @@ import styled from 'styled-components/macro';
 
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
-import {Box} from '../ui/Box';
-import {ButtonGroup} from '../ui/ButtonGroup';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {Caption, Subheading} from '../ui/Text';
 import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
 import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 

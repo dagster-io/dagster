@@ -1,16 +1,19 @@
+import {
+  Box,
+  ColorsWIP,
+  Group,
+  NonIdealState,
+  Page,
+  PageHeader,
+  Table,
+  Heading,
+  Subheading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {PageHeader} from '../ui/PageHeader';
-import {Table} from '../ui/Table';
-import {Heading, Subheading} from '../ui/Text';
 
 import {ReloadAllButton} from './ReloadAllButton';
 import {RepositoryLocationsList} from './RepositoryLocationsList';

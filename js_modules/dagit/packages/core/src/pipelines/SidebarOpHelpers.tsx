@@ -1,15 +1,11 @@
 import {Text} from '@blueprintjs/core';
+import {ColorsWIP, Group, IconWIP, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
 import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Code} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
 
 import {SectionHeader} from './SidebarComponents';
 

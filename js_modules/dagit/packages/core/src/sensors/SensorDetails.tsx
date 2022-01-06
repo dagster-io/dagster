@@ -1,3 +1,14 @@
+import {
+  Box,
+  CountdownStatus,
+  useCountdown,
+  Group,
+  MetadataTableWIP,
+  PageHeader,
+  RefreshableCountdown,
+  TagWIP,
+  Heading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AssetLink} from '../assets/AssetLink';
@@ -6,14 +17,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {CountdownStatus, useCountdown} from '../ui/Countdown';
-import {Group} from '../ui/Group';
-import {MetadataTableWIP} from '../ui/MetadataTable';
-import {PageHeader} from '../ui/PageHeader';
-import {RefreshableCountdown} from '../ui/RefreshableCountdown';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 

@@ -1,6 +1,5 @@
+import {SplitPanelContainer} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {LoadingOverlay} from './LoadingOverlay';
 import {SessionSettingsBar} from './SessionSettingsBar';

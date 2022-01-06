@@ -1,15 +1,11 @@
 import {gql, useLazyQuery} from '@apollo/client';
+import {ButtonWIP, IconWIP, MenuWIP, MenuLink, MenuItemWIP, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RunFragments} from '../runs/RunFragments';
 import {useJobReExecution} from '../runs/useJobReExecution';
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
-import {MenuWIP, MenuLink, MenuItemWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 

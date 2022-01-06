@@ -1,4 +1,23 @@
 import {gql, useLazyQuery, useQuery} from '@apollo/client';
+import {
+  Box,
+  AnchorButton,
+  ButtonWIP,
+  ButtonGroup,
+  ColorsWIP,
+  IconWIP,
+  MenuItemWIP,
+  MenuWIP,
+  PageHeader,
+  Popover,
+  Spinner,
+  Table,
+  TagWIP,
+  Body,
+  Heading,
+  TextInput,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 
@@ -20,20 +39,6 @@ import {JobMap, RunTimeline} from '../runs/RunTimeline';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {AnchorButton, ButtonWIP} from '../ui/Button';
-import {ButtonGroup} from '../ui/ButtonGroup';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {PageHeader} from '../ui/PageHeader';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Body, Heading} from '../ui/Text';
-import {TextInput} from '../ui/TextInput';
-import {FontFamily} from '../ui/styles';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';

@@ -1,4 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  DialogFooter,
+  DialogWIP,
+  StyledTable,
+  Table,
+  TagWIP,
+  Subheading,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -10,17 +24,6 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogFooter, DialogWIP} from '../ui/Dialog';
-import {StyledTable} from '../ui/MetadataTable';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Subheading} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

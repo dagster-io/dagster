@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, buildPipelineSelector, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';

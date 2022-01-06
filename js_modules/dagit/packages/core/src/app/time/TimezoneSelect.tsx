@@ -1,8 +1,6 @@
+import {MenuDividerWIP, MenuItemWIP, MenuWIP, SelectWIP} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
-
-import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../../ui/Menu';
-import {SelectWIP} from '../../ui/Select';
 
 import {TimezoneContext} from './TimezoneContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';

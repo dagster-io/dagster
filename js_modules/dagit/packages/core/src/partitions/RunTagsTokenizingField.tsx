@@ -1,13 +1,13 @@
-import uniq from 'lodash/uniq';
-import * as React from 'react';
-
-import {RunFilterTokenType} from '../runs/RunsFilterInput';
 import {
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from '../ui/TokenizingField';
+} from '@dagster-io/ui';
+import uniq from 'lodash/uniq';
+import * as React from 'react';
+
+import {RunFilterTokenType} from '../runs/RunsFilterInput';
 
 interface RunTagsTokenizingFieldProps {
   runs: {tags: {key: string; value: string}[]}[];

@@ -1,4 +1,5 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, Group, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,9 +7,6 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Mono} from '../ui/Text';
 import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';

@@ -1,4 +1,12 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  CursorHistoryControls,
+  NonIdealState,
+  Page,
+  TagWIP,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -12,13 +20,7 @@ import {
   useQueryPersistedRunFilters,
 } from '../runs/RunsFilterInput';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {Box} from '../ui/Box';
-import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {TagWIP} from '../ui/TagWIP';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 

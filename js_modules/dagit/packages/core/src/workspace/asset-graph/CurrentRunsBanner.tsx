@@ -1,10 +1,6 @@
+import {BaseTag, Box, ColorsWIP, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
-
-import {BaseTag} from '../../ui/BaseTag';
-import {Box} from '../../ui/Box';
-import {ColorsWIP} from '../../ui/Colors';
-import {Spinner} from '../../ui/Spinner';
 
 import {LiveDataForNode} from './Utils';
 

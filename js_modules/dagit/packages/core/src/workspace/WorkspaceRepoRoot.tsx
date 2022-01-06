@@ -1,3 +1,4 @@
+import {Box, PageHeader, Tab, Tabs, TagWIP, Heading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,11 +7,6 @@ import {useFeatureFlags} from '../app/Flags';
 import {OpsRoot} from '../ops/OpsRoot';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
-import {Box} from '../ui/Box';
-import {PageHeader} from '../ui/PageHeader';
-import {Tab, Tabs} from '../ui/Tabs';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
 
 import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';

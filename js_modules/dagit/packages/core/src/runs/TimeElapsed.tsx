@@ -1,9 +1,7 @@
+import {ColorsWIP, Group, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {formatElapsedTime} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
 
 export interface Props {
   startUnix: number | null;

@@ -1,5 +1,6 @@
+import {ColorsWIP} from '@dagster-io/ui';
+
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
-import {ColorsWIP} from '../ui/Colors';
 
 import {
   BOX_DOT_WIDTH_CUTOFF,

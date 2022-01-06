@@ -1,3 +1,16 @@
+import {
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  IconWrapper,
+  Table,
+  Mono,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,15 +21,6 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry} from '../runs/MetadataEntry';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Table} from '../ui/Table';
-import {Mono} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 

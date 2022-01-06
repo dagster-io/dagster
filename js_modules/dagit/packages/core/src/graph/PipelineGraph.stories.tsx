@@ -1,8 +1,8 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraph} from './PipelineGraph';
 import {SVGViewport} from './SVGViewport';

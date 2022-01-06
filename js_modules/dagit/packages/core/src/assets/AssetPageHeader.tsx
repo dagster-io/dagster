@@ -1,14 +1,10 @@
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
+import {Box, ColorsWIP, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {PageHeader} from '../ui/PageHeader';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 
 import {useAssetView} from './useAssetView';

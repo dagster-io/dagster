@@ -1,4 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogFooter,
+  DialogWIP,
+  IconWIP,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  TokenizingFieldValue,
+  FontFamily,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,15 +21,6 @@ import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogFooter, DialogWIP} from '../ui/Dialog';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuLink, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
