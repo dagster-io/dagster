@@ -1010,7 +1010,7 @@ type Schedule {
   description: String
   scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int): FutureInstigationTicks!
+  futureTicks(cursor: Float, limit: Int, until: Float): FutureInstigationTicks!
   futureTick(tickTimestamp: Int!): FutureInstigationTick!
 }
 
