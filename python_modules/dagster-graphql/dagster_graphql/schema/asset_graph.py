@@ -8,6 +8,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
+from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
@@ -40,8 +41,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
     opName = graphene.String()
-    jobName = graphene.String()
     jobs = non_null_list(GraphenePipeline)
+    repository = graphene.NonNull(lambda: external.GrapheneRepository)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependencyKeys = non_null_list(GrapheneAssetKey)
@@ -88,8 +89,14 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
-            jobName=external_asset_node.job_names[0] if external_asset_node.job_names else None,
         )
+
+    def resolve_repository(self, _graphene_info):
+        loc = None
+        for location in _graphene_info.context.repository_locations:
+            if self._external_repository in location.get_repositories().values():
+                loc = location
+        return external.GrapheneRepository(self._external_repository, loc)
 
     def resolve_dependencies(self, _graphene_info):
         return [

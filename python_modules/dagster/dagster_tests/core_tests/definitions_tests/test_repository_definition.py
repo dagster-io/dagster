@@ -102,7 +102,7 @@ def test_dupe_solid_repo_definition():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting definitions found in repository with name 'same'. Solid & Graph/CompositeSolid definition names must be unique within a repository.",
+        match="Conflicting definitions found in repository with name 'same'. Op/Graph/Solid definition names must be unique within a repository.",
     ):
         error_repo.get_all_pipelines()
 
@@ -378,14 +378,14 @@ def test_dupe_graph_defs():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+        match="Op/Graph/Solid definition names must be unique within a repository",
     ):
 
         get_collision_repo().get_all_pipelines()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+        match="Op/Graph/Solid definition names must be unique within a repository",
     ):
 
         get_collision_repo().get_all_jobs()

@@ -15,12 +15,6 @@ export interface RunFragment_tags {
   value: string;
 }
 
-export interface RunFragment_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-  solidSelection: string[] | null;
-}
-
 export interface RunFragment_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
@@ -99,7 +93,7 @@ export interface RunFragment {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineName: string;
-  pipeline: RunFragment_pipeline;
+  solidSelection: string[] | null;
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;

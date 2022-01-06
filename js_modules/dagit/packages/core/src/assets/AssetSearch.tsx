@@ -108,7 +108,7 @@ export const AssetSearch = () => {
         minimal
         fill={true}
         isOpen={open && results.length > 0}
-        position={'bottom-left'}
+        position="bottom-left"
         content={
           <div style={{maxWidth: 600, minWidth: 600}}>
             {loading ? <Spinner purpose="body-text" /> : null}
@@ -124,7 +124,7 @@ export const AssetSearch = () => {
         <TextInput
           value={queryString}
           style={{width: '600px'}}
-          placeholder={`Search all asset_keys...`}
+          placeholder="Search all asset_keys..."
           onChange={(e: React.ChangeEvent<any>) =>
             dispatch({type: 'change-query', queryString: e.target.value})
           }

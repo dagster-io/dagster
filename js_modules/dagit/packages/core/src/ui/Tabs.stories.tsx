@@ -22,7 +22,7 @@ export const Default = () => {
         <Tab
           id="sensors"
           title="Sensors"
-          icon={<IconWIP name={'warning'} color={ColorsWIP.Yellow500} />}
+          icon={<IconWIP name="warning" color={ColorsWIP.Yellow500} />}
         />
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" title={<a href="/?path=/story/box">Box Component</a>} />
@@ -33,7 +33,7 @@ export const Default = () => {
         <Tab
           id="sensors"
           title="Sensors"
-          icon={<IconWIP name={'warning'} color={ColorsWIP.Yellow500} />}
+          icon={<IconWIP name="warning" color={ColorsWIP.Yellow500} />}
         />
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" title={<a href="/?path=/story/box">Box Component</a>} />

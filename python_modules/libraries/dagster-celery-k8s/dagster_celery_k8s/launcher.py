@@ -239,6 +239,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             env_vars=env_vars,
+            labels={
+                "dagster/job": pipeline_origin.pipeline_name,
+            },
         )
 
         job_namespace = exc_config.get("job_namespace")

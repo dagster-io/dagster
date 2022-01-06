@@ -204,6 +204,84 @@ type SolidHandle {
   handleID: String!
   solid: Solid!
   parent: SolidHandle
+  stepStats(limit: Int): SolidStepStatsOrError
+}
+
+union SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError
+
+type SolidStepStatsConnection {
+  nodes: [RunStepStats!]!
+}
+
+type RunStepStats implements PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+  attempts: [RunMarker!]!
+  markers: [RunMarker!]!
+}
+
+interface PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
+  IN_PROGRESS
+}
+
+type Materialization implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+}
+
+interface DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+}
+
+interface EventMetadataEntry {
+  label: String!
+  description: String
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
+type RunMarker {
+  startTime: Float
+  endTime: Float
+}
+
+type SolidStepStatusUnavailableError implements Error {
+  message: String!
+}
+
+interface Error {
+  message: String!
 }
 
 type Mode {
@@ -265,10 +343,6 @@ type PipelineNotFoundError implements Error {
   pipelineName: String!
   repositoryName: String!
   repositoryLocationName: String!
-}
-
-interface Error {
-  message: String!
 }
 
 type DagsterTypeNotFoundError implements Error {
@@ -398,69 +472,6 @@ interface PipelineRunStatsSnapshot {
   endTime: Float
 }
 
-type RunStepStats implements PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [Materialization!]!
-  expectationResults: [ExpectationResult!]!
-  attempts: [RunMarker!]!
-  markers: [RunMarker!]!
-}
-
-interface PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [Materialization!]!
-  expectationResults: [ExpectationResult!]!
-}
-
-enum StepEventStatus {
-  SKIPPED
-  SUCCESS
-  FAILURE
-  IN_PROGRESS
-}
-
-type Materialization implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
-}
-
-interface DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-}
-
-interface EventMetadataEntry {
-  label: String!
-  description: String
-}
-
-type AssetKey {
-  path: [String!]!
-}
-
-type ExpectationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
-}
-
-type RunMarker {
-  startTime: Float
-  endTime: Float
-}
-
 type ComputeLogs {
   runId: String!
   stepKey: String!
@@ -492,13 +503,11 @@ type ExecutionStep {
 
 type ExecutionStepInput {
   name: String!
-  type: DagsterType!
   dependsOn: [ExecutionStep!]!
 }
 
 type ExecutionStepOutput {
   name: String!
-  type: DagsterType!
 }
 
 enum StepKind {
@@ -620,8 +629,8 @@ type AssetNode {
   assetKey: AssetKey!
   description: String
   opName: String
-  jobName: String
   jobs: [Pipeline!]!
+  repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!

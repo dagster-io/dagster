@@ -369,7 +369,16 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         args = execute_step_args.get_command_args()
 
         job = construct_dagster_k8s_job(
-            job_config, args, job_name, user_defined_k8s_config, pod_name, component="step_worker"
+            job_config,
+            args,
+            job_name,
+            user_defined_k8s_config,
+            pod_name,
+            component="step_worker",
+            labels={
+                "dagster/job": execute_step_args.pipeline_origin.pipeline_name,
+                "dagster/op": step_key,
+            },
         )
 
         # Running list of events generated from this task execution

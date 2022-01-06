@@ -270,10 +270,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               keyMap: 'sublime',
               extraKeys: {
                 'Cmd-Space': (editor: any) => editor.showHint({completeSingle: true}),
-                'Ctrl-A': (editor: any) => {
-                  editor.execCommand('goLineStartSmart');
-                },
-                'Ctrl-E': (editor: any) => editor.execCommand('goLineEnd'),
                 'Ctrl-Space': (editor: any) => editor.showHint({completeSingle: true}),
                 'Alt-Space': (editor: any) => editor.showHint({completeSingle: true}),
                 'Shift-Tab': (editor: any) => editor.execCommand('indentLess'),
@@ -281,8 +277,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
                 // Persistent search box in Query Editor
                 'Cmd-F': 'findPersistent',
                 'Ctrl-F': 'findPersistent',
-                'Cmd-Z': (editor: any) => editor.undo(),
-                'Cmd-Y': (editor: any) => editor.redo(),
               },
               gutters: [
                 'CodeMirror-foldgutter',

@@ -47,3 +47,9 @@ export const Mono = styled.span`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
 `;
+
+export const CaptionMono = styled.span<TextProps>`
+  ${({color}) => (color ? `color: ${color};` : null)}
+  font-family: ${FontFamily.monospace};
+  font-size: 14px;
+`;

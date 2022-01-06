@@ -152,9 +152,9 @@ const StepItem: React.FunctionComponent<{
             flip: {enabled: false},
           }}
           position="bottom"
-          content={'Unknown step state. Run completed without step execution completion.'}
+          content="Unknown step state. Run completed without step execution completion."
         >
-          <StepStatusDot>{'?'}</StepStatusDot>
+          <StepStatusDot>?</StepStatusDot>
         </Tooltip>
       ) : (
         <StepStatusDot
@@ -194,7 +194,7 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   }
 `;
 
-const StepStatusDot = styled.div`
+export const StepStatusDot = styled.div`
   width: 12px;
   height: 12px;
   flex-shrink: 0;

@@ -32,21 +32,21 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/runs')}
-            shortcutLabel={`⌥1`}
+            shortcutLabel="⌥1"
             shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
           >
             <TopNavLink to="/instance/runs">Runs</TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/assets')}
-            shortcutLabel={`⌥2`}
+            shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
             <TopNavLink to="/instance/assets">Assets</TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance')}
-            shortcutLabel={`⌥3`}
+            shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
             <TopNavLink to="/instance">
@@ -58,7 +58,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/workspace')}
-            shortcutLabel={`⌥4`}
+            shortcutLabel="⌥4"
             shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
           >
             <TopNavLink to="/workspace">

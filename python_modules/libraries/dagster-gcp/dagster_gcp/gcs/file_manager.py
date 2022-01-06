@@ -58,7 +58,7 @@ class GCSFileManager(FileManager):
             # instigate download
             temp_file_obj = self._temp_file_manager.tempfile()
             temp_name = temp_file_obj.name
-            bucket_obj = self._client.get_bucket(file_handle.gcs_bucket)
+            bucket_obj = self._client.bucket(file_handle.gcs_bucket)
             bucket_obj.blob(file_handle.gcs_key).download_to_file(temp_file_obj)
             self._local_handle_cache[file_handle.gcs_path] = temp_name
 
@@ -92,7 +92,7 @@ class GCSFileManager(FileManager):
     def write(self, file_obj, mode="wb", ext=None):
         check_file_like_obj(file_obj)
         gcs_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
-        bucket_obj = self._client.get_bucket(self._gcs_bucket)
+        bucket_obj = self._client.bucket(self._gcs_bucket)
         bucket_obj.blob(gcs_key).upload_from_file(file_obj)
         return GCSFileHandle(self._gcs_bucket, gcs_key)
 

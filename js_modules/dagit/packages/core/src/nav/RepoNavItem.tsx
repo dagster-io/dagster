@@ -106,7 +106,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
           {({tryReload, reloading}) => (
             <ShortcutHandler
               onShortcut={tryReload}
-              shortcutLabel={`⌥R`}
+              shortcutLabel="⌥R"
               shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
             >
               <ReloadTooltip

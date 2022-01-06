@@ -66,10 +66,7 @@ export const MetadataEntry: React.FC<{
     case 'EventPathMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
-          <MetadataEntryAction
-            title={'Copy to clipboard'}
-            onClick={(e) => copyValue(e, entry.path)}
-          >
+          <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
@@ -106,7 +103,7 @@ export const MetadataEntry: React.FC<{
     case 'EventUrlMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
-          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="_blank">
+          <MetadataEntryAction href={entry.url} title="Open in a new tab" target="_blank">
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">

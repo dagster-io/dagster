@@ -5,9 +5,12 @@ from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
+from .errors import GrapheneError
 from .metadata import GrapheneMetadataItemDefinition
 from .util import non_null_list
 
@@ -410,11 +413,31 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         ]
 
 
+class GrapheneSolidStepStatsUnavailableError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "SolidStepStatusUnavailableError"
+
+
+class GrapheneSolidStepStatsConnection(graphene.ObjectType):
+    nodes = non_null_list(GrapheneRunStepStats)
+
+    class Meta:
+        name = "SolidStepStatsConnection"
+
+
+class GrapheneSolidStepStatsOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneSolidStepStatsConnection, GrapheneSolidStepStatsUnavailableError)
+        name = "SolidStepStatsOrError"
+
+
 class GrapheneSolid(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     definition = graphene.NonNull(lambda: GrapheneISolidDefinition)
     inputs = non_null_list(GrapheneInput)
     outputs = non_null_list(GrapheneOutput)
+
     is_dynamic_mapped = graphene.NonNull(graphene.Boolean)
 
     class Meta:
@@ -440,6 +463,15 @@ class GrapheneSolid(graphene.ObjectType):
 
     def get_solid_definition(self):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+
+    def get_is_dynamic_mapped(self):
+        return self._solid_invocation_snap.is_dynamic_mapped
+
+    def get_is_composite(self):
+        return isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+
+    def get_pipeline_name(self):
+        return self._represented_pipeline.name
 
     def resolve_definition(self, _graphene_info):
         return self.get_solid_definition()
@@ -474,6 +506,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
     handleID = graphene.NonNull(graphene.String)
     solid = graphene.NonNull(GrapheneSolid)
     parent = graphene.Field(lambda: GrapheneSolidHandle)
+    stepStats = graphene.Field(GrapheneSolidStepStatsOrError, limit=graphene.Int())
 
     class Meta:
         name = "SolidHandle"
@@ -484,6 +517,28 @@ class GrapheneSolidHandle(graphene.ObjectType):
             solid=check.inst_param(solid, "solid", GrapheneSolid),
             parent=check.opt_inst_param(parent, "parent", GrapheneSolidHandle),
         )
+        self._solid = solid
+
+    def resolve_stepStats(self, _graphene_info, limit):
+        if self._solid.get_is_dynamic_mapped():
+            return GrapheneSolidStepStatsUnavailableError(
+                message="Step stats are not available for dynamically-mapped ops"
+            )
+
+        if self._solid.get_is_composite():
+            return GrapheneSolidStepStatsUnavailableError(
+                message="Step stats are not available for composite solids / subgraphs"
+            )
+
+        instance = _graphene_info.context.instance
+        runs_filter = PipelineRunsFilter(pipeline_name=self._solid.get_pipeline_name())
+        runs = instance.get_runs(runs_filter, limit=limit)
+        nodes = []
+        for run in runs:
+            stats = instance.get_run_step_stats(run.run_id, [str(self.handleID)])
+            if len(stats):
+                nodes.append(GrapheneRunStepStats(stats[0]))
+        return GrapheneSolidStepStatsConnection(nodes=nodes)
 
 
 class GrapheneSolidContainer(graphene.Interface):
@@ -534,7 +589,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_id(self, _graphene_info):
-        return f"{self._represented_pipeline.get_external_origin_id()}:{self._solid_def_snap.name}"
+        return f"{self._represented_pipeline.identifying_pipeline_snapshot_id}:{self._solid_def_snap.name}"
 
     def resolve_solids(self, _graphene_info):
         return build_solids(self._represented_pipeline, self._comp_solid_dep_index)

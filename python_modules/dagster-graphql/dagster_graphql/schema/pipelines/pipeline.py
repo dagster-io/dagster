@@ -253,20 +253,15 @@ class GrapheneRun(graphene.ObjectType):
             return None
 
         instance = graphene_info.context.instance
-        historical_pipeline = instance.get_historical_pipeline(
-            self._pipeline_run.pipeline_snapshot_id
-        )
+
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             self._pipeline_run.execution_plan_snapshot_id
         )
         return (
             GrapheneExecutionPlan(
-                ExternalExecutionPlan(
-                    execution_plan_snapshot=execution_plan_snapshot,
-                    represented_pipeline=historical_pipeline,
-                )
+                ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
             )
-            if execution_plan_snapshot and historical_pipeline
+            if execution_plan_snapshot
             else None
         )
 

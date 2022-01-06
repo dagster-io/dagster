@@ -3,6 +3,7 @@ import {useHistory} from 'react-router-dom';
 
 import {Box} from '../ui/Box';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
+import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
@@ -20,7 +21,7 @@ export const AssetNodeList: React.FC<{
       flex={{gap: 5}}
       padding={{horizontal: 12}}
       style={{
-        height: 110,
+        height: 112,
         overflowX: 'auto',
         width: '100%',
         whiteSpace: 'nowrap',
@@ -33,19 +34,22 @@ export const AssetNodeList: React.FC<{
             style={{position: 'relative', flexShrink: 0, width: 240, height: 90}}
             onClick={(e) => {
               e.stopPropagation();
-              if (asset.opName) {
-                history.push(`/instance/assets/${asset.assetKey.path.join('/')}`);
-              }
+              history.push(`/instance/assets/${asset.assetKey.path.join('/')}`);
             }}
           >
-            <AssetNode
-              definition={{...asset, description: null}}
-              metadata={[]}
-              selected={false}
-              liveData={liveDataByNode[asset.id]}
-              secondaryHighlight={false}
-              repoAddress={repoAddress}
-            />
+            {asset.jobs.length ? (
+              <AssetNode
+                definition={{...asset, description: null}}
+                metadata={[]}
+                jobName={asset.jobs[0].name}
+                selected={false}
+                liveData={liveDataByNode[asset.id]}
+                secondaryHighlight={false}
+                repoAddress={repoAddress}
+              />
+            ) : (
+              <ForeignNode assetKey={asset.assetKey} />
+            )}
           </div>
         );
       })}

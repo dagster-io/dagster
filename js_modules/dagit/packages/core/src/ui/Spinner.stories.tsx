@@ -18,7 +18,7 @@ export const Sizes = () => {
     <Group direction="column" spacing={32}>
       <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
-          <Code>{`purpose="caption-text"`}</Code>
+          <Code>purpose=&quot;caption-text&quot;</Code>
           <Group direction="row" spacing={8} alignItems="center">
             <Spinner purpose="caption-text" />
             <Caption>Waiting for something to load…</Caption>
@@ -27,7 +27,7 @@ export const Sizes = () => {
       </Box>
       <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
-          <Code>{`purpose="body-text"`}</Code>
+          <Code>purpose=&quot;body-text&quot;</Code>
           <Group direction="row" spacing={8} alignItems="center">
             <Spinner purpose="body-text" />
             <div>Waiting for something to load…</div>
@@ -36,7 +36,7 @@ export const Sizes = () => {
       </Box>
       <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
-          <Code>{`purpose="section"`}</Code>
+          <Code>purpose=&quot;section&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={24}>
             <Spinner purpose="section" />
             <Spinner purpose="section" fillColor={ColorsWIP.Blue500} />
@@ -45,7 +45,7 @@ export const Sizes = () => {
       </Box>
       <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
-          <Code>{`purpose="page"`}</Code>
+          <Code>purpose=&quot;page&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={48}>
             <Spinner purpose="page" />
             <Spinner purpose="page" fillColor={ColorsWIP.Blue500} />

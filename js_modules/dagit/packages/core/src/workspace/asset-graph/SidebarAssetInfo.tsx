@@ -10,7 +10,6 @@ import {Box} from '../../ui/Box';
 import {ColorsWIP} from '../../ui/Colors';
 import {RepoAddress} from '../types';
 
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
 
@@ -32,7 +31,6 @@ export const SidebarAssetInfo: React.FC<{
             margin={{bottom: 8}}
           >
             <SidebarTitle>{displayNameForAssetKey(node.assetKey)}</SidebarTitle>
-            <LaunchAssetExecutionButton assets={[node]} repoAddress={repoAddress} />
           </Box>
           <Description description={node.description || null} />
         </Box>
@@ -54,24 +52,5 @@ export const SidebarAssetInfo: React.FC<{
         setParams={() => {}}
       />
     </>
-  );
-};
-
-export const SidebarAssetsInfo: React.FC<{
-  nodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[];
-  repoAddress: RepoAddress;
-}> = ({nodes, repoAddress}) => {
-  return (
-    <SidebarSection title="Definition">
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Box
-          flex={{gap: 8, justifyContent: 'space-between', alignItems: 'baseline'}}
-          margin={{bottom: 8}}
-        >
-          <SidebarTitle>{`${nodes.length} Assets Selected`}</SidebarTitle>
-          <LaunchAssetExecutionButton repoAddress={repoAddress} assets={nodes} />
-        </Box>
-      </Box>
-    </SidebarSection>
   );
 };

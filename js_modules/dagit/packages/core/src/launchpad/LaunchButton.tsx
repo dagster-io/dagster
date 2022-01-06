@@ -69,7 +69,7 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
   return (
     <ShortcutHandler
       onShortcut={onClick}
-      shortcutLabel={`⌥L`}
+      shortcutLabel="⌥L"
       shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
@@ -111,7 +111,7 @@ export const LaunchButtonDropdown = ({
   return (
     <ShortcutHandler
       onShortcut={() => onConfigSelected(primary)}
-      shortcutLabel={`⌥L`}
+      shortcutLabel="⌥L"
       shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
@@ -157,7 +157,7 @@ export const LaunchButtonDropdown = ({
           style={{minWidth: 'initial'}}
           icon={<IconWIP name="arrow_drop_down" />}
           intent="primary"
-          joined={'left'}
+          joined="left"
         />
       </Popover>
     </ShortcutHandler>

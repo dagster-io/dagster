@@ -21,6 +21,7 @@ class StepDelegatingExecutor(Executor):
         retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
+        should_verify_step: bool = False,
     ):
         self._step_handler = step_handler
         self._retries = retries
@@ -33,6 +34,7 @@ class StepDelegatingExecutor(Executor):
                 check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
             ),
         )
+        self._should_verify_step = should_verify_step
 
     @property
     def retries(self):
@@ -55,6 +57,7 @@ class StepDelegatingExecutor(Executor):
                 instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries.for_inner_plan(),
                 known_state=active_execution.get_known_state(),
+                should_verify_step=self._should_verify_step,
             ),
             step_tags={step.key: step.tags for step in steps},
             pipeline_run=plan_context.pipeline_run,

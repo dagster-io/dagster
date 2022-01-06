@@ -96,7 +96,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
       {({graphOrError: result}) => {
         if (result.__typename === 'GraphNotFoundError') {
           return (
-            <NonIdealState icon="error" title={'Graph not found'} description={result.message} />
+            <NonIdealState icon="error" title="Graph not found" description={result.message} />
           );
         }
         if (result.__typename === 'PythonError') {

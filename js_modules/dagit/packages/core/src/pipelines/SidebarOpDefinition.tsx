@@ -74,7 +74,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
 
   return (
     <div>
-      <SidebarSection title={'Definition'}>
+      <SidebarSection title="Definition">
         <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarSubhead>{isComposite ? 'Graph' : 'Op'}</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
@@ -82,21 +82,21 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
         </Box>
       </SidebarSection>
       {definition.description && (
-        <SidebarSection title={'Description'}>
+        <SidebarSection title="Description">
           <Box padding={{vertical: 16, horizontal: 24}}>
             <Description description={definition.description} />
           </Box>
         </SidebarSection>
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
-        <SidebarSection title={'Metadata'}>
+        <SidebarSection title="Metadata">
           <Box padding={{vertical: 16, horizontal: 24}}>
             <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
           </Box>
         </SidebarSection>
       )}
       {configField && (
-        <SidebarSection title={'Config'}>
+        <SidebarSection title="Config">
           <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={configField.configType}
@@ -106,7 +106,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
         </SidebarSection>
       )}
       {requiredResources && (
-        <SidebarSection title={'Required Resources'}>
+        <SidebarSection title="Required Resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
@@ -117,7 +117,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           </Box>
         </SidebarSection>
       )}
-      <SidebarSection title={'Inputs'}>
+      <SidebarSection title="Inputs">
         <Box padding={{vertical: 16, horizontal: 24}}>
           {definition.inputDefinitions.map((inputDef, idx) => (
             <SectionItemContainer key={idx}>
@@ -131,7 +131,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           ))}
         </Box>
       </SidebarSection>
-      <SidebarSection title={'Outputs'}>
+      <SidebarSection title="Outputs">
         <Box padding={{vertical: 16, horizontal: 24}}>
           {definition.outputDefinitions.map((outputDef, idx) => (
             <SectionItemContainer key={idx}>
@@ -149,7 +149,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
         </Box>
       </SidebarSection>
       {getInvocations && (
-        <SidebarSection title={'All Invocations'}>
+        <SidebarSection title="All Invocations">
           <InvocationList
             invocations={getInvocations(definition.name)}
             onClickInvocation={onClickInvocation}

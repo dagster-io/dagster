@@ -7,6 +7,9 @@ from dagster import (
     DagsterInstance,
     Enum,
     Field,
+    In,
+    InputDefinition,
+    Nothing,
     Out,
     Permissive,
     Shape,
@@ -991,3 +994,17 @@ def test_graph_top_level_input():
     result = my_graph_with_nesting.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
     assert result.success
     assert result.output_for_node("my_graph.my_op") == 4
+
+
+def test_nothing_inputs_graph():
+    @op(ins={"sync_signal": In(Nothing)})
+    def my_op():
+        ...
+
+    @graph(input_defs=[InputDefinition("sync_signal", Nothing)])
+    def my_pipeline(sync_signal):
+        my_op(sync_signal)
+
+    the_job = my_pipeline.to_job()
+    result = the_job.execute_in_process()
+    assert result.success

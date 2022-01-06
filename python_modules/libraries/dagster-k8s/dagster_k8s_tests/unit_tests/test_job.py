@@ -1,4 +1,5 @@
 import pytest
+from dagster import __version__ as dagster_version
 from dagster import graph
 from dagster.core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
@@ -385,3 +386,56 @@ def test_construct_dagster_k8s_job_with_ttl():
         cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
     ).to_dict()
     assert job["spec"]["ttl_seconds_after_finished"] == 0
+
+
+def test_construct_dagster_k8s_job_with_job_op_labels():
+    common_labels = {
+        "app.kubernetes.io/name": "dagster",
+        "app.kubernetes.io/instance": "dagster",
+        "app.kubernetes.io/version": dagster_version,
+        "app.kubernetes.io/part-of": "dagster",
+    }
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="test",
+    )
+    job1 = construct_dagster_k8s_job(
+        cfg,
+        [],
+        "job123",
+        labels={
+            "dagster/job": "some_job",
+            "dagster/op": "some_op",
+        },
+    ).to_dict()
+    expected_labels1 = dict(
+        **common_labels,
+        **{
+            "dagster/job": "some_job",
+            "dagster/op": "some_op",
+        },
+    )
+    assert job1["metadata"]["labels"] == expected_labels1
+    assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
+
+    job2 = construct_dagster_k8s_job(
+        cfg,
+        [],
+        "job456",
+        labels={
+            "dagster/job": "long_job_name_64____01234567890123456789012345678901234567890123",
+            "dagster/op": "long_op_name_64_____01234567890123456789012345678901234567890123",
+        },
+    ).to_dict()
+    expected_labels2 = dict(
+        **common_labels,
+        **{
+            # The last character should be truncated.
+            "dagster/job": "long_job_name_64____0123456789012345678901234567890123456789012",
+            "dagster/op": "long_op_name_64_____0123456789012345678901234567890123456789012",
+        },
+    )
+    assert job2["metadata"]["labels"] == expected_labels2
+    assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2

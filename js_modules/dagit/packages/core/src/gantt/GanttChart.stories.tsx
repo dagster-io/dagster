@@ -381,7 +381,7 @@ export const EmptyStateCase = () => {
     <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
       <CustomTooltipProvider />
       <div style={{width: '100%', height: 400}}>
-        <GanttChartLoadingState runId={'r2'} />
+        <GanttChartLoadingState runId="r2" />
       </div>
     </StorybookProvider>
   );
@@ -401,7 +401,7 @@ export const InteractiveCase = (argValues: any) => {
           overrideNowTime={metadata.mostRecentLogAt}
           metadata={metadata}
           focusedTime={argValues.focusedTime}
-          runId={'r2'}
+          runId="r2"
           graph={GRAPH}
           selection={{query: selectionQuery, keys: selectionKeys}}
           onClickStep={(step) => {

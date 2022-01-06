@@ -15,7 +15,7 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.workspace import IWorkspace
-from dagster.daemon.daemon import DagsterDaemon
+from dagster.daemon.daemon import IntervalDaemon
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -91,7 +91,7 @@ class _TagConcurrencyLimitsCounter:
                 self._unique_value_counts[tag_tuple] += 1
 
 
-class QueuedRunCoordinatorDaemon(DagsterDaemon):
+class QueuedRunCoordinatorDaemon(IntervalDaemon):
     """
     Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
     store and launches them.

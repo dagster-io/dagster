@@ -109,7 +109,7 @@ export const SVGLabeledRect: React.FC<{
       height={undefined}
       size={minified ? 30 : 16}
       text={label}
-      fill={'#979797'}
+      fill="#979797"
     />
   </g>
 );

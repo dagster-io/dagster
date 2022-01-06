@@ -3,14 +3,19 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class JobType(Enum):
+class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
+
+
+register_serdes_enum_fallbacks({"JobType": InstigatorType})
+# for internal backcompat
+JobType = InstigatorType
 
 
 @whitelist_for_serdes

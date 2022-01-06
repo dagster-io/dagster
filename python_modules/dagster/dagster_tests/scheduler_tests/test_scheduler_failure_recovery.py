@@ -1,7 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobTickStatus
+from dagster.core.scheduler.instigation import TickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
@@ -89,7 +89,7 @@ def test_failure_recovery_before_run_created(
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
 
             assert instance.get_runs_count() == 0
 
@@ -117,7 +117,7 @@ def test_failure_recovery_before_run_created(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
             assert (
@@ -170,7 +170,7 @@ def test_failure_recovery_after_run_created(
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
 
             assert instance.get_runs_count() == 1
 
@@ -224,7 +224,7 @@ def test_failure_recovery_after_run_created(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -297,7 +297,11 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 run_ids = [run.run_id for run in instance.get_runs()]
 
             validate_tick(
-                ticks[0], external_schedule, initial_datetime, JobTickStatus.STARTED, run_ids
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                TickStatus.STARTED,
+                run_ids,
             )
 
         frozen_datetime = frozen_datetime.add(minutes=1)
@@ -322,7 +326,7 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [instance.get_runs()[0].run_id],
             )
 
@@ -382,6 +386,6 @@ def test_failure_recovery_between_multi_runs(external_repo_context, crash_locati
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )

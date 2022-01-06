@@ -290,6 +290,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
+            labels={
+                "dagster/job": pipeline_origin.pipeline_name,
+            },
         )
 
         self._instance.report_engine_event(

@@ -19,10 +19,10 @@ import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
-import {AssetValueGraph} from './AssetValueGraph';
+import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetViewParams} from './AssetView';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
-import {AssetKey, AssetNumericHistoricalData} from './types';
+import {AssetKey} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
   AssetMaterializationsQuery,
@@ -104,7 +104,7 @@ export const AssetMaterializations: React.FC<Props> = ({
     return (
       <>
         <CurrentRunsBanner liveData={liveData} />
-        <SidebarSection title={'Materialization in Last Run'}>
+        <SidebarSection title="Materialization in Last Run">
           <>
             {latest ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
@@ -126,7 +126,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             </Box>
           </>
         </SidebarSection>
-        <SidebarSection title={'Materialization Plots'}>
+        <SidebarSection title="Materialization Plots">
           <AssetMaterializationGraphs
             xAxis={xAxis}
             asSidebarSection
@@ -176,7 +176,10 @@ export const AssetMaterializations: React.FC<Props> = ({
             }
           />
         ) : (
-          <Box padding={{vertical: 20}}>
+          <Box
+            padding={{vertical: 20}}
+            border={{side: 'top', color: ColorsWIP.KeylineGray, width: 1}}
+          >
             <NonIdealState
               icon="asset"
               title="No materializations"
@@ -239,7 +242,7 @@ const AssetMaterializationGraphs: React.FC<{
             <Box padding={{horizontal: 24, vertical: 16}}>
               <AssetValueGraph
                 label={label}
-                width={'100%'}
+                width="100%"
                 data={graphDataByMetadataLabel[label]}
                 xHover={xHover}
                 onHoverX={(x) => x !== xHover && setXHover(x)}
@@ -273,7 +276,9 @@ const extractNumericData = (
   assetMaterializations: AssetMaterializationFragment[],
   xAxis: 'time' | 'partition',
 ) => {
-  const series: AssetNumericHistoricalData = {};
+  const series: {
+    [metadataEntryLabel: string]: AssetValueGraphData;
+  } = {};
 
   // Build a set of the numeric metadata entry labels (note they may be sparsely emitted)
   const numericMetadataLabels = uniq(

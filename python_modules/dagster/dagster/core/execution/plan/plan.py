@@ -176,7 +176,13 @@ class _PlanBuilder:
             input_source = get_root_graph_input_source(
                 plan_builder=self,
                 input_name=input_name,
+                input_def=input_def,
             )
+
+            # If an input with dagster_type "Nothing" doesn't have a value
+            # we don't create a StepInput
+            if input_source is None:
+                continue
 
             root_inputs.append(
                 StepInput(
@@ -399,12 +405,16 @@ class _PlanBuilder:
 def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
-) -> FromRootInputConfig:
+    input_def: InputDefinition,
+) -> Optional[FromRootInputConfig]:
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
         return FromRootInputConfig(input_name=input_name)
+
+    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+        return None
 
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
