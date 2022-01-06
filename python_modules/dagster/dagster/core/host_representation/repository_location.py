@@ -1,5 +1,4 @@
 import datetime
-import sys
 import threading
 from abc import abstractmethod, abstractproperty
 from contextlib import AbstractContextManager
@@ -283,9 +282,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     @property
     def executable_path(self) -> Optional[str]:
-        return (
-            self._recon_repo.executable_path if self._recon_repo.executable_path else sys.executable
-        )
+        return self._recon_repo.executable_path
 
     @property
     def container_image(self) -> str:

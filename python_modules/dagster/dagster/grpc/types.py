@@ -67,9 +67,14 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
+        return (
+            [
+                self.pipeline_origin.executable_path,
+                "-m",
+            ]
+            if self.pipeline_origin.executable_path
+            else []
+        ) + [
             "dagster",
             "api",
             "execute_run",
@@ -92,9 +97,14 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
+        return (
+            [
+                self.pipeline_origin.executable_path,
+                "-m",
+            ]
+            if self.pipeline_origin.executable_path
+            else []
+        ) + [
             "dagster",
             "api",
             "resume_run",
@@ -155,9 +165,14 @@ class ExecuteStepArgs(
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
+        return (
+            [
+                self.pipeline_origin.executable_path,
+                "-m",
+            ]
+            if self.pipeline_origin.executable_path
+            else []
+        ) + [
             "dagster",
             "api",
             "execute_step",
@@ -195,8 +210,6 @@ class ListRepositoriesResponse(
             repository_symbols=check.list_param(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
-            # These are currently only used by the GRPC Repository Location, but
-            # we will need to migrate the rest of the repository locations to use this.
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             repository_code_pointer_dict=check.opt_dict_param(
                 repository_code_pointer_dict,

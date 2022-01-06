@@ -301,7 +301,7 @@ class DagsterApiServer(DagsterApiServicer):
                 external_repository_origin.repository_name
             ],
             self._get_current_image(),
-            sys.executable,
+            self._loadable_target_origin.executable_path,
         )
 
     def _recon_pipeline_from_origin(self, external_pipeline_origin):
@@ -974,13 +974,11 @@ def open_server_process(
     mocked_system_timezone = get_mocked_system_timezone()
 
     subprocess_args = (
-        [
-            loadable_target_origin.executable_path
-            if loadable_target_origin and loadable_target_origin.executable_path
-            else sys.executable,
-            "-m",
-            "dagster.grpc",
-        ]
+        (
+            [loadable_target_origin.executable_path, "-m", "dagster.grpc"]
+            if (loadable_target_origin and loadable_target_origin.executable_path)
+            else ["dagster", "api", "grpc"]
+        )
         + ["--lazy-load-user-code"]
         + (["--port", str(port)] if port else [])
         + (["--socket", socket] if socket else [])

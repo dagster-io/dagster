@@ -358,6 +358,16 @@ def execute_step_command(input_json):
     "directory as a default",
 )
 @click.option(
+    "--use-system-executable-path",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Inform clients of this server to use the value of `sys.executable` as the Python "
+    "environment when launching runs using this code, instead of running `dagster`. Useful when "
+    "running code in environments that contain multiple Python environments, where a single "
+    "`dagster` command-line entry point is not enough to identify the correct Python environment.",
+)
+@click.option(
     "--ipc-output-file",
     type=click.Path(),
     help="[INTERNAL] This option should generally not be used by users. Internal param used by "
@@ -393,6 +403,7 @@ def grpc_command(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
+    use_system_executable_path=False,
     ipc_output_file=None,
     fixed_server_id=None,
     override_system_timezone=None,
@@ -421,7 +432,7 @@ def grpc_command(
         ]
     ):
         loadable_target_origin = LoadableTargetOrigin(
-            executable_path=sys.executable,
+            executable_path=sys.executable if use_system_executable_path else "",
             attribute=kwargs["attribute"],
             working_directory=(
                 None

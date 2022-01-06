@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 from dagster import check
 from dagster.core.code_pointer import ModuleCodePointer
@@ -31,7 +29,7 @@ def test_queued_pipeline_origin_check():
     fake_code_origin = PipelinePythonOrigin(
         pipeline_name="foo",
         repository_origin=RepositoryPythonOrigin(
-            sys.executable,
+            "",
             code_pointer,
         ),
     )

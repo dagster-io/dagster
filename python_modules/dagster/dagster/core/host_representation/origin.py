@@ -1,5 +1,4 @@
 import os
-import sys
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 from contextlib import contextmanager
@@ -175,7 +174,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             "package_name": self.loadable_target_origin.package_name,
             "executable_path": (
                 self.loadable_target_origin.executable_path
-                if self.loadable_target_origin.executable_path != sys.executable
+                if self.loadable_target_origin.executable_path
                 else None
             ),
         }

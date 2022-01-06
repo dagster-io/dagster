@@ -1,5 +1,4 @@
 import os
-import sys
 from contextlib import contextmanager
 
 import click
@@ -545,7 +544,7 @@ def get_repository_python_origin_from_kwargs(kwargs):
             )
         else:
             check.failed("Must specify a Python file or module name")
-        return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
+        return RepositoryPythonOrigin(executable_path="", code_pointer=code_pointer)
 
     code_pointer_dict = _get_code_pointer_dict_from_kwargs(kwargs)
     if provided_repo_name is None and len(code_pointer_dict) == 1:
@@ -567,7 +566,7 @@ def get_repository_python_origin_from_kwargs(kwargs):
     else:
         code_pointer = code_pointer_dict[provided_repo_name]
 
-    return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
+    return RepositoryPythonOrigin(executable_path="", code_pointer=code_pointer)
 
 
 @contextmanager

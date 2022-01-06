@@ -1,6 +1,5 @@
 import inspect
 import os
-import sys
 from collections import namedtuple
 from functools import lru_cache
 
@@ -65,7 +64,7 @@ class ReconstructableRepository(
 
     def get_python_origin(self):
         return RepositoryPythonOrigin(
-            executable_path=self.executable_path if self.executable_path else sys.executable,
+            executable_path=self.executable_path if self.executable_path else "",
             code_pointer=self.pointer,
             container_image=self.container_image,
         )
