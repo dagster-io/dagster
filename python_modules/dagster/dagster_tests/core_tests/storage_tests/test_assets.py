@@ -619,3 +619,43 @@ def test_asset_lazy_migration():
             # the asset key index as migrated
             instance.all_asset_keys()
             assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+
+@asset_test
+def test_get_asset_partition_counts(asset_aware_context):
+
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+
+    d = AssetKey("c")
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
+
+            partition_count_by_key = storage.get_asset_partition_counts([d])
+
+            assert partition_count_by_key.get(d) is 0
+
+    a = AssetKey("no_materializations_asset")
+    b = AssetKey("no_partitions_asset")
+    c = AssetKey("one_partition_asset")
+
+    @op
+    def materialize():
+        yield AssetMaterialization(b)
+        yield AssetMaterialization(c, partition="a")
+        yield Output(None)
+
+    @job
+    def my_job():
+        materialize()
+
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        my_job.execute_in_process(instance=instance)
+
+        partition_count_by_key = event_log_storage.get_asset_partition_counts([a, b, c])
+
+        assert partition_count_by_key.get(a) is 0
+        assert partition_count_by_key.get(b) is 0
+        assert partition_count_by_key.get(c) is 1

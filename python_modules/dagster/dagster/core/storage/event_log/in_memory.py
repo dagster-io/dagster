@@ -316,3 +316,27 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._wiped_asset_keys[asset_key] = time.time()
         if asset_key in self._asset_tags:
             del self._asset_tags[asset_key]
+
+    def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+
+        partitions_by_key = OrderedDict()
+        for records in self._logs.values():
+            for record in records:
+                if (
+                    record.is_dagster_event
+                    and record.dagster_event.asset_key
+                    and record.dagster_event.asset_key in asset_keys
+                    and record.dagster_event.partition
+                    and self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
+                ):
+                    asset_key = record.dagster_event.asset_key
+                    if asset_key not in partitions_by_key:
+                        partitions_by_key[asset_key] = set()
+                    partitions_by_key[asset_key].add(record.dagster_event.partition)
+
+        partition_count_by_key = OrderedDict()
+        for asset_key in asset_keys:
+            partition_count_by_key[asset_key] = len(partitions_by_key.get(asset_key, {}))
+
+        return partition_count_by_key

@@ -1061,3 +1061,31 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     )
                 )
+
+    def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
+        check.list_param(asset_keys, "asset_keys", AssetKey)
+        rows = self._fetch_asset_rows(asset_keys=asset_keys)
+
+        partitions_by_key: Dict[AssetKey, set] = {}
+        for row in rows:
+            asset_key = AssetKey.from_db_string(row[0])
+            if not asset_key:
+                continue
+            event_or_materialization = (
+                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+            )
+            if asset_key not in partitions_by_key:
+                partitions_by_key[asset_key] = set()
+
+            if isinstance(event_or_materialization, EventLogEntry):
+                partition = event_or_materialization.dagster_event.partition
+            else:  # AssetMaterialization object
+                partition = event_or_materialization.partition
+            if partition:
+                partitions_by_key[asset_key].add(partition)
+
+        partition_count_by_key = OrderedDict()
+        for asset_key in asset_keys:
+            partition_count_by_key[asset_key] = len(partitions_by_key.get(asset_key, {}))
+
+        return partition_count_by_key
