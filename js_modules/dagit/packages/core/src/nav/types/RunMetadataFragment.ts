@@ -49,5 +49,6 @@ export interface RunMetadataFragment {
   id: string;
   status: RunStatus;
   assets: RunMetadataFragment_assets[];
+  runId: string;
   stats: RunMetadataFragment_stats;
 }
