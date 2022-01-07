@@ -4,6 +4,7 @@ import {Redirect} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {QueryCountdown} from '../app/QueryCountdown';
 import {RUN_METADATA_FRAGMENT, ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -57,15 +58,7 @@ export const InstanceOverviewPage = () => {
     return <Redirect to="/instance" />;
   }
 
-  return (
-    <>
-      <PageHeader
-        title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="overview" />}
-      />
-      <OverviewContent />
-    </>
-  );
+  return <OverviewContent />;
 };
 
 const intent = (status: RunStatus) => {
@@ -121,19 +114,27 @@ const initialState: State = {
   searchValue: '',
 };
 
+const POLL_INTERVAL = 15 * 1000;
+
 const OverviewContent = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {options} = useRepositoryOptions();
-  const {data, loading} = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY);
+
+  const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
+    fetchPolicy: 'network-only',
+    pollInterval: POLL_INTERVAL,
+    notifyOnNetworkStatusChange: true,
+  });
+  const {data, loading} = queryResult;
+
   const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
     LAST_TEN_RUNS_PER_JOB_QUERY,
+    {fetchPolicy: 'network-only', pollInterval: POLL_INTERVAL},
   );
 
   const {hiddenRepos, searchValue} = state;
 
-  React.useEffect(() => {
-    retrieveLastTenRuns();
-  }, [retrieveLastTenRuns]);
+  React.useEffect(() => retrieveLastTenRuns(), [retrieveLastTenRuns]);
 
   const optionAddresses = React.useMemo(() => {
     if (!options) {
@@ -372,7 +373,7 @@ const OverviewContent = () => {
     return jobMap;
   }, [filteredJobsWithRuns, scheduled]);
 
-  if (loading) {
+  if (!data && loading) {
     return (
       <Box padding={64}>
         <Spinner purpose="page" />
@@ -423,6 +424,11 @@ const OverviewContent = () => {
 
   return (
     <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="overview" />}
+        right={<QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />}
+      />
       <Box
         padding={{horizontal: 24, top: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
