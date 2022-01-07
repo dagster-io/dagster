@@ -95,7 +95,8 @@ def environ(env):
 def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
     with ExitStack() as stack:
         if not temp_dir:
-            temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
+            tmp_dir_handle = tempfile.TemporaryDirectory()
+            temp_dir = stack.enter_context(tmp_dir_handle)
 
         # If using the default run launcher, wait for any grpc processes that created runs
         # during test disposal to finish, since they might also be using this instance's tempdir
@@ -132,6 +133,8 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                 raise
             finally:
                 cleanup_test_instance(instance)
+                if tmp_dir_handle:
+                    tmp_dir_handle.cleanup()
 
 
 def cleanup_test_instance(instance):
@@ -140,6 +143,7 @@ def cleanup_test_instance(instance):
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
     instance.run_launcher.join()
+    instance.dispose()
 
 
 def create_run_for_test(
