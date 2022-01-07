@@ -5,7 +5,7 @@ import {Redirect} from 'react-router-dom';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
-import {RUN_METADATA_FRAGMENT, ScheduleOrSensorTag} from '../nav/JobMetadata';
+import {JOB_METADATA_FRAGMENT, ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
@@ -19,8 +19,6 @@ import {
 import {JobMap, RunTimeline} from '../runs/RunTimeline';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {AnchorButton, ButtonWIP} from '../ui/Button';
@@ -661,43 +659,34 @@ const OVERVIEW_JOB_FRAGMENT = gql`
       mode
       runId
       status
-      ...RunMetadataFragment
       ...RunTimeFragment
     }
+    ...JobMetadataFragment
     modes {
       id
       name
     }
     schedules {
       id
-      mode
       name
       scheduleState {
         id
         status
       }
       ...ScheduleFutureTicksFragment
-      ...ScheduleSwitchFragment
     }
     sensors {
       id
       name
-      targets {
-        mode
-        pipelineName
-      }
       sensorState {
         id
         status
       }
-      ...SensorSwitchFragment
     }
   }
 
-  ${SCHEDULE_SWITCH_FRAGMENT}
   ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${RUN_METADATA_FRAGMENT}
+  ${JOB_METADATA_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
 `;
 
