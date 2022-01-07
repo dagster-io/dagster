@@ -948,3 +948,47 @@ def test_nested_invocation_with_yield():
         match="Attempted to invoke @solid 'basic' within solid 'should_not_work'",
     ):
         list(should_not_work())
+
+
+def test_async_solid_invalid_invocation():
+    @solid
+    def basic():
+        pass
+
+    @solid
+    async def aio_solid():
+        basic()
+        await asyncio.sleep(0.01)
+        return "done"
+
+    loop = asyncio.get_event_loop()
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @solid 'basic' within solid 'aio_solid', which is undefined behavior.",
+    ):
+        loop.run_until_complete(aio_solid())
+
+
+def test_async_gen_invalid_invocation():
+    @solid
+    def basic():
+        pass
+
+    @solid
+    async def aio_gen():
+        basic()
+        await asyncio.sleep(0.01)
+        yield Output("done")
+
+    async def get_results():
+        res = []
+        async for output in aio_gen():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @solid 'basic' within solid 'aio_gen', which is undefined behavior.",
+    ):
+        loop.run_until_complete(get_results())

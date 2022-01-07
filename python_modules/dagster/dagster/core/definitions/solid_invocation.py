@@ -234,7 +234,12 @@ def _type_check_output_wrapper(
     elif inspect.iscoroutine(result):
 
         async def type_check_coroutine(coro):
-            out = await coro
+            enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+            try:
+                out = await coro
+            finally:
+                if is_in_invalid_invocation_context():
+                    exit_invalid_composition_context()
             return _type_check_function_output(solid_def, out, context)
 
         return type_check_coroutine(result)
