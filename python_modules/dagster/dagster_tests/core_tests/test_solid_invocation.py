@@ -453,6 +453,10 @@ def test_multiple_outputs_iterator():
 
 
 def test_wrong_output():
+    from dagster.core.definitions.composition import (  # pylint: disable=unused-import
+        current_invalid_invocation_node,
+    )
+
     @solid
     def solid_wrong_output():
         return Output(5, output_name="wrong_name")
