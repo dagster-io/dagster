@@ -8,6 +8,11 @@ import yaml
 pytest_plugins = ["dagster_test.fixtures"]
 
 
+@pytest.fixture(autouse=True)
+def environ(monkeypatch, test_id):
+    monkeypatch.setenv("TEST_VOLUME", test_id)
+
+
 @pytest.fixture
 def other_docker_compose_yml(tmpdir):
     original = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
@@ -61,3 +66,10 @@ def test_docker_compose_cm_single_service(request, docker_compose_cm, retrying_r
     ) as docker_compose:
         assert not docker_compose.get("server1")
         assert retrying_requests.get(f"http://{docker_compose['server2']}:8001").ok
+
+
+def test_docker_compose_cm_destroys_volumes(docker_compose_cm, test_id):
+    with docker_compose_cm():
+        assert subprocess.check_output(["docker", "volume", "inspect", test_id])
+    with pytest.raises(Exception):
+        subprocess.check_output(["docker", "volume", "inspect", test_id])
