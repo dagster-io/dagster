@@ -4,9 +4,7 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PipelineGraph, PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
-import {SVGViewport} from '../graph/SVGViewport';
-import {getDagrePipelineLayout} from '../graph/getFullOpLayout';
+import {OP_NODE_INVOCATION_FRAGMENT} from '../graph/OpNode';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Popover} from '../ui/Popover';
@@ -14,11 +12,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {
-  OpSelectorQuery,
-  OpSelectorQuery_pipelineOrError,
-  OpSelectorQuery_pipelineOrError_Pipeline_solids,
-} from './types/OpSelectorQuery';
+import {OpSelectorQuery} from './types/OpSelectorQuery';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -26,46 +20,7 @@ interface IOpSelectorProps {
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
-  onRequestClose?: () => void;
   repoAddress: RepoAddress;
-}
-
-interface OpSelectorModalProps {
-  pipelineOrError: OpSelectorQuery_pipelineOrError;
-  queryResultOps: OpSelectorQuery_pipelineOrError_Pipeline_solids[];
-  errorMessage: string | null;
-}
-
-class OpSelectorModal extends React.PureComponent<OpSelectorModalProps> {
-  graphRef = React.createRef<PipelineGraph>();
-
-  render() {
-    const {pipelineOrError, queryResultOps, errorMessage} = this.props;
-
-    if (pipelineOrError.__typename !== 'Pipeline') {
-      return (
-        <OpSelectorModalContainer>
-          {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
-        </OpSelectorModalContainer>
-      );
-    }
-
-    return (
-      <OpSelectorModalContainer>
-        {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
-        <PipelineGraph
-          ref={this.graphRef}
-          backgroundColor={ColorsWIP.White}
-          pipelineName={pipelineOrError.name}
-          ops={queryResultOps}
-          layout={getDagrePipelineLayout(queryResultOps)}
-          interactor={SVGViewport.Interactors.None}
-          focusOps={[]}
-          highlightedOps={[]}
-        />
-      </OpSelectorModalContainer>
-    );
-  }
 }
 
 const SOLID_SELECTOR_QUERY = gql`
@@ -77,7 +32,7 @@ const SOLID_SELECTOR_QUERY = gql`
         name
         solids {
           name
-          ...PipelineGraphOpFragment
+          ...OpNodeInvocationFragment
         }
       }
       ... on PipelineNotFoundError {
@@ -91,74 +46,53 @@ const SOLID_SELECTOR_QUERY = gql`
       }
     }
   }
-  ${PIPELINE_GRAPH_OP_FRAGMENT}
+  ${OP_NODE_INVOCATION_FRAGMENT}
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
-  const {serverProvidedSubsetError, query, onChange, pipelineName, repoAddress} = props;
-  const [pending, setPending] = React.useState<string>(query || '*');
+  const {serverProvidedSubsetError, onChange, pipelineName, repoAddress} = props;
   const [focused, setFocused] = React.useState(false);
-  const selector = {
-    ...repoAddressToSelector(repoAddress),
-    pipelineName,
-  };
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: {selector},
     fetchPolicy: 'cache-and-network',
   });
 
-  React.useEffect(() => {
-    setPending(query || '*');
-  }, [query, focused]);
+  const query = props.query || '*';
+  const ops = data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError.solids : [];
+  const opsFetchError =
+    (data?.pipelineOrError.__typename !== 'Pipeline' && data?.pipelineOrError.message) || null;
 
-  const queryResultOps =
-    data?.pipelineOrError.__typename === 'Pipeline'
-      ? filterByQuery(data!.pipelineOrError.solids, pending).all
-      : [];
+  const queryResultOps = filterByQuery(ops, query).all;
+  const invalidOpSelection = !loading && queryResultOps.length === 0;
 
-  const pipelineErrorMessage =
-    data?.pipelineOrError.__typename !== 'Pipeline' ? data?.pipelineOrError.message || null : null;
+  const errorMessage = invalidOpSelection
+    ? isJob
+      ? `You must provide a valid op query or * to execute the entire job.`
+      : `You must provide a valid solid query or * to execute the entire pipeline.`
+    : serverProvidedSubsetError
+    ? serverProvidedSubsetError.message
+    : opsFetchError;
 
-  if (pipelineErrorMessage) {
-    console.error(`Could not load pipeline ${props.pipelineName}`);
-  }
-
-  const invalidResult = !loading && (queryResultOps.length === 0 || pending.length === 0);
-
-  const errorMessage = React.useMemo(() => {
-    if (invalidResult) {
-      return isJob
-        ? `You must provide a valid op query or * to execute the entire job.`
-        : `You must provide a valid solid query or * to execute the entire pipeline.`;
+  const onTextChange = (nextQuery: string) => {
+    if (nextQuery === '') {
+      nextQuery = '*';
     }
+    const queryResultOps = filterByQuery(ops, nextQuery).all;
 
-    return serverProvidedSubsetError ? serverProvidedSubsetError.message : pipelineErrorMessage;
-  }, [invalidResult, isJob, pipelineErrorMessage, serverProvidedSubsetError]);
-
-  const onCommitPendingValue = (applied: string) => {
-    if (data?.pipelineOrError.__typename !== 'Pipeline') {
-      return;
-    }
-
-    if (applied === '') {
-      applied = '*';
-    }
-    const queryResultOps = filterByQuery(data.pipelineOrError.solids, applied).all;
-
-    // If all solids are returned, we set the subset to null rather than sending
+    // If all ops are returned, we set the subset to null rather than sending
     // a comma separated list of evey solid to the API
-    if (queryResultOps.length === data.pipelineOrError.solids.length) {
-      onChange(null, applied);
+    if (queryResultOps.length === ops.length) {
+      onChange(null, nextQuery);
     } else {
       onChange(
         queryResultOps.map((s) => s.name),
-        applied,
+        nextQuery,
       );
     }
   };
@@ -170,15 +104,9 @@ export const OpSelector = (props: IOpSelectorProps) => {
   return (
     <div>
       <Popover
-        isOpen={focused}
+        isOpen={focused && !!errorMessage}
         position="bottom-left"
-        content={
-          <OpSelectorModal
-            pipelineOrError={data.pipelineOrError}
-            errorMessage={errorMessage}
-            queryResultOps={queryResultOps}
-          />
-        }
+        content={<PopoverErrorWrap>{errorMessage}</PopoverErrorWrap>}
       >
         <ShortcutHandler
           shortcutLabel="⌥S"
@@ -186,28 +114,21 @@ export const OpSelector = (props: IOpSelectorProps) => {
           onShortcut={() => inputRef.current?.focus()}
         >
           <GraphQueryInput
-            width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
+            width={(query !== '*' && query !== '') || focused ? 350 : 90}
             intent={errorMessage ? 'danger' : 'none'}
-            items={
-              data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
-            }
-            value={pending}
-            placeholder="Type an op subset…"
-            onChange={setPending}
-            onBlur={(pending) => {
-              onCommitPendingValue(pending);
-              setFocused(false);
-            }}
-            onFocus={() => setFocused(true)}
-            onKeyDown={(e) => {
-              if (e.isDefaultPrevented()) {
-                return;
-              }
-              if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Escape') {
-                e.currentTarget.blur();
-              }
-            }}
+            items={ops}
             ref={inputRef}
+            value={query}
+            placeholder="Type an op subset…"
+            onChange={onTextChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            linkToPreview={{
+              repoName: repoAddress.name,
+              repoLocation: repoAddress.location,
+              pipelineName: pipelineName,
+              isJob,
+            }}
           />
         </ShortcutHandler>
       </Popover>
@@ -215,23 +136,10 @@ export const OpSelector = (props: IOpSelectorProps) => {
   );
 };
 
-const OpSelectorModalContainer = styled.div`
-  border-radius: 4px;
-  width: 60vw;
-  height: 60vh;
-  background: ${ColorsWIP.White};
-  & > div {
-    border-radius: 4px;
-  }
-`;
-
-const ModalErrorOverlay = styled.div`
-  position: absolute;
-  margin: 5px;
+const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
-  z-index: 2;
   border-radius: 2px;
   border: 1px solid ${ColorsWIP.Red500};
   background: ${ColorsWIP.Red200};
-  color: white;
+  color: ${ColorsWIP.Red700};
 `;

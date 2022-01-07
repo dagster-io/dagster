@@ -2,9 +2,12 @@ import {Intent} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
+import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {Box} from './Box';
 import {ButtonWIP} from './Button';
@@ -24,6 +27,13 @@ interface GraphQueryInputProps {
   width?: string | number;
   className?: string;
   disabled?: boolean;
+
+  linkToPreview?: {
+    repoName: string;
+    repoLocation: string;
+    pipelineName: string;
+    isJob: boolean;
+  };
 
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
@@ -87,6 +97,30 @@ const intentToStrokeColor = (intent: Intent | undefined) => {
   }
 };
 
+const buildSuggestions = (lastElementName: string, items: GraphQueryItem[], suffix: string) => {
+  const available = items.map((s) => s.name);
+  for (const name of available) {
+    if (isDynamicStep(name)) {
+      available.push(dynamicKeyWithoutIndex(name));
+    }
+  }
+
+  const lastElementLower = lastElementName?.toLowerCase();
+  const matching =
+    lastElementLower && !suffix
+      ? uniq(available)
+          .sort()
+          .filter((n) => n.toLowerCase().startsWith(lastElementLower))
+      : [];
+
+  // No need to show a match if our string exactly matches the one suggestion.
+  if (matching.length === 1 && matching[0].toLowerCase() === lastElementLower) {
+    return [];
+  }
+
+  return matching;
+};
+
 export const GraphQueryInput = React.memo(
   React.forwardRef((props: GraphQueryInputProps, ref) => {
     const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
@@ -104,29 +138,10 @@ export const GraphQueryInput = React.memo(
     const lastClause = /(\*?\+*)([\w\d\[\]_-]+)(\+*\*?)$/.exec(pendingValue);
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
-    const suggestions = React.useMemo(() => {
-      const available = props.items.map((s) => s.name);
-      for (const name of available) {
-        if (isDynamicStep(name)) {
-          available.push(dynamicKeyWithoutIndex(name));
-        }
-      }
-
-      const lastElementLower = lastElementName?.toLowerCase();
-      const matching =
-        lastElementLower && !suffix
-          ? uniq(available)
-              .sort()
-              .filter((n) => n.toLowerCase().startsWith(lastElementLower))
-          : [];
-
-      // No need to show a match if our string exactly matches the one suggestion.
-      if (matching.length === 1 && matching[0].toLowerCase() === lastElementLower) {
-        return [];
-      }
-
-      return matching;
-    }, [lastElementName, props.items, suffix]);
+    const suggestions = React.useMemo(
+      () => buildSuggestions(lastElementName, props.items, suffix),
+      [lastElementName, props.items, suffix],
+    );
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';
@@ -169,6 +184,8 @@ export const GraphQueryInput = React.memo(
           onConfirmSuggestion(active.text);
           e.preventDefault();
           e.stopPropagation();
+        } else {
+          e.currentTarget.blur();
         }
       }
 
@@ -185,19 +202,7 @@ export const GraphQueryInput = React.memo(
       props.onKeyDown?.(e);
     };
 
-    const onKeyUp = (e: React.KeyboardEvent<any>) => {
-      if (
-        e.key === 'Enter' ||
-        e.key === 'Return' ||
-        e.key === 'Tab' ||
-        e.key === '+' ||
-        e.key === ' ' ||
-        (e.key === '*' && pendingValue.length > 1) ||
-        (e.key === 'Backspace' && pendingValue.length)
-      ) {
-        props.onChange(pendingValue);
-      }
-    };
+    const uncomitted = (pendingValue || '*') !== (props.value || '*');
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -225,30 +230,47 @@ export const GraphQueryInput = React.memo(
             )
           }
         >
-          <TextInput
-            disabled={props.disabled}
-            title="graph-query-input"
-            value={pendingValue}
-            icon="op_selector"
-            strokeColor={intentToStrokeColor(props.intent)}
-            autoFocus={props.autoFocus}
-            placeholder={placeholderTextForItems(props.placeholder, props.items)}
-            onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
-            onFocus={() => {
-              setFocused(true);
-              props.onFocus?.();
-            }}
-            onBlur={() => {
-              setFocused(false);
-              props.onChange(pendingValue);
-              props.onBlur?.(pendingValue);
-            }}
-            onKeyDown={onKeyDown}
-            onKeyUp={onKeyUp}
-            style={{width: props.width || '30vw'}}
-            className={props.className}
-            ref={inputRef}
-          />
+          <div style={{position: 'relative'}}>
+            <TextInput
+              disabled={props.disabled}
+              value={pendingValue}
+              icon="op_selector"
+              strokeColor={intentToStrokeColor(props.intent)}
+              autoFocus={props.autoFocus}
+              placeholder={placeholderTextForItems(props.placeholder, props.items)}
+              onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
+              onFocus={() => {
+                setFocused(true);
+                props.onFocus?.();
+              }}
+              onBlur={() => {
+                setFocused(false);
+                props.onChange(pendingValue);
+                props.onBlur?.(pendingValue);
+              }}
+              onKeyDown={onKeyDown}
+              style={{width: props.width || '30vw'}}
+              className={props.className}
+              ref={inputRef}
+            />
+            {focused && uncomitted && <EnterHint>Enter</EnterHint>}
+            {focused && props.linkToPreview && (
+              <OpCountWrap>
+                {`${filterByQuery(props.items, pendingValue).all.length} matching ops`}
+                <Link
+                  target="_blank"
+                  style={{display: 'flex', alignItems: 'center', gap: 4}}
+                  onMouseDown={(e) => e.currentTarget.click()}
+                  to={workspacePipelinePath({
+                    ...props.linkToPreview,
+                    pipelineName: `${props.linkToPreview.pipelineName}~${pendingValue}`,
+                  })}
+                >
+                  Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />
+                </Link>
+              </OpCountWrap>
+            )}
+          </div>
         </Popover>
         {props.presets &&
           (props.presets.find((p) => p.value === pendingValue) ? (
@@ -294,3 +316,32 @@ export const GraphQueryInput = React.memo(
     prevProps.value === nextProps.value &&
     isEqual(prevProps.presets, nextProps.presets),
 );
+
+const OpCountWrap = styled.div`
+  width: 350px;
+  padding: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  position: absolute;
+  top: 100%;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  background: ${ColorsWIP.White};
+  color: ${ColorsWIP.Gray600};
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  left: 0;
+`;
+
+const EnterHint = styled.div`
+  position: absolute;
+  right: 6px;
+  top: 5px;
+  border-radius: 5px;
+  border: 1px solid ${ColorsWIP.Gray500};
+  font-weight: 500;
+  font-size: 12px;
+  color: ${ColorsWIP.Gray500};
+  padding: 2px 6px;
+`;
