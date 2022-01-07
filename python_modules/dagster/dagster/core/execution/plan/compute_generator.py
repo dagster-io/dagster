@@ -65,15 +65,29 @@ def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_p
     from ...definitions.composition import (
         enter_invalid_composition_context,
         exit_invalid_composition_context,
+        is_in_invalid_invocation_context,
     )
 
     enter_invalid_composition_context(context.solid_def.name, f"@{context.solid_def.node_type_str}")
     try:
         result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-        for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-            yield event
     finally:
         exit_invalid_composition_context()
+
+    event_iter = _validate_and_coerce_solid_result_to_iterator(result, context, output_defs)
+    try:
+        while True:
+            enter_invalid_composition_context(
+                context.solid_def.name, f"@{context.solid_def.node_type_str}"
+            )
+            event = next(event_iter)
+            exit_invalid_composition_context()
+            yield event
+    except StopIteration:
+        pass
+    finally:
+        if is_in_invalid_invocation_context():
+            exit_invalid_composition_context()
 
 
 def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):

@@ -160,7 +160,8 @@ class SolidDefinition(NodeDefinition):
             try:
                 result = self.invoke(*args, **kwargs)
             finally:
-                exit_invalid_composition_context()
+                if is_in_invalid_invocation_context():
+                    exit_invalid_composition_context()
 
             return result
 
