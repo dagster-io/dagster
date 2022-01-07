@@ -5,7 +5,7 @@ import {Redirect} from 'react-router-dom';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
-import {JOB_METADATA_FRAGMENT, ScheduleOrSensorTag} from '../nav/JobMetadata';
+import {ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
@@ -19,6 +19,8 @@ import {
 import {JobMap, RunTimeline} from '../runs/RunTimeline';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {AnchorButton, ButtonWIP} from '../ui/Button';
@@ -45,7 +47,11 @@ import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {StepSummaryForRun} from './StepSummaryForRun';
-import {InstanceOverviewInitialQuery} from './types/InstanceOverviewInitialQuery';
+import {
+  InstanceOverviewInitialQuery,
+  InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules as Schedule,
+  InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors as Sensor,
+} from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
 
@@ -79,6 +85,8 @@ const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
 type JobItem = {
   job: OverviewJobFragment;
   repoAddress: RepoAddress;
+  schedules: Schedule[];
+  sensors: Sensor[];
 };
 
 type JobItemWithRuns = JobItem & {
@@ -180,7 +188,13 @@ const OverviewContent = () => {
         ) {
           for (const repository of locationEntry.locationOrLoadError.repositories) {
             for (const pipeline of repository.pipelines) {
-              const {runs, schedules} = pipeline;
+              const {runs} = pipeline;
+              const schedules: Schedule[] = (repository.schedules || []).filter(
+                (schedule) => schedule.pipelineName === pipeline.name,
+              );
+              const sensors: Sensor[] = (repository.sensors || []).filter((sensor) =>
+                sensor.targets?.map((t) => t.pipelineName).includes(pipeline.name),
+              );
               const repoAddress = buildRepoAddress(
                 repository.name,
                 locationEntry.locationOrLoadError.name,
@@ -188,8 +202,10 @@ const OverviewContent = () => {
 
               if (runs.length) {
                 const {status} = runs[0];
-                const item = {
+                const item: JobItem = {
                   job: pipeline,
+                  schedules,
+                  sensors,
                   repoAddress,
                 };
                 if (failedStatuses.has(status)) {
@@ -215,6 +231,8 @@ const OverviewContent = () => {
                   scheduled.push({
                     job: pipeline,
                     repoAddress,
+                    schedules,
+                    sensors,
                   });
                 }
               }
@@ -333,7 +351,7 @@ const OverviewContent = () => {
     }, {} as JobMap);
 
     for (const jobItem of scheduled) {
-      const {job, repoAddress} = jobItem;
+      const {job, repoAddress, schedules} = jobItem;
       const jobKey = makeJobKey(repoAddress, job.name);
 
       // If there are no runs tracked for this job yet because they're only scheduled,
@@ -352,7 +370,6 @@ const OverviewContent = () => {
       }
 
       const {runs} = jobMap[jobKey];
-      const {schedules} = job;
       for (const schedule of schedules) {
         if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
           schedule.futureTicks.results.forEach(({timestamp}) => {
@@ -569,7 +586,7 @@ const JobSection = (props: JobSectionProps) => {
           </tr>
         </thead>
         <tbody>
-          {jobs.map(({job, repoAddress, runs}) => {
+          {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
             const jobKey = makeJobKey(repoAddress, job.name);
             return (
               <tr key={jobKey}>
@@ -602,10 +619,14 @@ const JobSection = (props: JobSectionProps) => {
                   </Box>
                 </td>
                 <td>
-                  {job.schedules.length || job.sensors.length ? (
+                  {schedules.length || sensors.length ? (
                     <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <ScheduleOrSensorTag job={job} repoAddress={repoAddress} />
-                      {job.schedules.length ? <NextTick schedules={job.schedules} /> : null}
+                      <ScheduleOrSensorTag
+                        schedules={schedules}
+                        sensors={sensors}
+                        repoAddress={repoAddress}
+                      />
+                      {schedules.length ? <NextTick schedules={schedules} /> : null}
                     </Box>
                   ) : (
                     <div style={{color: ColorsWIP.Gray500}}>None</div>
@@ -661,32 +682,12 @@ const OVERVIEW_JOB_FRAGMENT = gql`
       status
       ...RunTimeFragment
     }
-    ...JobMetadataFragment
     modes {
       id
       name
     }
-    schedules {
-      id
-      name
-      scheduleState {
-        id
-        status
-      }
-      ...ScheduleFutureTicksFragment
-    }
-    sensors {
-      id
-      name
-      sensorState {
-        id
-        status
-      }
-    }
   }
 
-  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
-  ${JOB_METADATA_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
 `;
 
@@ -714,6 +715,29 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                   ...OverviewJobFragment
                 }
                 ...RepositoryInfoFragment
+                schedules {
+                  id
+                  name
+                  pipelineName
+                  scheduleState {
+                    id
+                    status
+                  }
+                  ...ScheduleFutureTicksFragment
+                  ...ScheduleSwitchFragment
+                }
+                sensors {
+                  id
+                  name
+                  targets {
+                    pipelineName
+                  }
+                  sensorState {
+                    id
+                    status
+                  }
+                  ...SensorSwitchFragment
+                }
               }
             }
             ... on PythonError {
@@ -728,6 +752,9 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
 
   ${OVERVIEW_JOB_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
