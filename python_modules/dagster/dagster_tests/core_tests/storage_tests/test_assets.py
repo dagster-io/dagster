@@ -638,7 +638,7 @@ def test_get_asset_partition_counts(asset_aware_context):
 
     a = AssetKey("no_materializations_asset")
     b = AssetKey("no_partitions_asset")
-    c = AssetKey("one_partition_asset")
+    c = AssetKey("two_partitions_asset")
 
     @op
     def materialize():
@@ -650,6 +650,15 @@ def test_get_asset_partition_counts(asset_aware_context):
     def my_job():
         materialize()
 
+    @op
+    def materialize_two():
+        yield AssetMaterialization(c, partition="b")
+        yield Output(None)
+
+    @job
+    def job_two():
+        materialize_two()
+
     with asset_aware_context() as ctx:
         instance, event_log_storage = ctx
         my_job.execute_in_process(instance=instance)
@@ -659,3 +668,7 @@ def test_get_asset_partition_counts(asset_aware_context):
         assert partition_count_by_key.get(a) is 0
         assert partition_count_by_key.get(b) is 0
         assert partition_count_by_key.get(c) is 1
+
+        job_two.execute_in_process(instance=instance)
+        partition_count_by_key = event_log_storage.get_asset_partition_counts([a, b, c])
+        assert partition_count_by_key.get(c) is 2

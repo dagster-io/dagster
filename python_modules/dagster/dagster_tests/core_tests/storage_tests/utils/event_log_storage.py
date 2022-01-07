@@ -239,7 +239,7 @@ class TestEventLogStorage:
     ```
     """
 
-    __test__ = False
+    __test__ = True
 
     @pytest.fixture(name="storage", params=[])
     def event_log_storage(self, request):
@@ -1474,3 +1474,49 @@ class TestEventLogStorage:
             assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
             assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
             assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
+
+    def test_get_asset_partition_counts(self, storage):
+        a = AssetKey("a")
+        b = AssetKey("b")
+
+        @solid
+        def one(_):
+            yield AssetMaterialization(a, partition="a")
+            yield AssetMaterialization(b, partition="b")
+            yield AssetMaterialization(b, partition="c")
+            yield Output(1)
+
+        @solid
+        def two(_):
+            yield AssetMaterialization(a, partition="d")
+            yield Output(2)
+
+        def _fetch_counts(storage):
+            return storage.get_asset_partition_counts([a, b])
+
+        events, _ = _synthesize_events(lambda: one())
+        for event in events:
+            print(event)
+            storage.store_event(event)
+
+        partition_counts_by_key = _fetch_counts(storage)
+        assert partition_counts_by_key[a] is 1
+        assert partition_counts_by_key[b] is 2
+
+        # wipe asset, make sure we respect that
+        if self.can_wipe():
+            storage.wipe_asset(a)
+            partition_counts_by_key = _fetch_counts(storage)
+            assert partition_counts_by_key.get(a) is 0
+            assert partition_counts_by_key[b] is 2
+
+            # rematerialize wiped asset
+            events, _ = _synthesize_events(lambda: two())
+            for event in events:
+                storage.store_event(event)
+
+            partition_counts_by_key = _fetch_counts(storage)
+            assert partition_counts_by_key[a] is 1
+            assert partition_counts_by_key[b] is 2
+
+        assert False

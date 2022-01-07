@@ -265,7 +265,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:
-            asset_details = self._get_asset_details(event_records_filter.asset_key)
+            asset_details = self._get_assets_details([event_records_filter.asset_key])[0]
         else:
             asset_details = None
 
@@ -285,7 +285,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         query = self._apply_filter_to_query(
             query=query,
             event_records_filter=event_records_filter,
-            asset_details=asset_details,
+            asset_details=asset_details[1] if asset_details and asset_details[1] else None,
             apply_cursor_filters=False,  # run-sharded cursor filters don't really make sense
         )
         if limit:

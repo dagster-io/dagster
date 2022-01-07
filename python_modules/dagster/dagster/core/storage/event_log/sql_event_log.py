@@ -161,9 +161,12 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         with self.index_connection() as conn:
+            print(event.dagster_event.partition)
             try:
+                print("lol")
                 conn.execute(insert_statement)
             except db.exc.IntegrityError:
+                print("what")
                 conn.execute(update_statement)
 
     def store_event(self, event):
@@ -614,14 +617,14 @@ class SqlEventLogStorage(EventLogStorage):
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:
-            asset_details = self._get_asset_details(event_records_filter.asset_key)
+            asset_details = self._get_assets_details([event_records_filter.asset_key])[0]
         else:
             asset_details = None
 
         query = self._apply_filter_to_query(
             query=query,
             event_records_filter=event_records_filter,
-            asset_details=asset_details,
+            asset_details=asset_details[1] if asset_details and asset_details[1] else None,
         )
         if limit:
             query = query.limit(limit)
@@ -911,27 +914,38 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
         return query
 
-    def _get_asset_details(self, asset_key):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        row = None
+    def _get_assets_details(self, asset_keys):
+        check.list_param(asset_keys, "asset_key", AssetKey)
+        rows = None
         with self.index_connection() as conn:
-            row = conn.execute(
-                db.select([AssetKeyTable.c.asset_details]).where(
-                    AssetKeyTable.c.asset_key == asset_key.to_string()
+            rows = conn.execute(
+                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
+                    AssetKeyTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in asset_keys]
+                    )
                 )
-            ).fetchone()
-            if not row or not row[0]:
-                return None
-            return deserialize_json_to_dagster_namedtuple(row[0])
+            ).fetchall()
 
-    def _add_asset_wipe_filter_to_query(self, query, asset_details):
-        if not asset_details or not asset_details.last_wipe_timestamp:
-            return query
+            return [
+                (row[0], deserialize_json_to_dagster_namedtuple(row[1]))
+                if row and row[0] and row[1]
+                else None
+                for row in rows
+            ]
 
-        return query.where(
-            SqlEventLogStorageTable.c.timestamp
-            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
-        )
+    def _add_assets_wipe_filter_to_query(self, query, assets_details):
+        for asset_details in assets_details:
+            if asset_details and asset_details[1].last_wipe_timestamp:
+                query = query.where(
+                    db.func.IF(
+                        asset_details[0] == SqlEventLogStorageTable.c.asset_key,
+                        SqlEventLogStorageTable.c.timestamp
+                        > datetime.utcfromtimestamp(asset_details[1].last_wipe_timestamp),
+                        True,
+                    )
+                )
+
+        return query
 
     def get_asset_events(
         self,
@@ -985,8 +999,8 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 
-        asset_details = self._get_asset_details(asset_key)
-        query = self._add_asset_wipe_filter_to_query(query, asset_details)
+        assets_details = self._get_assets_details([asset_key])
+        query = self._add_assets_wipe_filter_to_query(query, assets_details)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -1064,28 +1078,43 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
         check.list_param(asset_keys, "asset_keys", AssetKey)
-        rows = self._fetch_asset_rows(asset_keys=asset_keys)
+        str_asset_keys = [key.to_string() for key in asset_keys]
+        legacy_str_asset_keys = [key.to_string(legacy=True) for key in asset_keys]
 
-        partitions_by_key: Dict[AssetKey, set] = {}
-        for row in rows:
-            asset_key = AssetKey.from_db_string(row[0])
-            if not asset_key:
-                continue
-            event_or_materialization = (
-                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.count(db.func.distinct(SqlEventLogStorageTable.c.partition)),
+                ]
             )
-            if asset_key not in partitions_by_key:
-                partitions_by_key[asset_key] = set()
+            .where(
+                db.and_(
+                    db.or_(
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string() for asset_key in asset_keys]
+                        ),
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string(legacy=True) for asset_key in asset_keys]
+                        ),
+                    ),
+                    SqlEventLogStorageTable.c.partition != None,
+                )
+            )
+            .group_by(
+                SqlEventLogStorageTable.c.asset_key,
+            )
+        )
 
-            if isinstance(event_or_materialization, EventLogEntry):
-                partition = event_or_materialization.dagster_event.partition
-            else:  # AssetMaterialization object
-                partition = event_or_materialization.partition
-            if partition:
-                partitions_by_key[asset_key].add(partition)
+        assets_details = self._get_assets_details(asset_keys)
+        query = self._add_assets_wipe_filter_to_query(query, assets_details)
 
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        results = {AssetKey.from_db_string(row[0]): row[1] for row in results}
         partition_count_by_key = OrderedDict()
         for asset_key in asset_keys:
-            partition_count_by_key[asset_key] = len(partitions_by_key.get(asset_key, {}))
+            partition_count_by_key[asset_key] = results.get(asset_key, 0)
 
         return partition_count_by_key
