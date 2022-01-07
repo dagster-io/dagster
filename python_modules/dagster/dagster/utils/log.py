@@ -232,10 +232,13 @@ def define_default_formatter():
 
 @contextmanager
 def quieten(quiet=True, level=logging.WARNING):
-    if quiet:
-        logging.disable(level)
-    try:
+    if not quiet:
         yield
-    finally:
-        if quiet:
+    else:
+
+        logging.disable(level)
+
+        try:
+            yield
+        finally:
             logging.disable(logging.NOTSET)
