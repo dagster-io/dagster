@@ -25,11 +25,11 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
-  JobMetadataQuery,
-  JobMetadataQuery_pipelineOrError_Pipeline as Job,
-  JobMetadataQuery_pipelineOrError_Pipeline_schedules as Schedule,
-  JobMetadataQuery_pipelineOrError_Pipeline_sensors as Sensor,
-} from './types/JobMetadataQuery';
+  JobMetadataFragment as Job,
+  JobMetadataFragment_schedules as Schedule,
+  JobMetadataFragment_sensors as Sensor,
+} from './types/JobMetadataFragment';
+import {JobMetadataQuery} from './types/JobMetadataQuery';
 import {RunMetadataFragment} from './types/RunMetadataFragment';
 
 interface Props {
@@ -441,26 +441,35 @@ export const RUN_METADATA_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
 `;
 
+export const JOB_METADATA_FRAGMENT = gql`
+  fragment JobMetadataFragment on Pipeline {
+    id
+    isJob
+    name
+    schedules {
+      id
+      mode
+      ...ScheduleSwitchFragment
+    }
+    sensors {
+      id
+      targets {
+        pipelineName
+        mode
+      }
+      ...SensorSwitchFragment
+    }
+  }
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+`;
+
 const JOB_METADATA_QUERY = gql`
   query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
-        isJob
-        name
-        schedules {
-          id
-          mode
-          ...ScheduleSwitchFragment
-        }
-        sensors {
-          id
-          targets {
-            pipelineName
-            mode
-          }
-          ...SensorSwitchFragment
-        }
+        ...JobMetadataFragment
       }
     }
     pipelineRunsOrError(filter: $runsFilter, limit: 5) {
@@ -472,7 +481,6 @@ const JOB_METADATA_QUERY = gql`
       }
     }
   }
-  ${SCHEDULE_SWITCH_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
+  ${JOB_METADATA_FRAGMENT}
   ${RUN_METADATA_FRAGMENT}
 `;

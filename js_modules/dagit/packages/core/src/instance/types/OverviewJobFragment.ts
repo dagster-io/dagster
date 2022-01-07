@@ -9,17 +9,6 @@ import { RunStatus, InstigationStatus } from "./../../types/globalTypes";
 // GraphQL fragment: OverviewJobFragment
 // ====================================================
 
-export interface OverviewJobFragment_runs_assets_key {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface OverviewJobFragment_runs_assets {
-  __typename: "Asset";
-  id: string;
-  key: OverviewJobFragment_runs_assets_key;
-}
-
 export interface OverviewJobFragment_runs_stats_RunStatsSnapshot {
   __typename: "RunStatsSnapshot";
   id: string;
@@ -50,14 +39,7 @@ export interface OverviewJobFragment_runs {
   mode: string;
   runId: string;
   status: RunStatus;
-  assets: OverviewJobFragment_runs_assets[];
   stats: OverviewJobFragment_runs_stats;
-}
-
-export interface OverviewJobFragment_modes {
-  __typename: "Mode";
-  id: string;
-  name: string;
 }
 
 export interface OverviewJobFragment_schedules_scheduleState {
@@ -81,16 +63,16 @@ export interface OverviewJobFragment_schedules {
   id: string;
   mode: string;
   name: string;
+  cronSchedule: string;
   scheduleState: OverviewJobFragment_schedules_scheduleState;
   executionTimezone: string | null;
   futureTicks: OverviewJobFragment_schedules_futureTicks;
-  cronSchedule: string;
 }
 
 export interface OverviewJobFragment_sensors_targets {
   __typename: "Target";
-  mode: string;
   pipelineName: string;
+  mode: string;
 }
 
 export interface OverviewJobFragment_sensors_sensorState {
@@ -102,10 +84,16 @@ export interface OverviewJobFragment_sensors_sensorState {
 export interface OverviewJobFragment_sensors {
   __typename: "Sensor";
   id: string;
-  name: string;
   targets: OverviewJobFragment_sensors_targets[] | null;
-  sensorState: OverviewJobFragment_sensors_sensorState;
   jobOriginId: string;
+  name: string;
+  sensorState: OverviewJobFragment_sensors_sensorState;
+}
+
+export interface OverviewJobFragment_modes {
+  __typename: "Mode";
+  id: string;
+  name: string;
 }
 
 export interface OverviewJobFragment {
@@ -114,7 +102,7 @@ export interface OverviewJobFragment {
   name: string;
   isJob: boolean;
   runs: OverviewJobFragment_runs[];
-  modes: OverviewJobFragment_modes[];
   schedules: OverviewJobFragment_schedules[];
   sensors: OverviewJobFragment_sensors[];
+  modes: OverviewJobFragment_modes[];
 }
