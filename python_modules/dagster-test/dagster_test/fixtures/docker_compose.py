@@ -71,11 +71,7 @@ def docker_compose_down(docker_compose_yml, context, service):
     else:
         compose_command = ["docker-compose"]
 
-    compose_command += [
-        "--file",
-        str(docker_compose_yml),
-        "down",
-    ]
+    compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", "--remove-orphans"]
 
     if service:
         compose_command.append(service)

@@ -7,3 +7,10 @@ services:
       - 8000:8000
     command: python -m http.server
     container_name: server
+    volumes:
+      - test_volume:/tmp
+
+
+volumes:
+  test_volume:
+    name: ${TEST_VOLUME}
