@@ -88,7 +88,7 @@ def test_dagster_telemetry_disabled(caplog):
 
 def test_dagster_telemetry_unset(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -114,7 +114,7 @@ def test_dagster_telemetry_unset(caplog):
 
 def test_repo_stats(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_name = "multi_mode_with_resources"
@@ -149,7 +149,7 @@ def test_repo_stats(caplog):
 
 
 def test_log_workspace_stats(caplog):
-    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+    with instance_for_test() as instance:
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
         ) as context:
