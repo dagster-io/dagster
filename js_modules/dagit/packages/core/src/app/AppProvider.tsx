@@ -21,6 +21,7 @@ import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+// foo
 import {ColorsWIP} from '../ui/Colors';
 import {GlobalDialogStyle} from '../ui/Dialog';
 import {GlobalPopoverStyle} from '../ui/Popover';
