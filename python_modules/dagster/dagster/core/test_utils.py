@@ -107,7 +107,8 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                     "config": {
                         "wait_for_processes": True,
                     },
-                }
+                },
+                "telemetry": {"enabled": False},
             },
             (overrides if overrides else {}),
         )
