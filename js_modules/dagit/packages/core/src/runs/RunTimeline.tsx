@@ -305,16 +305,18 @@ const RunTimelineRow = (props: RowProps) => {
   const batched = React.useMemo(() => {
     const batches: RunBatch[] = runs
       .map((run) => {
-        const left = Math.floor(((run.startTime - start) / rangeLength) * width);
+        const startTime = run.startTime;
+        const endTime = run.endTime || Date.now();
+        const left = Math.floor(((startTime - start) / rangeLength) * width);
         const runWidth = Math.max(
           MIN_CHUNK_WIDTH,
-          Math.ceil(((run.endTime - run.startTime) / rangeLength) * width),
+          Math.ceil(((endTime - startTime) / rangeLength) * width),
         );
 
         return {
           runs: [run],
-          startTime: run.startTime,
-          endTime: run.endTime,
+          startTime,
+          endTime,
           left,
           width: runWidth,
         };
@@ -463,6 +465,8 @@ const RunChunk = styled.div<ChunkProps>`
   position: absolute;
   top: 2px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
+
+  transition: background-color 300ms linear, width 300ms ease-in-out;
 
   .chunk-popover-target {
     display: block;

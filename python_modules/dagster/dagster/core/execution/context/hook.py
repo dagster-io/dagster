@@ -163,9 +163,13 @@ class HookContext:
             * a dictionary from mapping key to corresponding value in the mapped case
         """
         results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        captured = self._step_execution_context.step_output_capture
+
+        if captured is None:
+            check.failed("Outputs were unexpectedly not captured for hook")
 
         # make the returned values more user-friendly
-        for step_output_handle, value in self._step_execution_context.step_output_capture.items():
+        for step_output_handle, value in captured.items():
             if step_output_handle.mapping_key:
                 if results.get(step_output_handle.output_name) is None:
                     results[step_output_handle.output_name] = {

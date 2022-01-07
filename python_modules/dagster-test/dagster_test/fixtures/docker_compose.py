@@ -71,11 +71,7 @@ def docker_compose_down(docker_compose_yml, context, service):
     else:
         compose_command = ["docker-compose"]
 
-    compose_command += [
-        "--file",
-        str(docker_compose_yml),
-        "down",
-    ]
+    compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", "--remove-orphans"]
 
     if service:
         compose_command.append(service)
@@ -101,7 +97,11 @@ def current_container():
 
 
 def connect_container_to_network(container, network):
-    subprocess.check_call(["docker", "network", "connect", network, container])
+    # subprocess.run instead of subprocess.check_call so we don't fail when
+    # trying to connect a container to a network that it's already connected to
+    subprocess.run(  # pylint: disable=subprocess-run-check
+        ["docker", "network", "connect", network, container]
+    )
 
 
 def disconnect_container_from_network(container, network):
