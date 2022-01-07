@@ -97,7 +97,9 @@ def current_container():
 
 
 def connect_container_to_network(container, network):
-    subprocess.check_call(["docker", "network", "connect", network, container])
+    subprocess.run(  # pylint: disable=subprocess-run-check
+        ["docker", "network", "connect", network, container]
+    )
 
 
 def disconnect_container_from_network(container, network):
