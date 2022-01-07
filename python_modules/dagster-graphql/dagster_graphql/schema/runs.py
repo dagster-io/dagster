@@ -1,3 +1,5 @@
+import json
+
 import graphene
 from dagster import check
 from graphene.types.generic import GenericScalar
@@ -133,9 +135,15 @@ class GrapheneRunGroupsOrError(graphene.ObjectType):
 class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
     class Meta:
         description = """This type is used when passing in a configuration object
-        for pipeline configuration. This is any-typed in the GraphQL type system,
-        but must conform to the constraints of the dagster config type system"""
+        for pipeline configuration. Can either be passed in as a string (the
+        JSON-serialized configuration object) or as the configuration object itself. In
+        either case, the object must conform to the constraints of the dagster config type system.
+        """
         name = "RunConfigData"
+
+
+def parse_run_config_input(run_config):
+    return json.loads(run_config) if isinstance(run_config, str) else run_config
 
 
 types = [
