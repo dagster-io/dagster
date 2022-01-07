@@ -7,6 +7,7 @@ import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../../runs
 import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
 import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
+import {AssetNodeFragment_assetKey} from './types/AssetNodeFragment';
 
 export const useLaunchSingleAssetJob = () => {
   const {basePath} = React.useContext(AppContext);
@@ -27,6 +28,15 @@ export const useLaunchSingleAssetJob = () => {
               mode: 'default',
               selector: {pipelineName: jobName, ...repoAddressToSelector(repoAddress)},
               stepKeys: [opName],
+              executionMetadata: {
+                tags: [
+                  {
+                    key: "dagster/asset_key",
+                    value: "TODO"
+                  }
+                ]
+
+              }
             },
           },
         });

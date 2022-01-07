@@ -11,6 +11,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    Sequence,
 )
 
 from dagster import check

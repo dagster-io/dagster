@@ -2,10 +2,20 @@ import json
 import os
 import subprocess
 import textwrap
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, Callable, List, Mapping, Optional, Sequence
 
-from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, check
-from dagster.core.asset_defs import asset
+from dagster import (
+    AssetKey,
+    OpDefinition,
+    Output,
+    SolidExecutionContext,
+    check,
+    Out,
+    Nothing,
+)
+from dagster.core.asset_defs import asset, multi_asset
+
+from .utils import generate_materializations
 
 
 def _load_manifest_for_project(
@@ -33,6 +43,49 @@ def _load_manifest_for_project(
 
 def _get_node_name(node_info: Mapping[str, Any]):
     return "__".join([node_info["resource_type"], node_info["package_name"], node_info["name"]])
+
+
+def _dbt_nodes_to_asset(
+    node_infos: Sequence[Mapping[str, Any]],
+):
+    outs = {}
+    sources = set()
+    for node_info in node_infos:
+        node_name = node_info["name"]
+        in_deps = []
+        out_deps = []
+        for dep in node_info["depends_on"]["nodes"]:
+            dep_type = dep.split(".")[0]
+            dep_name = dep.split(".")[-1]
+            if dep_type == "source":
+                sources.add(AssetKey(dep_name))
+                in_deps.append(dep_name)
+            elif dep_type == "model":
+                out_deps.append(dep_name)
+
+        outs[node_name] = Out(
+            dagster_type=None,
+            asset_key=AssetKey(node_name),
+            in_deps=in_deps,
+            out_deps=out_deps,
+            is_required=False,
+        )
+
+    @multi_asset(
+        name="dbt_project", non_argument_deps=sources, outs=outs, required_resource_keys={"dbt"}
+    )
+    def _dbt_project_multi_assset(context):
+        # TODO: this should not be implemented through tags
+        asset_key = context.get_tag("dagster/asset_key")
+        if asset_key:
+            dbt_output = context.resources.dbt.run(models=asset_key[2:-2])
+        else:
+            dbt_output = context.resources.dbt.run()
+        # TODO: this is a hack, also would be cool to stream this during the run
+        for materialization in generate_materializations(dbt_output):
+            yield Output(None, materialization.asset_key.path[-1])
+
+    return _dbt_project_multi_assset
 
 
 def _dbt_node_to_asset(
@@ -121,6 +174,29 @@ def load_assets_from_dbt_project(
 
     manifest_json = _load_manifest_for_project(project_dir, profiles_dir, target_dir, select or "*")
     return load_assets_from_dbt_manifest(manifest_json, runtime_metadata_fn, io_manager_key)
+
+
+def load_asset_from_dbt_project(
+    project_dir: str,
+    profiles_dir: Optional[str] = None,
+    target_dir: Optional[str] = None,
+    select: Optional[str] = None,
+):
+    check.str_param(project_dir, "project_dir")
+    profiles_dir = check.opt_str_param(
+        profiles_dir, "profiles_dir", os.path.join(project_dir, "config")
+    )
+    target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
+    manifest_json = _load_manifest_for_project(project_dir, profiles_dir, target_dir, select or "*")
+    return load_asset_from_dbt_manifest(manifest_json)
+
+
+def load_asset_from_dbt_manifest(manifest_json: Mapping[str, Any]):
+    check.dict_param(manifest_json, "manifest_json", key_type=str)
+    dbt_nodes = list(manifest_json["nodes"].values())
+    return _dbt_nodes_to_asset(
+        [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"]
+    )
 
 
 def load_assets_from_dbt_manifest(

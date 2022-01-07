@@ -3,10 +3,10 @@ import os
 
 import pandas as pd
 from dagster import EventMetadata
-from dagster.core.asset_defs import build_assets_job
+from dagster.core.asset_defs import build_assets_job, asset
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_asset_from_dbt_manifest
 from dagster_pyspark import pyspark_resource
 from hacker_news_assets.pipelines.download_pipeline import S3_SPARK_CONF
 from hacker_news_assets.resources.snowflake_io_manager import (
@@ -53,9 +53,7 @@ def asset_metadata(_context, model_info):
 
 
 # this list has one element per dbt model
-assets = load_assets_from_dbt_manifest(
+asset = load_asset_from_dbt_manifest(
     json.load(open(os.path.join(DBT_PROJECT_DIR, "target", "manifest.json"))),
-    runtime_metadata_fn=asset_metadata,
-    io_manager_key="warehouse_io_manager",
 )
-activity_stats = build_assets_job("activity_stats", assets, [], resource_defs=DEV_RESOURCES)
+activity_stats = build_assets_job("activity_stats", [asset], [], resource_defs=DEV_RESOURCES)
