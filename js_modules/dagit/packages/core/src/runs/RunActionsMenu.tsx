@@ -138,7 +138,7 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(basePath, run.pipelineName, result);
+                      handleLaunchResult(basePath, run.pipelineName, result, {});
                     }
                   }}
                 />

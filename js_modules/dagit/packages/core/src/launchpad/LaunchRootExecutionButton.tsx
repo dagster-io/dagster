@@ -47,7 +47,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
     try {
       const result = await launchPipelineExecution({variables});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
-      handleLaunchResult(basePath, props.pipelineName, result);
+      handleLaunchResult(basePath, props.pipelineName, result, {});
     } catch (error) {
       showLaunchError(error as Error);
     }
