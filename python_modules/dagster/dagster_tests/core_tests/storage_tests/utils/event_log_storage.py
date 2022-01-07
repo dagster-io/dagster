@@ -239,7 +239,7 @@ class TestEventLogStorage:
     ```
     """
 
-    __test__ = True
+    __test__ = False
 
     @pytest.fixture(name="storage", params=[])
     def event_log_storage(self, request):

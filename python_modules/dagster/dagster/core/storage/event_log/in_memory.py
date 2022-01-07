@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -313,7 +313,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        partitions_by_key = {}
+        partitions_by_key: Dict[AssetKey, set] = {}
         for records in self._logs.values():
             for record in records:
                 if (
