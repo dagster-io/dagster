@@ -9,17 +9,6 @@ import { RunStatus, InstigationStatus } from "./../../types/globalTypes";
 // GraphQL fragment: OverviewJobFragment
 // ====================================================
 
-export interface OverviewJobFragment_runs_assets_key {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface OverviewJobFragment_runs_assets {
-  __typename: "Asset";
-  id: string;
-  key: OverviewJobFragment_runs_assets_key;
-}
-
 export interface OverviewJobFragment_runs_stats_RunStatsSnapshot {
   __typename: "RunStatsSnapshot";
   id: string;
@@ -50,7 +39,6 @@ export interface OverviewJobFragment_runs {
   mode: string;
   runId: string;
   status: RunStatus;
-  assets: OverviewJobFragment_runs_assets[];
   stats: OverviewJobFragment_runs_stats;
 }
 

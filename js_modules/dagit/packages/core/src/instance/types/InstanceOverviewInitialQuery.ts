@@ -15,17 +15,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   value: string;
 }
 
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets_key {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets {
-  __typename: "Asset";
-  id: string;
-  key: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets_key;
-}
-
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_RunStatsSnapshot {
   __typename: "RunStatsSnapshot";
   id: string;
@@ -56,7 +45,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   mode: string;
   runId: string;
   status: RunStatus;
-  assets: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets[];
   stats: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats;
 }
 
