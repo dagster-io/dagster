@@ -161,12 +161,9 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         with self.index_connection() as conn:
-            print(event.dagster_event.partition)
             try:
-                print("lol")
                 conn.execute(insert_statement)
             except db.exc.IntegrityError:
-                print("what")
                 conn.execute(update_statement)
 
     def store_event(self, event):
@@ -617,14 +614,14 @@ class SqlEventLogStorage(EventLogStorage):
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:
-            asset_details = self._get_assets_details([event_records_filter.asset_key])[0]
+            asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
 
         query = self._apply_filter_to_query(
             query=query,
             event_records_filter=event_records_filter,
-            asset_details=asset_details[1] if asset_details and asset_details[1] else None,
+            asset_details=asset_details,
         )
         if limit:
             query = query.limit(limit)
@@ -914,7 +911,7 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
         return query
 
-    def _get_assets_details(self, asset_keys):
+    def _get_assets_details(self, asset_keys: Sequence[AssetKey]):
         check.list_param(asset_keys, "asset_key", AssetKey)
         rows = None
         with self.index_connection() as conn:
@@ -922,26 +919,44 @@ class SqlEventLogStorage(EventLogStorage):
                 db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
                     AssetKeyTable.c.asset_key.in_(
                         [asset_key.to_string() for asset_key in asset_keys]
-                    )
+                    ),
                 )
             ).fetchall()
 
-            return [
-                (row[0], deserialize_json_to_dagster_namedtuple(row[1]))
-                if row and row[0] and row[1]
-                else None
+            asset_key_to_details = {
+                row[0]: (deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None)
                 for row in rows
+            }
+
+            # returns a list of the corresponding asset_details to provided asset_keys
+            return [
+                asset_key_to_details.get(asset_key.to_string(), None) for asset_key in asset_keys
             ]
 
-    def _add_assets_wipe_filter_to_query(self, query, assets_details):
-        for asset_details in assets_details:
-            if asset_details and asset_details[1].last_wipe_timestamp:
+    def _add_assets_wipe_filter_to_query(
+        self, query, assets_details: Sequence[str], asset_keys: Sequence[AssetKey]
+    ):
+        check.invariant(
+            len(assets_details) == len(asset_keys),
+            "asset_details and asset_keys must be the same length",
+        )
+        for i in range(len(assets_details)):
+            asset_key, asset_details = asset_keys[i], assets_details[i]
+            if asset_details and asset_details.last_wipe_timestamp:  # type: ignore[attr-defined]
+                asset_key_in_row = db.or_(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                )
+                # If asset key is in row, keep the row if the timestamp > wipe timestamp, else remove the row.
+                # If asset key is not in row, keep the row.
                 query = query.where(
-                    db.func.IF(
-                        asset_details[0] == SqlEventLogStorageTable.c.asset_key,
-                        SqlEventLogStorageTable.c.timestamp
-                        > datetime.utcfromtimestamp(asset_details[1].last_wipe_timestamp),
-                        True,
+                    db.or_(
+                        db.and_(
+                            asset_key_in_row,
+                            SqlEventLogStorageTable.c.timestamp
+                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),  # type: ignore[attr-defined]
+                        ),
+                        db.not_(asset_key_in_row),
                     )
                 )
 
@@ -999,8 +1014,9 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 
-        assets_details = self._get_assets_details([asset_key])
-        query = self._add_assets_wipe_filter_to_query(query, assets_details)
+        asset_keys = [asset_key]
+        asset_details = self._get_assets_details(asset_keys)
+        query = self._add_assets_wipe_filter_to_query(query, asset_details, asset_keys)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -1078,8 +1094,6 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
         check.list_param(asset_keys, "asset_keys", AssetKey)
-        str_asset_keys = [key.to_string() for key in asset_keys]
-        legacy_str_asset_keys = [key.to_string(legacy=True) for key in asset_keys]
 
         query = (
             db.select(
@@ -1107,7 +1121,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         assets_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, assets_details)
+        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()

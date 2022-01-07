@@ -1496,19 +1496,18 @@ class TestEventLogStorage:
 
         events, _ = _synthesize_events(lambda: one())
         for event in events:
-            print(event)
             storage.store_event(event)
 
         partition_counts_by_key = _fetch_counts(storage)
-        assert partition_counts_by_key[a] is 1
-        assert partition_counts_by_key[b] is 2
+        assert partition_counts_by_key[a] == 1
+        assert partition_counts_by_key[b] == 2
 
         # wipe asset, make sure we respect that
         if self.can_wipe():
             storage.wipe_asset(a)
             partition_counts_by_key = _fetch_counts(storage)
-            assert partition_counts_by_key.get(a) is 0
-            assert partition_counts_by_key[b] is 2
+            assert partition_counts_by_key.get(a) == 0
+            assert partition_counts_by_key[b] == 2
 
             # rematerialize wiped asset
             events, _ = _synthesize_events(lambda: two())
@@ -1516,7 +1515,5 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             partition_counts_by_key = _fetch_counts(storage)
-            assert partition_counts_by_key[a] is 1
-            assert partition_counts_by_key[b] is 2
-
-        assert False
+            assert partition_counts_by_key[a] == 1
+            assert partition_counts_by_key[b] == 2

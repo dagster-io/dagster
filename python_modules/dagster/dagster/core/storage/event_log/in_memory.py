@@ -320,7 +320,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        partitions_by_key = OrderedDict()
+        partitions_by_key = {}
         for records in self._logs.values():
             for record in records:
                 if (
