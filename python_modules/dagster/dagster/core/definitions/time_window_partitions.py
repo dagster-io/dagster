@@ -49,7 +49,6 @@ class TimeWindowPartitionsDefinition(
         else:
             start_dt = start
 
-        check.param_invariant(end_offset >= 0, "end_offset", "end_offset must be non-negative")
         return super(TimeWindowPartitionsDefinition, cls).__new__(
             cls, schedule_type, start_dt, timezone or "UTC", fmt, end_offset
         )
@@ -96,6 +95,9 @@ class TimeWindowPartitionsDefinition(
                 break
 
             prev_time = next_time
+
+        if end_offset < 0:
+            partitions = partitions[:end_offset]
 
         return partitions
 
