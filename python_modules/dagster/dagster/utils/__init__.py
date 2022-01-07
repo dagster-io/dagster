@@ -27,7 +27,6 @@ from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvaria
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 
-from .alert import make_email_on_pipeline_failure_sensor, make_email_on_run_failure_sensor
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -46,6 +45,20 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
+
+# Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
+# were moved to avoid circular-dependency issues
+def make_email_on_pipeline_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_pipeline_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_pipeline_failure_sensor(*args, **kwargs)
+
+
+def make_email_on_run_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:

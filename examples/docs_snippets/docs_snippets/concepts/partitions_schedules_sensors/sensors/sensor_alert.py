@@ -30,7 +30,7 @@ slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv
 
 
 # start_email_marker
-from dagster.utils import make_email_on_run_failure_sensor
+from dagster import make_email_on_run_failure_sensor
 
 
 email_on_run_failure = make_email_on_run_failure_sensor(
