@@ -931,3 +931,20 @@ def test_build_context_with_resources_config(context_builder):
             resources={"my_resource": my_resource},
             resources_config={"bad_resource": {"config": "foo"}},
         )
+
+
+def test_nested_invocation_with_yield():
+    @solid
+    def basic():
+        pass
+
+    @solid
+    def should_not_work():
+        basic()
+        yield Output("foo")
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke @solid 'basic' within solid 'should_not_work'",
+    ):
+        list(should_not_work())

@@ -176,6 +176,11 @@ def _type_check_output_wrapper(
     If the solid result is itself a generator, then wrap in a fxn that will type check and yield
     outputs.
     """
+    from dagster.core.definitions.composition import (
+        is_in_invalid_invocation_context,
+        enter_invalid_composition_context,
+        exit_invalid_composition_context,
+    )
 
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
 
@@ -185,25 +190,38 @@ def _type_check_output_wrapper(
         async def to_gen(async_gen):
             outputs_seen = set()
 
-            async for event in async_gen:
-                if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    yield event
-                else:
-                    if not isinstance(event, (Output, DynamicOutput)):
-                        raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
-                        )
+            try:
+                while True:
+                    enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+                    event = await async_gen.__anext__()
+                    exit_invalid_composition_context()
+                    if isinstance(
+                        event, (AssetMaterialization, Materialization, ExpectationResult)
+                    ):
+                        yield event
                     else:
-                        output_def = output_defs[event.output_name]
-                        _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen and not isinstance(
-                            output_def, DynamicOutputDefinition
-                        ):
+                        if not isinstance(event, (Output, DynamicOutput)):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
                             )
-                        outputs_seen.add(output_def.name)
-                    yield event
+                        else:
+                            output_def = output_defs[event.output_name]
+                            _type_check_output(output_def, event, context)
+                            if output_def.name in outputs_seen and not isinstance(
+                                output_def, DynamicOutputDefinition
+                            ):
+                                raise DagsterInvariantViolationError(
+                                    f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                )
+                            outputs_seen.add(output_def.name)
+                        yield event
+
+            except StopAsyncIteration:
+                pass
+            finally:
+                if is_in_invalid_invocation_context():
+                    exit_invalid_composition_context()
+
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
@@ -226,25 +244,36 @@ def _type_check_output_wrapper(
 
         def type_check_gen(gen):
             outputs_seen = set()
-            for event in gen:
-                if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    yield event
-                else:
-                    if not isinstance(event, (Output, DynamicOutput)):
-                        raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
-                        )
+            try:
+                while True:
+                    enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+                    event = next(gen)
+                    exit_invalid_composition_context()
+                    if isinstance(
+                        event, (AssetMaterialization, Materialization, ExpectationResult)
+                    ):
+                        yield event
                     else:
-                        output_def = output_defs[event.output_name]
-                        output = _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen and not isinstance(
-                            output_def, DynamicOutputDefinition
-                        ):
+                        if not isinstance(event, (Output, DynamicOutput)):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
                             )
-                        outputs_seen.add(output_def.name)
-                    yield output
+                        else:
+                            output_def = output_defs[event.output_name]
+                            output = _type_check_output(output_def, event, context)
+                            if output_def.name in outputs_seen and not isinstance(
+                                output_def, DynamicOutputDefinition
+                            ):
+                                raise DagsterInvariantViolationError(
+                                    f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                )
+                            outputs_seen.add(output_def.name)
+                        yield output
+            except StopIteration:
+                pass
+            finally:
+                if is_in_invalid_invocation_context():
+                    exit_invalid_composition_context()
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
