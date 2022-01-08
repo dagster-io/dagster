@@ -5,7 +5,6 @@ import threading
 import time
 from collections import OrderedDict
 
-import pytest
 from dagster import ModeDefinition, default_executors
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.test_utils import instance_for_test
@@ -35,10 +34,6 @@ def test_eager_priority_pipeline():
         ]
 
 
-# If this test is failing locally, it likely means that there is a rogue
-# celery worker still running on your machine.
-# https://github.com/dagster-io/dagster/issues/3493
-@pytest.mark.skip
 def test_run_priority_pipeline(rabbitmq):
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
