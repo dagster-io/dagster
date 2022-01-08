@@ -155,12 +155,21 @@ def test_typed_is_tuple():
     assert check.is_tuple((), Foo) == ()
     foo_tuple = (Foo(),)
     assert check.is_tuple(foo_tuple, Foo) == foo_tuple
+    assert check.is_tuple(foo_tuple, (Foo, Bar))
 
     with pytest.raises(CheckError):
         check.is_tuple((Bar(),), Foo)
 
     with pytest.raises(CheckError):
         check.is_tuple((None,), Foo)
+
+    assert check.is_tuple((Foo(), Bar()), of_shape=(Foo, Bar))
+
+    with pytest.raises(CheckError):
+        check.is_tuple((Foo(),), of_shape=(Foo, Bar))
+
+    with pytest.raises(CheckError):
+        check.is_tuple((Foo(), Foo()), of_shape=(Foo, Bar))
 
 
 def test_typed_is_list():
@@ -894,41 +903,23 @@ def test_tuple_param():
     assert check.tuple_param((3, 4), "something", of_type=int)
     assert check.tuple_param(("foo", "bar"), "something", of_type=str)
 
-    assert check.tuple_param((3, 4), "something", of_type=(int, int))
-    assert check.tuple_param((3, 4), "something", of_type=(int, int))
+    assert check.tuple_param((3, 4), "something", of_type=(int,))
+    assert check.tuple_param((3, 4), "something", of_type=(int, str))
     assert check.tuple_param((3, "bar"), "something", of_type=(int, str))
 
     with pytest.raises(CheckError):
-        check.tuple_param((3, 4, 5), "something", of_type=(int, int))
+        check.tuple_param((3, 4, 5), "something", of_type=str)
 
     with pytest.raises(CheckError):
-        check.tuple_param((3, 4), "something", of_type=(int, int, int))
+        check.tuple_param((3, 4), "something", of_type=(str,))
+
+    assert check.tuple_param((3, "a"), "something", of_shape=(int, str))
 
     with pytest.raises(CheckError):
-        check.tuple_param((3, 4), "something", of_type=(int, str))
+        check.tuple_param((3, "a"), "something", of_shape=(int, str, int))
 
     with pytest.raises(CheckError):
-        check.tuple_param((3, 4), "something", of_type=(str, str))
-
-
-@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/3299")
-def test_non_variadic_union_type_is_tuple():
-    class Foo:
-        pass
-
-    class Bar:
-        pass
-
-    # this is the behavior of isinstance
-    foo_tuple = (Foo(),)
-    for item in foo_tuple:
-        assert isinstance(item, (Foo, Bar))
-
-    # This call fails:
-    # This does not call isinstance on tuple member and instead does
-    # non-variadic typing. It is impossible to check that each
-    # member is Foo or Bar given current API design
-    check.is_tuple(foo_tuple, of_type=(Foo, Bar))
+        check.tuple_param((3, "a"), "something", of_shape=(str, int))
 
 
 def test_matrix_param():
@@ -956,7 +947,7 @@ def test_matrix_param():
 def test_opt_tuple_param():
     assert check.opt_tuple_param((1, 2), "something")
     assert check.opt_tuple_param(None, "something") is None
-    assert check.opt_tuple_param(None, "something", (2)) == (2)
+    assert check.opt_tuple_param(None, "something", (2,)) == (2,)
 
     with pytest.raises(CheckError):
         check.opt_tuple_param(1, "something")
@@ -973,21 +964,23 @@ def test_opt_tuple_param():
     assert check.opt_tuple_param((3, 4), "something", of_type=int)
     assert check.opt_tuple_param(("foo", "bar"), "something", of_type=str)
 
-    assert check.opt_tuple_param((3, 4), "something", of_type=(int, int))
-    assert check.opt_tuple_param((3, 4), "something", of_type=(int, int))
+    assert check.opt_tuple_param((3, 4), "something", of_type=(int,))
+    assert check.opt_tuple_param((3, 4), "something", of_type=(int, str))
     assert check.opt_tuple_param((3, "bar"), "something", of_type=(int, str))
 
     with pytest.raises(CheckError):
-        check.opt_tuple_param((3, 4, 5), "something", of_type=(int, int))
+        check.opt_tuple_param((3, 4, 5), "something", of_type=str)
 
     with pytest.raises(CheckError):
-        check.opt_tuple_param((3, 4), "something", of_type=(int, int, int))
+        check.opt_tuple_param((3, 4), "something", of_type=(str,))
+
+    assert check.opt_tuple_param((3, "a"), "something", of_shape=(int, str))
 
     with pytest.raises(CheckError):
-        check.opt_tuple_param((3, 4), "something", of_type=(int, str))
+        check.opt_tuple_param((3, "a"), "something", of_shape=(int, str, int))
 
     with pytest.raises(CheckError):
-        check.opt_tuple_param((3, 4), "something", of_type=(str, str))
+        check.opt_tuple_param((3, "a"), "something", of_shape=(str, int))
 
 
 def test_opt_type_param():
