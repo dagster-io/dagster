@@ -389,8 +389,26 @@ def define_resources_limit_pipeline():
                         "requests": {"cpu": "250m", "memory": "64Mi"},
                         "limits": {"cpu": "500m", "memory": "2560Mi"},
                     }
-                }
-            }
+                },
+                "pod_spec_config": {
+                    "affinity": {
+                        "nodeAffinity": {
+                            "requiredDuringSchedulingIgnoredDuringExecution": {
+                                "nodeSelectorTerms": [
+                                    {
+                                        "matchExpressions": [
+                                            {
+                                                "key": "foo",
+                                                "operator": "DoesNotExist",
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+            },
         },
     )
     def resources_limit_pipeline():
