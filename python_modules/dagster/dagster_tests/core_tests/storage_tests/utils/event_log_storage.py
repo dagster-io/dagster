@@ -1475,13 +1475,14 @@ class TestEventLogStorage:
             assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
             assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
-    def test_get_asset_partition_counts(self, storage):
+    def test_get_materialization_count_by_partition(self, storage):
         a = AssetKey("a")
         b = AssetKey("b")
 
         @solid
         def one(_):
             yield AssetMaterialization(a, partition="a")
+            yield AssetMaterialization(b, partition="b")
             yield AssetMaterialization(b, partition="b")
             yield AssetMaterialization(b, partition="c")
             yield Output(1)
@@ -1492,28 +1493,30 @@ class TestEventLogStorage:
             yield Output(2)
 
         def _fetch_counts(storage):
-            return storage.get_asset_partition_counts([a, b])
+            return storage.get_materialization_count_by_partition([a, b])
 
         events, _ = _synthesize_events(lambda: one())
         for event in events:
             storage.store_event(event)
 
-        partition_counts_by_key = _fetch_counts(storage)
-        assert partition_counts_by_key[a] == 1
-        assert partition_counts_by_key[b] == 2
+        materialization_count_by_partition = _fetch_counts(storage)
+        assert materialization_count_by_partition[a]["a"] == 1
+        assert materialization_count_by_partition[b]["b"] == 2
+        assert materialization_count_by_partition[b]["c"] == 1
 
         # wipe asset, make sure we respect that
         if self.can_wipe():
             storage.wipe_asset(a)
-            partition_counts_by_key = _fetch_counts(storage)
-            assert partition_counts_by_key.get(a) == 0
-            assert partition_counts_by_key[b] == 2
+            materialization_count_by_partition = _fetch_counts(storage)
+            assert materialization_count_by_partition.get(a) == {}
+            assert materialization_count_by_partition[b]["b"] == 2
 
             # rematerialize wiped asset
             events, _ = _synthesize_events(lambda: two())
             for event in events:
                 storage.store_event(event)
 
-            partition_counts_by_key = _fetch_counts(storage)
-            assert partition_counts_by_key[a] == 1
-            assert partition_counts_by_key[b] == 2
+            materialization_count_by_partition = _fetch_counts(storage)
+            assert materialization_count_by_partition[a]["d"] == 1
+            assert len(materialization_count_by_partition[a]) == 1
+            assert materialization_count_by_partition[b]["b"] == 2

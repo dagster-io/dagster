@@ -263,7 +263,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Remove asset index history from event log for given asset_key"""
 
     @abstractmethod
-    def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
 
 

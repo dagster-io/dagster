@@ -1092,14 +1092,17 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
 
-    def get_asset_partition_counts(self, asset_keys: Sequence[AssetKey]) -> Mapping[AssetKey, int]:
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
         check.list_param(asset_keys, "asset_keys", AssetKey)
 
         query = (
             db.select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
-                    db.func.count(db.func.distinct(SqlEventLogStorageTable.c.partition)),
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.count(SqlEventLogStorageTable.c.id),
                 ]
             )
             .where(
@@ -1115,9 +1118,7 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.partition != None,
                 )
             )
-            .group_by(
-                SqlEventLogStorageTable.c.asset_key,
-            )
+            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
         )
 
         assets_details = self._get_assets_details(asset_keys)
@@ -1126,9 +1127,11 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        results = {AssetKey.from_db_string(row[0]): row[1] for row in results}
-        partition_count_by_key = OrderedDict()
-        for asset_key in asset_keys:
-            partition_count_by_key[asset_key] = results.get(asset_key, 0)
+        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
+            asset_key: {} for asset_key in asset_keys
+        }
+        for row in results:
+            asset_key = AssetKey.from_db_string(row[0])
+            materialization_count_by_partition[asset_key][row[1]] = row[2]
 
-        return partition_count_by_key
+        return materialization_count_by_partition

@@ -600,19 +600,19 @@ def test_asset_lazy_migration():
 
 
 @asset_test
-def test_get_asset_partition_counts(asset_aware_context):
+def test_get_materialization_count_by_partition(asset_aware_context):
 
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    # src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
 
-    d = AssetKey("c")
+    # d = AssetKey("c")
 
-    with copy_directory(src_dir) as test_dir:
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            storage = instance.event_log_storage
+    # with copy_directory(src_dir) as test_dir:
+    #     with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+    #         storage = instance.event_log_storage
 
-            partition_count_by_key = storage.get_asset_partition_counts([d])
+    #         materialization_count_by_key = storage.get_materialization_count_by_partition([d])
 
-            assert partition_count_by_key.get(d) == 0
+    #         assert materialization_count_by_key.get(d) == 0
 
     a = AssetKey("no_materializations_asset")
     b = AssetKey("no_partitions_asset")
@@ -630,6 +630,7 @@ def test_get_asset_partition_counts(asset_aware_context):
 
     @op
     def materialize_two():
+        yield AssetMaterialization(c, partition="a")
         yield AssetMaterialization(c, partition="b")
         yield Output(None)
 
@@ -641,12 +642,18 @@ def test_get_asset_partition_counts(asset_aware_context):
         instance, event_log_storage = ctx
         my_job.execute_in_process(instance=instance)
 
-        partition_count_by_key = event_log_storage.get_asset_partition_counts([a, b, c])
+        materialization_count_by_key = event_log_storage.get_materialization_count_by_partition(
+            [a, b, c]
+        )
 
-        assert partition_count_by_key.get(a) == 0
-        assert partition_count_by_key.get(b) == 0
-        assert partition_count_by_key.get(c) == 1
+        assert materialization_count_by_key.get(a) == {}
+        assert materialization_count_by_key.get(b) == {}
+        assert materialization_count_by_key.get(c)["a"] == 1
+        assert len(materialization_count_by_key.get(c)) == 1
 
         job_two.execute_in_process(instance=instance)
-        partition_count_by_key = event_log_storage.get_asset_partition_counts([a, b, c])
-        assert partition_count_by_key.get(c) == 2
+        materialization_count_by_key = event_log_storage.get_materialization_count_by_partition(
+            [a, b, c]
+        )
+        assert materialization_count_by_key.get(c)["a"] == 2
+        assert materialization_count_by_key.get(c)["b"] == 1
