@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
-_invalid_composition_stack: List[Tuple[str, str]] = []
+_op_execution_context: List[Tuple[str, str]] = []
 
 
 class MappedInputPlaceholder:
@@ -95,9 +95,9 @@ def enter_composition(name: str, source: str) -> None:
     _composition_stack.append(InProgressCompositionContext(name, source))
 
 
-def enter_invalid_composition_context(name: str, source: str) -> None:
+def enter_op_execution_context(name: str, source: str) -> None:
     """For use when within the body of an op/non-composite solid, where it should not be possible to directly invoke another op."""
-    _invalid_composition_stack.append((name, source))
+    _op_execution_context.append((name, source))
 
 
 def exit_composition(
@@ -106,8 +106,8 @@ def exit_composition(
     return _composition_stack.pop().complete(output)
 
 
-def exit_invalid_composition_context() -> None:
-    _invalid_composition_stack.pop()
+def exit_op_execution_context() -> None:
+    _op_execution_context.pop()
 
 
 def current_context() -> "InProgressCompositionContext":
@@ -118,13 +118,13 @@ def is_in_composition() -> bool:
     return bool(_composition_stack)
 
 
-def is_in_invalid_invocation_context() -> bool:
-    return bool(_invalid_composition_stack)
+def is_in_op_execution_context() -> bool:
+    return bool(_op_execution_context)
 
 
-def current_invalid_invocation_node() -> Tuple[str, str]:
+def current_op_execution_context() -> Tuple[str, str]:
     """Get the name and source of the node which is preventing the invocation."""
-    return _invalid_composition_stack[-1]
+    return _op_execution_context[-1]
 
 
 def assert_in_composition(name: str, node_def: NodeDefinition) -> None:

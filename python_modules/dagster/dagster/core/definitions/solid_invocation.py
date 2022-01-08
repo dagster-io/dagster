@@ -177,9 +177,9 @@ def _type_check_output_wrapper(
     outputs.
     """
     from dagster.core.definitions.composition import (
-        is_in_invalid_invocation_context,
-        enter_invalid_composition_context,
-        exit_invalid_composition_context,
+        is_in_op_execution_context,
+        enter_op_execution_context,
+        exit_op_execution_context,
     )
 
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
@@ -192,9 +192,9 @@ def _type_check_output_wrapper(
 
             try:
                 while True:
-                    enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+                    enter_op_execution_context(solid_def.name, solid_def.node_type_str)
                     event = await async_gen.__anext__()
-                    exit_invalid_composition_context()
+                    exit_op_execution_context()
                     if isinstance(
                         event, (AssetMaterialization, Materialization, ExpectationResult)
                     ):
@@ -219,8 +219,8 @@ def _type_check_output_wrapper(
             except StopAsyncIteration:
                 pass
             finally:
-                if is_in_invalid_invocation_context():
-                    exit_invalid_composition_context()
+                if is_in_op_execution_context():
+                    exit_op_execution_context()
 
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
@@ -234,12 +234,12 @@ def _type_check_output_wrapper(
     elif inspect.iscoroutine(result):
 
         async def type_check_coroutine(coro):
-            enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+            enter_op_execution_context(solid_def.name, solid_def.node_type_str)
             try:
                 out = await coro
             finally:
-                if is_in_invalid_invocation_context():
-                    exit_invalid_composition_context()
+                if is_in_op_execution_context():
+                    exit_op_execution_context()
             return _type_check_function_output(solid_def, out, context)
 
         return type_check_coroutine(result)
@@ -251,9 +251,9 @@ def _type_check_output_wrapper(
             outputs_seen = set()
             try:
                 while True:
-                    enter_invalid_composition_context(solid_def.name, solid_def.node_type_str)
+                    enter_op_execution_context(solid_def.name, solid_def.node_type_str)
                     event = next(gen)
-                    exit_invalid_composition_context()
+                    exit_op_execution_context()
                     if isinstance(
                         event, (AssetMaterialization, Materialization, ExpectationResult)
                     ):
@@ -277,8 +277,8 @@ def _type_check_output_wrapper(
             except StopIteration:
                 pass
             finally:
-                if is_in_invalid_invocation_context():
-                    exit_invalid_composition_context()
+                if is_in_op_execution_context():
+                    exit_op_execution_context()
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(

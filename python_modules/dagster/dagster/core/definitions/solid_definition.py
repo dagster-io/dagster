@@ -140,39 +140,30 @@ class SolidDefinition(NodeDefinition):
     def __call__(self, *args, **kwargs) -> Any:
         from .composition import (
             is_in_composition,
-            enter_invalid_composition_context,
-            is_in_invalid_invocation_context,
-            current_invalid_invocation_node,
-            exit_invalid_composition_context,
+            enter_op_execution_context,
+            is_in_op_execution_context,
+            current_op_execution_context,
+            exit_op_execution_context,
         )
-        from .decorators.solid import DecoratedSolidFunction
-        from ..execution.context.invocation import UnboundSolidExecutionContext
 
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)
-        elif is_in_invalid_invocation_context():
-            name, source = current_invalid_invocation_node()
+        elif is_in_op_execution_context():
+            name, source = current_op_execution_context()
             raise DagsterInvalidInvocationError(
                 f"Attempted to invoke @{self.node_type_str} '{self.name}' within {source} '{name}', which is undefined behavior. In order to compose invocations, check out the graph API: https://docs.dagster.io/concepts/ops-jobs-graphs/nesting-graphs#nesting-graphs"
             )
         else:
-            enter_invalid_composition_context(self.name, f"@{self.node_type_str}")
+            enter_op_execution_context(self.name, f"@{self.node_type_str}")
             try:
                 result = self.invoke(*args, **kwargs)
             finally:
-                if is_in_invalid_invocation_context():
-                    exit_invalid_composition_context()
+                if is_in_op_execution_context():
+                    exit_op_execution_context()
 
             return result
 
     def invoke(self, *args, **kwargs) -> Any:
-        from .composition import (
-            is_in_composition,
-            enter_invalid_composition_context,
-            is_in_invalid_invocation_context,
-            current_invalid_invocation_node,
-            exit_invalid_composition_context,
-        )
         from .decorators.solid import DecoratedSolidFunction
         from ..execution.context.invocation import UnboundSolidExecutionContext
 

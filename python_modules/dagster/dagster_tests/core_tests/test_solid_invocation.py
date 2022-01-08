@@ -454,7 +454,7 @@ def test_multiple_outputs_iterator():
 
 def test_wrong_output():
     from dagster.core.definitions.composition import (  # pylint: disable=unused-import
-        current_invalid_invocation_node,
+        current_op_execution_context,
     )
 
     @solid
