@@ -29,10 +29,6 @@ class RepositoryPythonOrigin(
         check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
-    @property
-    def loadable_target_origin(self):
-        return self.code_pointer.get_loadable_target_origin(self.executable_path)
-
 
 @whitelist_for_serdes
 class PipelinePythonOrigin(namedtuple("_PipelinePythonOrigin", "pipeline_name repository_origin")):

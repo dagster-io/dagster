@@ -31,26 +31,10 @@ class LoadableTargetOrigin(
         )
 
     def get_cli_args(self):
-
-        # Need to ensure that everything that consumes this knows about
-        # --empty-working-directory and --use-python-package
         args = (
-            (
-                (
-                    [
-                        "-f",
-                        self.python_file,
-                    ]
-                    + (
-                        ["-d", self.working_directory]
-                        if self.working_directory
-                        else ["--empty-working-directory"]
-                    )
-                )
-                if self.python_file
-                else []
-            )
+            (["-f", self.python_file] if self.python_file else [])
             + (["-m", self.module_name] if self.module_name else [])
+            + (["-d", self.working_directory] if self.working_directory else [])
             + (["-a", self.attribute] if self.attribute else [])
             + (["--package-name", self.package_name] if self.package_name else [])
         )

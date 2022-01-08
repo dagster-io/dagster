@@ -1679,7 +1679,6 @@ records = instance.get_event_records(
                 schedule_state.job_name: {
                     "status": schedule_state.status.value,
                     "cron_schedule": schedule_state.job_specific_data.cron_schedule,
-                    "repository_pointer": schedule_state.origin.get_repo_cli_args(),
                     "schedule_origin_id": schedule_state.job_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }

@@ -47,6 +47,7 @@ def _get_target_config():
             non_scalar_schema={
                 "module_name": StringSource,
                 "attribute": Field(StringSource, is_required=False),
+                "working_directory": Field(StringSource, is_required=False),
                 "location_name": Field(StringSource, is_required=False),
                 "executable_path": Field(StringSource, is_required=False),
             },
@@ -56,6 +57,7 @@ def _get_target_config():
             non_scalar_schema={
                 "package_name": StringSource,
                 "attribute": Field(StringSource, is_required=False),
+                "working_directory": Field(StringSource, is_required=False),
                 "location_name": Field(StringSource, is_required=False),
                 "executable_path": Field(StringSource, is_required=False),
             },

@@ -67,19 +67,26 @@ def location_origins_from_config(workspace_config, yaml_path):
 def _location_origin_from_module_config(
     python_module_config, default_executable_path=sys.executable
 ):
-    module_name, attribute, location_name, executable_path = _get_module_config_data(
-        python_module_config, default_executable_path
+    (
+        module_name,
+        attribute,
+        working_directory,
+        location_name,
+        executable_path,
+    ) = _get_module_config_data(python_module_config, default_executable_path)
+    return location_origin_from_module_name(
+        module_name, attribute, working_directory, location_name, executable_path
     )
-    return location_origin_from_module_name(module_name, attribute, location_name, executable_path)
 
 
 def _get_module_config_data(python_module_config, default_executable_path):
     return (
-        (python_module_config, None, None, default_executable_path)
+        (python_module_config, None, None, None, default_executable_path)
         if isinstance(python_module_config, str)
         else (
             python_module_config["module_name"],
             python_module_config.get("attribute"),
+            python_module_config.get("working_directory"),
             python_module_config.get("location_name"),
             _get_executable_path(
                 python_module_config.get("executable_path"), default_executable_path
@@ -93,17 +100,18 @@ def _create_python_env_location_origin(loadable_target_origin, location_name):
 
 
 def location_origin_from_module_name(
-    module_name, attribute, location_name=None, executable_path=sys.executable
+    module_name, attribute, working_directory, location_name=None, executable_path=sys.executable
 ):
     check.str_param(module_name, "module_name")
     check.opt_str_param(attribute, "attribute")
+    check.opt_str_param(working_directory, "working_directory")
     check.opt_str_param(location_name, "location_name")
 
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=executable_path,
         python_file=None,
         module_name=module_name,
-        working_directory=None,
+        working_directory=working_directory,
         attribute=attribute,
         package_name=None,
     )
@@ -114,19 +122,26 @@ def location_origin_from_module_name(
 def _location_origin_from_package_config(
     python_package_config, default_executable_path=sys.executable
 ):
-    module_name, attribute, location_name, executable_path = _get_package_config_data(
-        python_package_config, default_executable_path
+    (
+        module_name,
+        attribute,
+        working_directory,
+        location_name,
+        executable_path,
+    ) = _get_package_config_data(python_package_config, default_executable_path)
+    return location_origin_from_package_name(
+        module_name, attribute, working_directory, location_name, executable_path
     )
-    return location_origin_from_package_name(module_name, attribute, location_name, executable_path)
 
 
 def _get_package_config_data(python_package_config, default_executable_path):
     return (
-        (python_package_config, None, None, default_executable_path)
+        (python_package_config, None, None, None, default_executable_path)
         if isinstance(python_package_config, str)
         else (
             python_package_config["package_name"],
             python_package_config.get("attribute"),
+            python_package_config.get("working_directory"),
             python_package_config.get("location_name"),
             _get_executable_path(
                 python_package_config.get("executable_path"), default_executable_path
@@ -136,17 +151,18 @@ def _get_package_config_data(python_package_config, default_executable_path):
 
 
 def location_origin_from_package_name(
-    package_name, attribute, location_name=None, executable_path=sys.executable
+    package_name, attribute, working_directory, location_name=None, executable_path=sys.executable
 ):
     check.str_param(package_name, "package_name")
     check.opt_str_param(attribute, "attribute")
+    check.opt_str_param(working_directory, "working_directory")
     check.opt_str_param(location_name, "location_name")
 
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=executable_path,
         python_file=None,
         module_name=None,
-        working_directory=None,
+        working_directory=working_directory,
         attribute=attribute,
         package_name=package_name,
     )
