@@ -134,16 +134,16 @@ If you use a Kubernetes distribution that supports the [TTL Controller](https://
 
 ```python file=/deploying/kubernetes/ttl_config_job.py startafter=start_ttl endbefore=end_ttl
 @job(
-  tags = {
-    'dagster-k8s/config': {
-      'job_spec_config': {
-        'ttl_seconds_after_finished': 7200
-      }
+    tags = {
+        'dagster-k8s/config': {
+            'job_spec_config': {
+                'ttl_seconds_after_finished': 7200
+            }
+        }
     }
-  }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
