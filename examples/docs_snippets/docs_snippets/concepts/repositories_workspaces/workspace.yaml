@@ -1,2 +1,2 @@
 load_from:
-  - python_file: hello_world_repository.py
+  - python_file: repository.py
