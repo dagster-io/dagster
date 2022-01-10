@@ -171,6 +171,9 @@ def test_typed_is_tuple():
     with pytest.raises(CheckError):
         check.is_tuple((Foo(), Foo()), of_shape=(Foo, Bar))
 
+    with pytest.raises(CheckError):
+        check.is_tuple((Foo(), Foo()), of_shape=(Foo, Foo), of_type=Foo)
+
 
 def test_typed_is_list():
     class Foo:
@@ -921,6 +924,9 @@ def test_tuple_param():
     with pytest.raises(CheckError):
         check.tuple_param((3, "a"), "something", of_shape=(str, int))
 
+    with pytest.raises(CheckError):
+        check.is_tuple((3, 4), of_shape=(int, int), of_type=int)
+
 
 def test_matrix_param():
     assert check.matrix_param([[1, 2], [2, 3]], "something")
@@ -981,6 +987,9 @@ def test_opt_tuple_param():
 
     with pytest.raises(CheckError):
         check.opt_tuple_param((3, "a"), "something", of_shape=(str, int))
+
+    with pytest.raises(CheckError):
+        check.is_tuple((3, 4), of_shape=(int, int), of_type=int)
 
 
 def test_opt_type_param():

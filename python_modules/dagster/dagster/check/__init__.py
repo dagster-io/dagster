@@ -339,11 +339,19 @@ def is_tuple(
     of_shape: Optional[Tuple[Type, ...]] = None,
     desc: str = None,
 ) -> Tuple:
+    """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
+    type-- `obj` may be of any length, but each element must match the `of_type` argmument.
+    `of_shape` defines a fixed-length tuple type-- each element must match the corresponding element
+    in `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
+    """
     if not isinstance(obj_tuple, tuple):
         raise _type_mismatch_error(obj_tuple, tuple, desc)
 
     if of_type is None and of_shape is None:
         return obj_tuple
+
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
 
     return _check_tuple_items(obj_tuple, of_type, of_shape)
 
@@ -373,11 +381,19 @@ def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> AbstractSe
 def tuple_param(
     obj: Any, param_name: str, of_type: Type = None, of_shape: Optional[Tuple[Type, ...]] = None
 ) -> Tuple:
+    """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
+    `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
+    defines a fixed-length tuple type-- each element must match the corresponding element in
+    `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
+    """
     if not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name)
 
     if of_type is None and of_shape is None:
         return obj
+
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
 
     return _check_tuple_items(obj, of_type, of_shape)
 
@@ -400,6 +416,12 @@ def opt_tuple_param(
     of_type: Type = None,
     of_shape: Optional[Tuple[Type, ...]] = None,
 ) -> Optional[Tuple]:
+    """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
+    is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
+    must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
+    must match the corresponding element in `of_shape`. Passing both `of_type` and `of_shape` will
+    raise an error.
+    """
     if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name)
 
@@ -408,6 +430,9 @@ def opt_tuple_param(
 
     if of_type is None and of_shape is None:
         return obj
+
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
 
     return _check_tuple_items(obj, of_type, of_shape)
 
