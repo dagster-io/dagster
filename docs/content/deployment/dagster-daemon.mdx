@@ -7,7 +7,7 @@ description: Several Dagster features require a long-running daemon process with
 
 Several Dagster features, like [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), and [run queueing](/deployment/run-coordinator#limiting-run-concurrency), require a long-running `dagster-daemon` process to be included with your deployment.
 
-To start the `dagster-daemon` process locally, launch the following command and keep the process running:
+To start the `dagster-daemon` process locally, launch the following command in the same folder as your [`workspace.yaml`](/concepts/repositories-workspaces/workspaces#workspace-yaml) file and keep the process running:
 
 ```shell
 $ dagster-daemon run
@@ -17,7 +17,7 @@ Check the [Deployment Guides](/deployment#hands-on-guides-to-deploying-dagster) 
 
 ## Available daemons
 
-The `dagster-daemon` process reads from your [Dagster instance](/deployment/dagster-instance) file to determine which daemons it should include. Each of those daemons then runs on a regular interval.
+The `dagster-daemon` process reads from your [Dagster instance](/deployment/dagster-instance) file to determine which daemons it should include. Each of those daemons then runs on a regular interval in its own threads. Daemons that need to load your workspace will periodically reload the workspace from your `workspace.yaml` file. If you change your `workspace.yaml` file, you do not need to reload the `dagster-daemon` process in order for those changes to be included.
 
 The following daemons are currently available:
 
