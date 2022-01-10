@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@dagit/core/*": ["../core/src/*"]
+      "@dagster-io/dagit-core/*": ["../core/src/*"]
     },
     "target": "es5",
     "lib": [

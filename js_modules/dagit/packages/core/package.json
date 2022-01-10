@@ -1,8 +1,8 @@
 {
-  "name": "@dagit/core",
+  "name": "@dagster-io/dagit-core",
   "version": "1.0.0",
   "private": true,
-  "description": "Dagit Core Components",
+  "description": "Dagit Application Core",
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.16",
