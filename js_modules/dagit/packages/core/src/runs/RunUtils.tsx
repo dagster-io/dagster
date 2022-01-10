@@ -55,7 +55,7 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchRunSuccess') {
-    const url = `${basePath}/instance/runs/${obj.run.runId}${options.querystring}`;
+    const url = `${basePath}/instance/runs/${obj.run.runId}${options.querystring || ''}`;
     if (options.openInTab) {
       window.open(url, '_blank');
     } else {
