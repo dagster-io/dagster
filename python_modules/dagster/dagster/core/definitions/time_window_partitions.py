@@ -197,6 +197,7 @@ def daily_partitioned_config(
             partitions_def=DailyPartitionsDefinition(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -279,6 +280,7 @@ def hourly_partitioned_config(
             partitions_def=HourlyPartitionsDefinition(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -364,6 +366,7 @@ def monthly_partitioned_config(
                 fmt=fmt,
                 end_offset=end_offset,
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -449,6 +452,7 @@ def weekly_partitioned_config(
                 fmt=fmt,
                 end_offset=end_offset,
             ),
+            decorated_fn=fn,
         )
 
     return inner
