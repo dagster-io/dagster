@@ -1132,6 +1132,7 @@ class SqlEventLogStorage(EventLogStorage):
         }
         for row in results:
             asset_key = AssetKey.from_db_string(row[0])
-            materialization_count_by_partition[asset_key][row[1]] = row[2]
+            if asset_key:
+                materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition

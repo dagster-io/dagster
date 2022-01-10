@@ -601,18 +601,17 @@ def test_asset_lazy_migration():
 
 @asset_test
 def test_get_materialization_count_by_partition(asset_aware_context):
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
 
-    # src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    d = AssetKey("c")
 
-    # d = AssetKey("c")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
 
-    # with copy_directory(src_dir) as test_dir:
-    #     with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-    #         storage = instance.event_log_storage
+            materialization_count_by_key = storage.get_materialization_count_by_partition([d])
 
-    #         materialization_count_by_key = storage.get_materialization_count_by_partition([d])
-
-    #         assert materialization_count_by_key.get(d) == 0
+            assert materialization_count_by_key.get(d) == {}
 
     a = AssetKey("no_materializations_asset")
     b = AssetKey("no_partitions_asset")
