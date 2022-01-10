@@ -4,6 +4,7 @@ from dagster import job, op
 def my_op():
     print("foo")
 
+# start_ttl
 @job(
   tags = {
     'dagster-k8s/config': {
@@ -15,3 +16,4 @@ def my_op():
 )
 def my_job():
   my_op()
+# end_ttl
