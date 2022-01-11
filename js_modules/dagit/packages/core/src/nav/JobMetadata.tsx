@@ -22,16 +22,14 @@ import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment';
 import {RunStatus} from '../types/globalTypes';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  JobMetadataFragment as Job,
-  JobMetadataFragment_schedules as Schedule,
-  JobMetadataFragment_sensors as Sensor,
-} from './types/JobMetadataFragment';
+import {JobMetadataFragment as Job} from './types/JobMetadataFragment';
 import {JobMetadataQuery} from './types/JobMetadataQuery';
 import {RunMetadataFragment} from './types/RunMetadataFragment';
 
@@ -74,19 +72,17 @@ export const JobMetadata: React.FC<Props> = (props) => {
 
   return (
     <>
-      {job ? <ScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
+      {job ? <JobScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
       {lastRun ? <LatestRunTag run={lastRun} /> : null}
       {runs.length ? <RelatedAssetsTag runs={runs} /> : null}
     </>
   );
 };
 
-export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
+const JobScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
   job,
   repoAddress,
 }) => {
-  const [open, setOpen] = React.useState(false);
-
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
@@ -101,8 +97,24 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
     return [];
   }, [job]);
 
-  const scheduleCount = matchingSchedules.length;
-  const sensorCount = matchingSensors.length;
+  return (
+    <ScheduleOrSensorTag
+      schedules={matchingSchedules}
+      sensors={matchingSensors}
+      repoAddress={repoAddress}
+    />
+  );
+};
+
+export const ScheduleOrSensorTag: React.FC<{
+  schedules: ScheduleSwitchFragment[];
+  sensors: SensorSwitchFragment[];
+  repoAddress: RepoAddress;
+}> = ({schedules, sensors, repoAddress}) => {
+  const [open, setOpen] = React.useState(false);
+
+  const scheduleCount = schedules.length;
+  const sensorCount = sensors.length;
 
   if (scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount)) {
     const buttonText =
@@ -137,11 +149,11 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
           onClose={() => setOpen(false)}
         >
           <Box padding={{bottom: 12}}>
-            {matchingSchedules.length ? (
+            {schedules.length ? (
               <>
-                {matchingSensors.length ? (
+                {sensors.length ? (
                   <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Schedules ({matchingSchedules.length})</Subheading>
+                    <Subheading>Schedules ({schedules.length})</Subheading>
                   </Box>
                 ) : null}
                 <Table>
@@ -153,7 +165,7 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
                     </tr>
                   </thead>
                   <tbody>
-                    {matchingSchedules.map((schedule) => (
+                    {schedules.map((schedule) => (
                       <tr key={schedule.name}>
                         <td>
                           <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
@@ -175,11 +187,11 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
                 </Table>
               </>
             ) : null}
-            {matchingSensors.length ? (
+            {sensors.length ? (
               <>
-                {matchingSchedules.length ? (
+                {schedules.length ? (
                   <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Sensors ({matchingSensors.length})</Subheading>
+                    <Subheading>Sensors ({sensors.length})</Subheading>
                   </Box>
                 ) : null}
                 <Table>
@@ -190,7 +202,7 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
                     </tr>
                   </thead>
                   <tbody>
-                    {matchingSensors.map((sensor) => (
+                    {sensors.map((sensor) => (
                       <tr key={sensor.name}>
                         <td>
                           <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
@@ -220,17 +232,17 @@ export const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}>
   }
 
   if (scheduleCount) {
-    return <MatchingSchedule schedule={matchingSchedules[0]} repoAddress={repoAddress} />;
+    return <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} />;
   }
 
   if (sensorCount) {
-    return <MatchingSensor sensor={matchingSensors[0]} repoAddress={repoAddress} />;
+    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} />;
   }
 
   return null;
 };
 
-const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}> = ({
+const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress: RepoAddress}> = ({
   schedule,
   repoAddress,
 }) => {
@@ -271,7 +283,7 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
   );
 };
 
-const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
+const MatchingSensor: React.FC<{sensor: SensorSwitchFragment; repoAddress: RepoAddress}> = ({
   sensor,
   repoAddress,
 }) => {
