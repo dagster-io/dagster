@@ -1,5 +1,16 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
@@ -10,6 +21,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
+from dagster.core.selector.subset_selector import LeafIgnoredNode
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import (
     IInputManagerDefinition,
@@ -1027,20 +1039,25 @@ def _create_run_config_schema(
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
+    ignored_solids_dict: Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]
     if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
         # JobDefinition isn't aware of full graph but it threads ignored_solids in via OpSelectionData
-        ignored_solids = pipeline_def.op_selection_data.ignored_solids
+        ignored_solids_dict = pipeline_def.op_selection_data.ignored_solids_dict
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")
 
-        ignored_solids = [
-            solid
+        ignored_solids_dict = {
+            solid: LeafIgnoredNode
             for solid in pipeline_def.parent_pipeline_def.graph.solids
             if not pipeline_def.has_solid_named(solid.name)
-        ]
+        }
     else:
-        ignored_solids = []
+        ignored_solids_dict = {}
+
+    # ignored_solids_dict = cast(
+    #     Dict[Union[Node, str], Union[Dict[Any, Any], Type[LeafIgnoredNode]]], ignored_solids_dict
+    # )
 
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
@@ -1050,7 +1067,7 @@ def _create_run_config_schema(
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,
-            ignored_solids=ignored_solids,
+            ignored_solids_dict=ignored_solids_dict,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
         )

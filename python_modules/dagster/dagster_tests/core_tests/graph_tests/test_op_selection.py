@@ -574,11 +574,22 @@ def test_nested_op_selection_with_config_mapping():
     assert result_sub_1.success
     assert result_sub_1.output_for_node("my_nested_graph.concat") == "hellohello"
 
-    # TODO config mapping - ignore unselected nodes
-    # result_sub_2 = my_graph.to_job().execute_in_process(
-    #     op_selection=["my_nested_graph.my_op"],
-    #     # fail bc "Received unexpected config entry "concat" at the root"
-    #     run_config={"ops": {"config": "hello"}},
-    # )
-    # assert result_sub_2.success
-    # assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"
+    # when config mapping generates values for unselected nodes, the excess values are ignored
+    result_sub_2 = my_graph.to_job().execute_in_process(
+        op_selection=["my_nested_graph.my_op"],
+        run_config={"ops": {"config": "hello"}},
+    )
+    assert result_sub_2.success
+    assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"
+
+    # sub sub graph
+    @graph
+    def my_super_graph():
+        my_graph()
+
+    result_sub_3 = my_super_graph.execute_in_process(
+        op_selection=["my_graph.my_nested_graph.my_op"],
+        run_config={"ops": {"my_graph": {"config": "hello"}}},
+    )
+    assert result_sub_3.success
+    assert result_sub_3.output_for_node("my_graph.my_nested_graph.my_op") == "hello"

@@ -37,7 +37,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.dependency_structure,
         pipeline_def.mode_definition,
         logger_defs=default_loggers(),
-        ignored_solids=[],
+        ignored_solids_dict={},
         required_resources=set(),
         is_using_graph_job_op_apis=pipeline_def.is_job,
     )
@@ -281,7 +281,7 @@ def test_solid_config_error():
     pipeline_def = define_test_solids_config_pipeline()
     solid_dict_type = define_solid_dictionary_cls(
         solids=pipeline_def.solids,
-        ignored_solids=None,
+        ignored_solids_dict=None,
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
