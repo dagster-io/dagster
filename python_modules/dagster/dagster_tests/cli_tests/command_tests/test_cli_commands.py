@@ -18,6 +18,7 @@ from dagster import (
     String,
     execute_pipeline,
     graph,
+    in_process_executor,
     job,
     lambda_solid,
     op,
@@ -85,10 +86,11 @@ qux_job = qux.to_job(
         partitions_def=StaticPartitionsDefinition(["abc"]), run_config_for_partition_fn=lambda _: {}
     ),
     tags={"foo": "bar"},
+    executor_def=in_process_executor,
 )
 
 
-@job
+@job(executor_def=in_process_executor)
 def quux_job():
     do_something_op()
 
