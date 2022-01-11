@@ -28,6 +28,7 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
+from dagster.core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server_watcher import create_grpc_watch_thread
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -63,7 +64,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
     into errors.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def instance(self) -> DagsterInstance:
         pass
 
@@ -75,18 +77,22 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def process_context(self) -> "IWorkspaceProcessContext":
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def version(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def permissions(self) -> Dict[str, bool]:
         pass
 
+    @abstractmethod
     def has_permission(self, permission: str) -> bool:
         pass
 
@@ -317,10 +323,12 @@ class IWorkspaceProcessContext(ABC):
                 or http connection.
         """
 
+    @abstractmethod
     def has_permission(self, permission: str) -> bool:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def version(self) -> str:
         pass
 
@@ -403,7 +411,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self.add_state_subscriber(self._location_state_subscriber)
 
         if grpc_server_registry:
-            self._grpc_server_registry = check.inst_param(
+            self._grpc_server_registry: GrpcServerRegistry = check.inst_param(
                 grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
             )
         else:
@@ -449,7 +457,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 self._start_watch_thread(origin)
             self._location_entry_dict[origin.location_name] = self._load_location(origin)
 
-    def _create_location_from_origin(self, origin):
+    def _create_location_from_origin(
+        self, origin: RepositoryLocationOrigin
+    ) -> Optional[RepositoryLocation]:
         if not self._grpc_server_registry.supports_origin(origin):
             return origin.create_location()
         else:
@@ -490,7 +500,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         return permissions[permission]
 
     @property
-    def version(self):
+    def version(self) -> str:
         return self._version
 
     def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
@@ -498,7 +508,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         for subscriber in self._state_subscribers:
             subscriber.handle_event(event)
 
-    def _start_watch_thread(self, origin):
+    def _start_watch_thread(self, origin: GrpcServerRepositoryLocationOrigin) -> None:
         location_name = origin.location_name
         check.invariant(location_name not in self._watch_thread_shutdown_events)
         client = origin.create_client()

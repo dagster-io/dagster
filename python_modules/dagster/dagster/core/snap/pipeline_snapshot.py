@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import Field, Permissive, Selector, Shape, check
 from dagster.config.config_type import (
@@ -258,13 +258,13 @@ class PipelineSnapshot(
 
 
 def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):
-    check.list_param(config_type_snap.enum_values, "enum_values", ConfigEnumValueSnap)
+    enum_values = check.list_param(config_type_snap.enum_values, "enum_values", ConfigEnumValueSnap)
 
     return Enum(
         name=config_type_snap.key,
         enum_values=[
             EnumValue(enum_value_snap.value, description=enum_value_snap.description)
-            for enum_value_snap in config_type_snap.enum_values
+            for enum_value_snap in enum_values
         ],
     )
 
@@ -273,16 +273,17 @@ def _construct_fields(
     config_type_snap: ConfigTypeSnap,
     config_snap_map: Dict[str, ConfigTypeSnap],
 ) -> Dict[str, Field]:
+    fields = check.not_none(config_type_snap.fields)
     return {
-        field.name: Field(
+        cast(str, field.name): Field(
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
             description=field.description,
             is_required=field.is_required,
-            default_value=deserialize_value(field.default_value_as_json_str)
+            default_value=deserialize_value(cast(str, field.default_value_as_json_str))
             if field.default_provided
             else FIELD_NO_DEFAULT_PROVIDED,
         )
-        for field in config_type_snap.fields
+        for field in fields
     }
 
 
