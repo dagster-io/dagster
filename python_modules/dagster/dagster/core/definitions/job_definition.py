@@ -195,11 +195,6 @@ class JobDefinition(PipelineDefinition):
 
         sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
-        # TODO: config mapping - ignore unselected nested nodes
-        ignored_solids = [
-            solid for solid in self.graph.solids if not sub_graph.has_solid_named(solid.name)
-        ]
-
         return JobDefinition(
             name=self.name,
             description=self.description,
@@ -215,7 +210,6 @@ class JobDefinition(PipelineDefinition):
                 resolved_op_selection=set(
                     resolved_op_selection_dict.keys()
                 ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                ignored_solids=ignored_solids,  # used by config resolution
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
         )

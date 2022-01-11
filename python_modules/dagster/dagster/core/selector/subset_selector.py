@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
-from dagster.core.definitions.dependency import DependencyStructure, Node
+from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
@@ -19,7 +19,6 @@ class OpSelectionData(
         [
             ("op_selection", List[str]),
             ("resolved_op_selection", AbstractSet[str]),
-            ("ignored_solids", List[Node]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -29,13 +28,11 @@ class OpSelectionData(
     Attributes:
         op_selection (List[str]): The queries of op selection.
         resolved_op_selection (AbstractSet[str]): The names of selected ops.
-        ignored_solids (List[Node]): The solids in the original full graph but outside the current
-            selection. This is used in run config resolution to handle unsatisfied inputs correctly.
         parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, op_selection, resolved_op_selection, ignored_solids, parent_job_def):
+    def __new__(cls, op_selection, resolved_op_selection, parent_job_def):
         from dagster.core.definitions.job_definition import JobDefinition
 
         return super(OpSelectionData, cls).__new__(
@@ -44,7 +41,6 @@ class OpSelectionData(
             resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
-            ignored_solids=check.list_param(ignored_solids, "ignored_solids", Node),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
