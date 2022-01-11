@@ -5,6 +5,7 @@ from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.graph_definition import GraphDefinition
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.run_config import define_solid_dictionary_cls
@@ -85,6 +86,11 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             pipeline_def.is_job,  # pylint: disable=protected-access
         )
 
+    if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
+        ignored_solids_dict = pipeline_def.op_selection_data.ignored_solids_dict
+    else:
+        ignored_solids_dict = None
+
     return {
         handle.to_string(): solid_config
         for handle, solid_config in _composite_descent(
@@ -92,11 +98,14 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             solids_config_dict=solids_config,
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=pipeline_def.is_job,  # pylint: disable=protected-access
+            ignored_solids_dict=ignored_solids_dict,
         )
     }
 
 
-def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis):
+def _composite_descent(
+    parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis, ignored_solids_dict
+):
     """
     The core implementation of composite_descent. This yields a stream of
     SolidConfigEntry. This is used by composite_descent to construct a
@@ -150,6 +159,12 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
 
         # If there is a config mapping, invoke it and get the descendent solids
         # config that way. Else just grabs the solids entry of the current config
+
+        # pass in info inner ignored nodes so the system knows to ignore then when config mapping
+        # generates values where the nodes are not selected
+        ignored_solids_dict = check.opt_dict_param(ignored_solids_dict, "ignored_solids_dict")
+        inner_ignored_solids_dict = ignored_solids_dict.get(solid.name)
+
         solids_dict = (
             _get_mapped_solids_dict(
                 solid,
@@ -158,13 +173,18 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
                 current_solid_config,
                 resource_defs,
                 is_using_graph_job_op_apis,
+                inner_ignored_solids_dict,
             )
             if graph_def.has_config_mapping
             else current_solid_config.get(node_key, {})
         )
 
         yield from _composite_descent(
-            current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+            current_stack,
+            solids_dict,
+            resource_defs,
+            is_using_graph_job_op_apis,
+            inner_ignored_solids_dict,
         )
 
 
@@ -200,7 +220,7 @@ def _apply_top_level_config_mapping(
 
         type_to_evaluate_against = define_solid_dictionary_cls(
             solids=graph_def.solids,
-            ignored_solids=None,
+            ignored_solids_dict=None,
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
@@ -223,6 +243,7 @@ def _get_mapped_solids_dict(
     current_solid_config,
     resource_defs,
     is_using_graph_job_op_apis,
+    ignored_solids_dict,
 ):
     # the spec of the config mapping function is that it takes the dictionary at:
     # solid_name:
@@ -257,7 +278,7 @@ def _get_mapped_solids_dict(
 
     type_to_evaluate_against = define_solid_dictionary_cls(
         solids=graph_def.solids,
-        ignored_solids=None,
+        ignored_solids_dict=ignored_solids_dict,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,

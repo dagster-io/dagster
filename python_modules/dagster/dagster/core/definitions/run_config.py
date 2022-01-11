@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, Type, Union, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -12,6 +12,7 @@ from dagster.core.definitions.executor_definition import (
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.selector.subset_selector import LeafIgnoredNode
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
@@ -68,7 +69,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Dict[str, LoggerDefinition]
-    ignored_solids: List[Node]
+    ignored_solids_dict: Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
 
@@ -145,7 +146,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         nodes_field = Field(
             define_solid_dictionary_cls(
                 solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
+                ignored_solids_dict=creation_data.ignored_solids_dict,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
@@ -363,6 +364,7 @@ def define_isolid_field(
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
+    inner_ignored_solids_dict: Optional[Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]],
 ) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
@@ -414,7 +416,7 @@ def define_isolid_field(
         nodes_field = Field(
             define_solid_dictionary_cls(
                 solids=graph_def.solids,
-                ignored_solids=None,
+                ignored_solids_dict=inner_ignored_solids_dict,
                 dependency_structure=graph_def.dependency_structure,
                 parent_handle=handle,
                 resource_defs=resource_defs,
@@ -433,14 +435,13 @@ def define_isolid_field(
 
 def define_solid_dictionary_cls(
     solids: List[Node],
-    ignored_solids: Optional[List[Node]],
+    ignored_solids_dict: Optional[Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
-
+    ignored_solids_dict = check.opt_dict_param(ignored_solids_dict, "ignored_solids_dict")
     fields = {}
     for solid in solids:
         solid_field = define_isolid_field(
@@ -450,12 +451,12 @@ def define_solid_dictionary_cls(
             resource_defs,
             ignored=False,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            inner_ignored_solids_dict=ignored_solids_dict.get(solid.name),
         )
 
         if solid_field:
             fields[solid.name] = solid_field
-
-    for solid in ignored_solids:
+    for solid in filter(lambda n: isinstance(n, Node), ignored_solids_dict.keys()):
         solid_field = define_isolid_field(
             solid,
             NodeHandle(solid.name, parent_handle),
@@ -463,6 +464,7 @@ def define_solid_dictionary_cls(
             resource_defs,
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            inner_ignored_solids_dict=None,
         )
         if solid_field:
             fields[solid.name] = solid_field

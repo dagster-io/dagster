@@ -1,7 +1,7 @@
 import re
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple, Type, Union
 
 from dagster.core.definitions.dependency import DependencyStructure, Node
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -13,13 +13,18 @@ if TYPE_CHECKING:
 MAX_NUM = sys.maxsize
 
 
+class LeafIgnoredNode:
+    """Marker for leaf node in ignored_solids_dict. It indicates the entire node is not selected and
+    will be ignored in config validations."""
+
+
 class OpSelectionData(
     NamedTuple(
         "_OpSelectionData",
         [
             ("op_selection", List[str]),
             ("resolved_op_selection", AbstractSet[str]),
-            ("ignored_solids", List[Node]),
+            ("ignored_solids_dict", Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -29,13 +34,40 @@ class OpSelectionData(
     Attributes:
         op_selection (List[str]): The queries of op selection.
         resolved_op_selection (AbstractSet[str]): The names of selected ops.
-        ignored_solids (List[Node]): The solids in the original full graph but outside the current
-            selection. This is used in run config resolution to handle unsatisfied inputs correctly.
+        ignored_solids_dict (Dict[Union[Node, str], Union[dict, Type[LeafIgnoredNode]]]): The dict
+            that represents nodes in the original full graph but outside the current selection, keyed
+            by either
+            * the Node object (when the node itself is unselected): the value will be LeafIgnoredNode,
+                meaning no nested selection inside.
+            * the name of the node (when anything inside the node is unselected): the value will be
+                a recursive dict for ignored nodes inside the node.
+
+            This is used in run config resolution to handle unsatisfied inputs and config mapping correctly.
+
+            For example:
+            ```
+            ignored_solids_dict = {
+                Node("my_op", ...): LeafIgnoredNode,
+                "my_graph": {
+                    Node("my_op", ...): LeafIgnoredNode
+                },
+            }
+            ```
+            "my_op" is the top-level op node in the job and will be ignored entirely in config validation,
+            "my_graph" is the top-level graph node where its child node `my_graph.my_op` will be ignored.
+            We won't ignore "my_graph" entirely bc some other selected nodes in that graph may be selected.
+
         parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, op_selection, resolved_op_selection, ignored_solids, parent_job_def):
+    def __new__(
+        cls,
+        op_selection,
+        resolved_op_selection,
+        ignored_solids_dict,
+        parent_job_def,
+    ):
         from dagster.core.definitions.job_definition import JobDefinition
 
         return super(OpSelectionData, cls).__new__(
@@ -44,7 +76,7 @@ class OpSelectionData(
             resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
-            ignored_solids=check.list_param(ignored_solids, "ignored_solids", Node),
+            ignored_solids_dict=check.dict_param(ignored_solids_dict, "ignored_solids_dict"),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
