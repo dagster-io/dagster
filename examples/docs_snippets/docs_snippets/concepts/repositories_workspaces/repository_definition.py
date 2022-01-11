@@ -1,19 +1,24 @@
-from dagster import RunRequest, ScheduleDefinition, job, repository, sensor
+from dagster import RunRequest, ScheduleDefinition, job, op, repository, sensor
+
+
+@op
+def hello():
+    pass
 
 
 @job
 def job1():
-    ...
+    hello()
 
 
 @job
 def job2():
-    ...
+    hello()
 
 
 @job
 def job3():
-    ...
+    hello()
 
 
 job1_schedule = ScheduleDefinition(job=job1, cron_schedule="0 0 * * *")

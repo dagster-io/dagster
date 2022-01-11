@@ -47,7 +47,8 @@
 - path: tutorial/repos.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
   url: http://127.0.0.1:3000/
-  vetted: false
+  width: 1536
+  height: 1152
 
 - path: tutorial/materializations.png
   vetted: false
@@ -70,7 +71,8 @@
 - path: concepts/repo-dagit.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
   url: http://127.0.0.1:3000/
-  vetted: false
+  width: 1536
+  height: 1152
 
 - path: concepts/config-dagit.png
   vetted: false
