@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -22,7 +23,7 @@ from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-from dagster.utils.log import default_system_logger
+from dagster.utils.log import configure_loggers
 
 
 @click.group(name="api")
@@ -406,7 +407,8 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    logger = default_system_logger("dagster-code-server", coerce_valid_log_level(log_level))
+    configure_loggers(log_level=coerce_valid_log_level(log_level))
+    logger = logging.getLogger("dagster.code_server")
 
     loadable_target_origin = None
     if any(
