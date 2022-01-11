@@ -1,9 +1,8 @@
 {
   "name": "@dagster-io/ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dagster UI Component Library",
-  "author": "Elementl",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "types": "src/index.ts",
   "scripts": {
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
@@ -20,6 +19,13 @@
     "@blueprintjs/table": "^3.8.33",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
+  },
+  "dependencies": {
+    "react-markdown": "6.0.3",
+    "remark": "13.x",
+    "remark-gfm": "1.0.0",
+    "remark-plain-text": "^0.2.0",
+    "styled-components": "^5.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
@@ -53,12 +59,5 @@
     "jest": "^27.4.7",
     "nearest-color": "^0.4.4",
     "typescript": "^4.5.4"
-  },
-  "dependencies": {
-    "react-markdown": "6.0.3",
-    "remark": "13.x",
-    "remark-gfm": "1.0.0",
-    "remark-plain-text": "^0.2.0",
-    "styled-components": "^5.3.3"
   }
 }
