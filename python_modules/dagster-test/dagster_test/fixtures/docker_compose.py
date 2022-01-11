@@ -105,7 +105,11 @@ def connect_container_to_network(container, network):
 
 
 def disconnect_container_from_network(container, network):
-    subprocess.check_call(["docker", "network", "disconnect", network, container])
+    # subprocess.run instead of subprocess.check_call so we don't fail when
+    # trying to disconnect a container from a network that it's not connected to
+    subprocess.run(  # pylint: disable=subprocess-run-check
+        ["docker", "network", "disconnect", network, container]
+    )
 
 
 def hostnames(network):
