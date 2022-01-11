@@ -18,12 +18,12 @@ from dagster.core.snap import (
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
 
 
-def run_filter(filters):
-    def _filter_fn(run):
+def build_run_filter(filters: Optional[PipelineRunsFilter]) -> Callable[[PipelineRun], bool]:
+    def _filter(run: PipelineRun) -> bool:
         if not filters:
             return True
 
@@ -49,7 +49,7 @@ def run_filter(filters):
 
         return True
 
-    return _filter_fn
+    return _filter
 
 
 class InMemoryRunStorage(RunStorage):
@@ -112,15 +112,34 @@ class InMemoryRunStorage(RunStorage):
             )
 
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: PipelineRunsFilter = None,
+        cursor: str = None,
+        limit: int = None,
+        bucket: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         check.opt_inst_param(filters, "filters", PipelineRunsFilter)
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
+        check.opt_inst_param(bucket, "bucket", (JobBucket, TagBucket))
 
-        filter_fn = run_filter(filters)
-        matching_runs = list(filter(filter_fn, list(self._runs.values())[::-1]))
-        return self._slice(matching_runs, cursor=cursor, limit=limit)
+        matching_runs = list(filter(build_run_filter(filters), list(self._runs.values())[::-1]))
+        if not bucket:
+            return self._slice(matching_runs, cursor=cursor, limit=limit)
+
+        results = []
+        bucket_counts: Dict[str, int] = defaultdict(int)
+        for run in matching_runs:
+            bucket_key = (
+                run.pipeline_name if isinstance(bucket, JobBucket) else run.tags.get(bucket.tag_key)
+            )
+            if not bucket_key or (
+                bucket.bucket_limit and bucket_counts[bucket_key] >= bucket.bucket_limit
+            ):
+                continue
+            bucket_counts[bucket_key] += 1
+            results.append(run)
+        return results
 
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         check.opt_inst_param(filters, "filters", PipelineRunsFilter)
@@ -131,7 +150,7 @@ class InMemoryRunStorage(RunStorage):
         self,
         items: List,
         cursor: Optional[str],
-        limit: Optional[int],
+        limit: Optional[int] = None,
         key_fn: Callable = lambda _: _.run_id,
     ):
         if cursor:
@@ -162,6 +181,7 @@ class InMemoryRunStorage(RunStorage):
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
+        bucket: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         check.opt_inst_param(filters, "filters", PipelineRunsFilter)
         check.opt_str_param(cursor, "cursor")

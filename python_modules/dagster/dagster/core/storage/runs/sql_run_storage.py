@@ -33,7 +33,7 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
 from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -232,6 +232,19 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
+    def _bucket_rank_column(self, bucket, order_by, ascending):
+        check.inst_param(bucket, "bucket", (JobBucket, TagBucket))
+        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
+        direction = db.asc if ascending else db.desc
+        bucket_column = (
+            RunsTable.c.pipeline_name if isinstance(bucket, JobBucket) else RunTagsTable.c.value
+        )
+        return (
+            db.func.rank()
+            .over(order_by=direction(sorting_column), partition_by=bucket_column)
+            .label("rank")
+        )
+
     def _runs_query(
         self,
         filters: PipelineRunsFilter = None,
@@ -240,8 +253,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         columns: List[str] = None,
         order_by: str = None,
         ascending: bool = False,
+        bucket: Optional[Union[JobBucket, TagBucket]] = None,
     ):
-
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
@@ -254,26 +267,63 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if columns is None:
             columns = ["run_body"]
 
-        base_query_columns = [getattr(RunsTable.c, column) for column in columns]
+        query_columns = [getattr(RunsTable.c, column) for column in columns]
 
-        # If we have a tags filter, then we need to select from a joined table
-        if filters.tags:
-            base_query = db.select(base_query_columns).select_from(
-                RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-            )
+        if bucket:
+            if limit or cursor:
+                check.failed("cannot specify bucket and limit/cursor at the same time")
+
+            # this is a bucketed query, so we need to calculate rank to apply bucket-based limits
+            # and ordering
+            query_columns.append(self._bucket_rank_column(bucket, order_by, ascending))
+
+            if isinstance(bucket, JobBucket):
+                base_query = (
+                    db.select(query_columns)
+                    .select_from(
+                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                        if filters.tags
+                        else RunsTable
+                    )
+                    .where(RunsTable.c.pipeline_name.in_(bucket.job_names))
+                )
+            else:
+                check.invariant(isinstance(bucket, TagBucket))
+                base_query = (
+                    db.select(query_columns)
+                    .select_from(
+                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                    )
+                    .where(RunTagsTable.c.key == bucket.tag_key)
+                    .where(RunTagsTable.c.value.in_(bucket.tag_values))
+                )
+
+            base_query = self._add_filters_to_query(base_query, filters)
+            subquery = base_query.subquery()
+            query = db.select(subquery).order_by(subquery.c.rank.asc())
+            if bucket.bucket_limit:
+                query = query.where(subquery.c.rank <= bucket.bucket_limit)
         else:
-            base_query = db.select(base_query_columns).select_from(RunsTable)
+            if filters.tags:
+                base_query = db.select(query_columns).select_from(
+                    RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                )
+            else:
+                base_query = db.select(query_columns).select_from(RunsTable)
 
-        query = self._add_filters_to_query(base_query, filters)
-        query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
+            query = self._add_filters_to_query(base_query, filters)
+            query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
 
         return query
 
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: PipelineRunsFilter = None,
+        cursor: str = None,
+        limit: int = None,
+        bucket: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
-        query = self._runs_query(filters, cursor, limit)
-
+        query = self._runs_query(filters, cursor, limit, bucket=bucket)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
@@ -311,11 +361,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
+        bucket: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
-        limit = check.opt_int_param(limit, "limit")
+        check.opt_int_param(limit, "limit")
 
         columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
 
@@ -329,6 +380,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             order_by=order_by,
             ascending=ascending,
             cursor=cursor,
+            bucket=bucket,
         )
 
         rows = self.fetchall(query)
