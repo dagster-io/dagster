@@ -314,6 +314,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None, bad_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
+        self._launched_run_ids = set()
         self._bad_run_ids = bad_run_ids
 
         super().__init__()
@@ -327,10 +328,14 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception(f"Bad run {run.run_id}")
 
         self._queue.append(run)
+        self._launched_run_ids.add(run.run_id)
         return run
 
     def queue(self):
         return self._queue
+
+    def did_run_launch(self, run_id):
+        return run_id in self._launched_run_ids
 
     @classmethod
     def config_type(cls):
