@@ -3,7 +3,12 @@ from typing import Callable, List, Optional
 
 import pendulum
 import pytest
-from dagster import DynamicPartitionsDefinition, StaticPartitionsDefinition
+from dagster import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster.check import CheckError
 from dagster.core.definitions.partition import (
     Partition,
@@ -698,3 +703,20 @@ def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Li
     ]
 
     assert partitions.get_partition_keys() == partition_fn(None)
+
+
+def test_partitions_def_to_string():
+    hourly = HourlyPartitionsDefinition(
+        "Tue Jan 11 1:30PM", "America/Los_Angeles", "%a %b %d %I:%M%p"
+    )
+    assert hourly.to_string() == "Hourly starting Thu Jan 11 01:30PM America/Los_Angeles."
+
+    daily = DailyPartitionsDefinition(start_date="2020-01-01", end_offset=1)
+    assert daily.to_string() == "Daily starting 2020-01-01 UTC. End offsetted by 1 partition."
+
+    static = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    assert static.to_string() == "Partitioned by keys 'foo', 'bar', 'baz', 'qux'."
+
+    dynamic_fn = lambda _current_time: ["a_partition"]
+    dynamic = DynamicPartitionsDefinition(dynamic_fn)
+    assert dynamic.to_string() == "Partitioned by key 'a_partition'."
