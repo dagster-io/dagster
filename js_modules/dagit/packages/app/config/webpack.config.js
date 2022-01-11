@@ -313,7 +313,7 @@ module.exports = function (webpackEnv) {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
         'react-native': 'react-native-web',
-        '@dagit/core': paths.dagitCore,
+        '@dagster-io/dagit-core': paths.dagitCore,
         // Allows for better profiling with ReactDevTools
         ...(isEnvProductionProfile && {
           'react-dom$': 'react-dom/profiling',
@@ -379,7 +379,7 @@ module.exports = function (webpackEnv) {
             // The preset includes JSX, Flow, TypeScript, and some ESnext features.
             {
               test: /\.(js|mjs|jsx|ts|tsx)$/,
-              // DAGSTER: Include `src` and `@dagit/core`.
+              // DAGSTER: Include `src` and `@dagster-io/dagit-core`.
               include: [paths.appSrc, paths.dagitCore],
               loader: require.resolve('babel-loader'),
               options: {

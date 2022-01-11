@@ -144,6 +144,4 @@ width={1680}
 height={946}
 />
 
-When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal`—in any order—and that `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed.
-
-In more sophisticated execution environments, `find_highest_calorie_cereal` and `find_highest_protein_cereal` could execute not just in any order, but at the same time, since they don't depend on each other's outputs—but both would still have to execute after `download_cereals` (because they depend on its output) and before `display_results` (because `display_results` depends on both of their outputs).
+When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal` executing in parallel, since they don't depend on each other's outputs. Finally, `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed (because `display_results` depends on both of their outputs).

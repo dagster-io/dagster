@@ -1,8 +1,8 @@
 {
-  "name": "@dagit/app",
+  "name": "@dagster-io/dagit-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Dagit Application Root",
+  "description": "Dagit Application Shell",
   "license": "MIT",
   "dependencies": {
     "@blueprintjs/core": "^3.45.0",
@@ -10,7 +10,7 @@
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
     "@blueprintjs/table": "^3.8.33",
-    "@dagit/core": "1.0.0",
+    "@dagster-io/dagit-core": "1.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.1.2"

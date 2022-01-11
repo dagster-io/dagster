@@ -4165,9 +4165,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@dagit/app@workspace:packages/app":
+"@dagster-io/dagit-app@workspace:packages/app":
   version: 0.0.0-use.local
-  resolution: "@dagit/app@workspace:packages/app"
+  resolution: "@dagster-io/dagit-app@workspace:packages/app"
   dependencies:
     "@babel/core": 7.12.3
     "@blueprintjs/core": ^3.45.0
@@ -4175,7 +4175,7 @@ __metadata:
     "@blueprintjs/popover2": 0.10.1
     "@blueprintjs/select": ^3.16.4
     "@blueprintjs/table": ^3.8.33
-    "@dagit/core": 1.0.0
+    "@dagster-io/dagit-core": 1.0.0
     "@pmmmwh/react-refresh-webpack-plugin": 0.4.3
     "@svgr/webpack": 5.5.0
     "@testing-library/dom": ^7.30.3
@@ -4253,9 +4253,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagit/core@1.0.0, @dagit/core@workspace:packages/core":
+"@dagster-io/dagit-core@1.0.0, @dagster-io/dagit-core@workspace:packages/core":
   version: 0.0.0-use.local
-  resolution: "@dagit/core@workspace:packages/core"
+  resolution: "@dagster-io/dagit-core@workspace:packages/core"
   dependencies:
     "@apollo/client": ^3.3.16
     "@babel/cli": ^7.13.15
@@ -4380,6 +4380,12 @@ __metadata:
     react: ^17.0.2
     react-dom: ^17.0.2
     react-router-dom: ^5.1.2
+  languageName: unknown
+  linkType: soft
+
+"@dagster-io/dagit-workspace@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@dagster-io/dagit-workspace@workspace:."
   languageName: unknown
   linkType: soft
 
@@ -12111,12 +12117,6 @@ __metadata:
   checksum: 49ca0639c7b822db670de93d4fbce44b4aa072cd848c76292c9978a8cd0fff1028763020ff4b0f147bd77bfe29b4c7f82e0f71ade76b2a06100543cdfd948d19
   languageName: node
   linkType: hard
-
-"dagit@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "dagit@workspace:."
-  languageName: unknown
-  linkType: soft
 
 "dagre@npm:^0.8.2":
   version: 0.8.5

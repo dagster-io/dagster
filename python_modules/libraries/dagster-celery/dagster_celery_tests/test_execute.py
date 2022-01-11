@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import os
-import tempfile
 from threading import Thread
 from unittest import mock
 
@@ -17,10 +16,8 @@ from dagster import (
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEventType
-from dagster.core.test_utils import instance_for_test
 from dagster.utils import send_interrupt
 from dagster_celery_tests.repo import COMPOSITE_DEPTH
-from dagster_celery_tests.utils import start_celery_worker
 
 from .utils import (  # isort:skip
     execute_eagerly_on_celery,
@@ -111,85 +108,80 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
         assert result.result_for_solid("should_never_execute").skipped
 
 
-def test_terminate_pipeline_on_celery(rabbitmq):
-    with start_celery_worker():
-        with tempfile.TemporaryDirectory() as tempdir:
-            pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_pipeline")
+def test_terminate_pipeline_on_celery(dagster_celery_worker, instance, tempdir):
+    pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_pipeline")
 
-            with instance_for_test(temp_dir=tempdir) as instance:
-                run_config = {
-                    "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
-                    "execution": {"celery": {}},
-                }
+    run_config = {
+        "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
+        "execution": {"celery": {}},
+    }
 
-                results = []
-                result_types = []
-                interrupt_thread = None
+    results = []
+    result_types = []
+    interrupt_thread = None
 
-                for result in execute_pipeline_iterator(
-                    pipeline=pipeline_def,
-                    run_config=run_config,
-                    instance=instance,
-                ):
-                    # Interrupt once the first step starts
-                    if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
-                        interrupt_thread = Thread(target=send_interrupt, args=())
-                        interrupt_thread.start()
+    for result in execute_pipeline_iterator(
+        pipeline=pipeline_def,
+        run_config=run_config,
+        instance=instance,
+    ):
+        # Interrupt once the first step starts
+        if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+            interrupt_thread = Thread(target=send_interrupt, args=())
+            interrupt_thread.start()
 
-                    results.append(result)
-                    result_types.append(result.event_type)
+        results.append(result)
+        result_types.append(result.event_type)
 
-                interrupt_thread.join()
+    interrupt_thread.join()
 
-                # At least one step succeeded (the one that was running when the interrupt fired)
-                assert DagsterEventType.STEP_SUCCESS in result_types
+    # At least one step succeeded (the one that was running when the interrupt fired)
+    assert DagsterEventType.STEP_SUCCESS in result_types
 
-                # At least one step was revoked (and there were no step failure events)
-                revoke_steps = [
-                    result
-                    for result in results
-                    if result.event_type == DagsterEventType.ENGINE_EVENT
-                    and "was revoked." in result.message
-                ]
+    # At least one step was revoked (and there were no step failure events)
+    revoke_steps = [
+        result
+        for result in results
+        if result.event_type == DagsterEventType.ENGINE_EVENT and "was revoked." in result.message
+    ]
 
-                assert len(revoke_steps) > 0
+    assert len(revoke_steps) > 0
 
-            # The overall pipeline failed
-            assert DagsterEventType.PIPELINE_FAILURE in result_types
+    # The overall pipeline failed
+    assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
-def test_execute_eagerly_on_celery():
-    with instance_for_test() as instance:
-        with execute_eagerly_on_celery("test_pipeline", instance=instance) as result:
-            assert result.result_for_solid("simple").output_value() == 1
-            assert len(result.step_event_list) == 4
-            assert len(events_of_type(result, "STEP_START")) == 1
-            assert len(events_of_type(result, "STEP_OUTPUT")) == 1
-            assert len(events_of_type(result, "HANDLED_OUTPUT")) == 1
-            assert len(events_of_type(result, "STEP_SUCCESS")) == 1
+def test_execute_eagerly_on_celery(instance):
+    with execute_eagerly_on_celery("test_pipeline", instance=instance) as result:
+        assert result.result_for_solid("simple").output_value() == 1
+        assert len(result.step_event_list) == 4
+        assert len(events_of_type(result, "STEP_START")) == 1
+        assert len(events_of_type(result, "STEP_OUTPUT")) == 1
+        assert len(events_of_type(result, "HANDLED_OUTPUT")) == 1
+        assert len(events_of_type(result, "STEP_SUCCESS")) == 1
 
-            events = instance.all_logs(result.run_id)
-            start_markers = {}
-            end_markers = {}
-            for event in events:
-                dagster_event = event.dagster_event
-                if dagster_event and dagster_event.is_engine_event:
-                    if dagster_event.engine_event_data.marker_start:
-                        key = "{step}.{marker}".format(
-                            step=event.step_key, marker=dagster_event.engine_event_data.marker_start
-                        )
-                        start_markers[key] = event.timestamp
-                    if dagster_event.engine_event_data.marker_end:
-                        key = "{step}.{marker}".format(
-                            step=event.step_key, marker=dagster_event.engine_event_data.marker_end
-                        )
-                        end_markers[key] = event.timestamp
+        events = instance.all_logs(result.run_id)
+        start_markers = {}
+        end_markers = {}
+        for event in events:
+            dagster_event = event.dagster_event
+            if dagster_event and dagster_event.is_engine_event:
+                if dagster_event.engine_event_data.marker_start:
+                    key = "{step}.{marker}".format(
+                        step=event.step_key, marker=dagster_event.engine_event_data.marker_start
+                    )
+                    start_markers[key] = event.timestamp
+                if dagster_event.engine_event_data.marker_end:
+                    key = "{step}.{marker}".format(
+                        step=event.step_key, marker=dagster_event.engine_event_data.marker_end
+                    )
+                    end_markers[key] = event.timestamp
 
-            seen = set()
-            assert set(start_markers.keys()) == set(end_markers.keys())
-            for key in end_markers:
-                assert end_markers[key] - start_markers[key] > 0
-                seen.add(key)
+        seen = set()
+        assert set(start_markers.keys()) == set(end_markers.keys())
+        for key in end_markers:
+            assert end_markers[key] - start_markers[key] > 0
+            seen.add(key)
 
 
 def test_execute_eagerly_serial_on_celery():
@@ -286,38 +278,35 @@ def test_execute_eagerly_retries_pipeline_on_celery():
         assert len(events_of_type(result, "STEP_FAILURE")) == 1
 
 
-def test_engine_error():
+def test_engine_error(instance, tempdir):
     with mock.patch(
         "dagster.core.execution.context.system.PlanData.raise_on_error",
         return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):
-            with tempfile.TemporaryDirectory() as tempdir:
-                with instance_for_test(temp_dir=tempdir) as instance:
-                    storage = os.path.join(tempdir, "flakey_storage")
-                    execute_pipeline(
-                        ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
-                        run_config={
-                            "resources": {"io_manager": {"config": {"base_dir": storage}}},
-                            "execution": {
-                                "celery": {"config": {"config_source": {"task_always_eager": True}}}
-                            },
-                            "solids": {"destroy": {"config": storage}},
-                        },
-                        instance=instance,
-                    )
+            storage = os.path.join(tempdir, "flakey_storage")
+            execute_pipeline(
+                ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
+                run_config={
+                    "resources": {"io_manager": {"config": {"base_dir": storage}}},
+                    "execution": {
+                        "celery": {"config": {"config_source": {"task_always_eager": True}}}
+                    },
+                    "solids": {"destroy": {"config": storage}},
+                },
+                instance=instance,
+            )
 
 
-def test_memoization_celery_executor(dagster_celery_worker):
-    with instance_for_test() as instance:
-        with execute_pipeline_on_celery(
-            "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
-        ) as result:
-            assert result.success
-            assert result.output_for_solid("bar_solid") == "bar"
+def test_memoization_celery_executor(instance, dagster_celery_worker):
+    with execute_pipeline_on_celery(
+        "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
+    ) as result:
+        assert result.success
+        assert result.output_for_solid("bar_solid") == "bar"
 
-        with execute_pipeline_on_celery(
-            "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
-        ) as result:
-            assert result.success
-            assert len(result.step_event_list) == 0
+    with execute_pipeline_on_celery(
+        "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
+    ) as result:
+        assert result.success
+        assert len(result.step_event_list) == 0

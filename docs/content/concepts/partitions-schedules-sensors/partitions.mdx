@@ -127,19 +127,16 @@ The <PyObject object="build_schedule_from_partitioned_job"/> function allows you
 
 ### Testing Partitioned Config
 
-You see what config a <PyObject object="PartitionedConfig" /> will generate for a partition by invoking its <PyObject object="PartitionedConfig" method="get_run_config" /> method.
+Invoking a <PyObject object="PartitionedConfig" /> object will directly invoke the decorated function.
 
 If you want to check whether the generated run config is valid for the config of job, you can use the <PyObject object="validate_run_config" /> function.
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start endbefore=end
-from dagster import validate_run_config
+from dagster import validate_run_config, daily_partitioned_config
+from datetime import datetime
 
 
-def test_my_partitioned_config():
-    first_partition_key = my_partitioned_config.get_partition_keys()[0]
-    run_config = my_partitioned_config.get_run_config(first_partition_key)
-    assert run_config == {"ops": {"process_data_for_date": {"config": {"date": "2020-01-01"}}}}
-    assert validate_run_config(do_stuff_partitioned, run_config)
+@daily_partitioned_config(start_date=datetime(2020, 1, 1))
 ```
 
 ### Testing Partitioned Jobs
