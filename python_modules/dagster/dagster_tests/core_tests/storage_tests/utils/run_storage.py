@@ -126,6 +126,13 @@ class TestRunStorage:
         storage.wipe()
         assert list(storage.get_runs()) == []
 
+    def test_storage_telemetry(self, storage):
+        assert storage
+        watermark = storage.get_telemetry_watermark()
+        assert isinstance(watermark, str)
+        watermark_again = storage.get_telemetry_watermark()
+        assert watermark == watermark_again
+
     def test_fetch_by_pipeline(self, storage):
         assert storage
         one = make_new_run_id()

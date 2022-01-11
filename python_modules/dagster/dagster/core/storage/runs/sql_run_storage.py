@@ -1,4 +1,5 @@
 import logging
+import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
@@ -43,6 +44,7 @@ from .schema import (
     RunsTable,
     SecondaryIndexMigrationTable,
     SnapshotsTable,
+    TelemetryTable,
 )
 
 
@@ -666,6 +668,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
             conn.execute(snapshot_insert)
             return snapshot_id
+
+    def get_telemetry_watermark(self) -> str:
+        query = db.select([TelemetryTable.c.telemetry_id])
+        row = self.fetchone(query)
+        if not row:
+            telemetry_id = str(uuid.uuid4())
+            with self.connect() as conn:
+                conn.execute(TelemetryTable.insert().values(telemetry_id=telemetry_id))
+            return telemetry_id
+        else:
+            return row[0]
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
         query = db.select([SnapshotsTable.c.snapshot_id]).where(
