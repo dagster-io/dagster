@@ -161,7 +161,7 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
         ...
 
-    def to_string(self) -> str:
+    def __str__(self) -> str:
         partitioned_keys = self.get_partition_keys()
         joined_keys = ', '.join([f"'{key}'" for key in partitioned_keys])
         return f"Partitioned by {'key' if len(partitioned_keys) == 1 else 'keys'} {joined_keys}."

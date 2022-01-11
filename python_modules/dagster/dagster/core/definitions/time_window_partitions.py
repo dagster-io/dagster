@@ -101,7 +101,7 @@ class TimeWindowPartitionsDefinition(
 
         return partitions
 
-    def to_string(self) -> str:
+    def __str__(self) -> str:
         partition_def_str = f"{self.schedule_type.value.capitalize()} starting {self.start.strftime(self.fmt)} {self.timezone}."
         if self.end_offset != 0:
             partition_def_str += f" End offsetted by {self.end_offset} {'partition' if self.end_offset == 1 else 'partitions'}."
