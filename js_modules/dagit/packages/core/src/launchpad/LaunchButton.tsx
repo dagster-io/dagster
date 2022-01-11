@@ -103,10 +103,12 @@ export const LaunchButtonDropdown = ({
   runCount,
 }: LaunchButtonDropdownProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const allOptionsDisabled = options.every((d) => d.disabled);
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
     runCount,
-    disabled: disabled || options.every((d) => d.disabled),
+    disabled: disabled || allOptionsDisabled,
   });
+  const popoverDisabled = status === LaunchButtonStatus.Disabled;
 
   return (
     <ShortcutHandler
@@ -127,7 +129,7 @@ export const LaunchButtonDropdown = ({
       <Popover
         isOpen={isOpen}
         onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-        disabled={status === LaunchButtonStatus.Disabled}
+        disabled={popoverDisabled}
         position="bottom-right"
         content={
           <MenuWIP>
@@ -158,6 +160,7 @@ export const LaunchButtonDropdown = ({
           icon={<IconWIP name="arrow_drop_down" />}
           intent="primary"
           joined="left"
+          disabled={popoverDisabled}
         />
       </Popover>
     </ShortcutHandler>
