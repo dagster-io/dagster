@@ -206,7 +206,7 @@ def python_target_click_options(is_using_job_op_graph_apis: bool = False):
         ),
         click.option(
             "--package-name",
-            help=f"Specify installed Python package where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            help=f"Specify Python package where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
         ),
         click.option(
             "--module-name",
