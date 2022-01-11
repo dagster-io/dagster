@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from dagster import check
 from dagster.core.definitions.composition import MappedInputPlaceholder
@@ -24,7 +24,7 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
@@ -193,7 +193,7 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = _get_graph_definition(self.graph, resolved_op_selection_dict)
+        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         # TODO: config mapping - ignore unselected nested nodes
         ignored_solids = [
@@ -300,17 +300,17 @@ def _dep_key_of(node: Node) -> NodeInvocation:
     )
 
 
-def _get_graph_definition(
+def _get_subselected_graph_definition(
     graph: GraphDefinition,
     resolved_op_selection_dict: Dict,
     parent_handle: Optional[NodeHandle] = None,
-):
+) -> SubselectedGraphDefinition:
     deps: Dict[
         Union[str, NodeInvocation],
         Dict[str, IDependencyDefinition],
     ] = {}
 
-    selected_nodes: List[NodeDefinition] = []
+    selected_nodes: List[Tuple[str, NodeDefinition]] = []
 
     for node in graph.solids_in_topological_order:
         node_handle = NodeHandle(node.name, parent=parent_handle)
@@ -320,7 +320,7 @@ def _get_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
-            definition = _get_graph_definition(
+            definition = _get_subselected_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,
@@ -328,7 +328,7 @@ def _get_graph_definition(
         # use definition if the node as a whole is selected. this includes selecting the entire graph
         else:
             definition = node.definition
-        selected_nodes.append(definition)
+        selected_nodes.append((node.name, definition))
 
         # build dependencies for the node. we do it for both cases because nested graphs can have
         # inputs and outputs too
@@ -374,27 +374,25 @@ def _get_graph_definition(
     new_input_mappings = list(
         filter(
             lambda input_mapping: input_mapping.maps_to.solid_name
-            in [node.name for node in selected_nodes],
+            in [name for name, _ in selected_nodes],
             graph._input_mappings,  # pylint: disable=protected-access
         )
     )
     new_output_mappings = list(
         filter(
             lambda output_mapping: output_mapping.maps_from.solid_name
-            in [node.name for node in selected_nodes],
+            in [name for name, _ in selected_nodes],
             graph._output_mappings,  # pylint: disable=protected-access
         )
     )
 
     try:
-        return GraphDefinition(
-            name=graph.name,
+        return SubselectedGraphDefinition(
+            parent_graph_def=graph,
             dependencies=deps,
-            node_defs=selected_nodes,
+            node_defs=[definition for _, definition in selected_nodes],
             input_mappings=new_input_mappings,
             output_mappings=new_output_mappings,
-            config=graph.config_mapping,
-            description=None,
         )
     except DagsterInvalidDefinitionError as exc:
         # This handles the case when you construct a subset such that an unsatisfied

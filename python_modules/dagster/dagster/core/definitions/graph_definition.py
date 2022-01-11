@@ -624,6 +624,29 @@ class GraphDefinition(NodeDefinition):
         )
 
 
+class SubselectedGraphDefinition(GraphDefinition):
+    def __init__(
+        self,
+        parent_graph_def: GraphDefinition,
+        node_defs: Optional[List[NodeDefinition]],
+        dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
+        input_mappings: Optional[List[InputMapping]],
+        output_mappings: Optional[List[OutputMapping]],
+    ):
+        self._parent_graph_def = check.inst_param(
+            parent_graph_def, "parent_graph_def", GraphDefinition
+        )
+        super(SubselectedGraphDefinition, self).__init__(
+            name=parent_graph_def.name,  # should we create special name for subselected graphs
+            node_defs=node_defs,
+            dependencies=dependencies,
+            input_mappings=input_mappings,
+            output_mappings=output_mappings,
+            config=parent_graph_def.config_mapping,
+            tags=parent_graph_def.tags,
+        )
+
+
 def _validate_in_mappings(
     input_mappings: List[InputMapping],
     solid_dict: Dict[str, Node],
@@ -728,7 +751,10 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type and class_name != "GraphDefinition":
+        if target_type != mapping.definition.dagster_type and class_name not in (
+            "GraphDefinition",
+            "SubselectedGraphDefinition",  # TODO better
+        ):
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
                 "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "

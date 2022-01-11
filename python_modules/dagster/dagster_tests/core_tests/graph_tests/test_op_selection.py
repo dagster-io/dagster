@@ -429,7 +429,7 @@ def test_nested_graph_selection_unsatisfied_subgraph_inputs():
 def test_nested_graph_selection_input_mapping():
     @graph
     def _subgraph(x):
-        return add_one(adder(return_one(), x))
+        return add_one(adder.alias("aliased_adder")(return_one(), x))
 
     @job
     def _super():
@@ -437,27 +437,27 @@ def test_nested_graph_selection_input_mapping():
 
     # graph subset has input mapping
     result_sub_1 = _super.execute_in_process(
-        op_selection=["return_two", "_subgraph.return_one", "_subgraph.adder"],
+        op_selection=["return_two", "_subgraph.return_one", "_subgraph.aliased_adder"],
     )
     assert result_sub_1.success
     assert set(_success_step_keys(result_sub_1)) == {
         "return_two",
         "_subgraph.return_one",
-        "_subgraph.adder",
+        "_subgraph.aliased_adder",
     }
-    assert result_sub_1.output_for_node("_subgraph.adder") == 3
+    assert result_sub_1.output_for_node("_subgraph.aliased_adder") == 3
 
     # graph subset doesn't have input mapping
     result_sub_2 = _super.execute_in_process(
-        op_selection=["_subgraph.return_one", "_subgraph.adder"],
+        op_selection=["_subgraph.return_one", "_subgraph.aliased_adder"],
         run_config={"ops": {"_subgraph": {"inputs": {"x": {"value": 100}}}}},
     )
     assert result_sub_2.success
     assert set(_success_step_keys(result_sub_2)) == {
         "_subgraph.return_one",
-        "_subgraph.adder",
+        "_subgraph.aliased_adder",
     }
-    assert result_sub_2.output_for_node("_subgraph.adder") == 101
+    assert result_sub_2.output_for_node("_subgraph.aliased_adder") == 101
 
 
 def test_sub_sub_graph_selection():
