@@ -209,3 +209,49 @@ def test_user_code_error_boundary_python_capture(use_handler):
 
     for k, v in test_extra.items():
         assert getattr(captured_record, k) == v
+
+
+def test_log_handler_emit_by_handlers_level():
+    class TestHandler(logging.Handler):
+        def __init__(self, level=logging.NOTSET):
+            self.captured = []
+            super().__init__(level)
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = TestHandler(level=logging.ERROR)
+    test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
+
+    with user_code_error_boundary(
+        DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                logging_metadata=DagsterLoggingMetadata(
+                    run_id="123456",
+                    pipeline_name="pipeline",
+                    step_key="some_step",
+                ),
+                loggers=[],
+                handlers=[capture_handler],
+            ),
+            managed_loggers=[logging.getLogger()],
+        ),
+    ):
+        python_log = logging.getLogger()
+        python_log.setLevel(logging.INFO)
+
+        python_log.debug("debug")
+        python_log.critical("critical msg", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    assert captured_record.name == "root"
+    assert captured_record.msg == "pipeline - 123456 - some_step - critical msg"
+    assert captured_record.levelno == logging.CRITICAL
+    assert captured_record.dagster_meta["orig_message"] == "critical msg"
+
+    for k, v in test_extra.items():
+        assert getattr(captured_record, k) == v
