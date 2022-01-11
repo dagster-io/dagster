@@ -1,4 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ColorsWIP,
+  CursorHistoryControls,
+  NonIdealState,
+  Page,
+  PageHeader,
+  Tab,
+  Tabs,
+  TagWIP,
+  Heading,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,18 +21,7 @@ import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {PageHeader} from '../ui/PageHeader';
-import {Tab, Tabs} from '../ui/Tabs';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {AllScheduledTicks} from './AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';

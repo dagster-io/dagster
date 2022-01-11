@@ -1,11 +1,9 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {

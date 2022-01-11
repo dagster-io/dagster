@@ -1,8 +1,7 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 type ConfigTypeSchemaTheme = 'dark' | 'light';
 

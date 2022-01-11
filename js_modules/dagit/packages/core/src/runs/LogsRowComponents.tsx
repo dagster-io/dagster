@@ -1,3 +1,4 @@
+import {ColorsWIP, FontFamily} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -5,8 +6,6 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
-import {ColorsWIP} from '../ui/Colors';
-import {FontFamily} from '../ui/styles';
 
 import {LogLevel} from './LogLevel';
 import {ColumnWidthsContext} from './LogsScrollingTableHeader';

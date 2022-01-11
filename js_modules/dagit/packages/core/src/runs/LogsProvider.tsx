@@ -1,10 +1,10 @@
 import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
+import {TokenizingFieldValue} from '@dagster-io/ui';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../types/globalTypes';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunFragments} from './RunFragments';
 import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';

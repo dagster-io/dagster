@@ -1,10 +1,8 @@
+import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Popover} from '../ui/Popover';
 
 import {RunStats} from './RunStats';
 

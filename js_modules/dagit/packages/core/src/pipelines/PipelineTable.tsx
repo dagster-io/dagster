@@ -1,13 +1,10 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, Group, Table, Caption} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Table} from '../ui/Table';
-import {Caption} from '../ui/Text';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

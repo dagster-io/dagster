@@ -1,10 +1,7 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {FontFamily} from '../ui/styles';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';

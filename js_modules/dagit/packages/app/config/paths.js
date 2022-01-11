@@ -74,6 +74,7 @@ module.exports = {
 
   // DAGSTER: Path to @dagster-io/dagit-core source.
   dagitCore: path.resolve('../core/src'),
+  dagitUI: path.resolve('../ui/src'),
 };
 
 module.exports.moduleFileExtensions = moduleFileExtensions;

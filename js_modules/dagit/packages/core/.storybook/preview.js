@@ -4,13 +4,15 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {FontFamily} from '../src/ui/styles';
-import {GlobalDialogStyle} from '../src/ui/Dialog';
-import {GlobalPopoverStyle} from '../src/ui/Popover';
-import {GlobalSuggestStyle} from '../src/ui/Suggest';
-import {GlobalToasterStyle} from '../src/ui/Toaster';
-import {GlobalTooltipStyle} from '../src/ui/Tooltip';
-import {ColorsWIP} from '../src/ui/Colors';
+import {
+  FontFamily,
+  GlobalDialogStyle,
+  GlobalPopoverStyle,
+  GlobalSuggestStyle,
+  GlobalToasterStyle,
+  GlobalTooltipStyle,
+  ColorsWIP,
+} from '@dagster-io/ui';
 
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';

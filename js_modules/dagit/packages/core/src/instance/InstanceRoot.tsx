@@ -1,3 +1,4 @@
+import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
@@ -7,7 +8,6 @@ import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
 import {SnapshotRoot} from '../snapshots/SnapshotRoot';
-import {MainContent} from '../ui/MainContent';
 
 import {InstanceStatusRoot} from './InstanceStatusRoot';
 

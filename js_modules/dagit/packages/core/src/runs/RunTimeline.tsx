@@ -1,3 +1,4 @@
+import {Box, ColorsWIP, Popover, Mono, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,11 +7,6 @@ import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Popover} from '../ui/Popover';
-import {Mono} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
 
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';

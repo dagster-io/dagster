@@ -1,4 +1,15 @@
 import {useMutation} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ButtonLink,
+  Checkbox,
+  ColorsWIP,
+  Group,
+  Table,
+  Subheading,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -11,15 +22,6 @@ import {StopSchedule} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
 import {StopSensor} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Table} from '../ui/Table';
-import {Subheading} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';

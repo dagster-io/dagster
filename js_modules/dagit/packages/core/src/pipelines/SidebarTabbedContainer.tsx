@@ -1,12 +1,10 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
 import {RightInfoPanelContent} from './GraphExplorer';

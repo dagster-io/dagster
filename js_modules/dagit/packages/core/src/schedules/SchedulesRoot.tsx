@@ -1,15 +1,12 @@
 import {useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

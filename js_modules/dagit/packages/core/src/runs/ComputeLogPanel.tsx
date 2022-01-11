@@ -1,8 +1,7 @@
+import {Box, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {Box} from '../ui/Box';
-import {Spinner} from '../ui/Spinner';
 
 import {ComputeLogContent} from './ComputeLogContent';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';

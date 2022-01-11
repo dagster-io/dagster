@@ -1,9 +1,8 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {CustomTooltipProvider} from '../app/CustomTooltipProvider';
-
 import {ColorsWIP} from './Colors';
+import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {Group} from './Group';
 import {IconWIP} from './Icon';
 import {Tooltip, GlobalTooltipStyle} from './Tooltip';

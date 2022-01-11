@@ -11,6 +11,7 @@
     "@blueprintjs/select": "^3.16.4",
     "@blueprintjs/table": "^3.8.33",
     "@dagster-io/dagit-core": "1.0.0",
+    "@dagster-io/ui": "1.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.1.2"

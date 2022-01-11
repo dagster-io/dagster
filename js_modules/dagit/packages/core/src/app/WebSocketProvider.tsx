@@ -1,9 +1,8 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
-
-import {ColorsWIP} from '../ui/Colors';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 

@@ -1,4 +1,5 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {uniq, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router';
@@ -14,13 +15,8 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../../runs/RunUtils';
-import {Box} from '../../ui/Box';
-import {ColorsWIP} from '../../ui/Colors';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
-import {IconWIP} from '../../ui/Icon';
 import {Loading} from '../../ui/Loading';
-import {NonIdealState} from '../../ui/NonIdealState';
-import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {buildPipelineSelector} from '../WorkspaceContext';
 import {RepoAddress} from '../types';
 

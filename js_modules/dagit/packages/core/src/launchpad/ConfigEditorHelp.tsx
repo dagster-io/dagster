@@ -1,10 +1,10 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {ConfigTypeSchema, TypeData} from '../typeexplorer/ConfigTypeSchema';
-import {ColorsWIP} from '../ui/Colors';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

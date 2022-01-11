@@ -1,12 +1,10 @@
+import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
-import {Box} from '../ui/Box';
-import {MainContent} from '../ui/MainContent';
-import {NonIdealState} from '../ui/NonIdealState';
 
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';

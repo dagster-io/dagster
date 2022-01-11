@@ -1,19 +1,23 @@
-import {gql, useQuery} from '@apollo/client';
-import {Chart} from 'chart.js';
 import 'chartjs-adapter-date-fns';
+
+import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  Subheading,
+} from '@dagster-io/ui';
+import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {Tab, Tabs} from '../ui/Tabs';
-import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

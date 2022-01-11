@@ -1,13 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
+import {ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {OP_NODE_INVOCATION_FRAGMENT} from '../graph/OpNode';
-import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Popover} from '../ui/Popover';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';

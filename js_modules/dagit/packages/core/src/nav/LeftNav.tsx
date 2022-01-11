@@ -1,8 +1,8 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {LayoutContext} from '../app/LayoutProvider';
-import {ColorsWIP} from '../ui/Colors';
 
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
 

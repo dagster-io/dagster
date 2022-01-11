@@ -1,8 +1,5 @@
+import {NonIdealState, NonIdealStateProps, Spinner, SplitPanelContainer} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {NonIdealState, NonIdealStateProps} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {SessionSettingsBar} from './SessionSettingsBar';
 

@@ -1,3 +1,4 @@
+import {ColorsWIP, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -5,9 +6,6 @@ import {formatElapsedTime} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
-import {ColorsWIP} from '../ui/Colors';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 
 import {GanttChartMode} from './Constants';
 import {boxStyleFor} from './GanttChartLayout';

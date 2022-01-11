@@ -1,12 +1,11 @@
 import {gql} from '@apollo/client';
 import {Code} from '@blueprintjs/core';
+import {ColorsWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {ColorsWIP} from '../ui/Colors';
-import {FontFamily} from '../ui/styles';
 
 import {OpTypeSignatureFragment} from './types/OpTypeSignatureFragment';
 

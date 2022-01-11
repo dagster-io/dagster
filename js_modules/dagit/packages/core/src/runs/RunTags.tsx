@@ -1,7 +1,5 @@
+import {Box, TokenizingFieldValue} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {Box} from '../ui/Box';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunTag} from './RunTag';
 

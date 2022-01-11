@@ -1,4 +1,14 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  IconWIP,
+  NonIdealState,
+  Table,
+  Mono,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,14 +18,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Table} from '../ui/Table';
-import {Mono} from '../ui/Text';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,

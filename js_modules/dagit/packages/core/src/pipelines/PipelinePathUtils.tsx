@@ -1,7 +1,6 @@
+import {Mono} from '@dagster-io/ui';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
-
-import {Mono} from '../ui/Text';
 
 export interface ExplorerPath {
   pipelineName: string;

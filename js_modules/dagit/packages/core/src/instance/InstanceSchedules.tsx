@@ -1,4 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ColorsWIP,
+  Group,
+  NonIdealState,
+  PageHeader,
+  Heading,
+  Subheading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -8,13 +17,7 @@ import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
 import {InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 

@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -7,11 +8,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Spinner} from '../ui/Spinner';
 import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,

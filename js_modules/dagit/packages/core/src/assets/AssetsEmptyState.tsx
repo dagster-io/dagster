@@ -1,6 +1,5 @@
+import {NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {NonIdealState} from '../ui/NonIdealState';
 
 export const AssetsEmptyState = ({prefixPath}: {prefixPath: string[]}) => (
   <NonIdealState

@@ -1,9 +1,5 @@
+import {ButtonWIP, IconWIP, MenuItemWIP, SelectWIP} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP} from '../ui/Menu';
-import {SelectWIP} from '../ui/Select';
 
 import {ModeNotFoundError} from './ModeNotFoundError';
 

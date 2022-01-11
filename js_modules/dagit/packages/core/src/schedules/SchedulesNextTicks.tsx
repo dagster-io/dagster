@@ -1,4 +1,24 @@
 import {gql, useLazyQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  HighlightedCodeBlock,
+  IconWIP,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  NonIdealState,
+  Popover,
+  Spinner,
+  Table,
+  FontFamily,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -9,20 +29,6 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuLink, MenuWIP} from '../ui/Menu';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {Table} from '../ui/Table';
-import {FontFamily} from '../ui/styles';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,

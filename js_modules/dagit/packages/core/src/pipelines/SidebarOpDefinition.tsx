@@ -1,4 +1,5 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
@@ -6,9 +7,6 @@ import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignatur
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';

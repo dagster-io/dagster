@@ -1,9 +1,9 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components/macro';
 
 import {colorHash} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 

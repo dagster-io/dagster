@@ -1,14 +1,11 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Caption, Subheading} from '../ui/Text';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';

@@ -1,10 +1,9 @@
 import {QueryResult} from '@apollo/client';
+import {Box, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
-import {Box} from '../ui/Box';
-import {Tab, Tabs} from '../ui/Tabs';
 
 import {useCanSeeConfig} from './useCanSeeConfig';
 

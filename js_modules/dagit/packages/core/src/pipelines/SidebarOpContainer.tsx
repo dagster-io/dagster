@@ -1,11 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {LoadingSpinner} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';

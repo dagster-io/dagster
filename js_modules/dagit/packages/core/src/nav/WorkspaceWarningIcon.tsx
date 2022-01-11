@@ -1,7 +1,6 @@
+import {ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {WarningTooltip} from './WarningTooltip';

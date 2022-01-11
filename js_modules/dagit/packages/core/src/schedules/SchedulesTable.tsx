@@ -1,3 +1,15 @@
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  IconWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  Table,
+  TagWIP,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -5,15 +17,6 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {MenuLink, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

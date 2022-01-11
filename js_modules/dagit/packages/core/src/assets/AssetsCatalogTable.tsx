@@ -1,10 +1,10 @@
+import {ButtonGroup} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {ButtonGroup} from '../ui/ButtonGroup';
 
 import {AssetKeysTable} from './AssetKeysTable';
 import {AssetNamespaceTable} from './AssetNamespaceTable';

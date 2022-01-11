@@ -1,10 +1,9 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
 import {TypeListFragment} from './types/TypeListFragment';

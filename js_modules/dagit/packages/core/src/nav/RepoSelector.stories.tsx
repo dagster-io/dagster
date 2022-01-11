@@ -1,9 +1,8 @@
+import {Box, ColorsWIP} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {RepoDetails, RepoSelector} from './RepoSelector';

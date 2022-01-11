@@ -1,9 +1,9 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {ColorsWIP} from '../ui/Colors';
 
 import {OpLinks} from './OpLinks';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';

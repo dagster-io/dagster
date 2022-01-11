@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {Breadcrumbs} from '@blueprintjs/core';
+import {Checkbox, ColorsWIP, SplitPanelContainer, TextInput} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -10,11 +11,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
-import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
 import {EmptyDAGNotice, LargeDAGNotice} from './GraphNotices';

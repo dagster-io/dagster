@@ -1,10 +1,8 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
+import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {displayNameForAssetKey} from '../app/Util';
-import {ButtonWIP} from '../ui/Button';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
 
 interface AssetKey {
   path: string[];

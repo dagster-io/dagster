@@ -1,12 +1,15 @@
+import {
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  TagWIP,
+  Trace,
+} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {TagWIP} from '../ui/TagWIP';
-import {Trace} from '../ui/Trace';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
 

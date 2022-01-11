@@ -1,15 +1,11 @@
 import {Overlay} from '@blueprintjs/core';
+import {Box, ColorsWIP, IconWIP, Spinner, FontFamily} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Spinner} from '../ui/Spinner';
-import {FontFamily} from '../ui/styles';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';

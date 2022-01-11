@@ -1,7 +1,7 @@
+import {Box} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
 import {LiveData} from '../workspace/asset-graph/Utils';

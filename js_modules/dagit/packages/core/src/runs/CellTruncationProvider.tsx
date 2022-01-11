@@ -1,8 +1,8 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {ColorsWIP} from '../ui/Colors';
 
 const OverflowFade = styled.div`
   position: absolute;
