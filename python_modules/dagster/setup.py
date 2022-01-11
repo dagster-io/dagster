@@ -115,7 +115,7 @@ if __name__ == "__main__":
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
-                "types-pkg-resources",  # version will be resolved against pkg_resources (setuptools)
+                "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
