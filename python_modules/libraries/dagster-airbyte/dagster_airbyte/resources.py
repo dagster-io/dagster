@@ -14,12 +14,11 @@ from dagster import (
 )
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
+from enum import Enum
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
-class AirbyteResource:
-    """
-    This class exposes methods on top of the Airbyte REST API.
-    """
+
+class AirbyteState(str, Enum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     CANCELLED = "cancelled"
@@ -27,6 +26,12 @@ class AirbyteResource:
     FAILED = "failed"
     ERROR = "error"
     INCOMPLETE = "incomplete"
+
+
+class AirbyteResource:
+    """
+    This class exposes methods on top of the Airbyte REST API.
+    """
 
     def __init__(
         self,
@@ -130,13 +135,13 @@ class AirbyteResource:
             job_details = self.get_job_status(job_id)
             state = job_details.get("job").get("status")
 
-            if state in (self.RUNNING, self.PENDING, self.INCOMPLETE):
+            if state in (AirbyteState.RUNNING.value, AirbyteState.PENDING.value, AirbyteState.INCOMPLETE.value):
                 continue
-            elif state == self.SUCCEEDED:
+            elif state == AirbyteState.SUCCEEDED.value:
                 break
-            elif state == self.ERROR:
+            elif state == AirbyteState.ERROR.value:
                 raise Failure(f"Job failed: {job_id}")
-            elif state == self.CANCELLED:
+            elif state == AirbyteState.CANCELLED.value:
                 raise Failure(f"Job was cancelled: {job_id}")
             else:
                 raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")

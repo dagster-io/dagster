@@ -1,7 +1,7 @@
 import pytest
 import responses
 from dagster import Failure, build_init_resource_context
-from dagster_airbyte import airbyte_resource, AirbyteOutput
+from dagster_airbyte import airbyte_resource, AirbyteOutput, AirbyteState
 
 @responses.activate
 def test_trigger_connection():
@@ -44,7 +44,7 @@ def test_trigger_connection_fail():
 @responses.activate
 @pytest.mark.parametrize(
     "state",
-    ["succeeded", "error", "cancelled", "unrecognized"],
+    [AirbyteState.SUCCEEDED.value, AirbyteState.CANCELLED.value, AirbyteState.ERROR.value, "unrecognized"],
 )
 def test_sync_and_pool(state):
     ab_resource = airbyte_resource(
@@ -69,11 +69,11 @@ def test_sync_and_pool(state):
     )
 
     
-    if state == ab_resource.ERROR:
+    if state == AirbyteState.ERROR.value:
         with pytest.raises(Failure, match="Job failed"):
             r = ab_resource.sync_and_poll("some_connection", 0)
 
-    elif state == ab_resource.CANCELLED:
+    elif state == AirbyteState.CANCELLED.value:
         with pytest.raises(Failure, match="Job was cancelled"):
             r = ab_resource.sync_and_poll("some_connection", 0)
     

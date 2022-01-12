@@ -8,13 +8,13 @@ This library provides a Dagster integration with `Airbyte <https://www.airbyte.c
 Ops
 ===
 
-.. autofunction:: airbyte_sync_op
+.. autoconfigurable:: airbyte_sync_op
 
 
 Resources
 =========
 
-.. autodata:: airbyte_resource
+.. autoconfigurable:: airbyte_resource
     :annotation: ResourceDefinition
 
 .. autoclass:: AirbyteResource
