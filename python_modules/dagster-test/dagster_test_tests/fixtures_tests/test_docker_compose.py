@@ -89,10 +89,14 @@ def test_connect_container_to_network(docker_compose_cm, other_docker_compose_ym
         connect_container_to_network(container=container, network=network)
 
 
-def test_disconnect_container_from_network(docker_compose_cm, other_docker_compose_yml):
+def test_disconnect_container_from_network(docker_compose_cm, other_docker_compose_yml, caplog):
+    caplog.set_level("INFO")
+
     with docker_compose_cm(docker_compose_yml=other_docker_compose_yml) as docker_compose:
         container = next(iter(docker_compose))
         network = network_name_from_yml(other_docker_compose_yml)
         # Disconnecting multiple times is idempotent
         disconnect_container_from_network(container=container, network=network)
+        assert f"Disconnected {container} from network {network}." in caplog.text
         disconnect_container_from_network(container=container, network=network)
+        assert f"Unable to disconnect {container} from network {network}." in caplog.text
