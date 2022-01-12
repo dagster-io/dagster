@@ -10,6 +10,7 @@ from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_by_step
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.loader import BatchJobRunLoader, BatchTagRunLoader
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
@@ -182,6 +183,10 @@ class GrapheneRepository(graphene.ObjectType):
         return GrapheneRepositoryLocation(self._repository_location)
 
     def resolve_schedules(self, graphene_info):
+        from dagster.core.storage.tags import SCHEDULE_NAME_TAG
+
+        batch_run_loader = BatchTagRunLoader(graphene_info, SCHEDULE_NAME_TAG)
+
         schedules = self._repository.get_external_schedules()
         schedule_states_by_name = {
             state.name: state
@@ -194,8 +199,7 @@ class GrapheneRepository(graphene.ObjectType):
         return sorted(
             [
                 GrapheneSchedule(
-                    schedule,
-                    schedule_states_by_name.get(schedule.name),
+                    schedule, schedule_states_by_name.get(schedule.name), batch_run_loader
                 )
                 for schedule in schedules
             ],
@@ -203,6 +207,9 @@ class GrapheneRepository(graphene.ObjectType):
         )
 
     def resolve_sensors(self, graphene_info):
+        from dagster.core.storage.tags import SENSOR_NAME_TAG
+
+        batch_run_loader = BatchTagRunLoader(graphene_info, SENSOR_NAME_TAG)
         sensors = self._repository.get_external_sensors()
         sensor_states_by_name = {
             state.name: state
@@ -216,23 +223,31 @@ class GrapheneRepository(graphene.ObjectType):
                 GrapheneSensor(
                     sensor,
                     sensor_states_by_name.get(sensor.name),
+                    batch_run_loader,
                 )
                 for sensor in sensors
             ],
             key=lambda sensor: sensor.name,
         )
 
-    def resolve_pipelines(self, _graphene_info):
+    def resolve_pipelines(self, graphene_info):
+
+        external_pipelines = self._repository.get_all_external_pipelines()
+        batch_run_loader = BatchJobRunLoader(graphene_info, [x.name for x in external_pipelines])
         return [
-            GraphenePipeline(pipeline)
-            for pipeline in sorted(
-                self._repository.get_all_external_pipelines(), key=lambda pipeline: pipeline.name
-            )
+            GraphenePipeline(pipeline, batch_run_loader)
+            for pipeline in sorted(external_pipelines, key=lambda pipeline: pipeline.name)
         ]
 
-    def resolve_jobs(self, _graphene_info):
+    def resolve_jobs(self, graphene_info):
+        external_jobs = [
+            pipeline
+            for pipeline in self._repository.get_all_external_pipelines()
+            if pipeline.is_job
+        ]
+        batch_run_loader = BatchJobRunLoader(graphene_info, [x.name for x in external_jobs])
         return [
-            GrapheneJob(pipeline)
+            GrapheneJob(pipeline, batch_run_loader)
             for pipeline in sorted(
                 self._repository.get_all_external_pipelines(), key=lambda pipeline: pipeline.name
             )

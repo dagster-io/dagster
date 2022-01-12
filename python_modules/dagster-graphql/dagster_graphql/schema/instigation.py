@@ -21,6 +21,7 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
+from ..implementation.loader import BatchTagRunLoader
 from .errors import GraphenePythonError
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
@@ -273,8 +274,15 @@ class GrapheneInstigationState(graphene.ObjectType):
     class Meta:
         name = "InstigationState"
 
-    def __init__(self, job_state):
+    def __init__(
+        self,
+        job_state,
+        batch_run_loader=None,
+    ):
         self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+        self._batch_run_loader = check.opt_inst_param(
+            batch_run_loader, "batch_run_loader", BatchTagRunLoader
+        )
         super().__init__(
             id=job_state.job_origin_id,
             name=job_state.name,
@@ -300,6 +308,22 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_runs(self, graphene_info, **kwargs):
         from .pipelines.pipeline import GrapheneRun
+        from dagster.core.storage.tags import SENSOR_NAME_TAG, SCHEDULE_NAME_TAG
+
+        tag_key = (
+            SENSOR_NAME_TAG
+            if self._job_state.job_type == InstigatorType.SENSOR
+            else SCHEDULE_NAME_TAG
+        )
+        if (
+            kwargs.get("limit")
+            and self._batch_run_loader
+            and self._batch_run_loader.tag_key == tag_key
+        ):
+            runs = self._batch_run_loader.get_runs_for_tag(
+                self._job_state.name, kwargs.get("limit")
+            )
+            return [GrapheneRun(run) for run in runs]
 
         if self._job_state.job_type == InstigatorType.SENSOR:
             filters = PipelineRunsFilter.for_sensor(self._job_state)

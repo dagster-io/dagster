@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster_graphql.implementation.loader import BatchTagRunLoader
 
 from ..errors import (
     GraphenePythonError,
@@ -41,13 +42,14 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, external_schedule, schedule_state):
+    def __init__(self, external_schedule, schedule_state, batch_run_loader=None):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
         self._schedule_state = check.opt_inst_param(
             schedule_state, "schedule_state", InstigatorState
         )
+        check.opt_inst_param(batch_run_loader, "batch_run_loader", BatchTagRunLoader)
         if not self._schedule_state:
             self._schedule_state = external_schedule.get_default_instigation_state()
 
@@ -57,7 +59,7 @@ class GrapheneSchedule(graphene.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            scheduleState=GrapheneInstigationState(self._schedule_state),
+            scheduleState=GrapheneInstigationState(self._schedule_state, batch_run_loader),
             execution_timezone=(
                 self._external_schedule.execution_timezone
                 if self._external_schedule.execution_timezone
