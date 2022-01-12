@@ -1,7 +1,7 @@
 import os
-import pytest
 import time
 
+import pytest
 from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION

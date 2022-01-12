@@ -4,9 +4,9 @@ from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
+    ExternalDynamicPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
-    ExternalDynamicPartitionsDefinitionData,
 )
 
 from . import external

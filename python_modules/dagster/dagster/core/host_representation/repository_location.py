@@ -11,11 +11,11 @@ from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_partition import (
+    sync_get_external_asset_partition_keys_grpc,
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
-    sync_get_external_asset_partition_keys_grpc,
 )
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
@@ -46,6 +46,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.grpc.impl import (
+    get_asset_partition_keys,
     get_external_schedule_execution,
     get_external_sensor_execution,
     get_notebook_data,
@@ -168,6 +169,12 @@ class RepositoryLocation(AbstractContextManager):
     @abstractmethod
     def get_external_partition_names(
         self, repository_handle: RepositoryHandle, partition_set_name: str
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+        pass
+
+    @abstractmethod
+    def get_external_asset_partition_keys(
+        self, repository_handle: RepositoryHandle, job_name: str, op_name: str
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -401,6 +408,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return get_partition_names(
             recon_repo=self._recon_repo,
             partition_set_name=partition_set_name,
+        )
+
+    def get_external_asset_partition_keys(
+        self, repository_handle: RepositoryHandle, job_name: str, op_name: str
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.str_param(job_name, "job_name")
+        check.str_param(op_name, "op_name")
+
+        return get_asset_partition_keys(
+            recon_repo=self._recon_repo, job_name=job_name, op_name=op_name
         )
 
     def get_external_schedule_execution_data(

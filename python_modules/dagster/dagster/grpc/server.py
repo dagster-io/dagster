@@ -38,6 +38,7 @@ from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServic
 from .impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
+    get_asset_partition_keys,
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
@@ -48,9 +49,9 @@ from .impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
     start_run_in_subprocess,
-    get_asset_partition_keys,
 )
 from .types import (
+    AssetPartitionArgs,
     CanCancelExecutionRequest,
     CanCancelExecutionResult,
     CancelExecutionRequest,
@@ -63,7 +64,6 @@ from .types import (
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
-    AssetPartitionArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,

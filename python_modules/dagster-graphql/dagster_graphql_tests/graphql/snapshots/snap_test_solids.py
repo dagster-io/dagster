@@ -372,6 +372,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'downstream_dynamic_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_dynamic_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'downstream_static_partitioned_asset'
                 },
                 'invocations': [
@@ -477,6 +493,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'emit_ten'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'error_dynamic_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'error_dynamic_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'error_dynamic_partitioned_asset'
                         }
                     }
                 ]
@@ -1429,6 +1461,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'throw_a_thing'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'upstream_dynamic_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_dynamic_partitioned_asset'
                         }
                     }
                 ]

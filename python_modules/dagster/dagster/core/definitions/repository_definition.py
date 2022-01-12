@@ -327,8 +327,8 @@ class RepositoryData(ABC):
 
     def get_asset_partition_keys(self, job_name, op_name):
         output = self.get_job(job_name).solid_named(op_name).output_dict.get("result", None)
-        if output and output._asset_partitions_def:
-            partitions_def = output._asset_partitions_def
+        if output and output._asset_partitions_def:  # pylint: disable=protected-access
+            partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
             return partitions_def.get_partition_keys()
 
     def get_schedule_names(self):
@@ -822,8 +822,8 @@ class CachingRepositoryData(RepositoryData):
 
     def get_asset_partition_keys(self, job_name, op_name):
         output = self.get_job(job_name).solid_named(op_name).output_dict.get("result", None)
-        if output and output._asset_partitions_def:
-            partitions_def = output._asset_partitions_def
+        if output and output._asset_partitions_def:  # pylint: disable=protected-access
+            partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
             return partitions_def.get_partition_keys()
 
     def get_schedule_names(self):

@@ -1,6 +1,8 @@
 import string
 
 from dagster import (
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
     InputDefinition,
     Int,
     OutputDefinition,
@@ -12,11 +14,10 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.test_utils import default_mode_def_for_test
-from dagster import HourlyPartitionsDefinition, DynamicPartitionsDefinition
-from dagster.core.asset_defs import build_assets_job, asset
 
 
 @lambda_solid

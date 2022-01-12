@@ -9,10 +9,10 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import (
+    AssetPartitionArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
-    AssetPartitionArgs,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 

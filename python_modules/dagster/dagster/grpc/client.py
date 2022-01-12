@@ -19,6 +19,7 @@ from grpc_health.v1.health_pb2_grpc import HealthStub
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess
 from .types import (
+    AssetPartitionArgs,
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteExternalPipelineArgs,
@@ -26,7 +27,6 @@ from .types import (
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
-    AssetPartitionArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,

@@ -26,7 +26,7 @@ from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.sensor_definition import AssetSensorDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -331,7 +331,7 @@ class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsError
 
 class ExternalPartitionsDefinitionData(ABC):
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition:
+    def get_partitions_definition(self) -> Optional[PartitionsDefinition]:
         ...
 
 
@@ -341,7 +341,8 @@ class ExternalDynamicPartitionsDefinitionData(
 ):
     # Empty class to serve as a placeholder for dynamic partitions definition.
     # gRPC call will fetch partition keys from repository using job and op names.
-    pass
+    def get_partitions_definition(self) -> Optional[PartitionsDefinition]:
+        return None
 
 
 @whitelist_for_serdes
