@@ -5,6 +5,8 @@ import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
+import {useFeatureFlags} from './Flags';
+
 const InstanceRedirect = () => {
   const location = useLocation();
   const path = `${location.pathname}${location.search}`;
@@ -27,6 +29,12 @@ export const FallthroughRoot = () => {
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = React.useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
+
+  const {flagInstanceOverview} = useFeatureFlags();
+
+  if (flagInstanceOverview) {
+    return <Redirect to="/instance" />;
+  }
 
   if (loading) {
     return (
