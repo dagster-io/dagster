@@ -36,10 +36,9 @@ from dagster_airbyte.types import AirbyteOutput
 )
 def airbyte_sync_op(context):
     """
+    Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
-    Executes a Airbyte sync for a given ``connector_id``, and polls until that sync
-    the details of the Airbyte connector after the sync successfully completes, as well as details
-    about which tables the sync updates.
+    the job details for a given ``connection_id``.
 
     It requires the use of the :py:class:`~dagster_airbyte.airbyte_resource`, which allows it to
     communicate with the Airbyte API.

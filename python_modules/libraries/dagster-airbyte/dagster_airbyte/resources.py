@@ -30,14 +30,16 @@ class AirbyteResource:
 
     def __init__(
         self,
-        host: str = "localhost",
-        port: str = "8000",
+        host: str,
+        port: str,
+        use_https: bool,
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
         log: logging.Logger = get_dagster_logger(),
     ):
         self._host = host
         self._port = port
+        self._use_https = use_https
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
 
@@ -45,14 +47,18 @@ class AirbyteResource:
 
     @property
     def api_base_url(self) -> str:
-        return f"http://{self._host}:{self._port}/api/v1"
-    
+        return (
+            ("https://" if self._use_https else "http://") 
+            + (f"{self._host}:{self._port}" if self._port else self._host) 
+            + "/api/v1"
+        )
+
     def make_request(self, endpoint: str, data: Optional[str]):
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
         Args:
-            endpoint (str): The Fivetran API endpoint to send this request to.
+            endpoint (str): The Airbyte API endpoint to send this request to.
             data (Optional[str]): JSON-formatted data string to be included in the request.
 
         Returns:
@@ -104,14 +110,14 @@ class AirbyteResource:
 
         Args:
             connection_id (str): The Airbyte Connector ID. You can retrieve this value from the
-                "Setup" tab of a given connector in the Fivetran UI.
+                "Connection" tab of a given connection in the Arbyte UI.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
             poll_timeout (float): The maximum time that will waited before this operation is timed
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~DbtCloudOutput`:
-                Object containing details about the connector and the tables it updates
+            :py:class:`~AirbyteOutput`:
+                Details of the sync job.
         """
         job_id = self.start_sync(connection_id)
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
@@ -144,12 +150,17 @@ class AirbyteResource:
         "host": Field(
             StringSource,
             is_required=True,
-            description="The Airbyte Server Address",
+            description="The Airbyte Server Address.",
         ),
         "port": Field(
             StringSource,
             is_required=False,
-            description="Port for the Airbyte Server",
+            description="Port for the Airbyte Server.",
+        ),
+        "use_https": Field(
+            bool,
+            default_value=False,
+            description="Use https to connect in Airbyte Server.",
         ),
         "request_max_retries": Field(
             int,
@@ -199,6 +210,7 @@ def airbyte_resource(context) -> AirbyteResource:
     return AirbyteResource(
         host=context.resource_config["host"],
         port=context.resource_config["port"],
+        use_https=context.resource_config["use_https"],
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
         log=context.log,

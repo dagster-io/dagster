@@ -18,8 +18,8 @@ if __name__ == "__main__":
     setup(
         name="dagster-airbyte",
         version=ver,
-        author="Marcos Marx",
-        author_email="marcos@airbyte.io",
+        author="Elementl",
+        author_email="hello@elementl.com",
         license="Apache-2.0",
         description="Package for integrating Airbyte with Dagster.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte",
