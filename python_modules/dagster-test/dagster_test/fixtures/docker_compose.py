@@ -100,9 +100,23 @@ def current_container():
 def connect_container_to_network(container, network):
     # subprocess.run instead of subprocess.check_call so we don't fail when
     # trying to connect a container to a network that it's already connected to
-    subprocess.run(  # pylint: disable=subprocess-run-check
-        ["docker", "network", "connect", network, container]
-    )
+    try:
+        subprocess.check_call(  # pylint: disable=subprocess-run-check
+            ["docker", "network", "connect", network, container]
+        )
+        logging.info(
+            "Connected {container} to network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
+    except subprocess.CalledProcessError:
+        logging.warning(
+            "Unable to connect {container} to network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
 
 
 def disconnect_container_from_network(container, network):
