@@ -1,5 +1,5 @@
 from dagster import Field, In, Noneable, Nothing, Out, Output, op
-from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL
+from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.types import AirbyteOutput
 
 
@@ -22,7 +22,7 @@ from dagster_airbyte.types import AirbyteOutput
         ),
         "poll_interval": Field(
             float,
-            default_value=DEFAULT_POLL_INTERVAL,
+            default_value=DEFAULT_POLL_INTERVAL_SECONDS,
             description="The time (in seconds) that will be waited between successive polls.",
         ),
         "poll_timeout": Field(
@@ -71,8 +71,8 @@ def airbyte_sync_op(context):
     """
 
     airbyte_output = context.resources.airbyte.sync_and_poll(
-        connector_id=context.op_config["connector_id"],
+        connection_id=context.op_config["connection_id"],
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
-    yield Output(airbyte_output)
+    yield AirbyteOutput(airbyte_output)

@@ -13,10 +13,19 @@ from dagster import (
     Field
 )
 from requests.exceptions import RequestException
+
+DEFAULT_POLL_INTERVAL_SECONDS = 10
 class AirbyteResource:
     """
     This class exposes methods on top of the Airbyte REST API.
     """
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    CANCELLED = "cancelled"
+    PENDING = "pending"
+    FAILED = "failed"
+    ERROR = "error"
+    INCOMPLETE = "incomplete"
 
     def __init__(
         self,
@@ -86,6 +95,8 @@ class AirbyteResource:
     def sync_and_poll(
         self,
         connection_id: str,
+        poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
+        poll_timeout: float = None,
     ):
         """
         Initializes a sync operation for the given connector, and polls until it completes.
@@ -102,18 +113,29 @@ class AirbyteResource:
                 Object containing details about the connector and the tables it updates
         """
         job_id = self.start_sync(connection_id)
-        self._log.info(
-            f"Job {job_id} initialized for connection_id={connection_id}.
-        )
-        job_response = self.get_job_status(job_id)
-        job_status = job_response.get("job").get("status")
+        self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
+        start = time.monotonic()
 
-        while job_status == "running":
-            job_response = self.get_job_status(job_id)
-            job_status = job_response.get("job").get("status")
-            time.sleep(3)
-            
-        return AirbyteOutput(job_details=job_response.get("job"))
+        while True:
+            if poll_timeout and start + poll_timeout < time.monotonic():
+                raise Failure(f"Timeout: Airbyte job {job_id} is not ready after the timeout {timeout} seconds")
+            time.sleep(poll_interval)
+            job_details = self.get_job_status(job_id)
+            state = job_details.get("job").get("status")
+
+            if state in (self.RUNNING, self.PENDING, self.INCOMPLETE):
+                continue
+            elif state == self.SUCCEEDED:
+                break
+            elif state == self.ERROR:
+                raise Failure(f"Job failed: {job_id}")
+            elif state == self.CANCELLED:
+                raise Failure(f"Job was cancelled: {job_id}")
+            else:
+                raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
+
+
+        return AirbyteOutput(job_details=job_details.get("job"))
 
 
 @resource(
