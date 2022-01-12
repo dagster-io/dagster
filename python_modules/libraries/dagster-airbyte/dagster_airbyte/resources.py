@@ -4,6 +4,7 @@ import json
 from typing import Optional
 
 import requests
+from requests.models import HTTPError
 from dagster import (
     get_dagster_logger, 
     __version__,
@@ -63,6 +64,7 @@ class AirbyteResource:
 
         num_retries = 0
         while True:
+            print(num_retries)
             try:
                 response = requests.request(
                     method="POST",
@@ -119,7 +121,7 @@ class AirbyteResource:
 
         while True:
             if poll_timeout and start + poll_timeout < time.monotonic():
-                raise Failure(f"Timeout: Airbyte job {job_id} is not ready after the timeout {timeout} seconds")
+                raise Failure(f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds")
             time.sleep(poll_interval)
             job_details = self.get_job_status(job_id)
             state = job_details.get("job").get("status")
