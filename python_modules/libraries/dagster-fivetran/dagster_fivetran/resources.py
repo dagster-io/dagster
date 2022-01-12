@@ -286,7 +286,7 @@ class FivetranResource:
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~DbtCloudOutput`:
+            :py:class:`~FivetranOutput`:
                 Object containing details about the connector and the tables it updates
         """
         schema_config = self.get_connector_schema_config(connector_id)
