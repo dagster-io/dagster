@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
 from dagster.core.definitions.partition import PartitionsDefinition
-
-from .partition_key_range import PartitionKeyRange
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 
 
 class PartitionMapping(ABC):

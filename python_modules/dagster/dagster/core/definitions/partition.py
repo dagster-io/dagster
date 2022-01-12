@@ -57,6 +57,11 @@ class Partition(Generic[T]):
     def name(self) -> str:
         return self._name
 
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, Partition) and self.value == other.value and self.name == other.name
+        )
+
 
 def schedule_partition_range(
     start: datetime,
@@ -185,6 +190,15 @@ class StaticPartitionsDefinition(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
     ) -> List[Partition[str]]:
         return self._partitions
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, StaticPartitionsDefinition)
+            and self._partitions == other.get_partitions()
+        )
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
 
 
 class ScheduleTimeBasedPartitionsDefinition(
