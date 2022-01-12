@@ -124,7 +124,8 @@ class AirbyteResource:
             :py:class:`~AirbyteOutput`:
                 Details of the sync job.
         """
-        job_id = self.start_sync(connection_id)
+        job_details = self.start_sync(connection_id)
+        job_id = job_details.get("job").get("id")
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
 
