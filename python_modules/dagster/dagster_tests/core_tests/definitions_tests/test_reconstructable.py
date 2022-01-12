@@ -6,7 +6,11 @@ import pytest
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import reconstructable
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
@@ -152,6 +156,7 @@ def test_reconstruct_from_origin():
                 working_directory="/",
             ),
             container_image="my_image",
+            entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
         ),
     )
 

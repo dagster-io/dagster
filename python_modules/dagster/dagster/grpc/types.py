@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -11,8 +11,9 @@ from dagster.core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster.utils import frozenlist
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -52,6 +53,14 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
+def _get_entry_point(origin: PipelinePythonOrigin):
+    return (
+        origin.repository_origin.entry_point
+        if origin.repository_origin.entry_point
+        else get_python_environment_entry_point(origin.executable_path)
+    )
+
+
 @whitelist_for_serdes
 class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
     def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
@@ -67,10 +76,7 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
-            "dagster",
+        return _get_entry_point(self.pipeline_origin) + [
             "api",
             "execute_run",
             serialize_dagster_namedtuple(self),
@@ -92,10 +98,7 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
-            "dagster",
+        return _get_entry_point(self.pipeline_origin) + [
             "api",
             "resume_run",
             serialize_dagster_namedtuple(self),
@@ -155,10 +158,7 @@ class ExecuteStepArgs(
         )
 
     def get_command_args(self) -> List[str]:
-        return [
-            self.pipeline_origin.executable_path,
-            "-m",
-            "dagster",
+        return _get_entry_point(self.pipeline_origin) + [
             "api",
             "execute_step",
             serialize_dagster_namedtuple(self),
@@ -179,9 +179,14 @@ class LoadableRepositorySymbol(
 
 @whitelist_for_serdes
 class ListRepositoriesResponse(
-    namedtuple(
+    NamedTuple(
         "_ListRepositoriesResponse",
-        "repository_symbols executable_path repository_code_pointer_dict",
+        [
+            ("repository_symbols", List[LoadableRepositorySymbol]),
+            ("executable_path", Optional[str]),
+            ("repository_code_pointer_dict", Dict[str, CodePointer]),
+            ("entry_point", Optional[List[str]]),
+        ],
     )
 ):
     def __new__(
@@ -189,20 +194,24 @@ class ListRepositoriesResponse(
         repository_symbols,
         executable_path=None,
         repository_code_pointer_dict=None,
+        entry_point=None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
             repository_symbols=check.list_param(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
-            # These are currently only used by the GRPC Repository Location, but
-            # we will need to migrate the rest of the repository locations to use this.
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             repository_code_pointer_dict=check.opt_dict_param(
                 repository_code_pointer_dict,
                 "repository_code_pointer_dict",
                 key_type=str,
                 value_type=CodePointer,
+            ),
+            entry_point=(
+                frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+                if entry_point != None
+                else None
             ),
         )
 

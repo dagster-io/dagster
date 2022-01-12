@@ -12,6 +12,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -351,6 +352,17 @@ def execute_step_command(input_json):
 )
 @python_origin_target_argument
 @click.option(
+    "--use-python-environment-entry-point",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="If this flag is set, the server will signal to clients that they should launch "
+    "dagster commands using `<this server's python executable> -m dagster`, instead of the "
+    "default `dagster` entry point. This is useful when there are multiple Python environments "
+    "running in the same machine, so a single `dagster` entry point is not enough to uniquely "
+    "determine the environment.",
+)
+@click.option(
     "--empty-working-directory",
     is_flag=True,
     required=False,
@@ -398,6 +410,7 @@ def grpc_command(
     fixed_server_id=None,
     override_system_timezone=None,
     log_level="INFO",
+    use_python_environment_entry_point=False,
     **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
@@ -451,6 +464,11 @@ def grpc_command(
             lazy_load_user_code=lazy_load_user_code,
             ipc_output_file=ipc_output_file,
             fixed_server_id=fixed_server_id,
+            entry_point=(
+                get_python_environment_entry_point(sys.executable)
+                if use_python_environment_entry_point
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
         )
 
         code_desc = " "
