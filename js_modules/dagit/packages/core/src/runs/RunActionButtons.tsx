@@ -164,7 +164,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From Selected',
-    disabled: !doneStatuses.has(run.status) || selection.keys.length !== 1,
+    disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
       if (!run.executionPlan) {
@@ -234,7 +234,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
-      <CancelRunButton run={run} isFinalStatus={!doneStatuses.has(run.status)} />
+      <CancelRunButton run={run} isFinalStatus={canRunAllSteps(run)} />
     </Group>
   );
 };
