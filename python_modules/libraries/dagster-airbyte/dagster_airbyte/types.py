@@ -17,6 +17,6 @@ class AirbyteOutput(
 
     Attributes:
         job_details (Dict[str, Any]):
-            The raw Fivetran API response containing the details of the sync'd connector. For info
+            The raw Airbyte API response containing the details of the sync'd connector. For info
             on the schema of this dictionary, see: https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/jobs/get
     """

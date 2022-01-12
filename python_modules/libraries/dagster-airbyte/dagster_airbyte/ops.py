@@ -59,7 +59,7 @@ def airbyte_sync_op(context):
 
         sync_foobar = airbyte_sync_op.configured({"connection_id": "foobar"}, name="sync_foobar")
 
-        @job(resource_defs={"fivetran": my_airbyte_resource})
+        @job(resource_defs={"airbyte": my_airbyte_resource})
         def my_simple_airbyte_job():
             sync_foobar()
 
