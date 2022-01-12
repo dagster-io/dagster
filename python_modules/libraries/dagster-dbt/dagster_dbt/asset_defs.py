@@ -82,7 +82,11 @@ def _dbt_nodes_to_asset(
         )
 
     @multi_asset(
-        name="dbt_project", non_argument_deps=sources, outs=outs, required_resource_keys={"dbt"}
+        name="dbt_project",
+        non_argument_deps=sources,
+        outs=outs,
+        required_resource_keys={"dbt"},
+        compute_kind="dbt",
     )
     def _dbt_project_multi_assset(context):
         # TODO: this should not be implemented through tags
