@@ -75,4 +75,4 @@ def airbyte_sync_op(context):
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
-    yield AirbyteOutput(airbyte_output)
+    yield Output(airbyte_output)

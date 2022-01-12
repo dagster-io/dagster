@@ -12,6 +12,7 @@ from dagster import (
     Failure,
     Field
 )
+from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10

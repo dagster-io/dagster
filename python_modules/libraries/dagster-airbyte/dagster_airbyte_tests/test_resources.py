@@ -11,7 +11,7 @@ from dagster_airbyte import airbyte_resource
 
 
 @responses.activate
-def test_run_sync_and_poll():
+def test_trigger_connection():
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -27,6 +27,5 @@ def test_run_sync_and_poll():
         json={"job": {"id": 1 }},
         status=200
     )
-    resp = ab_resource.sync_and_poll("some_connection")
-    print(resp)
-    assert resp == 1
+    resp = ab_resource.start_sync("some_connection")
+    assert resp == {"job": {"id": 1 }}
