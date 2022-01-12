@@ -1381,6 +1381,30 @@ dynamic_partitioned_assets_job = build_assets_job(
 )
 
 
+def no_return_dynamic_partitions_fn(_):
+    pass
+
+
+def erroring_dynamic_partitions_fn(_):
+    raise Exception("foo")
+
+
+error_dynamic_partitions_def = DynamicPartitionsDefinition(erroring_dynamic_partitions_fn)
+
+
+@asset(partitions_def=error_dynamic_partitions_def)
+def error_dynamic_partitioned_asset():
+    return 1
+
+
+error_dynamic_partitioned_assets_job = build_assets_job(
+    "error_dynamic_partitioned_assets_job",
+    [
+        error_dynamic_partitioned_asset,
+    ],
+)
+
+
 @job
 def two_ins_job():
     @op
@@ -1453,6 +1477,7 @@ def define_pipelines():
         static_partitioned_assets_job,
         time_partitioned_assets_job,
         dynamic_partitioned_assets_job,
+        error_dynamic_partitioned_assets_job,
     ]
 
 

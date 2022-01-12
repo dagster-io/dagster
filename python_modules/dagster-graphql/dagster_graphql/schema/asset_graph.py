@@ -176,7 +176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     self._external_asset_node.job_names[0],
                     self._external_asset_node.op_name,
                 )
-                return [key for key in result.partition_names]
+                return result.partition_names
         return []
 
 

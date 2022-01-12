@@ -339,6 +339,8 @@ class ExternalPartitionsDefinitionData(ABC):
 class ExternalDynamicPartitionsDefinitionData(
     ExternalPartitionsDefinitionData, namedtuple("_ExternalDynamicPartitionsDefinitionData", "")
 ):
+    # Empty class to serve as a placeholder for dynamic partitions definition.
+    # gRPC call will fetch partition keys from repository using job and op names.
     pass
 
 

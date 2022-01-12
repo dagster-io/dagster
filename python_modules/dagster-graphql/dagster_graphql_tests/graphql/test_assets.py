@@ -1,4 +1,5 @@
 import os
+import pytest
 import time
 
 from dagster import AssetKey
@@ -415,8 +416,13 @@ class TestAssetAwareEventLog(
         assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) == 10
         assert asset_node["partitionKeys"] == [str(num) for num in range(10)]
 
-        # TODO: add test for dynamic partition function that errors
-        # TODO: add test for dynamic partiion funciton that returns empty array or no array
+        selector = infer_pipeline_selector(graphql_context, "error_dynamic_partitioned_assets_job")
+        with pytest.raises(Exception, match="foo"):
+            execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_PARTITIONS_FROM_KEYS,
+                variables={"pipelineSelector": selector},
+            )
 
 
 class TestPersistentInstanceAssetInProgress(

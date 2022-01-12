@@ -138,18 +138,19 @@ def sync_get_external_asset_partition_keys_grpc(api_client, repository_handle, j
 
     repository_origin = repository_handle.get_external_origin()
 
-    result = deserialize_json_to_dagster_namedtuple(
-        api_client.external_asset_partition_keys(
-            asset_partition_args=AssetPartitionArgs(
-                repository_origin=repository_origin,
-                job_name=job_name,
-                op_name=op_name,
+    result = check.inst(
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_asset_partition_keys(
+                asset_partition_args=AssetPartitionArgs(
+                    repository_origin=repository_origin,
+                    job_name=job_name,
+                    op_name=op_name,
+                ),
             ),
         ),
+        (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
     )
-    #     (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
-    # )
-    # if isinstance(result, ExternalPartitionExecutionErrorData):
-    #     raise DagsterUserCodeProcessError.from_error_info(result.error)
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
