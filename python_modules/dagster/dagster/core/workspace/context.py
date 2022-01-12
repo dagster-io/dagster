@@ -302,7 +302,11 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._process_context.permissions
 
     def has_permission(self, permission: str) -> bool:
-        return self._process_context.has_permission(permission)
+        permissions = self._process_context.permissions
+        check.invariant(
+            permission in permissions, f"Permission {permission} not listed in permissions map"
+        )
+        return permissions[permission]
 
 
 class IWorkspaceProcessContext(ABC):
@@ -322,10 +326,6 @@ class IWorkspaceProcessContext(ABC):
                 The source of the request, such as an object representing the web request
                 or http connection.
         """
-
-    @abstractmethod
-    def has_permission(self, permission: str) -> bool:
-        pass
 
     @property
     @abstractmethod
@@ -491,13 +491,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     @property
     def permissions(self) -> Dict[str, bool]:
         return get_user_permissions(self)
-
-    def has_permission(self, permission: str) -> bool:
-        permissions = self.permissions
-        check.invariant(
-            permission in permissions, f"Permission {permission} not listed in permissions map"
-        )
-        return permissions[permission]
 
     @property
     def version(self) -> str:
