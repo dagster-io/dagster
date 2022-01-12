@@ -4,7 +4,6 @@ import json
 from typing import Optional
 
 import requests
-from requests.models import HTTPError
 from dagster import (
     get_dagster_logger, 
     __version__,
@@ -64,7 +63,6 @@ class AirbyteResource:
 
         num_retries = 0
         while True:
-            print(num_retries)
             try:
                 response = requests.request(
                     method="POST",
