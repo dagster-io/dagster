@@ -44,7 +44,7 @@ def test_trigger_connection_fail():
 @responses.activate
 @pytest.mark.parametrize(
     "state",
-    [AirbyteState.SUCCEEDED.value, AirbyteState.CANCELLED.value, AirbyteState.ERROR.value, "unrecognized"],
+    [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
 def test_sync_and_pool(state):
     ab_resource = airbyte_resource(
@@ -69,11 +69,11 @@ def test_sync_and_pool(state):
     )
 
     
-    if state == AirbyteState.ERROR.value:
+    if state == AirbyteState.ERROR:
         with pytest.raises(Failure, match="Job failed"):
             r = ab_resource.sync_and_poll("some_connection", 0)
 
-    elif state == AirbyteState.CANCELLED.value:
+    elif state == AirbyteState.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
             r = ab_resource.sync_and_poll("some_connection", 0)
     

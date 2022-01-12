@@ -18,7 +18,7 @@ from enum import Enum
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
-class AirbyteState(str, Enum):
+class AirbyteState:
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     CANCELLED = "cancelled"
@@ -135,13 +135,13 @@ class AirbyteResource:
             job_details = self.get_job_status(job_id)
             state = job_details.get("job").get("status")
 
-            if state in (AirbyteState.RUNNING.value, AirbyteState.PENDING.value, AirbyteState.INCOMPLETE.value):
+            if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
                 continue
-            elif state == AirbyteState.SUCCEEDED.value:
+            elif state == AirbyteState.SUCCEEDED:
                 break
-            elif state == AirbyteState.ERROR.value:
+            elif state == AirbyteState.ERROR:
                 raise Failure(f"Job failed: {job_id}")
-            elif state == AirbyteState.CANCELLED.value:
+            elif state == AirbyteState.CANCELLED:
                 raise Failure(f"Job was cancelled: {job_id}")
             else:
                 raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
