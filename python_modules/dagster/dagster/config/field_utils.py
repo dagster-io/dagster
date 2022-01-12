@@ -1,25 +1,28 @@
 # encoding: utf-8
 import hashlib
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
 
-from .config_type import ConfigType, ConfigTypeKind
+from .config_type import Array, ConfigType, ConfigTypeKind
+
+if TYPE_CHECKING:
+    from dagster.config.field import Field
 
 
-def all_optional_type(config_type):
+def all_optional_type(config_type: ConfigType) -> bool:
     check.inst_param(config_type, "config_type", ConfigType)
 
     if ConfigTypeKind.is_shape(config_type.kind):
-        for field in config_type.fields.values():
+        for field in config_type.fields.values():  # type: ignore
             if field.is_required:
                 return False
         return True
 
     if ConfigTypeKind.is_selector(config_type.kind):
-        if len(config_type.fields) == 1:
-            for field in config_type.fields.values():
+        if len(config_type.fields) == 1:  # type: ignore
+            for field in config_type.fields.values():  # type: ignore
                 if field.is_required:
                     return False
             return True
@@ -250,27 +253,31 @@ class Selector(_ConfigHasFields):
 # Config syntax expansion code below
 
 
-def is_potential_field(potential_field):
+def is_potential_field(potential_field: object) -> bool:
     from .field import Field, resolve_to_config_type
 
-    return isinstance(potential_field, (Field, dict, list)) or resolve_to_config_type(
-        potential_field
+    return isinstance(potential_field, (Field, dict, list)) or bool(
+        resolve_to_config_type(potential_field)
     )
 
 
-def convert_fields_to_dict_type(fields):
+def convert_fields_to_dict_type(fields: Dict[str, object]):
     return _convert_fields_to_dict_type(fields, fields, [])
 
 
-def _convert_fields_to_dict_type(original_root, fields, stack):
+def _convert_fields_to_dict_type(
+    original_root: object, fields: Dict[str, object], stack: List[str]
+) -> Shape:
     return Shape(_expand_fields_dict(original_root, fields, stack))
 
 
-def expand_fields_dict(fields):
+def expand_fields_dict(fields: Dict[str, object]) -> Dict[str, "Field"]:
     return _expand_fields_dict(fields, fields, [])
 
 
-def _expand_fields_dict(original_root, fields, stack):
+def _expand_fields_dict(
+    original_root: object, fields: Dict[str, object], stack: List[str]
+) -> Dict[str, "Field"]:
     check.dict_param(fields, "fields")
     return {
         name: _convert_potential_field(original_root, value, stack + [name])
@@ -278,8 +285,7 @@ def _expand_fields_dict(original_root, fields, stack):
     }
 
 
-def expand_list(original_root, the_list, stack):
-    from .config_type import Array
+def expand_list(original_root: object, the_list: List[object], stack: List[str]) -> Array:
 
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
@@ -300,11 +306,11 @@ def expand_list(original_root, the_list, stack):
     return Array(inner_type)
 
 
-def convert_potential_field(potential_field):
+def convert_potential_field(potential_field: object) -> "Field":
     return _convert_potential_field(potential_field, potential_field, [])
 
 
-def _convert_potential_type(original_root, potential_type, stack):
+def _convert_potential_type(original_root: object, potential_type, stack: List[str]):
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
@@ -316,7 +322,9 @@ def _convert_potential_type(original_root, potential_type, stack):
     return resolve_to_config_type(potential_type)
 
 
-def _convert_potential_field(original_root, potential_field, stack):
+def _convert_potential_field(
+    original_root: object, potential_field: object, stack: List[str]
+) -> "Field":
     from .field import Field
 
     if potential_field is None:

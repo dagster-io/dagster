@@ -66,7 +66,7 @@ def types():
     )
 
 
-def create_schema():
+def create_schema() -> graphene.Schema:
     return graphene.Schema(
         query=GrapheneDagitQuery,
         mutation=GrapheneDagitMutation,
