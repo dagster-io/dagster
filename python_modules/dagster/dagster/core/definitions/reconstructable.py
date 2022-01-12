@@ -3,7 +3,7 @@ import os
 import sys
 from collections import namedtuple
 from functools import lru_cache
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, List, NamedTuple, Optional, Union, overload
 
 from dagster import check, seven
 from dagster.core.code_pointer import (
@@ -14,9 +14,14 @@ from dagster.core.code_pointer import (
     get_python_file_from_target,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster.utils import frozenlist
 from dagster.utils.backcompat import experimental
 
 from .pipeline_base import IPipeline
@@ -40,6 +45,7 @@ class ReconstructableRepository(
             ("pointer", CodePointer),
             ("container_image", Optional[str]),
             ("executable_path", Optional[str]),
+            ("entry_point", List[str]),
         ],
     )
 ):
@@ -48,12 +54,18 @@ class ReconstructableRepository(
         pointer,
         container_image=None,
         executable_path=None,
+        entry_point=None,
     ):
         return super(ReconstructableRepository, cls).__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
             container_image=check.opt_str_param(container_image, "container_image"),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
+            entry_point=(
+                frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+                if entry_point != None
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
         )
 
     @lru_cache(maxsize=1)
@@ -62,9 +74,6 @@ class ReconstructableRepository(
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
-
-    def get_reconstructable_schedule(self, name):
-        return ReconstructableSchedule(self, name)
 
     @classmethod
     def for_file(cls, file, fn_name, working_directory=None, container_image=None):
@@ -81,6 +90,7 @@ class ReconstructableRepository(
             executable_path=self.executable_path if self.executable_path else sys.executable,
             code_pointer=self.pointer,
             container_image=self.container_image,
+            entry_point=self.entry_point,
         )
 
     def get_python_origin_id(self):
@@ -222,35 +232,6 @@ class ReconstructablePipeline(
 
     def get_python_origin_id(self):
         return self.get_python_origin().get_id()
-
-
-@whitelist_for_serdes
-class ReconstructableSchedule(
-    namedtuple(
-        "_ReconstructableSchedule",
-        "repository schedule_name",
-    )
-):
-    def __new__(
-        cls,
-        repository,
-        schedule_name,
-    ):
-        return super(ReconstructableSchedule, cls).__new__(
-            cls,
-            repository=check.inst_param(repository, "repository", ReconstructableRepository),
-            schedule_name=check.str_param(schedule_name, "schedule_name"),
-        )
-
-    def get_python_origin(self):
-        return SchedulePythonOrigin(self.schedule_name, self.repository.get_python_origin())
-
-    def get_python_origin_id(self):
-        return self.get_python_origin().get_id()
-
-    @lru_cache(maxsize=1)
-    def get_definition(self):
-        return self.repository.get_definition().get_schedule_def(self.schedule_name)
 
 
 def reconstructable(target):

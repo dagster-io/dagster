@@ -242,6 +242,11 @@ class RepositoryLocation(AbstractContextManager):
 
     @property
     @abstractmethod
+    def entry_point(self) -> Optional[List[str]]:
+        pass
+
+    @property
+    @abstractmethod
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         pass
 
@@ -256,6 +261,7 @@ class RepositoryLocation(AbstractContextManager):
             executable_path=self.executable_path,
             code_pointer=code_pointer,
             container_image=self.container_image,
+            entry_point=self.entry_point,
         )
 
 
@@ -295,6 +301,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
     @property
     def container_image(self) -> Optional[str]:
         return self._recon_repo.container_image
+
+    @property
+    def entry_point(self) -> Optional[List[str]]:
+        return self._recon_repo.entry_point
 
     @property
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
@@ -506,6 +516,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         self._executable_path = None
         self._container_image = None
         self._repository_code_pointer_dict = None
+        self._entry_point = None
 
         try:
             self.client = DagsterGrpcClient(
@@ -539,6 +550,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._repository_code_pointer_dict = (
                 list_repositories_response.repository_code_pointer_dict
             )
+            self._entry_point = list_repositories_response.entry_point
 
             self._container_image = self._reload_current_image()
 
@@ -576,6 +588,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     @property
     def executable_path(self) -> Optional[str]:
         return self._executable_path
+
+    @property
+    def entry_point(self) -> Optional[List[str]]:
+        return self._entry_point
 
     @property
     def port(self) -> Optional[int]:
