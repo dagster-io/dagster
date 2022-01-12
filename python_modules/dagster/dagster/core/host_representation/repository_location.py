@@ -1,7 +1,7 @@
 import datetime
 import sys
 import threading
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
@@ -129,11 +129,29 @@ class RepositoryLocation(AbstractContextManager):
     ) -> ExternalExecutionPlan:
         pass
 
+    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+        """Return the ExternalPipeline for a specific pipeline. Subclasses only
+        need to implement get_subset_external_pipeline_result to handle the case where
+        a solid selection is specified, which requires access to the underlying PipelineDefinition
+        to generate the subsetted pipeline snapshot."""
+        if not selector.solid_selection:
+            return self.get_repository(selector.repository_name).get_full_external_pipeline(
+                selector.pipeline_name
+            )
+
+        repo_handle = self.get_repository(selector.repository_name).handle
+
+        return ExternalPipeline(
+            self.get_subset_external_pipeline_result(selector).external_pipeline_data, repo_handle
+        )
+
     @abstractmethod
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
     ) -> ExternalPipelineSubsetResult:
-        pass
+        """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
+        access to the underlying PipelineDefinition. Callsites should likely use
+        `get_external_pipeline` instead."""
 
     @abstractmethod
     def get_external_partition_config(
@@ -188,7 +206,8 @@ class RepositoryLocation(AbstractContextManager):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_reload_supported(self) -> bool:
         pass
 
@@ -201,7 +220,8 @@ class RepositoryLocation(AbstractContextManager):
     def cleanup(self) -> None:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def origin(self) -> RepositoryLocationOrigin:
         pass
 
@@ -211,15 +231,18 @@ class RepositoryLocation(AbstractContextManager):
             ({"image": self.container_image} if self.container_image else {}),
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def executable_path(self) -> Optional[str]:
         pass
 
-    @abstractproperty
-    def container_image(self) -> str:
+    @property
+    @abstractmethod
+    def container_image(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         pass
 
@@ -271,7 +294,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     @property
-    def container_image(self) -> str:
+    def container_image(self) -> Optional[str]:
         return self._recon_repo.container_image
 
     @property
@@ -340,8 +363,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
                 external_pipeline.identifying_pipeline_snapshot_id,
-            ),
-            represented_pipeline=external_pipeline,
+            )
         )
 
     def get_external_partition_config(
@@ -637,10 +659,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             instance=instance,
         )
 
-        return ExternalExecutionPlan(
-            execution_plan_snapshot=execution_plan_snapshot_or_error,
-            represented_pipeline=external_pipeline,
-        )
+        return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector

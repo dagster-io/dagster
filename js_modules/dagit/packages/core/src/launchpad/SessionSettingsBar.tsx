@@ -1,6 +1,5 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 export const SessionSettingsBar = styled.div`
   color: white;

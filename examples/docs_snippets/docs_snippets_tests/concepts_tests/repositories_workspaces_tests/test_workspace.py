@@ -38,7 +38,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.repository_locations_count == 2
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),

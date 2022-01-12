@@ -18,7 +18,7 @@ class BuiltinEnum:
     STRING = String
 
     @classmethod
-    def contains(cls, value):
+    def contains(cls, value: object) -> bool:
         for ttype in [cls.ANY, cls.BOOL, cls.FLOAT, cls.INT, cls.STRING, cls.NOTHING]:
             if value == ttype:
                 return True

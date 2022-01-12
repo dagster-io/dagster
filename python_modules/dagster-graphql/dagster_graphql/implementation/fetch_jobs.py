@@ -1,7 +1,7 @@
 from dagster import check
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import InstigationSelector
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
 
@@ -10,7 +10,7 @@ from .utils import capture_error
 def get_unloadable_job_states_or_error(graphene_info, job_type=None):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
-    check.opt_inst_param(job_type, "job_type", JobType)
+    check.opt_inst_param(job_type, "job_type", InstigatorType)
     job_states = graphene_info.context.instance.all_stored_job_state(job_type=job_type)
     external_jobs = [
         job
@@ -24,7 +24,8 @@ def get_unloadable_job_states_or_error(graphene_info, job_type=None):
     unloadable_states = [
         job_state
         for job_state in job_states
-        if job_state.job_origin_id not in job_origin_ids and job_state.status == JobStatus.RUNNING
+        if job_state.job_origin_id not in job_origin_ids
+        and job_state.status == InstigatorStatus.RUNNING
     ]
 
     return GrapheneInstigationStates(
@@ -46,18 +47,14 @@ def get_job_state_or_error(graphene_info, selector):
             external_sensor.get_external_origin_id()
         )
         if not job_state:
-            job_state = external_sensor.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            job_state = external_sensor.get_default_instigation_state()
     elif repository.has_external_schedule(selector.name):
         external_schedule = repository.get_external_schedule(selector.name)
         job_state = graphene_info.context.instance.get_job_state(
             external_schedule.get_external_origin_id()
         )
         if not job_state:
-            job_state = external_schedule.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            job_state = external_schedule.get_default_instigation_state()
     else:
         check.failed(f"Could not find a definition for {selector.name}")
 

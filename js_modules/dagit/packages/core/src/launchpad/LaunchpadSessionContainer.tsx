@@ -1,4 +1,13 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  Group,
+  IconWIP,
+  SecondPanelToggle,
+  SplitPanelContainer,
+} from '@dagster-io/ui';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -25,12 +34,6 @@ import {
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {SecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -522,8 +525,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     <>
       <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
       <SplitPanelContainer
-        axis={'vertical'}
-        identifier={'execution'}
+        axis="vertical"
+        identifier="execution"
         firstMinSize={100}
         firstInitialPercent={75}
         first={
@@ -576,7 +579,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
               {tagsFromSession.length ? null : (
                 <>
                   <ShortcutHandler
-                    shortcutLabel={'⌥T'}
+                    shortcutLabel="⌥T"
                     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
                     onShortcut={openTagEditor}
                   >

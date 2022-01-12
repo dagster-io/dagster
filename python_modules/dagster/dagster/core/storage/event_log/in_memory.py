@@ -29,7 +29,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._logs = defaultdict(list)
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
-        self._asset_tags = defaultdict(dict)
         self._wiped_asset_keys = defaultdict(float)
         if preload:
             for payload in preload:
@@ -85,10 +84,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
-
-        if event.is_dagster_event and event.dagster_event.asset_key:
-            materialization = event.dagster_event.step_materialization_data.materialization
-            self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 
         # snapshot handlers
         handlers = list(self._handlers[run_id])
@@ -314,5 +309,3 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self._wiped_asset_keys[asset_key] = time.time()
-        if asset_key in self._asset_tags:
-            del self._asset_tags[asset_key]

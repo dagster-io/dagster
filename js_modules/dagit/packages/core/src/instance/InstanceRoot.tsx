@@ -1,3 +1,4 @@
+import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
@@ -7,7 +8,6 @@ import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
 import {SnapshotRoot} from '../snapshots/SnapshotRoot';
-import {MainContent} from '../ui/MainContent';
 
 import {InstanceStatusRoot} from './InstanceStatusRoot';
 
@@ -23,12 +23,24 @@ export const InstanceRoot = () => {
   return (
     <MainContent ref={main}>
       <Switch>
-        <Route path="/instance/assets" exact component={AssetsCatalogRoot} />
-        <Route path="/instance/assets/(/?.*)" component={AssetEntryRoot} />
-        <Route path="/instance/runs" exact component={RunsRoot} />
-        <Route path="/instance/runs/:runId" exact component={RunRoot} />
-        <Route path="/instance/snapshots/:pipelinePath/:tab?" component={SnapshotRoot} />
-        <Route path="/instance/:tab" component={InstanceStatusRoot} />
+        <Route path="/instance/assets" exact>
+          <AssetsCatalogRoot />
+        </Route>
+        <Route path="/instance/assets/(/?.*)">
+          <AssetEntryRoot />
+        </Route>
+        <Route path="/instance/runs" exact>
+          <RunsRoot />
+        </Route>
+        <Route path="/instance/runs/:runId" exact>
+          <RunRoot />
+        </Route>
+        <Route path="/instance/snapshots/:pipelinePath/:tab?">
+          <SnapshotRoot />
+        </Route>
+        <Route path="/instance/:tab">
+          <InstanceStatusRoot />
+        </Route>
         <Route
           path="*"
           render={() => (

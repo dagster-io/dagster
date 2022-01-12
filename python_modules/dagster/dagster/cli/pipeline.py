@@ -510,17 +510,12 @@ def _create_external_pipeline_run(
         solid_selection=solid_selection,
     )
 
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
+    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
-    external_pipeline_subset = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
-
-    pipeline_mode = mode or external_pipeline_subset.get_default_mode_name()
+    pipeline_mode = mode or external_pipeline.get_default_mode_name()
 
     external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline_subset,
+        external_pipeline,
         run_config,
         pipeline_mode,
         step_keys_to_execute=None,
@@ -534,17 +529,17 @@ def _create_external_pipeline_run(
         run_id=run_id,
         run_config=run_config,
         mode=pipeline_mode,
-        solids_to_execute=external_pipeline_subset.solids_to_execute,
+        solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         solid_selection=solid_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline_subset.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline_subset.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline_subset.get_external_origin(),
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 

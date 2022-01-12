@@ -313,7 +313,8 @@ module.exports = function (webpackEnv) {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
         'react-native': 'react-native-web',
-        '@dagit/core': paths.dagitCore,
+        '@dagster-io/dagit-core': paths.dagitCore,
+        '@dagster-io/ui': paths.dagitUI,
         // Allows for better profiling with ReactDevTools
         ...(isEnvProductionProfile && {
           'react-dom$': 'react-dom/profiling',
@@ -331,7 +332,7 @@ module.exports = function (webpackEnv) {
         // please link the files into your node_modules/ and let module-resolution kick in.
         // Make sure your source files are compiled, as they will not be processed in any way.
         new ModuleScopePlugin(
-          [paths.appSrc, paths.dagitCore],
+          [paths.appSrc, paths.dagitCore, paths.dagitUI],
           [paths.appPackageJson, reactRefreshOverlayEntry],
         ),
       ],
@@ -379,8 +380,8 @@ module.exports = function (webpackEnv) {
             // The preset includes JSX, Flow, TypeScript, and some ESnext features.
             {
               test: /\.(js|mjs|jsx|ts|tsx)$/,
-              // DAGSTER: Include `src` and `@dagit/core`.
-              include: [paths.appSrc, paths.dagitCore],
+              // DAGSTER: Include `src` and `@dagster-io/dagit-core`.
+              include: [paths.appSrc, paths.dagitCore, paths.dagitUI],
               loader: require.resolve('babel-loader'),
               options: {
                 customize: require.resolve('babel-preset-react-app/webpack-overrides'),

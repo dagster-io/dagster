@@ -85,7 +85,7 @@ export const OpLinks = React.memo(
                 color={props.color}
                 x={sourceOutput.layout.x}
                 y={sourceOutput.layout.y}
-                direction={'output'}
+                direction="output"
               />
             )}
             {inputIsDynamicCollect(props.ops, to) && (
@@ -93,7 +93,7 @@ export const OpLinks = React.memo(
                 color={props.color}
                 x={targetInput.layout.x}
                 y={targetInput.layout.y}
-                direction={'collect'}
+                direction="collect"
               />
             )}
           </g>

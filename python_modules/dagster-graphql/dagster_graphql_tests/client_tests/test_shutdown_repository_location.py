@@ -1,6 +1,6 @@
 import time
 
-import grpc
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster_graphql import ShutdownRepositoryLocationStatus
 
 from ..graphql.graphql_context_test_suite import (
@@ -28,7 +28,7 @@ class TestShutdownRepositoryLocation(
         while time.time() - start_time < 15:
             try:
                 origin.create_client().heartbeat()
-            except grpc._channel._InactiveRpcError:  # pylint:disable=protected-access
+            except DagsterUserCodeUnreachableError:
                 # Shutdown succeeded
                 return
             time.sleep(1)

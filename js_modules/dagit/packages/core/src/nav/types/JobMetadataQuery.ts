@@ -104,6 +104,7 @@ export interface JobMetadataQuery_pipelineRunsOrError_Runs_results {
   id: string;
   status: RunStatus;
   assets: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets[];
+  runId: string;
   stats: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats;
 }
 

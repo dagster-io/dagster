@@ -98,6 +98,7 @@ if __name__ == "__main__":
                 "grpcio-tools==1.32.0",
                 "isort>=4.3.21,<5",
                 "mock==3.0.5",
+                "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
                 "pylint==2.6.0",
                 "pytest-cov==2.10.1",
@@ -112,6 +113,13 @@ if __name__ == "__main__":
                 "tox==3.14.2",
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
+                "types-croniter",  # version will be resolved against croniter
+                "types-mock",  # version will be resolved against mock
+                "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
+                "types-python-dateutil",  # version will be resolved against python-dateutil
+                "types-PyYAML",  # version will be resolved against PyYAML
+                "types-pytz",  # version will be resolved against pytz
+                "types-tabulate",  # version will be resolved against tabulate
                 "yamllint",
             ],
         },

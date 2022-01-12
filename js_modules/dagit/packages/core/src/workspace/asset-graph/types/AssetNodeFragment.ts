@@ -17,6 +17,5 @@ export interface AssetNodeFragment {
   id: string;
   opName: string | null;
   description: string | null;
-  jobName: string | null;
   assetKey: AssetNodeFragment_assetKey;
 }

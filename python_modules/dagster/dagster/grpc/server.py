@@ -17,6 +17,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
@@ -144,6 +145,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_python_package(
                 loadable_target_origin.package_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
         else:
             repository_code_pointer_dict[
@@ -151,6 +153,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_module(
                 loadable_target_origin.module_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
 
     return repository_code_pointer_dict
@@ -955,7 +958,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
         try:
             client.ping("")
             return
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             last_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         if time.time() - start_time > timeout:

@@ -100,18 +100,6 @@ def solid_normalization(_):
     yield Output(1)
 
 
-@solid
-def solid_asset_tags(_):
-    yield AssetMaterialization(asset_key=AssetKey("asset_tags"), tags={"foo": "FOO", "bar": "BAR"})
-    yield Output(1)
-
-
-@solid
-def solid_asset_tags_overwrite(_):
-    yield AssetMaterialization(asset_key=AssetKey("asset_tags"), tags={"foo": "NOT_FOO"})
-    yield Output(1)
-
-
 @pipeline
 def pipeline_one():
     solid_one()
@@ -126,16 +114,6 @@ def pipeline_two():
 @pipeline
 def pipeline_normalization():
     solid_normalization()
-
-
-@pipeline
-def pipeline_asset_tags():
-    solid_asset_tags()
-
-
-@pipeline
-def pipeline_asset_tags_overwrite():
-    solid_asset_tags_overwrite()
 
 
 @solid(config_schema={"partition": Field(str, is_required=False)})

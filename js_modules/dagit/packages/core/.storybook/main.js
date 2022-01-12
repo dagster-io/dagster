@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
@@ -10,11 +12,25 @@ module.exports = {
   },
   // https://github.com/storybookjs/storybook/issues/16690#issuecomment-971579785
   webpackFinal: async (config) => {
-    config.module.rules.push({
-      test: /\.mjs$/,
-      include: /node_modules/,
-      type: "javascript/auto",
-    })
-    return config
+    // console.log(path.resolve('../ui/src'));
+    // process.exit(1);
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: {
+          ...config.resolve.alias,
+          '@dagster-io/ui': path.resolve('../ui/src'),
+        },
+      },
+      module: {
+        ...config.module,
+        rules: [...config.module.rules, {
+          test: /\.mjs$/,
+          include: /node_modules/,
+          type: "javascript/auto",
+        }],
+      },
+    };
   },
-};
+}

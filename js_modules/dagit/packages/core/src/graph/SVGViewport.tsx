@@ -1,11 +1,7 @@
+import {Box, ColorsWIP, IconWIP, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Slider} from '../ui/Slider';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;

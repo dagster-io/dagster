@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-from croniter import croniter
 from dagster import check
 from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
+from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -25,7 +25,7 @@ from ..storage.tags import check_tags
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import JobType, RunRequest, SkipReason
+from .run_request import InstigatorType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -197,9 +197,10 @@ class ScheduleDefinition:
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
-        if not croniter.is_valid(self._cron_schedule):
+        if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''.  "
+                "Dagster recognizes cron expressions consisting of 5 space-separated fields."
             )
 
         if job is not None:
@@ -377,8 +378,8 @@ class ScheduleDefinition:
         return self._target.pipeline_name
 
     @property
-    def job_type(self) -> JobType:
-        return JobType.SCHEDULE
+    def job_type(self) -> InstigatorType:
+        return InstigatorType.SCHEDULE
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
@@ -423,9 +424,11 @@ class ScheduleDefinition:
             execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
 
+        skip_message: Optional[str] = None
+
         if not result or result == [None]:
             run_requests = []
-            skip_message = None
+            skip_message = "Schedule function returned an empty result"
         elif len(result) == 1:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest))

@@ -1,17 +1,21 @@
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {PipelineRunTag} from '../app/LocalStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {TextInput} from '../ui/TextInput';
-import {Tooltip} from '../ui/Tooltip';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -211,7 +215,7 @@ interface ITagEditorLinkProps {
 
 const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   <ShortcutHandler
-    shortcutLabel={'⌥T'}
+    shortcutLabel="⌥T"
     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
     onShortcut={onRequestOpen}
   >

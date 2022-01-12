@@ -6,6 +6,7 @@ from contextlib import contextmanager
 
 import grpc
 from dagster import check, seven
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
@@ -45,7 +46,7 @@ def client_heartbeat_thread(client, shutdown_event):
 
         try:
             client.heartbeat("ping")
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             continue
 
 
@@ -99,17 +100,22 @@ class DagsterGrpcClient:
             yield channel
 
     def _query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
-        with self._channel() as channel:
-            stub = DagsterApiStub(channel)
-            response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
-        # TODO need error handling here
-        return response
+        try:
+            with self._channel() as channel:
+                stub = DagsterApiStub(channel)
+                response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
+            return response
+        except Exception as e:
+            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
 
     def _streaming_query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
-        with self._channel() as channel:
-            stub = DagsterApiStub(channel)
-            response_stream = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
-            yield from response_stream
+        try:
+            with self._channel() as channel:
+                stub = DagsterApiStub(channel)
+                response_stream = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
+                yield from response_stream
+        except Exception as e:
+            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
 
     def ping(self, echo):
         check.str_param(echo, "echo")
@@ -413,7 +419,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
             if self._server_process.poll() is None:
                 try:
                     self.shutdown_server()
-                except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+                except DagsterUserCodeUnreachableError:
                     pass
             self._server_process = None
 

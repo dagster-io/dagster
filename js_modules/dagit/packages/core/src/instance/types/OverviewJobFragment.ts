@@ -3,22 +3,11 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus, InstigationStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: OverviewJobFragment
 // ====================================================
-
-export interface OverviewJobFragment_runs_assets_key {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface OverviewJobFragment_runs_assets {
-  __typename: "Asset";
-  id: string;
-  key: OverviewJobFragment_runs_assets_key;
-}
 
 export interface OverviewJobFragment_runs_stats_RunStatsSnapshot {
   __typename: "RunStatsSnapshot";
@@ -50,7 +39,6 @@ export interface OverviewJobFragment_runs {
   mode: string;
   runId: string;
   status: RunStatus;
-  assets: OverviewJobFragment_runs_assets[];
   stats: OverviewJobFragment_runs_stats;
 }
 
@@ -60,42 +48,6 @@ export interface OverviewJobFragment_modes {
   name: string;
 }
 
-export interface OverviewJobFragment_schedules_scheduleState {
-  __typename: "InstigationState";
-  id: string;
-  status: InstigationStatus;
-}
-
-export interface OverviewJobFragment_schedules {
-  __typename: "Schedule";
-  id: string;
-  mode: string;
-  name: string;
-  scheduleState: OverviewJobFragment_schedules_scheduleState;
-  cronSchedule: string;
-}
-
-export interface OverviewJobFragment_sensors_targets {
-  __typename: "Target";
-  mode: string;
-  pipelineName: string;
-}
-
-export interface OverviewJobFragment_sensors_sensorState {
-  __typename: "InstigationState";
-  id: string;
-  status: InstigationStatus;
-}
-
-export interface OverviewJobFragment_sensors {
-  __typename: "Sensor";
-  id: string;
-  name: string;
-  targets: OverviewJobFragment_sensors_targets[] | null;
-  sensorState: OverviewJobFragment_sensors_sensorState;
-  jobOriginId: string;
-}
-
 export interface OverviewJobFragment {
   __typename: "Pipeline";
   id: string;
@@ -103,6 +55,4 @@ export interface OverviewJobFragment {
   isJob: boolean;
   runs: OverviewJobFragment_runs[];
   modes: OverviewJobFragment_modes[];
-  schedules: OverviewJobFragment_schedules[];
-  sensors: OverviewJobFragment_sensors[];
 }

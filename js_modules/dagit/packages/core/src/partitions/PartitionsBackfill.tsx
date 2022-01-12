@@ -1,4 +1,20 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  Checkbox,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  Group,
+  IconWIP,
+  NonIdealState,
+  Spinner,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -13,20 +29,7 @@ import {useViewport} from '../gantt/useViewport';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {RunStatus} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {TextInput} from '../ui/TextInput';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';

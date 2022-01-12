@@ -155,3 +155,17 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
                 mock_s3_bucket.Object(
                     key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.out"
                 ).get()
+
+
+def test_blank_compute_logs(mock_s3_bucket):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
+        )
+
+        # simulate subscription to an in-progress run, where there is no key in the bucket
+        stdout = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDOUT)
+        stderr = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDERR)
+
+        assert not stdout.data
+        assert not stderr.data

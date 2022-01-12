@@ -1,90 +1,133 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
+import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {AssetNeighborsGraph} from './AssetNeighborsGraph';
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {AssetNodeList} from './AssetNodeList';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
-  repo: DagsterRepoOption | null;
+  repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
-}> = ({repo, assetNode, liveDataByNode}) => {
-  if (!repo) {
-    return (
-      <Box padding={{vertical: 20}}>
-        <NonIdealState
-          icon="asset"
-          title="No software-defined metadata"
-          description="The definition of this asset could not be found in a repository."
-        />
-      </Box>
-    );
-  }
-
+}> = ({repoAddress, assetNode, liveDataByNode}) => {
   return (
-    <Box
-      flex={{direction: 'row'}}
-      border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
-    >
-      <Box style={{flex: 1}}>
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-          flex={{justifyContent: 'space-between'}}
-        >
-          <Subheading>Definition in Repository</Subheading>
-          {assetNode.jobName && (
-            <PipelineReference
-              showIcon
-              pipelineName={assetNode.jobName}
-              pipelineHrefContext={'repo-unknown'}
-              isJob
-            />
-          )}
-        </Box>
-        <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
-          <Description
-            description={assetNode.description || 'No description provided.'}
-            maxHeight={318}
-          />
-        </Box>
-      </Box>
+    <>
+      <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
       <Box
-        border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-        style={{width: '40%', height: 390}}
-        flex={{direction: 'column'}}
+        flex={{direction: 'row'}}
+        border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
       >
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <Subheading>Related Assets</Subheading>
+        <Box style={{flex: 1}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between', gap: 8}}
+          >
+            <Subheading>Definition in Repository</Subheading>
+            <Box flex={{alignItems: 'baseline', gap: 8, wrap: 'wrap'}}>
+              {assetNode.jobs.map((job) => (
+                <PipelineReference
+                  key={job.id}
+                  isJob
+                  showIcon
+                  pipelineName={job.name}
+                  pipelineHrefContext={repoAddress}
+                />
+              ))}
+              {assetNode.jobs.length === 0 && !assetNode.opName && (
+                <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
+              )}
+            </Box>
+          </Box>
+          <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
+            <Description
+              description={assetNode.description || 'No description provided.'}
+              maxHeight={260}
+            />
+          </Box>
         </Box>
-        <Box margin={{vertical: 16, horizontal: 24}} style={{minHeight: 0, height: '100%'}}>
-          <AssetNeighborsGraph
-            assetNode={assetNode}
+        <Box
+          border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+          style={{width: '40%', height: 330}}
+          flex={{direction: 'column'}}
+        >
+          <Box
+            padding={{vertical: 16, left: 24, right: 12}}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
+            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
+          </Box>
+          <AssetNodeList
+            items={assetNode.dependencies}
             liveDataByNode={liveDataByNode}
-            repoAddress={{name: repo.repository.name, location: repo.repositoryLocation.name}}
+            repoAddress={repoAddress}
+          />
+          <Box
+            padding={{vertical: 16, left: 24, right: 12}}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
+            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
+          </Box>
+          <AssetNodeList
+            items={assetNode.dependedBy}
+            liveDataByNode={liveDataByNode}
+            repoAddress={repoAddress}
           />
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
+
+const JobGraphLink: React.FC<{
+  repoAddress: RepoAddress;
+  assetNode: AssetNodeDefinitionFragment;
+  direction: 'upstream' | 'downstream';
+}> = ({direction, assetNode, repoAddress}) =>
+  assetNode.jobs.length > 0 &&
+  assetNode.opName &&
+  (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0 ? (
+    <Link
+      to={workspacePathFromAddress(
+        repoAddress,
+        `/jobs/${explorerPathToString({
+          pipelineName: assetNode.jobs[0].name,
+          opNames: [assetNode.opName],
+          opsQuery: direction === 'upstream' ? `*${assetNode.opName}` : `${assetNode.opName}*`,
+        })}`,
+      )}
+    >
+      <Box flex={{gap: 4, alignItems: 'center'}}>
+        {direction === 'upstream' ? 'View upstream graph' : 'View downstream graph'}
+        <IconWIP name="open_in_new" color={ColorsWIP.Link} />
+      </Box>
+    </Link>
+  ) : null;
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
+    description
+    opName
+    jobs {
+      id
+      name
+    }
+
     ...AssetNodeFragment
     ...AssetNodeLiveFragment
 
@@ -92,6 +135,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        jobs {
+          id
+          name
+        }
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }
@@ -100,6 +147,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        jobs {
+          id
+          name
+        }
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }

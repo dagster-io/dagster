@@ -69,7 +69,7 @@ def source_code(reference_deployment, tmpdir):
             else:
                 overrides.append(requirement + "\n")
                 continue
-            shutil.copytree(source, modules / requirement)
+            shutil.copytree(source, modules / requirement, ignore=shutil.ignore_patterns(".tox"))
             overrides.append(f"./modules/{requirement}\n")
 
         with open(path, "w") as f:

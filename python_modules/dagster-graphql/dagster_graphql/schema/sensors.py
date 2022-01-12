@@ -1,7 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
-from dagster.core.scheduler.job import JobState
+from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
@@ -58,18 +58,12 @@ class GrapheneSensor(graphene.ObjectType):
     class Meta:
         name = "Sensor"
 
-    def __init__(self, graphene_info, external_sensor):
+    def __init__(self, external_sensor, sensor_state):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
-        self._sensor_state = graphene_info.context.instance.get_job_state(
-            self._external_sensor.get_external_origin_id()
-        )
+        self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
 
         if not self._sensor_state:
-            # Also include a SensorState for a stopped sensor that may not
-            # have a stored database row yet
-            self._sensor_state = self._external_sensor.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            self._sensor_state = self._external_sensor.get_default_instigation_state()
 
         super().__init__(
             name=external_sensor.name,
@@ -139,7 +133,7 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
 
     def __init__(self, job_state):
         super().__init__()
-        self._job_state = check.inst_param(job_state, "job_state", JobState)
+        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
 
     def resolve_instigationState(self, _graphene_info):
         if not self._job_state:

@@ -1,12 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DagsterTag} from '../runs/RunTag';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {RepoAddress} from '../workspace/types';
 

@@ -1,20 +1,32 @@
 import qs from 'qs';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
 
 import {IExecutionSession, applyCreateSession, useStorage} from '../app/LocalStorage';
+import {usePermissions} from '../app/Permissions';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+  const {repoAddress} = props;
+  const {canLaunchPipelineExecution} = usePermissions();
+  const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
+
+  if (!canLaunchPipelineExecution) {
+    return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
+  }
+  return <LaunchpadSetupAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
+};
+
 interface Props {
   pipelinePath: string;
   repoAddress: RepoAddress;
 }
 
-export const LaunchpadSetupRoot: React.FC<Props> = (props) => {
+const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);

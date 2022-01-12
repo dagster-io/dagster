@@ -44,13 +44,12 @@ def test_build_reconstructable_pipeline():
         with pytest.raises(DagsterInvariantViolationError):
             reconstructable(bar_pipeline)
 
-        sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-
         reconstructable_bar_pipeline = build_reconstructable_pipeline(
             "test_custom_reconstructable",
             "reconstruct_pipeline",
             ("foo_",),
             {"has_nested_scope_solid": True, "name": "bar"},
+            reconstructor_working_directory=os.path.dirname(os.path.realpath(__file__)),
         )
 
         reconstructed_bar_pipeline_def = reconstructable_bar_pipeline.get_definition()

@@ -1,13 +1,16 @@
+import {
+  Box,
+  ButtonLink,
+  Checkbox,
+  ColorsWIP,
+  MetadataTable,
+  PageHeader,
+  Heading,
+  Subheading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {MetadataTable} from '../ui/MetadataTable';
-import {PageHeader} from '../ui/PageHeader';
-import {Heading, Subheading} from '../ui/Text';
 
 import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
 import {TimezoneSelect} from './time/TimezoneSelect';

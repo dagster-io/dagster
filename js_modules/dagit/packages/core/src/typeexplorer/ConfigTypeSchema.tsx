@@ -1,8 +1,7 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 type ConfigTypeSchemaTheme = 'dark' | 'light';
 
@@ -80,7 +79,7 @@ function renderTypeRecursive(
       <>
         {`{`}
         {type.isSelector && (
-          <DictBlockComment indent={innerIndent} content={`One of the following:`} />
+          <DictBlockComment indent={innerIndent} content="One of the following:" />
         )}
         {type.fields.map((fieldData) => (
           <DictEntry key={fieldData.name}>

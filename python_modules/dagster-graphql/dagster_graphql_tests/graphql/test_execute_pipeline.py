@@ -1,3 +1,4 @@
+import json
 import time
 import uuid
 
@@ -44,6 +45,50 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
         )
+
+    def test_start_pipeline_execution_serialized_config(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": json.dumps(csv_hello_world_solids_config()),
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
+        assert (
+            result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
+        )
+
+    def test_start_pipeline_execution_malformed_config(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": '{"foo": {{{{',
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["launchPipelineExecution"]["__typename"] == "PythonError"
+        assert "JSONDecodeError" in result.data["launchPipelineExecution"]["message"]
 
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")

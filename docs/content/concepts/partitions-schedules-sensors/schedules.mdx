@@ -38,7 +38,7 @@ You define a schedule by constructing a <PyObject object="ScheduleDefinition" />
 
 ### A basic schedule
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and "@monthly" if your croniter dependency's version is >= 1.0.12.
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job

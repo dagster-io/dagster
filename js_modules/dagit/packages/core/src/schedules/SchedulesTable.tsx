@@ -1,3 +1,15 @@
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  IconWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  Table,
+  TagWIP,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -5,15 +17,6 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {MenuLink, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -46,10 +49,10 @@ export const SchedulesTable: React.FC<{
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>
-          <th style={{minWidth: '300px'}}>Schedule name</th>
-          <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{minWidth: '170px'}}>Next tick</th>
-          <th style={{width: '120px'}}>
+          <th>Schedule name</th>
+          <th style={{width: '15%'}}>Schedule</th>
+          <th style={{width: '10%'}}>Next tick</th>
+          <th style={{width: '10%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
@@ -57,7 +60,7 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: 130}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last run
               <Tooltip position="top" content={lastRun}>
@@ -65,15 +68,15 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: '30%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
-              Partition
+              Partition Set
               <Tooltip position="top" content={partitionStatus}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Box>
           </th>
-          <th />
+          <th style={{width: 80}} />
         </tr>
       </thead>
       <tbody>
@@ -173,7 +176,7 @@ const ScheduleRow: React.FC<{
       </td>
       <td>
         {cronSchedule ? (
-          <Tooltip position={'bottom'} content={cronSchedule}>
+          <Tooltip position="bottom" content={cronSchedule}>
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (

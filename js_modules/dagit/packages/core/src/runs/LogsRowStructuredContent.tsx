@@ -1,4 +1,5 @@
 import {Intent} from '@blueprintjs/core';
+import {Box, ColorsWIP, TagWIP} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -6,9 +7,6 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {TagWIP} from '../ui/TagWIP';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';

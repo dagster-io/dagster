@@ -1,10 +1,12 @@
 import os
 import re
 import subprocess
+import sys
 import uuid
 
 import pytest
 from dagster import seven
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
@@ -314,6 +316,10 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
+@pytest.mark.skipif(
+    sys.version_info.major == 3 and sys.version_info.minor == 6,
+    reason="Sporadically failing with segfault on Python 3.6",
+)
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
@@ -442,7 +448,7 @@ def test_sensor_timeout():
                 ),
                 repository_name="bar_repo",
             )
-            with pytest.raises(Exception, match="Deadline Exceeded"):
+            with pytest.raises(DagsterUserCodeUnreachableError) as exc_info:
                 client.external_sensor_execution(
                     sensor_execution_args=SensorExecutionArgs(
                         repository_origin=repo_origin,
@@ -454,6 +460,8 @@ def test_sensor_timeout():
                     ),
                     timeout=2,
                 )
+
+            assert "Deadline Exceeded" in str(exc_info.getrepr())
 
             # Call succeeds without the timeout
             client.external_sensor_execution(

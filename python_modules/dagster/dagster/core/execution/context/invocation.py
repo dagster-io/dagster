@@ -264,7 +264,7 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
             config_evr.errors,
             solid_config,
         )
-    validated_config = config_evr.value.get("config")
+    validated_config = cast(Dict, config_evr.value).get("config")
     mapped_config_evr = solid_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
@@ -272,7 +272,7 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
             mapped_config_evr.errors,
             solid_config,
         )
-    validated_config = mapped_config_evr.value.get("config")
+    validated_config = cast(Dict, mapped_config_evr.value).get("config")
     return validated_config
 
 

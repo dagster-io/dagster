@@ -1,9 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {WarningTooltip} from './WarningTooltip';
@@ -22,15 +21,12 @@ export const InstanceWarningIcon = React.memo(() => {
 
     // Find any schedules or sensors in the repo list.
     for (const repo of options) {
-      const {pipelines} = repo.repository;
-      for (const job of pipelines) {
-        const {sensors, schedules} = job;
-        if (sensors.length) {
-          anySensors = true;
-        }
-        if (schedules.length) {
-          anySchedules = true;
-        }
+      const {schedules, sensors} = repo.repository;
+      if (sensors.length) {
+        anySensors = true;
+      }
+      if (schedules.length) {
+        anySchedules = true;
       }
       if (anySensors && anySchedules) {
         break;

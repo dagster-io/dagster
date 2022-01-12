@@ -1,9 +1,9 @@
 import abc
 from typing import Iterable
 
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.scheduler.job import JobState, JobTick, JobTickData, JobTickStatus
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
@@ -15,17 +15,17 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def all_stored_job_state(
-        self, repository_origin_id: str = None, job_type: JobType = None
-    ) -> Iterable[JobState]:
-        """Return all JobStates present in storage
+        self, repository_origin_id: str = None, job_type: InstigatorType = None
+    ) -> Iterable[InstigatorState]:
+        """Return all InstigationStates present in storage
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
-            job_type (Optional[JobType]): The JobType to scope results to
+            job_type (Optional[InstigatorType]): The InstigatorType to scope results to
         """
 
     @abc.abstractmethod
-    def get_job_state(self, job_origin_id: str) -> JobState:
+    def get_job_state(self, job_origin_id: str) -> InstigatorState:
         """Return the unique job with the given id
 
         Args:
@@ -33,19 +33,19 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def add_job_state(self, job: JobState):
+    def add_job_state(self, job: InstigatorState):
         """Add a job to storage.
 
         Args:
-            job (JobState): The job to add
+            job (InstigatorState): The job to add
         """
 
     @abc.abstractmethod
-    def update_job_state(self, job: JobState):
+    def update_job_state(self, job: InstigatorState):
         """Update a job in storage.
 
         Args:
-            job (JobState): The job to update
+            job (InstigatorState): The job to update
         """
 
     @abc.abstractmethod
@@ -59,7 +59,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     @abc.abstractmethod
     def get_job_ticks(
         self, job_origin_id: str, before: float = None, after: float = None, limit: int = None
-    ) -> Iterable[JobTick]:
+    ) -> Iterable[InstigatorTick]:
         """Get the ticks for a given job.
 
         Args:
@@ -67,7 +67,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_latest_job_tick(self, job_origin_id: str) -> JobTick:
+    def get_latest_job_tick(self, job_origin_id: str) -> InstigatorTick:
         """Get the most recent tick for a given job.
 
         Args:
@@ -75,28 +75,28 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data: JobTickData):
+    def create_job_tick(self, job_tick_data: TickData):
         """Add a job tick to storage.
 
         Args:
-            job_tick_data (JobTickData): The job tick to add
+            job_tick_data (TickData): The job tick to add
         """
 
     @abc.abstractmethod
-    def update_job_tick(self, tick: JobTick):
+    def update_job_tick(self, tick: InstigatorTick):
         """Update a job tick already in storage.
 
         Args:
-            tick (JobTick): The job tick to update
+            tick (InstigatorTick): The job tick to update
         """
 
     @abc.abstractmethod
-    def purge_job_ticks(self, job_origin_id: str, tick_status: JobTickStatus, before: float):
+    def purge_job_ticks(self, job_origin_id: str, tick_status: TickStatus, before: float):
         """Wipe ticks for a job for a certain status and timestamp.
 
         Args:
             job_origin_id (str): The id of the ExternalJob target to delete
-            tick_status (JobTickStatus): The tick status to wipe
+            tick_status (TickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
         """
 

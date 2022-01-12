@@ -1,11 +1,10 @@
 import {gql} from '@apollo/client';
+import {Box, CursorPaginationControls} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {Box} from '../ui/Box';
-import {CursorPaginationControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
 
 import {AssetSearch} from './AssetSearch';

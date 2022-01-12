@@ -1,6 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {Redirect, useParams} from 'react-router-dom';
 
+import {usePermissions} from '../app/Permissions';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -16,12 +18,24 @@ import {LaunchpadRootQuery} from './types/LaunchpadRootQuery';
 
 const LaunchpadSessionContainer = React.lazy(() => import('./LaunchpadSessionContainer'));
 
+export const LaunchpadRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+  const {repoAddress} = props;
+  const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
+  const {canLaunchPipelineExecution} = usePermissions();
+
+  if (!canLaunchPipelineExecution) {
+    return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
+  }
+
+  return <LaunchpadAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
+};
+
 interface Props {
   pipelinePath: string;
   repoAddress: RepoAddress;
 }
 
-export const LaunchpadRoot: React.FC<Props> = (props) => {
+const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;

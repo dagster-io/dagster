@@ -1,19 +1,27 @@
+import gc
+from typing import NamedTuple
+
+import objgraph
 import pytest
 from dagster import (
     DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
+    Out,
     build_solid_context,
     execute_pipeline,
     execute_solid,
     graph,
+    job,
     op,
     pipeline,
+    reconstructable,
     solid,
 )
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.test_utils import instance_for_test
 
 
 def test_basic():
@@ -219,3 +227,35 @@ def test_dynamic_with_op():
         emit().map(passthrough)
 
     assert test_graph.execute_in_process().success
+
+
+class DangerNoodle(NamedTuple):
+    x: int
+
+
+@op(out={"items": DynamicOut(), "refs": Out()})
+def spawn():
+    for i in range(10):
+        yield DynamicOutput(DangerNoodle(i), output_name="items", mapping_key=f"num_{i}")
+
+    gc.collect()
+    yield Output(len(objgraph.by_type("DangerNoodle")), output_name="refs")
+
+
+@job()
+def no_leaks_plz():
+    spawn()
+
+
+def test_dealloc_prev_outputs():
+    # Ensure dynamic outputs can be used to chunk large data objects
+    # by not holding any refs to previous outputs.
+    # Things that will hold on to outputs:
+    # * in process execution / mem io manager
+    # * having hooks
+    with instance_for_test() as inst:
+        result = execute_pipeline(reconstructable(no_leaks_plz), instance=inst)
+        assert result.success
+
+        # there may be 1 still referenced by outer iteration frames
+        assert result.output_for_solid("spawn", "refs") <= 1

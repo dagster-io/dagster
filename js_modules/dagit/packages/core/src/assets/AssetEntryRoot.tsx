@@ -1,17 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
+import {Page} from '@dagster-io/ui';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import {Loading} from '../ui/Loading';
-import {Page} from '../ui/Page';
 
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
 
-export const AssetEntryRoot: React.FC<RouteComponentProps> = ({match}) => {
-  const currentPath: string[] = (match.params['0'] || '')
+export const AssetEntryRoot = () => {
+  const params = useParams();
+  const currentPath: string[] = (params['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
@@ -22,12 +23,12 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({match}) => {
 
   return queryResult.loading ? (
     <Page>
-      <AssetPageHeader currentPath={currentPath} />
+      <AssetPageHeader assetKey={{path: currentPath}} repoAddress={null} />
       <Loading queryResult={queryResult}>{() => null}</Loading>
     </Page>
   ) : queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
     <Page>
-      <AssetPageHeader currentPath={currentPath} />
+      <AssetPageHeader assetKey={{path: currentPath}} repoAddress={null} />
       <AssetsCatalogTable prefixPath={currentPath} />
     </Page>
   ) : (

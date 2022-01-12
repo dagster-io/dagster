@@ -356,7 +356,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_launcher = step_launcher_resources[0]
 
         self._step_exception: Optional[BaseException] = None
-        self._step_output_capture: Dict[StepOutputHandle, Any] = {}
+
+        self._step_output_capture: Optional[Dict[StepOutputHandle, Any]] = None
+        # Enable step output capture if there are any hooks which will receive them.
+        # Expect in the future that hooks may control whether or not they get outputs,
+        # but for now presence of any will cause output capture.
+        if self.pipeline_def.get_all_hooks_for_handle(self.solid_handle):
+            self._step_output_capture = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -541,7 +547,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_exception
 
     @property
-    def step_output_capture(self) -> Dict[StepOutputHandle, Any]:
+    def step_output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._step_output_capture
 
     @property

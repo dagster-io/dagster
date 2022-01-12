@@ -2,6 +2,7 @@ import io
 import os.path
 import pickle
 import tempfile
+import time
 
 from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -12,9 +13,15 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.serdes import deserialize_value
+from dagster.utils.backoff import backoff
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    poll_run_state,
+)
 from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
 
 from .configs import (
     define_databricks_secrets_config,
@@ -74,7 +81,9 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             description="If set, and if the specified cluster is configured to export logs, "
             "the system will wait after job completion for the logs to appear in the configured "
             "location. Note that logs are copied every 5 minutes, so enabling this will add "
-            "several minutes to the job runtime.",
+            "several minutes to the job runtime. NOTE: this integration will export stdout/stderr"
+            "from the remote Databricks process automatically, so this option is not generally "
+            "necessary.",
         ),
         "max_completion_wait_time_seconds": Field(
             IntSource,
@@ -82,6 +91,12 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             default_value=DEFAULT_RUN_MAX_WAIT_TIME_SEC,
             description="If the Databricks job run takes more than this many seconds, then "
             "consider it failed and terminate the step.",
+        ),
+        "poll_interval_sec": Field(
+            float,
+            is_required=False,
+            default_value=5.0,
+            description="How frequently Dagster will poll Databricks to determine the state of the job.",
         ),
     }
 )
@@ -113,6 +128,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         staging_prefix,
         wait_for_logs,
         max_completion_wait_time_seconds,
+        poll_interval_sec=5,
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
     ):
@@ -140,6 +156,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_runner = DatabricksJobRunner(
             host=databricks_host,
             token=databricks_token,
+            poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
 
@@ -160,21 +177,92 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # If this is being called within a `capture_interrupts` context, allow interrupts while
             # waiting for the  execution to complete, so that we can terminate slow or hanging steps
             with raise_execution_interrupts():
-                self.databricks_runner.wait_for_run_to_complete(log, databricks_run_id)
+                yield from self.step_events_iterator(step_context, step_key, databricks_run_id)
         finally:
+            self.log_compute_logs(log, run_id, step_key)
+            # this is somewhat obsolete
             if self.wait_for_logs:
                 self._log_logs_from_cluster(log, databricks_run_id)
 
-        for event in self.get_step_events(run_id, step_key):
-            # write each pickled event from the DataBricks instance to the local instance
-            step_context.instance.handle_new_event(event)
-            if event.is_dagster_event:
-                yield event.dagster_event
+    def log_compute_logs(self, log, run_id, step_key):
+        stdout = self.databricks_runner.client.read_file(
+            self._dbfs_path(run_id, step_key, "stdout")
+        ).decode()
+        stderr = self.databricks_runner.client.read_file(
+            self._dbfs_path(run_id, step_key, "stderr")
+        ).decode()
+        log.info(f"Captured stdout for step {step_key}:")
+        log.info(stdout)
+        log.info(f"Captured stderr for step {step_key}:")
+        log.info(stderr)
 
-    def get_step_events(self, run_id, step_key):
+    def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
+        """The launched Databricks job writes all event records to a specific dbfs file. This iterator
+        regularly reads the contents of the file, adds any events that have not yet been seen to
+        the instance, and yields any DagsterEvents.
+
+        By doing this, we simulate having the remote Databricks process able to directly write to
+        the local DagsterInstance. Importantly, this means that timestamps (and all other record
+        properties) will be sourced from the Databricks process, rather than recording when this
+        process happens to log them.
+        """
+
+        check.int_param(databricks_run_id, "databricks_run_id")
+        processed_events = 0
+        start = time.time()
+        done = False
+        step_context.log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+        while not done:
+            with raise_execution_interrupts():
+                step_context.log.debug(
+                    "Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec
+                )
+                time.sleep(self.databricks_runner.poll_interval_sec)
+                try:
+                    done = poll_run_state(
+                        self.databricks_runner.client,
+                        step_context.log,
+                        start,
+                        databricks_run_id,
+                        self.databricks_runner.max_wait_time_sec,
+                    )
+                finally:
+                    all_events = self.get_step_events(step_context.run_id, step_key)
+                    # we get all available records on each poll, but we only want to process the
+                    # ones we haven't seen before
+                    for event in all_events[processed_events:]:
+                        # write each event from the DataBricks instance to the local instance
+                        step_context.instance.handle_new_event(event)
+                        if event.is_dagster_event:
+                            yield event.dagster_event
+                    processed_events = len(all_events)
+
+        step_context.log.info(f"Databricks run {databricks_run_id} completed.")
+
+    def get_step_events(self, run_id: str, step_key: str):
         path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
-        events_data = self.databricks_runner.client.read_file(path)
-        return deserialize_value(pickle.loads(events_data))
+
+        def _get_step_records():
+            serialized_records = self.databricks_runner.client.read_file(path)
+            if not serialized_records:
+                return []
+            return deserialize_value(pickle.loads(serialized_records))
+
+        try:
+            # reading from dbfs while it writes can be flaky
+            # allow for retry if we get malformed data
+            return backoff(
+                fn=_get_step_records,
+                retry_on=(pickle.UnpicklingError,),
+                max_retries=2,
+            )
+        # if you poll before the Databricks process has had a chance to create the file,
+        # we expect to get this error
+        except HTTPError as e:
+            if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+                return []
+
+        return []
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.

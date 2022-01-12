@@ -1,4 +1,3 @@
-import os
 import re
 import sys
 import types
@@ -6,7 +5,7 @@ import types
 import pytest
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository, reconstructable
+from dagster.core.definitions.reconstructable import reconstructable
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
@@ -119,25 +118,6 @@ def test_inner_decorator():
         match="Use a function or decorated function defined at module scope",
     ):
         reconstructable(pipe)
-
-
-def test_reconstructable_cli_args():
-    recon_file = ReconstructableRepository.for_file(
-        "foo_file", "bar_function", "/path/to/working_dir"
-    )
-    assert (
-        recon_file.get_cli_args()
-        == "-f {foo_file} -a bar_function -d {working_directory}".format(
-            foo_file=os.path.abspath(os.path.expanduser("foo_file")),
-            working_directory=os.path.abspath(os.path.expanduser("/path/to/working_dir")),
-        )
-    )
-    recon_file = ReconstructableRepository.for_file("foo_file", "bar_function")
-    assert recon_file.get_cli_args() == "-f {foo_file} -a bar_function -d {working_dir}".format(
-        foo_file=os.path.abspath(os.path.expanduser("foo_file")), working_dir=os.getcwd()
-    )
-    recon_module = ReconstructableRepository.for_module("foo_module", "bar_function")
-    assert recon_module.get_cli_args() == "-m foo_module -a bar_function"
 
 
 def test_solid_selection():

@@ -1,17 +1,14 @@
+import {Box, ColorsWIP, IconWIP, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {InstigationStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Tooltip} from '../ui/Tooltip';
 import {
   DagsterRepoOption,
-  WorkspaceJobSchedule,
-  WorkspaceJobSensor,
+  WorkspaceRepositorySchedule,
+  WorkspaceRepositorySensor,
 } from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -32,8 +29,8 @@ type JobItem = {
   isJob: boolean;
   label: React.ReactNode;
   repoAddress: RepoAddress;
-  schedule: WorkspaceJobSchedule | null;
-  sensor: WorkspaceJobSensor | null;
+  schedule: WorkspaceRepositorySchedule | null;
+  sensor: WorkspaceRepositorySensor | null;
 };
 
 export const FlatContentList: React.FC<Props> = (props) => {
@@ -55,10 +52,14 @@ export const FlatContentList: React.FC<Props> = (props) => {
         continue;
       }
 
+      const {schedules, sensors} = repository;
       for (const pipeline of repository.pipelines) {
-        const {isJob, name, schedules, sensors} = pipeline;
-        const schedule = schedules[0] || null;
-        const sensor = sensors[0] || null;
+        const {isJob, name} = pipeline;
+        const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
+        const sensor =
+          sensors.find((sensor) =>
+            sensor.targets?.map((target) => target.pipelineName).includes(name),
+          ) || null;
         items.push({
           name,
           isJob,

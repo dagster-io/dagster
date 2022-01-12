@@ -1,41 +1,41 @@
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
+import {Box, ColorsWIP, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {PageHeader} from '../ui/PageHeader';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {RepoAddress} from '../workspace/types';
 
 import {useAssetView} from './useAssetView';
 
-export const AssetPageHeader: React.FC<
-  {currentPath: string[]} & Partial<React.ComponentProps<typeof PageHeader>>
-> = ({currentPath, ...extra}) => {
+type Props = {assetKey: {path: string[]}; repoAddress: RepoAddress | null} & Partial<
+  React.ComponentProps<typeof PageHeader>
+>;
+
+export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extra}) => {
   const [view] = useAssetView();
 
   const breadcrumbs = React.useMemo(() => {
-    if (currentPath.length === 1 || view !== 'directory') {
+    if (assetKey.path.length === 1 || view !== 'directory') {
       return null;
     }
 
     const list: BreadcrumbProps[] = [];
-    currentPath.reduce((accum: string, elem: string) => {
+    assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       list.push({text: elem, href});
       return href;
     }, '/instance/assets');
 
     return list;
-  }, [currentPath, view]);
+  }, [assetKey.path, view]);
 
   return (
     <PageHeader
       title={
         view !== 'directory' || !breadcrumbs ? (
-          <Heading>{currentPath[currentPath.length - 1]}</Heading>
+          <Heading>{assetKey.path[assetKey.path.length - 1]}</Heading>
         ) : (
           <Box
             flex={{alignItems: 'center', gap: 4}}
@@ -53,7 +53,15 @@ export const AssetPageHeader: React.FC<
           </Box>
         )
       }
-      tags={<TagWIP icon="asset">Asset</TagWIP>}
+      tags={
+        repoAddress ? (
+          <TagWIP icon="asset">
+            Asset in <RepositoryLink repoAddress={repoAddress} />
+          </TagWIP>
+        ) : (
+          <TagWIP icon="asset">Asset</TagWIP>
+        )
+      }
       {...extra}
     />
   );

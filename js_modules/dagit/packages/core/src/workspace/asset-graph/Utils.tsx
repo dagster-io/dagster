@@ -21,7 +21,6 @@ export interface Node {
   id: string;
   assetKey: AssetKey;
   definition: AssetNode;
-  hidden: boolean;
 }
 interface LayoutNode {
   id: string;
@@ -45,7 +44,7 @@ export type IEdge = {
   dashed: boolean;
 };
 
-export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
+export const buildGraphData = (assetNodes: AssetNode[]) => {
   const data: GraphData = {
     nodes: {},
     downstream: {},
@@ -68,7 +67,6 @@ export const buildGraphData = (assetNodes: AssetNode[], jobName?: string) => {
     data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
-      hidden: !!jobName && definition.jobName !== jobName,
       definition,
     };
   });
@@ -86,7 +84,6 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
         id: assetNode.id,
         assetKey: assetNode.assetKey,
         definition: {...assetNode, dependencyKeys: []},
-        hidden: false,
       },
     },
     upstream: {
@@ -101,7 +98,6 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       id: asset.id,
       assetKey: asset.assetKey,
       definition: {...asset, dependencyKeys: []},
-      hidden: false,
     };
   }
   for (const {asset} of assetNode.dependedBy) {
@@ -111,7 +107,6 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       id: asset.id,
       assetKey: asset.assetKey,
       definition: {...asset, dependencyKeys: []},
-      hidden: false,
     };
   }
   return graphData;
@@ -157,7 +152,7 @@ export const layoutGraph = (
   });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const shouldRender = (node?: Node) => node && !node.hidden && node.definition.opName;
+  const shouldRender = (node?: Node) => node && node.definition.opName;
 
   Object.values(graphData.nodes)
     .filter(shouldRender)

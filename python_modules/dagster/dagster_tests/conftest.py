@@ -5,9 +5,9 @@ import time
 from contextlib import contextmanager
 
 import docker
-import grpc
 import pytest
 from dagster import check, seven
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.seven import nullcontext
 from dagster.utils import file_relative_path
@@ -61,7 +61,7 @@ def wait_for_connection(host, port):
         try:
             if DagsterGrpcClient(host=host, port=port).ping("ready") == "ready":
                 return True
-        except grpc.RpcError:
+        except DagsterUserCodeUnreachableError:
             pass
 
         time.sleep(0.2)

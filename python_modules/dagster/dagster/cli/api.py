@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -22,7 +23,7 @@ from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-from dagster.utils.log import default_system_logger
+from dagster.utils.log import configure_loggers
 
 
 @click.group(name="api")
@@ -350,6 +351,14 @@ def execute_step_command(input_json):
 )
 @python_origin_target_argument
 @click.option(
+    "--empty-working-directory",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Indicates that the working directory should be empty and should not set to the current "
+    "directory as a default",
+)
+@click.option(
     "--ipc-output-file",
     type=click.Path(),
     help="[INTERNAL] This option should generally not be used by users. Internal param used by "
@@ -398,7 +407,8 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    logger = default_system_logger("dagster-code-server", coerce_valid_log_level(log_level))
+    configure_loggers(log_level=coerce_valid_log_level(log_level))
+    logger = logging.getLogger("dagster.code_server")
 
     loadable_target_origin = None
     if any(
@@ -415,7 +425,11 @@ def grpc_command(
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
-            working_directory=get_working_directory_from_kwargs(kwargs),
+            working_directory=(
+                None
+                if kwargs.get("empty_working_directory")
+                else get_working_directory_from_kwargs(kwargs)
+            ),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
             package_name=kwargs["package_name"],

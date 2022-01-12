@@ -57,7 +57,7 @@ class OutputsConfig(NamedTuple):
         elif isinstance(self.config, dict):
             return self.config.keys()
         else:
-            return {}
+            return set()
 
     @property
     def type_materializer_specs(self) -> list:
@@ -162,7 +162,7 @@ class ResolvedRunConfig(
                 run_config,
             )
 
-        config_value = config_evr.value
+        config_value = cast(Dict[str, Any], config_evr.value)
 
         mode_def = pipeline_def.get_mode_definition(mode)
 

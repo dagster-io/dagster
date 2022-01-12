@@ -1,10 +1,8 @@
+import {Box, Popover, TagWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {Popover} from '../ui/Popover';
-import {TagWIP} from '../ui/TagWIP';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';

@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, buildPipelineSelector, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -47,14 +47,14 @@ export const SidebarPipelineOrJobOverview: React.FC<{
 
         return (
           <>
-            <SidebarSection title={'Description'}>
+            <SidebarSection title="Description">
               <Box padding={{vertical: 16, horizontal: 24}}>
                 <Description
                   description={pipelineSnapshotOrError.description || 'No description provided'}
                 />
               </Box>
             </SidebarSection>
-            <SidebarSection title={'Resources'}>
+            <SidebarSection title="Resources">
               <Box padding={{vertical: 16, horizontal: 24}}>
                 {modes.map((mode) => (
                   <SidebarModeSection mode={mode} key={mode.name} />

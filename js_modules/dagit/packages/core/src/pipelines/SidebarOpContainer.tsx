@@ -1,15 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {LoadingSpinner} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SidebarOpInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
 import {
   SidebarGraphSolidQuery,
@@ -141,6 +140,15 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
             : undefined
         }
       />
+      {!isGraph && repoAddress && (
+        <SidebarOpExecutionGraphs
+          key={`${handleID}-graphs`}
+          handleID={handleID}
+          solidName={solidContainer!.solidHandle!.solid.name}
+          pipelineName={explorerPath.pipelineName}
+          repoAddress={repoAddress}
+        />
+      )}
       <SidebarOpDefinition
         key={`${handleID}-def`}
         showingSubgraph={showingSubgraph}

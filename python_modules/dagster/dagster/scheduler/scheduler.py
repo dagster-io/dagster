@@ -5,9 +5,16 @@ import time
 
 import pendulum
 from dagster import check
-from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
+from dagster.core.errors import DagsterUserCodeUnreachableError
+from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
+from dagster.core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    InstigatorType,
+    TickData,
+    TickStatus,
+)
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
@@ -29,7 +36,14 @@ class _ScheduleLaunchContext:
         return self._tick.job_tick_data.failure_count
 
     def update_state(self, status, error=None, **kwargs):
+        skip_reason = kwargs.get("skip_reason")
+        if "skip_reason" in kwargs:
+            del kwargs["skip_reason"]
+
         self._tick = self._tick.with_status(status=status, error=error, **kwargs)
+
+        if skip_reason:
+            self._tick = self._tick.with_reason(skip_reason=skip_reason)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -41,15 +55,6 @@ class _ScheduleLaunchContext:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        # Log the error if the failure wasn't an interrupt or the daemon generator stopping
-        if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
-            error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_state(
-                JobTickStatus.FAILURE,
-                error=error_data,
-                failure_count=self.failure_count + 1,
-            )
-
         self._write()
 
 
@@ -103,8 +108,8 @@ def launch_scheduled_runs(
 
     schedules = [
         s
-        for s in instance.all_stored_job_state(job_type=JobType.SCHEDULE)
-        if s.status == JobStatus.RUNNING
+        for s in instance.all_stored_job_state(job_type=InstigatorType.SCHEDULE)
+        if s.status == InstigatorStatus.RUNNING
     ]
 
     if not schedules:
@@ -157,7 +162,7 @@ def launch_scheduled_runs_for_schedule(
     log_verbose_checks=True,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(schedule_state, "schedule_state", JobState)
+    check.inst_param(schedule_state, "schedule_state", InstigatorState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
 
@@ -166,11 +171,11 @@ def launch_scheduled_runs_for_schedule(
     start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
 
     if latest_tick:
-        if latest_tick.status == JobTickStatus.STARTED:
+        if latest_tick.status == TickStatus.STARTED:
             # Scheduler was interrupted while performing this tick, re-do it
             start_timestamp_utc = max(start_timestamp_utc, latest_tick.timestamp)
         elif (
-            latest_tick.status == JobTickStatus.FAILURE
+            latest_tick.status == TickStatus.FAILURE
             and latest_tick.failure_count <= max_tick_retries
         ):
             # Tick failed and hasn't reached its retry limit, retry it
@@ -201,10 +206,11 @@ def launch_scheduled_runs_for_schedule(
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
         timezone_str = "UTC"
-        logger.warn(
-            f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
-            "an execution_timezone in its definition."
-        )
+        if log_verbose_checks:
+            logger.warn(
+                f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
+                "an execution_timezone in its definition."
+            )
 
     tick_times = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
@@ -237,7 +243,7 @@ def launch_scheduled_runs_for_schedule(
         schedule_time_str = schedule_time.strftime(default_date_format_string())
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
-            if latest_tick.status == JobTickStatus.FAILURE:
+            if latest_tick.status == TickStatus.FAILURE:
                 logger.info(f"Retrying previously failed schedule execution at {schedule_time_str}")
             else:
                 logger.info(
@@ -245,11 +251,11 @@ def launch_scheduled_runs_for_schedule(
                 )
         else:
             tick = instance.create_job_tick(
-                JobTickData(
+                TickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,
-                    job_type=JobType.SCHEDULE,
-                    status=JobTickStatus.STARTED,
+                    job_type=InstigatorType.SCHEDULE,
+                    status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
                 )
             )
@@ -257,19 +263,46 @@ def launch_scheduled_runs_for_schedule(
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
-            _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
+            try:
+                _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
-            yield from _schedule_runs_at_time(
-                instance,
-                logger,
-                workspace,
-                repo_location,
-                external_repo,
-                external_schedule,
-                schedule_time,
-                tick_context,
-                debug_crash_flags,
-            )
+                yield from _schedule_runs_at_time(
+                    instance,
+                    logger,
+                    workspace,
+                    repo_location,
+                    external_repo,
+                    external_schedule,
+                    schedule_time,
+                    tick_context,
+                    debug_crash_flags,
+                )
+            except Exception as e:
+                if isinstance(e, DagsterUserCodeUnreachableError):
+                    try:
+                        raise DagsterSchedulerError(
+                            f"Unable to reach the user code server for schedule {schedule_name}. Schedule will resume execution once the server is available."
+                        ) from e
+                    except:
+                        error_data = serializable_error_info_from_exc_info(sys.exc_info())
+
+                        tick_context.update_state(
+                            TickStatus.FAILURE,
+                            error=error_data,
+                            # don't increment the failure count - retry forever until the server comes back up
+                            # or the schedule is turned off
+                            failure_count=tick_context.failure_count,
+                        )
+                        raise  # Raise the wrapped DagsterSchedulerError exception
+
+                else:
+                    error_data = serializable_error_info_from_exc_info(sys.exc_info())
+                    tick_context.update_state(
+                        TickStatus.FAILURE,
+                        error=error_data,
+                        failure_count=tick_context.failure_count + 1,
+                    )
+                    raise
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
@@ -305,11 +338,7 @@ def _schedule_runs_at_time(
         solid_selection=external_schedule.solid_selection,
     )
 
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
+    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
         instance=instance,
@@ -320,10 +349,17 @@ def _schedule_runs_at_time(
     yield
 
     if not schedule_execution_data.run_requests:
-        logger.info(f"No run requests returned for {external_schedule.name}, skipping")
+        if schedule_execution_data.skip_message:
+            logger.info(
+                f"Schedule {external_schedule.name} skipped: {schedule_execution_data.skip_message}"
+            )
+        else:
+            logger.info(f"No run requests returned for {external_schedule.name}, skipping")
 
         # Update tick to skipped state and return
-        tick_context.update_state(JobTickStatus.SKIPPED)
+        tick_context.update_state(
+            TickStatus.SKIPPED, skip_reason=schedule_execution_data.skip_message
+        )
         return
 
     for run_request in schedule_execution_data.run_requests:
@@ -373,7 +409,7 @@ def _schedule_runs_at_time(
         yield
 
     _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
-    tick_context.update_state(JobTickStatus.SUCCESS)
+    tick_context.update_state(TickStatus.SUCCESS)
 
 
 def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):

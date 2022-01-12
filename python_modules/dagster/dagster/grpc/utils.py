@@ -28,15 +28,23 @@ def get_loadable_targets(python_file, module_name, package_name, working_directo
         )
     elif module_name:
         return (
-            [LoadableTarget(attribute, load_def_in_module(module_name, attribute))]
+            [
+                LoadableTarget(
+                    attribute, load_def_in_module(module_name, attribute, working_directory)
+                )
+            ]
             if attribute
-            else loadable_targets_from_python_module(module_name)
+            else loadable_targets_from_python_module(module_name, working_directory)
         )
     elif package_name:
         return (
-            [LoadableTarget(attribute, load_def_in_package(package_name, attribute))]
+            [
+                LoadableTarget(
+                    attribute, load_def_in_package(package_name, attribute, working_directory)
+                )
+            ]
             if attribute
-            else loadable_targets_from_python_package(package_name)
+            else loadable_targets_from_python_package(package_name, working_directory)
         )
     else:
         check.failed("invalid")

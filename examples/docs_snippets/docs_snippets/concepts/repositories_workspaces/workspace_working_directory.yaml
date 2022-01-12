@@ -2,3 +2,6 @@ load_from:
   - python_file:
       relative_path: hello_world_repository.py
       working_directory: my_working_directory/
+  - python_package:
+      package_name: my_team_package
+      working_directory: my_other_working_directory/

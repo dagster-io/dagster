@@ -1,3 +1,4 @@
+import {Box, ButtonLink, ColorsWIP} from '@dagster-io/ui';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -6,9 +7,6 @@ import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {InstigationTickStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
 
 import {TickHistoryQuery_instigationStateOrError_InstigationState_ticks} from './types/TickHistoryQuery';
 

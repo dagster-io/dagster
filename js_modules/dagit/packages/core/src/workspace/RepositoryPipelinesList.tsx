@@ -1,9 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
-import {Box} from '../ui/Box';
-import {NonIdealState} from '../ui/NonIdealState';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';

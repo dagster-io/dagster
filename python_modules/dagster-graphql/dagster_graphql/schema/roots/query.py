@@ -7,7 +7,7 @@ from dagster.core.host_representation import (
     ScheduleSelector,
     SensorSelector,
 )
-from dagster.core.scheduler.job import JobType
+from dagster.core.scheduler.instigation import InstigatorType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
@@ -71,6 +71,7 @@ from ..runs import (
     GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
+    parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
@@ -313,7 +314,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
     def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):
-        job_type = JobType(kwargs["instigationType"]) if "instigationType" in kwargs else None
+        job_type = (
+            InstigatorType(kwargs["instigationType"]) if "instigationType" in kwargs else None
+        )
         return get_unloadable_job_states_or_error(graphene_info, job_type)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
@@ -385,7 +388,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 
@@ -393,7 +396,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 

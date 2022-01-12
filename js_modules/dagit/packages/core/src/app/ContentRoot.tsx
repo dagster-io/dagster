@@ -1,19 +1,32 @@
 import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
 
-import {FallthroughRoot} from './FallthroughRoot';
-
 const InstanceRoot = React.lazy(() => import('../instance/InstanceRoot'));
 const SettingsRoot = React.lazy(() => import('../app/SettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
+const FallthroughRoot = React.lazy(() => import('./FallthroughRoot'));
 
 export const ContentRoot = React.memo(() => (
-  <React.Suspense fallback={<div />}>
-    <Switch>
-      <Route path="/instance" component={InstanceRoot} />
-      <Route path="/workspace" component={WorkspaceRoot} />
-      <Route path="/settings" component={SettingsRoot} />
-      <Route path="*" component={FallthroughRoot} />
-    </Switch>
-  </React.Suspense>
+  <Switch>
+    <Route path="/instance">
+      <React.Suspense fallback={<div />}>
+        <InstanceRoot />
+      </React.Suspense>
+    </Route>
+    <Route path="/workspace">
+      <React.Suspense fallback={<div />}>
+        <WorkspaceRoot />
+      </React.Suspense>
+    </Route>
+    <Route path="/settings">
+      <React.Suspense fallback={<div />}>
+        <SettingsRoot />
+      </React.Suspense>
+    </Route>
+    <Route path="*">
+      <React.Suspense fallback={<div />}>
+        <FallthroughRoot />
+      </React.Suspense>
+    </Route>
+  </Switch>
 ));

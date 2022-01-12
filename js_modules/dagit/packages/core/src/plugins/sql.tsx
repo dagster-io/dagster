@@ -1,10 +1,14 @@
+import {
+  ButtonWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  HighlightedCodeBlock,
+  IconWIP,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
-import {ButtonWIP} from '../ui/Button';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const [open, setOpen] = React.useState(false);

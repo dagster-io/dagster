@@ -8,6 +8,11 @@ from dagster import check
 from dagster.seven.compat.pendulum import to_timezone
 
 
+def is_valid_cron_string(cron_string: str) -> bool:
+    # dagster only recognizes standard cron strings that contains 5 parts
+    return croniter.is_valid(cron_string) and len(cron_string.split(" ")) == 5
+
+
 def schedule_execution_time_iterator(
     start_timestamp: float, cron_schedule: str, execution_timezone: Optional[str]
 ) -> Iterator[datetime.datetime]:
@@ -24,7 +29,7 @@ def schedule_execution_time_iterator(
 
     cron_parts = cron_schedule.split(" ")
 
-    check.invariant(len(cron_parts) == 5)
+    check.invariant(is_valid_cron_string(cron_schedule))
 
     is_numeric = [part.isnumeric() for part in cron_parts]
 

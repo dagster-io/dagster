@@ -1,10 +1,8 @@
+import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
-import {ColorsWIP} from '../../ui/Colors';
-import {IconWIP} from '../../ui/Icon';
-import {FontFamily} from '../../ui/styles';
 
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>

@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 import time
@@ -6,7 +7,6 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
@@ -16,11 +16,11 @@ from dagster.daemon.daemon import (
     MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
-    get_default_daemon_logger,
 )
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
+from dagster.utils.log import configure_loggers
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
@@ -33,7 +33,6 @@ DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 30
 
 # How long after an error is raised in a daemon that it's still included in the status for that daemon
 DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS = 300
-
 
 THREAD_CHECK_INTERVAL = 5
 
@@ -110,6 +109,7 @@ class DagsterDaemonController:
         heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+        handler="default",
     ):
 
         self._daemon_uuid = str(uuid.uuid4())
@@ -138,7 +138,9 @@ class DagsterDaemonController:
 
         self._daemon_shutdown_event = threading.Event()
 
-        self._logger = get_default_daemon_logger("dagster-daemon")
+        configure_loggers(handler=handler)
+
+        self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
             "instance is configured with the following daemons: {}".format(
                 _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)
@@ -149,7 +151,7 @@ class DagsterDaemonController:
 
         for daemon_type, daemon in self._daemons.items():
             self._daemon_threads[daemon_type] = threading.Thread(
-                target=daemon.run_loop,
+                target=daemon.run_daemon_loop,
                 args=(
                     self._instance.get_ref(),
                     self._daemon_uuid,
@@ -277,9 +279,9 @@ class DagsterDaemonController:
 
 def create_daemon_of_type(daemon_type, instance):
     if daemon_type == SchedulerDaemon.daemon_type():
-        return SchedulerDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+        return SchedulerDaemon()
     elif daemon_type == SensorDaemon.daemon_type():
-        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
+        return SensorDaemon()
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
         return QueuedRunCoordinatorDaemon(
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds
@@ -385,7 +387,7 @@ def get_daemon_status(
 
 
 def debug_daemon_heartbeats(instance):
-    daemon = SensorDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+    daemon = SensorDaemon()
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp

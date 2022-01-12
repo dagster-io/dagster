@@ -1,6 +1,5 @@
+import {SplitPanelContainer} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {LoadingOverlay} from './LoadingOverlay';
 import {SessionSettingsBar} from './SessionSettingsBar';
@@ -9,8 +8,8 @@ const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
 
 export const LaunchpadSessionLoading = () => (
   <SplitPanelContainer
-    axis={'vertical'}
-    identifier={'execution'}
+    axis="vertical"
+    identifier="execution"
     firstInitialPercent={75}
     firstMinSize={100}
     first={
@@ -19,6 +18,6 @@ export const LaunchpadSessionLoading = () => (
         <SessionSettingsBar />
       </>
     }
-    second={<LoadingOverlay isLoading message={'Loading pipeline and partition sets...'} />}
+    second={<LoadingOverlay isLoading message="Loading pipeline and partition sets..." />}
   />
 );

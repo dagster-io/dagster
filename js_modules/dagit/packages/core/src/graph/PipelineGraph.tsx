@@ -1,9 +1,9 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {ColorsWIP} from '../ui/Colors';
 
 import {OpLinks} from './OpLinks';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
@@ -146,7 +146,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
       <OpLinks
         ops={ops}
         layout={layout}
-        color={ColorsWIP.Gray500}
+        color={ColorsWIP.Blue500}
         onHighlight={setHighlighted}
         connections={layout.connections.filter(({from, to}) =>
           isHighlighted(highlighted, {

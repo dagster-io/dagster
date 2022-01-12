@@ -1,28 +1,26 @@
 import * as React from 'react';
-import {Redirect, RouteComponentProps, useLocation} from 'react-router-dom';
+import {Redirect, useLocation, useParams} from 'react-router-dom';
 
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 
-interface Props extends RouteComponentProps<{repoPath: string; pipelinePath: string}> {
+interface Props {
   repoAddress: RepoAddress;
 }
 
 export const PipelineOrJobDisambiguationRoot: React.FC<Props> = (props) => {
-  const location = useLocation();
   const {repoAddress} = props;
-  const {pipelinePath} = props.match.params;
+  const location = useLocation();
+  const {pipelinePath} = useParams<{pipelinePath: string}>();
+
   const {pipelineName: pipelineOrJobName} = explorerPathFromString(pipelinePath);
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineOrJobName);
-  const {search} = location;
+  const {pathname, search} = location;
 
-  const replacedPath = props.match.url.replace(
-    '/pipeline_or_job/',
-    isJob ? '/jobs/' : '/pipelines/',
-  );
+  const replacedPath = pathname.replace('/pipeline_or_job/', isJob ? '/jobs/' : '/pipelines/');
 
   return <Redirect to={`${replacedPath}${search}`} />;
 };

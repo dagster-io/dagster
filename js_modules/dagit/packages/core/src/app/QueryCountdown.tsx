@@ -1,8 +1,6 @@
 import {NetworkStatus, QueryResult} from '@apollo/client';
+import {useCountdown, RefreshableCountdown} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {useCountdown} from '../ui/Countdown';
-import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 
 interface Props<TData> {
   pollInterval: number;

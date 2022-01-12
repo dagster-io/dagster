@@ -1,3 +1,19 @@
+import {
+  Box,
+  ButtonLink,
+  ColorsWIP,
+  CountdownStatus,
+  useCountdown,
+  Group,
+  MetadataTableWIP,
+  PageHeader,
+  RefreshableCountdown,
+  TagWIP,
+  Code,
+  Heading,
+  Mono,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useCopyToClipboard} from '../app/browser';
@@ -5,17 +21,6 @@ import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {CountdownStatus, useCountdown} from '../ui/Countdown';
-import {Group} from '../ui/Group';
-import {MetadataTableWIP} from '../ui/MetadataTable';
-import {PageHeader} from '../ui/PageHeader';
-import {RefreshableCountdown} from '../ui/RefreshableCountdown';
-import {TagWIP} from '../ui/TagWIP';
-import {Code, Heading, Mono} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 

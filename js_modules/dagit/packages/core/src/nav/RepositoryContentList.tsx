@@ -1,7 +1,6 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 export const Items = styled.div`
   flex: 1;

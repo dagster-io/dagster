@@ -1,7 +1,7 @@
 import threading
 
-import grpc
 from dagster import check
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import DagsterGrpcClient
 
 WATCH_INTERVAL = 1
@@ -108,7 +108,7 @@ def watch_grpc_server_thread(
                     on_updated(location_name, new_server_id)
                     set_server_id(new_server_id)
                     return
-            except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            except DagsterUserCodeUnreachableError:
                 attempts += 1
 
             if attempts >= max_reconnect_attempts and not has_error():
@@ -120,7 +120,7 @@ def watch_grpc_server_thread(
             break
         try:
             watch_for_changes()
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             on_disconnect(location_name)
             reconnect_loop()
 

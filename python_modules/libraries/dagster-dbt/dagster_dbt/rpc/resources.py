@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
+from dagster.core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
 from .types import DbtRpcOutput
@@ -484,9 +485,17 @@ class DbtRpcSyncResource(DbtRpcResource):
         while True:
             out = self.poll(
                 request_token=request_token,
-                logs=False,
+                logs=True,
                 logs_start=logs_start,
             )
+            logs = out.result.get("logs", [])
+            for log in logs:
+                self.logger.log(
+                    msg=log["message"],
+                    level=coerce_valid_log_level(log.get("levelname", "INFO")),
+                    extra=log.get("extra"),
+                )
+            logs_start += len(logs)
 
             current_state = out.result.get("state")
             # Stop polling if request's state is no longer "running".

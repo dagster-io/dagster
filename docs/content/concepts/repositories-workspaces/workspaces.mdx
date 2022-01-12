@@ -63,23 +63,16 @@ could be loaded using the following `workspace.yaml` file in the same folder:
 
 ```yaml file=/concepts/repositories_workspaces/workspace.yaml
 load_from:
-  - python_file: hello_world_repository.py
+  - python_file: repository.py
 ```
 
 ## Using a Workspace
 
-Dagit will look for the `workspace.yaml` file in the current directory by default, allowing you to launch Dagit from that directory with no arguments and see the repositories defined in the workspace:
+Dagit will look for the `workspace.yaml` file in the current directory by default, allowing you to launch Dagit from that directory with no arguments:
 
     dagit
 
-<Image
-alt="workspace-dagit"
-src="/images/concepts/workspace-dagit.png"
-width={4032}
-height={2454}
-/>
-
-Using a `workspace.yaml` keeps you from having to type the same `-f` or `-m` flag repeatedly. You can also load the workspace yaml file from a different location with `-w`. See detailed references in [`dagit`](/\_apidocs/cli#dagit).
+Using a `workspace.yaml` keeps you from having to type the same command-line flags repeatedly to load your code. You can also load the workspace yaml file from a different folder with `-w`. See detailed references in the [`dagit API docs`](/\_apidocs/cli#dagit).
 
 ## Examples
 
@@ -96,27 +89,16 @@ load_from:
 
 The example above also illustrates that the `python_file` key can be a single string if the only configuration needed is the relative file path, but must be a map if more parameters are added.
 
-### Loading relative imports
-
-By default, if you use `python_file` your code will load with no working directory available to resolve imports in your code. You can supply a custom working directory for relative imports using the `working_directory` key. For example:
-
-```yaml file=/concepts/repositories_workspaces/workspace_working_directory.yaml
-load_from:
-  - python_file:
-      relative_path: hello_world_repository.py
-      working_directory: my_working_directory/
-```
-
 ### Loading via Python package
 
-`python_package` can also be used instead of `python_file` to load code from an installed Python package.
+`python_package` can also be used instead of `python_file` to load code from a local or installed Python package.
 
 ```yaml file=/concepts/repositories_workspaces/workspace_python_package.yaml
 load_from:
   - python_package: hello_world_package
 ```
 
-A deprecated `python_module` key with similar semantics also exists, but you should prefer using either `python_package` if the code is in an installed package and does not require specifying a working directory, or `python_file` if it does not.
+A deprecated `python_module` key with identical semantics to `python_package` also exists, but you should prefer using either `python_package` or `python_file`.
 
 You can also specify an attribute to identify a single repository within a package, as with `python_file`:
 
@@ -125,6 +107,20 @@ load_from:
   - python_package:
       package_name: yourproject.hello_world_repository
       attribute: hello_world_repository
+```
+
+### Loading relative imports
+
+By default, your code will load with `dagit`'s working directory as the base path to resolve any local imports in your code. You can supply a custom working directory for relative imports using the `working_directory` key. For example:
+
+```yaml file=/concepts/repositories_workspaces/workspace_working_directory.yaml
+load_from:
+  - python_file:
+      relative_path: hello_world_repository.py
+      working_directory: my_working_directory/
+  - python_package:
+      package_name: my_team_package
+      working_directory: my_other_working_directory/
 ```
 
 ### Loading multiple repositories
@@ -153,7 +149,7 @@ The example above also illustrates the `location_name` key. Each repository loca
 
 When you start a schedule or a sensor, a serialized representation of the entry in your `workspace.yaml` file is stored in a database, and the `dagster-daemon` process uses this serialized representation to identify and load your schedule or sensor. This means that if you rename a repository location or change its configuration in your `workspace.yaml`, you must also stop and restart any running schedules or sensors in that repository location. You can do this within Dagit from the Status page under Schedules or Sensors.
 
-#### Repository locations in Dagit
+#### Code locations in Dagit
 
 If you run `dagit` in the same folder as a `workspace.yaml` file, it will load all the repositories in each repository location defined by the workspace. (You can also specify a different workspace file using the `-w` command-line argument).
 

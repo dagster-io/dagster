@@ -1,4 +1,14 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  IconWIP,
+  NonIdealState,
+  Table,
+  Mono,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,14 +18,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Table} from '../ui/Table';
-import {Mono} from '../ui/Text';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -104,7 +106,7 @@ export const RunTable = (props: RunTableProps) => {
       <Table>
         <thead>
           <tr>
-            <th style={{paddingTop: 0, paddingBottom: 0}}>
+            <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
               {canTerminateOrDelete ? (
                 <Checkbox
                   indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
@@ -117,10 +119,10 @@ export const RunTable = (props: RunTableProps) => {
                 />
               ) : null}
             </th>
-            <th>Status</th>
-            <th>Run ID</th>
+            <th style={{width: 120}}>Status</th>
+            <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
-            <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
+            <th style={{width: 90}}>Snapshot ID</th>
             <th style={{width: 180}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />

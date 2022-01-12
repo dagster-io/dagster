@@ -1,15 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
+import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationSelector, InstigationTickStatus} from '../types/globalTypes';
-import {ButtonWIP} from '../ui/Button';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
 
 import {FailedRunList, RunList, TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/SelectedTickQuery';

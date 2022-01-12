@@ -263,22 +263,13 @@ width={1982}
 height={1400}
 />
 
-If you click on any sensor, you can monitor all sensor evaluations and runs created:
+If you click on any sensor, you can monitor all sensor evaluations on a timeline and view a table of runs launched by the sensor:
 
 <Image
 alt="Sensor A"
 src="/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png"
 width={1982}
 height={1400}
-/>
-
-If your sensor throws an error or yields a skip reason, the sensor timeline view will display more information about the errors and skips:
-
-<Image
-alt="My Directory Sensor"
-src="/images/concepts/partitions-schedules-sensors/sensors/my-directory-sensor.png"
-width={1938}
-height={1356}
 />
 
 ## Asset sensors
@@ -430,7 +421,7 @@ slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv
 you create a job failure sensor that will send emails via the SMTP protocol:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_email_marker endbefore=end_email_marker
-from dagster.utils import make_email_on_run_failure_sensor
+from dagster import make_email_on_run_failure_sensor
 
 
 email_on_run_failure = make_email_on_run_failure_sensor(

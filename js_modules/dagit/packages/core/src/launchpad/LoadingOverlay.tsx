@@ -1,8 +1,6 @@
+import {Group, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {Group} from '../ui/Group';
-import {Spinner} from '../ui/Spinner';
 
 export const LoadingOverlay: React.FC<{
   isLoading: boolean;

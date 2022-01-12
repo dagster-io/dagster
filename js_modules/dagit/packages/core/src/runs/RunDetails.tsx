@@ -1,18 +1,22 @@
 import {gql} from '@apollo/client';
+import {
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  HighlightedCodeBlock,
+  IconWIP,
+  MetadataTable,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {MetadataTable} from '../ui/MetadataTable';
-import {Tooltip} from '../ui/Tooltip';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';

@@ -1,6 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
+from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from ..errors import (
@@ -28,7 +29,10 @@ class GrapheneSchedule(graphene.ObjectType):
     scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
-        GrapheneFutureInstigationTicks, cursor=graphene.Float(), limit=graphene.Int()
+        GrapheneFutureInstigationTicks,
+        cursor=graphene.Float(),
+        limit=graphene.Int(),
+        until=graphene.Float(),
     )
     futureTick = graphene.NonNull(
         GrapheneFutureInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
@@ -37,20 +41,15 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, graphene_info, external_schedule):
+    def __init__(self, external_schedule, schedule_state):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-        self._schedule_state = graphene_info.context.instance.get_job_state(
-            self._external_schedule.get_external_origin_id()
+        self._schedule_state = check.opt_inst_param(
+            schedule_state, "schedule_state", InstigatorState
         )
-
         if not self._schedule_state:
-            # Also include a ScheduleState for a stopped schedule that may not
-            # have a stored database row yet
-            self._schedule_state = self._external_schedule.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            self._schedule_state = external_schedule.get_default_instigation_state()
 
         super().__init__(
             name=external_schedule.name,
@@ -92,13 +91,27 @@ class GrapheneSchedule(graphene.ObjectType):
         cursor = kwargs.get(
             "cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
         )
-        limit = kwargs.get("limit", 10)
-
         tick_times = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
 
-        for _ in range(limit):
-            tick_times.append(next(time_iter).timestamp())
+        until = float(kwargs.get("until")) if kwargs.get("until") else None
+
+        if until:
+            currentTime = None
+            while (not currentTime or currentTime < until) and (
+                not kwargs.get("limit") or len(tick_times) < kwargs.get("limit")
+            ):
+                try:
+                    currentTime = next(time_iter).timestamp()
+                    if currentTime < until:
+                        tick_times.append(currentTime)
+                except StopIteration:
+                    break
+        else:
+            limit = kwargs.get("limit", 10)
+
+            for _ in range(limit):
+                tick_times.append(next(time_iter).timestamp())
 
         future_ticks = [
             GrapheneFutureInstigationTick(self._schedule_state, tick_time)

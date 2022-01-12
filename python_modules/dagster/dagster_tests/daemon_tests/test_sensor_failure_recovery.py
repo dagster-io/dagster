@@ -1,8 +1,8 @@
 import pendulum
 import pytest
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import (
@@ -54,7 +54,11 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
             )
 
             # create a tick
@@ -66,7 +70,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             launch_process.join(timeout=60)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SKIPPED
+            assert ticks[0].status == TickStatus.SKIPPED
             capfd.readouterr()
 
             # create a starting tick, but crash
@@ -84,7 +88,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
             assert not int(ticks[0].timestamp) % 2  # skip condition for simple_sensor
             assert instance.get_runs_count() == 0
 
@@ -103,15 +107,15 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == f"""2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == f"""2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 3
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 @pytest.mark.skipif(
@@ -135,7 +139,11 @@ def test_failure_after_run_created_before_run_launched(
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
             )
 
             # create a starting tick, but crash
@@ -152,7 +160,7 @@ def test_failure_after_run_created_before_run_launched(
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
 
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
             assert instance.get_runs_count() == 1
 
             run = instance.get_runs()[0]
@@ -185,7 +193,7 @@ def test_failure_after_run_created_before_run_launched(
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == TickStatus.SUCCESS
 
 
 @pytest.mark.skipif(
@@ -215,7 +223,11 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
             )
 
             # create a run, launch but crash
@@ -232,7 +244,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
 
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.STARTED
+            assert ticks[0].status == TickStatus.STARTED
             assert instance.get_runs_count() == 1
 
             run = instance.get_runs()[0]
@@ -262,4 +274,4 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
-            assert ticks[0].status == JobTickStatus.SKIPPED
+            assert ticks[0].status == TickStatus.SKIPPED

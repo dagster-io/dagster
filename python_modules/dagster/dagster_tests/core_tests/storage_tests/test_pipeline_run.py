@@ -19,8 +19,7 @@ from dagster.core.storage.pipeline_run import (
 
 
 def test_queued_pipeline_origin_check():
-
-    code_pointer = ModuleCodePointer("fake", "fake")
+    code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
             InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),

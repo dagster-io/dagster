@@ -1,15 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ColorsWIP,
+  HighlightedCodeBlock,
+  IconWIP,
+  PageHeader,
+  Spinner,
+  Code,
+  Heading,
+  Subheading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
-
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {PageHeader} from '../ui/PageHeader';
-import {Spinner} from '../ui/Spinner';
-import {Code, Heading, Subheading} from '../ui/Text';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
