@@ -162,7 +162,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         ...
 
     def __str__(self) -> str:
-        joined_keys = ', '.join([f"'{key}'" for key in self.get_partition_keys()])
+        joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
         return joined_keys
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
