@@ -4,7 +4,11 @@ import subprocess
 
 import pytest
 import yaml
-from dagster_test.fixtures.docker_compose import connect_container_to_network, network_name_from_yml
+from dagster_test.fixtures.docker_compose import (
+    connect_container_to_network,
+    disconnect_container_from_network,
+    network_name_from_yml,
+)
 
 pytest_plugins = ["dagster_test.fixtures"]
 
@@ -76,10 +80,28 @@ def test_docker_compose_cm_destroys_volumes(docker_compose_cm, test_id):
         subprocess.check_output(["docker", "volume", "inspect", test_id])
 
 
-def test_connect_container_to_network(docker_compose_cm, other_docker_compose_yml):
+def test_connect_container_to_network(docker_compose_cm, other_docker_compose_yml, caplog):
+    caplog.set_level("INFO")
+
     with docker_compose_cm(docker_compose_yml=other_docker_compose_yml) as docker_compose:
         container = next(iter(docker_compose))
         network = network_name_from_yml(other_docker_compose_yml)
+        disconnect_container_from_network(container=container, network=network)
         # Connecting multiple times is idempotent
         connect_container_to_network(container=container, network=network)
+        assert f"Connected {container} to network {network}." in caplog.text
         connect_container_to_network(container=container, network=network)
+        assert f"Unable to connect {container} to network {network}." in caplog.text
+
+
+def test_disconnect_container_from_network(docker_compose_cm, other_docker_compose_yml, caplog):
+    caplog.set_level("INFO")
+
+    with docker_compose_cm(docker_compose_yml=other_docker_compose_yml) as docker_compose:
+        container = next(iter(docker_compose))
+        network = network_name_from_yml(other_docker_compose_yml)
+        # Disconnecting multiple times is idempotent
+        disconnect_container_from_network(container=container, network=network)
+        assert f"Disconnected {container} from network {network}." in caplog.text
+        disconnect_container_from_network(container=container, network=network)
+        assert f"Unable to disconnect {container} from network {network}." in caplog.text
