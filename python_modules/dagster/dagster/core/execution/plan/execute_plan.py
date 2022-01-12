@@ -1,4 +1,6 @@
+import logging
 import sys
+from contextlib import ExitStack
 from typing import Iterator, List, cast
 
 from dagster import check
@@ -59,12 +61,27 @@ def inner_plan_execution_iterator(
             )
 
             # capture all of the logs for this step
-            with pipeline_context.instance.compute_log_manager.watch(
-                step_context.pipeline_run, step_context.step.key
-            ):
-                yield DagsterEvent.capture_logs(
-                    step_context, log_key=step_context.step.key, steps=[step_context.step]
-                )
+            with ExitStack() as stack:
+                log_capture_error = None
+                try:
+                    stack.enter_context(
+                        pipeline_context.instance.compute_log_manager.watch(
+                            step_context.pipeline_run, step_context.step.key
+                        )
+                    )
+                except Exception as e:
+                    log_capture_error = e
+                    logging.exception(
+                        "Exception while setting up compute log capture for step %s in run %s: %s",
+                        step_context.step.key,
+                        step_context.pipeline_run.run_id,
+                        e,
+                    )
+
+                if not log_capture_error:
+                    yield DagsterEvent.capture_logs(
+                        step_context, log_key=step_context.step.key, steps=[step_context.step]
+                    )
 
                 for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):
                     check.inst(step_event, DagsterEvent)
@@ -73,6 +90,16 @@ def inner_plan_execution_iterator(
                     active_execution.handle_event(step_event)
 
                 active_execution.verify_complete(pipeline_context, step.key)
+
+                try:
+                    stack.close()
+                except Exception as e:
+                    logging.exception(
+                        "Exception while cleaning up compute log capture for step %s in run %s: %s",
+                        step_context.step.key,
+                        step_context.pipeline_run.run_id,
+                        e,
+                    )
 
             # process skips from failures or uncovered inputs
             for event in active_execution.plan_events_iterator(pipeline_context):
