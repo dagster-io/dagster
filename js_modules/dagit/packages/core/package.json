@@ -3,7 +3,32 @@
   "version": "1.0.0",
   "private": true,
   "description": "Dagit Application Core",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "scripts": {
+    "prettier": "prettier --write \"./src/**/*.tsx\"",
+    "find-dead-code": "yarn ts-prune | grep -Ev '/types/\\|stories.tsx'",
+    "jest": "jest",
+    "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
+    "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
+    "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
+    "ts": "tsc -p .",
+    "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook",
+    "analyze": "source-map-explorer 'build/static/js/*.js'"
+  },
+  "peerDependencies": {
+    "@blueprintjs/core": "^3.45.0",
+    "@blueprintjs/icons": "^3.26.1",
+    "@blueprintjs/popover2": "0.10.1",
+    "@blueprintjs/select": "^3.16.4",
+    "@blueprintjs/table": "^3.8.33",
+    "@dagster-io/ui": "workspace:*",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^5.1.2"
+  },
   "dependencies": {
     "@apollo/client": "^3.3.16",
     "@vx/shape": "^0.0.192",
@@ -118,31 +143,6 @@
     "ts-prune": "0.8.9",
     "typescript": "4.5.4",
     "webpack": "4.46.0"
-  },
-  "peerDependencies": {
-    "@blueprintjs/core": "^3.45.0",
-    "@blueprintjs/icons": "^3.26.1",
-    "@blueprintjs/popover2": "0.10.1",
-    "@blueprintjs/select": "^3.16.4",
-    "@blueprintjs/table": "^3.8.33",
-    "@dagster-io/ui": "1.0.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-router-dom": "^5.1.2"
-  },
-  "scripts": {
-    "prettier": "prettier --write \"./src/**/*.tsx\"",
-    "find-dead-code": "yarn ts-prune | grep -Ev '/types/\\|stories.tsx'",
-    "jest": "jest",
-    "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
-    "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
-    "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
-    "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
-    "ts": "tsc -p .",
-    "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook",
-    "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "babelMacros": {},
   "browserslist": [
