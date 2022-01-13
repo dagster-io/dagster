@@ -388,10 +388,7 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
-@pytest.mark.skipif(
-    sys.version_info.major == 3 and sys.version_info.minor == 6,
-    reason="Sporadically failing with segfault on Python 3.6",
-)
+@pytest.mark.skip(reason="Sporadically failing with segfault")
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
