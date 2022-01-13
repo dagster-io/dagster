@@ -261,6 +261,7 @@ export const buildLiveData = (
     const lastMaterialization = node.assetMaterializations[0] || null;
     const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
     const isForeignNode = !node.opName;
+    const isPartitioned = graph.nodes[node.id].definition.partitionDefinition;
 
     const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
 
@@ -269,7 +270,15 @@ export const buildLiveData = (
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
       unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
-      computeStatus: isForeignNode ? 'good' : lastMaterialization ? 'unknown' : 'none',
+      computeStatus: isForeignNode
+        ? 'good' // foreign nodes are always considered up-to-date
+        : isPartitioned
+        ? // partitioned nodes are not supported, need to compare materializations
+          // of the same partition key and the API does not make fetching this easy
+          'none'
+        : lastMaterialization
+        ? 'unknown' // resolve to 'good' or 'old' by looking upstream
+        : 'none',
     };
   }
 
