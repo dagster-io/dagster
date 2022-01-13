@@ -28,7 +28,7 @@ export interface PartitionHealthQuery_assetNodeOrError_AssetNode {
   __typename: "AssetNode";
   id: string;
   partitionKeys: string[];
-  latestMaterializationByPartition: PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition[];
+  latestMaterializationByPartition: (PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition | null)[];
 }
 
 export type PartitionHealthQuery_assetNodeOrError = PartitionHealthQuery_assetNodeOrError_AssetNotFoundError | PartitionHealthQuery_assetNodeOrError_AssetNode;

@@ -20,16 +20,20 @@ export function usePartitionHealthData(assetKey: AssetKey) {
 
   const {spans, keys, indexToPct} = React.useMemo(() => {
     const latest =
-      data && data.assetNodeOrError.__typename === 'AssetNode'
-        ? data.assetNodeOrError.latestMaterializationByPartition
-        : [];
+      (data &&
+        data.assetNodeOrError.__typename === 'AssetNode' &&
+        data.assetNodeOrError.latestMaterializationByPartition) ||
+      [];
 
     const keys =
       data && data.assetNodeOrError.__typename === 'AssetNode'
         ? data.assetNodeOrError.partitionKeys
         : [];
 
-    const latestByKey = keyBy(latest.filter(Boolean), (l) => l.partition);
+    const latestByKey = keyBy(
+      latest.filter(Boolean).map((l) => l!),
+      (l) => l.partition,
+    );
     const spans = assembleIntoSpans(keys, (key) => key in latestByKey);
 
     return {

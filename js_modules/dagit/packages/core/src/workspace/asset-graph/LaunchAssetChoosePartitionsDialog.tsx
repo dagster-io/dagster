@@ -1,4 +1,4 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   DialogWIP,
   DialogHeader,
@@ -39,6 +39,12 @@ import {
 } from '../../runs/types/LaunchPipelineExecution';
 import {RepoAddress} from '../types';
 
+import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {
+  AssetJobPartitionSetsQuery,
+  AssetJobPartitionSetsQueryVariables,
+} from './types/AssetJobPartitionSetsQuery';
+
 export const LaunchAssetChoosePartitionsDialog: React.FC<{
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -47,6 +53,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   assets: {assetKey: {path: string[]}; opName: string | null; partitionDefinition: string | null}[];
 }> = ({open, setOpen, assets, repoAddress, assetJobName}) => {
   const data = usePartitionHealthData(assets[0].assetKey);
+
   const [selected, setSelected] = React.useState<string[]>([]);
   const [previewCount, setPreviewCount] = React.useState(4);
   const [launching, setLaunching] = React.useState(false);
@@ -74,24 +81,35 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   const {basePath} = React.useContext(AppContext);
   const history = useHistory();
 
+  // Find the partition set name. This seems like a bit of a hack, unclear
+  // how it would work if there were two different partition spaces in the asset job
+  const {data: partitionSetsData} = useQuery<
+    AssetJobPartitionSetsQuery,
+    AssetJobPartitionSetsQueryVariables
+  >(ASSET_JOB_PARTITION_SETS_QUERY, {
+    variables: {
+      repositoryLocationName: repoAddress.location,
+      repositoryName: repoAddress.name,
+      pipelineName: assetJobName,
+    },
+  });
+
+  const partitionSet =
+    partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'
+      ? partitionSetsData.partitionSetsOrError.results[0]
+      : undefined;
+
   const onLaunch = async () => {
     setLaunching(true);
 
-    // Find the partition set name. This seems like a bit of a hack, unclear
-    // how it would work if there were two different partition spaces in the asset job
-    const {data: partitionSetsData} = await client.query<any, any>({
-      query: ASSET_JOB_PARTITION_SETS_QUERY,
-      variables: {
-        repositoryLocationName: repoAddress.location,
-        repositoryName: repoAddress.name,
-        pipelineName: assetJobName,
-      },
-    });
-
-    const partitionSet =
-      partitionSetsData.partitionSetsOrError.__typename === 'PartitionSets'
-        ? partitionSetsData.partitionSetsOrError.results[0]
-        : undefined;
+    if (!partitionSet) {
+      SharedToaster.show({
+        message: 'No partition set was found on the job for this asset graph',
+        icon: 'error',
+        intent: 'danger',
+      });
+      return;
+    }
 
     if (selected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
@@ -242,7 +260,9 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
           ) : undefined}
         </Box>
       </DialogBody>
-      <DialogFooter>
+      <DialogFooter
+        left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
+      >
         <ButtonWIP intent="none" onClick={() => setOpen(false)}>
           Cancel
         </ButtonWIP>
