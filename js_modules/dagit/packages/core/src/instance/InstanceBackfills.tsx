@@ -282,7 +282,7 @@ const BackfillRow = ({
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = `/instance/runs?${qs.stringify({
-    q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
+    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
   })}`;
 
   const repoAddress = backfill.partitionSet
@@ -305,7 +305,7 @@ const BackfillRow = ({
         pipelineName: backfill.partitionSet.pipelineName,
         path: `/partitions?${qs.stringify({
           partitionSet: backfill.partitionSet.name,
-          q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
+          q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
         })}`,
         isJob,
       })
