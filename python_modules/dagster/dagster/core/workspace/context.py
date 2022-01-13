@@ -263,7 +263,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_external_asset_partition_keys(
         self, repository_handle: RepositoryHandle, job_name: str, op_name: str
-    ):
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             repository_handle.location_name
         ).get_external_asset_partition_keys(repository_handle, job_name, op_name)
