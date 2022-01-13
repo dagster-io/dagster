@@ -54,8 +54,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
+    partitionDefinition = graphene.String()
     latestMaterializationByPartition = graphene.Field(
-        graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
+        graphene.List(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
     )
 
@@ -170,7 +171,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_pipeline(job_name)
         ]
 
-    def resolve_partitionKeys(self, _graphene_info):
+    def get_partition_keys(self):
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
@@ -183,6 +184,15 @@ class GrapheneAssetNode(graphene.ObjectType):
                 ]
         return []
 
+    def resolve_partitionKeys(self, _graphene_info):
+        return self.get_partition_keys()
+
+    def resolve_partitionDefinition(self, _graphene_info):
+        partitions_def_data = self._external_asset_node.partitions_def_data
+        if partitions_def_data:
+            return str(partitions_def_data.get_partitions_definition())
+        return None
+
     def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
 
@@ -190,7 +200,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = kwargs.get("partitions")
+        partitions = kwargs.get("partitions") or self.get_partition_keys()
+
         events_for_partitions = get_asset_events(
             _graphene_info,
             self._external_asset_node.asset_key,

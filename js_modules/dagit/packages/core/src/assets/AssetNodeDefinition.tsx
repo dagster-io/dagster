@@ -13,6 +13,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetNodeList} from './AssetNodeList';
+import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
@@ -27,7 +28,7 @@ export const AssetNodeDefinition: React.FC<{
         flex={{direction: 'row'}}
         border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
       >
-        <Box style={{flex: 1}}>
+        <Box style={{flex: 1}} flex={{direction: 'column'}}>
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
@@ -49,12 +50,30 @@ export const AssetNodeDefinition: React.FC<{
               )}
             </Box>
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 4}}>
+          <Box padding={{top: 16, horizontal: 24, bottom: 4}} style={{flex: 1}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
             />
           </Box>
+          {assetNode.partitionDefinition && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Partitions</Subheading>
+              </Box>
+              <Box
+                padding={{top: 16, horizontal: 24, bottom: 24}}
+                flex={{direction: 'column', gap: 16}}
+              >
+                <p>{assetNode.partitionDefinition}</p>
+                <PartitionHealthSummary assetKey={assetNode.assetKey} />
+              </Box>
+            </>
+          )}
         </Box>
         <Box
           border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}

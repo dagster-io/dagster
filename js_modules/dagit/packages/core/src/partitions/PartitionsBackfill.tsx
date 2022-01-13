@@ -12,7 +12,6 @@ import {
   IconWIP,
   NonIdealState,
   Spinner,
-  TextInput,
   Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -34,6 +33,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
+import {PartitionRangeInput} from './PartitionRangeInput';
 import {
   BOX_SIZE,
   GridColumn,
@@ -60,68 +60,6 @@ type SelectionRange = {
   start: string;
   end: string;
 };
-
-function placeholderForPartitions(names: string[]) {
-  if (names.length < 4) {
-    return `ex: ${names[0]}, ${names[1]}`;
-  }
-  return `ex: ${names[0]}, ${names[1]}, [${names[2]}...${names[names.length - 1]}]`;
-}
-
-function partitionsToText(selected: string[], all: string[]) {
-  const remaining = [...selected].sort((a, b) => all.indexOf(a) - all.indexOf(b));
-
-  let str = '';
-  while (remaining.length) {
-    const start = remaining.shift()!;
-    const startIdx = all.indexOf(start);
-    let endIdx = startIdx;
-    let endIdxInSelected = -1;
-    while (
-      endIdx < all.length - 1 &&
-      (endIdxInSelected = remaining.indexOf(all[endIdx + 1])) !== -1
-    ) {
-      endIdx++;
-      remaining.splice(endIdxInSelected, 1);
-    }
-    if (endIdx !== startIdx) {
-      str += `[${start}...${all[endIdx]}], `;
-    } else {
-      str += `${start}, `;
-    }
-  }
-  return str.replace(/, $/, '');
-}
-
-function textToPartitions(selected: string, all: string[]) {
-  const terms = selected.split(',').map((s) => s.trim());
-  const result = [];
-  for (const term of terms) {
-    if (term.length === 0) {
-      continue;
-    }
-    const rangeMatch = /^\[(.*)\.\.\.(.*)\]$/g.exec(term);
-    if (rangeMatch) {
-      const [, start, end] = rangeMatch;
-      const allStartIdx = all.indexOf(start);
-      const allEndIdx = all.indexOf(end);
-      if (allStartIdx === -1 || allEndIdx === -1) {
-        throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
-      }
-      result.push(...all.slice(allStartIdx, allEndIdx + 1));
-    } else if (term.includes('*')) {
-      const [prefix, suffix] = term.split('*');
-      result.push(...all.filter((p) => p.startsWith(prefix) && p.endsWith(suffix)));
-    } else {
-      const idx = all.indexOf(term);
-      if (idx === -1) {
-        throw new Error(`Could not find partition: ${term}`);
-      }
-      result.push(term);
-    }
-  }
-  return result.sort((a, b) => all.indexOf(a) - all.indexOf(b));
-}
 
 export const PartitionsBackfillPartitionSelector: React.FC<{
   partitionSetName: string;
@@ -271,48 +209,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   };
 
   const onError = (data: LaunchPartitionBackfill | null | undefined) => {
-    const result = data?.launchPartitionBackfill;
-    let errors = <></>;
-    if (
-      result?.__typename === 'PythonError' ||
-      result?.__typename === 'PartitionSetNotFoundError'
-    ) {
-      errors = <PythonErrorInfo error={result} />;
-    } else if (result?.__typename === 'InvalidStepError') {
-      errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;
-    } else if (result?.__typename === 'InvalidOutputError') {
-      errors = <div>{`Invalid output: ${result.invalidOutputName} for ${result.stepKey}`}</div>;
-    } else if (result && 'errors' in result) {
-      errors = (
-        <>
-          {result['errors'].map((error, idx) => (
-            <PythonErrorInfo error={error} key={idx} />
-          ))}
-        </>
-      );
-    }
-
-    const message = (
-      <Group direction="column" spacing={4}>
-        <div>An unexpected error occurred. This backfill was not launched.</div>
-        {errors ? (
-          <ButtonLink
-            color={ColorsWIP.White}
-            underline="always"
-            onClick={() => {
-              showCustomAlert({
-                body: errors,
-              });
-            }}
-          >
-            View error
-          </ButtonLink>
-        ) : null}
-      </Group>
-    );
-
     SharedToaster.show({
-      message,
+      message: messageForLaunchBackfillError(data),
       icon: 'error',
       intent: 'danger',
     });
@@ -413,8 +311,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     setCurrentSelectionRange({start, end: name});
   };
 
-  const selectedString = partitionsToText(selected, partitionNames);
-
   const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / BOX_SIZE));
   const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / BOX_SIZE);
   const visiblePartitionNames = partitionNames.slice(
@@ -446,18 +342,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
               }}
             />
           </Box>
-          <TextInput
-            placeholder={placeholderForPartitions(partitionNames)}
-            defaultValue={selectedString}
-            style={{display: 'flex', width: '100%'}}
-            onBlur={(e) => {
-              try {
-                setSelected(textToPartitions(e.target.value, partitionNames));
-              } catch (err: any) {
-                e.preventDefault();
-                showCustomAlert({body: err.message});
-              }
-            }}
+          <PartitionRangeInput
+            value={selected}
+            partitionNames={partitionNames}
+            onChange={setSelected}
           />
         </Box>
         <Box flex={{direction: 'row', gap: 24}} margin={{top: 16}}>
@@ -860,7 +748,7 @@ const PARTITION_STATUS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
+export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {
       __typename
@@ -906,6 +794,46 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
 `;
+
+export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+  const result = data?.launchPartitionBackfill;
+
+  let errors = <></>;
+  if (result?.__typename === 'PythonError' || result?.__typename === 'PartitionSetNotFoundError') {
+    errors = <PythonErrorInfo error={result} />;
+  } else if (result?.__typename === 'InvalidStepError') {
+    errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;
+  } else if (result?.__typename === 'InvalidOutputError') {
+    errors = <div>{`Invalid output: ${result.invalidOutputName} for ${result.stepKey}`}</div>;
+  } else if (result && 'errors' in result) {
+    errors = (
+      <>
+        {result['errors'].map((error, idx) => (
+          <PythonErrorInfo error={error} key={idx} />
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <Group direction="column" spacing={4}>
+      <div>An unexpected error occurred. This backfill was not launched.</div>
+      {errors ? (
+        <ButtonLink
+          color={ColorsWIP.White}
+          underline="always"
+          onClick={() => {
+            showCustomAlert({
+              body: errors,
+            });
+          }}
+        >
+          View error
+        </ButtonLink>
+      ) : null}
+    </Group>
+  );
+}
 
 const DaemonNotRunningAlert: React.FC = () => (
   <Alert

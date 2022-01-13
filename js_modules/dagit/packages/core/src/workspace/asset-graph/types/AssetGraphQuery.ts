@@ -28,6 +28,7 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   id: string;
   opName: string | null;
   description: string | null;
+  partitionDefinition: string | null;
   assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
   dependencyKeys: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencyKeys[];
 }

@@ -521,7 +521,7 @@ scalar RunConfigData
 type Asset {
   id: String!
   key: AssetKey!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(partitions: [String], partitionInLast: Int, beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   definition: AssetNode
 }
 
@@ -637,7 +637,8 @@ type AssetNode {
   dependedByKeys: [AssetKey!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   partitionKeys: [String!]!
-  latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
+  partitionDefinition: String
+  latestMaterializationByPartition(partitions: [String]): [AssetMaterialization!]!
 }
 
 type AssetDependency {
