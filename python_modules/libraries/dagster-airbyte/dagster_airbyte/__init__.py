@@ -7,4 +7,10 @@ from .types import AirbyteOutput
 
 check_dagster_package_version("dagster-airbyte", __version__)
 
-__all__ = ["AirbyteResource", "AirbyteOutput", "airbyte_resource", "airbyte_sync_op", "AirbyteState"]
+__all__ = [
+    "AirbyteResource",
+    "AirbyteOutput",
+    "airbyte_resource",
+    "airbyte_sync_op",
+    "AirbyteState",
+]

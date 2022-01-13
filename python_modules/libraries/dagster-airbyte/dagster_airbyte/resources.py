@@ -1,22 +1,16 @@
 import logging
 import time
 import json
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import requests
-from dagster import (
-    get_dagster_logger, 
-    __version__,
-    resource,
-    StringSource,
-    Failure,
-    Field
-)
+from dagster import get_dagster_logger, __version__, resource, StringSource, Failure, Field
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 from enum import Enum
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
+
 
 class AirbyteState:
     RUNNING = "running"
@@ -53,12 +47,12 @@ class AirbyteResource:
     @property
     def api_base_url(self) -> str:
         return (
-            ("https://" if self._use_https else "http://") 
-            + (f"{self._host}:{self._port}" if self._port else self._host) 
+            ("https://" if self._use_https else "http://")
+            + (f"{self._host}:{self._port}" if self._port else self._host)
             + "/api/v1"
         )
 
-    def make_request(self, endpoint: str, data: Optional[str]):
+    def make_request(self, endpoint: str, data: Optional[Dict[str, Any]]):
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -93,16 +87,10 @@ class AirbyteResource:
         raise Failure("Exceeded max number of retries.")
 
     def start_sync(self, connection_id: str) -> dict:
-        return self.make_request(
-            endpoint="/connections/sync",
-            data={"connectionId": connection_id}
-        )
-    
+        return self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
+
     def get_job_status(self, job_id: int) -> dict:
-        return self.make_request(
-            endpoint="/jobs/get",
-            data={"id": job_id}
-        )
+        return self.make_request(endpoint="/jobs/get", data={"id": job_id})
 
     def sync_and_poll(
         self,
@@ -125,16 +113,18 @@ class AirbyteResource:
                 Details of the sync job.
         """
         job_details = self.start_sync(connection_id)
-        job_id = job_details.get("job").get("id")
+        job_id = job_details.get("job", {}).get("id")
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
 
         while True:
             if poll_timeout and start + poll_timeout < time.monotonic():
-                raise Failure(f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds")
+                raise Failure(
+                    f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds"
+                )
             time.sleep(poll_interval)
             job_details = self.get_job_status(job_id)
-            state = job_details.get("job").get("status")
+            state = job_details.get("job", {}).get("status")
 
             if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
                 continue
@@ -147,8 +137,7 @@ class AirbyteResource:
             else:
                 raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
 
-
-        return AirbyteOutput(job_details=job_details.get("job"))
+        return AirbyteOutput(job_details=job_details.get("job", {}))
 
 
 @resource(
