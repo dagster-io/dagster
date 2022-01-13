@@ -1236,6 +1236,12 @@ records = instance.get_event_records(
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
 
+    @traced
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        return self._event_storage.get_materialization_count_by_partition(asset_keys)
+
     # event subscriptions
 
     def _get_yaml_python_handlers(self):

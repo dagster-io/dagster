@@ -597,3 +597,62 @@ def test_asset_lazy_migration():
             # the asset key index as migrated
             instance.all_asset_keys()
             assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+
+@asset_test
+def test_get_materialization_count_by_partition(asset_aware_context):
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+
+    d = AssetKey("c")
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
+
+            materialization_count_by_key = storage.get_materialization_count_by_partition([d])
+
+            assert materialization_count_by_key.get(d) == {}
+
+    a = AssetKey("no_materializations_asset")
+    b = AssetKey("no_partitions_asset")
+    c = AssetKey("two_partitions_asset")
+
+    @op
+    def materialize():
+        yield AssetMaterialization(b)
+        yield AssetMaterialization(c, partition="a")
+        yield Output(None)
+
+    @job
+    def my_job():
+        materialize()
+
+    @op
+    def materialize_two():
+        yield AssetMaterialization(c, partition="a")
+        yield AssetMaterialization(c, partition="b")
+        yield Output(None)
+
+    @job
+    def job_two():
+        materialize_two()
+
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        my_job.execute_in_process(instance=instance)
+
+        materialization_count_by_key = event_log_storage.get_materialization_count_by_partition(
+            [a, b, c]
+        )
+
+        assert materialization_count_by_key.get(a) == {}
+        assert materialization_count_by_key.get(b) == {}
+        assert materialization_count_by_key.get(c)["a"] == 1
+        assert len(materialization_count_by_key.get(c)) == 1
+
+        job_two.execute_in_process(instance=instance)
+        materialization_count_by_key = event_log_storage.get_materialization_count_by_partition(
+            [a, b, c]
+        )
+        assert materialization_count_by_key.get(c)["a"] == 2
+        assert materialization_count_by_key.get(c)["b"] == 1

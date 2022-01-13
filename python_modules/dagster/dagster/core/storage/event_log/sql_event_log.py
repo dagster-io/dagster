@@ -614,7 +614,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:
-            asset_details = self._get_asset_details(event_records_filter.asset_key)
+            asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
 
@@ -911,27 +911,56 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
         return query
 
-    def _get_asset_details(self, asset_key):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        row = None
+    def _get_assets_details(self, asset_keys: Sequence[AssetKey]):
+        check.list_param(asset_keys, "asset_key", AssetKey)
+        rows = None
         with self.index_connection() as conn:
-            row = conn.execute(
-                db.select([AssetKeyTable.c.asset_details]).where(
-                    AssetKeyTable.c.asset_key == asset_key.to_string()
+            rows = conn.execute(
+                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
+                    AssetKeyTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in asset_keys]
+                    ),
                 )
-            ).fetchone()
-            if not row or not row[0]:
-                return None
-            return deserialize_json_to_dagster_namedtuple(row[0])
+            ).fetchall()
 
-    def _add_asset_wipe_filter_to_query(self, query, asset_details):
-        if not asset_details or not asset_details.last_wipe_timestamp:
-            return query
+            asset_key_to_details = {
+                row[0]: (deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None)
+                for row in rows
+            }
 
-        return query.where(
-            SqlEventLogStorageTable.c.timestamp
-            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+            # returns a list of the corresponding asset_details to provided asset_keys
+            return [
+                asset_key_to_details.get(asset_key.to_string(), None) for asset_key in asset_keys
+            ]
+
+    def _add_assets_wipe_filter_to_query(
+        self, query, assets_details: Sequence[str], asset_keys: Sequence[AssetKey]
+    ):
+        check.invariant(
+            len(assets_details) == len(asset_keys),
+            "asset_details and asset_keys must be the same length",
         )
+        for i in range(len(assets_details)):
+            asset_key, asset_details = asset_keys[i], assets_details[i]
+            if asset_details and asset_details.last_wipe_timestamp:  # type: ignore[attr-defined]
+                asset_key_in_row = db.or_(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                )
+                # If asset key is in row, keep the row if the timestamp > wipe timestamp, else remove the row.
+                # If asset key is not in row, keep the row.
+                query = query.where(
+                    db.or_(
+                        db.and_(
+                            asset_key_in_row,
+                            SqlEventLogStorageTable.c.timestamp
+                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),  # type: ignore[attr-defined]
+                        ),
+                        db.not_(asset_key_in_row),
+                    )
+                )
+
+        return query
 
     def get_asset_events(
         self,
@@ -985,8 +1014,9 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 
-        asset_details = self._get_asset_details(asset_key)
-        query = self._add_asset_wipe_filter_to_query(query, asset_details)
+        asset_keys = [asset_key]
+        asset_details = self._get_assets_details(asset_keys)
+        query = self._add_assets_wipe_filter_to_query(query, asset_details, asset_keys)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -1061,3 +1091,48 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     )
                 )
+
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        check.list_param(asset_keys, "asset_keys", AssetKey)
+
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.count(SqlEventLogStorageTable.c.id),
+                ]
+            )
+            .where(
+                db.and_(
+                    db.or_(
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string() for asset_key in asset_keys]
+                        ),
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string(legacy=True) for asset_key in asset_keys]
+                        ),
+                    ),
+                    SqlEventLogStorageTable.c.partition != None,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
+        )
+
+        assets_details = self._get_assets_details(asset_keys)
+        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
+
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
+            asset_key: {} for asset_key in asset_keys
+        }
+        for row in results:
+            asset_key = AssetKey.from_db_string(row[0])
+            if asset_key:
+                materialization_count_by_partition[asset_key][row[1]] = row[2]
+
+        return materialization_count_by_partition
