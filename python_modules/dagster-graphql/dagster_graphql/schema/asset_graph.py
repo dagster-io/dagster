@@ -56,7 +56,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     latestMaterializationByPartition = graphene.Field(
-        graphene.List(GrapheneAssetMaterialization),
+        graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
         partitions=graphene.List(graphene.String),
     )
 

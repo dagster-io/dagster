@@ -59,6 +59,12 @@ export const PartitionHealthSummary: React.FC<{
       </div>
     );
   }
+
+  const populated = spans
+    .filter((s) => s.status === true)
+    .map((s) => s.endIdx - s.startIdx + 1)
+    .reduce((a, b) => a + b, 0);
+
   return (
     <div>
       <Box
@@ -66,7 +72,12 @@ export const PartitionHealthSummary: React.FC<{
         margin={{bottom: 4}}
         style={{fontSize: '0.8rem', color: ColorsWIP.Gray500}}
       >
-        <span>{showAssetKey ? displayNameForAssetKey(assetKey) : `${keys.length} Partitions`}</span>
+        <span>
+          {showAssetKey
+            ? displayNameForAssetKey(assetKey)
+            : `${populated}/${keys.length} Partitions`}
+        </span>
+        {showAssetKey ? <span>{`${populated}/${keys.length}`}</span> : undefined}
       </Box>
       {selected && (
         <div style={{position: 'relative', width: '100%', overflowX: 'hidden', height: 10}}>
@@ -101,7 +112,9 @@ export const PartitionHealthSummary: React.FC<{
             style={{
               left: indexToPct(s.startIdx),
               width: indexToPct(s.endIdx - s.startIdx + 1),
+              minWidth: 2,
               position: 'absolute',
+              zIndex: s.status === false ? 2 : 1,
               top: 0,
             }}
           >
@@ -119,6 +132,7 @@ export const PartitionHealthSummary: React.FC<{
                 style={{
                   width: '100%',
                   height: 14,
+                  outline: 'none',
                   background: s.status ? ColorsWIP.Green500 : ColorsWIP.Gray200,
                 }}
               />
