@@ -1,13 +1,11 @@
 import logging
 import time
-import json
 from typing import Any, Dict, Optional
 
 import requests
 from dagster import get_dagster_logger, __version__, resource, StringSource, Failure, Field
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
-from enum import Enum
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 

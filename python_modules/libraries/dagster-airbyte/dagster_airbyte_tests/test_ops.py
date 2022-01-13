@@ -1,5 +1,5 @@
 import responses
-from dagster import AssetKey, job, op
+from dagster import job, op
 from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
 
 DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"

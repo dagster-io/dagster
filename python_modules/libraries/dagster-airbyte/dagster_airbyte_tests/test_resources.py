@@ -34,7 +34,7 @@ def test_trigger_connection_fail():
         method=responses.POST, url=ab_resource.api_base_url + "/connections/sync", status=500
     )
     with pytest.raises(Failure, match="Exceeded max number of retries"):
-        r = ab_resource.sync_and_poll("some_connection")
+        ab_resource.sync_and_poll("some_connection")
 
 
 @responses.activate
@@ -118,4 +118,4 @@ def test_sync_and_poll_timeout():
     poll_wait_second = 2
     timeout = 1
     with pytest.raises(Failure, match="Timeout: Airbyte job"):
-        r = ab_resource.sync_and_poll("some_connection", poll_wait_second, timeout)
+        ab_resource.sync_and_poll("some_connection", poll_wait_second, timeout)
