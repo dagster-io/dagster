@@ -293,14 +293,9 @@ def test_solid_required_resources_no_arg():
 
 
 def test_solid_config_no_arg():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="'_noop2' decorated function requires positional parameter 'context',",
-    ):
-
-        @solid(config_schema={"foo": str})
-        def _noop2():
-            return
+    @solid(config_schema={"foo": str})
+    def _noop2():
+        return
 
 
 def test_solid_docstring():

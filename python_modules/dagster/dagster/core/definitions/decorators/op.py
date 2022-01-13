@@ -106,7 +106,6 @@ class _Op:
             fn_name=self.name,
             compute_fn=compute_fn,
             explicit_input_defs=input_defs,
-            context_required=bool(self.config_schema),
             exclude_nothing=True,
         )
 

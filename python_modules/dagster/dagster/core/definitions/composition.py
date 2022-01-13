@@ -996,7 +996,6 @@ def do_composition(
         fn_name=graph_name,
         compute_fn=compute_fn,
         explicit_input_defs=provided_input_defs,
-        context_required=False,
         exclude_nothing=False,
     )
 
