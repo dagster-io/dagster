@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, Optional
 
 import requests
-from dagster import get_dagster_logger, __version__, resource, StringSource, Failure, Field
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 

@@ -1,7 +1,7 @@
 import pytest
 import responses
 from dagster import Failure, build_init_resource_context
-from dagster_airbyte import airbyte_resource, AirbyteOutput, AirbyteState
+from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 
 
 @responses.activate
