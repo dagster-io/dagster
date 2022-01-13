@@ -31,22 +31,27 @@ You can set up multiple repositories and load them all at once by creating a `wo
 Repositories are typically declared using the <PyObject object="repository" decorator /> decorator. For example:
 
 ```python file=/concepts/repositories_workspaces/repository_definition.py
-from dagster import RunRequest, ScheduleDefinition, job, repository, sensor
+from dagster import RunRequest, ScheduleDefinition, job, op, repository, sensor
+
+
+@op
+def hello():
+    pass
 
 
 @job
 def job1():
-    ...
+    hello()
 
 
 @job
 def job2():
-    ...
+    hello()
 
 
 @job
 def job3():
-    ...
+    hello()
 
 
 job1_schedule = ScheduleDefinition(job=job1, cron_schedule="0 0 * * *")

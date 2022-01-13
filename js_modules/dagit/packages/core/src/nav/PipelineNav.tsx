@@ -1,4 +1,5 @@
 import {IconName} from '@blueprintjs/core';
+import {Box, PageHeader, Tab, Tabs, TagWIP, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -8,12 +9,6 @@ import {
   explorerPathToString,
   ExplorerPath,
 } from '../pipelines/PipelinePathUtils';
-import {Box} from '../ui/Box';
-import {PageHeader} from '../ui/PageHeader';
-import {Tab, Tabs} from '../ui/Tabs';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

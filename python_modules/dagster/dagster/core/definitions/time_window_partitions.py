@@ -101,6 +101,12 @@ class TimeWindowPartitionsDefinition(
 
         return partitions
 
+    def __str__(self) -> str:
+        partition_def_str = f"{self.schedule_type.value.capitalize()}, starting {self.start.strftime(self.fmt)} {self.timezone}."
+        if self.end_offset != 0:
+            partition_def_str += f" End offsetted by {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
+        return partition_def_str
+
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         start = self.start_time_for_partition_key(partition_key)
         iterator = schedule_execution_time_iterator(
@@ -197,6 +203,7 @@ def daily_partitioned_config(
             partitions_def=DailyPartitionsDefinition(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -279,6 +286,7 @@ def hourly_partitioned_config(
             partitions_def=HourlyPartitionsDefinition(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -364,6 +372,7 @@ def monthly_partitioned_config(
                 fmt=fmt,
                 end_offset=end_offset,
             ),
+            decorated_fn=fn,
         )
 
     return inner
@@ -449,6 +458,7 @@ def weekly_partitioned_config(
                 fmt=fmt,
                 end_offset=end_offset,
             ),
+            decorated_fn=fn,
         )
 
     return inner

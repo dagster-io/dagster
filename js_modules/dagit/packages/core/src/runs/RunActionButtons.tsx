@@ -1,13 +1,10 @@
+import {Box, ButtonWIP, Group, IconName, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {Group} from '../ui/Group';
-import {IconName, IconWIP} from '../ui/Icon';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -167,7 +164,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From Selected',
-    disabled: !doneStatuses.has(run.status) || selection.keys.length !== 1,
+    disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
       if (!run.executionPlan) {
@@ -237,7 +234,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
-      <CancelRunButton run={run} isFinalStatus={!doneStatuses.has(run.status)} />
+      <CancelRunButton run={run} isFinalStatus={canRunAllSteps(run)} />
     </Group>
   );
 };

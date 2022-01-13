@@ -1,9 +1,6 @@
+import {ButtonWIP, DialogWIP, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ButtonWIP} from '../ui/Button';
-import {DialogWIP, DialogBody, DialogFooter} from '../ui/Dialog';
-import {FontFamily} from '../ui/styles';
 
 import {copyValue} from './DomUtils';
 

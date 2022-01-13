@@ -30,7 +30,7 @@ def test_dagster_telemetry_upload(env):
 
     responses.add(responses.POST, DAGSTER_TELEMETRY_URL)
 
-    with instance_for_test():
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         with environ(env):
             runner = CliRunner()
             with pushd(path_to_file("")):

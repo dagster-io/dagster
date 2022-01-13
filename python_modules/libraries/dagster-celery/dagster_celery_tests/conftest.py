@@ -1,16 +1,15 @@
 import os
 import subprocess
+import tempfile
 import time
 
 import docker
 import pytest
-from celery.contrib.testing import worker
-from celery.contrib.testing.app import setup_default_app
 from dagster import file_relative_path
 from dagster.core.test_utils import environ, instance_for_test
-from dagster_celery.make_app import make_app
-from dagster_celery.tasks import create_task
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
+
+from .utils import start_celery_worker
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -61,20 +60,24 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
             pass
 
 
-@pytest.fixture(scope="session")
-def dagster_celery_app(rabbitmq):  # pylint: disable=redefined-outer-name, unused-argument
-    app = make_app()
-    execute_plan = create_task(app)  # pylint: disable=unused-variable
-    with instance_for_test():
-        with setup_default_app(app, use_trap=False):
-            yield app
-
-
-# pylint doesn't understand pytest fixtures
 @pytest.fixture(scope="function")
-def dagster_celery_worker(dagster_celery_app):  # pylint: disable=redefined-outer-name
-    with worker.start_worker(dagster_celery_app, perform_ping_check=False) as w:
-        yield w
+def tempdir():
+    with tempfile.TemporaryDirectory() as the_dir:
+        yield the_dir
+
+
+@pytest.fixture(scope="function")
+def instance(tempdir):  # pylint: disable=redefined-outer-name
+    with instance_for_test(temp_dir=tempdir) as test_instance:
+        yield test_instance
+
+
+@pytest.fixture(scope="function")
+def dagster_celery_worker(
+    rabbitmq, instance
+):  # pylint: disable=redefined-outer-name, unused-argument
+    with start_celery_worker():
+        yield
 
 
 @pytest.fixture(scope="session")

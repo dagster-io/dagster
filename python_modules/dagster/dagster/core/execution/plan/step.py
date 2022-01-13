@@ -38,7 +38,7 @@ class StepKindSerializer(DefaultEnumSerializer):
         return super().value_from_storage_str(value, klass)
 
 
-@whitelist_for_serdes(StepKindSerializer)
+@whitelist_for_serdes(serializer=StepKindSerializer)
 class StepKind(Enum):
     COMPUTE = "COMPUTE"
     UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED"

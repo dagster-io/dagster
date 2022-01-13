@@ -15,15 +15,13 @@ import 'codemirror/lib/codemirror.css';
 import './codemirror-yaml/lint'; // Patch lint
 import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
+import {ColorsWIP, FontFamily, Icons} from '@dagster-io/ui';
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
-
-import {ColorsWIP} from '../ui/Colors';
-import {FontFamily} from '../ui/styles';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {
@@ -75,7 +73,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     .CodeMirror-lint-marker-error {
       background-image: none;
       background: ${ColorsWIP.Red500};
-      mask-image: url(${require('../ui/icon-svgs/error.svg').default});
+      mask-image: url(${Icons.error});
       mask-size: cover;
       margin-bottom: 2px;
     }

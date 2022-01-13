@@ -1,14 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, Spinner, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';

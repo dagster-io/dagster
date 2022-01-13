@@ -72,9 +72,9 @@ def test_simple(external_repo_context, capfd):
         backfill = instance.get_backfill("simple")
         assert backfill.status == BulkActionStatus.COMPLETED
         assert (
-            get_logger_output_from_capfd(capfd, "BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
 
@@ -110,8 +110,8 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
         assert (
-            get_logger_output_from_capfd(capfd, "BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple"""
+            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -126,9 +126,9 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert (
-            get_logger_output_from_capfd(capfd, "BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -168,8 +168,8 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
         assert (
-            get_logger_output_from_capfd(capfd, "BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple"""
+            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -184,10 +184,10 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert (
-            get_logger_output_from_capfd(capfd, "BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
-2021-02-16 18:00:00 -0600 - BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
+2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")

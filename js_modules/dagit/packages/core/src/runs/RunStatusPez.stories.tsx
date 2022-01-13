@@ -1,11 +1,10 @@
+import {Box, MetadataTable} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {MetadataTable} from '../ui/MetadataTable';
 
 import {RunStatusPez, RunStatusPezList} from './RunStatusPez';
 

@@ -1,9 +1,9 @@
-from collections import namedtuple
+from typing import List, NamedTuple, Tuple
 
 from dagster import check
 
 
-class EvaluationStack(namedtuple("_EvaluationStack", "entries")):
+class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["EvaluationStackEntry"])])):
     def __new__(cls, entries):
         return super(EvaluationStack, cls).__new__(
             cls,
@@ -11,17 +11,17 @@ class EvaluationStack(namedtuple("_EvaluationStack", "entries")):
         )
 
     @property
-    def levels(self):
+    def levels(self) -> List[str]:
         return [
             entry.field_name
             for entry in self.entries
             if isinstance(entry, EvaluationStackPathEntry)
         ]
 
-    def for_field(self, field_name):
+    def for_field(self, field_name: str) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackPathEntry(field_name)])
 
-    def for_array_index(self, list_index):
+    def for_array_index(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
 
@@ -30,9 +30,9 @@ class EvaluationStackEntry:  # marker interface
 
 
 class EvaluationStackPathEntry(
-    namedtuple("_EvaluationStackEntry", "field_name"), EvaluationStackEntry
+    NamedTuple("_EvaluationStackEntry", [("field_name", str)]), EvaluationStackEntry
 ):
-    def __new__(cls, field_name):
+    def __new__(cls, field_name: str):
         return super(EvaluationStackPathEntry, cls).__new__(
             cls,
             check.str_param(field_name, "field_name"),
@@ -40,19 +40,19 @@ class EvaluationStackPathEntry(
 
 
 class EvaluationStackListItemEntry(
-    namedtuple("_EvaluationStackListItemEntry", "list_index"), EvaluationStackEntry
+    NamedTuple("_EvaluationStackListItemEntry", [("list_index", int)]), EvaluationStackEntry
 ):
-    def __new__(cls, list_index):
+    def __new__(cls, list_index: int):
         check.int_param(list_index, "list_index")
         check.param_invariant(list_index >= 0, "list_index")
         return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
-def get_friendly_path_msg(stack):
+def get_friendly_path_msg(stack: EvaluationStack) -> str:
     return get_friendly_path_info(stack)[0]
 
 
-def get_friendly_path_info(stack):
+def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
     if not stack.entries:
         path = ""
         path_msg = "at the root"

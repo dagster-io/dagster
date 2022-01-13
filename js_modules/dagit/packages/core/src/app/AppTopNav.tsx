@@ -1,3 +1,4 @@
+import {Box, ColorsWIP, IconWIP, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,10 +7,6 @@ import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceWarningIcon} from '../nav/WorkspaceWarningIcon';
 import {SearchDialog} from '../search/SearchDialog';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Tooltip} from '../ui/Tooltip';
 
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';

@@ -69,7 +69,7 @@ def _not_invoked_warning(
     context_name: str,
 ) -> None:
     warning_message = (
-        "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
+        "While in {context} context '{name}', received an uninvoked {node_type} '{solid_name}'.\n"
     )
     if solid.given_alias:
         warning_message += "'{solid_name}' was aliased as '{given_alias}'.\n"
@@ -85,6 +85,7 @@ def _not_invoked_warning(
         given_alias=solid.given_alias,
         tags=solid.tags,
         hooks=[hook.name for hook in solid.hook_defs],
+        node_type=solid.node_def.node_type_str,
     )
 
     warnings.warn(warning_message.strip())
@@ -995,7 +996,6 @@ def do_composition(
         fn_name=graph_name,
         compute_fn=compute_fn,
         explicit_input_defs=provided_input_defs,
-        context_required=False,
         exclude_nothing=False,
     )
 

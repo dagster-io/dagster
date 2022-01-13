@@ -1,7 +1,5 @@
+import {ColorsWIP, IconWIP} from '@dagster-io/ui';
 import React from 'react';
-
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 
 export const formatRepositoryUrl = (url: string): string => {
   try {

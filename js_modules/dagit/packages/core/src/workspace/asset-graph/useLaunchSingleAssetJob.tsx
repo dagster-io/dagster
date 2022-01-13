@@ -30,7 +30,9 @@ export const useLaunchSingleAssetJob = () => {
             },
           },
         });
-        handleLaunchResult(basePath, jobName, result, true);
+        handleLaunchResult(basePath, jobName, result, {
+          openInTab: true,
+        });
       } catch (error) {
         showLaunchError(error as Error);
       }

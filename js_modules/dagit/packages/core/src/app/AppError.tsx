@@ -1,9 +1,7 @@
 import {ErrorResponse, onError} from '@apollo/client/link/error';
+import {Toaster, FontFamily} from '@dagster-io/ui';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
-
-import {Toaster} from '../ui/Toaster';
-import {FontFamily} from '../ui/styles';
 
 import {showCustomAlert} from './CustomAlertProvider';
 

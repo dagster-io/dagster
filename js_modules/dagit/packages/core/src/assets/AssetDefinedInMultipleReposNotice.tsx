@@ -1,9 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
+import {Alert, Box, ColorsWIP} from '@dagster-io/ui';
 import React from 'react';
 
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 

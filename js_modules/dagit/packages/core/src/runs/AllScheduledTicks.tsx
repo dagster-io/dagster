@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Alert, Box, ButtonLink, ColorsWIP, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -7,11 +8,6 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 
 import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';

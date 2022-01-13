@@ -1,5 +1,17 @@
 import {gql} from '@apollo/client';
 import {Intent} from '@blueprintjs/core';
+import {
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  Checkbox,
+  ColorsWIP,
+  IconWIP,
+  SplitPanelContainer,
+  TagWIP,
+  Code,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -11,16 +23,6 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
-import {TagWIP} from '../ui/TagWIP';
-import {Code} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,

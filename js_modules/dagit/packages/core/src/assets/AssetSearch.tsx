@@ -1,3 +1,4 @@
+import {Popover, Spinner, TextInput} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -5,9 +6,6 @@ import {useHistory} from 'react-router-dom';
 import {SearchResults} from '../search/SearchResults';
 import {SearchResult} from '../search/types';
 import {useAssetSearch} from '../search/useRepoSearch';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {TextInput} from '../ui/TextInput';
 
 type State = {
   open: boolean;

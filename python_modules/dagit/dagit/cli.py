@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import threading
@@ -15,7 +16,7 @@ from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import default_system_logger
+from dagster.utils.log import configure_loggers
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
@@ -186,7 +187,8 @@ def uploading_logging_thread():
 def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
-    logger = default_system_logger("dagit")
+    configure_loggers()
+    logger = logging.getLogger("dagit")
 
     logger.info(
         "Serving dagit on http://{host}:{port}{path_prefix} in process {pid}".format(

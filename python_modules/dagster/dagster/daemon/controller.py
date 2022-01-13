@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 import time
@@ -15,11 +16,11 @@ from dagster.daemon.daemon import (
     MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
-    get_default_daemon_logger,
 )
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
+from dagster.utils.log import configure_loggers
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
@@ -32,7 +33,6 @@ DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 30
 
 # How long after an error is raised in a daemon that it's still included in the status for that daemon
 DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS = 300
-
 
 THREAD_CHECK_INTERVAL = 5
 
@@ -109,6 +109,7 @@ class DagsterDaemonController:
         heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+        handler="default",
     ):
 
         self._daemon_uuid = str(uuid.uuid4())
@@ -137,7 +138,9 @@ class DagsterDaemonController:
 
         self._daemon_shutdown_event = threading.Event()
 
-        self._logger = get_default_daemon_logger("dagster-daemon")
+        configure_loggers(handler=handler)
+
+        self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
             "instance is configured with the following daemons: {}".format(
                 _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)

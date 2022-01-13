@@ -15,17 +15,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   value: string;
 }
 
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets_key {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets {
-  __typename: "Asset";
-  id: string;
-  key: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets_key;
-}
-
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_RunStatsSnapshot {
   __typename: "RunStatsSnapshot";
   id: string;
@@ -56,7 +45,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   mode: string;
   runId: string;
   status: RunStatus;
-  assets: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_assets[];
   stats: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats;
 }
 
@@ -66,54 +54,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   name: string;
 }
 
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState {
-  __typename: "InstigationState";
-  id: string;
-  status: InstigationStatus;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks_results {
-  __typename: "FutureInstigationTick";
-  timestamp: number;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks {
-  __typename: "FutureInstigationTicks";
-  results: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks_results[];
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules {
-  __typename: "Schedule";
-  id: string;
-  mode: string;
-  name: string;
-  scheduleState: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState;
-  executionTimezone: string | null;
-  futureTicks: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_futureTicks;
-  cronSchedule: string;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets {
-  __typename: "Target";
-  mode: string;
-  pipelineName: string;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState {
-  __typename: "InstigationState";
-  id: string;
-  status: InstigationStatus;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors {
-  __typename: "Sensor";
-  id: string;
-  name: string;
-  targets: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets[] | null;
-  sensorState: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState;
-  jobOriginId: string;
-}
-
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
@@ -121,8 +61,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   isJob: boolean;
   runs: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs[];
   modes: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
-  schedules: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules[];
-  sensors: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors[];
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location {
@@ -137,6 +75,53 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   value: string;
 }
 
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_futureTicks_results {
+  __typename: "FutureInstigationTick";
+  timestamp: number;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_futureTicks {
+  __typename: "FutureInstigationTicks";
+  results: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_futureTicks_results[];
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+  pipelineName: string;
+  scheduleState: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState;
+  executionTimezone: string | null;
+  futureTicks: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_futureTicks;
+  cronSchedule: string;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_targets {
+  __typename: "Target";
+  pipelineName: string;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  targets: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_targets[] | null;
+  sensorState: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState;
+  jobOriginId: string;
+}
+
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories {
   __typename: "Repository";
   id: string;
@@ -144,6 +129,8 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   pipelines: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines[];
   location: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location;
   displayMetadata: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_displayMetadata[];
+  schedules: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules[];
+  sensors: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors[];
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {

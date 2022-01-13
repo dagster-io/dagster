@@ -1,3 +1,4 @@
+import {Box, ColorsWIP, IconWIP, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css} from 'styled-components/macro';
 
@@ -8,9 +9,6 @@ import {
   applySelectSession,
   IStorageData,
 } from '../app/LocalStorage';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconWrapper} from '../ui/Icon';
 
 interface ExecutationTabProps {
   canRemove?: boolean;

@@ -1,12 +1,18 @@
-from dagster import PartitionsDefinition, StaticPartitionsDefinition
-from dagster.core.asset_defs import asset
+import pytest
+from dagster import (
+    AssetMaterialization,
+    DagsterInvalidDefinitionError,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.asset_defs.asset_partitions import (
-    PartitionKeyRange,
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
 )
 from dagster.core.asset_defs.partition_mapping import PartitionMapping
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 
 
 def test_assets_with_same_partitioning():
@@ -107,3 +113,50 @@ def test_filter_mapping_partitions_dep():
         )
         == PartitionKeyRange("ringo", "paul")
     )
+
+
+def test_single_partitioned_asset_job():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        pass
+
+    my_job = build_assets_job("my_job", assets=[my_asset])
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("my_asset") == [
+        AssetMaterialization(asset_key=AssetKey(["my_asset"]), partition="b")
+    ]
+
+
+def test_two_partitioned_assets_job():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def downstream(upstream):
+        assert upstream is None
+
+    my_job = build_assets_job("my_job", assets=[upstream, downstream])
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("upstream") == [
+        AssetMaterialization(AssetKey(["upstream"]), partition="b")
+    ]
+    assert result.asset_materializations_for_node("downstream") == [
+        AssetMaterialization(AssetKey(["downstream"]), partition="b")
+    ]
+
+
+def test_assets_job_with_different_partitions_defs():
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+        def upstream():
+            pass
+
+        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+        def downstream(upstream):
+            assert upstream is None
+
+        build_assets_job("my_job", assets=[upstream, downstream])

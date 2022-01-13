@@ -404,7 +404,7 @@ def nothing_dependency():
     create_table_2(start=create_table_1())
 ```
 
-In this example, `create_table_2` has an input of type `Nothing` meaning that it doesn't exepct any data to be provided by the upstream op. This lets us connect them in the graph definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+In this example, `create_table_2` has an input of type `Nothing` meaning that it doesn't expect any data to be provided by the upstream op. This lets us connect them in the graph definition so that `create_table_2` executes only after `create_table_1` successfully executes.
 
 `Nothing` type inputs do not have a corresponding parameter in the function since there is no data to pass. When connecting the dependencies, it is recommended to use keyword args to prevent mix-ups with other positional inputs.
 

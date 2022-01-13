@@ -94,7 +94,7 @@ describe('RunDetails', () => {
     global.Date.now = dateNow;
   });
 
-  it('renders QUEUED details', async () => {
+  it.only('renders QUEUED details', async () => {
     renderAll({status: RunStatus.QUEUED, startTime: null, endTime: null});
 
     await waitFor(() => {

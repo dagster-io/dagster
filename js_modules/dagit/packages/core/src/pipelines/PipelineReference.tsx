@@ -1,9 +1,7 @@
+import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 

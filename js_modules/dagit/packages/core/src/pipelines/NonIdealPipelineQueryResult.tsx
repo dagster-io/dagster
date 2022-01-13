@@ -1,6 +1,5 @@
+import {NonIdealState} from '@dagster-io/ui';
 import React from 'react';
-
-import {NonIdealState} from '../ui/NonIdealState';
 
 interface Props {
   isGraph: boolean;

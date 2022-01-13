@@ -71,6 +71,7 @@ from ..runs import (
     GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
+    parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
@@ -387,7 +388,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 
@@ -395,7 +396,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 

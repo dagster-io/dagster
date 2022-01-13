@@ -1,3 +1,4 @@
+import {Box, ColorsWIP, Group, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import {gql} from 'graphql.macro';
 import qs from 'qs';
 import * as React from 'react';
@@ -8,13 +9,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Table} from '../ui/Table';
-import {Mono} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 

@@ -1,9 +1,9 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from '../ui/Colors';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,

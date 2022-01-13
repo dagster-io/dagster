@@ -23,7 +23,7 @@ export const GlobalPopoverStyle = createGlobalStyle`
         width: 16px;
         height: 16px;
         background: ${ColorsWIP.Gray900};
-        mask-image: url(${require('./icon-svgs/search.svg').default});
+        mask-image: url(${require('../icon-svgs/search.svg').default});
         mask-size: cover;
         &::before { 
           content: '';

@@ -1,14 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../app/Util';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Table} from '../ui/Table';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';

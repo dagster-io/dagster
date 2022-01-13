@@ -1,19 +1,23 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  Markdown,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Markdown} from '../ui/Markdown';
-import {Tooltip} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 

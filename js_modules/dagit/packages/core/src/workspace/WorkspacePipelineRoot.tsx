@@ -1,15 +1,9 @@
+import {Alert, Box, NonIdealState, Page, PageHeader, Table, Heading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
 import {LoadingSpinner} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {PageHeader} from '../ui/PageHeader';
-import {Table} from '../ui/Table';
-import {Heading} from '../ui/Text';
 
 import {isThisThingAJob, optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoPath} from './buildRepoAddress';

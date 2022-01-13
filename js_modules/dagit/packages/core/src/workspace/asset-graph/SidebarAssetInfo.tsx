@@ -1,3 +1,4 @@
+import {Box, ColorsWIP} from '@dagster-io/ui';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../../app/Util';
@@ -6,8 +7,6 @@ import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
-import {Box} from '../../ui/Box';
-import {ColorsWIP} from '../../ui/Colors';
 import {RepoAddress} from '../types';
 
 import {LiveDataForNode} from './Utils';

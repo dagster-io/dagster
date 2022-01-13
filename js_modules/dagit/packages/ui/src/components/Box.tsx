@@ -1,6 +1,6 @@
 import styled, {css} from 'styled-components/macro';
 
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable} from '../util/assertUnreachable';
 
 import {BorderSetting, DirectionalSpacing, FlexProperties} from './types';
 
@@ -80,6 +80,7 @@ const borderSettingToCSS = (border: BorderSetting) => {
       `;
     default:
       assertUnreachable(side);
+      return '';
   }
 };
 

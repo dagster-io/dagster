@@ -28,6 +28,7 @@ from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.log import configure_loggers
 
 
 def step_output_event_filter(pipe_iterator):
@@ -107,7 +108,8 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                     "config": {
                         "wait_for_processes": True,
                     },
-                }
+                },
+                "telemetry": {"enabled": False},
             },
             (overrides if overrides else {}),
         )
@@ -312,6 +314,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None, bad_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
+        self._launched_run_ids = set()
         self._bad_run_ids = bad_run_ids
 
         super().__init__()
@@ -325,10 +328,14 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception(f"Bad run {run.run_id}")
 
         self._queue.append(run)
+        self._launched_run_ids.add(run.run_id)
         return run
 
     def queue(self):
         return self._queue
+
+    def did_run_launch(self, run_id):
+        return run_id in self._launched_run_ids
 
     @classmethod
     def config_type(cls):
@@ -419,7 +426,7 @@ def get_mocked_system_timezone():
 
 
 # Test utility for creating a test workspace for a function
-class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         self._origin = origin
 
@@ -430,7 +437,7 @@ class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
 @contextmanager
 def in_process_test_workspace(instance, recon_repo):
     with WorkspaceProcessContext(
-        instance, TestInProcessWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+        instance, InProcessTestWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 
@@ -438,6 +445,7 @@ def in_process_test_workspace(instance, recon_repo):
 @contextmanager
 def create_test_daemon_workspace():
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    configure_loggers()
     with create_daemon_grpc_server_registry() as grpc_server_registry:
         with DynamicWorkspace(grpc_server_registry) as workspace:
             yield workspace

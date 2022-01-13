@@ -1,4 +1,5 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {uniq, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router';
@@ -14,13 +15,8 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../../runs/RunUtils';
-import {Box} from '../../ui/Box';
-import {ColorsWIP} from '../../ui/Colors';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
-import {IconWIP} from '../../ui/Icon';
 import {Loading} from '../../ui/Loading';
-import {NonIdealState} from '../../ui/NonIdealState';
-import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {buildPipelineSelector} from '../WorkspaceContext';
 import {RepoAddress} from '../types';
 
@@ -327,13 +323,7 @@ const AssetGraphExplorerWithData: React.FC<
 
           <div style={{position: 'absolute', right: 12, top: 12}}>
             <LaunchAssetExecutionButton
-              title={
-                selectedGraphNodes.length === 0
-                  ? 'Refresh All'
-                  : selectedGraphNodes.length === 1
-                  ? 'Refresh Selected'
-                  : `Refresh Selected (${selectedGraphNodes.length})`
-              }
+              title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
               repoAddress={repoAddress}
               assetJobName={explorerPath.pipelineName}
               assets={(selectedGraphNodes.length
@@ -493,4 +483,15 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
+};
+
+const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
+  const isRematerializeForAll = (nodes.length
+    ? nodes.map((n) => liveDataByNode[n.id])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
+    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
+  }`;
 };

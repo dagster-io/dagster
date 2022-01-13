@@ -79,7 +79,7 @@ def merge_yaml_strings(yaml_strs):
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(path):
+def load_yaml_from_path(path: str) -> object:
     check.str_param(path, "path")
     with open(path, "r") as ff:
         return yaml.safe_load(ff)

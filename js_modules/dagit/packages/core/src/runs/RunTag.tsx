@@ -1,7 +1,5 @@
+import {Tag, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {Tag} from '../ui/Tag';
-import {Tooltip} from '../ui/Tooltip';
 
 export enum DagsterTag {
   Namespace = 'dagster/',

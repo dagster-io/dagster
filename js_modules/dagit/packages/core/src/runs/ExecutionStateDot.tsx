@@ -1,6 +1,5 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 import {IStepState} from './RunMetadataProvider';
 

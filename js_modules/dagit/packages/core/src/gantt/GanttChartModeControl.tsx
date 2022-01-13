@@ -1,6 +1,5 @@
+import {ButtonGroup, ButtonGroupItem} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {ButtonGroup, ButtonGroupItem} from '../ui/ButtonGroup';
 
 import {GanttChartMode} from './Constants';
 

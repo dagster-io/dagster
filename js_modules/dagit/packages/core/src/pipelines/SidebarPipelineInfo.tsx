@@ -1,8 +1,8 @@
 import {gql} from '@apollo/client';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
-import {Box} from '../ui/Box';
 
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';

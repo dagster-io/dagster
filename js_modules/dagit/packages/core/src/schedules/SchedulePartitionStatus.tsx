@@ -1,4 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
+import {ButtonLink, ColorsWIP, Group, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -6,10 +7,6 @@ import {Link} from 'react-router-dom';
 import {assertUnreachable} from '../app/Util';
 import {StatusTable} from '../instigation/InstigationUtils';
 import {RunStatus} from '../types/globalTypes';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Caption} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

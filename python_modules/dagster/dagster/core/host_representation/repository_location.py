@@ -1,7 +1,7 @@
 import datetime
 import sys
 import threading
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
@@ -205,7 +205,8 @@ class RepositoryLocation(AbstractContextManager):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_reload_supported(self) -> bool:
         pass
 
@@ -218,7 +219,8 @@ class RepositoryLocation(AbstractContextManager):
     def cleanup(self) -> None:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def origin(self) -> RepositoryLocationOrigin:
         pass
 
@@ -228,15 +230,23 @@ class RepositoryLocation(AbstractContextManager):
             ({"image": self.container_image} if self.container_image else {}),
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def executable_path(self) -> Optional[str]:
         pass
 
-    @abstractproperty
-    def container_image(self) -> str:
+    @property
+    @abstractmethod
+    def container_image(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
+    def entry_point(self) -> Optional[List[str]]:
+        pass
+
+    @property
+    @abstractmethod
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         pass
 
@@ -251,6 +261,7 @@ class RepositoryLocation(AbstractContextManager):
             executable_path=self.executable_path,
             code_pointer=code_pointer,
             container_image=self.container_image,
+            entry_point=self.entry_point,
         )
 
 
@@ -288,8 +299,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     @property
-    def container_image(self) -> str:
+    def container_image(self) -> Optional[str]:
         return self._recon_repo.container_image
+
+    @property
+    def entry_point(self) -> Optional[List[str]]:
+        return self._recon_repo.entry_point
 
     @property
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
@@ -501,6 +516,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         self._executable_path = None
         self._container_image = None
         self._repository_code_pointer_dict = None
+        self._entry_point = None
 
         try:
             self.client = DagsterGrpcClient(
@@ -534,6 +550,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._repository_code_pointer_dict = (
                 list_repositories_response.repository_code_pointer_dict
             )
+            self._entry_point = list_repositories_response.entry_point
 
             self._container_image = self._reload_current_image()
 
@@ -571,6 +588,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     @property
     def executable_path(self) -> Optional[str]:
         return self._executable_path
+
+    @property
+    def entry_point(self) -> Optional[List[str]]:
+        return self._entry_point
 
     @property
     def port(self) -> Optional[int]:

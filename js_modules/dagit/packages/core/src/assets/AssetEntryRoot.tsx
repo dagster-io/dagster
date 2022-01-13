@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Page} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {Loading} from '../ui/Loading';
-import {Page} from '../ui/Page';
 
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';

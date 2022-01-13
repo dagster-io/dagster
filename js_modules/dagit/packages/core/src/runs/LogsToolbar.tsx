@@ -1,19 +1,23 @@
+import {
+  Box,
+  ButtonWIP,
+  ButtonGroup,
+  Checkbox,
+  Group,
+  IconName,
+  IconWIP,
+  MenuItemWIP,
+  SelectWIP,
+  Spinner,
+  Tab,
+  Tabs,
+  TagWIP,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonGroup} from '../ui/ButtonGroup';
-import {Checkbox} from '../ui/Checkbox';
-import {Group} from '../ui/Group';
-import {IconName, IconWIP} from '../ui/Icon';
-import {MenuItemWIP} from '../ui/Menu';
-import {SelectWIP} from '../ui/Select';
-import {Spinner} from '../ui/Spinner';
-import {Tab, Tabs} from '../ui/Tabs';
-import {TagWIP} from '../ui/TagWIP';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
@@ -268,7 +272,7 @@ const StructuredLogToolbar = ({
       {filterText ? (
         <NonMatchCheckbox
           checked={filter.hideNonMatches}
-          onChange={(event) =>
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
           }
           label="Hide non-matches"

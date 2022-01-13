@@ -1,11 +1,8 @@
+import {ButtonWIP, IconWIP, MenuItemWIP, SelectWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP} from '../ui/Menu';
-import {SelectWIP} from '../ui/Select';
 
 interface NodeJumpBarProps<T extends {name: string}> {
   nodes: T[];

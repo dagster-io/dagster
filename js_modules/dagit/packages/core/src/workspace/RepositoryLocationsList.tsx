@@ -1,19 +1,21 @@
+import {
+  Box,
+  ButtonLink,
+  ColorsWIP,
+  Group,
+  NonIdealState,
+  Spinner,
+  Table,
+  TagWIP,
+  Caption,
+  Tooltip,
+} from '@dagster-io/ui';
 import React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {Timestamp} from '../app/time/Timestamp';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Caption} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';

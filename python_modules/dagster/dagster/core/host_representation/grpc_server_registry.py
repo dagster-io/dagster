@@ -1,9 +1,9 @@
 import sys
 import threading
 import uuid
-from abc import abstractmethod, abstractproperty
-from collections import namedtuple
+from abc import abstractmethod
 from contextlib import AbstractContextManager
+from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from dagster import check
@@ -18,7 +18,17 @@ from dagster.grpc.server import GrpcServerProcess
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
-class GrpcServerEndpoint(namedtuple("_GrpcServerEndpoint", "server_id host port socket")):
+class GrpcServerEndpoint(
+    NamedTuple(
+        "_GrpcServerEndpoint",
+        [
+            ("server_id", str),
+            ("host", str),
+            ("port", Optional[int]),
+            ("socket", Optional[str]),
+        ],
+    )
+):
     def __new__(cls, server_id, host, port, socket):
         return super(GrpcServerEndpoint, cls).__new__(
             cls,
@@ -28,34 +38,42 @@ class GrpcServerEndpoint(namedtuple("_GrpcServerEndpoint", "server_id host port 
             check.opt_str_param(socket, "socket"),
         )
 
-    def create_client(self):
+    def create_client(self) -> DagsterGrpcClient:
         return DagsterGrpcClient(port=self.port, socket=self.socket, host=self.host)
 
 
+T = TypeVar("T")
+
 # Daemons in different threads can use a shared GrpcServerRegistry to ensure that
 # a single GrpcServerProcess is created for each origin
-class GrpcServerRegistry(AbstractContextManager):
+class GrpcServerRegistry(AbstractContextManager, Generic[T]):
     @abstractmethod
-    def supports_origin(self, repository_location_origin):
+    def supports_origin(self, repository_location_origin: RepositoryLocationOrigin) -> bool:
         pass
 
     @abstractmethod
-    def get_grpc_endpoint(self, repository_location_origin):
+    def get_grpc_endpoint(self, repository_location_origin: T) -> GrpcServerEndpoint:
         pass
 
     @abstractmethod
-    def reload_grpc_endpoint(self, repository_location_origin):
+    def reload_grpc_endpoint(self, repository_location_origin: T) -> GrpcServerEndpoint:
         pass
 
-    @abstractproperty
-    def supports_reload(self):
+    @property
+    @abstractmethod
+    def supports_reload(self) -> bool:
         pass
 
 
 class ProcessRegistryEntry(
-    namedtuple(
+    NamedTuple(
         "_ProcessRegistryEntry",
-        "process_or_error loadable_target_origin creation_timestamp server_id",
+        [
+            ("process_or_error", Union[GrpcServerProcess, SerializableErrorInfo]),
+            ("loadable_target_origin", LoadableTargetOrigin),
+            ("creation_timestamp", float),
+            ("server_id", Optional[str]),
+        ],
     )
 ):
     def __new__(cls, process_or_error, loadable_target_origin, creation_timestamp, server_id):
@@ -127,7 +145,9 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
     def supports_reload(self):
         return True
 
-    def reload_grpc_endpoint(self, repository_location_origin):
+    def reload_grpc_endpoint(
+        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+    ) -> GrpcServerEndpoint:
         check.inst_param(
             repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
         )
@@ -140,7 +160,9 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
             return self._get_grpc_endpoint(repository_location_origin)
 
-    def get_grpc_endpoint(self, repository_location_origin):
+    def get_grpc_endpoint(
+        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+    ) -> GrpcServerEndpoint:
         check.inst_param(
             repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
         )
@@ -148,7 +170,9 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         with self._lock:
             return self._get_grpc_endpoint(repository_location_origin)
 
-    def _get_loadable_target_origin(self, repository_location_origin):
+    def _get_loadable_target_origin(
+        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+    ):
         check.inst_param(
             repository_location_origin,
             "repository_location_origin",
@@ -156,7 +180,9 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         )
         return repository_location_origin.loadable_target_origin
 
-    def _get_grpc_endpoint(self, repository_location_origin):
+    def _get_grpc_endpoint(
+        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+    ) -> GrpcServerEndpoint:
         origin_id = repository_location_origin.get_id()
         loadable_target_origin = self._get_loadable_target_origin(repository_location_origin)
         if not loadable_target_origin:
@@ -170,6 +196,8 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
             active_entry = self._active_entries[origin_id]
             refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
+        server_process: Union[GrpcServerProcess, SerializableErrorInfo]
+        new_server_id: Optional[str]
         if refresh_server:
             try:
                 new_server_id = str(uuid.uuid4())
@@ -241,7 +269,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
     def __exit__(self, exception_type, exception_value, traceback):
         if self._cleanup_thread:
-            self._cleanup_thread_shutdown_event.set()
+            cast(threading.Event, self._cleanup_thread_shutdown_event).set()
             self._cleanup_thread.join()
 
         for process in self._all_processes:

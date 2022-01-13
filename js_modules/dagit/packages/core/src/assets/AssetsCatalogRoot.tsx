@@ -1,8 +1,6 @@
+import {PageHeader, Heading} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
-
-import {PageHeader} from '../ui/PageHeader';
-import {Heading} from '../ui/Text';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 

@@ -41,6 +41,11 @@ Dagster CLI
 .. click:: dagit.cli:cli
    :prog: dagit
 
+.. currentmodule:: dagster
+
+.. click:: dagster.cli.api:grpc_command
+   :prog: dagster api grpc
+
 Legacy APIs
 -----------
 

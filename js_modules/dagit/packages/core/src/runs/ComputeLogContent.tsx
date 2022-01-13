@@ -1,13 +1,8 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP, Group, IconWIP, Spinner, FontFamily} from '@dagster-io/ui';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Spinner} from '../ui/Spinner';
-import {FontFamily} from '../ui/styles';
 
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 

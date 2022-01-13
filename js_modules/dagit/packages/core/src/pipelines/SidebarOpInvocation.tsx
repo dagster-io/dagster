@@ -1,12 +1,10 @@
 import {gql} from '@apollo/client';
+import {Box, ButtonWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';

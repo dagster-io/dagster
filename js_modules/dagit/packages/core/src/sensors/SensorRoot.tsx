@@ -1,14 +1,12 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, Page} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {Page} from '../ui/Page';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ButtonLink, ColorsWIP, Group, IconWIP, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,12 +9,6 @@ import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {FontFamily} from '../ui/styles';
 
 import {RunGroupPanelQuery} from './types/RunGroupPanelQuery';
 

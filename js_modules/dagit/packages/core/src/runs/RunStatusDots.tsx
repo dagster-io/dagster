@@ -1,10 +1,8 @@
+import {ColorsWIP, Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
 import {RunStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
 
 import {RunStats} from './RunStats';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';

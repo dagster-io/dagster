@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 from collections import namedtuple
 
@@ -298,7 +299,7 @@ def make_airflow_dag(
         coerce_old_to_new=lambda val: val,
     )
 
-    recon_repo = ReconstructableRepository.for_module(module_name, job_name)
+    recon_repo = ReconstructableRepository.for_module(module_name, job_name, os.getcwd())
     return _make_airflow_dag(
         recon_repo=recon_repo,
         job_name=job_name,
@@ -480,7 +481,7 @@ def make_airflow_dag_containerized(
         breaking_version="future versions",
         coerce_old_to_new=lambda val: val,
     )
-    recon_repo = ReconstructableRepository.for_module(module_name, job_name)
+    recon_repo = ReconstructableRepository.for_module(module_name, job_name, os.getcwd())
 
     op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)
     op_kwargs["image"] = image
