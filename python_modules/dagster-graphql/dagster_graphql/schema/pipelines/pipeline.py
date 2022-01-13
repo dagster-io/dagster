@@ -81,6 +81,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
+        partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
@@ -88,6 +89,10 @@ class GrapheneAsset(graphene.ObjectType):
 
     class Meta:
         name = "Asset"
+
+    def __init__(self, key, definition=None):
+        super().__init__(key=key, definition=definition)
+        self._definition = definition
 
     def resolve_id(self, _):
         return self.key
@@ -106,6 +111,9 @@ class GrapheneAsset(graphene.ObjectType):
 
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
+        partitionInLast = kwargs.get("partitionInLast")
+        if partitionInLast and self._definition:
+            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
         return [
             GrapheneAssetMaterialization(event=event)

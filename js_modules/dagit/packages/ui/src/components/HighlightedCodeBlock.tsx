@@ -18,7 +18,7 @@ hljs.registerLanguage('yaml', yaml);
 
 interface Props {
   value: string;
-  language: 'yaml' | 'sql';
+  language: 'yaml' | 'sql' | 'py';
   className?: string;
   style?: React.CSSProperties;
 }

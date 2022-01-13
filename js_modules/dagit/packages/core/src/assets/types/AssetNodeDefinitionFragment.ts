@@ -323,6 +323,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   opName: string | null;
   jobs: AssetNodeDefinitionFragment_dependencies_asset_jobs[];
   description: string | null;
+  partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations[];
 }
@@ -492,6 +493,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   opName: string | null;
   jobs: AssetNodeDefinitionFragment_dependedBy_asset_jobs[];
   description: string | null;
+  partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations[];
 }
@@ -507,6 +509,7 @@ export interface AssetNodeDefinitionFragment {
   description: string | null;
   opName: string | null;
   jobs: AssetNodeDefinitionFragment_jobs[];
+  partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];
   dependencies: AssetNodeDefinitionFragment_dependencies[];

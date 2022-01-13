@@ -37,6 +37,10 @@ class BulkActionStatus(Enum):
     FAILED = "FAILED"
     CANCELED = "CANCELED"
 
+    @staticmethod
+    def from_graphql_input(graphql_str):
+        return BulkActionStatus(graphql_str)
+
 
 @whitelist_for_serdes
 class PartitionBackfill(

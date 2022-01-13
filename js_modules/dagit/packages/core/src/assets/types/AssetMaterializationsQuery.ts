@@ -162,11 +162,18 @@ export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializat
   materializationEvent: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
 }
 
+export interface AssetMaterializationsQuery_assetOrError_Asset_definition {
+  __typename: "AssetNode";
+  id: string;
+  partitionKeys: string[];
+}
+
 export interface AssetMaterializationsQuery_assetOrError_Asset {
   __typename: "Asset";
   id: string;
   key: AssetMaterializationsQuery_assetOrError_Asset_key;
   assetMaterializations: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations[];
+  definition: AssetMaterializationsQuery_assetOrError_Asset_definition | null;
 }
 
 export type AssetMaterializationsQuery_assetOrError = AssetMaterializationsQuery_assetOrError_AssetNotFoundError | AssetMaterializationsQuery_assetOrError_Asset;
@@ -177,6 +184,7 @@ export interface AssetMaterializationsQuery {
 
 export interface AssetMaterializationsQueryVariables {
   assetKey: AssetKeyInput;
-  limit: number;
+  limit?: number | null;
   before?: string | null;
+  partitionInLast?: number | null;
 }

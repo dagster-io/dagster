@@ -25,16 +25,16 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
+import {MaterializationGroup} from './groupByPartition';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
   hasPartitions: boolean;
   hasLineage: boolean;
-  materializations: HistoricalMaterialization[];
-  focused?: string;
-  setFocused?: (timestamp: string) => void;
-}> = ({hasPartitions, hasLineage, materializations, focused, setFocused}) => {
+  groups: MaterializationGroup[];
+  focused?: MaterializationGroup;
+  setFocused?: (timestamp: MaterializationGroup) => void;
+}> = ({hasPartitions, hasLineage, groups, focused, setFocused}) => {
   return (
     <Table>
       <thead>
@@ -46,13 +46,13 @@ export const AssetMaterializationTable: React.FC<{
         </tr>
       </thead>
       <tbody>
-        {materializations.map((m) => (
+        {groups.map((group) => (
           <AssetMaterializationRow
-            key={m.latest.materializationEvent.timestamp}
+            key={group.timestamp || group.partition}
             hasPartitions={hasPartitions}
             hasLineage={hasLineage}
-            assetMaterialization={m}
-            focused={focused}
+            group={group}
+            isFocused={focused === group}
             setFocused={setFocused}
           />
         ))}
@@ -61,48 +61,57 @@ export const AssetMaterializationTable: React.FC<{
   );
 };
 
+const NoneSpan = () => <span style={{color: ColorsWIP.Gray400}}>None</span>;
+
 const AssetMaterializationRow: React.FC<{
-  assetMaterialization: HistoricalMaterialization;
+  group: MaterializationGroup;
   hasPartitions: boolean;
   hasLineage: boolean;
-  focused?: string;
-  setFocused?: (timestamp: string) => void;
-}> = ({assetMaterialization, hasPartitions, hasLineage, focused, setFocused}) => {
-  const {latest, predecessors} = assetMaterialization;
-  const run = latest.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
+  isFocused: boolean;
+  setFocused?: (group: MaterializationGroup) => void;
+}> = React.memo(({group, hasPartitions, hasLineage, isFocused, setFocused}) => {
+  const {latest, partition, timestamp, predecessors} = group;
+
+  const focusCss = isFocused
+    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
+    : {paddingLeft: 8};
+
+  const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)
     : null;
   const repo = useRepository(repoAddress);
 
+  if (!latest) {
+    return (
+      <HoverableRow>
+        <td style={{whiteSpace: 'nowrap', paddingLeft: 24}}>{partition || <NoneSpan />}</td>
+        <td colSpan={3} />
+      </HoverableRow>
+    );
+  }
+
   if (!run) {
     return <span />;
   }
-  const {materialization, assetLineage, timestamp, stepKey} = latest.materializationEvent;
+  const {materialization, assetLineage, stepKey} = latest.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
-  const isFocused = focused === timestamp;
-
-  const focusCss = isFocused
-    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
-    : {paddingLeft: 8};
 
   return (
     <>
-      <HoverableRow>
+      <HoverableRow onClick={() => setFocused?.(group)}>
         {hasPartitions && (
           <td style={{whiteSpace: 'nowrap', ...focusCss}}>
             <Group direction="row" spacing={2}>
-              <DisclosureTriangle open={isFocused} onClick={() => setFocused?.(timestamp)} />
-              {latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}
+              <DisclosureTriangle open={isFocused} />
+              {partition || <NoneSpan />}
             </Group>
           </td>
         )}
         <td style={hasPartitions ? {} : focusCss}>
           <Group direction="row" spacing={4}>
-            {!hasPartitions && (
-              <DisclosureTriangle open={isFocused} onClick={() => setFocused?.(timestamp)} />
-            )}
+            {!hasPartitions && <DisclosureTriangle open={isFocused} />}
             <Group direction="column" spacing={4}>
               <Timestamp timestamp={{ms: Number(timestamp)}} />
               {predecessors?.length ? (
@@ -183,7 +192,7 @@ const AssetMaterializationRow: React.FC<{
       )}
     </>
   );
-};
+});
 
 const HoverableRow = styled.tr`
   &:hover {
@@ -236,9 +245,11 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
           <AssetMaterializationTable
             hasLineage={hasLineage}
             hasPartitions={hasPartitions}
-            materializations={predecessors.map((p) => ({
+            groups={predecessors.map((p) => ({
               latest: p,
+              partition: p.partition || undefined,
               timestamp: p.materializationEvent.timestamp,
+              predecessors: [],
             }))}
           />
         </Box>
@@ -252,7 +263,7 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   );
 };
 
-const DisclosureTriangle: React.FC<{open: boolean; onClick: () => void}> = ({open, onClick}) => (
+const DisclosureTriangle: React.FC<{open: boolean; onClick?: () => void}> = ({open, onClick}) => (
   <DisclosureTriangleButton onClick={onClick} $open={open}>
     <IconWIP name="arrow_drop_down" size={24} />
   </DisclosureTriangleButton>

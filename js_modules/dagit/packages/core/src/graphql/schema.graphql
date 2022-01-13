@@ -37,7 +37,7 @@ type DagitQuery {
   assetNodes: [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
-  partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  partitionBackfillsOrError(status: BulkActionStatus, cursor: String, limit: Int): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
 }
 
@@ -521,7 +521,7 @@ scalar RunConfigData
 type Asset {
   id: String!
   key: AssetKey!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(partitions: [String], partitionInLast: Int, beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   definition: AssetNode
 }
 
@@ -637,6 +637,7 @@ type AssetNode {
   dependedByKeys: [AssetKey!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   partitionKeys: [String!]!
+  partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
 }
 
